@@ -25,6 +25,7 @@
 .DS_Store
 *.pem
 .venv/
+.agents/
 .claude/
 .firecrawl/
 .gemini/
