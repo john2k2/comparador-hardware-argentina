@@ -1,6 +1,6 @@
 # Auditoria Integral y Plan de Ejecucion
 
-Ultima actualizacion: 2026-03-06
+Ultima actualizacion: 2026-03-07
 Estado general: En progreso
 
 ## Como usar este documento
@@ -60,10 +60,12 @@ Regla de trabajo:
     - `src/app/api/products/route.ts`
 
 - [~] `A-07` Amplificacion de escrituras en DB (persistencia frecuente de snapshots + historial).
-  - Estado actual: dedupe en memoria por firma de precio/stock para evitar reinsertar `product_prices` y `price_history` sin cambios.
+  - Estado actual: dedupe contra estado persistido en DB con firmas (`content_signature` / `state_signature`) + heartbeat de frescura cada `12h`; `updated_at` ya no se pisa cuando solo refresca `last_seen_at` / `last_updated`.
   - Referencias:
     - `src/app/api/search/route.ts`
     - `src/lib/persistence/product-catalog.ts`
+    - `src/lib/persistence/product-write-dedupe.ts`
+    - `supabase/migrations/20260307103000_catalog_write_signatures.sql`
 
 - [x] `A-08` SEO limitado por alto uso client-side en Home/Search/Product.
   - Estado actual: Home, Search y Product ya exponen wrappers server-first con metadata/robots correctos y HTML inicial con contenido real enlazable; `/search?category=...` indexa, `/search?q=...` queda `noindex`.
@@ -1044,6 +1046,42 @@ Regla de trabajo:
 - [x] Validacion tecnica:
   - `npm run test:e2e` OK en `msedge`.
   - `npm test` -> `16` tests unitarios OK.
+
+### 2026-03-07 (A-07 - persistencia con firmas y heartbeat)
+- [x] Se reemplazo el dedupe de escrituras basado solo en memoria por comparacion contra estado persistido en Supabase:
+  - `products` ahora calcula `content_signature`
+  - `product_prices` ahora calcula `state_signature`
+  - helper puro:
+    - `src/lib/persistence/product-write-dedupe.ts`
+- [x] `persistProductsSnapshot()` ahora:
+  - lee el estado persistido actual por lote
+  - upsertea solo filas nuevas/cambiadas
+  - hace touch de frescura cada `12h` cuando no hubo cambios reales
+  - inserta `price_history` solo cuando cambia el estado efectivo del precio/stock/cuotas
+- [x] Se evito contaminar `updated_at` con refrescos de heartbeat:
+  - nueva migracion:
+    - `supabase/migrations/20260307103000_catalog_write_signatures.sql`
+  - `products.updated_at` y `product_prices.updated_at` solo avanzan cuando cambia la firma real, no cuando solo se refresca metadata de observacion
+- [x] Cobertura automatizada agregada:
+  - `src/lib/persistence/product-write-dedupe.test.ts`
+  - casos cubiertos:
+    - firma estable con orden distinto de `specs`
+    - skip de filas intactas dentro de la ventana de heartbeat
+    - re-touch cuando la frescura expira
+    - `price_history` solo ante cambio real
+- [x] Validacion tecnica:
+  - `npx eslint src/lib/persistence/product-catalog.ts src/lib/persistence/product-write-dedupe.ts src/lib/persistence/product-write-dedupe.test.ts src/lib/supabase.ts` OK
+  - `npm test` -> `20` tests OK
+  - `npm run build` OK
+  - `GET http://localhost:3000/api/search?q=mouse%20logitech%20g502%20x` -> `200`, `ProductCount=1`, `Total=1`, `Page=1`
+- [x] Validacion en Supabase real (`zyiyziubpcpgoqlkcrie`):
+  - migracion `catalog_write_signatures` aplicada OK
+  - columnas nuevas presentes:
+    - `public.products.content_signature`
+    - `public.product_prices.state_signature`
+  - prueba transaccional de trigger:
+    - touch de `products.last_seen_at` sin cambio de firma -> `updated_at` preservado
+    - touch de `product_prices.last_updated` sin cambio de firma -> `updated_at` preservado
 
 ### Punto de retomada (manana)
 - [x] Definir regla final de "Bajaron de precio":

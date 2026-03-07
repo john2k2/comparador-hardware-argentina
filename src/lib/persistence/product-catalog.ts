@@ -1,12 +1,14 @@
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 import type { Product } from '@/lib/types';
 import { buildCatalogMetadata } from '@/lib/catalog/catalog-metadata';
+import {
+  buildProductPriceRowKey,
+  planPriceRowPersistence,
+  planProductRowPersistence,
+} from '@/lib/persistence/product-write-dedupe';
 
 const UPSERT_CHUNK_SIZE = 250;
 const HISTORY_CHUNK_SIZE = 500;
-const LAST_PRICE_SIGNATURE_CACHE_MAX = 120_000;
-
-const lastPersistedPriceSignatureByKey = new Map<string, string>();
 
 type ProductRow = {
   id: string;
@@ -29,6 +31,7 @@ type ProductRow = {
   average_price: number;
   last_seen_at: string;
   updated_at: string;
+  content_signature: string;
 };
 
 type ProductPriceRow = {
@@ -42,6 +45,7 @@ type ProductPriceRow = {
   installment_amount: number | null;
   last_updated: string;
   updated_at: string;
+  state_signature: string;
 };
 
 type PriceHistoryRow = {
@@ -51,6 +55,21 @@ type PriceHistoryRow = {
   original_price: number | null;
   stock: 'in-stock' | 'low-stock' | 'out-of-stock' | 'unknown';
   recorded_at: string;
+};
+
+type PersistedProductStateRow = {
+  id: string;
+  content_signature: string | null;
+  last_seen_at: string | null;
+  last_scraped_at: string | null;
+};
+
+type PersistedProductPriceStateRow = {
+  product_id: string;
+  store_id: string;
+  url: string;
+  state_signature: string | null;
+  last_updated: string | null;
 };
 
 function toIsoDate(value: Date | string | undefined, fallback: Date): string {
@@ -68,6 +87,7 @@ function toStock(value: string | undefined): 'in-stock' | 'low-stock' | 'out-of-
 }
 
 function chunk<T>(rows: T[], size: number): T[][] {
+  if (rows.length === 0) return [];
   if (rows.length <= size) return [rows];
 
   const chunks: T[][] = [];
@@ -75,19 +95,6 @@ function chunk<T>(rows: T[], size: number): T[][] {
     chunks.push(rows.slice(i, i + size));
   }
   return chunks;
-}
-
-function rememberPriceSignature(key: string, signature: string): void {
-  if (lastPersistedPriceSignatureByKey.has(key)) {
-    lastPersistedPriceSignatureByKey.delete(key);
-  }
-  lastPersistedPriceSignatureByKey.set(key, signature);
-
-  while (lastPersistedPriceSignatureByKey.size > LAST_PRICE_SIGNATURE_CACHE_MAX) {
-    const oldestKey = lastPersistedPriceSignatureByKey.keys().next().value as string | undefined;
-    if (!oldestKey) break;
-    lastPersistedPriceSignatureByKey.delete(oldestKey);
-  }
 }
 
 async function readTrackedProductIds(
@@ -134,6 +141,50 @@ async function readTrackedProductIds(
   return trackedIds;
 }
 
+async function readPersistedCatalogState(
+  supabase: NonNullable<ReturnType<typeof getServerSupabaseServiceClient>>,
+  productIds: string[],
+): Promise<{
+  productsById: Map<string, PersistedProductStateRow>;
+  pricesByKey: Map<string, PersistedProductPriceStateRow>;
+}> {
+  const productsById = new Map<string, PersistedProductStateRow>();
+  const pricesByKey = new Map<string, PersistedProductPriceStateRow>();
+  if (productIds.length === 0) {
+    return { productsById, pricesByKey };
+  }
+
+  const chunks = chunk(productIds, UPSERT_CHUNK_SIZE);
+  for (const batch of chunks) {
+    const [{ data: productsData, error: productsError }, { data: pricesData, error: pricesError }] = await Promise.all([
+      supabase
+        .from('products')
+        .select('id,content_signature,last_seen_at,last_scraped_at')
+        .in('id', batch),
+      supabase
+        .from('product_prices')
+        .select('product_id,store_id,url,state_signature,last_updated')
+        .in('product_id', batch),
+    ]);
+
+    if (productsError) {
+      throw new Error(`Error read persisted products: ${productsError.message}`);
+    }
+    if (pricesError) {
+      throw new Error(`Error read persisted product_prices: ${pricesError.message}`);
+    }
+
+    for (const row of (productsData ?? []) as PersistedProductStateRow[]) {
+      productsById.set(row.id, row);
+    }
+    for (const row of (pricesData ?? []) as PersistedProductPriceStateRow[]) {
+      pricesByKey.set(buildProductPriceRowKey(row), row);
+    }
+  }
+
+  return { productsById, pricesByKey };
+}
+
 export async function persistProductsSnapshot(products: Product[]): Promise<void> {
   const supabase = getServerSupabaseServiceClient();
   if (!supabase || products.length === 0) {
@@ -146,14 +197,15 @@ export async function persistProductsSnapshot(products: Product[]): Promise<void
   );
   const enrichedProducts = await buildCatalogMetadata(products, trackedProductIds);
   const now = new Date();
-  const productRowsById = new Map<string, ProductRow>();
-  const productPriceRowsByKey = new Map<string, ProductPriceRow>();
-  const historyRows: PriceHistoryRow[] = [];
+  const candidateProductRowsById = new Map<string, ProductRow>();
+  const candidatePriceRowsByKey = new Map<string, ProductPriceRow>();
 
   for (const product of enrichedProducts) {
     const updatedAt = toIsoDate(product.updatedAt, now);
+    const lastScrapedAt = toIsoDate(product.lastScrapedAt, now);
+    const lastNormalizedAt = product.lastNormalizedAt ? toIsoDate(product.lastNormalizedAt, now) : null;
 
-    productRowsById.set(product.id, {
+    const productRowBase = {
       id: product.id,
       name: product.name,
       category: product.category,
@@ -166,65 +218,111 @@ export async function persistProductsSnapshot(products: Product[]): Promise<void
       family_key: product.familyKey ?? null,
       variant_key: product.variantKey ?? null,
       refresh_priority: product.refreshPriority ?? 'normal',
-      last_scraped_at: toIsoDate(product.lastScrapedAt, now),
-      last_normalized_at: toIsoDate(product.lastNormalizedAt ?? now, now),
       specs: product.specs ?? {},
       lowest_price: product.lowestPrice ?? 0,
       highest_price: product.highestPrice ?? 0,
       average_price: product.averagePrice ?? 0,
+    } as const;
+    const productPlan = planProductRowPersistence(productRowBase, undefined, now);
+
+    candidateProductRowsById.set(product.id, {
+      ...productRowBase,
+      last_scraped_at: lastScrapedAt,
+      last_normalized_at: lastNormalizedAt,
       last_seen_at: now.toISOString(),
       updated_at: updatedAt,
+      content_signature: productPlan.contentSignature,
     });
 
     for (const price of product.prices ?? []) {
       if (!price.storeId || !price.url) continue;
-      const key = `${product.id}|${price.storeId}|${price.url}`;
       const lastUpdated = toIsoDate(price.lastUpdated, now);
       const stock = toStock(price.stock);
       const installmentCount = price.installment?.count ?? null;
       const installmentAmount = price.installment?.amount ?? null;
-      const signature = [
-        price.price ?? 0,
-        price.originalPrice ?? '',
+      const priceRowBase = {
+        price: price.price ?? 0,
+        original_price: price.originalPrice ?? null,
         stock,
-        installmentCount ?? '',
-        installmentAmount ?? '',
-      ].join('|');
-      const previousSignature = lastPersistedPriceSignatureByKey.get(key);
-      const changedSinceLastPersist = previousSignature !== signature;
+        installment_count: installmentCount,
+        installment_amount: installmentAmount,
+      } as const;
+      const pricePlan = planPriceRowPersistence(priceRowBase, undefined, now);
+      const key = buildProductPriceRowKey({
+        product_id: product.id,
+        store_id: price.storeId,
+        url: price.url,
+      });
 
-      if (changedSinceLastPersist) {
-        productPriceRowsByKey.set(key, {
-          product_id: product.id,
-          store_id: price.storeId,
-          url: price.url,
-          price: price.price ?? 0,
-          original_price: price.originalPrice ?? null,
-          stock,
-          installment_count: installmentCount,
-          installment_amount: installmentAmount,
-          last_updated: lastUpdated,
-          updated_at: now.toISOString(),
-        });
-      }
-
-      if (changedSinceLastPersist) {
-        historyRows.push({
-          product_id: product.id,
-          store_id: price.storeId,
-          price: price.price ?? 0,
-          original_price: price.originalPrice ?? null,
-          stock,
-          recorded_at: lastUpdated,
-        });
-      }
-
-      rememberPriceSignature(key, signature);
+      candidatePriceRowsByKey.set(key, {
+        product_id: product.id,
+        store_id: price.storeId,
+        url: price.url,
+        ...priceRowBase,
+        last_updated: lastUpdated,
+        updated_at: now.toISOString(),
+        state_signature: pricePlan.stateSignature,
+      });
     }
   }
 
-  const productRows = Array.from(productRowsById.values());
-  const priceRows = Array.from(productPriceRowsByKey.values());
+  const productIds = Array.from(candidateProductRowsById.keys());
+  const { productsById, pricesByKey } = await readPersistedCatalogState(supabase, productIds);
+  const productRows: ProductRow[] = [];
+  const priceRows: ProductPriceRow[] = [];
+  const historyRows: PriceHistoryRow[] = [];
+
+  for (const row of candidateProductRowsById.values()) {
+    const plan = planProductRowPersistence({
+      name: row.name,
+      category: row.category,
+      brand: row.brand,
+      model: row.model,
+      description: row.description,
+      image: row.image,
+      normalized_title: row.normalized_title,
+      canonical_product_key: row.canonical_product_key,
+      family_key: row.family_key,
+      variant_key: row.variant_key,
+      refresh_priority: row.refresh_priority,
+      specs: row.specs,
+      lowest_price: row.lowest_price,
+      highest_price: row.highest_price,
+      average_price: row.average_price,
+    }, productsById.get(row.id), now);
+    row.content_signature = plan.contentSignature;
+
+    if (plan.shouldUpsert) {
+      productRows.push(row);
+    }
+  }
+
+  for (const row of candidatePriceRowsByKey.values()) {
+    const key = buildProductPriceRowKey(row);
+    const plan = planPriceRowPersistence({
+      price: row.price,
+      original_price: row.original_price,
+      stock: row.stock,
+      installment_count: row.installment_count,
+      installment_amount: row.installment_amount,
+    }, pricesByKey.get(key), now);
+    row.state_signature = plan.stateSignature;
+
+    if (plan.shouldUpsert) {
+      priceRows.push(row);
+    }
+
+    if (plan.changed) {
+      historyRows.push({
+        product_id: row.product_id,
+        store_id: row.store_id,
+        price: row.price,
+        original_price: row.original_price,
+        stock: row.stock,
+        recorded_at: row.last_updated,
+      });
+    }
+  }
 
   for (const batch of chunk(productRows, UPSERT_CHUNK_SIZE)) {
     const { error } = await supabase.from('products').upsert(batch, {

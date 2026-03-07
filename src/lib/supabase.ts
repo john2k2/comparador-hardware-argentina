@@ -37,6 +37,7 @@ export interface Database {
           highest_price: number;
           average_price: number;
           last_seen_at: string;
+          content_signature: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -60,6 +61,7 @@ export interface Database {
           highest_price?: number;
           average_price?: number;
           last_seen_at?: string;
+          content_signature?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -83,6 +85,7 @@ export interface Database {
           highest_price?: number;
           average_price?: number;
           last_seen_at?: string;
+          content_signature?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -99,6 +102,7 @@ export interface Database {
           installment_count: number | null;
           installment_amount: number | null;
           last_updated: string;
+          state_signature: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -113,6 +117,7 @@ export interface Database {
           installment_count?: number | null;
           installment_amount?: number | null;
           last_updated?: string;
+          state_signature?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -127,6 +132,7 @@ export interface Database {
           installment_count?: number | null;
           installment_amount?: number | null;
           last_updated?: string;
+          state_signature?: string | null;
           created_at?: string;
           updated_at?: string;
         };
