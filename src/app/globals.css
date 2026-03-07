@@ -1,0 +1,785 @@
+@import "tailwindcss";
+
+/* ============================================
+   Tailwind CSS v4 - Pixel Art Design Tokens
+   ============================================ */
+
+@theme {
+  /* Variables base que cambian con .dark */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+
+  /* Colores neón variables basados en el tema */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-ring: var(--primary);
+
+  /* Force NO radius for Pixel Art */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+
+  /* Typography */
+  --font-pixel: var(--font-pixel), "Press Start 2P", cursive;
+
+  /* Animations Retro Definitions */
+  @keyframes pixel-blink {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes scanline {
+    0% {
+      transform: translateY(-100%);
+    }
+
+    100% {
+      transform: translateY(100%);
+    }
+  }
+
+  @keyframes glitch {
+    0% {
+      transform: translate(0);
+    }
+
+    20% {
+      transform: translate(-2px, 2px);
+    }
+
+    40% {
+      transform: translate(-2px, -2px);
+    }
+
+    60% {
+      transform: translate(2px, 2px);
+    }
+
+    80% {
+      transform: translate(2px, -2px);
+    }
+
+    100% {
+      transform: translate(0);
+    }
+  }
+
+  @keyframes text-neon {
+
+    0%,
+    100% {
+      color: var(--color-secondary);
+      text-shadow: 0 0 5px var(--color-secondary);
+    }
+
+    50% {
+      color: #fff;
+      text-shadow: 2px 2px 0px var(--color-primary);
+    }
+  }
+
+  @keyframes float-pixel {
+
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+
+  @keyframes wipe-diagonal {
+    0% {
+      transform: translate(-150%, -150%) rotate(45deg);
+    }
+
+    100% {
+      transform: translate(150%, 150%) rotate(45deg);
+    }
+  }
+
+  @keyframes typing {
+    from {
+      width: 0;
+    }
+
+    to {
+      width: 100%;
+    }
+  }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes pixel-search {
+
+    0%,
+    100% {
+      transform: translate(0, 0);
+    }
+
+    25% {
+      transform: translate(-2px, -2px) rotate(-10deg);
+    }
+
+    50% {
+      transform: translate(2px, -2px) rotate(10deg);
+    }
+
+    75% {
+      transform: translate(2px, 2px);
+    }
+  }
+
+  @keyframes buscar-adentro {
+    0% {
+      transform: translate(0, 0);
+    }
+
+    20% {
+      transform: translate(-2px, -2px);
+    }
+
+    40% {
+      transform: translate(2px, -1px);
+    }
+
+    60% {
+      transform: translate(-1px, 2px);
+    }
+
+    80% {
+      transform: translate(1px, 1px);
+    }
+
+    100% {
+      transform: translate(0, 0);
+    }
+  }
+
+  @keyframes blink-pink {
+    0% {
+      color: var(--primary);
+      text-shadow: none;
+    }
+
+    50% {
+      color: #ffffff;
+      text-shadow: 0 0 10px var(--primary);
+    }
+
+    100% {
+      color: var(--primary);
+      text-shadow: none;
+    }
+  }
+
+  @keyframes scan {
+    0% {
+      top: 4px;
+      opacity: 0;
+    }
+
+    10% {
+      opacity: 1;
+    }
+
+    45% {
+      top: calc(100% - 6px);
+      opacity: 1;
+    }
+
+    50% {
+      top: calc(100% - 6px);
+      opacity: 0;
+    }
+
+    100% {
+      top: 4px;
+      opacity: 0;
+    }
+  }
+
+  /* Registration of Animation Utilities */
+  --animate-pixel-blink: pixel-blink 1s steps(2) infinite;
+  --animate-scanline: scanline 10s linear infinite;
+  --animate-glitch: glitch 0.3s steps(2) infinite;
+  --animate-text-neon: text-neon 2s steps(4) infinite;
+  --animate-float-pixel: float-pixel 2s steps(4) infinite;
+  --animate-wipe-diagonal: wipe-diagonal 1.2s steps(30) forwards;
+  --animate-typewriter: typing 2s steps(24) forwards;
+  --animate-marquee: marquee 20s linear infinite;
+  --animate-pixel-search: pixel-search 1.5s steps(4) infinite;
+  --animate-buscar-adentro: buscar-adentro 4s steps(4) infinite;
+  --animate-blink-pink: blink-pink 0.6s steps(2) infinite;
+  --animate-scan: scan 2.5s linear infinite;
+  --animate-move-clouds: move-clouds 20s linear infinite;
+}
+
+/* ============================================
+   Theme Variables Configuration
+   ============================================ */
+
+:root {
+  /* Cielo de Mario Bros clásico */
+  --background: #5c94fc;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --muted: #e5e5e5;
+  --muted-foreground: #555555;
+  --border: #1a1a1a;
+
+  /* Neones para fondo BLANCO (más oscuros y saturados) */
+  --primary: #d90048;
+  /* Rosa más oscuro */
+  --primary-foreground: #ffffff;
+  --primary-hover: #b3003b;
+  --secondary: #008a5c;
+  /* Verde más oscuro */
+  --secondary-foreground: #ffffff;
+  --accent: #cc9900;
+  /* Amarillo más oscuro/naranja */
+  --accent-foreground: #ffffff;
+}
+
+.dark {
+  --background: #121010;
+  --foreground: #ffffff;
+  --card: #1f1d1d;
+  --muted: #2a2a2a;
+  --muted-foreground: #aaaaaa;
+  --border: #ffffff;
+
+  /* Neones para fondo NEGRO (brillantes y clásicos) */
+  --primary: #ff0055;
+  --primary-foreground: #ffffff;
+  --primary-hover: #ff3377;
+  --secondary: #00ffaa;
+  --secondary-foreground: #1a1a1a;
+  --accent: #ffcc00;
+  --accent-foreground: #1a1a1a;
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+
+@layer base {
+  * {
+    @apply border-border;
+    image-rendering: pixelated;
+  }
+
+  svg {
+    image-rendering: pixelated;
+  }
+
+  img {
+    image-rendering: auto;
+  }
+
+  body {
+    @apply text-foreground overflow-x-hidden transition-colors duration-300;
+    font-family: var(--font-pixel);
+    line-height: 1.6;
+    font-size: 12px;
+    position: relative;
+    isolation: isolate;
+    background: linear-gradient(180deg, #5b7cf5 0%, #8ca5ff 50%, #b3c6ff 100%);
+    background-size: 100% 200%;
+    animation: sky-shift 15s ease infinite alternate;
+  }
+
+  .dark body {
+    background: linear-gradient(180deg, #090a10 0%, #111424 40%, #1e1b4b 100%);
+    animation: none;
+  }
+
+  /* Overlay de Scanlines CRT */
+  body::before {
+    content: " ";
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%,
+        rgba(0, 0, 0, 0.05) 50%), linear-gradient(90deg,
+        rgba(255, 0, 0, 0.02),
+        rgba(0, 255, 0, 0.01),
+        rgba(0, 0, 255, 0.02));
+    z-index: 9999;
+    background-size: 100% 4px, 3px 100%;
+    pointer-events: none;
+  }
+
+  /* Línea de escaneo moviéndose */
+  body::after {
+    content: " ";
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    opacity: 0.1;
+    z-index: 9999;
+    pointer-events: none;
+    animation: scanline 10s linear infinite;
+    background: linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply uppercase tracking-tighter font-bold;
+    line-height: 1.2;
+  }
+
+  /* Scrollbar Retro */
+  ::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--background);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-primary);
+    border: 2px solid var(--border);
+  }
+}
+
+@layer utilities {
+  .pixel-border {
+    box-shadow:
+      0 -4px 0 0 #000,
+      0 4px 0 0 #000,
+      -4px 0 0 0 #000,
+      4px 0 0 0 #000,
+      0 0 0 4px #fff;
+    margin: 4px;
+  }
+
+  .pixel-shadow {
+    box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 0.8);
+  }
+
+  .pixel-shadow-primary {
+    box-shadow: 6px 6px 0px 0px var(--color-primary);
+  }
+
+  .pixel-button {
+    @apply relative inline-block px-4 py-2 bg-primary text-primary-foreground transition-transform active:translate-x-1 active:translate-y-1;
+    box-shadow: 4px 4px 0px 0px #000;
+  }
+
+  /* Versión corregida del barrido diagonal */
+  .pixel-wipe-overlay {
+    @apply fixed inset-[-100%] z-[9999] pointer-events-none;
+    transform: rotate(45deg);
+    animation: wipe-diagonal 1.2s steps(30) forwards;
+  }
+}
+
+@keyframes move-clouds {
+  from {
+    background-position: 0 0;
+  }
+
+  to {
+    background-position: 300px 0;
+  }
+}
+
+/* ============================================
+   Parallax Mario Sky - Background CSS
+   ============================================ */
+
+/* Fondo del cielo */
+.sky-bg {
+  background: linear-gradient(180deg, #5b7cf5 0%, #8ca5ff 50%, #b3c6ff 100%);
+  background-size: 100% 200%;
+  animation: sky-shift 15s ease infinite alternate;
+}
+
+.dark .sky-layer {
+  display: none;
+}
+
+.night-sky-bg {
+  background: linear-gradient(180deg, #090a10 0%, #111424 40%, #1e1b4b 100%);
+}
+
+.night-sky-layer {
+  display: none;
+}
+
+.dark .night-sky-layer {
+  display: block;
+}
+
+@keyframes sky-shift {
+  0% {
+    background-position: top;
+  }
+
+  100% {
+    background-position: bottom;
+  }
+}
+
+/* Animaciones de las nubes */
+@keyframes float-across {
+  0% {
+    transform: translateX(110vw);
+  }
+
+  100% {
+    transform: translateX(-30vw);
+  }
+}
+
+@keyframes bobbing {
+
+  0%,
+  100% {
+    margin-top: 0;
+  }
+
+  50% {
+    margin-top: -15px;
+  }
+}
+
+@keyframes drift-stars {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-100px);
+  }
+}
+
+@keyframes shoot {
+  0% {
+    transform: translateX(0) translateY(0) rotate(-35deg);
+    opacity: 1;
+  }
+
+  10% {
+    transform: translateX(-400px) translateY(280px) rotate(-35deg);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateX(-400px) translateY(280px) rotate(-35deg);
+    opacity: 0;
+  }
+}
+
+@keyframes comet-pass {
+  0% {
+    transform: translateX(0vw) translateY(0vh) rotate(15deg) scale(2.5);
+    opacity: 0;
+  }
+
+  2% {
+    opacity: 0;
+  }
+
+  8% {
+    opacity: 1;
+  }
+
+  40% {
+    transform: translateX(130vw) translateY(35vh) rotate(15deg) scale(2.5);
+    opacity: 1;
+  }
+
+  45% {
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateX(130vw) translateY(35vh) rotate(15deg) scale(2.5);
+    opacity: 0;
+  }
+}
+
+@keyframes night-bobbing {
+
+  0%,
+  100% {
+    margin-top: 0;
+  }
+
+  50% {
+    margin-top: -10px;
+  }
+}
+
+/* Estructura de las nubes */
+.cloud-wrapper {
+  position: absolute;
+  will-change: transform;
+  animation: float-across linear infinite;
+}
+
+.cloud-inner {
+  width: 100%;
+  animation: bobbing 4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.night-stars-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.stars-slow {
+  animation: drift-stars 80s linear infinite;
+}
+
+.stars-fast {
+  animation: drift-stars 40s linear infinite;
+}
+
+.night-moon-layer {
+  position: absolute;
+  top: 10%;
+  right: 15%;
+  width: 96px;
+  height: 96px;
+  filter: drop-shadow(0 0 25px rgba(254, 240, 138, 0.4));
+  z-index: 1;
+}
+
+.shooting-star {
+  position: absolute;
+  width: 70px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #4dc3e5, #ffffff);
+  transform: rotate(-35deg);
+  opacity: 0;
+  animation: shoot 6s linear infinite;
+  z-index: 3;
+}
+
+.shooting-star-1 {
+  top: 10%;
+  left: 70%;
+  animation-delay: 2s;
+}
+
+.shooting-star-2 {
+  top: 25%;
+  left: 110%;
+  animation-delay: 8s;
+}
+
+.shooting-star-3 {
+  top: 5%;
+  left: 40%;
+  animation-delay: 14s;
+}
+
+.comet-container {
+  position: absolute;
+  top: 15%;
+  left: -20%;
+  width: 150px;
+  opacity: 0;
+  transform: rotate(15deg);
+  animation: comet-pass 60s linear infinite;
+  z-index: 2;
+}
+
+.night-cloud-wrapper {
+  position: absolute;
+  will-change: transform;
+  animation: float-across linear infinite;
+}
+
+.night-cloud-inner {
+  width: 100%;
+  animation: night-bobbing 5s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* Efecto Parallax (Profundidad) */
+.cloud-1 {
+  top: 15%;
+  width: 80px;
+  animation-duration: 120s;
+  animation-delay: -10s;
+  z-index: 0;
+  opacity: 0.5;
+  filter: blur(2px);
+}
+
+.cloud-1 .cloud-inner {
+  animation-duration: 6s;
+  animation-delay: 0s;
+}
+
+.cloud-2 {
+  top: 60%;
+  width: 110px;
+  animation-duration: 90s;
+  animation-delay: -45s;
+  z-index: 0;
+  opacity: 0.6;
+  filter: blur(1px);
+}
+
+.cloud-2 .cloud-inner {
+  animation-duration: 7s;
+  animation-delay: 1s;
+}
+
+.cloud-3 {
+  top: 30%;
+  width: 180px;
+  animation-duration: 60s;
+  animation-delay: -25s;
+  z-index: 1;
+  opacity: 0.8;
+}
+
+.cloud-3 .cloud-inner {
+  animation-duration: 5s;
+  animation-delay: 2s;
+}
+
+.cloud-4 {
+  top: 70%;
+  width: 220px;
+  animation-duration: 45s;
+  animation-delay: -5s;
+  z-index: 2;
+  opacity: 0.9;
+}
+
+.cloud-4 .cloud-inner {
+  animation-duration: 4.5s;
+  animation-delay: 0.5s;
+}
+
+.cloud-5 {
+  top: 10%;
+  width: 350px;
+  animation-duration: 30s;
+  animation-delay: -15s;
+  z-index: 3;
+}
+
+.cloud-5 .cloud-inner {
+  animation-duration: 4s;
+  animation-delay: 3s;
+}
+
+.cloud-6 {
+  top: 50%;
+  width: 450px;
+  animation-duration: 20s;
+  animation-delay: -50s;
+  z-index: 4;
+}
+
+.cloud-6 .cloud-inner {
+  animation-duration: 3.5s;
+  animation-delay: 1.5s;
+}
+
+.night-cloud-1 {
+  top: 20%;
+  width: 120px;
+  animation-duration: 150s;
+  animation-delay: -30s;
+  z-index: 4;
+  opacity: 0.4;
+  filter: blur(1px);
+}
+
+.night-cloud-1 .night-cloud-inner {
+  animation-duration: 6s;
+  animation-delay: 0s;
+}
+
+.night-cloud-2 {
+  top: 65%;
+  width: 180px;
+  animation-duration: 100s;
+  animation-delay: -60s;
+  z-index: 5;
+  opacity: 0.6;
+}
+
+.night-cloud-2 .night-cloud-inner {
+  animation-duration: 7s;
+  animation-delay: 2s;
+}
+
+.night-cloud-3 {
+  top: 45%;
+  width: 250px;
+  animation-duration: 75s;
+  animation-delay: -10s;
+  z-index: 6;
+  opacity: 0.8;
+}
+
+.night-cloud-3 .night-cloud-inner {
+  animation-duration: 5s;
+  animation-delay: 1s;
+}
+
+.night-cloud-4 {
+  top: 80%;
+  width: 400px;
+  animation-duration: 40s;
+  animation-delay: -80s;
+  z-index: 7;
+  opacity: 0.95;
+}
+
+.night-cloud-4 .night-cloud-inner {
+  animation-duration: 4s;
+  animation-delay: 3s;
+}

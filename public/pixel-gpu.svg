@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="100%" height="100%" shape-rendering="crispEdges">
+  <!-- Tarjeta base -->
+  <rect x="2" y="4" width="12" height="6" fill="#1a1a1a" />
+  
+  <!-- Conector PCIe -->
+  <rect x="4" y="10" width="6" height="2" fill="#ffcc00" />
+  <rect x="5" y="10" width="1" height="2" fill="#1a1a1a" />
+  <rect x="7" y="10" width="1" height="2" fill="#1a1a1a" />
+  <rect x="9" y="10" width="1" height="2" fill="#1a1a1a" />
+
+  <!-- Ventiladores -->
+  <rect x="3" y="5" width="4" height="4" fill="#333333" />
+  <rect x="9" y="5" width="4" height="4" fill="#333333" />
+  
+  <!-- Aspas -->
+  <rect x="4" y="6" width="2" height="2" fill="#00ffaa" />
+  <rect x="10" y="6" width="2" height="2" fill="#00ffaa" />
+  
+  <!-- Detalles neón -->
+  <rect x="13" y="4" width="1" height="6" fill="#ff0055" />
+  <rect x="2" y="4" width="12" height="1" fill="#ff0055" />
+</svg>
