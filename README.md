@@ -212,4 +212,4 @@ Notas:
 ## Notas
 
 - El monitoreo actual es en memoria de proceso (no persistente entre reinicios/deploy).
-- Para backlog tecnico y pendientes operativos, revisar `PENDIENTES.md`.
+- El estado de auditoria, backlog tecnico y evidencia operativa vive en `AUDITORIA_Y_PLAN.md`.

@@ -31,6 +31,8 @@
 .gemini/
 .playwright-mcp/
 /tmp/
+CLAUDE.md
+skills-lock.json
 
 # debug
 npm-debug.log*
