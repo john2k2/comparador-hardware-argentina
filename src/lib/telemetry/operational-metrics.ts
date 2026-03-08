@@ -1,4 +1,5 @@
 import { stores as configuredStores } from '@/lib/scrapers/static-data';
+import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 
 export type MonitoredEndpoint = '/api/search' | '/api/products';
 export type ScrapeHealthStatus = 'ok' | 'slow' | 'blocked' | 'no-results' | 'error';
@@ -8,6 +9,9 @@ const STORE_EVENT_LIMIT = 1500;
 const ENDPOINT_EVENT_LIMIT = 1000;
 const SNAPSHOT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const SLOW_SCRAPE_THRESHOLD_MS = 8000;
+const PERSISTED_EVENT_TTL_MS = 48 * 60 * 60 * 1000;
+const STORE_SCOPE = 'operational-store-event';
+const ENDPOINT_SCOPE = 'operational-endpoint-event';
 
 interface StoreScrapeEvent {
   endpoint: MonitoredEndpoint;
@@ -37,6 +41,10 @@ interface OperationalTelemetryState {
   storeEvents: StoreScrapeEvent[];
   endpointEvents: EndpointRequestEvent[];
 }
+
+type PersistedEntryRow = {
+  payload: unknown;
+};
 
 export interface StoreFailureSnapshot {
   at: string;
@@ -190,6 +198,149 @@ function isFailureEvent(
   return event.status === 'blocked' || event.status === 'error';
 }
 
+function isMonitoredEndpoint(value: unknown): value is MonitoredEndpoint {
+  return value === '/api/search' || value === '/api/products';
+}
+
+function isScrapeHealthStatus(value: unknown): value is ScrapeHealthStatus {
+  return value === 'ok' || value === 'slow' || value === 'blocked' || value === 'no-results' || value === 'error';
+}
+
+function normalizeStoreEvent(value: unknown): StoreScrapeEvent | null {
+  if (!value || typeof value !== 'object') return null;
+  const event = value as Partial<StoreScrapeEvent>;
+  if (!isMonitoredEndpoint(event.endpoint)) return null;
+  if (!isScrapeHealthStatus(event.status)) return null;
+  if (typeof event.storeId !== 'string' || typeof event.storeName !== 'string') return null;
+  if (!Number.isFinite(event.startedAtMs) || !Number.isFinite(event.finishedAtMs) || !Number.isFinite(event.latencyMs)) {
+    return null;
+  }
+
+  return {
+    endpoint: event.endpoint,
+    storeId: event.storeId,
+    storeName: event.storeName,
+    startedAtMs: Number(event.startedAtMs),
+    finishedAtMs: Number(event.finishedAtMs),
+    latencyMs: Number(event.latencyMs),
+    resultCount: Number(event.resultCount ?? 0),
+    status: event.status,
+    httpStatus: typeof event.httpStatus === 'number' ? event.httpStatus : undefined,
+    message: typeof event.message === 'string' ? event.message : undefined,
+  };
+}
+
+function normalizeEndpointEvent(value: unknown): EndpointRequestEvent | null {
+  if (!value || typeof value !== 'object') return null;
+  const event = value as Partial<EndpointRequestEvent>;
+  if (!isMonitoredEndpoint(event.endpoint)) return null;
+  if (!Number.isFinite(event.startedAtMs) || !Number.isFinite(event.finishedAtMs) || !Number.isFinite(event.latencyMs)) {
+    return null;
+  }
+  if (!Number.isFinite(event.statusCode)) return null;
+
+  return {
+    endpoint: event.endpoint,
+    startedAtMs: Number(event.startedAtMs),
+    finishedAtMs: Number(event.finishedAtMs),
+    latencyMs: Number(event.latencyMs),
+    statusCode: Number(event.statusCode),
+    success: Boolean(event.success),
+    resultCount: Number(event.resultCount ?? 0),
+    note: typeof event.note === 'string' ? event.note : undefined,
+  };
+}
+
+function buildEventKey(scope: string, event: { endpoint: string; startedAtMs: number; finishedAtMs: number }, suffix: string): string {
+  return `${scope}:${event.finishedAtMs}:${event.startedAtMs}:${event.endpoint}:${suffix}`;
+}
+
+async function persistTelemetryEntry(scope: string, cacheKey: string, payload: StoreScrapeEvent | EndpointRequestEvent): Promise<void> {
+  const supabase = getServerSupabaseServiceClient();
+  if (!supabase) return;
+
+  const expiresAt = new Date(Date.now() + PERSISTED_EVENT_TTL_MS).toISOString();
+  await supabase
+    .from('api_cache_entries')
+    .upsert({
+      cache_key: cacheKey,
+      scope,
+      payload,
+      expires_at: expiresAt,
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'cache_key',
+    });
+}
+
+async function readPersistedTelemetryState(nowMs = Date.now()): Promise<OperationalTelemetryState | null> {
+  const supabase = getServerSupabaseServiceClient();
+  if (!supabase) return null;
+
+  const nowIso = new Date(nowMs).toISOString();
+  const [storeRows, endpointRows] = await Promise.all([
+    supabase
+      .from('api_cache_entries')
+      .select('payload')
+      .eq('scope', STORE_SCOPE)
+      .gt('expires_at', nowIso)
+      .order('updated_at', { ascending: false })
+      .limit(STORE_EVENT_LIMIT),
+    supabase
+      .from('api_cache_entries')
+      .select('payload')
+      .eq('scope', ENDPOINT_SCOPE)
+      .gt('expires_at', nowIso)
+      .order('updated_at', { ascending: false })
+      .limit(ENDPOINT_EVENT_LIMIT),
+  ]);
+
+  if (storeRows.error && endpointRows.error) {
+    return null;
+  }
+
+  return {
+    storeEvents: ((storeRows.data ?? []) as PersistedEntryRow[])
+      .map((row) => normalizeStoreEvent(row.payload))
+      .filter((event): event is StoreScrapeEvent => Boolean(event))
+      .sort((a, b) => a.finishedAtMs - b.finishedAtMs),
+    endpointEvents: ((endpointRows.data ?? []) as PersistedEntryRow[])
+      .map((row) => normalizeEndpointEvent(row.payload))
+      .filter((event): event is EndpointRequestEvent => Boolean(event))
+      .sort((a, b) => a.finishedAtMs - b.finishedAtMs),
+  };
+}
+
+function mergeState(preferred: OperationalTelemetryState, fallback: OperationalTelemetryState): OperationalTelemetryState {
+  const mergedStoreEvents = [...fallback.storeEvents];
+  const storeKeys = new Set(mergedStoreEvents.map((event) => buildEventKey(STORE_SCOPE, event, event.storeId)));
+
+  for (const event of preferred.storeEvents) {
+    const key = buildEventKey(STORE_SCOPE, event, event.storeId);
+    if (storeKeys.has(key)) continue;
+    mergedStoreEvents.push(event);
+    storeKeys.add(key);
+  }
+
+  const mergedEndpointEvents = [...fallback.endpointEvents];
+  const endpointKeys = new Set(mergedEndpointEvents.map((event) => buildEventKey(ENDPOINT_SCOPE, event, String(event.statusCode))));
+
+  for (const event of preferred.endpointEvents) {
+    const key = buildEventKey(ENDPOINT_SCOPE, event, String(event.statusCode));
+    if (endpointKeys.has(key)) continue;
+    mergedEndpointEvents.push(event);
+    endpointKeys.add(key);
+  }
+
+  mergedStoreEvents.sort((a, b) => a.finishedAtMs - b.finishedAtMs);
+  mergedEndpointEvents.sort((a, b) => a.finishedAtMs - b.finishedAtMs);
+
+  return {
+    storeEvents: mergedStoreEvents.slice(-STORE_EVENT_LIMIT),
+    endpointEvents: mergedEndpointEvents.slice(-ENDPOINT_EVENT_LIMIT),
+  };
+}
+
 export function recordStoreScrapeEvent(event: {
   endpoint: MonitoredEndpoint;
   storeId: string;
@@ -203,14 +354,17 @@ export function recordStoreScrapeEvent(event: {
   message?: string;
 }): void {
   const state = getState();
-  pushWithCap(
-    state.storeEvents,
-    {
-      ...event,
-      finishedAtMs: event.finishedAtMs ?? event.startedAtMs + event.latencyMs,
-    },
-    STORE_EVENT_LIMIT,
-  );
+  const normalizedEvent: StoreScrapeEvent = {
+    ...event,
+    finishedAtMs: event.finishedAtMs ?? event.startedAtMs + event.latencyMs,
+  };
+
+  pushWithCap(state.storeEvents, normalizedEvent, STORE_EVENT_LIMIT);
+  void persistTelemetryEntry(
+    STORE_SCOPE,
+    buildEventKey(STORE_SCOPE, normalizedEvent, normalizedEvent.storeId),
+    normalizedEvent,
+  ).catch(() => undefined);
 }
 
 export function recordEndpointRequestEvent(event: {
@@ -224,15 +378,18 @@ export function recordEndpointRequestEvent(event: {
 }): void {
   const state = getState();
   const finishedAtMs = event.finishedAtMs ?? Date.now();
-  pushWithCap(
-    state.endpointEvents,
-    {
-      ...event,
-      finishedAtMs,
-      latencyMs: Math.max(0, finishedAtMs - event.startedAtMs),
-    },
-    ENDPOINT_EVENT_LIMIT,
-  );
+  const normalizedEvent: EndpointRequestEvent = {
+    ...event,
+    finishedAtMs,
+    latencyMs: Math.max(0, finishedAtMs - event.startedAtMs),
+  };
+
+  pushWithCap(state.endpointEvents, normalizedEvent, ENDPOINT_EVENT_LIMIT);
+  void persistTelemetryEntry(
+    ENDPOINT_SCOPE,
+    buildEventKey(ENDPOINT_SCOPE, normalizedEvent, String(normalizedEvent.statusCode)),
+    normalizedEvent,
+  ).catch(() => undefined);
 }
 
 export async function runObservedStoreScrape<T>(params: {
@@ -297,7 +454,7 @@ function buildStoreSnapshots(nowMs: number, allStoreEvents: StoreScrapeEvent[]):
     const slowCount = inWindow.filter((event) => event.status === 'slow').length;
     const noResultsCount = inWindow.filter((event) => event.status === 'no-results').length;
     const avgLatency = inWindow.length > 0
-      ? Math.round(inWindow.reduce((sum, event) => sum + event.latencyMs, 0) / inWindow.length)
+      ? Math.round(inWindow.reduce((sum, currentEvent) => sum + currentEvent.latencyMs, 0) / inWindow.length)
       : null;
     const recentFailures = [...events]
       .reverse()
@@ -484,9 +641,7 @@ function buildLogs(storeEvents: StoreScrapeEvent[], endpointEvents: EndpointRequ
     .slice(0, 160);
 }
 
-export function getOperationalMetricsSnapshot(): OperationalMetricsSnapshot {
-  const nowMs = Date.now();
-  const state = getState();
+function buildSnapshotFromState(state: OperationalTelemetryState, nowMs: number): OperationalMetricsSnapshot {
   const stores = buildStoreSnapshots(nowMs, state.storeEvents);
   const endpoints = buildEndpointSnapshots(nowMs, state.endpointEvents);
   const alerts = buildAlerts(nowMs, stores, endpoints);
@@ -499,4 +654,15 @@ export function getOperationalMetricsSnapshot(): OperationalMetricsSnapshot {
     alerts,
     logs,
   };
+}
+
+export async function getOperationalMetricsSnapshot(): Promise<OperationalMetricsSnapshot> {
+  const nowMs = Date.now();
+  const memoryState = getState();
+  const persistedState = await readPersistedTelemetryState(nowMs).catch(() => null);
+  const effectiveState = persistedState
+    ? mergeState(persistedState, memoryState)
+    : memoryState;
+
+  return buildSnapshotFromState(effectiveState, nowMs);
 }

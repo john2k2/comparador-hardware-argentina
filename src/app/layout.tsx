@@ -256,8 +256,8 @@ export default function RootLayout({
                 </div>
               </div>
               <div className="border-t border-border pt-8 text-center text-sm text-muted-foreground">
-                <p>&copy; {new Date().getFullYear()} Comparador Hardware Argentina. Todos los derechos reservados.</p>
-                <p className="mt-2">Precios aproximados sujetos a cambios. Ultima actualizacion: {new Date().toLocaleDateString("es-AR")}</p>
+                <p>&copy; Comparador Hardware Argentina. Todos los derechos reservados.</p>
+                <p className="mt-2">Precios aproximados sujetos a cambios segun disponibilidad y actualizaciones de cada tienda.</p>
               </div>
             </div>
           </footer>

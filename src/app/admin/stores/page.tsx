@@ -27,8 +27,8 @@ const STATUS_CLASS: Record<StoreHealthStatus, string> = {
   unknown: 'border-muted-foreground text-muted-foreground',
 };
 
-export default function AdminStoresPage() {
-  const snapshot = getOperationalMetricsSnapshot();
+export default async function AdminStoresPage() {
+  const snapshot = await getOperationalMetricsSnapshot();
 
   return (
     <RetroPageShell

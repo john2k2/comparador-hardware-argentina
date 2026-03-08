@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-export default function AdminScrapersPage() {
-  const snapshot = getOperationalMetricsSnapshot();
+export default async function AdminScrapersPage() {
+  const snapshot = await getOperationalMetricsSnapshot();
   const slowestStores = [...snapshot.stores]
     .filter((store) => store.avgLatencyMs24h !== null)
     .sort((a, b) => (b.avgLatencyMs24h ?? 0) - (a.avgLatencyMs24h ?? 0))

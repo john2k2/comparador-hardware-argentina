@@ -17,8 +17,8 @@ const cards = [
   { href: '/admin/alerts', title: 'ALERTAS', desc: 'Bloqueos, errores repetidos y riesgos de degradacion.' },
 ];
 
-export default function AdminPage() {
-  const snapshot = getOperationalMetricsSnapshot();
+export default async function AdminPage() {
+  const snapshot = await getOperationalMetricsSnapshot();
   const criticalAlerts = snapshot.alerts.filter((alert) => alert.severity === 'critical').length;
   const warningAlerts = snapshot.alerts.filter((alert) => alert.severity === 'warning').length;
   const activeStores = snapshot.stores.filter((store) => store.status !== 'unknown').length;

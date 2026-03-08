@@ -170,6 +170,57 @@ function categoryToSearchTerm(category: HardwareCategory): string {
   return 'procesador';
 }
 
+function inferDetailCategory(value: string): HardwareCategory {
+  const normalized = value.toLowerCase();
+
+  if (
+    normalized.includes('rtx')
+    || normalized.includes('radeon')
+    || normalized.includes('geforce')
+    || normalized.includes('rx ')
+    || normalized.includes('placa de video')
+    || normalized.includes('gpu')
+  ) {
+    return 'tarjetas-graficas';
+  }
+
+  if (
+    normalized.includes('ryzen')
+    || normalized.includes('core i')
+    || normalized.includes('ultra ')
+    || normalized.includes('procesador')
+    || normalized.includes('cpu')
+  ) {
+    return 'procesadores';
+  }
+
+  if (normalized.includes('mother') || normalized.includes('placa madre')) {
+    return 'motherboards';
+  }
+
+  if (normalized.includes('ddr4') || normalized.includes('ddr5') || normalized.includes('ram')) {
+    return 'memoria-ram';
+  }
+
+  if (normalized.includes('ssd') || normalized.includes('nvme') || normalized.includes('hdd') || normalized.includes('disco')) {
+    return 'almacenamiento';
+  }
+
+  if (normalized.includes('fuente') || normalized.includes('psu')) {
+    return 'fuentes-alimentacion';
+  }
+
+  if (normalized.includes('gabinete') || normalized.includes('case')) {
+    return 'gabinetes';
+  }
+
+  if (normalized.includes('cooler') || normalized.includes('refrigeracion') || normalized.includes('ventilador')) {
+    return 'refrigeracion';
+  }
+
+  return 'perifericos';
+}
+
 function normalizeProductContent(product: Product): Product {
   const sanitized = sanitizeProduct(product);
   const normalizedDescription = sanitized.description?.trim() || sanitized.name;
@@ -377,6 +428,7 @@ export async function GET(request: NextRequest) {
 
     if (id) {
       const detailKey = normalizeId(id);
+      let hasNegativeDetailCache = false;
       if (!bypassDb) {
         const cachedProduct = await getCachedDetail(id);
         if (cachedProduct !== undefined) {
@@ -397,35 +449,7 @@ export async function GET(request: NextRequest) {
               note: staleCachedDetail ? 'DETAIL_HIT_STALE' : 'DETAIL_HIT',
             });
           }
-
-          const snapshotFromMiss = getSnapshotProductById(id);
-          if (snapshotFromMiss) {
-            const hydrated = await normalizeAndEnrichProduct(snapshotFromMiss);
-            const staleSnapshotDetail = hasStaleProducts([hydrated]);
-            if (staleSnapshotDetail && !isRefreshRequest) {
-              scheduleBackgroundProductsRefresh(request, `detail:${detailKey}`);
-            }
-
-            await setCachedDetail(id, hydrated);
-            snapshotProducts([hydrated]);
-            return respond(hydrated, {
-              headers: { 'X-Product-Cache': staleSnapshotDetail ? 'SNAPSHOT-STALE' : 'SNAPSHOT' },
-            }, {
-              success: true,
-              resultCount: 1,
-              note: staleSnapshotDetail ? 'DETAIL_SNAPSHOT_FROM_MISS_STALE' : 'DETAIL_SNAPSHOT_FROM_MISS',
-            });
-          }
-
-          if (!isRefreshRequest) {
-            scheduleBackgroundProductsRefresh(request, `detail:${detailKey}`);
-          }
-
-          return respond({ error: 'Producto no encontrado en vivo (cache)' }, { status: 404 }, {
-            success: true,
-            resultCount: 0,
-            note: 'DETAIL_CACHE_NOT_FOUND',
-          });
+          hasNegativeDetailCache = true;
         }
 
         const snapshotProduct = getSnapshotProductById(id);
@@ -469,6 +493,18 @@ export async function GET(request: NextRequest) {
             note: staleDatabaseDetail ? 'DETAIL_DB_STALE' : 'DETAIL_DB',
           });
         }
+
+        if (hasNegativeDetailCache) {
+          if (!isRefreshRequest) {
+            scheduleBackgroundProductsRefresh(request, `detail:${detailKey}`);
+          }
+
+          return respond({ error: 'Producto no encontrado en vivo (cache)' }, { status: 404 }, {
+            success: false,
+            resultCount: 0,
+            note: 'DETAIL_CACHE_NOT_FOUND',
+          });
+        }
       }
 
       const pendingDetail = inFlightDetailRequests.get(detailKey);
@@ -499,7 +535,9 @@ export async function GET(request: NextRequest) {
         const fullh4rdSearchUrl = `https://www.fullh4rd.com.ar/cat/search/${encodeURIComponent(searchQuery)}`;
         const venexSearchUrl = `https://www.venex.com.ar/resultados-busqueda.htm?keywords=${encodeURIComponent(searchQuery)}`;
 
-        const fallbackCategory: HardwareCategory = 'procesadores';
+        const fallbackCategory: HardwareCategory = isHardwareCategory(category)
+          ? category
+          : inferDetailCategory(`${searchQuery} ${id}`);
         const wooProduct = await withAbortTimeout(
           (signal) => fetchWooCommerceProductById(id, fallbackCategory, { signal }),
           SCRAPER_TIMEOUT_MS,
@@ -584,7 +622,7 @@ export async function GET(request: NextRequest) {
 
       await setCachedDetail(id, null);
       return respond({ error: 'Producto no encontrado en vivo (requiere DB para historial)' }, { status: 404 }, {
-        success: true,
+        success: false,
         resultCount: 0,
         note: 'DETAIL_NOT_FOUND',
       });
