@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const snapshot = getOperationalMetricsSnapshot();
+    const snapshot = await getOperationalMetricsSnapshot();
     return NextResponse.json(snapshot);
   } catch (error) {
     console.error('Admin operational API error:', error);

@@ -15,8 +15,8 @@ const LEVEL_CLASS = {
   error: 'text-red-500',
 } as const;
 
-export default function AdminLogsPage() {
-  const snapshot = getOperationalMetricsSnapshot();
+export default async function AdminLogsPage() {
+  const snapshot = await getOperationalMetricsSnapshot();
 
   return (
     <RetroPageShell

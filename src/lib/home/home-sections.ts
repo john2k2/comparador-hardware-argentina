@@ -1,4 +1,6 @@
 import { readProductsFromDatabase } from '@/lib/persistence/product-read';
+import { hydrateProducts } from '@/lib/product-serialization';
+import { getSharedCache, setSharedCache } from '@/lib/server/shared-cache';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 import type { Product } from '@/lib/types';
 
@@ -57,6 +59,7 @@ const PRICE_DROP_MIN_PERCENT = 0.05;
 const PRICE_DROP_MIN_AMOUNT_ARS = 10_000;
 const DB_PRODUCTS_LIMIT = 600;
 const MAX_HISTORY_ROWS = 20_000;
+const HOME_SECTIONS_CACHE_TTL_MS = 5 * 60 * 1000;
 
 function toNumber(value: number | string | null | undefined, fallback = 0): number {
   if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;
@@ -299,6 +302,15 @@ async function readRecentHistoryRows(sinceIso: string): Promise<HistoryRow[]> {
 }
 
 export async function getHomeSectionsData(): Promise<HomeSectionsData> {
+  const cached = await getSharedCache<HomeSectionsData>('home-sections', 'homepage-v1');
+  if (cached) {
+    return {
+      ...cached,
+      featuredProducts: hydrateProducts(cached.featuredProducts ?? []),
+      priceDropProducts: hydrateProducts(cached.priceDropProducts ?? []),
+    };
+  }
+
   const dropWindowStartMs = Date.now() - PRICE_DROP_WINDOW_MS;
   const dropWindowStartIso = new Date(dropWindowStartMs).toISOString();
   const products = await readProductsFromDatabase({
@@ -319,7 +331,7 @@ export async function getHomeSectionsData(): Promise<HomeSectionsData> {
     dropWindowStartMs,
   );
 
-  return {
+  const payload: HomeSectionsData = {
     featuredProducts,
     priceDropProducts,
     rules: {
@@ -339,4 +351,7 @@ export async function getHomeSectionsData(): Promise<HomeSectionsData> {
       },
     },
   };
+
+  await setSharedCache('home-sections', 'homepage-v1', payload, HOME_SECTIONS_CACHE_TTL_MS);
+  return payload;
 }

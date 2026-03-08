@@ -15,8 +15,8 @@ const SEVERITY_CLASS = {
   critical: 'border-red-500 text-red-500',
 } as const;
 
-export default function AdminAlertsPage() {
-  const snapshot = getOperationalMetricsSnapshot();
+export default async function AdminAlertsPage() {
+  const snapshot = await getOperationalMetricsSnapshot();
   const sortedAlerts = [...snapshot.alerts].sort(
     (a, b) => new Date(b.triggeredAt).getTime() - new Date(a.triggeredAt).getTime(),
   );
