@@ -7,8 +7,10 @@ import { fetchVenexProducts } from '@/lib/scrapers/venex';
 import { fetchFullh4rdProducts } from '@/lib/scrapers/fullh4rd';
 import { fetchCompraGamerProducts, searchCompraGamerProducts } from '@/lib/scrapers/compragamer';
 import { fetchMaximusProducts } from '@/lib/scrapers/maximus';
+import { fetchGamingCityProducts, getGamingCityCategoryUrl } from '@/lib/scrapers/gamingcity';
 import { fetchGezatekProducts } from '@/lib/scrapers/gezatek';
 import { fetchCompugardenProducts } from '@/lib/scrapers/compugarden';
+import { fetchLoggProducts } from '@/lib/scrapers/logg';
 import { fetchAllWooCommerceCategory, fetchAllWooCommerceSearch, fetchWooCommerceProductById } from '@/lib/scrapers/woocommerce';
 import { fetchProductDescriptionFromUrl, isWeakProductDescription } from '@/lib/scrapers/product-description';
 import { getSnapshotProductById, snapshotProducts } from '@/lib/cache/search-snapshot';
@@ -554,10 +556,14 @@ export async function GET(request: NextRequest) {
           searchPromises.push(observeSource('fullh4rd', 'FullH4rd', (signal) => fetchFullh4rdProducts(fullh4rdSearchUrl, fallbackCategory, signal)));
         } else if (storePrefix === 'maximus') {
           searchPromises.push(observeSource('maximus', 'Maximus', (signal) => fetchMaximusProducts(searchQuery, fallbackCategory, signal)));
+        } else if (storePrefix === 'gamingcity') {
+          searchPromises.push(observeSource('gamingcity', 'Gaming City', (signal) => fetchGamingCityProducts(cleanQuery || searchQuery, fallbackCategory, signal)));
         } else if (storePrefix === 'gezatek') {
           searchPromises.push(observeSource('gezatek', 'Gezatek', (signal) => fetchGezatekProducts(searchQuery, fallbackCategory, signal)));
         } else if (storePrefix === 'compugarden') {
           searchPromises.push(observeSource('compugarden', 'Compugarden', (signal) => fetchCompugardenProducts(searchQuery, fallbackCategory, signal)));
+        } else if (storePrefix === 'logg') {
+          searchPromises.push(observeSource('logg', 'Logg', (signal) => fetchLoggProducts(cleanQuery || searchQuery, fallbackCategory, signal)));
         } else if (storePrefix === 'cg' || storePrefix === 'compragamer') {
           searchPromises.push(observeSource('compragamer', 'CompraGamer', (signal) => fetchCompraGamerByQuery(searchQuery, fallbackCategory, signal)));
         } else {
@@ -566,8 +572,10 @@ export async function GET(request: NextRequest) {
             observeSource('venex', 'Venex', (signal) => fetchVenexProducts(venexSearchUrl, fallbackCategory, signal)),
             observeSource('fullh4rd', 'FullH4rd', (signal) => fetchFullh4rdProducts(fullh4rdSearchUrl, fallbackCategory, signal)),
             observeSource('maximus', 'Maximus', (signal) => fetchMaximusProducts(searchQuery, fallbackCategory, signal)),
+            observeSource('gamingcity', 'Gaming City', (signal) => fetchGamingCityProducts(cleanQuery || searchQuery, fallbackCategory, signal)),
             observeSource('gezatek', 'Gezatek', (signal) => fetchGezatekProducts(searchQuery, fallbackCategory, signal)),
             observeSource('compugarden', 'Compugarden', (signal) => fetchCompugardenProducts(searchQuery, fallbackCategory, signal)),
+            observeSource('logg', 'Logg', (signal) => fetchLoggProducts(cleanQuery || searchQuery, fallbackCategory, signal)),
             observeSource('compragamer', 'CompraGamer', (signal) => fetchCompraGamerByQuery(searchQuery, fallbackCategory, signal)),
             withAbortTimeout(
               (signal) => fetchAllWooCommerceSearch(searchQuery, fallbackCategory, '/api/products', undefined, { signal }),
@@ -634,23 +642,27 @@ export async function GET(request: NextRequest) {
     let mexxUrl = 'https://www.mexx.com.ar/productos-rubro/procesadores/';
     let fullh4rdUrl = 'https://www.fullh4rd.com.ar/cat/search/procesador';
     let venexUrl = 'https://www.venex.com.ar/componentes-de-pc/microprocesadores';
+    let gamingCityUrl = getGamingCityCategoryUrl(categorySlug);
     let cgCategoryId = 27;
 
     if (categorySlug === 'tarjetas-graficas') {
       mexxUrl = 'https://www.mexx.com.ar/productos-rubro/placas-de-video/';
       fullh4rdUrl = 'https://www.fullh4rd.com.ar/cat/search/video';
       venexUrl = 'https://www.venex.com.ar/componentes-de-pc/placas-de-video';
+      gamingCityUrl = getGamingCityCategoryUrl(categorySlug);
       cgCategoryId = 6;
     } else if (categorySlug === 'motherboards') {
       mexxUrl = 'https://www.mexx.com.ar/productos-rubro/motherboards/';
       fullh4rdUrl = 'https://www.fullh4rd.com.ar/cat/search/mother';
       venexUrl = 'https://www.venex.com.ar/componentes-de-pc/mothers';
+      gamingCityUrl = getGamingCityCategoryUrl(categorySlug);
       cgCategoryId = 26;
     } else if (categorySlug === 'perifericos') {
       const encodedPeripheralQuery = encodeURIComponent(nonWooQuery);
       mexxUrl = `https://www.mexx.com.ar/buscar/?p=${encodedPeripheralQuery}`;
       fullh4rdUrl = `https://www.fullh4rd.com.ar/cat/search/${encodedPeripheralQuery}`;
       venexUrl = `https://www.venex.com.ar/resultados-busqueda.htm?keywords=${encodedPeripheralQuery}`;
+      gamingCityUrl = getGamingCityCategoryUrl(categorySlug);
     }
 
     console.log(`[API] Iniciando scraping paralelo para la categoria: ${categorySlug}`);
@@ -696,8 +708,10 @@ export async function GET(request: NextRequest) {
       observeSource('venex', 'Venex', (signal) => fetchVenexProducts(venexUrl, categorySlug, signal)),
       observeSource('fullh4rd', 'FullH4rd', (signal) => fetchFullh4rdProducts(fullh4rdUrl, categorySlug, signal)),
       observeSource('maximus', 'Maximus', (signal) => fetchMaximusProducts(nonWooQuery, categorySlug, signal)),
+      observeSource('gamingcity', 'Gaming City', (signal) => fetchGamingCityProducts(query || gamingCityUrl, categorySlug, signal)),
       observeSource('gezatek', 'Gezatek', (signal) => fetchGezatekProducts(nonWooQuery, categorySlug, signal)),
       observeSource('compugarden', 'Compugarden', (signal) => fetchCompugardenProducts(nonWooQuery, categorySlug, signal)),
+      observeSource('logg', 'Logg', (signal) => fetchLoggProducts(query || '', categorySlug, signal)),
       observeSource('compragamer', 'CompraGamer', (signal) => fetchCompraGamerProducts(cgCategoryId, categorySlug, signal)),
       query
         ? withAbortTimeout(

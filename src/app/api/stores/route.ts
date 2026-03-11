@@ -30,7 +30,7 @@ export async function GET() {
     const rows = (data ?? []) as StoreRow[];
 
     if (!error && rows.length > 0) {
-      const stores: Store[] = rows.map((item) => ({
+      const databaseStores: Store[] = rows.map((item) => ({
         id: item.id,
         name: item.name,
         logo: item.logo,
@@ -38,7 +38,12 @@ export async function GET() {
         color: item.color,
       }));
 
-      return NextResponse.json({ stores });
+      const mergedStores = [
+        ...databaseStores,
+        ...staticStores.filter((store) => !databaseStores.some((databaseStore) => databaseStore.id === store.id)),
+      ].sort((a, b) => a.name.localeCompare(b.name, 'es-AR'));
+
+      return NextResponse.json({ stores: mergedStores });
     }
 
     if (error) {

@@ -55,6 +55,21 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'www.gamingcity.com.ar',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'gamingcity.com.ar',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'logg.api.cygnus.market',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'compugarden.com.ar',
         pathname: '/**',
       },

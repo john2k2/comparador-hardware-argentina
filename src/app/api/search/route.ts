@@ -5,8 +5,10 @@ import { fetchMexxProducts } from '@/lib/scrapers/mexx';
 import { fetchVenexProducts } from '@/lib/scrapers/venex';
 import { fetchFullh4rdProducts } from '@/lib/scrapers/fullh4rd';
 import { fetchMaximusProducts } from '@/lib/scrapers/maximus';
+import { fetchGamingCityProducts } from '@/lib/scrapers/gamingcity';
 import { fetchGezatekProducts } from '@/lib/scrapers/gezatek';
 import { fetchCompugardenProducts } from '@/lib/scrapers/compugarden';
+import { fetchLoggProducts } from '@/lib/scrapers/logg';
 import { searchCompraGamerProducts } from '@/lib/scrapers/compragamer';
 import { fetchAllWooCommerceSearch } from '@/lib/scrapers/woocommerce';
 import { snapshotProducts } from '@/lib/cache/search-snapshot';
@@ -740,6 +742,21 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      if (shouldRunStore(selectedStoreIds, 'gamingcity')) {
+        sourceTasks.push(
+          runObservedStoreScrape({
+            endpoint: '/api/search',
+            storeId: 'gamingcity',
+            storeName: 'Gaming City',
+            run: () => withAbortTimeout(
+              (signal) => fetchGamingCityProducts(query, defaultCategory, signal),
+              SCRAPER_TIMEOUT_MS,
+              'gamingcity',
+            ),
+          }),
+        );
+      }
+
       if (shouldRunStore(selectedStoreIds, 'gezatek')) {
         sourceTasks.push(
           runObservedStoreScrape({
@@ -765,6 +782,21 @@ export async function GET(request: NextRequest) {
               (signal) => fetchCompugardenProducts(query, defaultCategory, signal),
               SCRAPER_TIMEOUT_MS,
               'compugarden',
+            ),
+          }),
+        );
+      }
+
+      if (shouldRunStore(selectedStoreIds, 'logg')) {
+        sourceTasks.push(
+          runObservedStoreScrape({
+            endpoint: '/api/search',
+            storeId: 'logg',
+            storeName: 'Logg',
+            run: () => withAbortTimeout(
+              (signal) => fetchLoggProducts(query, defaultCategory, signal),
+              SCRAPER_TIMEOUT_MS,
+              'logg',
             ),
           }),
         );

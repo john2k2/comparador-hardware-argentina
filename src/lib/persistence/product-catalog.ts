@@ -1,4 +1,5 @@
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
+import { stores as staticStores } from '@/lib/scrapers/static-data';
 import type { Product } from '@/lib/types';
 import { buildCatalogMetadata } from '@/lib/catalog/catalog-metadata';
 import {
@@ -70,6 +71,15 @@ type PersistedProductPriceStateRow = {
   url: string;
   state_signature: string | null;
   last_updated: string | null;
+};
+
+type StoreRow = {
+  id: string;
+  name: string;
+  logo: string;
+  url: string;
+  color: string;
+  is_active?: boolean;
 };
 
 function toIsoDate(value: Date | string | undefined, fallback: Date): string {
@@ -183,6 +193,45 @@ async function readPersistedCatalogState(
   }
 
   return { productsById, pricesByKey };
+}
+
+async function ensurePersistedStores(
+  supabase: NonNullable<ReturnType<typeof getServerSupabaseServiceClient>>,
+  storeIds: string[],
+): Promise<void> {
+  const uniqueStoreIds = Array.from(new Set(storeIds.filter(Boolean)));
+  if (uniqueStoreIds.length === 0) return;
+
+  const { data, error } = await supabase
+    .from('stores')
+    .select('id')
+    .in('id', uniqueStoreIds);
+
+  if (error) {
+    throw new Error(`Error read stores: ${error.message}`);
+  }
+
+  const persistedStoreIds = new Set((data ?? []).map((row) => String(row.id ?? '').trim()).filter(Boolean));
+  const missingStores: StoreRow[] = staticStores
+    .filter((store) => uniqueStoreIds.includes(store.id) && !persistedStoreIds.has(store.id))
+    .map((store) => ({
+      id: store.id,
+      name: store.name,
+      logo: store.logo,
+      url: store.url,
+      color: store.color,
+      is_active: true,
+    }));
+
+  if (missingStores.length === 0) return;
+
+  const { error: upsertError } = await supabase.from('stores').upsert(missingStores, {
+    onConflict: 'id',
+  });
+
+  if (upsertError) {
+    throw new Error(`Error upsert stores: ${upsertError.message}`);
+  }
 }
 
 export async function persistProductsSnapshot(products: Product[]): Promise<void> {
@@ -332,6 +381,11 @@ export async function persistProductsSnapshot(products: Product[]): Promise<void
       throw new Error(`Error upsert products: ${error.message}`);
     }
   }
+
+  await ensurePersistedStores(
+    supabase,
+    priceRows.map((row) => row.store_id),
+  );
 
   for (const batch of chunk(priceRows, UPSERT_CHUNK_SIZE)) {
     const { error } = await supabase.from('product_prices').upsert(batch, {

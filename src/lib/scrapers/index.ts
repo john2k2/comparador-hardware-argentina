@@ -7,4 +7,6 @@ export * from './compragamer';
 export * from './maximus';
 export * from './gezatek';
 export * from './compugarden';
+export * from './gamingcity';
+export * from './logg';
 export * from './woocommerce';
