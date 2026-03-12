@@ -15,9 +15,14 @@ export interface WooStore {
 }
 
 export const WOOCOMMERCE_STORES: WooStore[] = [
+  { id: 'acuarioinsumos', name: 'Acuario Insumos', baseUrl: 'https://www.acuarioinsumos.com.ar' },
+  { id: 'beings', name: 'Beings', baseUrl: 'https://beings.com.ar' },
+  { id: 'gamerspoint', name: 'Gamers Point', baseUrl: 'https://www.gamerspoint.com.ar' },
   { id: 'katech', name: 'Katech', baseUrl: 'https://katech.com.ar' },
   { id: 'dinobyte', name: 'Dinobyte', baseUrl: 'https://dinobyte.ar' },
+  { id: 'liontech', name: 'LionTech', baseUrl: 'https://liontech.com.ar' },
   { id: 'maxtecno', name: 'MaxTecno', baseUrl: 'https://www.maxtecno.com.ar' },
+  { id: 'scphardstore', name: 'SCP Hardstore', baseUrl: 'https://www.scphardstore.com' },
   { id: 'thegamershop', name: 'TheGamerShop', baseUrl: 'https://www.thegamershop.com.ar' },
   { id: 'hardcore', name: 'Hardcore', baseUrl: 'https://hardcorecomputacion.com.ar' },
   { id: 'goldentechstore', name: 'Golden Tech', baseUrl: 'https://www.goldentechstore.com.ar' },
@@ -96,13 +101,24 @@ async function scrapeWooPage(
   category: HardwareCategory,
   options?: WooRequestOptions,
 ): Promise<{ products: Product[]; nextPageUrl: string | null }> {
-  const res = await fetch(url, {
+  let res = await fetch(url, {
     headers: {
       ...SCRAPE_HEADERS,
       Referer: `${store.baseUrl}/`,
     },
     signal: options?.signal,
   });
+
+  if (res.status === 403) {
+    res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      signal: options?.signal,
+    });
+  }
+
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
   const html = await res.text();

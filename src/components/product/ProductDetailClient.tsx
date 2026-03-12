@@ -23,8 +23,11 @@ const WHITELISTED_HOSTS = [
   'katech.com.ar', 'dinobyte.ar', 'maxtecno.com.ar', 'thegamershop.com.ar',
   'hardcorecomputacion.com.ar', 'beings.com.ar', 'liontech-gaming.com',
   'portalstore.com.ar', 'goldentechstore.com.ar', 'xt-pc.com.ar',
-  'rockethard.com.ar', 'hypergaming.com.ar', '37bytes.com.ar',
-  'mitiendanube.com',
+  'rockethard.com.ar', 'hypergaming.com.ar', 'clickgaming.com.ar',
+  'megasoftargentina.com.ar', 'noxiestore.com', 'armytech.com.ar',
+  'hftecnologia.com.ar', 'spacegamer.com.ar', 'wiztech.com.ar',
+  '37bytes.com.ar', 'vrx.com.ar', 'mitiendanube.com', 'qloud.ar',
+  'qloud.com.ar', 'contabilium.com',
 ];
 
 function toDateValue(value: unknown): Date {

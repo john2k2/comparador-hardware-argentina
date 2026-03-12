@@ -322,6 +322,27 @@ function sortProducts(products: Product[], sortBy: ProductSort): Product[] {
   return sorted;
 }
 
+function recalculateProductPrices(product: Product, allowedStoreIds?: Set<string>): Product | null {
+  const filteredPrices = allowedStoreIds
+    ? product.prices.filter((priceInfo) => allowedStoreIds.has(priceInfo.storeId.toLowerCase()))
+    : product.prices;
+
+  if (filteredPrices.length === 0) return null;
+
+  const priceValues = filteredPrices.map((price) => price.price);
+  const lowestPrice = Math.min(...priceValues);
+  const highestPrice = Math.max(...priceValues);
+  const averagePrice = Math.round(priceValues.reduce((acc, value) => acc + value, 0) / priceValues.length);
+
+  return {
+    ...product,
+    prices: filteredPrices,
+    lowestPrice,
+    highestPrice,
+    averagePrice,
+  };
+}
+
 function mapDbProduct(row: DbProductRow): Product {
   const prices = (row.product_prices ?? []).map((price) => {
     const installmentCount = price.installment_count;
@@ -501,9 +522,9 @@ export async function readProductsFromDatabase(params: ReadProductsParams): Prom
   products = dedupeProductsByCanonicalName(products);
 
   if (params.storeIds && params.storeIds.size > 0) {
-    products = products.filter((product) =>
-      product.prices.some((priceInfo) => params.storeIds!.has(priceInfo.storeId.toLowerCase())),
-    );
+    products = products
+      .map((product) => recalculateProductPrices(product, params.storeIds))
+      .filter((product): product is Product => Boolean(product));
   }
 
   return sortProducts(products, params.sortBy ?? 'relevance');

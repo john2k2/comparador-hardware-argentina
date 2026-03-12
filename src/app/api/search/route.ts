@@ -8,9 +8,15 @@ import { fetchMaximusProducts } from '@/lib/scrapers/maximus';
 import { fetchGamingCityProducts } from '@/lib/scrapers/gamingcity';
 import { fetchGezatekProducts } from '@/lib/scrapers/gezatek';
 import { fetchCompugardenProducts } from '@/lib/scrapers/compugarden';
+import { fetchAllFoxtiendaSearch } from '@/lib/scrapers/foxtienda';
 import { fetchLoggProducts } from '@/lib/scrapers/logg';
+import { fetchAllPrestashopSearch } from '@/lib/scrapers/prestashop';
+import { fetchAllQloudSearch } from '@/lib/scrapers/qloud';
 import { searchCompraGamerProducts } from '@/lib/scrapers/compragamer';
+import { fetchAllTiendaNubeSearch } from '@/lib/scrapers/tiendanube';
 import { fetchAllWooCommerceSearch } from '@/lib/scrapers/woocommerce';
+import { fetchWiztechProducts } from '@/lib/scrapers/wiztech';
+import { fetchXtpcProducts } from '@/lib/scrapers/xtpc';
 import { snapshotProducts } from '@/lib/cache/search-snapshot';
 import { recordEndpointRequestEvent, runObservedStoreScrape } from '@/lib/telemetry/operational-metrics';
 import { persistProductsSnapshot } from '@/lib/persistence/product-catalog';
@@ -245,6 +251,22 @@ function normalizeProductContent(product: Product): Product {
     ...sanitized,
     description: normalizedDescription,
     model: normalizedModel,
+  };
+}
+
+function filterProductStores(product: Product, selectedStoreIds: Set<string>): Product | null {
+  if (selectedStoreIds.size === 0) return product;
+
+  const prices = product.prices.filter((priceInfo) => selectedStoreIds.has(priceInfo.storeId.toLowerCase()));
+  if (prices.length === 0) return null;
+
+  const values = prices.map((price) => price.price);
+  return {
+    ...product,
+    prices,
+    lowestPrice: Math.min(...values),
+    highestPrice: Math.max(...values),
+    averagePrice: Math.round(values.reduce((acc, value) => acc + value, 0) / values.length),
   };
 }
 
@@ -817,6 +839,92 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      if (shouldRunStore(selectedStoreIds, 'xtpc')) {
+        sourceTasks.push(
+          runObservedStoreScrape({
+            endpoint: '/api/search',
+            storeId: 'xtpc',
+            storeName: 'Xt-PC',
+            run: () => withAbortTimeout(
+              (signal) => fetchXtpcProducts(query, defaultCategory, signal),
+              SCRAPER_TIMEOUT_MS,
+              'xtpc',
+            ),
+          }),
+        );
+      }
+
+      if (shouldRunStore(selectedStoreIds, 'wiztech')) {
+        sourceTasks.push(
+          runObservedStoreScrape({
+            endpoint: '/api/search',
+            storeId: 'wiztech',
+            storeName: 'WizTech',
+            run: () => withAbortTimeout(
+              (signal) => fetchWiztechProducts(query, defaultCategory, signal),
+              SCRAPER_TIMEOUT_MS,
+              'wiztech',
+            ),
+          }),
+        );
+      }
+
+      sourceTasks.push(
+        withAbortTimeout(
+          (signal) => fetchAllFoxtiendaSearch(
+            query,
+            defaultCategory,
+            '/api/search',
+            selectedStoreIds,
+            { signal },
+          ),
+          SCRAPER_TIMEOUT_MS,
+          'foxtienda',
+        ).catch(() => [] as Product[]),
+      );
+
+      sourceTasks.push(
+        withAbortTimeout(
+          (signal) => fetchAllQloudSearch(
+            query,
+            defaultCategory,
+            '/api/search',
+            selectedStoreIds,
+            { signal },
+          ),
+          SCRAPER_TIMEOUT_MS,
+          'qloud',
+        ).catch(() => [] as Product[]),
+      );
+
+      sourceTasks.push(
+        withAbortTimeout(
+          (signal) => fetchAllPrestashopSearch(
+            query,
+            defaultCategory,
+            '/api/search',
+            selectedStoreIds,
+            { signal },
+          ),
+          SCRAPER_TIMEOUT_MS,
+          'prestashop',
+        ).catch(() => [] as Product[]),
+      );
+
+      sourceTasks.push(
+        withAbortTimeout(
+          (signal) => fetchAllTiendaNubeSearch(
+            query,
+            defaultCategory,
+            '/api/search',
+            selectedStoreIds,
+            { signal },
+          ),
+          SCRAPER_TIMEOUT_MS,
+          'tiendanube',
+        ).catch(() => [] as Product[]),
+      );
+
       sourceTasks.push(
         withAbortTimeout(
           (signal) => fetchAllWooCommerceSearch(
@@ -987,9 +1095,9 @@ export async function GET(request: NextRequest) {
       }
 
       if (selectedStoreIds.size > 0) {
-        liveProducts = liveProducts.filter((product) =>
-          product.prices.some((priceInfo) => selectedStoreIds.has(priceInfo.storeId.toLowerCase())),
-        );
+        liveProducts = liveProducts
+          .map((product) => filterProductStores(product, selectedStoreIds))
+          .filter((product): product is Product => Boolean(product));
       }
 
       if (sortBy === 'price-asc') {
