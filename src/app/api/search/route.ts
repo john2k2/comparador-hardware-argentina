@@ -10,6 +10,7 @@ import { fetchGezatekProducts } from '@/lib/scrapers/gezatek';
 import { fetchCompugardenProducts } from '@/lib/scrapers/compugarden';
 import { fetchAllFoxtiendaSearch } from '@/lib/scrapers/foxtienda';
 import { fetchLoggProducts } from '@/lib/scrapers/logg';
+import { fetchPortalTechProducts } from '@/lib/scrapers/portaltech';
 import { fetchAllPrestashopSearch } from '@/lib/scrapers/prestashop';
 import { fetchAllQloudSearch } from '@/lib/scrapers/qloud';
 import { searchCompraGamerProducts } from '@/lib/scrapers/compragamer';
@@ -819,6 +820,21 @@ export async function GET(request: NextRequest) {
               (signal) => fetchLoggProducts(query, defaultCategory, signal),
               SCRAPER_TIMEOUT_MS,
               'logg',
+            ),
+          }),
+        );
+      }
+
+      if (shouldRunStore(selectedStoreIds, 'portaltech')) {
+        sourceTasks.push(
+          runObservedStoreScrape({
+            endpoint: '/api/search',
+            storeId: 'portaltech',
+            storeName: 'Portal Tech',
+            run: () => withAbortTimeout(
+              (signal) => fetchPortalTechProducts(query, defaultCategory, signal),
+              SCRAPER_TIMEOUT_MS,
+              'portaltech',
             ),
           }),
         );

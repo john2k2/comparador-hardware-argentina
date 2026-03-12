@@ -18,6 +18,7 @@ export const stores: Store[] = [
   { id: 'megasoft', name: 'Megasoft', logo: '/pixel-box.svg', url: 'https://megasoftargentina.com.ar', color: '#dc2626' },
   { id: 'mexx', name: 'Mexx', logo: '/pixel-box.svg', url: 'https://www.mexx.com.ar', color: '#f97316' },
   { id: 'noxie', name: 'Noxie Store', logo: '/pixel-box.svg', url: 'https://noxiestore.com', color: '#7c3aed' },
+  { id: 'portaltech', name: 'Portal Tech', logo: '/pixel-box.svg', url: 'https://portalstore.com.ar', color: '#0ea5e9' },
   { id: 'venex', name: 'Venex', logo: '/pixel-box.svg', url: 'https://www.venex.com.ar', color: '#fb8c00' },
   { id: 'fullh4rd', name: 'FullH4rd', logo: '/pixel-box.svg', url: 'https://www.fullh4rd.com.ar', color: '#22c55e' },
   { id: 'compragamer', name: 'CompraGamer', logo: '/pixel-box.svg', url: 'https://www.compragamer.com', color: '#06b6d4' },

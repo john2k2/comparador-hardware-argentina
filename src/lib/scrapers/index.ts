@@ -10,6 +10,7 @@ export * from './compugarden';
 export * from './gamingcity';
 export * from './foxtienda';
 export * from './logg';
+export * from './portaltech';
 export * from './prestashop';
 export * from './qloud';
 export * from './tiendanube';

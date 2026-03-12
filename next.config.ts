@@ -32,6 +32,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'noxiestore.com', pathname: '/**' },
       { protocol: 'https', hostname: 'nb.com.ar', pathname: '/**' },
       { protocol: 'https', hostname: 'invidcomputers.com', pathname: '/**' },
+      { protocol: 'https', hostname: 'portalstore.com.ar', pathname: '/**' },
       { protocol: 'https', hostname: '*.acdn-us.mitiendanube.com', pathname: '/**' },
       { protocol: 'https', hostname: 'www.acuarioinsumos.com.ar', pathname: '/**' },
       { protocol: 'https', hostname: 'www.gamerspoint.com.ar', pathname: '/**' },

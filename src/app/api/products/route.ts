@@ -12,6 +12,7 @@ import { fetchGezatekProducts } from '@/lib/scrapers/gezatek';
 import { fetchCompugardenProducts } from '@/lib/scrapers/compugarden';
 import { fetchAllFoxtiendaCategory, fetchAllFoxtiendaSearch, fetchFoxtiendaProductById } from '@/lib/scrapers/foxtienda';
 import { fetchLoggProducts } from '@/lib/scrapers/logg';
+import { fetchPortalTechCategory, fetchPortalTechProductById, fetchPortalTechProducts } from '@/lib/scrapers/portaltech';
 import { fetchAllPrestashopCategory, fetchAllPrestashopSearch } from '@/lib/scrapers/prestashop';
 import { fetchAllQloudCategory, fetchAllQloudSearch } from '@/lib/scrapers/qloud';
 import { fetchAllTiendaNubeCategory, fetchAllTiendaNubeSearch, fetchTiendaNubeProductById } from '@/lib/scrapers/tiendanube';
@@ -564,6 +565,12 @@ export async function GET(request: NextRequest) {
           'xtpc-detail',
         ).catch(() => null);
         if (xtpcProduct) return xtpcProduct;
+        const portalTechProduct = await withAbortTimeout(
+          (signal) => fetchPortalTechProductById(id, signal),
+          SCRAPER_TIMEOUT_MS,
+          'portaltech-detail',
+        ).catch(() => null);
+        if (portalTechProduct) return portalTechProduct;
         const wiztechProduct = await withAbortTimeout(
           (signal) => fetchWiztechProductById(id, fallbackCategory, signal),
           SCRAPER_TIMEOUT_MS,
@@ -620,6 +627,8 @@ export async function GET(request: NextRequest) {
           );
         } else if (storePrefix === 'xtpc') {
           searchPromises.push(observeSource('xtpc', 'Xt-PC', (signal) => fetchXtpcProducts(searchQuery, fallbackCategory, signal)));
+        } else if (storePrefix === 'portaltech') {
+          searchPromises.push(observeSource('portaltech', 'Portal Tech', (signal) => fetchPortalTechProducts(searchQuery, fallbackCategory, signal)));
         } else if (storePrefix === 'wiztech') {
           searchPromises.push(observeSource('wiztech', 'WizTech', (signal) => fetchWiztechProducts(searchQuery, fallbackCategory, signal)));
         } else if (storePrefix === 'cg' || storePrefix === 'compragamer') {
@@ -635,6 +644,7 @@ export async function GET(request: NextRequest) {
             observeSource('compugarden', 'Compugarden', (signal) => fetchCompugardenProducts(searchQuery, fallbackCategory, signal)),
             observeSource('logg', 'Logg', (signal) => fetchLoggProducts(cleanQuery || searchQuery, fallbackCategory, signal)),
             observeSource('compragamer', 'CompraGamer', (signal) => fetchCompraGamerByQuery(searchQuery, fallbackCategory, signal)),
+            observeSource('portaltech', 'Portal Tech', (signal) => fetchPortalTechProducts(searchQuery, fallbackCategory, signal)),
             observeSource('xtpc', 'Xt-PC', (signal) => fetchXtpcProducts(searchQuery, fallbackCategory, signal)),
             observeSource('wiztech', 'WizTech', (signal) => fetchWiztechProducts(searchQuery, fallbackCategory, signal)),
             withAbortTimeout(
@@ -797,6 +807,9 @@ export async function GET(request: NextRequest) {
       observeSource('compugarden', 'Compugarden', (signal) => fetchCompugardenProducts(nonWooQuery, categorySlug, signal)),
       observeSource('logg', 'Logg', (signal) => fetchLoggProducts(query || '', categorySlug, signal)),
       observeSource('compragamer', 'CompraGamer', (signal) => fetchCompraGamerProducts(cgCategoryId, categorySlug, signal)),
+      query
+        ? observeSource('portaltech', 'Portal Tech', (signal) => fetchPortalTechProducts(query, categorySlug, signal))
+        : observeSource('portaltech', 'Portal Tech', (signal) => fetchPortalTechCategory(categorySlug, signal)),
       query
         ? observeSource('wiztech', 'WizTech', (signal) => fetchWiztechProducts(query, categorySlug, signal))
         : observeSource('wiztech', 'WizTech', (signal) => fetchWiztechCategory(categorySlug, signal)),
