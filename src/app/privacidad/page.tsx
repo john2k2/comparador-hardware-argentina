@@ -1,31 +1,56 @@
 import type { Metadata } from 'next';
 import { RetroPageShell } from '@/components/layout/RetroPageShell';
+import { SITE_NAME, SUPPORT_EMAIL } from '@/lib/site-config';
 
 export const metadata: Metadata = {
   title: 'Politica de Privacidad',
-  description: 'Politica de privacidad de Comparador Hardware Argentina.',
+  description: `Politica de privacidad y tratamiento general de datos de ${SITE_NAME}.`,
 };
 
 export default function PrivacidadPage() {
   return (
     <RetroPageShell
       title="POLITICA DE PRIVACIDAD"
-      subtitle="Version inicial. Este contenido puede actualizarse cuando se incorpore analitica y panel administrativo completo."
+      subtitle="Documento operativo y honesto sobre el tratamiento basico de datos. Debe revisarse otra vez cuando se active analitica, ads o formularios."
     >
       <div className="space-y-4 text-[10px] uppercase text-foreground">
         <div className="border-2 border-border p-4 bg-muted/30">
           <p className="text-secondary font-bold mb-2">[ DATOS ]</p>
-          <p className="leading-relaxed">Se utilizan datos de busqueda y navegacion para operar el servicio y mejorar resultados.</p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            {SITE_NAME} puede procesar datos tecnicos basicos de navegacion, consultas de busqueda, URLs visitadas y registros operativos para mantener el servicio, detectar errores y mejorar resultados.
+          </p>
         </div>
 
         <div className="border-2 border-border p-4 bg-muted/30">
           <p className="text-secondary font-bold mb-2">[ FINALIDAD ]</p>
-          <p className="leading-relaxed">Optimizar rendimiento, estabilidad de scrapers y experiencia de usuario.</p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            La finalidad principal es operar el comparador, monitorear estabilidad, mejorar agrupacion de productos y analizar problemas de scraping o integridad de precios.
+          </p>
         </div>
 
         <div className="border-2 border-border p-4 bg-muted/30">
-          <p className="text-secondary font-bold mb-2">[ CONTACTO ]</p>
-          <p className="leading-relaxed">Para consultas de privacidad, usa la pagina de contacto del sitio.</p>
+          <p className="text-secondary font-bold mb-2">[ TERCEROS ]</p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            Cuando haces clic en una oferta, sales del comparador y pasas a una tienda externa. Cada comercio tiene sus propias politicas, condiciones y practicas de datos.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="border-2 border-border p-4 bg-muted/30">
+            <p className="text-secondary font-bold mb-2">[ CONSERVACION ]</p>
+            <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+              Los registros operativos se conservan solo el tiempo necesario para diagnostico, seguridad, rendimiento o mejora del catalogo, salvo obligaciones tecnicas adicionales.
+            </p>
+          </div>
+
+          <div className="border-2 border-border p-4 bg-muted/30">
+            <p className="text-secondary font-bold mb-2">[ CONSULTAS ]</p>
+            <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+              {SUPPORT_EMAIL
+                ? `Para privacidad o datos, puedes escribir a ${SUPPORT_EMAIL}.`
+                : 'Para consultas de privacidad, antes del lanzamiento conviene definir un canal de contacto publico y verificable.'}
+            </p>
+          </div>
         </div>
       </div>
     </RetroPageShell>

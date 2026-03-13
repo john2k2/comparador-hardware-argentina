@@ -1,12 +1,17 @@
 import { getServerSupabaseReadClient } from '@/lib/server/supabase-server';
+import { SITE_URL } from '@/lib/site-config';
 
-export const SITE_URL = 'https://comparador-hardware.com.ar';
 export const PRODUCT_SITEMAP_PAGE_SIZE = 2000;
+export const INDEXABLE_PRODUCT_ID_PREFIX = 'agrupado-';
 
 type ProductSitemapRow = {
   id: string;
   updated_at: string | null;
 };
+
+export function isIndexableProductId(id: string): boolean {
+  return id.startsWith(INDEXABLE_PRODUCT_ID_PREFIX);
+}
 
 export function toAbsoluteUrl(path: string): string {
   return `${SITE_URL}${path.startsWith('/') ? path : `/${path}`}`;
@@ -23,16 +28,17 @@ export async function countIndexedProducts(): Promise<number> {
   const supabase = getServerSupabaseReadClient();
   if (!supabase) return 0;
 
-  const { count, error } = await supabase
+  const { count: groupedCount, error: groupedError } = await supabase
     .from('products')
-    .select('id', { count: 'exact', head: true });
+    .select('id', { count: 'exact', head: true })
+    .like('id', `${INDEXABLE_PRODUCT_ID_PREFIX}%`);
 
-  if (error) {
-    console.warn('[sitemap] product count omitted:', error.message);
+  if (groupedError) {
+    console.warn('[sitemap] grouped product count omitted:', groupedError.message);
     return 0;
   }
 
-  return count ?? 0;
+  return groupedCount ?? 0;
 }
 
 export async function readProductSitemapPage(page: number, pageSize = PRODUCT_SITEMAP_PAGE_SIZE): Promise<ProductSitemapRow[]> {
@@ -47,6 +53,7 @@ export async function readProductSitemapPage(page: number, pageSize = PRODUCT_SI
   const { data, error } = await supabase
     .from('products')
     .select('id, updated_at')
+    .like('id', `${INDEXABLE_PRODUCT_ID_PREFIX}%`)
     .order('updated_at', { ascending: false })
     .range(from, to);
 

@@ -32,6 +32,8 @@ type DropCandidate = {
 export type HomeSectionsData = {
   featuredProducts: Product[];
   priceDropProducts: Product[];
+  featuredFallbackUsed: boolean;
+  priceDropFallbackUsed: boolean;
   rules: {
     featured: {
       stock: string[];
@@ -117,6 +119,23 @@ function pickFeaturedProducts(products: Product[], limit: number): Product[] {
     });
 
   return [...selected, ...remaining].slice(0, limit);
+}
+
+function pickFallbackHomeProducts(products: Product[], limit: number, excludedIds: Set<string> = new Set()): Product[] {
+  const inStock = products.filter((product) => !excludedIds.has(product.id) && isInStockProduct(product));
+  const source = inStock.length > 0 ? inStock : products.filter((product) => !excludedIds.has(product.id));
+
+  return [...source]
+    .sort((a, b) => {
+      const byFreshness = b.updatedAt.getTime() - a.updatedAt.getTime();
+      if (byFreshness !== 0) return byFreshness;
+
+      const byStoreCount = b.prices.length - a.prices.length;
+      if (byStoreCount !== 0) return byStoreCount;
+
+      return a.lowestPrice - b.lowestPrice;
+    })
+    .slice(0, limit);
 }
 
 function qualifiesPriceDrop(dropAmount: number, dropPercent: number): boolean {
@@ -318,22 +337,34 @@ export async function getHomeSectionsData(): Promise<HomeSectionsData> {
     limit: DB_PRODUCTS_LIMIT,
   });
 
-  const featuredProducts = pickFeaturedProducts(products, FEATURED_PRODUCTS_LIMIT);
+  const featuredPrimary = pickFeaturedProducts(products, FEATURED_PRODUCTS_LIMIT);
+  const featuredFallback = featuredPrimary.length === 0
+    ? pickFallbackHomeProducts(products, FEATURED_PRODUCTS_LIMIT)
+    : [];
+  const featuredProducts = featuredPrimary.length > 0 ? featuredPrimary : featuredFallback;
+  const featuredFallbackUsed = featuredPrimary.length === 0 && featuredFallback.length > 0;
   const historyRows = await readRecentHistoryRows(dropWindowStartIso).catch((historyError) => {
     console.warn('[Home Sections] Historial de precios no disponible:', historyError);
     return [] as HistoryRow[];
   });
 
-  const priceDropProducts = pickPriceDropProductsFromHistory(
+  const priceDropPrimary = pickPriceDropProductsFromHistory(
     products,
     historyRows,
     PRICE_DROP_PRODUCTS_LIMIT,
     dropWindowStartMs,
   );
+  const priceDropFallback = priceDropPrimary.length === 0
+    ? pickFallbackHomeProducts(products, PRICE_DROP_PRODUCTS_LIMIT, new Set(featuredProducts.map((product) => product.id)))
+    : [];
+  const priceDropProducts = priceDropPrimary.length > 0 ? priceDropPrimary : priceDropFallback;
+  const priceDropFallbackUsed = priceDropPrimary.length === 0 && priceDropFallback.length > 0;
 
   const payload: HomeSectionsData = {
     featuredProducts,
     priceDropProducts,
+    featuredFallbackUsed,
+    priceDropFallbackUsed,
     rules: {
       featured: {
         stock: ['in-stock', 'low-stock'],

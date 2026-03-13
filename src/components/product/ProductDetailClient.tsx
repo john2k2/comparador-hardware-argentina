@@ -8,9 +8,9 @@ import { ArrowLeft, ExternalLink, Store, Shield, Clock } from 'lucide-react';
 import { PriceDisplay, InstallmentPicker, ProductCard } from '@/components/functional';
 import { cn } from '@/lib/utils';
 import { saveRecentlyViewedProduct } from '@/lib/client/recently-viewed';
-import { formatPriceARS } from '@/lib/price-utils';
+import { computeComparableStorePriceStats, formatPriceARS } from '@/lib/price-utils';
 import { normalizeDisplayText } from '@/lib/text-utils';
-import type { Product, ProductPrice } from '@/lib/types';
+import type { Product } from '@/lib/types';
 
 const CLIENT_DETAIL_CACHE_TTL_MS = 5 * 60 * 1000;
 const clientProductDetailCache = new Map<string, { expiresAt: number; product: Product | null }>();
@@ -110,35 +110,6 @@ function resolveBackHref(fromParam: string | null): string {
   return decoded.startsWith('/search') ? decoded : '/search';
 }
 
-function pickBestStorePrices(prices: ProductPrice[]): ProductPrice[] {
-  const bestByStore = new Map<string, ProductPrice>();
-
-  for (const price of prices) {
-    const storeKey = price.storeId.toLowerCase();
-    const currentBest = bestByStore.get(storeKey);
-
-    if (!currentBest) {
-      bestByStore.set(storeKey, price);
-      continue;
-    }
-
-    if (price.price < currentBest.price) {
-      bestByStore.set(storeKey, price);
-      continue;
-    }
-
-    if (price.price === currentBest.price) {
-      const currentUpdatedAt = new Date(currentBest.lastUpdated).getTime();
-      const candidateUpdatedAt = new Date(price.lastUpdated).getTime();
-      if (candidateUpdatedAt > currentUpdatedAt) {
-        bestByStore.set(storeKey, price);
-      }
-    }
-  }
-
-  return Array.from(bestByStore.values()).sort((a, b) => a.price - b.price);
-}
-
 type ProductDetailClientProps = {
   id: string;
   initialProduct: Product | null;
@@ -159,6 +130,7 @@ export function ProductDetailClient({ id, initialProduct }: ProductDetailClientP
     interest: boolean;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(!normalizedInitialProduct);
+  const [latestSyncLabel, setLatestSyncLabel] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -234,6 +206,48 @@ export function ProductDetailClient({ id, initialProduct }: ProductDetailClientP
     saveRecentlyViewedProduct(product);
   }, [product]);
 
+  const comparableStats = useMemo(
+    () => (product
+      ? computeComparableStorePriceStats(product.prices)
+      : {
+          comparablePrices: [],
+          discardedPrices: [],
+          lowest: 0,
+          highest: 0,
+          average: 0,
+        }),
+    [product],
+  );
+  const merchantPrices = comparableStats.comparablePrices;
+  const lowestComparablePrice = product
+    ? (comparableStats.lowest > 0 ? comparableStats.lowest : product.lowestPrice)
+    : 0;
+  const highestComparablePrice = product
+    ? (comparableStats.highest > 0 ? comparableStats.highest : product.highestPrice)
+    : 0;
+  const bestPrice = product
+    ? (merchantPrices[0] ?? product.prices.find((price) => price.price === lowestComparablePrice))
+    : undefined;
+  const latestSyncAtMs = merchantPrices.reduce((max, price) => {
+    const timestamp = new Date(price.lastUpdated).getTime();
+    if (!Number.isFinite(timestamp)) return max;
+    return Math.max(max, timestamp);
+  }, 0);
+
+  useEffect(() => {
+    if (latestSyncAtMs <= 0) {
+      setLatestSyncLabel(null);
+      return;
+    }
+
+    setLatestSyncLabel(new Intl.DateTimeFormat('es-AR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(latestSyncAtMs)));
+  }, [latestSyncAtMs]);
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -272,8 +286,6 @@ export function ProductDetailClient({ id, initialProduct }: ProductDetailClientP
     );
   }
 
-  const merchantPrices = pickBestStorePrices(product.prices);
-  const bestPrice = merchantPrices[0] ?? product.prices.find((price) => price.price === product.lowestPrice);
   const installments = bestPrice?.installment ? [bestPrice.installment] : [];
   const displayName = normalizeDisplayText(product.name);
   const displayBrand = normalizeDisplayText(product.brand);
@@ -284,26 +296,10 @@ export function ProductDetailClient({ id, initialProduct }: ProductDetailClientP
     normalizeDisplayText(String(value)),
   ] as const));
   const storesCompared = merchantPrices.length;
-  const highestComparablePrice = merchantPrices.length > 0
-    ? Math.max(...merchantPrices.map((price) => price.price))
-    : product.highestPrice;
-  const priceSpread = Math.max(0, highestComparablePrice - product.lowestPrice);
+  const priceSpread = Math.max(0, highestComparablePrice - lowestComparablePrice);
   const spreadPercent = highestComparablePrice > 0
     ? Math.round((priceSpread / highestComparablePrice) * 100)
     : 0;
-  const latestSyncAtMs = merchantPrices.reduce((max, price) => {
-    const timestamp = new Date(price.lastUpdated).getTime();
-    if (!Number.isFinite(timestamp)) return max;
-    return Math.max(max, timestamp);
-  }, 0);
-  const latestSyncLabel = latestSyncAtMs > 0
-    ? new Date(latestSyncAtMs).toLocaleString('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-    : null;
 
   const relatedProducts: Product[] = [];
 
@@ -400,7 +396,7 @@ export function ProductDetailClient({ id, initialProduct }: ProductDetailClientP
             </div>
 
             <p className="text-[8px] uppercase text-muted-foreground mt-3">
-              {`Rango actual: ${formatPriceARS(product.lowestPrice)} - ${formatPriceARS(highestComparablePrice)}`}
+              {`Rango actual: ${formatPriceARS(lowestComparablePrice)} - ${formatPriceARS(highestComparablePrice)}`}
             </p>
           </div>
 
@@ -408,7 +404,7 @@ export function ProductDetailClient({ id, initialProduct }: ProductDetailClientP
             <div>
               <p className="text-[10px] uppercase font-bold text-muted-foreground mb-2">MEJOR PRECIO DETECTADO</p>
               <PriceDisplay
-                price={selectedInstallment ? selectedInstallment.totalAmount : product.lowestPrice}
+                price={selectedInstallment ? selectedInstallment.totalAmount : (bestPrice?.price ?? lowestComparablePrice)}
                 originalPrice={bestPrice?.originalPrice}
                 size="lg"
               />
@@ -418,7 +414,7 @@ export function ProductDetailClient({ id, initialProduct }: ProductDetailClientP
               <div className="pt-4 border-t-4 border-border border-dashed">
                 <InstallmentPicker
                   installments={installments}
-                  currentPrice={product.lowestPrice}
+                  currentPrice={bestPrice?.price ?? lowestComparablePrice}
                   onSelect={setSelectedInstallment}
                 />
               </div>

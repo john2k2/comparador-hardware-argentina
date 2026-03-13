@@ -2,7 +2,217 @@
 // Price Utils - Utilidades para precios en ARS
 // ============================================
 
-import type { InstallmentInfo, PriceHistoryPoint } from './types';
+import type { InstallmentInfo, PriceHistoryPoint, ProductPrice } from './types';
+
+type PriceLike = { price: number };
+type StorePriceLike = PriceLike & {
+  storeId: string;
+  lastUpdated?: Date | string | number;
+  stock?: string | null;
+};
+
+const UPPER_OUTLIER_RATIO = 2.6;
+const LOWER_OUTLIER_RATIO = 0.38;
+const OUTLIER_MIN_DELTA_ARS = 50_000;
+const PAIR_OUTLIER_RATIO = 4;
+const PAIR_OUTLIER_MIN_DELTA_ARS = 150_000;
+
+function isFinitePositivePrice(value: number): boolean {
+  return Number.isFinite(value) && value > 0;
+}
+
+function toTimestamp(value: Date | string | number | undefined): number {
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = new Date(value).getTime();
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function getMedian(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) {
+    return (sorted[middle - 1] + sorted[middle]) / 2;
+  }
+  return sorted[middle];
+}
+
+function isUpperOutlier(price: number, medianPrice: number): boolean {
+  if (medianPrice <= 0) return false;
+  return (
+    price / medianPrice >= UPPER_OUTLIER_RATIO
+    && price - medianPrice >= Math.max(OUTLIER_MIN_DELTA_ARS, Math.round(medianPrice * 0.35))
+  );
+}
+
+function isLowerOutlier(price: number, medianPrice: number): boolean {
+  if (medianPrice <= 0) return false;
+  return (
+    price / medianPrice <= LOWER_OUTLIER_RATIO
+    && medianPrice - price >= Math.max(OUTLIER_MIN_DELTA_ARS, Math.round(medianPrice * 0.35))
+  );
+}
+
+export function parseLocalizedArsPrice(value: string): number {
+  if (!value) return 0;
+
+  let normalized = value
+    .replace(/[^\d.,-]/g, '')
+    .trim();
+
+  if (!normalized) return 0;
+
+  const hasComma = normalized.includes(',');
+  const hasDot = normalized.includes('.');
+  const hasThousandsDot = /^\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?$/.test(normalized);
+  const hasThousandsComma = /^\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?$/.test(normalized);
+
+  if (hasThousandsDot) {
+    normalized = normalized.replace(/\./g, '').replace(',', '.');
+  } else if (hasThousandsComma) {
+    normalized = normalized.replace(/,/g, '');
+  } else if (hasComma && !hasDot) {
+    normalized = /,\d{1,2}$/.test(normalized)
+      ? normalized.replace(',', '.')
+      : normalized.replace(/,/g, '');
+  } else if (!hasComma && hasDot && /^\d{1,3}(?:\.\d{3})+$/.test(normalized)) {
+    normalized = normalized.replace(/\./g, '');
+  }
+
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : 0;
+}
+
+export function pickBestStorePrices<T extends StorePriceLike>(prices: T[]): T[] {
+  const bestByStore = new Map<string, T>();
+
+  for (const price of prices) {
+    if (!price.storeId || !isFinitePositivePrice(price.price)) continue;
+
+    const storeKey = price.storeId.toLowerCase();
+    const currentBest = bestByStore.get(storeKey);
+
+    if (!currentBest) {
+      bestByStore.set(storeKey, price);
+      continue;
+    }
+
+    if (price.price < currentBest.price) {
+      bestByStore.set(storeKey, price);
+      continue;
+    }
+
+    if (currentBest.stock === 'out-of-stock' && price.stock !== 'out-of-stock') {
+      bestByStore.set(storeKey, price);
+      continue;
+    }
+
+    if (price.price === currentBest.price && toTimestamp(price.lastUpdated) > toTimestamp(currentBest.lastUpdated)) {
+      bestByStore.set(storeKey, price);
+    }
+  }
+
+  return Array.from(bestByStore.values()).sort((a, b) => a.price - b.price);
+}
+
+export function filterPriceOutliers<T extends PriceLike>(
+  prices: T[],
+): { comparablePrices: T[]; discardedPrices: T[] } {
+  const validPrices = prices
+    .filter((price) => isFinitePositivePrice(price.price))
+    .sort((a, b) => a.price - b.price);
+
+  if (validPrices.length <= 1) {
+    return {
+      comparablePrices: validPrices,
+      discardedPrices: [],
+    };
+  }
+
+  if (validPrices.length === 2) {
+    const [lowest, highest] = validPrices;
+    const ratio = highest.price / Math.max(lowest.price, 1);
+    const delta = highest.price - lowest.price;
+
+    if (ratio >= PAIR_OUTLIER_RATIO && delta >= PAIR_OUTLIER_MIN_DELTA_ARS) {
+      return {
+        comparablePrices: [lowest],
+        discardedPrices: [highest],
+      };
+    }
+
+    return {
+      comparablePrices: validPrices,
+      discardedPrices: [],
+    };
+  }
+
+  const medianPrice = getMedian(validPrices.map((price) => price.price));
+  const comparablePrices: T[] = [];
+  const discardedPrices: T[] = [];
+
+  for (const price of validPrices) {
+    if (isUpperOutlier(price.price, medianPrice) || isLowerOutlier(price.price, medianPrice)) {
+      discardedPrices.push(price);
+      continue;
+    }
+    comparablePrices.push(price);
+  }
+
+  if (comparablePrices.length === 0) {
+    return {
+      comparablePrices: validPrices,
+      discardedPrices: [],
+    };
+  }
+
+  return {
+    comparablePrices,
+    discardedPrices,
+  };
+}
+
+export function computeComparablePriceStats<T extends PriceLike>(
+  prices: T[],
+): {
+  comparablePrices: T[];
+  discardedPrices: T[];
+  lowest: number;
+  highest: number;
+  average: number;
+} {
+  const { comparablePrices, discardedPrices } = filterPriceOutliers(prices);
+
+  if (comparablePrices.length === 0) {
+    return {
+      comparablePrices: [],
+      discardedPrices,
+      lowest: 0,
+      highest: 0,
+      average: 0,
+    };
+  }
+
+  const values = comparablePrices.map((price) => price.price);
+  return {
+    comparablePrices,
+    discardedPrices,
+    lowest: Math.min(...values),
+    highest: Math.max(...values),
+    average: Math.round(values.reduce((acc, value) => acc + value, 0) / values.length),
+  };
+}
+
+export function computeComparableStorePriceStats(prices: ProductPrice[]) {
+  return computeComparablePriceStats(pickBestStorePrices(prices));
+}
+
+export function getComparableStorePrices(prices: ProductPrice[]): ProductPrice[] {
+  return computeComparableStorePriceStats(prices).comparablePrices;
+}
 
 // Formatear precio en ARS
 export function formatPriceARS(amount: number): string {

@@ -1,6 +1,7 @@
 import { stores as staticStores } from '@/lib/scrapers/static-data';
 import { getServerSupabaseReadClient } from '@/lib/server/supabase-server';
 import type { HardwareCategory, Product, StockStatus } from '@/lib/types';
+import { computeComparableStorePriceStats } from '@/lib/price-utils';
 import { sanitizeProduct } from '@/lib/product-sanitizer';
 import { buildProductIdentityKey, extractExactModelIdentity, normalizeIdentityText } from '@/lib/product-identity';
 
@@ -244,12 +245,7 @@ function dedupeProductsByCanonicalName(products: Product[]): Product[] {
     }
 
     const mergedPrices = mergeGroupedPrices(existing.prices, product.prices);
-    const priceValues = mergedPrices.map((price) => price.price);
-    const lowestPrice = priceValues.length > 0 ? Math.min(...priceValues) : 0;
-    const highestPrice = priceValues.length > 0 ? Math.max(...priceValues) : 0;
-    const averagePrice = priceValues.length > 0
-      ? Math.round(priceValues.reduce((acc, value) => acc + value, 0) / priceValues.length)
-      : 0;
+    const stats = computeComparableStorePriceStats(mergedPrices);
 
     const pickedImage = existing.image === '/pixel-box.svg' && product.image !== '/pixel-box.svg'
       ? product.image
@@ -257,10 +253,10 @@ function dedupeProductsByCanonicalName(products: Product[]): Product[] {
 
     grouped.set(key, {
       ...existing,
-      prices: mergedPrices,
-      lowestPrice,
-      highestPrice,
-      averagePrice,
+      prices: stats.comparablePrices,
+      lowestPrice: stats.lowest,
+      highestPrice: stats.highest,
+      averagePrice: stats.average,
       image: pickedImage,
       updatedAt: existing.updatedAt > product.updatedAt ? existing.updatedAt : product.updatedAt,
       createdAt: existing.createdAt < product.createdAt ? existing.createdAt : product.createdAt,
@@ -279,12 +275,7 @@ function dedupeProductsByCanonicalName(products: Product[]): Product[] {
 
     const existing = final[targetIndex];
     const mergedPrices = mergeGroupedPrices(existing.prices, candidate.prices);
-    const priceValues = mergedPrices.map((price) => price.price);
-    const lowestPrice = priceValues.length > 0 ? Math.min(...priceValues) : 0;
-    const highestPrice = priceValues.length > 0 ? Math.max(...priceValues) : 0;
-    const averagePrice = priceValues.length > 0
-      ? Math.round(priceValues.reduce((acc, value) => acc + value, 0) / priceValues.length)
-      : 0;
+    const stats = computeComparableStorePriceStats(mergedPrices);
 
     const preferredName = tokenizeNameForDedupe(candidate.name).length > tokenizeNameForDedupe(existing.name).length
       ? candidate.name
@@ -294,10 +285,10 @@ function dedupeProductsByCanonicalName(products: Product[]): Product[] {
       ...existing,
       name: preferredName,
       model: preferredName,
-      prices: mergedPrices,
-      lowestPrice,
-      highestPrice,
-      averagePrice,
+      prices: stats.comparablePrices,
+      lowestPrice: stats.lowest,
+      highestPrice: stats.highest,
+      averagePrice: stats.average,
       updatedAt: existing.updatedAt > candidate.updatedAt ? existing.updatedAt : candidate.updatedAt,
       createdAt: existing.createdAt < candidate.createdAt ? existing.createdAt : candidate.createdAt,
     };
@@ -329,17 +320,14 @@ function recalculateProductPrices(product: Product, allowedStoreIds?: Set<string
 
   if (filteredPrices.length === 0) return null;
 
-  const priceValues = filteredPrices.map((price) => price.price);
-  const lowestPrice = Math.min(...priceValues);
-  const highestPrice = Math.max(...priceValues);
-  const averagePrice = Math.round(priceValues.reduce((acc, value) => acc + value, 0) / priceValues.length);
+  const stats = computeComparableStorePriceStats(filteredPrices);
 
   return {
     ...product,
-    prices: filteredPrices,
-    lowestPrice,
-    highestPrice,
-    averagePrice,
+    prices: stats.comparablePrices,
+    lowestPrice: stats.lowest,
+    highestPrice: stats.highest,
+    averagePrice: stats.average,
   };
 }
 
@@ -367,6 +355,9 @@ function mapDbProduct(row: DbProductRow): Product {
     };
   });
 
+  const comparableStats = computeComparableStorePriceStats(prices);
+  const hasComparablePrices = comparableStats.comparablePrices.length > 0;
+
   const mapped: Product = {
     id: row.id,
     name: row.name,
@@ -383,12 +374,18 @@ function mapDbProduct(row: DbProductRow): Product {
     lastScrapedAt: row.last_scraped_at ? toDate(row.last_scraped_at) : undefined,
     lastNormalizedAt: row.last_normalized_at ? toDate(row.last_normalized_at) : null,
     specs: row.specs ?? {},
-    prices,
-    lowestPrice: toNumber(row.lowest_price, prices.length > 0 ? Math.min(...prices.map((p) => p.price)) : 0),
-    highestPrice: toNumber(row.highest_price, prices.length > 0 ? Math.max(...prices.map((p) => p.price)) : 0),
+    prices: hasComparablePrices ? comparableStats.comparablePrices : prices,
+    lowestPrice: hasComparablePrices
+      ? comparableStats.lowest
+      : toNumber(row.lowest_price, prices.length > 0 ? Math.min(...prices.map((p) => p.price)) : 0),
+    highestPrice: hasComparablePrices
+      ? comparableStats.highest
+      : toNumber(row.highest_price, prices.length > 0 ? Math.max(...prices.map((p) => p.price)) : 0),
     averagePrice: toNumber(
       row.average_price,
-      prices.length > 0 ? prices.reduce((acc, current) => acc + current.price, 0) / prices.length : 0,
+      hasComparablePrices
+        ? comparableStats.average
+        : (prices.length > 0 ? prices.reduce((acc, current) => acc + current.price, 0) / prices.length : 0),
     ),
     createdAt: toDate(row.created_at),
     updatedAt: toDate(row.updated_at),

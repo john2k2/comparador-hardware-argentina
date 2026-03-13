@@ -26,7 +26,9 @@ import { hydrateProducts } from '@/lib/product-serialization';
 import { normalizeProductTitlesWithStats } from '@/lib/ai/normalize-products';
 import { resolveAdminAccessFromToken } from '@/lib/server/admin-auth';
 import { sanitizeProduct, sanitizeProducts } from '@/lib/product-sanitizer';
+import { computeComparableStorePriceStats } from '@/lib/price-utils';
 import { buildRateLimitHeaders, checkRateLimit, getRequestIp } from '@/lib/server/rate-limit';
+import { shouldScheduleInternalBackgroundRefresh } from '@/lib/server/background-refresh';
 import { getSharedCache, setSharedCache } from '@/lib/server/shared-cache';
 import type { SearchApiResponse } from '@/lib/search/search-api';
 import { SEARCH_PAGE_SIZE, paginateProducts } from '@/lib/search/search-pagination';
@@ -132,6 +134,7 @@ function hasStaleProducts(products: Product[], staleAfterMs = DB_STALE_AFTER_MS)
 }
 
 function scheduleBackgroundSearchRefresh(request: NextRequest, refreshKey: string): void {
+  if (!shouldScheduleInternalBackgroundRefresh(request)) return;
   if (inFlightBackgroundSearchRefreshes.has(refreshKey)) return;
 
   const refreshUrl = new URL(request.url);
@@ -261,13 +264,13 @@ function filterProductStores(product: Product, selectedStoreIds: Set<string>): P
   const prices = product.prices.filter((priceInfo) => selectedStoreIds.has(priceInfo.storeId.toLowerCase()));
   if (prices.length === 0) return null;
 
-  const values = prices.map((price) => price.price);
+  const stats = computeComparableStorePriceStats(prices);
   return {
     ...product,
-    prices,
-    lowestPrice: Math.min(...values),
-    highestPrice: Math.max(...values),
-    averagePrice: Math.round(values.reduce((acc, value) => acc + value, 0) / values.length),
+    prices: stats.comparablePrices,
+    lowestPrice: stats.lowest,
+    highestPrice: stats.highest,
+    averagePrice: stats.average,
   };
 }
 
@@ -334,18 +337,6 @@ function mergePriceOptions(
   return merged;
 }
 
-function computePriceStats(prices: Product['prices']): { lowest: number; highest: number; average: number } {
-  if (prices.length === 0) {
-    return { lowest: 0, highest: 0, average: 0 };
-  }
-
-  const values = prices.map((price) => price.price);
-  const lowest = Math.min(...values);
-  const highest = Math.max(...values);
-  const average = Math.round(values.reduce((acc, value) => acc + value, 0) / values.length);
-  return { lowest, highest, average };
-}
-
 function tokenizeForDedupe(value: string): string[] {
   return normalizeSearchText(value)
     .split(/\s+/)
@@ -408,7 +399,7 @@ function canMergeNearDuplicate(existing: Product, candidate: Product): boolean {
 
 function mergeProductEntries(existing: Product, candidate: Product): Product {
   const mergedPrices = mergePriceOptions(existing.prices, candidate.prices);
-  const stats = computePriceStats(mergedPrices);
+  const stats = computeComparableStorePriceStats(mergedPrices);
   const existingTokens = tokenizeForDedupe(existing.name).length;
   const candidateTokens = tokenizeForDedupe(candidate.name).length;
   const preferred = candidateTokens > existingTokens ? candidate : existing;
@@ -422,7 +413,7 @@ function mergeProductEntries(existing: Product, candidate: Product): Product {
     model: preferred.model,
     brand: preferred.brand,
     image: mergedImage,
-    prices: mergedPrices,
+    prices: stats.comparablePrices,
     lowestPrice: stats.lowest,
     highestPrice: stats.highest,
     averagePrice: stats.average,
@@ -1046,12 +1037,17 @@ export async function GET(request: NextRequest) {
 
         if (!uniqueMap.has(groupKey)) {
           const normalizedProduct = normalizeProductContent(product);
+          const stats = computeComparableStorePriceStats(normalizedProduct.prices);
 
           uniqueMap.set(groupKey, {
             ...normalizedProduct,
             id: buildGroupedProductId(product, normalizedName, groupKey),
             name: normalizedProduct.name,
             model: normalizedProduct.model,
+            prices: stats.comparablePrices,
+            lowestPrice: stats.lowest,
+            highestPrice: stats.highest,
+            averagePrice: stats.average,
             normalizedTitle: normalizedName,
             canonicalProductKey: groupKey,
             familyKey,
@@ -1060,7 +1056,7 @@ export async function GET(request: NextRequest) {
         } else {
           const existingProduct = uniqueMap.get(groupKey)!;
           const mergedPrices = mergePriceOptions(existingProduct.prices, product.prices);
-          const stats = computePriceStats(mergedPrices);
+          const stats = computeComparableStorePriceStats(mergedPrices);
 
           let finalImage = existingProduct.image;
           if (finalImage === '/pixel-box.svg' && product.image !== '/pixel-box.svg') {
@@ -1073,7 +1069,7 @@ export async function GET(request: NextRequest) {
 
           uniqueMap.set(groupKey, {
             ...existingProduct,
-            prices: mergedPrices,
+            prices: stats.comparablePrices,
             lowestPrice: stats.lowest,
             highestPrice: stats.highest,
             averagePrice: stats.average,

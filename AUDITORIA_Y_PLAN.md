@@ -1,7 +1,7 @@
 # Auditoria Integral y Plan de Ejecucion
 
-Ultima actualizacion: 2026-03-07
-Estado general: En progreso
+Ultima actualizacion: 2026-03-13
+Estado general: En progreso / no listo para monetizacion ni indexacion real
 
 ## Como usar este documento
 - `- [ ]` Pendiente
@@ -9,191 +9,261 @@ Estado general: En progreso
 - `- [x]` Completado
 - `- [!]` Bloqueado
 
-Regla de trabajo:
-1. No cerrar una tarea sin evidencia (archivo cambiado, endpoint validado o test).
-2. Si aparece un bloqueo, marcar `- [!]` y anotar el motivo en "Registro de avances".
-3. Siempre actualizar este archivo al terminar cada bloque de trabajo.
+Reglas de trabajo:
+1. No cerrar una tarea sin evidencia real (archivo cambiado, endpoint validado, test o smoke concreto).
+2. Si aparece un bloqueo, marcar `- [!]` y anotarlo en `Registro de avances`.
+3. No avanzar a monetizacion ni a indexacion amplia si la Fase 0 sigue incompleta.
+4. Toda decision de SEO/indexacion debe respetar la politica de superficie publica definida en este documento.
+5. Cada cierre tecnico minimo exige, como base, `build + lint + test`, salvo que el item especifique evidencia adicional.
 
-## Hallazgos Prioritarios (Base de auditoria)
+## Estado actual real
+
+### Rojo (bloqueantes reales)
+- [ ] El dominio `comparador-hardware.com.ar` no resuelve por DNS; hoy no hay superficie publica rastreable real.
+- [ ] `google-site-verification-code` sigue siendo placeholder; Search Console no esta configurado de forma efectiva.
+- [ ] El sitemap de producto mezcla URLs agrupadas utiles con URLs raw por tienda, generando thin/duplicate content.
+- [ ] El parser monetario de Compugarden infla precios por formato local y contamina spreads, ahorros y metadata.
+
+### Amarillo (alto impacto, no bloquea build pero si calidad real)
+- [ ] Las landings indexables de categoria no tienen H1 real ni intro editorial util.
+- [ ] Hay placeholders de publicidad dominando zonas visibles en paginas con ambicion SEO.
+- [ ] Home sections (`featuredProducts` / `priceDropProducts`) hoy pueden quedar vacias con las reglas actuales.
+- [ ] La pagina de producto tiene hydration mismatch por formateo local de fecha/hora.
+
+### Verde (base ya validada)
+- [x] `npm run build` compila correctamente.
+- [x] `npm run lint` esta estable.
+- [x] `npm test` pasa en la base actual.
+- [x] La metadata base existe y las paginas de producto ya tienen JSON-LD.
+- [x] Admin y auth estan fuera del objetivo indexable (`noindex`).
+- [x] Existen `robots.txt`, `sitemap.xml` y `sitemap-index.xml`, aunque todavia requieren limpieza funcional.
+
+## Hallazgos Prioritarios (Baseline 2026-03-13)
 
 ### Criticos
-- [x] `A-01` Admin expuesto sin auth y potencialmente indexable.
-  - Estado actual: panel/admin APIs protegidos con auth admin server-side y `noindex` en admin.
-  - Referencias:
-    - `src/app/api/admin/operational/route.ts`
-    - `src/app/admin/page.tsx`
-    - `src/app/layout.tsx`
+- [ ] `B-01` Dominio `comparador-hardware.com.ar` sin resolucion DNS.
+  - Severidad: Critico
+  - Impacto: bloquea indexacion real, Search Console y cualquier revision seria de monetizacion.
+  - Estado actual: `nslookup comparador-hardware.com.ar` devuelve `NXDOMAIN`.
+  - Evidencia esperada: DNS resolviendo, respuesta HTTP publica y canonical apuntando a ese host.
+  - Dependencias/Bloqueos: configuracion del proveedor DNS y deploy publico funcional.
 
-- [x] `A-02` Riesgo de seguridad en capa Supabase server (uso de `NEXT_PUBLIC_*` en server) + falta de RLS/policies explicitas en migraciones.
-  - Estado actual: cliente server-only activo, migracion RLS aplicada en proyecto real y policies verificadas (public read solo en catalogo). Variables server `SUPABASE_URL` + `SUPABASE_ANON_KEY` configuradas localmente para evitar fallback `NEXT_PUBLIC_*`.
-  - Referencias:
-    - `src/lib/supabase.ts`
-    - `src/lib/server/supabase-server.ts`
-    - `supabase/migrations/20260304183000_initial_argen_prices_schema.sql`
-    - `supabase/migrations/20260305203000_catalog_rls_hardening.sql`
+- [ ] `B-02` Verificacion de Google aun en placeholder.
+  - Severidad: Critico
+  - Impacto: Search Console no verificable, sin envio confiable de sitemap ni cobertura real.
+  - Estado actual: `src/app/layout.tsx` usa `google-site-verification-code`.
+  - Evidencia esperada: meta real de verificacion y propiedad validada en Search Console.
+  - Dependencias/Bloqueos: Fase 0, dominio publico estable.
 
-- [~] `A-03` Cualquier cliente puede forzar scraping caro (`bypassDb=1`) sin rate limiting.
-  - Estado actual: bypass restringido a admin + rate limit en memoria por IP (falta version distribuida para multi-instancia).
-  - Referencias:
-    - `src/app/api/search/route.ts`
-    - `src/app/api/products/route.ts`
+- [ ] `B-03` Sitemap contaminado con paginas agrupadas + paginas raw por tienda.
+  - Severidad: Critico
+  - Impacto: aumenta crawl waste y expone muchas URLs thin/duplicadas con poco valor agregado.
+  - Estado actual: muestreo local del sitemap detecto `1662` URLs agrupadas y `951` raw indexables.
+  - Evidencia esperada: politica de indexacion aplicada y sitemap emitiendo solo la superficie indexable final.
+  - Dependencias/Bloqueos: decision de canonical/noindex para paginas raw.
+
+- [ ] `B-04` Bug de parseo monetario en Compugarden.
+  - Severidad: Critico
+  - Impacto: precios absurdos, ahorro falso de `99%`, mala UX y datos SEO enga?osos.
+  - Estado actual: `src/lib/scrapers/compugarden.ts` elimina todos los no-digitos y rompe montos con separadores locales.
+  - Evidencia esperada: parser corregido + guardas de outliers + muestra real sin spreads absurdos.
+  - Dependencias/Bloqueos: validacion con productos reales y normalizacion comun de montos.
 
 ### Altos
-- [x] `A-04` Busqueda por categoria/tienda sin `q` queda vacia por contrato actual de `/api/search`.
-  - Estado actual: `search` soporta intencion por filtros sin `q` (DB-first) y la UI envia `category/stores/min/max/sort` al backend.
-  - Referencias:
-    - `src/app/api/search/route.ts`
-    - `src/app/search/page.tsx`
-    - `src/app/page.tsx`
+- [ ] `B-05` Paginas de categoria indexables sin H1 real ni intro util.
+  - Severidad: Alto
+  - Impacto: la landing que deberia rankear nace debil en SEO y valor editorial.
+  - Estado actual: `/search?category=procesadores` indexa pero no expone H1 visible y carece de bloque introductorio.
+  - Evidencia esperada: H1 real, intro util, mejor jerarquia y copy alineado a intencion de busqueda.
 
-- [x] `A-05` Normalizacion IA procesa muy pocos titulos por request y gran parte cae en fallback heuristico.
-  - Estado actual: se aumento cobertura por request, se agrego concurrencia por lotes en Gemini y se elimino fallback silencioso con metricas por request (fallback rate + origen memoria/DB/Gemini + validacion de persistencia en cache DB).
-  - Referencias:
-    - `src/lib/ai/normalize-products.ts`
+- [ ] `B-06` Placeholders de ads dominando zonas visibles en paginas SEO.
+  - Severidad: Alto
+  - Impacto: baja calidad percibida, menor foco en contenido y peor readiness para monetizacion seria.
+  - Estado actual: `SearchPageClient` muestra banners mock arriba y al costado del contenido principal.
+  - Evidencia esperada: placeholders retirados, reducidos o reemplazados por bloques utiles hasta monetizacion real.
 
-- [x] `A-06` `withTimeout` no aborta requests reales; solo deja de esperar.
-  - Estado actual: timeout abortable aplicado con `AbortController` en search/products + normalizador Gemini + scrapers principales.
-  - Referencias:
-    - `src/lib/async/with-abort-timeout.ts`
-    - `src/lib/ai/normalize-products.ts`
-    - `src/app/api/search/route.ts`
-    - `src/app/api/products/route.ts`
+- [ ] `B-07` Home sin secciones utiles garantizadas.
+  - Severidad: Alto
+  - Impacto: la portada puede quedar debil para SEO, discovery y conversion.
+  - Estado actual: `/api/home/sections` devuelve vacio en featured/priceDrop bajo las reglas actuales.
+  - Evidencia esperada: reglas de refresh/seleccion que sostengan cards utiles en home.
 
-- [~] `A-07` Amplificacion de escrituras en DB (persistencia frecuente de snapshots + historial).
-  - Estado actual: dedupe contra estado persistido en DB con firmas (`content_signature` / `state_signature`) + heartbeat de frescura cada `12h`; `updated_at` ya no se pisa cuando solo refresca `last_seen_at` / `last_updated`.
-  - Referencias:
-    - `src/app/api/search/route.ts`
-    - `src/lib/persistence/product-catalog.ts`
-    - `src/lib/persistence/product-write-dedupe.ts`
-    - `supabase/migrations/20260307103000_catalog_write_signatures.sql`
-
-- [x] `A-08` SEO limitado por alto uso client-side en Home/Search/Product.
-  - Estado actual: Home, Search y Product ya exponen wrappers server-first con metadata/robots correctos y HTML inicial con contenido real enlazable; `/search?category=...` indexa, `/search?q=...` queda `noindex`.
-  - Referencias:
-    - `src/app/page.tsx`
-    - `src/app/search/page.tsx`
-    - `src/app/product/[id]/page.tsx`
-    - `src/components/home/HomePageClient.tsx`
-    - `src/components/search/SearchPageClient.tsx`
-    - `src/components/functional/ProductCard.tsx`
-    - `src/components/functional/ProductGrid.tsx`
-    - `src/lib/search/search-state.ts`
-
-- [x] `A-09` `sitemap.xml` estatico desactualizado (slugs/categorias no alineadas).
-  - Estado actual: sitemap dinamico implementado en App Router con rutas estaticas + categorias + productos desde DB, y se elimino el `public/sitemap.xml` legacy que generaba conflicto en runtime.
-  - Referencias:
-    - `src/app/sitemap.ts`
-    - `src/lib/types.ts`
-
-- [x] `A-10` Metadata referencia `og-image.png` inexistente.
-  - Estado actual: metadata social usa `og-image.svg` existente en `public/`.
-  - Referencias:
-    - `src/app/layout.tsx`
-    - `public/`
+- [ ] `B-08` Hydration mismatch en detalle de producto.
+  - Severidad: Alto
+  - Impacto: error tecnico visible, re-render innecesario y menor estabilidad percibida.
+  - Estado actual: timestamp `ACT:` cambia entre server y cliente por `toLocaleString('es-AR')`.
+  - Evidencia esperada: cero hydration errors en smoke local del detalle.
 
 ### Medios
-- [x] `A-11` `lint` global no confiable (incluye `tmp/` y scripts debug).
-  - Estado actual: `eslint.config.mjs` ignora `tmp/` y scripts de debugging/smoke fuera del app runtime.
-  - Referencias:
-    - `eslint.config.mjs`
-    - `tmp/`
+- [ ] `B-09` Paginas legales y de contacto demasiado basicas para confianza/monetizacion.
+  - Severidad: Medio
+  - Impacto: baja confianza, peor lectura de calidad y mas riesgo en revisiones de monetizacion.
+  - Estado actual: `acerca`, `contacto`, `privacidad` y `terminos` son demasiado breves.
+  - Evidencia esperada: contenido institucional mas serio, claro y util.
 
-- [x] `A-12` Falta de tests automatizados en logica critica (agrupacion/ranking/paginacion).
-  - Estado actual: cobertura unitaria activa para identidad/ranking/paginacion + e2e browser para `search -> detail -> back` con scroll restore.
-  - Referencias:
-    - `package.json`
-    - `vitest.config.ts`
-    - `playwright.config.ts`
-    - `src/lib/product-identity.test.ts`
-    - `src/lib/search/search-state.test.ts`
-    - `src/lib/search/search-ranking.ts`
-    - `src/lib/search/search-ranking.test.ts`
-    - `src/lib/search/search-pagination.ts`
-    - `src/lib/search/search-pagination.test.ts`
-    - `e2e/search-navigation.spec.ts`
+- [ ] `B-10` Falta de medicion, analytics y consentimiento listos para explotacion real.
+  - Severidad: Medio
+  - Impacto: dificulta leer SEO, conversion y salud del negocio una vez publico.
+  - Estado actual: no hay implementacion visible de analytics, consent o instrumentation de negocio.
+  - Evidencia esperada: stack minimo de medicion y politica de consentimiento definida.
 
-- [x] `A-13` Caches en memoria por proceso (inconsistentes en multi-instancia/serverless).
-  - Estado actual: `search` y `product detail` usan cache compartido en Supabase y el rate limit publico ya es distribuido via RPC; los `inFlight*` locales quedan solo como dedupe optimista por instancia, no como fuente principal de consistencia.
-  - Referencias:
-    - `src/app/api/search/route.ts`
-    - `src/app/api/products/route.ts`
-    - `src/lib/telemetry/operational-metrics.ts`
-    - `src/lib/server/shared-cache.ts`
-    - `src/lib/server/rate-limit.ts`
-    - `supabase/migrations/20260306182000_shared_cache_and_rate_limits.sql`
+- [ ] `B-11` Warnings de imagen/LCP y normalizacion irregular de algunas URLs.
+  - Severidad: Medio
+  - Impacto: degrada performance percibida y puede generar imagenes rotas o no optimizadas.
+  - Estado actual: warnings locales en listados y algunos `src` con paths normalizados de forma fragil.
+  - Evidencia esperada: warnings controlados, `sizes/loading/priority` revisados y URLs limpias.
 
-- [x] `A-14` Links del footer apuntan a query params en home que no siempre impactan el resultado esperado.
-  - Estado actual: links de categorias/tiendas en footer ahora apuntan a `/search?...`.
-  - Referencia:
-    - `src/app/layout.tsx`
-
-- [ ] `A-15` Costo de render alto por overlays/animaciones globales.
-  - Referencia:
-    - `src/app/globals.css`
+### Riesgos heredados / deuda arrastrada del plan anterior
+- [ ] `H-01` Consolidar observabilidad operativa (latencia, fallos por tienda, degradacion).
+- [ ] `H-02` Endurecer version distribuida/estable del control de costo y de los flujos caros residuales.
+- [ ] `H-03` Revisar costo de render global por overlays y animaciones persistentes.
+- [ ] `H-04` Cerrar deuda residual de seguridad/documentacion operativa (ej. `auth_leaked_password_protection` fuera del repo).
 
 ## Plan por Fases
 
-## Fase 1 - Seguridad y Control de Costo (Urgente)
-- [x] Proteger `/admin` y `/api/admin/*` con auth.
-- [x] Marcar admin como no indexable.
-- [x] Separar cliente Supabase server-safe (service role en server, no `NEXT_PUBLIC_*`).
-- [x] Definir y aplicar RLS + policies para tablas criticas.
-- [x] Limitar `bypassDb` a uso interno.
-- [x] Agregar rate limit en `/api/search` y `/api/products`.
-- [x] Separar cliente Supabase server-safe (lectura server + service role para escritura server).
-- [x] Definir RLS/policies para catalogo y cache de normalizacion (migracion aplicada y verificada en DB).
+## Fase 0 - Dominio, deploy y superficie publica real
+Objetivo: dejar una base publica rastreable y verificable. Sin esta fase cerrada no se habilita monetizacion ni indexacion amplia.
+
+- [ ] `F0-01` [Critico] Resolver DNS del dominio y confirmar respuesta publica del sitio.
+  - Evidencia esperada: `nslookup`/`dig`, respuesta HTTP publica y captura de URL final.
+- [ ] `F0-02` [Critico] Confirmar base URL y canonical unico para todo el proyecto.
+  - Evidencia esperada: metadata/canonical alineados al dominio real, sin hosts alternativos activos.
+- [ ] `F0-03` [Critico] Reemplazar la verificacion de Google placeholder por la real.
+  - Evidencia esperada: meta tag real y propiedad verificable en Search Console.
+- [ ] `F0-04` [Critico] Preparar Search Console y envio del sitemap publico.
+  - Evidencia esperada: sitemap enviado y valido, sin bloqueos obvios de coverage.
+- [ ] `F0-05` [Critico] Dejar documentada la regla operativa: no avanzar a monetizacion con la Fase 0 incompleta.
+  - Evidencia esperada: regla visible en este documento y respetada en el backlog.
+
+### Criterio de cierre Fase 0
+- [ ] El dominio resuelve publicamente.
+- [ ] Search Console es verificable.
+- [ ] `robots.txt`, `sitemap.xml` y `sitemap-index.xml` responden desde el dominio final.
+- [ ] El proyecto tiene un host canonico unico y consistente.
+
+## Fase 1 - Calidad de datos y confiabilidad de scrapers
+Objetivo: que el comparador muestre precios creibles y no se sabotee a si mismo con outliers o parseos defectuosos.
+
+- [ ] `F1-01` [Critico] Corregir parseo monetario de Compugarden.
+  - Evidencia esperada: muestra de productos reales sin inflar centavos como pesos enteros.
+- [ ] `F1-02` [Critico] Documentar e implementar guardas de outliers y cuarentena de datos dudosos.
+  - Evidencia esperada: criterio explicito de descarte/flag de precios imposibles por tienda.
+- [ ] `F1-03` [Alto] Revisar logica de spreads/ahorros para eliminar falsos `99%`.
+  - Evidencia esperada: cards y detalle sin claims absurdos frente a datos anormales.
+- [ ] `F1-04` [Medio] Verificar y corregir imagenes o URLs mal normalizadas en scrapers/listados.
+  - Evidencia esperada: sin rutas rotas evidentes en smoke de search/category/product.
+- [ ] `F1-05` [Alto] Definir refresh minimo y reglas de elegibilidad para que home no quede vacia.
+  - Evidencia esperada: `featuredProducts` y `priceDropProducts` con contenido util reproducible.
 
 ### Criterio de cierre Fase 1
-- [x] Acceso admin bloqueado sin credenciales.
-- [x] Endpoints publicos no permiten bypass no autorizado.
-- [x] Policies de DB activas y verificadas (migracion aplicada y pruebas anon/auth ejecutadas).
+- [ ] Muestras reales sin precios absurdos ni spreads rotos.
+- [ ] Los ahorros mostrados son defendibles con datos comparables.
+- [ ] Home carga secciones utiles en condiciones normales.
+- [ ] Las URLs de imagen y precios clave pasan smoke funcional.
 
-## Fase 2 - Calidad de Busqueda y Agrupacion
-- [x] Corregir flujo sin `q` (categoria/tienda).
-- [x] Enviar filtros reales al backend (category/stores/min/max/sort).
-- [x] Mejorar pipeline IA:
-  - [x] Mayor cobertura por request.
-  - [x] Menor fallback silencioso.
-  - [x] Persistencia de normalizaciones validada.
-- [~] Endurecer clave canonica de agrupacion por tipo de producto y variante.
-- [x] Verificar casos reales reportados (ej: MSI Shadow 2X OC RTX 5060).
+## Fase 2 - Funcionalidad core y UX estable
+Objetivo: quitar errores visibles y dejar los flujos principales listos para uso real.
+
+- [ ] `F2-01` [Alto] Corregir hydration mismatch en detalle de producto.
+  - Evidencia esperada: smoke sin errores de hidratacion en `/product/...`.
+- [ ] `F2-02` [Alto] Revisar estados vacios, loading y navegacion volver/busqueda.
+  - Evidencia esperada: flujo coherente en home -> search -> product -> back.
+- [ ] `F2-03` [Alto] Mover o reemplazar placeholders de anuncios en paginas core hasta tener monetizacion real.
+  - Evidencia esperada: first screen prioriza contenido util, no mocks publicitarios.
+- [ ] `F2-04` [Medio] Ajustar detalles de performance visual (LCP, prioridad de imagenes, jerarquia de carga).
+  - Evidencia esperada: warnings principales reducidos y experiencia mas estable.
+- [ ] `F2-05` [Alto] Validar search/category/product con smoke real despues de cada bloque.
+  - Evidencia esperada: checklist de smoke reproducible documentado y usado.
 
 ### Criterio de cierre Fase 2
-- [ ] Mismo modelo en distintas tiendas se agrupa en una sola card.
-- [ ] No se fusionan variantes distintas por error.
+- [ ] Cero hydration errors visibles en flows core.
+- [ ] Search/category/product funcionan sin estados confusos ni regresiones obvias.
+- [ ] La UX principal prioriza comparacion y confianza por sobre placeholders.
 
-## Fase 3 - Performance y Persistencia
-- [~] Reemplazar timeouts por abort real (`AbortController`).
-- [~] Reducir escrituras innecesarias en `products/product_prices/price_history`.
-- [x] Definir retencion/limpieza de `price_history`.
-- [x] Paginacion server-side real para reducir payload.
+## Fase 3 - SEO tecnico e indexacion sana
+Objetivo: reducir crawl waste y dejar solo URLs utiles dentro de la superficie indexable.
+
+- [ ] `F3-01` [Critico] Documentar y aplicar politica definitiva de indexacion/canonical.
+  - Indexables: home, landings de categoria, productos agrupados utiles, institucionales.
+  - No indexables o canonicalizados: query search, auth/admin/api, paginas raw de tienda.
+- [ ] `F3-02` [Critico] Limpiar sitemap para no emitir URLs thin o duplicadas.
+  - Evidencia esperada: solo URLs objetivo dentro del sitemap final.
+- [ ] `F3-03` [Alto] Agregar H1 real e intro util a las categorias indexables.
+  - Evidencia esperada: categorias convertidas en landing pages reales.
+- [ ] `F3-04` [Medio] Expandir `acerca`, `contacto`, `privacidad` y `terminos` con contenido institucional serio.
+  - Evidencia esperada: paginas de confianza menos thin y mas utiles.
+- [ ] `F3-05` [Medio] Evaluar schema adicional para listados/categorias (`ItemList`, `Breadcrumb`, etc.) donde aporte.
+  - Evidencia esperada: decision documentada y schema consistente con la superficie publica final.
 
 ### Criterio de cierre Fase 3
-- [ ] Menor latencia p95 en `/api/search`.
-- [ ] Menos costo de DB por request.
+- [ ] El sitemap esta alineado a la superficie indexable real.
+- [ ] Las categorias tienen estructura SEO basica util.
+- [ ] Las URLs raw ya no compiten como landing principal.
+- [ ] La superficie indexable es pequena, clara y defendible.
 
-## Fase 4 - SEO Tecnico y de Contenido
-- [x] Migrar sitemap estatico a `src/app/sitemap.ts` dinamico.
-- [x] Corregir metadata social (`og-image` real).
-- [x] Implementar metadata por producto (title/description/canonical/og/twitter).
-- [x] Agregar JSON-LD (`Product`, `Offer`, `Organization`).
-- [x] Revisar `robots` final.
+## Fase 4 - Calidad operativa, pruebas y observabilidad
+Objetivo: dejar una base reproducible para cambios futuros sin romper funcionalidad ni perder visibilidad operativa.
+
+- [ ] `F4-01` [Alto] Consolidar matriz de validacion minima por release.
+  - Base: `npm run build`, `npm run lint`, `npm test`, smoke E2E, chequeos SEO basicos, chequeos de datos.
+- [ ] `F4-02` [Medio] Definir monitoreo minimo para scraping, errores, latencia y degradacion.
+  - Evidencia esperada: lista de metricas y fuentes de observacion por endpoint/tienda.
+- [ ] `F4-03` [Medio] Documentar evidencia esperada para cerrar cada bloque del backlog.
+  - Evidencia esperada: checklists por fase sin ambiguedad.
+- [ ] `F4-04` [Medio] Revisar pipeline CI/operativo para que el baseline tecnico sea repetible.
+  - Evidencia esperada: comandos y orden de validacion definidos.
 
 ### Criterio de cierre Fase 4
-- [x] URLs clave indexables con metadata correcta.
-- [ ] Sitemap alineado al estado real del sitio.
+- [ ] Existe una matriz de validacion reproducible por release.
+- [ ] La observabilidad minima permite detectar degradaciones reales.
+- [ ] Cada cierre de tarea tiene evidencia comparable y trazable.
 
-## Fase 5 - Calidad Operativa
-- [x] Ajustar lint para ignorar `tmp/` y archivos de debugging.
-- [ ] Crear tests unitarios (normalizacion, ranking, dedupe).
-- [ ] Crear tests e2e (paginacion + volver desde detalle).
-- [ ] Definir alertas de salud operativa (latencia, fallos por tienda, uso fallback IA).
+## Fase 5 - Preparacion para monetizacion
+Objetivo: llegar a una monetizacion defendible, sin forzar AdSense antes de que el sitio tenga calidad suficiente.
+
+- [ ] `F5-01` [Critico] Mantener AdSense detras de las Fases 0-4; no usarlo como primer paso.
+  - Evidencia esperada: decision explicita y criterio de readiness.
+- [ ] `F5-02` [Alto] Definir dos caminos de monetizacion en paralelo.
+  - Camino A: Google/AdSense readiness.
+  - Camino B: sponsors, placements, acuerdos con tiendas, featured listings.
+- [ ] `F5-03` [Alto] Agregar checklist de confianza para monetizacion.
+  - Incluye: legales serios, contacto real, politica de contenido, propuesta de valor clara del comparador.
+- [ ] `F5-04` [Medio] Revisar la ubicacion/formato de espacios promocionales desde UX, no solo desde inventario publicitario.
+  - Evidencia esperada: placements compatibles con la utilidad principal del sitio.
 
 ### Criterio de cierre Fase 5
-- [ ] Pipeline CI de calidad estable (lint + tests).
-- [ ] Dashboard operativo con alertas utiles.
+- [ ] El sitio es defendible frente a una revision de calidad.
+- [ ] Existe una propuesta de monetizacion realista y no dependiente de una unica via.
+- [ ] Los anuncios/placements no degradan el valor util del comparador.
+
+## Interfaces publicas / tipos / superficies afectadas
+- [x] En esta etapa no hay cambios de API o tipos porque este bloque es solo de documentacion/planificacion.
+- [ ] Politica futura de superficie publica a respetar:
+  - Home como landing principal del proyecto.
+  - Categorias como landings SEO reales.
+  - Productos agrupados como paginas comparativas principales.
+  - URLs raw de tienda fuera del objetivo indexable principal.
+
+## Matriz minima de validacion exigida por este documento
+- [ ] `V-01` Dominio responde publicamente y el canonical apunta al host real.
+- [ ] `V-02` `robots.txt`, `sitemap.xml` y `sitemap-index.xml` accesibles desde el dominio final.
+- [ ] `V-03` `/search?category=procesadores` expone H1 real e intro util.
+- [ ] `V-04` `/product/agrupado-procesadores-amd-ryzen-5-5600gt-ay7of2` no muestra hydration mismatch.
+- [ ] `V-05` Una URL raw tipo `/product/mexx-47372-...` queda tratada segun la politica SEO final.
+- [ ] `V-06` Muestra real de productos sin spreads absurdos por precios inflados.
+- [ ] `V-07` Home mantiene secciones destacadas/utiles y no queda vacia.
+- [ ] `V-08` `npm run build`, `npm run lint` y `npm test` como baseline minimo de cierre tecnico.
+
+## Supuestos y defaults elegidos
+- Este documento sigue siendo interno, en espanol y operativo.
+- Se actualiza el MD actual; no se crea un roadmap paralelo.
+- El alcance es integral (tecnico + datos + UX + SEO + operacion + monetizacion).
+- El formato oficial es fases + checklist; no auditoria narrativa ni backlog tabular puro.
+- El historial previo se conserva como registro de evidencia; solo se redefine la baseline y el backlog superior.
+- La monetizacion se trata como etapa posterior a calidad/indexacion, no como primer movimiento.
 
 ## Registro de avances
+
 
 ### 2026-03-05
 - [x] Se creo el documento maestro de auditoria y plan.
@@ -1083,12 +1153,46 @@ Regla de trabajo:
     - touch de `products.last_seen_at` sin cambio de firma -> `updated_at` preservado
     - touch de `product_prices.last_updated` sin cambio de firma -> `updated_at` preservado
 
-### Punto de retomada (manana)
-- [x] Definir regla final de "Bajaron de precio":
-  - opcion elegida: estricta 24h reales (sin fallback snapshot).
-  - Archivo principal: `src/app/api/home/sections/route.ts`
-- [x] Aplicar saneado de texto tambien en backend (antes de persistir/responder) para cortar mojibake de origen.
-- [~] Continuar auditoria desde Fase 2 (calidad de agrupacion + pipeline IA) segun plan.
+### 2026-03-13 (Documento maestro v2 + baseline integral)
+- [x] Se actualizo `AUDITORIA_Y_PLAN.md` como documento maestro v2, manteniendo el historial previo y reordenando el backlog integral por fases.
+- [x] Se redefinio el estado general del proyecto como `En progreso / no listo para monetizacion ni indexacion real`.
+- [x] Se agrego el bloque `Estado actual real` con semaforo operativo:
+  - Rojo: dominio/DNS, Search Console real, sitemap contaminado, bug de precios/outliers.
+  - Amarillo: UX de categorias, hydration mismatch, home sin secciones utiles.
+  - Verde: build/lint/tests, metadata base, JSON-LD de producto, admin/auth noindex.
+- [x] Se incorporo baseline 2026-03-13 en `Hallazgos Prioritarios` con problemas confirmados localmente:
+  - dominio sin resolucion,
+  - verificacion Google placeholder,
+  - sitemap con mezcla de URLs agrupadas y raw,
+  - parser monetario defectuoso en Compugarden,
+  - categorias indexables sin H1/intro,
+  - placeholders de ads en paginas SEO,
+  - home sections vacias,
+  - hydration mismatch en detalle.
+- [x] Se redefinio el plan por fases para cubrir todos los niveles:
+  - Fase 0: dominio/deploy/Search Console,
+  - Fase 1: datos/scrapers,
+  - Fase 2: UX y funcionalidad core,
+  - Fase 3: SEO/indexacion,
+  - Fase 4: calidad operativa,
+  - Fase 5: monetizacion.
+- [x] Se agregaron `Interfaces publicas / tipos / superficies afectadas`, `Matriz minima de validacion` y `Supuestos y defaults elegidos`.
+- [x] Validaciones usadas como base de esta auditoria/documento:
+  - `npm run build` OK
+  - `npm run lint` OK
+  - `npm test` OK
+  - smoke local de home/search/product/sitemaps
+- [~] Bloqueos reales vigentes al cierre de esta actualizacion:
+  - dominio publico sin resolver,
+  - Search Console no conectada,
+  - sitemap/indexacion sin limpiar,
+  - datos de precio con outliers en algunas tiendas.
+
+### Punto de retomada (2026-03-13)
+- [ ] 1. Resolver dominio + DNS + Search Console + verificacion real de Google.
+- [ ] 2. Corregir parser de Compugarden y definir guardas de outliers/spreads falsos.
+- [ ] 3. Limpiar sitemap y politica de indexacion para sacar URLs raw de tienda del objetivo SEO principal.
+- [ ] 4. Convertir categorias indexables en landing pages reales (H1 + intro + jerarquia util).
 
 Plantilla para nuevas entradas:
 - Fecha:
@@ -1097,7 +1201,6 @@ Plantilla para nuevas entradas:
 - Riesgos pendientes:
 
 ## Proxima accion recomendada
-- [x] Resolver deuda de taxonomia: categoria `perifericos` (o mapeo equivalente) para evitar clasificacion de teclados/mouse/monitores en `tarjetas-graficas`.
-- [x] Ejecutar benchmark de latencia (`sin filtro` vs `con filtro de tiendas`) y anexar delta p50/p95.
-- [ ] Atender advisor de seguridad restante: `auth_leaked_password_protection` (activar en Dashboard Auth).
-- [x] Conectar un cron/job externo a `/api/admin/catalog-refresh` para pasar a refresh programado real DB-first.
+1. [ ] Dominio + Search Console + verificacion real (`Fase 0`).
+2. [ ] Fix de Compugarden + outliers + claims de ahorro (`Fase 1`).
+3. [ ] Limpieza de sitemap/indexacion y tratamiento de URLs raw (`Fase 3`).

@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import type { AnyNode } from 'domhandler';
 import { HardwareCategory, Product, StockStatus } from '../types';
+import { parseLocalizedArsPrice } from '../price-utils';
 
 const COMPUGARDEN_BASE_URL = 'https://www.compugarden.com.ar';
 
@@ -16,11 +17,6 @@ function normalizeAbsoluteUrl(baseUrl: string, href: string): string {
   if (href.startsWith('http')) return href;
   if (href.startsWith('//')) return `https:${href}`;
   return `${baseUrl}${href.startsWith('/') ? '' : '/'}${href}`;
-}
-
-function parseArsPrice(value: string): number {
-  const digits = value.replace(/\D/g, '');
-  return parseInt(digits, 10) || 0;
 }
 
 function slugify(value: string): string {
@@ -119,7 +115,7 @@ export async function fetchCompugardenProducts(
       const image = imageRaw ? normalizeAbsoluteUrl(COMPUGARDEN_BASE_URL, imageRaw) : undefined;
 
       const priceText = card.find('.price').first().text().trim();
-      const price = parseArsPrice(priceText);
+      const price = parseLocalizedArsPrice(priceText);
       if (price <= 0) return;
 
       const stock = inferStock(card);

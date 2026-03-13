@@ -94,11 +94,15 @@ function PromoBanner({
 type HomePageClientProps = {
   initialFeaturedProducts: Product[];
   initialPriceDropProducts: Product[];
+  initialFeaturedFallbackUsed: boolean;
+  initialPriceDropFallbackUsed: boolean;
 };
 
 export function HomePageClient({
   initialFeaturedProducts,
   initialPriceDropProducts,
+  initialFeaturedFallbackUsed,
+  initialPriceDropFallbackUsed,
 }: HomePageClientProps) {
   const router = useRouter();
   const stores = useMemo(() => defaultStores, []);
@@ -106,6 +110,8 @@ export function HomePageClient({
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
   const [featuredProducts] = useState<Product[]>(normalizeFetchedProducts(initialFeaturedProducts));
   const [priceDropProducts] = useState<Product[]>(normalizeFetchedProducts(initialPriceDropProducts));
+  const [featuredFallbackUsed] = useState(initialFeaturedFallbackUsed);
+  const [priceDropFallbackUsed] = useState(initialPriceDropFallbackUsed);
   const [isSectionsLoading] = useState(false);
 
   useEffect(() => {
@@ -132,13 +138,13 @@ export function HomePageClient({
       <section className="mb-6 bg-card/95 border-[3px] border-border pixel-shadow p-4 md:p-6 flex flex-col lg:flex-row gap-5 lg:items-center lg:justify-between backdrop-blur-[1px]">
         <div>
           <h1 className="text-xl md:text-3xl font-bold uppercase text-foreground tracking-tight">
-            [ ENCONTRA TU HARDWARE ]
+            [ COMPARA PRECIOS DE HARDWARE EN ARGENTINA ]
           </h1>
           <p className="text-[10px] md:text-xs uppercase text-secondary font-bold mt-2 tracking-[0.14em]">
-            HOME | VISTOS, DESTACADOS Y BAJARON DE PRECIO
+            PROCESADORES, GPUS, RAM, SSD Y MAS EN MULTIPLES TIENDAS
           </p>
           <p className="text-[8px] md:text-[9px] uppercase text-muted-foreground mt-2 tracking-wide">
-            COMPARADOR INDEPENDIENTE: NO VENDEMOS, SOLO MOSTRAMOS PRECIOS Y ENLACES A TIENDAS
+            COMPARADOR INDEPENDIENTE: NO VENDEMOS, SOLO MOSTRAMOS PRECIOS, DISPONIBILIDAD Y ENLACES A TIENDAS
           </p>
         </div>
 
@@ -201,7 +207,9 @@ export function HomePageClient({
 
       <SectionTitle
         title="PRODUCTOS DESTACADOS"
-        subtitle="EN STOCK + ACTUALIZADOS < 24H + MEJOR PRECIO POR CATEGORIA"
+        subtitle={featuredFallbackUsed
+          ? 'SELECCION ACTIVA DEL CATALOGO MIENTRAS SE RECONSTRUYE LA CURACION AUTOMATICA'
+          : 'EN STOCK + ACTUALIZADOS < 24H + MEJOR PRECIO POR CATEGORIA'}
         actionHref="/search?q=rtx"
         actionLabel="VER TODO"
       />
@@ -218,15 +226,19 @@ export function HomePageClient({
       />
 
       <SectionTitle
-        title="BAJARON DE PRECIO"
-        subtitle="PRODUCTOS CON BAJA REAL EN HISTORIAL DE 24H"
+        title={priceDropFallbackUsed ? 'RECIEN ACTUALIZADOS' : 'BAJARON DE PRECIO'}
+        subtitle={priceDropFallbackUsed
+          ? 'FALLBACK HONESTO: MOSTRAMOS PRODUCTOS ACTIVOS HASTA TENER HISTORIAL SUFICIENTE'
+          : 'PRODUCTOS CON BAJA REAL EN HISTORIAL DE 24H'}
         actionHref="/search?sortBy=price-asc"
-        actionLabel="MAS BARATOS"
+        actionLabel={priceDropFallbackUsed ? 'VER CATALOGO' : 'MAS BARATOS'}
       />
       <ProductGrid
         products={priceDropProducts}
         isLoading={isSectionsLoading}
-        emptyMessage="No hay productos con baja de precio detectada por ahora."
+        emptyMessage={priceDropFallbackUsed
+          ? 'No se pudieron cargar productos activos para esta seccion.'
+          : 'No hay productos con baja de precio detectada por ahora.'}
       />
 
       <PromoBanner

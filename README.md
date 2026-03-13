@@ -33,12 +33,26 @@ Plataforma web para comparar precios de hardware en tiendas argentinas, con scra
 npm install
 ```
 
-2. Crear `.env.local`:
+2. Crear `.env.local` a partir de `.env.example`:
+
+```bash
+cp .env.example .env.local
+```
+
+Variables minimas:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=tu-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-supabase-anon-key
 FIRECRAWL_API_KEY=tu-firecrawl-api-key
+```
+
+Variables publicas recomendadas para produccion/SEO:
+
+```bash
+SITE_URL=https://comparador-hardware.com.ar
+GOOGLE_SITE_VERIFICATION=tu-token-real-de-search-console
+SUPPORT_EMAIL=contacto@tu-dominio.com
 ```
 
 Si usas normalizacion con Gemini:
@@ -55,6 +69,12 @@ Si usas refresh programado de catalogo por cron:
 CRON_SECRET=tu-cron-secret-seguro
 # opcional (si queres separar secreto del cron general)
 CATALOG_REFRESH_CRON_SECRET=tu-cron-secret-catalogo
+```
+
+Si quieres desactivar el background refresh interno en un entorno puntual:
+
+```bash
+DISABLE_INTERNAL_BACKGROUND_REFRESH=1
 ```
 
 3. Desarrollo local:
@@ -213,3 +233,24 @@ Notas:
 
 - El monitoreo actual es en memoria de proceso (no persistente entre reinicios/deploy).
 - El estado de auditoria, backlog tecnico y evidencia operativa vive en `AUDITORIA_Y_PLAN.md`.
+
+## Search Console y verificacion real
+
+Para conectar Google Search Console de forma correcta:
+
+1. Agrega la propiedad del sitio en Search Console.
+2. Si usas una **Domain property**, la verificacion se hace con un registro DNS/TXT.
+3. Si usas una **URL-prefix property**, puedes verificar con el meta tag `google-site-verification`.
+4. Copia el token real y guardalo en:
+
+```bash
+GOOGLE_SITE_VERIFICATION=tu-token-real
+```
+
+5. Despliega la app y verifica la propiedad desde Search Console.
+
+Referencias oficiales:
+
+- [Add a website property to Search Console](https://support.google.com/webmasters/answer/34592?hl=en)
+- [Verify your site ownership](https://support.google.com/webmasters/answer/9008080?hl=en-GB)
+- [Google-supported meta tags](https://developers.google.com/search/docs/crawling-indexing/special-tags)

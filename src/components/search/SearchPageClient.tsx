@@ -6,6 +6,7 @@ import { SearchBar, ProductGrid, Filters } from '@/components/functional';
 import type { SearchApiResponse } from '@/lib/search/search-api';
 import { hydrateProducts } from '@/lib/product-serialization';
 import { buildApiSearchKey, buildSearchPageParams, buildSearchRoute, toSearchFilters, type SearchPageState } from '@/lib/search/search-state';
+import { getCategorySeoCopy, isIndexableCategoryLanding } from '@/lib/search/search-seo';
 import { stores as defaultStores, categories } from '@/lib/scrapers/static-data';
 import type { Product, SearchFilters } from '@/lib/types';
 
@@ -158,6 +159,8 @@ export function SearchPageClient({
   const isSearchSyncing = hasSearchIntent && resolvedRequestKey !== null && resolvedRequestKey !== requestKey;
   const isBusy = isLoading || isSearchSyncing;
   const searchRoute = useMemo(() => buildSearchRoute(currentState), [currentState]);
+  const categorySeoCopy = useMemo(() => getCategorySeoCopy(currentState.category), [currentState.category]);
+  const isSeoCategoryLanding = useMemo(() => isIndexableCategoryLanding(currentState), [currentState]);
 
   const products = baseProducts;
   const totalResults = pagination.total;
@@ -325,14 +328,30 @@ export function SearchPageClient({
 
   return (
     <div className="w-full max-w-[1800px] mx-auto px-4 xl:px-8 py-6">
-      <div className="flex flex-col md:flex-row gap-6 mb-8 items-center">
-        <section className="flex-1 w-full border-4 border-dashed border-muted p-2 text-center bg-card">
-          <div className="bg-muted w-full h-16 md:h-20 flex items-center justify-center border-4 border-border relative overflow-hidden pixel-shadow">
-            <span className="text-primary font-bold text-sm md:text-base animate-pixel-blink">[ SPONSORED BANNER ]</span>
-          </div>
-        </section>
+      {isSeoCategoryLanding && categorySeoCopy ? (
+        <header className="mb-8 bg-card border-4 border-border p-5 md:p-6 pixel-shadow">
+          <p className="text-[8px] uppercase tracking-[0.3em] text-secondary font-bold mb-3">
+            LANDING DE CATEGORIA
+          </p>
+          <h1 className="text-sm md:text-lg uppercase font-bold leading-relaxed text-foreground">
+            {categorySeoCopy.heading}
+          </h1>
+          <p className="mt-4 text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/80 font-mono">
+            {categorySeoCopy.intro}
+          </p>
+        </header>
+      ) : null}
 
-        <div className="w-full md:w-1/3 min-w-0 sm:min-w-[300px]">
+      <div className="flex flex-col md:flex-row gap-6 mb-8 items-center">
+        {!isSeoCategoryLanding && (
+          <section className="flex-1 w-full border-4 border-dashed border-muted p-2 text-center bg-card">
+            <div className="bg-muted w-full h-16 md:h-20 flex items-center justify-center border-4 border-border relative overflow-hidden pixel-shadow">
+              <span className="text-primary font-bold text-sm md:text-base animate-pixel-blink">[ SPONSORED BANNER ]</span>
+            </div>
+          </section>
+        )}
+
+        <div className={isSeoCategoryLanding ? 'w-full' : 'w-full md:w-1/3 min-w-0 sm:min-w-[300px]'}>
           <SearchBar
             key={searchQuery}
             onSearch={handleSearch}
@@ -358,14 +377,16 @@ export function SearchPageClient({
             />
           </div>
 
-          <div className="border-4 border-dashed border-muted p-4 text-center bg-card flex-shrink-0">
-            <div className="text-muted-foreground uppercase text-[8px] tracking-widest mb-2 font-bold">
-              -- VERTICAL BANNER --
+          {!isSeoCategoryLanding && (
+            <div className="border-4 border-dashed border-muted p-4 text-center bg-card flex-shrink-0">
+              <div className="text-muted-foreground uppercase text-[8px] tracking-widest mb-2 font-bold">
+                -- VERTICAL BANNER --
+              </div>
+              <div className="bg-muted w-full h-[300px] flex items-center justify-center border-4 border-border relative overflow-hidden pixel-shadow">
+                <span className="text-primary font-bold text-sm animate-pixel-blink text-center px-2">[ INSERT COIN ]</span>
+              </div>
             </div>
-            <div className="bg-muted w-full h-[300px] flex items-center justify-center border-4 border-border relative overflow-hidden pixel-shadow">
-              <span className="text-primary font-bold text-sm animate-pixel-blink text-center px-2">[ INSERT COIN ]</span>
-            </div>
-          </div>
+          )}
         </aside>
 
         <div className="flex-1">
@@ -396,7 +417,7 @@ export function SearchPageClient({
           )}
 
           <div id="product-grid-start" className="bg-muted p-4 border-4 border-border relative">
-            {products.length > 4 && (
+            {!isSeoCategoryLanding && products.length > 4 && (
               <div className="col-span-full border-4 border-dashed border-muted p-4 my-8 text-center bg-card">
                 <div className="text-muted-foreground uppercase text-[8px] tracking-widest mb-2 font-bold">
                   -- SPONSOR --
@@ -485,30 +506,32 @@ export function SearchPageClient({
           </div>
         </div>
 
-        <aside className="hidden xl:block w-64 flex-shrink-0">
-          <div className="xl:sticky xl:top-8 flex flex-col gap-8">
-            <div className="border-4 border-dashed border-muted p-4 text-center bg-card">
-              <div className="text-muted-foreground uppercase text-[8px] tracking-widest mb-2 font-bold">
-                -- PREMIUM AD SPACE --
+        {!isSeoCategoryLanding && (
+          <aside className="hidden xl:block w-64 flex-shrink-0">
+            <div className="xl:sticky xl:top-8 flex flex-col gap-8">
+              <div className="border-4 border-dashed border-muted p-4 text-center bg-card">
+                <div className="text-muted-foreground uppercase text-[8px] tracking-widest mb-2 font-bold">
+                  -- PREMIUM AD SPACE --
+                </div>
+                <div className="bg-muted w-full h-[600px] flex flex-col items-center justify-center border-4 border-border px-2 text-center relative overflow-hidden pixel-shadow">
+                  <span className="text-accent font-bold text-lg animate-pixel-blink mb-4">[ MEGA DEAL ]</span>
+                  <p className="text-[10px] text-muted-foreground leading-loose">
+                    RESERVA ESTE ESPACIO PARA DESTACAR TU TIENDA EN TODA LA NAVEGACION.
+                  </p>
+                </div>
               </div>
-              <div className="bg-muted w-full h-[600px] flex flex-col items-center justify-center border-4 border-border px-2 text-center relative overflow-hidden pixel-shadow">
-                <span className="text-accent font-bold text-lg animate-pixel-blink mb-4">[ MEGA DEAL ]</span>
-                <p className="text-[10px] text-muted-foreground leading-loose">
-                  RESERVA ESTE ESPACIO PARA DESTACAR TU TIENDA EN TODA LA NAVEGACION.
-                </p>
-              </div>
-            </div>
 
-            <div className="border-4 border-dashed border-muted p-4 text-center bg-card">
-              <div className="text-muted-foreground uppercase text-[8px] tracking-widest mb-2 font-bold">
-                -- SIDEBAR AD --
-              </div>
-              <div className="bg-muted w-full h-[300px] flex items-center justify-center border-4 border-border relative overflow-hidden pixel-shadow">
-                <span className="text-primary font-bold text-sm animate-pixel-blink px-2">[ AD SPACE 2 ]</span>
+              <div className="border-4 border-dashed border-muted p-4 text-center bg-card">
+                <div className="text-muted-foreground uppercase text-[8px] tracking-widest mb-2 font-bold">
+                  -- SIDEBAR AD --
+                </div>
+                <div className="bg-muted w-full h-[300px] flex items-center justify-center border-4 border-border relative overflow-hidden pixel-shadow">
+                  <span className="text-primary font-bold text-sm animate-pixel-blink px-2">[ AD SPACE 2 ]</span>
+                </div>
               </div>
             </div>
-          </div>
-        </aside>
+          </aside>
+        )}
       </div>
     </div>
   );

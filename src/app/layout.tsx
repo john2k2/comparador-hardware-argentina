@@ -5,6 +5,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Navigation } from "@/components/layout/Navigation";
 import { ThemeScript } from "@/components/functional/ThemeScript";
+import { GOOGLE_SITE_VERIFICATION, SITE_NAME, SITE_URL } from "@/lib/site-config";
 
 const pixelFont = Press_Start_2P({
   weight: "400",
@@ -13,10 +14,10 @@ const pixelFont = Press_Start_2P({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://comparador-hardware.com.ar"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Comparador de Precios Hardware Argentina | Encuentra las Mejores Ofertas",
-    template: "%s | Comparador Hardware Argentina",
+    template: `%s | ${SITE_NAME}`,
   },
   description: "Compara precios de hardware de las mejores tiendas de Argentina. Procesadores, tarjetas graficas, motherboards, memoria RAM, SSD y mas. Encuentra el mejor precio y ahorra hasta un 30%.",
   keywords: [
@@ -30,9 +31,9 @@ export const metadata: Metadata = {
     "mejor precio hardware",
     "cuotas sin interes hardware",
   ],
-  authors: [{ name: "Comparador Hardware Argentina" }],
-  creator: "Comparador Hardware Argentina",
-  publisher: "Comparador Hardware Argentina",
+  authors: [{ name: SITE_NAME }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
   formatDetection: {
     email: false,
     address: false,
@@ -41,8 +42,8 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "es_AR",
-    url: "https://comparador-hardware.com.ar",
-    siteName: "Comparador Hardware Argentina",
+    url: SITE_URL,
+    siteName: SITE_NAME,
     title: "Comparador de Precios Hardware Argentina | Encuentra las Mejores Ofertas",
     description: "Compara precios de hardware de las mejores tiendas de Argentina. Procesadores, tarjetas graficas, motherboards y mas. Encuentra el mejor precio.",
     images: [
@@ -56,7 +57,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Comparador de Precios Hardware Argentina",
+    title: SITE_NAME,
     description: "Compara precios de hardware y encuentra las mejores ofertas en Argentina",
     images: ["/og-image.svg"],
   },
@@ -71,9 +72,9 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  verification: {
-    google: "google-site-verification-code",
-  },
+  verification: GOOGLE_SITE_VERIFICATION ? {
+    google: GOOGLE_SITE_VERIFICATION,
+  } : undefined,
 };
 
 export const viewport: Viewport = {

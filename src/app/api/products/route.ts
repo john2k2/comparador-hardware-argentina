@@ -28,6 +28,7 @@ import { readProductByIdFromDatabase, readProductsFromDatabase } from '@/lib/per
 import { resolveAdminAccessFromToken } from '@/lib/server/admin-auth';
 import { sanitizeProduct } from '@/lib/product-sanitizer';
 import { buildRateLimitHeaders, checkRateLimit, getRequestIp } from '@/lib/server/rate-limit';
+import { shouldScheduleInternalBackgroundRefresh } from '@/lib/server/background-refresh';
 import { getSharedCache, setSharedCache } from '@/lib/server/shared-cache';
 import { withAbortTimeout, withPromiseTimeout } from '@/lib/async/with-abort-timeout';
 
@@ -270,6 +271,7 @@ function hasStaleProducts(products: Product[], staleAfterMs = DB_STALE_AFTER_MS)
 }
 
 function scheduleBackgroundProductsRefresh(request: NextRequest, refreshKey: string): void {
+  if (!shouldScheduleInternalBackgroundRefresh(request)) return;
   if (inFlightBackgroundProductsRefreshes.has(refreshKey)) return;
 
   const refreshUrl = new URL(request.url);

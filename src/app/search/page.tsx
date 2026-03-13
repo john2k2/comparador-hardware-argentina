@@ -4,9 +4,8 @@ import { buildApiSearchKey, hasSearchIntent, parseSearchState, type SearchPageSt
 import { readProductsPageFromDatabase } from '@/lib/persistence/product-read';
 import { SEARCH_PAGE_SIZE } from '@/lib/search/search-pagination';
 import type { SearchApiResponse } from '@/lib/search/search-api';
-import { categories } from '@/lib/scrapers/static-data';
-
-const SITE_URL = 'https://comparador-hardware.com.ar';
+import { getCategorySeoCopy, isIndexableCategoryLanding } from '@/lib/search/search-seo';
+import { SITE_URL } from '@/lib/site-config';
 
 type SearchPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -70,24 +69,17 @@ async function readInitialSearchPage(state: SearchPageState): Promise<{
 }
 
 function resolveSearchMetadata(state: SearchPageState): Metadata {
-  const categoryConfig = state.category
-    ? categories.find((category) => category.id === state.category)
-    : null;
-  const hasAdvancedFilters = state.stores.length > 0
-    || state.minPrice !== undefined
-    || state.maxPrice !== undefined
-    || state.sortBy !== 'relevance'
-    || state.page > 1;
+  const categorySeoCopy = getCategorySeoCopy(state.category);
   const hasQuery = state.query.length > 0;
-  const isIndexableCategoryLanding = Boolean(categoryConfig) && !hasQuery && !hasAdvancedFilters;
-  const canonical = isIndexableCategoryLanding
-    ? `${SITE_URL}/search?category=${categoryConfig!.id}`
+  const indexableCategoryLanding = isIndexableCategoryLanding(state) && Boolean(categorySeoCopy);
+  const canonical = indexableCategoryLanding
+    ? `${SITE_URL}/search?category=${state.category}`
     : `${SITE_URL}/search`;
 
-  if (isIndexableCategoryLanding) {
+  if (indexableCategoryLanding && categorySeoCopy) {
     return {
-      title: `${categoryConfig!.name} en Argentina`,
-      description: `Compara precios de ${categoryConfig!.name.toLowerCase()} en multiples tiendas de Argentina y encuentra el mejor valor disponible.`,
+      title: categorySeoCopy.title,
+      description: categorySeoCopy.description,
       alternates: {
         canonical,
       },

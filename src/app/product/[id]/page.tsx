@@ -2,10 +2,11 @@ import { cache } from 'react';
 import type { Metadata } from 'next';
 import { ProductDetailClient } from '@/components/product/ProductDetailClient';
 import { readProductByIdFromDatabase } from '@/lib/persistence/product-read';
+import { getComparableStorePrices } from '@/lib/price-utils';
+import { isIndexableProductId } from '@/lib/seo/sitemap';
+import { SITE_URL } from '@/lib/site-config';
 import { normalizeDisplayText } from '@/lib/text-utils';
-import type { Product, ProductPrice } from '@/lib/types';
-
-const SITE_URL = 'https://comparador-hardware.com.ar';
+import type { Product } from '@/lib/types';
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.svg`;
 
 type ProductPageProps = {
@@ -34,35 +35,6 @@ function formatPriceArs(price: number): string {
   }).format(price);
 }
 
-function pickBestStorePrices(prices: ProductPrice[]): ProductPrice[] {
-  const bestByStore = new Map<string, ProductPrice>();
-
-  for (const price of prices) {
-    const key = price.storeId.toLowerCase();
-    const existing = bestByStore.get(key);
-
-    if (!existing) {
-      bestByStore.set(key, price);
-      continue;
-    }
-
-    if (price.price < existing.price) {
-      bestByStore.set(key, price);
-      continue;
-    }
-
-    if (price.price === existing.price) {
-      const existingUpdatedAt = new Date(existing.lastUpdated).getTime();
-      const candidateUpdatedAt = new Date(price.lastUpdated).getTime();
-      if (candidateUpdatedAt > existingUpdatedAt) {
-        bestByStore.set(key, price);
-      }
-    }
-  }
-
-  return Array.from(bestByStore.values()).sort((a, b) => a.price - b.price);
-}
-
 function resolveProductImage(product: Product | null): string {
   const rawImage = (product?.image ?? '').trim();
   if (!rawImage) return DEFAULT_OG_IMAGE;
@@ -82,7 +54,7 @@ function buildProductDescription(product: Product): string {
   const name = normalizeDisplayText(product.name);
   const brand = normalizeDisplayText(product.brand);
   const model = normalizeDisplayText(product.model);
-  const storesCompared = pickBestStorePrices(product.prices).length;
+  const storesCompared = getComparableStorePrices(product.prices).length;
   const bestPrice = formatPriceArs(product.lowestPrice);
 
   return [
@@ -92,7 +64,7 @@ function buildProductDescription(product: Product): string {
   ].join(' ');
 }
 
-function stockToSchemaAvailability(stock: ProductPrice['stock']): string {
+function stockToSchemaAvailability(stock: Product['prices'][number]['stock']): string {
   if (stock === 'in-stock' || stock === 'low-stock') {
     return 'https://schema.org/InStock';
   }
@@ -107,7 +79,7 @@ function buildProductJsonLd(product: Product, id: string) {
   const displayName = normalizeDisplayText(product.name);
   const displayBrand = normalizeDisplayText(product.brand || 'Generica');
   const displayDescription = normalizeDisplayText(product.description || product.name);
-  const offers = pickBestStorePrices(product.prices)
+  const offers = getComparableStorePrices(product.prices)
     .filter((price) => price.price > 0 && price.url)
     .map((price) => ({
       '@type': 'Offer',
@@ -154,6 +126,7 @@ function buildProductJsonLd(product: Product, id: string) {
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { id } = await params;
   const product = await getProductForPage(id);
+  const indexableProduct = isIndexableProductId(id);
 
   if (!product) {
     return {
@@ -174,8 +147,14 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   return {
     title,
     description,
-    alternates: {
-      canonical: url,
+    alternates: indexableProduct
+      ? {
+          canonical: url,
+        }
+      : undefined,
+    robots: {
+      index: indexableProduct,
+      follow: true,
     },
     openGraph: {
       type: 'website',
@@ -201,7 +180,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 export default async function ProductDetailPage({ params }: ProductPageProps) {
   const { id } = await params;
   const product = await getProductForPage(id);
-  const jsonLd = product ? buildProductJsonLd(product, id) : null;
+  const jsonLd = product && isIndexableProductId(id) ? buildProductJsonLd(product, id) : null;
 
   return (
     <>

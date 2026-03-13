@@ -6,7 +6,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { formatPriceARS } from '@/lib/price-utils';
+import { computeComparableStorePriceStats, formatPriceARS } from '@/lib/price-utils';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -47,8 +47,8 @@ export interface ProductCardProps {
   returnTo?: string | null;
 }
 
-function getPriceDropBaseline(product: Product): number | null {
-  let baseline = product.highestPrice;
+function getPriceDropBaseline(product: Product, highestComparablePrice: number): number | null {
+  let baseline = highestComparablePrice;
 
   for (const price of product.prices) {
     if (typeof price.originalPrice === 'number' && Number.isFinite(price.originalPrice)) {
@@ -64,16 +64,21 @@ function getPriceDropBaseline(product: Product): number | null {
 }
 
 export function ProductCard({ product, showStore = true, className, returnTo = null }: ProductCardProps) {
+  const comparableStats = computeComparableStorePriceStats(product.prices);
+  const comparablePrices = comparableStats.comparablePrices;
+  const comparableStoreCount = comparablePrices.length;
+  const lowestComparablePrice = comparableStats.lowest > 0 ? comparableStats.lowest : product.lowestPrice;
+  const highestComparablePrice = comparableStats.highest > 0 ? comparableStats.highest : product.highestPrice;
   const displayName = normalizeDisplayText(product.name);
   const displayBrand = normalizeDisplayText(product.brand);
 
-  const bestPrice = product.prices.find((price) => price.price === product.lowestPrice);
+  const bestPrice = comparablePrices[0] ?? product.prices.find((price) => price.price === lowestComparablePrice);
   const hasDiscount = Boolean(bestPrice?.originalPrice && bestPrice.originalPrice > bestPrice.price);
   const discountPercent = hasDiscount
     ? Math.round((((bestPrice?.originalPrice ?? 0) - (bestPrice?.price ?? 0)) / (bestPrice?.originalPrice ?? 1)) * 100)
     : 0;
-  const priceDropBaseline = getPriceDropBaseline(product);
-  const priceDropAmount = priceDropBaseline ? Math.max(0, priceDropBaseline - product.lowestPrice) : 0;
+  const priceDropBaseline = getPriceDropBaseline(product, highestComparablePrice);
+  const priceDropAmount = priceDropBaseline ? Math.max(0, priceDropBaseline - lowestComparablePrice) : 0;
   const priceDropPercent = priceDropBaseline ? Math.round((priceDropAmount / priceDropBaseline) * 100) : 0;
   const hasPriceDrop = Boolean(
     priceDropBaseline &&
@@ -136,7 +141,7 @@ export function ProductCard({ product, showStore = true, className, returnTo = n
             </div>
           )}
 
-          {product.prices.length > 1 && (
+          {comparableStoreCount > 1 && (
             <div className="absolute top-0 left-0 bg-secondary text-secondary-foreground px-2 py-1 text-[7px] uppercase font-bold border-b-2 border-r-2 border-border">
               COMPARADO
             </div>
@@ -149,7 +154,7 @@ export function ProductCard({ product, showStore = true, className, returnTo = n
               {`// ${displayBrand}`}
             </p>
             <span className="text-[7px] uppercase text-muted-foreground tracking-wide shrink-0">
-              {product.prices.length} STORES
+              {comparableStoreCount} STORES
             </span>
           </div>
 
@@ -166,7 +171,7 @@ export function ProductCard({ product, showStore = true, className, returnTo = n
           <div className="mt-auto pt-3 border-t-2 border-muted">
             <p className="text-[8px] uppercase text-muted-foreground mb-1">MEJOR PRECIO</p>
             <PriceDisplay
-              price={product.lowestPrice}
+              price={lowestComparablePrice}
               originalPrice={hasDiscount ? bestPrice?.originalPrice : undefined}
               size="md"
             />

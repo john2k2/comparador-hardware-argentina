@@ -85,8 +85,46 @@ vi.mock('@/lib/scrapers/compragamer', () => ({
   searchCompraGamerProducts: vi.fn(async () => []),
 }));
 vi.mock('@/lib/scrapers/maximus', () => ({ fetchMaximusProducts: vi.fn(async () => []) }));
+vi.mock('@/lib/scrapers/gamingcity', () => ({
+  fetchGamingCityProducts: vi.fn(async () => []),
+  getGamingCityCategoryUrl: vi.fn(() => ''),
+}));
 vi.mock('@/lib/scrapers/gezatek', () => ({ fetchGezatekProducts: vi.fn(async () => []) }));
 vi.mock('@/lib/scrapers/compugarden', () => ({ fetchCompugardenProducts: vi.fn(async () => []) }));
+vi.mock('@/lib/scrapers/foxtienda', () => ({
+  fetchAllFoxtiendaCategory: vi.fn(async () => []),
+  fetchAllFoxtiendaSearch: vi.fn(async () => []),
+  fetchFoxtiendaProductById: vi.fn(async () => null),
+}));
+vi.mock('@/lib/scrapers/logg', () => ({ fetchLoggProducts: vi.fn(async () => []) }));
+vi.mock('@/lib/scrapers/portaltech', () => ({
+  fetchPortalTechCategory: vi.fn(async () => []),
+  fetchPortalTechProductById: vi.fn(async () => null),
+  fetchPortalTechProducts: vi.fn(async () => []),
+}));
+vi.mock('@/lib/scrapers/prestashop', () => ({
+  fetchAllPrestashopCategory: vi.fn(async () => []),
+  fetchAllPrestashopSearch: vi.fn(async () => []),
+}));
+vi.mock('@/lib/scrapers/qloud', () => ({
+  fetchAllQloudCategory: vi.fn(async () => []),
+  fetchAllQloudSearch: vi.fn(async () => []),
+}));
+vi.mock('@/lib/scrapers/tiendanube', () => ({
+  fetchAllTiendaNubeCategory: vi.fn(async () => []),
+  fetchAllTiendaNubeSearch: vi.fn(async () => []),
+  fetchTiendaNubeProductById: vi.fn(async () => null),
+}));
+vi.mock('@/lib/scrapers/wiztech', () => ({
+  fetchWiztechCategory: vi.fn(async () => []),
+  fetchWiztechProductById: vi.fn(async () => null),
+  fetchWiztechProducts: vi.fn(async () => []),
+}));
+vi.mock('@/lib/scrapers/xtpc', () => ({
+  fetchXtpcCategory: vi.fn(async () => []),
+  fetchXtpcProductById: vi.fn(async () => null),
+  fetchXtpcProducts: vi.fn(async () => []),
+}));
 
 const sampleProduct: Product = {
   id: 'gpu-123-rtx-5070',
