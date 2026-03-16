@@ -6,14 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint src e2e next.config.ts eslint.config.mjs playwright.config.ts vitest.config.ts --no-error-on-unmatched-pattern",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test"
   },
   "dependencies": {
     "@google/genai": "^1.44.0",
-    "@mendable/firecrawl-js": "^4.15.0",
     "@supabase/supabase-js": "^2.98.0",
     "axios": "^1.13.6",
     "cheerio": "^1.2.0",

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { HardwareCategory, Product } from '@/lib/types';
+import { type HardwareCategory, type Product } from '@/lib/types';
 import { fetchMexxProducts } from '@/lib/scrapers/mexx';
 import { fetchVenexProducts } from '@/lib/scrapers/venex';
 import { fetchFullh4rdProducts } from '@/lib/scrapers/fullh4rd';
@@ -21,46 +21,33 @@ import { fetchXtpcProducts } from '@/lib/scrapers/xtpc';
 import { snapshotProducts } from '@/lib/cache/search-snapshot';
 import { recordEndpointRequestEvent, runObservedStoreScrape } from '@/lib/telemetry/operational-metrics';
 import { persistProductsSnapshot } from '@/lib/persistence/product-catalog';
+import { hasStaleProducts } from '@/lib/persistence/product-staleness';
 import { readProductsPageFromDatabase } from '@/lib/persistence/product-read';
 import { hydrateProducts } from '@/lib/product-serialization';
 import { normalizeProductTitlesWithStats } from '@/lib/ai/normalize-products';
+import {
+  inferHardwareCategoryFromName,
+  isHardwareCategory,
+} from '@/lib/catalog/hardware-categories';
+import { normalizeProductContent } from '@/lib/products/normalize-product-content';
 import { resolveAdminAccessFromToken } from '@/lib/server/admin-auth';
-import { sanitizeProduct, sanitizeProducts } from '@/lib/product-sanitizer';
-import { computeComparableStorePriceStats } from '@/lib/price-utils';
+import { sanitizeProducts } from '@/lib/product-sanitizer';
 import { buildRateLimitHeaders, checkRateLimit, getRequestIp } from '@/lib/server/rate-limit';
-import { shouldScheduleInternalBackgroundRefresh } from '@/lib/server/background-refresh';
 import { getSharedCache, setSharedCache } from '@/lib/server/shared-cache';
+import { scheduleInternalRefresh } from '@/lib/server/internal-refresh';
 import type { SearchApiResponse } from '@/lib/search/search-api';
 import { SEARCH_PAGE_SIZE, paginateProducts } from '@/lib/search/search-pagination';
+import { filterProductStores, groupSearchProducts } from '@/lib/search/search-dedupe';
 import {
   normalizeSearchText,
   parseSingleCharQueryVariants,
   parseStrictVariantQueryTokens,
-  scoreProductRelevance,
   shouldKeepByQueryIntent,
   sortProductsBySearchRelevance,
 } from '@/lib/search/search-ranking';
-import {
-  buildProductFamilyKey,
-  buildProductIdentityKey,
-  buildProductVariantKey,
-  extractExactModelIdentity,
-} from '@/lib/product-identity';
 import { withAbortTimeout, withPromiseTimeout } from '@/lib/async/with-abort-timeout';
 
 type SortBy = 'relevance' | 'price-asc' | 'price-desc' | 'name' | 'newest';
-
-const VALID_CATEGORIES: HardwareCategory[] = [
-  'procesadores',
-  'tarjetas-graficas',
-  'motherboards',
-  'memoria-ram',
-  'almacenamiento',
-  'fuentes-alimentacion',
-  'gabinetes',
-  'refrigeracion',
-  'perifericos',
-];
 
 const VALID_SORTS = new Set<SortBy>(['relevance', 'price-asc', 'price-desc', 'name', 'newest']);
 const SCRAPER_TIMEOUT_MS = 25000;
@@ -69,16 +56,8 @@ const PERSISTENCE_TIMEOUT_MS = 7000;
 const DB_STALE_AFTER_MS = 20 * 60 * 1000;
 const BACKGROUND_REFRESH_TIMEOUT_MS = 60 * 1000;
 const SEARCH_RATE_LIMIT = { limit: 30, windowMs: 60 * 1000 };
-const DEDUPE_STOPWORDS = new Set([
-  'de', 'del', 'la', 'el', 'los', 'las', 'y', 'con', 'para', 'por',
-  'vga', 'placa', 'video', 'procesador', 'micro', 'cpu', 'gpu', 'gamer',
-]);
 const inFlightSearchRequests = new Map<string, Promise<SearchApiResponse>>();
 const inFlightBackgroundSearchRefreshes = new Map<string, Promise<void>>();
-
-function isHardwareCategory(value: string | null): value is HardwareCategory {
-  return value !== null && VALID_CATEGORIES.includes(value as HardwareCategory);
-}
 
 function parseNonNegativeNumber(value: string | null): number | undefined {
   if (value === null) return undefined;
@@ -121,106 +100,15 @@ function hasSearchFiltersIntent(input: {
   );
 }
 
-function isProductStale(product: Product, staleAfterMs: number, nowMs: number): boolean {
-  const updatedAtMs = product.updatedAt?.getTime?.();
-  if (typeof updatedAtMs !== 'number' || !Number.isFinite(updatedAtMs)) return true;
-  return nowMs - updatedAtMs > staleAfterMs;
-}
-
-function hasStaleProducts(products: Product[], staleAfterMs = DB_STALE_AFTER_MS): boolean {
-  if (products.length === 0) return false;
-  const nowMs = Date.now();
-  return products.some((product) => isProductStale(product, staleAfterMs, nowMs));
-}
-
 function scheduleBackgroundSearchRefresh(request: NextRequest, refreshKey: string): void {
-  if (!shouldScheduleInternalBackgroundRefresh(request)) return;
-  if (inFlightBackgroundSearchRefreshes.has(refreshKey)) return;
-
-  const refreshUrl = new URL(request.url);
-  refreshUrl.searchParams.set('bypassDb', '1');
-  refreshUrl.searchParams.set('refresh', '1');
-
-  const refreshPromise = withAbortTimeout(
-    async (signal) => {
-      const response = await fetch(refreshUrl.toString(), {
-        method: 'GET',
-        cache: 'no-store',
-        headers: {
-          'x-internal-refresh': '1',
-        },
-        signal,
-      });
-      if (!response.ok) {
-        throw new Error(`refresh request failed with HTTP ${response.status}`);
-      }
-    },
-    BACKGROUND_REFRESH_TIMEOUT_MS,
-    'search-background-refresh',
-  )
-    .catch((refreshError) => {
-      console.warn('[API Search] Background refresh error:', refreshError);
-    })
-    .finally(() => {
-      inFlightBackgroundSearchRefreshes.delete(refreshKey);
-    });
-
-  inFlightBackgroundSearchRefreshes.set(refreshKey, refreshPromise);
-}
-
-function inferCategoryFromName(name: string): HardwareCategory {
-  const lowerName = name.toLowerCase();
-  if (lowerName.includes('ryzen') || lowerName.includes('core i') || lowerName.includes('procesador')) {
-    return 'procesadores';
-  }
-  if (lowerName.includes('rtx') || lowerName.includes('radeon') || lowerName.includes('geforce') || lowerName.includes('placa de video')) {
-    return 'tarjetas-graficas';
-  }
-  if (lowerName.includes('mother') || lowerName.includes('placa madre')) {
-    return 'motherboards';
-  }
-  if (lowerName.includes('ddr4') || lowerName.includes('ddr5') || lowerName.includes('ram')) {
-    return 'memoria-ram';
-  }
-  if (lowerName.includes('ssd') || lowerName.includes('nvme') || lowerName.includes('hdd')) {
-    return 'almacenamiento';
-  }
-  if (lowerName.includes('fuente') || lowerName.includes('psu')) {
-    return 'fuentes-alimentacion';
-  }
-  if (lowerName.includes('gabinete') || lowerName.includes('case')) {
-    return 'gabinetes';
-  }
-  if (lowerName.includes('cooler') || lowerName.includes('refrigeracion') || lowerName.includes('ventilador')) {
-    return 'refrigeracion';
-  }
-  if (
-    lowerName.includes('mouse')
-    || lowerName.includes('teclado')
-    || lowerName.includes('keyboard')
-    || lowerName.includes('monitor')
-    || lowerName.includes('auricular')
-    || lowerName.includes('headset')
-    || lowerName.includes('headphone')
-    || lowerName.includes('parlante')
-    || lowerName.includes('speaker')
-    || lowerName.includes('microfono')
-    || lowerName.includes('microphone')
-    || lowerName.includes('webcam')
-    || lowerName.includes('camara web')
-    || lowerName.includes('joystick')
-    || lowerName.includes('gamepad')
-    || lowerName.includes('mousepad')
-    || lowerName.includes('alfombrilla')
-    || lowerName.includes('logitech')
-    || lowerName.includes('razer')
-    || lowerName.includes('redragon')
-    || lowerName.includes('steelseries')
-    || lowerName.includes('keychron')
-  ) {
-    return 'perifericos';
-  }
-  return 'perifericos';
+  scheduleInternalRefresh({
+    request,
+    refreshKey,
+    inFlightRefreshes: inFlightBackgroundSearchRefreshes,
+    timeoutMs: BACKGROUND_REFRESH_TIMEOUT_MS,
+    timeoutLabel: 'search-background-refresh',
+    logPrefix: '[API Search]',
+  });
 }
 
 function buildResponsePagination(total: number, page: number, pageSize: number) {
@@ -245,197 +133,6 @@ function emptySearchResponse(page = 1, pageSize = SEARCH_PAGE_SIZE): SearchApiRe
     pagination: buildResponsePagination(0, page, pageSize),
     facets: { categories: [], brands: [], stores: [] },
   };
-}
-
-function normalizeProductContent(product: Product): Product {
-  const sanitized = sanitizeProduct(product);
-  const normalizedDescription = sanitized.description?.trim() || sanitized.name;
-  const normalizedModel = sanitized.model?.trim() || sanitized.name;
-  return {
-    ...sanitized,
-    description: normalizedDescription,
-    model: normalizedModel,
-  };
-}
-
-function filterProductStores(product: Product, selectedStoreIds: Set<string>): Product | null {
-  if (selectedStoreIds.size === 0) return product;
-
-  const prices = product.prices.filter((priceInfo) => selectedStoreIds.has(priceInfo.storeId.toLowerCase()));
-  if (prices.length === 0) return null;
-
-  const stats = computeComparableStorePriceStats(prices);
-  return {
-    ...product,
-    prices: stats.comparablePrices,
-    lowestPrice: stats.lowest,
-    highestPrice: stats.highest,
-    averagePrice: stats.average,
-  };
-}
-
-function slugifyGroupPart(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-+/g, '-');
-}
-
-function hashGroupKey(value: string): string {
-  let hash = 2166136261;
-
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-
-  return (hash >>> 0).toString(36);
-}
-
-function buildGroupedProductId(product: Product, normalizedTitle: string, groupKey: string): string {
-  const readable = slugifyGroupPart(normalizedTitle).slice(0, 48) || 'item';
-  const fingerprint = hashGroupKey(`${product.category}|${groupKey}`);
-  return `agrupado-${product.category}-${readable}-${fingerprint}`;
-}
-
-function buildIdentityFallback(product: Product): string {
-  return [product.brand, product.model, product.name]
-    .map((value) => value?.trim())
-    .filter(Boolean)
-    .join(' ');
-}
-
-function buildCanonicalGroupKey(product: Product, normalizedTitle: string): string {
-  return buildProductIdentityKey(product.category, normalizedTitle, buildIdentityFallback(product));
-}
-
-function mergePriceOptions(
-  current: Product['prices'],
-  incoming: Product['prices'],
-): Product['prices'] {
-  const merged = [...current];
-
-  for (const candidate of incoming) {
-    const existingIndex = merged.findIndex((price) => price.storeId === candidate.storeId);
-    if (existingIndex < 0) {
-      merged.push(candidate);
-      continue;
-    }
-
-    const existing = merged[existingIndex];
-    const candidateIsBetter = candidate.price < existing.price
-      || (existing.stock === 'out-of-stock' && candidate.stock !== 'out-of-stock');
-
-    if (candidateIsBetter) {
-      merged[existingIndex] = candidate;
-    }
-  }
-
-  return merged;
-}
-
-function tokenizeForDedupe(value: string): string[] {
-  return normalizeSearchText(value)
-    .split(/\s+/)
-    .map((token) => token.trim())
-    .filter((token) => token.length > 1)
-    .filter((token) => !DEDUPE_STOPWORDS.has(token));
-}
-
-function extractFingerprint(value: string): { brand: string | null; chip: string | null; memory: string | null } {
-  const normalized = normalizeSearchText(value);
-  const brand = (normalized.match(/\b(asus|gigabyte|msi|zotac|palit|inno3d|asrock|pny|xfx|sapphire|amd|intel)\b/) ?? [])[1] ?? null;
-  const chip = (normalized.match(/\b(rtx\s*\d{3,4}(?:\s*(?:ti|super))?|rx\s*\d{3,4}(?:\s*xt)?|ryzen\s*[3579]\s*\d{3,5}(?:x3d|gt|ge|xt|x|g|f)?|core\s*i[3579]\s*\d{4,5}[a-z]{0,2})\b/) ?? [])[1]?.replace(/\s+/g, '') ?? null;
-  const memory = (normalized.match(/\b(\d{1,2}\s*gb)\b/) ?? [])[1]?.replace(/\s+/g, '') ?? null;
-  return { brand, chip, memory };
-}
-
-function shareStoreAndPrice(first: Product, second: Product): boolean {
-  for (const a of first.prices) {
-    for (const b of second.prices) {
-      if (a.storeId === b.storeId && a.price === b.price) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-function isSubset(first: Set<string>, second: Set<string>): boolean {
-  if (first.size === 0 || second.size === 0) return false;
-  if (first.size > second.size) return false;
-  for (const token of first) {
-    if (!second.has(token)) return false;
-  }
-  return true;
-}
-
-function canMergeNearDuplicate(existing: Product, candidate: Product): boolean {
-  if (existing.category !== candidate.category) return false;
-
-  const existingExactModel = extractExactModelIdentity(existing.category, existing.name);
-  const candidateExactModel = extractExactModelIdentity(candidate.category, candidate.name);
-  if (existingExactModel && candidateExactModel && existingExactModel === candidateExactModel) {
-    return true;
-  }
-
-  const existingFingerprint = extractFingerprint(existing.name);
-  const candidateFingerprint = extractFingerprint(candidate.name);
-
-  if (!shareStoreAndPrice(existing, candidate)) return false;
-
-  if (!existingFingerprint.chip || !candidateFingerprint.chip) return false;
-  if (existingFingerprint.chip !== candidateFingerprint.chip) return false;
-  if (existingFingerprint.brand && candidateFingerprint.brand && existingFingerprint.brand !== candidateFingerprint.brand) return false;
-  if (existingFingerprint.memory && candidateFingerprint.memory && existingFingerprint.memory !== candidateFingerprint.memory) return false;
-
-  const existingTokens = new Set(tokenizeForDedupe(existing.name));
-  const candidateTokens = new Set(tokenizeForDedupe(candidate.name));
-  return isSubset(existingTokens, candidateTokens) || isSubset(candidateTokens, existingTokens);
-}
-
-function mergeProductEntries(existing: Product, candidate: Product): Product {
-  const mergedPrices = mergePriceOptions(existing.prices, candidate.prices);
-  const stats = computeComparableStorePriceStats(mergedPrices);
-  const existingTokens = tokenizeForDedupe(existing.name).length;
-  const candidateTokens = tokenizeForDedupe(candidate.name).length;
-  const preferred = candidateTokens > existingTokens ? candidate : existing;
-  const mergedImage = existing.image === '/pixel-box.svg' && candidate.image !== '/pixel-box.svg'
-    ? candidate.image
-    : existing.image;
-
-  return {
-    ...existing,
-    name: preferred.name,
-    model: preferred.model,
-    brand: preferred.brand,
-    image: mergedImage,
-    prices: stats.comparablePrices,
-    lowestPrice: stats.lowest,
-    highestPrice: stats.highest,
-    averagePrice: stats.average,
-    updatedAt: existing.updatedAt > candidate.updatedAt ? existing.updatedAt : candidate.updatedAt,
-  };
-}
-
-function dedupeNearDuplicates(products: Product[]): Product[] {
-  if (products.length <= 1) return products;
-  const deduped: Product[] = [];
-
-  for (const candidate of products) {
-    const index = deduped.findIndex((existing) => canMergeNearDuplicate(existing, candidate));
-    if (index < 0) {
-      deduped.push(candidate);
-      continue;
-    }
-
-    deduped[index] = mergeProductEntries(deduped[index], candidate);
-  }
-
-  return deduped;
 }
 
 function buildSearchCacheKey(input: {
@@ -590,7 +287,7 @@ export async function GET(request: NextRequest) {
   if (!bypassDb) {
     const cached = await getCachedSearchResponse(cacheKey);
     if (cached) {
-      const staleCache = hasStaleProducts(cached.products);
+      const staleCache = hasStaleProducts(cached.products, DB_STALE_AFTER_MS);
       if (query && staleCache && !isRefreshRequest) {
         scheduleBackgroundSearchRefresh(request, cacheKey);
       }
@@ -623,7 +320,7 @@ export async function GET(request: NextRequest) {
       });
 
       if (databasePage.total > 0) {
-        const staleDatabase = hasStaleProducts(databasePage.products);
+        const staleDatabase = hasStaleProducts(databasePage.products, DB_STALE_AFTER_MS);
         if (query && staleDatabase && !isRefreshRequest) {
           scheduleBackgroundSearchRefresh(request, cacheKey);
         }
@@ -693,7 +390,7 @@ export async function GET(request: NextRequest) {
 
       console.log(`[API Search] Buscando globalmente: ${query}`);
 
-      const defaultCategory = category ?? inferCategoryFromName(query);
+      const defaultCategory = category ?? inferHardwareCategoryFromName(query);
       const sourceTasks: Promise<Product[]>[] = [];
 
       if (shouldRunStore(selectedStoreIds, 'mexx')) {
@@ -1026,67 +723,13 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      const uniqueMap = new Map<string, Product>();
-
-      for (const product of liveProducts) {
-        const normalizedName = normalizedTitlesMap.get(product.name) || product.name;
-        const groupKey = buildCanonicalGroupKey(product, normalizedName);
-        const identityFallback = buildIdentityFallback(product);
-        const familyKey = buildProductFamilyKey(product.category, normalizedName, identityFallback) ?? undefined;
-        const variantKey = buildProductVariantKey(product.category, normalizedName, identityFallback);
-
-        if (!uniqueMap.has(groupKey)) {
-          const normalizedProduct = normalizeProductContent(product);
-          const stats = computeComparableStorePriceStats(normalizedProduct.prices);
-
-          uniqueMap.set(groupKey, {
-            ...normalizedProduct,
-            id: buildGroupedProductId(product, normalizedName, groupKey),
-            name: normalizedProduct.name,
-            model: normalizedProduct.model,
-            prices: stats.comparablePrices,
-            lowestPrice: stats.lowest,
-            highestPrice: stats.highest,
-            averagePrice: stats.average,
-            normalizedTitle: normalizedName,
-            canonicalProductKey: groupKey,
-            familyKey,
-            variantKey,
-          });
-        } else {
-          const existingProduct = uniqueMap.get(groupKey)!;
-          const mergedPrices = mergePriceOptions(existingProduct.prices, product.prices);
-          const stats = computeComparableStorePriceStats(mergedPrices);
-
-          let finalImage = existingProduct.image;
-          if (finalImage === '/pixel-box.svg' && product.image !== '/pixel-box.svg') {
-            finalImage = product.image;
-          }
-
-          const existingScore = scoreProductRelevance(existingProduct, queryWords, query, category);
-          const incomingScore = scoreProductRelevance(product, queryWords, query, category);
-          const shouldReplaceDisplay = incomingScore > existingScore;
-
-          uniqueMap.set(groupKey, {
-            ...existingProduct,
-            prices: stats.comparablePrices,
-            lowestPrice: stats.lowest,
-            highestPrice: stats.highest,
-            averagePrice: stats.average,
-            image: finalImage,
-            name: shouldReplaceDisplay ? product.name : existingProduct.name,
-            model: shouldReplaceDisplay ? product.model : existingProduct.model,
-            brand: shouldReplaceDisplay ? product.brand : existingProduct.brand,
-            normalizedTitle: shouldReplaceDisplay ? normalizedName : existingProduct.normalizedTitle,
-            canonicalProductKey: groupKey,
-            familyKey: existingProduct.familyKey ?? familyKey,
-            variantKey: existingProduct.variantKey ?? variantKey,
-            updatedAt: existingProduct.updatedAt > product.updatedAt ? existingProduct.updatedAt : product.updatedAt,
-          });
-        }
-      }
-      liveProducts = Array.from(uniqueMap.values());
-      liveProducts = dedupeNearDuplicates(liveProducts);
+      liveProducts = groupSearchProducts(
+        liveProducts.map((product) => normalizeProductContent(product)),
+        normalizedTitlesMap,
+        queryWords,
+        query,
+        category,
+      );
 
       if (queryWords.length > 0) {
         liveProducts = liveProducts.filter((product) => {

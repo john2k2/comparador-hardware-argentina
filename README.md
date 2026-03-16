@@ -2,7 +2,7 @@
 
 Plataforma web para comparar precios de hardware en tiendas argentinas, con scraping multi-fuente y panel operativo.
 
-## Estado actual (2026-03-04)
+## Estado actual (2026-03-16)
 
 - Base funcional de busqueda y detalle operativa.
 - Cache server/client activa para mejorar estabilidad y navegacion.
@@ -17,7 +17,6 @@ Plataforma web para comparar precios de hardware en tiendas argentinas, con scra
 - TypeScript `5.9`
 - Tailwind CSS `v4`
 - Supabase SDK (`@supabase/supabase-js`)
-- Firecrawl SDK (`@mendable/firecrawl-js`)
 - Scraping con `fetch` + `cheerio`
 
 ## Requisitos
@@ -44,7 +43,15 @@ Variables minimas:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=tu-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-supabase-anon-key
-FIRECRAWL_API_KEY=tu-firecrawl-api-key
+```
+
+Variables recomendadas del lado servidor para que funcionen bien
+cache compartida, rate limiting y persistencia del catalogo:
+
+```bash
+SUPABASE_URL=tu-supabase-url
+SUPABASE_ANON_KEY=tu-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
 ```
 
 Variables publicas recomendadas para produccion/SEO:
@@ -61,6 +68,13 @@ Si usas normalizacion con Gemini:
 GEMINI_API_KEY=tu-gemini-api-key
 GEMINI_BATCH_TIMEOUT_MS=3500
 GEMINI_BATCH_SIZE=15
+```
+
+Si usas integraciones que pasan por Cloudflare:
+
+```bash
+CLOUDFLARE_API_TOKEN=tu-cloudflare-api-token
+CLOUDFLARE_ACCOUNT_ID=tu-cloudflare-account-id
 ```
 
 Si usas refresh programado de catalogo por cron:
@@ -220,14 +234,11 @@ Notas:
 
 ## Fuentes actualmente integradas
 
-- Mexx
-- Venex
-- FullH4rd
-- CompraGamer
-- Maximus
-- Gezatek
-- Compugarden
-- Set WooCommerce activo: Katech, Dinobyte, MaxTecno, TheGamerShop, Hardcore, GoldenTechStore
+**Directas (Cheerio/fetch):** Mexx, Venex, FullH4rd, CompraGamer, Maximus, Gezatek, Compugarden, Gaming City, Logg, PortalTech (via Cloudflare), XTPC, WizTech
+
+**WooCommerce (11 tiendas):** Katech, Dinobyte, MaxTecno, TheGamerShop, Hardcore, GoldenTechStore, Acuario Insumos, Beings, Gamers Point, LionTech, SCP Hardstore
+
+**Plataformas:** TiendaNube, Prestashop, Qloud, Foxtienda
 
 ## Notas
 
