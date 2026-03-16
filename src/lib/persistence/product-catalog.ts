@@ -130,7 +130,7 @@ async function readTrackedProductIds(
     ]);
 
     if (favoritesError) {
-      console.warn('[Catalog Persist] user_favorites tracking lookup omitido:', favoritesError.message);
+      console.warn('[Catalog Persist] user_favorites tracking lookup skipped:', favoritesError.message);
     } else {
       for (const row of favoritesData ?? []) {
         const productId = String(row.product_id ?? '').trim();
@@ -139,7 +139,7 @@ async function readTrackedProductIds(
     }
 
     if (alertsError) {
-      console.warn('[Catalog Persist] price_alerts tracking lookup omitido:', alertsError.message);
+      console.warn('[Catalog Persist] price_alerts tracking lookup skipped:', alertsError.message);
     } else {
       for (const row of alertsData ?? []) {
         const productId = String(row.product_id ?? '').trim();

@@ -8,7 +8,7 @@ import { hydrateProducts } from '@/lib/product-serialization';
 import { buildApiSearchKey, buildSearchPageParams, buildSearchRoute, toSearchFilters, type SearchPageState } from '@/lib/search/search-state';
 import { getCategorySeoCopy, isIndexableCategoryLanding } from '@/lib/search/search-seo';
 import { stores as defaultStores, categories } from '@/lib/scrapers/static-data';
-import type { Product, SearchFilters } from '@/lib/types';
+import type { HardwareCategory, Product, SearchFilters } from '@/lib/types';
 
 const CLIENT_SEARCH_CACHE_TTL_MS = 90 * 1000;
 const clientSearchCache = new Map<string, { expiresAt: number; payload: SearchApiResponse }>();
@@ -343,15 +343,7 @@ export function SearchPageClient({
       ) : null}
 
       <div className="flex flex-col md:flex-row gap-6 mb-8 items-center">
-        {!isSeoCategoryLanding && (
-          <section className="flex-1 w-full border-4 border-dashed border-muted p-2 text-center bg-card">
-            <div className="bg-muted w-full h-16 md:h-20 flex items-center justify-center border-4 border-border relative overflow-hidden pixel-shadow">
-              <span className="text-primary font-bold text-sm md:text-base animate-pixel-blink">[ SPONSORED BANNER ]</span>
-            </div>
-          </section>
-        )}
-
-        <div className={isSeoCategoryLanding ? 'w-full' : 'w-full md:w-1/3 min-w-0 sm:min-w-[300px]'}>
+        <div className="w-full">
           <SearchBar
             key={searchQuery}
             onSearch={handleSearch}
@@ -377,16 +369,24 @@ export function SearchPageClient({
             />
           </div>
 
-          {!isSeoCategoryLanding && (
-            <div className="border-4 border-dashed border-muted p-4 text-center bg-card flex-shrink-0">
-              <div className="text-muted-foreground uppercase text-[8px] tracking-widest mb-2 font-bold">
-                -- VERTICAL BANNER --
-              </div>
-              <div className="bg-muted w-full h-[300px] flex items-center justify-center border-4 border-border relative overflow-hidden pixel-shadow">
-                <span className="text-primary font-bold text-sm animate-pixel-blink text-center px-2">[ INSERT COIN ]</span>
-              </div>
+          <div className="bg-card border-4 border-border p-4 flex-shrink-0">
+            <h3 className="text-[10px] uppercase font-bold text-primary mb-3 border-b-2 border-muted pb-2">CATEGORIAS</h3>
+            <div className="flex flex-col gap-1">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => handleFiltersChange({ category: category.id as HardwareCategory })}
+                  className={`text-left text-[9px] uppercase font-bold px-2 py-1.5 transition-colors ${
+                    filters.category === category.id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  }`}
+                >
+                  {category.name}
+                </button>
+              ))}
             </div>
-          )}
+          </div>
         </aside>
 
         <div className="flex-1">
@@ -417,16 +417,6 @@ export function SearchPageClient({
           )}
 
           <div id="product-grid-start" className="bg-muted p-4 border-4 border-border relative">
-            {!isSeoCategoryLanding && products.length > 4 && (
-              <div className="col-span-full border-4 border-dashed border-muted p-4 my-8 text-center bg-card">
-                <div className="text-muted-foreground uppercase text-[8px] tracking-widest mb-2 font-bold">
-                  -- SPONSOR --
-                </div>
-                <div className="bg-muted w-full h-16 flex items-center justify-center border-4 border-border relative overflow-hidden">
-                  <span className="text-accent font-bold text-sm">[ HOT DEAL BANNER ]</span>
-                </div>
-              </div>
-            )}
 
             {showNoResultsState ? (
               <div className="border-4 border-primary bg-card p-6 md:p-8 text-center pixel-shadow">
@@ -506,32 +496,6 @@ export function SearchPageClient({
           </div>
         </div>
 
-        {!isSeoCategoryLanding && (
-          <aside className="hidden xl:block w-64 flex-shrink-0">
-            <div className="xl:sticky xl:top-8 flex flex-col gap-8">
-              <div className="border-4 border-dashed border-muted p-4 text-center bg-card">
-                <div className="text-muted-foreground uppercase text-[8px] tracking-widest mb-2 font-bold">
-                  -- PREMIUM AD SPACE --
-                </div>
-                <div className="bg-muted w-full h-[600px] flex flex-col items-center justify-center border-4 border-border px-2 text-center relative overflow-hidden pixel-shadow">
-                  <span className="text-accent font-bold text-lg animate-pixel-blink mb-4">[ MEGA DEAL ]</span>
-                  <p className="text-[10px] text-muted-foreground leading-loose">
-                    RESERVA ESTE ESPACIO PARA DESTACAR TU TIENDA EN TODA LA NAVEGACION.
-                  </p>
-                </div>
-              </div>
-
-              <div className="border-4 border-dashed border-muted p-4 text-center bg-card">
-                <div className="text-muted-foreground uppercase text-[8px] tracking-widest mb-2 font-bold">
-                  -- SIDEBAR AD --
-                </div>
-                <div className="bg-muted w-full h-[300px] flex items-center justify-center border-4 border-border relative overflow-hidden pixel-shadow">
-                  <span className="text-primary font-bold text-sm animate-pixel-blink px-2">[ AD SPACE 2 ]</span>
-                </div>
-              </div>
-            </div>
-          </aside>
-        )}
       </div>
     </div>
   );

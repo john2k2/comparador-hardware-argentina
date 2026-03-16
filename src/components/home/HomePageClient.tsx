@@ -71,10 +71,12 @@ function PromoBanner({
   label,
   title,
   cta,
+  href,
 }: {
   label: string;
   title: string;
   cta: string;
+  href: string;
 }) {
   return (
     <section className="my-8 border-[3px] border-dashed border-muted bg-card p-2">
@@ -85,7 +87,7 @@ function PromoBanner({
         <p className="text-[11px] md:text-sm uppercase font-bold text-primary text-center md:text-left leading-relaxed">
           {title}
         </p>
-        <button className="pixel-button text-[9px] px-4 py-2 min-w-[120px]">{cta}</button>
+        <Link href={href} className="pixel-button text-[9px] px-4 py-2 min-w-[120px] text-center">{cta}</Link>
       </div>
     </section>
   );
@@ -203,6 +205,7 @@ export function HomePageClient({
         label="-- INFO COMPARADOR --"
         title="COMPARA EL MISMO PRODUCTO ENTRE MULTIPLES TIENDAS Y ENTRA A LA OPCION MAS CONVENIENTE"
         cta="COMO FUNCIONA"
+        href="/acerca"
       />
 
       <SectionTitle
@@ -223,6 +226,7 @@ export function HomePageClient({
         label="-- ACTUALIZACION --"
         title="ACTUALIZAMOS PRECIOS Y STOCK EN TIEMPO REAL PARA AYUDARTE A DECIDIR MEJOR"
         cta="VER METODO"
+        href="/acerca"
       />
 
       <SectionTitle
@@ -245,6 +249,7 @@ export function HomePageClient({
         label="-- AVISO IMPORTANTE --"
         title="LA COMPRA FINAL Y LAS CONDICIONES SE REALIZAN SIEMPRE EN LA TIENDA DE DESTINO"
         cta="VER TIENDAS"
+        href="/search"
       />
 
       <section className="mt-10 bg-card border-[3px] border-border pixel-shadow p-4">
