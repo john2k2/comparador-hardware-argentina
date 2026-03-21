@@ -1,5 +1,6 @@
 export * from './config';
 export * from './static-data';
+export * from './types';
 export * from './mexx';
 export * from './venex';
 export * from './fullh4rd';

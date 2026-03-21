@@ -1,3 +1,9 @@
+'use client';
+
+interface ThemeScriptProps {
+  nonce?: string;
+}
+
 const themeInitScript = `
   (function () {
     try {
@@ -16,10 +22,11 @@ const themeInitScript = `
   })();
 `;
 
-export function ThemeScript() {
+export function ThemeScript({ nonce }: ThemeScriptProps) {
   return (
     <script
       id="theme-init"
+      nonce={nonce}
       dangerouslySetInnerHTML={{ __html: themeInitScript }}
     />
   );

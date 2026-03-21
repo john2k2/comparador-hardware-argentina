@@ -1,4 +1,5 @@
 import { HardwareCategory, Product, StockStatus } from '../types';
+import { logger } from '../logger';
 
 const COMPRAGAMER_PRODUCTS_URL = 'https://static.compragamer.com/productos';
 const COMPRAGAMER_SUBCATEGORIES_URL = 'https://static.compragamer.com/categorias_sub';
@@ -533,10 +534,10 @@ export async function fetchCompraGamerProducts(
       products.push(mapped);
     }
 
-    console.log(`[CompraGamer Scraper] Categoria ${categorySlug}: ${products.length} productos`);
+    logger.info(`[CompraGamer Scraper] Categoria ${categorySlug}: ${products.length} productos`);
     return products;
   } catch (error) {
-    console.error('[CompraGamer Scraper] Error al obtener catalogo estatico por categoria:', error);
+    logger.error('[CompraGamer Scraper] Error al obtener catalogo estatico por categoria', { error });
     return [];
   }
 }
@@ -575,10 +576,10 @@ export async function searchCompraGamerProducts(
       products.push(mapped);
     }
 
-    console.log(`[CompraGamer Scraper] Busqueda "${query}": ${products.length} productos`);
+    logger.info(`[CompraGamer Scraper] Busqueda "${query}": ${products.length} productos`);
     return products;
   } catch (error) {
-    console.error('[CompraGamer Scraper] Error al buscar en catalogo estatico:', error);
+    logger.error('[CompraGamer Scraper] Error al buscar en catalogo estatico', { error });
     return [];
   }
 }

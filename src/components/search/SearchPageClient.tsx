@@ -1,93 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { SearchBar, ProductGrid, Filters } from '@/components/functional';
 import type { SearchApiResponse } from '@/lib/search/search-api';
 import { hydrateProducts } from '@/lib/product-serialization';
-import { buildApiSearchKey, buildSearchPageParams, buildSearchRoute, toSearchFilters, type SearchPageState } from '@/lib/search/search-state';
+import { buildApiSearchKey, buildSearchRoute, toSearchFilters, type SearchPageState } from '@/lib/search/search-state';
 import { getCategorySeoCopy, isIndexableCategoryLanding } from '@/lib/search/search-seo';
 import { stores as defaultStores, categories } from '@/lib/scrapers/static-data';
 import type { HardwareCategory, Product, SearchFilters } from '@/lib/types';
-
-const CLIENT_SEARCH_CACHE_TTL_MS = 90 * 1000;
-const clientSearchCache = new Map<string, { expiresAt: number; payload: SearchApiResponse }>();
-const CLIENT_SEARCH_STORAGE_PREFIX = 'search-cache:v3:';
-const SEARCH_SCROLL_STORAGE_PREFIX = 'search-scroll:v1:';
-const SEARCH_SCROLL_TTL_MS = 10 * 60 * 1000;
-
-function getStorageKey(cacheKey: string): string {
-  return `${CLIENT_SEARCH_STORAGE_PREFIX}${cacheKey}`;
-}
-
-function normalizeSearchPayload(payload: SearchApiResponse): SearchApiResponse {
-  return {
-    ...payload,
-    products: hydrateProducts(payload.products ?? []),
-  };
-}
-
-function readStoredSearch(cacheKey: string): { expiresAt: number; payload: SearchApiResponse } | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.sessionStorage.getItem(getStorageKey(cacheKey));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { expiresAt?: number; payload?: SearchApiResponse };
-    if (!parsed.expiresAt || !parsed.payload || !Array.isArray(parsed.payload.products)) return null;
-    if (parsed.expiresAt <= Date.now()) {
-      window.sessionStorage.removeItem(getStorageKey(cacheKey));
-      return null;
-    }
-    return { expiresAt: parsed.expiresAt, payload: normalizeSearchPayload(parsed.payload) };
-  } catch {
-    return null;
-  }
-}
-
-function writeStoredSearch(cacheKey: string, value: { expiresAt: number; payload: SearchApiResponse }) {
-  if (typeof window === 'undefined') return;
-  try {
-    window.sessionStorage.setItem(getStorageKey(cacheKey), JSON.stringify(value));
-  } catch {
-    // Ignore storage quota errors.
-  }
-}
-
-type StoredScrollPayload = {
-  y?: number;
-  savedAt?: number;
-};
-
-function readStoredScrollPosition(searchRoute: string): number | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.sessionStorage.getItem(`${SEARCH_SCROLL_STORAGE_PREFIX}${searchRoute}`);
-    if (!raw) return null;
-
-    const parsed = JSON.parse(raw) as StoredScrollPayload;
-    const y = typeof parsed.y === 'number' && Number.isFinite(parsed.y) ? parsed.y : null;
-    const savedAt = typeof parsed.savedAt === 'number' && Number.isFinite(parsed.savedAt) ? parsed.savedAt : 0;
-
-    if (y === null || y < 0) return null;
-    if (savedAt > 0 && Date.now() - savedAt > SEARCH_SCROLL_TTL_MS) {
-      window.sessionStorage.removeItem(`${SEARCH_SCROLL_STORAGE_PREFIX}${searchRoute}`);
-      return null;
-    }
-
-    return Math.round(y);
-  } catch {
-    return null;
-  }
-}
-
-function clearStoredScrollPosition(searchRoute: string) {
-  if (typeof window === 'undefined') return;
-  try {
-    window.sessionStorage.removeItem(`${SEARCH_SCROLL_STORAGE_PREFIX}${searchRoute}`);
-  } catch {
-    // Ignore storage failures.
-  }
-}
+import { trackSearch, trackFilterChange } from '@/lib/analytics';
+import { SearchCacheProvider, useSearchCache, useScrollRestoration } from '@/lib/search/search-hooks';
 
 export type SearchPageClientProps = {
   initialState: SearchPageState;
@@ -97,7 +20,19 @@ export type SearchPageClientProps = {
   initialHasSearchIntent: boolean;
 };
 
-export function SearchPageClient({
+// ---------------------------------------------------------------------------
+// Main Component
+// ---------------------------------------------------------------------------
+
+export function SearchPageClient(props: SearchPageClientProps) {
+  return (
+    <SearchCacheProvider>
+      <SearchPageClientInner {...props} />
+    </SearchCacheProvider>
+  );
+}
+
+function SearchPageClientInner({
   initialState,
   initialBaseProducts,
   initialPagination,
@@ -105,53 +40,43 @@ export function SearchPageClient({
   initialHasSearchIntent,
 }: SearchPageClientProps) {
   const router = useRouter();
+  const { setCached, checkStored } = useSearchCache();
+
+  // State
   const [currentState, setCurrentState] = useState<SearchPageState>(initialState);
   const [baseProducts, setBaseProducts] = useState<Product[]>(hydrateProducts(initialBaseProducts));
   const [pagination, setPagination] = useState(initialPagination);
   const [isLoading, setIsLoading] = useState(initialHasSearchIntent && initialPagination.total === 0);
   const [resolvedRequestKey, setResolvedRequestKey] = useState<string | null>(initialResolvedRequestKey);
+  const [pendingSearchTrack, setPendingSearchTrack] = useState<{ query: string; category?: string } | null>(null);
 
+  // Sync state when server props change
   useEffect(() => {
     setCurrentState(initialState);
     setBaseProducts(hydrateProducts(initialBaseProducts));
     setPagination(initialPagination);
     setResolvedRequestKey(initialResolvedRequestKey);
     setIsLoading(initialHasSearchIntent && initialPagination.total === 0);
-  }, [initialBaseProducts, initialHasSearchIntent, initialPagination, initialResolvedRequestKey, initialState]);
+  }, [initialState, initialBaseProducts, initialPagination, initialResolvedRequestKey, initialHasSearchIntent]);
 
+  // Cache initial products
   useEffect(() => {
     if (!initialResolvedRequestKey || initialPagination.total === 0) return;
-
-    const entry = {
-      payload: {
-        products: initialBaseProducts,
-        pagination: initialPagination,
-        facets: {
-          categories: [],
-          brands: [],
-          stores: [],
-        },
-      },
-      expiresAt: Date.now() + CLIENT_SEARCH_CACHE_TTL_MS,
+    const data: SearchApiResponse = {
+      products: initialBaseProducts,
+      pagination: initialPagination,
+      facets: { categories: [], brands: [], stores: [] },
     };
-    clientSearchCache.set(initialResolvedRequestKey, {
-      ...entry,
-      payload: normalizeSearchPayload(entry.payload),
-    });
-    writeStoredSearch(initialResolvedRequestKey, entry);
-  }, [initialBaseProducts, initialPagination, initialResolvedRequestKey]);
+    setCached(initialResolvedRequestKey, data);
+  }, [initialBaseProducts, initialPagination, initialResolvedRequestKey, setCached]);
 
+  // Derived values
   const availableStores = useMemo(() => defaultStores, []);
-
   const filters = useMemo(() => toSearchFilters(currentState), [currentState]);
   const searchQuery = currentState.query;
-  const apiSearchKey = useMemo(() => {
-    return buildApiSearchKey(currentState) ?? '__empty__';
-  }, [currentState]);
-  const requestKey = useMemo(
-    () => `${apiSearchKey}|page=${currentState.page}`,
-    [apiSearchKey, currentState.page],
-  );
+  const apiSearchKey = useMemo(() => buildApiSearchKey(currentState) ?? '__empty__', [currentState]);
+  const requestKey = useMemo(() => `${apiSearchKey}|page=${currentState.page}`, [apiSearchKey, currentState.page]);
+
   const hasStoreFilters = (filters.stores?.length ?? 0) > 0;
   const hasPriceFilters = filters.minPrice !== undefined || filters.maxPrice !== undefined;
   const hasActiveFilters = Boolean(filters.category || hasStoreFilters || hasPriceFilters || filters.sortBy !== 'relevance');
@@ -169,41 +94,27 @@ export function SearchPageClient({
   const totalPages = pagination.totalPages;
   const currentPage = pagination.page;
 
+  // Scroll restoration
+  useScrollRestoration(isBusy, searchRoute, initialPagination);
+
+  // Product loading
   useEffect(() => {
     const controller = new AbortController();
 
     const loadProducts = async () => {
       if (!hasSearchIntent) {
         setBaseProducts([]);
-        setPagination({
-          limit: 0,
-          offset: 0,
-          total: 0,
-          totalPages: 0,
-          page: 1,
-          pageSize: initialPagination.pageSize,
-        });
+        setPagination({ limit: 0, offset: 0, total: 0, totalPages: 0, page: 1, pageSize: initialPagination.pageSize });
         setIsLoading(false);
         setResolvedRequestKey(requestKey);
         return;
       }
 
-      const cacheKey = requestKey;
-
-      const cached = clientSearchCache.get(cacheKey);
-      if (cached && cached.expiresAt > Date.now()) {
-        setBaseProducts(cached.payload.products);
-        setPagination(cached.payload.pagination);
-        setIsLoading(false);
-        setResolvedRequestKey(requestKey);
-        return;
-      }
-
-      const stored = readStoredSearch(cacheKey);
-      if (stored) {
-        clientSearchCache.set(cacheKey, stored);
-        setBaseProducts(stored.payload.products);
-        setPagination(stored.payload.pagination);
+      // Check memory cache
+      const cached = checkStored(requestKey);
+      if (cached) {
+        setBaseProducts(cached.products);
+        setPagination(cached.pagination);
         setIsLoading(false);
         setResolvedRequestKey(requestKey);
         return;
@@ -211,30 +122,18 @@ export function SearchPageClient({
 
       setIsLoading(true);
       try {
-        const searchParams = buildSearchPageParams(currentState).toString();
+        const searchParams = buildSearchRoute(currentState).split('?')[1] || '';
         const endpoint = searchParams ? `/api/search?${searchParams}` : '/api/search';
         const res = await fetch(endpoint, { signal: controller.signal });
-        if (!res.ok) throw new Error(`Search request failed: ${res.status}`);
-        const data = normalizeSearchPayload(await res.json() as SearchApiResponse);
+        if (!res.ok) throw new Error(`Search failed: ${res.status}`);
+        const data = await res.json() as SearchApiResponse;
         setBaseProducts(data.products);
         setPagination(data.pagination);
-        const entry = {
-          payload: data,
-          expiresAt: Date.now() + CLIENT_SEARCH_CACHE_TTL_MS,
-        };
-        clientSearchCache.set(cacheKey, entry);
-        writeStoredSearch(cacheKey, entry);
+        setCached(requestKey, data);
       } catch (error) {
         if ((error as Error).name !== 'AbortError') {
           setBaseProducts([]);
-          setPagination({
-            limit: 0,
-            offset: 0,
-            total: 0,
-            totalPages: 0,
-            page: currentState.page,
-            pageSize: initialPagination.pageSize,
-          });
+          setPagination({ limit: 0, offset: 0, total: 0, totalPages: 0, page: currentState.page, pageSize: initialPagination.pageSize });
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -246,257 +145,281 @@ export function SearchPageClient({
 
     void loadProducts();
     return () => controller.abort();
-  }, [currentState, hasSearchIntent, initialPagination.pageSize, requestKey]);
+  }, [currentState, hasSearchIntent, initialPagination.pageSize, requestKey, checkStored, setCached]);
 
+  // Track search events
   useEffect(() => {
-    if (isBusy || typeof window === 'undefined') return;
+    if (pendingSearchTrack && totalResults >= 0 && !isBusy) {
+      trackSearch({ searchTerm: pendingSearchTrack.query, category: pendingSearchTrack.category, resultCount: totalResults });
+      setPendingSearchTrack(null);
+    }
+  }, [pendingSearchTrack, totalResults, isBusy]);
 
-    const targetY = readStoredScrollPosition(searchRoute);
-    if (targetY === null) return;
-
-    let cancelled = false;
-    const timers: number[] = [];
-    const restore = () => {
-      if (cancelled) return;
-      window.scrollTo(0, targetY);
-    };
-
-    restore();
-    timers.push(window.setTimeout(restore, 80));
-    timers.push(window.setTimeout(restore, 220));
-    timers.push(window.setTimeout(() => {
-      if (cancelled) return;
-      restore();
-      clearStoredScrollPosition(searchRoute);
-    }, 420));
-
-    return () => {
-      cancelled = true;
-      for (const timer of timers) window.clearTimeout(timer);
-    };
-  }, [isBusy, searchRoute]);
-
-  const buildStateFromFilters = (nextFilters: SearchFilters, page = 1): SearchPageState => ({
+  // Handlers
+  const buildStateFromFilters = useCallback((nextFilters: SearchFilters, page = 1): SearchPageState => ({
     query: nextFilters.query.trim(),
     category: nextFilters.category,
     minPrice: nextFilters.minPrice,
     maxPrice: nextFilters.maxPrice,
-    stores: (nextFilters.stores ?? [])
-      .map((storeId) => storeId.trim())
-      .filter(Boolean)
-      .sort(),
+    stores: (nextFilters.stores ?? []).map((s) => s.trim()).filter(Boolean).sort(),
     sortBy: nextFilters.sortBy,
     page,
-  });
+  }), []);
 
-  const commitState = (nextState: SearchPageState) => {
-    const url = buildSearchRoute(nextState);
+  const commitState = useCallback((nextState: SearchPageState) => {
+    router.replace(buildSearchRoute(nextState), { scroll: false });
     setCurrentState(nextState);
-    router.replace(url, { scroll: false });
-  };
+  }, [router]);
 
-  const handleSearch = (query: string) => {
+  const handleSearch = useCallback((query: string) => {
     const nextQuery = query.trim();
+    setPendingSearchTrack({ query: nextQuery, category: filters.category });
     commitState(buildStateFromFilters({ ...filters, query: nextQuery }, 1));
-  };
+  }, [filters, buildStateFromFilters, commitState]);
 
-  const handleFiltersChange = (newFilters: Partial<SearchFilters>) => {
-    const nextFilters: SearchFilters = {
-      ...filters,
-      ...newFilters,
-      query: searchQuery,
-    };
+  const handleFiltersChange = useCallback((newFilters: Partial<SearchFilters>) => {
+    const nextFilters: SearchFilters = { ...filters, ...newFilters, query: searchQuery };
+    if (newFilters.category && newFilters.category !== filters.category) {
+      trackFilterChange({ filterType: 'category', filterValue: newFilters.category });
+    }
+    if (newFilters.minPrice !== undefined || newFilters.maxPrice !== undefined) {
+      trackFilterChange({ filterType: 'price_range', filterValue: `$${newFilters.minPrice || 0}-$${newFilters.maxPrice || '∞'}` });
+    }
+    if (newFilters.stores && filters.stores && newFilters.stores.length !== filters.stores.length) {
+      trackFilterChange({ filterType: 'store', filterValue: newFilters.stores.join(',') });
+    }
     commitState(buildStateFromFilters(nextFilters, 1));
-  };
+  }, [filters, searchQuery, buildStateFromFilters, commitState]);
 
-  const handlePageChange = (nextPage: number) => {
+  const handlePageChange = useCallback((nextPage: number) => {
     const clamped = Math.max(1, Math.min(Math.max(totalPages, 1), nextPage));
     commitState(buildStateFromFilters(filters, clamped));
-  };
+  }, [filters, totalPages, buildStateFromFilters, commitState]);
 
-  const handleClearFilters = () => {
-    commitState(buildStateFromFilters({
-      ...filters,
-      category: undefined,
-      minPrice: undefined,
-      maxPrice: undefined,
-      stores: [],
-      sortBy: 'relevance',
-      sortOrder: 'asc',
-    }, 1));
-  };
+  const handleClearFilters = useCallback(() => {
+    commitState(buildStateFromFilters({ ...filters, category: undefined, minPrice: undefined, maxPrice: undefined, stores: [], sortBy: 'relevance', sortOrder: 'asc' }, 1));
+  }, [filters, buildStateFromFilters, commitState]);
 
   return (
+    <SearchPageUI
+      products={products}
+      filters={filters}
+      searchQuery={searchQuery}
+      isBusy={isBusy}
+      hasActiveFilters={hasActiveFilters}
+      totalResults={totalResults}
+      totalPages={totalPages}
+      currentPage={currentPage}
+      isSeoCategoryLanding={isSeoCategoryLanding}
+      categorySeoCopy={categorySeoCopy}
+      searchRoute={searchRoute}
+      availableStores={availableStores}
+      showNoResultsState={showNoResultsState}
+      showIdleState={showIdleState}
+      onSearch={handleSearch}
+      onFiltersChange={handleFiltersChange}
+      onClearFilters={handleClearFilters}
+      onPageChange={handlePageChange}
+    />
+  );
+}
+
+// ---------------------------------------------------------------------------
+// UI Sub-component
+// ---------------------------------------------------------------------------
+
+type SearchPageUIProps = {
+  products: Product[];
+  filters: ReturnType<typeof toSearchFilters>;
+  searchQuery: string;
+  isBusy: boolean;
+  hasActiveFilters: boolean;
+  totalResults: number;
+  totalPages: number;
+  currentPage: number;
+  isSeoCategoryLanding: boolean;
+  categorySeoCopy: ReturnType<typeof getCategorySeoCopy>;
+  searchRoute: string;
+  availableStores: typeof defaultStores;
+  showNoResultsState: boolean;
+  showIdleState: boolean;
+  onSearch: (query: string) => void;
+  onFiltersChange: (filters: Partial<SearchFilters>) => void;
+  onClearFilters: () => void;
+  onPageChange: (page: number) => void;
+};
+
+function SearchPageUI({
+  products,
+  filters,
+  searchQuery,
+  isBusy,
+  hasActiveFilters,
+  totalResults,
+  totalPages,
+  currentPage,
+  isSeoCategoryLanding,
+  categorySeoCopy,
+  searchRoute,
+  availableStores,
+  showNoResultsState,
+  showIdleState,
+  onSearch,
+  onFiltersChange,
+  onClearFilters,
+  onPageChange,
+}: SearchPageUIProps) {
+  return (
     <div className="w-full max-w-[1800px] mx-auto px-4 xl:px-8 py-6">
-      {isSeoCategoryLanding && categorySeoCopy ? (
+      {isSeoCategoryLanding && categorySeoCopy && (
         <header className="mb-8 bg-card border-4 border-border p-5 md:p-6 pixel-shadow">
-          <p className="text-[8px] uppercase tracking-[0.3em] text-secondary font-bold mb-3">
-            LANDING DE CATEGORIA
-          </p>
-          <h1 className="text-sm md:text-lg uppercase font-bold leading-relaxed text-foreground">
-            {categorySeoCopy.heading}
-          </h1>
-          <p className="mt-4 text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/80 font-mono">
-            {categorySeoCopy.intro}
-          </p>
+          <p className="text-[8px] uppercase tracking-[0.3em] text-secondary font-bold mb-3">LANDING DE CATEGORIA</p>
+          <h1 className="text-sm md:text-lg uppercase font-bold leading-relaxed text-foreground">{categorySeoCopy.heading}</h1>
+          <p className="mt-4 text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/80 font-mono">{categorySeoCopy.intro}</p>
         </header>
-      ) : null}
+      )}
 
       <div className="flex flex-col md:flex-row gap-6 mb-8 items-center">
         <div className="w-full">
           <SearchBar
             key={searchQuery}
-            onSearch={handleSearch}
+            onSearch={onSearch}
             placeholder="NUEVA BUSQUEDA..."
             initialValue={searchQuery}
             isLoading={isBusy}
-            loadingText={searchQuery
-              ? `Consultando tiendas para ${searchQuery}...`
-              : 'Consultando tiendas y precios...'}
+            loadingText={searchQuery ? `Consultando tiendas para ${searchQuery}...` : 'Consultando tiendas y precios...'}
           />
         </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
         <aside className="lg:w-72 flex-shrink-0 lg:sticky lg:top-8 max-h-[calc(100vh-4rem)] overflow-y-auto scrollbar-thin pr-2 pb-4 flex flex-col gap-8">
-          <div className="bg-card border-4 border-border p-4 flex-shrink-0">
-            <h2 className="text-[12px] mb-6 border-b-4 border-primary pb-2 uppercase font-bold text-primary">FILTROS</h2>
-            <Filters
-              filters={filters}
-              onChange={handleFiltersChange}
-              categories={categories}
-              stores={availableStores}
-            />
-          </div>
-
-          <div className="bg-card border-4 border-border p-4 flex-shrink-0">
-            <h3 className="text-[10px] uppercase font-bold text-primary mb-3 border-b-2 border-muted pb-2">CATEGORIAS</h3>
-            <div className="flex flex-col gap-1">
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => handleFiltersChange({ category: category.id as HardwareCategory })}
-                  className={`text-left text-[9px] uppercase font-bold px-2 py-1.5 transition-colors ${
-                    filters.category === category.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                  }`}
-                >
-                  {category.name}
-                </button>
-              ))}
-            </div>
-          </div>
+          <FiltersPanel filters={filters} stores={availableStores} onChange={onFiltersChange} />
+          <CategoriesPanel filters={filters} onChange={onFiltersChange} />
         </aside>
 
         <div className="flex-1">
-          <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="bg-primary text-primary-foreground p-2 inline-block border-2 border-border">
-              <p className="text-[10px] uppercase font-bold" aria-live="polite">
-                {isBusy ? 'BUSCANDO...' : `RESULTADOS: ${totalResults} ITEMS`}
-              </p>
-            </div>
-            {searchQuery && (
-              <div className="text-[10px] uppercase font-bold text-muted-foreground">
-                BUSQUEDA: <span className="text-secondary">&quot;{searchQuery}&quot;</span>
-              </div>
-            )}
-          </div>
-
-          {isBusy && (
-            <div className="mb-4 border-2 border-secondary bg-card px-4 py-3 pixel-shadow animate-pulse">
-              <p className="text-[10px] uppercase font-bold text-secondary tracking-wide">
-                {searchQuery
-                  ? `ESCANEANDO TIENDAS PARA "${searchQuery}"...`
-                  : 'ESCANEANDO TIENDAS Y PRECIOS...'}
-              </p>
-              <p className="text-[8px] uppercase text-muted-foreground mt-1 tracking-wide">
-                Espera a que termine la busqueda antes de asumir que no hay stock o resultados.
-              </p>
-            </div>
-          )}
-
+          <SearchHeader totalResults={totalResults} searchQuery={searchQuery} isBusy={isBusy} />
+          {isBusy && <LoadingState searchQuery={searchQuery} />}
           <div id="product-grid-start" className="bg-muted p-4 border-4 border-border relative">
-
-            {showNoResultsState ? (
-              <div className="border-4 border-primary bg-card p-6 md:p-8 text-center pixel-shadow">
-                <p className="text-[11px] uppercase font-bold text-primary">
-                  [ SIN RESULTADOS ]
-                </p>
-                <p className="text-[9px] uppercase text-muted-foreground mt-2 leading-relaxed">
-                  {searchQuery
-                    ? `No encontramos coincidencias para "${searchQuery}".`
-                    : 'No encontramos coincidencias con los filtros actuales.'}
-                </p>
-                <p className="text-[8px] uppercase text-muted-foreground mt-2 leading-relaxed">
-                  Proba otra palabra, una marca/modelo mas corto o amplia los filtros.
-                </p>
-                <div className="mt-4 flex flex-wrap justify-center gap-2">
-                  {hasActiveFilters && (
-                    <button
-                      onClick={handleClearFilters}
-                      className="pixel-button text-[9px] px-3 py-2"
-                    >
-                      LIMPIAR FILTROS
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleSearch(searchQuery)}
-                    className="pixel-button text-[9px] px-3 py-2"
-                  >
-                    REINTENTAR BUSQUEDA
-                  </button>
-                </div>
-              </div>
-            ) : showIdleState ? (
-              <div className="border-4 border-border bg-card p-8 text-center pixel-shadow">
-                <p className="text-[10px] uppercase font-bold text-primary">
-                  [ LISTO PARA BUSCAR ]
-                </p>
-                <p className="text-[9px] uppercase text-muted-foreground mt-2">
-                  Escribi un producto para empezar (ej: RTX 5060, Ryzen 7600).
-                </p>
-              </div>
-            ) : (
-              <ProductGrid
-                products={products}
-                isLoading={isBusy}
-                emptyMessage="No se encontraron productos"
-                returnTo={searchRoute}
-              />
-            )}
-
-            {!isBusy && totalResults > 0 && totalPages > 1 && (
-              <div className="flex justify-between items-center mt-6 pt-6 border-t-4 border-border border-dashed">
-                <button
-                  onClick={() => {
-                    handlePageChange(currentPage - 1);
-                    document.getElementById('product-grid-start')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  disabled={currentPage === 1}
-                  className="pixel-button disabled:opacity-50 disabled:active:translate-y-0 disabled:active:translate-x-0 disabled:cursor-not-allowed text-[10px]"
-                >
-                  {`<< PREV`}
-                </button>
-                <div className="text-[10px] font-bold uppercase text-primary px-4 py-2 border-2 border-primary bg-card pixel-shadow-primary flex items-center gap-2">
-                  <span className="hidden sm:inline">NIVEL</span> {currentPage} / {totalPages}
-                </div>
-                <button
-                  onClick={() => {
-                    handlePageChange(currentPage + 1);
-                    document.getElementById('product-grid-start')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  disabled={currentPage === totalPages}
-                  className="pixel-button disabled:opacity-50 disabled:active:translate-y-0 disabled:active:translate-x-0 disabled:cursor-not-allowed text-[10px]"
-                >
-                  {`NEXT >>`}
-                </button>
-              </div>
-            )}
+            {showNoResultsState && <NoResultsState searchQuery={searchQuery} hasActiveFilters={hasActiveFilters} onClearFilters={onClearFilters} onRetry={() => onSearch(searchQuery)} />}
+            {showIdleState && <IdleState />}
+            {!showNoResultsState && !showIdleState && <ProductGrid products={products} isLoading={isBusy} emptyMessage="No se encontraron productos" returnTo={searchRoute} />}
+            <PaginationControls currentPage={currentPage} totalPages={totalPages} isBusy={isBusy} onPageChange={onPageChange} />
           </div>
         </div>
-
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Panel Sub-components
+// ---------------------------------------------------------------------------
+
+function FiltersPanel({ filters, stores, onChange }: { filters: ReturnType<typeof toSearchFilters>; stores: typeof defaultStores; onChange: (f: Partial<SearchFilters>) => void }) {
+  return (
+    <div className="bg-card border-4 border-border p-4 flex-shrink-0">
+      <h2 className="text-[12px] mb-6 border-b-4 border-primary pb-2 uppercase font-bold text-primary">FILTROS</h2>
+      <Filters filters={filters} onChange={onChange} categories={categories} stores={stores} />
+    </div>
+  );
+}
+
+function CategoriesPanel({ filters, onChange }: { filters: ReturnType<typeof toSearchFilters>; onChange: (f: Partial<SearchFilters>) => void }) {
+  return (
+    <div className="bg-card border-4 border-border p-4 flex-shrink-0">
+      <h3 className="text-[10px] uppercase font-bold text-primary mb-3 border-b-2 border-muted pb-2">CATEGORIAS</h3>
+      <div className="flex flex-col gap-1">
+        {categories.map((category) => (
+          <button
+            key={category.id}
+            onClick={() => onChange({ category: category.id as HardwareCategory })}
+            aria-label={`Filtrar por categoría: ${category.name}`}
+            className={`text-left text-[9px] uppercase font-bold px-2 py-1.5 transition-colors ${filters.category === category.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+          >
+            {category.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SearchHeader({ totalResults, searchQuery, isBusy }: { totalResults: number; searchQuery: string; isBusy: boolean }) {
+  return (
+    <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="bg-primary text-primary-foreground p-2 inline-block border-2 border-border">
+        <p className="text-[10px] uppercase font-bold" aria-live="polite">{isBusy ? 'BUSCANDO...' : `RESULTADOS: ${totalResults} ITEMS`}</p>
+      </div>
+      {searchQuery && (
+        <div className="text-[10px] uppercase font-bold text-muted-foreground">
+          BUSQUEDA: <span className="text-secondary">&quot;{searchQuery}&quot;</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LoadingState({ searchQuery }: { searchQuery: string }) {
+  return (
+    <div className="mb-4 border-2 border-secondary bg-card px-4 py-3 pixel-shadow animate-pulse">
+      <p className="text-[10px] uppercase font-bold text-secondary tracking-wide">
+        {searchQuery ? `ESCANEANDO TIENDAS PARA "${searchQuery}"...` : 'ESCANEANDO TIENDAS Y PRECIOS...'}
+      </p>
+      <p className="text-[8px] uppercase text-muted-foreground mt-1 tracking-wide">
+        Espera a que termine la busqueda antes de asumir que no hay stock o resultados.
+      </p>
+    </div>
+  );
+}
+
+function NoResultsState({ searchQuery, hasActiveFilters, onClearFilters, onRetry }: { searchQuery: string; hasActiveFilters: boolean; onClearFilters: () => void; onRetry: () => void }) {
+  return (
+    <div className="border-4 border-primary bg-card p-6 md:p-8 text-center pixel-shadow">
+      <p className="text-[11px] uppercase font-bold text-primary">[ SIN RESULTADOS ]</p>
+      <p className="text-[9px] uppercase text-muted-foreground mt-2 leading-relaxed">
+        {searchQuery ? `No encontramos coincidencias para "${searchQuery}".` : 'No encontramos coincidencias con los filtros actuales.'}
+      </p>
+      <p className="text-[8px] uppercase text-muted-foreground mt-2 leading-relaxed">Proba otra palabra, una marca/modelo mas corto o amplia los filtros.</p>
+      <div className="mt-4 flex flex-wrap justify-center gap-2">
+        {hasActiveFilters && <button onClick={onClearFilters} className="pixel-button text-[9px] px-3 py-2">LIMPIAR FILTROS</button>}
+        <button onClick={onRetry} className="pixel-button text-[9px] px-3 py-2">REINTENTAR BUSQUEDA</button>
+      </div>
+    </div>
+  );
+}
+
+function IdleState() {
+  return (
+    <div className="border-4 border-border bg-card p-8 text-center pixel-shadow">
+      <p className="text-[10px] uppercase font-bold text-primary">[ LISTO PARA BUSCAR ]</p>
+      <p className="text-[9px] uppercase text-muted-foreground mt-2">Escribi un producto para empezar (ej: RTX 5060, Ryzen 7600).</p>
+    </div>
+  );
+}
+
+function PaginationControls({ currentPage, totalPages, isBusy, onPageChange }: { currentPage: number; totalPages: number; isBusy: boolean; onPageChange: (p: number) => void }) {
+  if (isBusy || currentPage >= totalPages || totalPages <= 1) return null;
+  return (
+    <div className="flex justify-between items-center mt-6 pt-6 border-t-4 border-border border-dashed">
+      <button
+        onClick={() => { onPageChange(currentPage - 1); document.getElementById('product-grid-start')?.scrollIntoView({ behavior: 'smooth' }); }}
+        disabled={currentPage === 1}
+        className="pixel-button disabled:opacity-50 disabled:active:translate-y-0 disabled:active:translate-x-0 disabled:cursor-not-allowed text-[10px]"
+      >
+        {`<< PREV`}
+      </button>
+      <div className="text-[10px] font-bold uppercase text-primary px-4 py-2 border-2 border-primary bg-card pixel-shadow-primary flex items-center gap-2">
+        <span className="hidden sm:inline">NIVEL</span> {currentPage} / {totalPages}
+      </div>
+      <button
+        onClick={() => { onPageChange(currentPage + 1); document.getElementById('product-grid-start')?.scrollIntoView({ behavior: 'smooth' }); }}
+        disabled={currentPage === totalPages}
+        className="pixel-button disabled:opacity-50 disabled:active:translate-y-0 disabled:active:translate-x-0 disabled:cursor-not-allowed text-[10px]"
+      >
+        {`NEXT >>`}
+      </button>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { HardwareCategory, Product } from '../types';
+import { logger } from '../logger';
 
 const MAXIMUS_BASE_URL = 'https://www.maximus.com.ar';
 const MAXIMUS_SEARCH_SCRIPT = 'web.MAX.GetItemList4Search_v3';
@@ -191,7 +192,7 @@ export async function fetchMaximusProducts(
   if (!searchQuery) return [];
 
   try {
-    console.log(`[Maximus Scraper] Extrayendo productos para: ${searchQuery}`);
+    logger.info(`[Maximus Scraper] Extrayendo productos para: ${searchQuery}`);
     const items = await fetchMaximusItems(searchQuery, signal);
     const products: Product[] = [];
     const seenIds = new Set<string>();
@@ -243,10 +244,10 @@ export async function fetchMaximusProducts(
       });
     }
 
-    console.log(`[Maximus Scraper] Productos detectados: ${products.length}`);
+    logger.info(`[Maximus Scraper] Productos detectados: ${products.length}`);
     return products;
   } catch (error) {
-    console.error('[Maximus Scraper] Error:', error);
+    logger.error('[Maximus Scraper] Error', { error });
     return [];
   }
 }

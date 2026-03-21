@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Press_Start_2P } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
@@ -6,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { Navigation } from "@/components/layout/Navigation";
 import { ThemeScript } from "@/components/functional/ThemeScript";
 import { GOOGLE_SITE_VERIFICATION, SITE_NAME, SITE_URL } from "@/lib/site-config";
+import { Analytics } from "@/components/functional/Analytics";
+
 
 const pixelFont = Press_Start_2P({
   weight: "400",
@@ -86,78 +89,56 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get('x-content-security-policy-nonce');
+
+  const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    '@id': `${SITE_URL}#organization`,
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: `${SITE_URL}/og-image.svg`,
+    description: 'Comparador de precios de hardware en Argentina. Compara precios de procesadores, tarjetas graficas, motherboards, memoria RAM y mas.',
+    foundingDate: '2024',
+    areaServed: {
+      '@type': 'Country',
+      name: 'Argentina',
+    },
+    sameAs: [
+    ],
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'customer service',
+      email: 'soporte@comparador-hardware.com.ar',
+      availableLanguage: 'Spanish',
+    },
+  };
+
   return (
     <html lang="es" suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          nonce={nonce ?? undefined}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
+      </head>
       <body
         className={cn(
           pixelFont.variable,
           "min-h-screen bg-background text-foreground font-pixel flex flex-col"
         )}
       >
-        <ThemeScript />
+        <ThemeScript nonce={nonce ?? undefined} />
+        <Analytics nonce={nonce ?? undefined} />
 
-        {/* --- DICCIONARIO SVG PIXEL ART OCULTO --- */}
-        <svg width="0" height="0" style={{ display: 'none', position: 'absolute' }}>
-          <defs>
-            <g id="cloud-pixel-art" strokeWidth="1" strokeLinecap="butt">
-              <path stroke="#FFFFFF" d="M13 1h6 M11 2h8 M20 2h1 M10 3h9 M21 3h1 M9 4h14 M8 5h16 M28 5h2 M8 6h17 M27 6h3 M7 7h22 M6 8h23 M5 9h24 M4 10h26 M3 11h27 M3 12h3 M7 12h23 M4 13h1 M7 13h23 M4 14h1 M8 14h8 M17 14h12 M5 15h1 M9 15h5 M17 15h6 M25 15h4 M5 16h2 M11 16h1 M17 16h5 M26 16h3 M6 17h2 M14 17h8 M27 17h1 M7 18h3 M13 18h9 M25 18h2 M10 19h3 M22 19h3" />
-              <path stroke="#4DC3E5" d="M19 2h1 M19 3h2 M6 12h1 M5 13h2 M5 14h3 M16 14h1 M6 15h3 M14 15h3 M23 15h2 M7 16h4 M12 16h5 M22 16h4 M8 17h6 M22 17h5 M10 18h3 M22 18h3" />
-              <path stroke="#535E94" d="M13 0h6 M11 1h2 M19 1h2 M10 2h1 M21 2h1 M9 3h1 M22 3h1 M8 4h1 M23 4h1 M28 4h2 M7 5h1 M24 5h1 M27 5h1 M30 5h1 M7 6h1 M25 6h2 M30 6h1 M6 7h1 M29 7h1 M5 8h1 M29 8h1 M4 9h1 M29 9h2 M3 10h1 M30 10h1 M2 11h1 M30 11h1 M2 12h1 M30 12h1 M3 13h1 M30 13h1 M3 14h1 M29 14h2 M4 15h1 M29 15h1 M4 16h1 M29 16h1 M5 17h1 M28 17h1 M6 18h1 M27 18h1 M7 19h3 M13 19h9 M25 19h2 M9 20h4 M21 20h4" />
-            </g>
-
-            <pattern id="stars-small" width="250" height="250" patternUnits="userSpaceOnUse">
-              <rect x="20" y="40" width="2" height="2" fill="#FFFFFF" opacity="0.3" />
-              <rect x="180" y="210" width="2" height="2" fill="#FFFFFF" opacity="0.4" />
-              <rect x="120" y="90" width="2" height="2" fill="#FFFFFF" opacity="0.2" />
-              <rect x="50" y="220" width="2" height="2" fill="#4DC3E5" opacity="0.5" />
-
-              <rect x="80" y="150" width="2" height="2" fill="#FFFFFF">
-                <animate attributeName="opacity" values="0.1;1;0.1" dur="3s" repeatCount="indefinite" />
-              </rect>
-              <rect x="210" y="50" width="3" height="3" fill="#FDE047">
-                <animate attributeName="opacity" values="1;0.2;1" dur="4.5s" repeatCount="indefinite" />
-              </rect>
-              <rect x="15" y="110" width="2" height="2" fill="#FFFFFF">
-                <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite" />
-              </rect>
-            </pattern>
-
-            <pattern id="stars-medium" width="350" height="350" patternUnits="userSpaceOnUse">
-              <path fill="#FFFFFF" d="M 60 50 h 2 v -2 h 2 v 2 h 2 v 2 h -2 v 2 h -2 v -2 h -2 z">
-                <animate attributeName="opacity" values="0.1;0.9;0.1" dur="5s" repeatCount="indefinite" />
-              </path>
-              <path fill="#4DC3E5" opacity="0.6" d="M 250 120 h 2 v -2 h 2 v 2 h 2 v 2 h -2 v 2 h -2 v -2 h -2 z" />
-              <path fill="#FFFFFF" d="M 150 280 h 2 v -2 h 2 v 2 h 2 v 2 h -2 v 2 h -2 v -2 h -2 z">
-                <animate attributeName="opacity" values="1;0.2;1" dur="2.5s" repeatCount="indefinite" />
-              </path>
-              <path fill="#FDE047" opacity="0.4" d="M 300 250 h 2 v -2 h 2 v 2 h 2 v 2 h -2 v 2 h -2 v -2 h -2 z" />
-            </pattern>
-
-            <g id="pixel-moon">
-              <path fill="#FEF08A" d="M6 0h4 M4 1h8 M3 2h10 M2 3h6 M1 4h5 M1 5h4 M0 6h4 M0 7h4 M0 8h4 M0 9h4 M1 10h4 M1 11h5 M2 12h6 M3 13h10 M4 14h8 M6 15h4" />
-              <path fill="#EAB308" d="M8 1h2 M10 2h2 M6 3h2 M4 4h1 M4 5h1 M3 6h1 M3 7h1 M3 8h1 M3 9h1 M4 10h1 M4 11h1 M6 12h2 M10 13h2 M8 14h2" />
-            </g>
-
-            <g id="pixel-comet" strokeWidth="1" strokeLinecap="butt">
-              <path stroke="#1e1b4b" opacity="0.6" d="M 0 6 h 8 M 4 7 h 6 M 2 5 h 5 M 8 4 h 4 M 5 8 h 5" />
-              <path stroke="#4DC3E5" opacity="0.4" d="M 8 6 h 12 M 10 7 h 10 M 7 5 h 8 M 12 4 h 6 M 10 8 h 7" />
-              <path stroke="#4DC3E5" opacity="0.8" d="M 20 6 h 10 M 20 7 h 8 M 15 5 h 12 M 18 4 h 8 M 17 8 h 8" />
-              <path stroke="#FFFFFF" opacity="0.6" d="M 30 6 h 8 M 28 7 h 6 M 27 5 h 8 M 26 4 h 6 M 25 8 h 7" />
-              <path stroke="#FFFFFF" d="M 38 5 h 4 M 37 6 h 6 M 38 7 h 4 M 39 4 h 2 M 39 8 h 2" />
-            </g>
-
-            <g id="cloud-night-pixel-art" strokeWidth="1" strokeLinecap="butt">
-              <path stroke="#1A1B35" d="M13 1h6 M11 2h8 M20 2h1 M10 3h9 M21 3h1 M9 4h14 M8 5h16 M28 5h2 M8 6h17 M27 6h3 M7 7h22 M6 8h23 M5 9h24 M4 10h26 M3 11h27 M3 12h3 M7 12h23 M4 13h1 M7 13h23 M4 14h1 M8 14h8 M17 14h12 M5 15h1 M9 15h5 M17 15h6 M25 15h4 M5 16h2 M11 16h1 M17 16h5 M26 16h3 M6 17h2 M14 17h8 M27 17h1 M7 18h3 M13 18h9 M25 18h2 M10 19h3 M22 19h3" />
-              <path stroke="#25284D" d="M19 2h1 M19 3h2 M6 12h1 M5 13h2 M5 14h3 M16 14h1 M6 15h3 M14 15h3 M23 15h2 M7 16h4 M12 16h5 M22 16h4 M8 17h6 M22 17h5 M10 18h3 M22 18h3" />
-              <path stroke="#080812" d="M13 0h6 M11 1h2 M19 1h2 M10 2h1 M21 2h1 M9 3h1 M22 3h1 M8 4h1 M23 4h1 M28 4h2 M7 5h1 M24 5h1 M27 5h1 M30 5h1 M7 6h1 M25 6h2 M30 6h1 M6 7h1 M29 7h1 M5 8h1 M29 8h1 M4 9h1 M29 9h2 M3 10h1 M30 10h1 M2 11h1 M30 11h1 M2 12h1 M30 12h1 M3 13h1 M30 13h1 M3 14h1 M29 14h2 M4 15h1 M29 15h1 M4 16h1 M29 16h1 M5 17h1 M28 17h1 M6 18h1 M27 18h1 M7 19h3 M13 19h9 M25 19h2 M9 20h4 M21 20h4" />
-            </g>
-          </defs>
-        </svg>
+        {/* Preload SVG sprites for parallax background */}
+        <link rel="preload" href="/sprites/pixel-art.svg" as="image" type="image/svg+xml" />
 
         {/* --- CAPA FONDO PARALLAX --- */}
         <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 0 }} className="sky-bg sky-layer">
@@ -214,6 +195,13 @@ export default function RootLayout({
         {/* Resto de la aplicación por encima del parallax */}
         <div className="relative z-10 flex flex-col flex-1">
           <Navigation />
+          {/* Skip to main content link for accessibility */}
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            Saltar al contenido principal
+          </a>
           <main id="main-content" className="flex-1" tabIndex={-1}>
             {children}
           </main>

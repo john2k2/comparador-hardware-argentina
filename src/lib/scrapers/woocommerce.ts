@@ -6,6 +6,7 @@ import {
   findNextPageUrl,
   normalizeAbsoluteUrl as normalizeAbsolutePaginationUrl,
 } from './common-pagination';
+import { logger } from '../logger';
 
 export interface WooStore {
   id: string;
@@ -392,20 +393,20 @@ export async function fetchWooCommerceSearch(
       if (options?.signal?.aborted) return [];
       const url = `${store.baseUrl}/?s=${encodeURIComponent(query)}&post_type=product`;
       try {
-        console.log(`[WooCommerce] ${store.name} buscando: ${query}`);
+        logger.info(`[WooCommerce] ${store.name} buscando: ${query}`);
         const results = await scrapeWooPages(url, store, category, WOO_SEARCH_MAX_PAGES, options);
         if (results.length > 0) {
           storeBackoffUntil.delete(store.id);
         }
-        console.log(`[WooCommerce] ${store.name} -> ${results.length} productos`);
+        logger.info(`[WooCommerce] ${store.name} -> ${results.length} productos`);
         return results;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         if (message.includes('HTTP 403') || message.includes('HTTP 429')) {
           storeBackoffUntil.set(store.id, Date.now() + STORE_BACKOFF_MS);
-          console.warn(`[WooCommerce] ${store.name} bloquea scraping (${message})`);
+          logger.warn(`[WooCommerce] ${store.name} bloquea scraping (${message})`);
         } else {
-          console.error(`[WooCommerce] ${store.name} error: ${message}`);
+          logger.error(`[WooCommerce] ${store.name} error: ${message}`);
         }
         throw error;
       }
@@ -482,16 +483,18 @@ export async function fetchWooCommerceCategory(
           const results = await scrapeWooPages(url, store, category, WOO_CATEGORY_MAX_PAGES, options);
           if (results.length > 0) {
             storeBackoffUntil.delete(store.id);
-            console.log(`[WooCommerce] ${store.name} categoria '${slug}' -> ${results.length} productos`);
+            logger.info(`[WooCommerce] ${store.name} categoria '${slug}' -> ${results.length} productos`);
             return results;
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           if (message.includes('HTTP 403') || message.includes('HTTP 429')) {
             storeBackoffUntil.set(store.id, Date.now() + STORE_BACKOFF_MS);
-            console.warn(`[WooCommerce] ${store.name} bloquea scraping (${message})`);
+            logger.warn(`[WooCommerce] ${store.name} bloquea scraping (${message})`);
             throw error;
           }
+          logger.error(`[WooCommerce] ${store.name} error: ${message}`);
+          throw error;
         }
       }
 
@@ -514,7 +517,9 @@ export async function fetchWooCommerceCategory(
         const message = error instanceof Error ? error.message : String(error);
         if (message.includes('HTTP 403') || message.includes('HTTP 429')) {
           storeBackoffUntil.set(store.id, Date.now() + STORE_BACKOFF_MS);
-          console.warn(`[WooCommerce] ${store.name} bloquea scraping (${message})`);
+          logger.warn(`[WooCommerce] ${store.name} bloquea scraping (${message})`);
+        } else {
+          logger.error(`[WooCommerce] ${store.name} error: ${message}`);
         }
         throw error;
       }

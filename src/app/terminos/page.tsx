@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { RetroPageShell } from '@/components/layout/RetroPageShell';
 import { SITE_NAME } from '@/lib/site-config';
+import { TERMINOS_FAQ } from '@/lib/seo/faq-schema';
 
 export const metadata: Metadata = {
   title: 'Terminos de Uso',
@@ -9,6 +10,11 @@ export const metadata: Metadata = {
 
 export default function TerminosPage() {
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(TERMINOS_FAQ) }}
+      />
     <RetroPageShell
       title="TERMINOS DE USO"
       subtitle="Marco general de uso del comparador. Sirve como base operativa, pero no reemplaza revision legal profesional."
@@ -52,5 +58,6 @@ export default function TerminosPage() {
         </div>
       </div>
     </RetroPageShell>
+    </>
   );
 }

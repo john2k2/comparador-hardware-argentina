@@ -6,18 +6,23 @@ import {
   normalizeAbsoluteUrl,
   resolvePaginationBudget,
 } from './common-pagination';
+import { extractBrandFromName as extractBrandFromNameShared } from './brand-utils';
+import { logger } from '../logger';
+import { ScrapingError, ScraperResult, ok, fail, getErrorCode } from './types';
 
 const VENEX_BASE_URL = 'https://www.venex.com.ar';
 const VENEX_CATEGORY_MAX_PAGES = 5;
 const VENEX_SEARCH_MAX_PAGES = 3;
 
-export async function fetchVenexProducts(
+export async function scrapeVenexProducts(
   categoryUrl: string,
   categorySlug: HardwareCategory,
   signal?: AbortSignal,
-): Promise<Product[]> {
+): Promise<ScraperResult<Product>> {
+  const startTime = Date.now();
+
   try {
-    console.log(`[Venex Scraper] Extrayendo productos de: ${categoryUrl}`);
+    logger.info(`[Venex Scraper] Extrayendo productos de: ${categoryUrl}`);
 
     const products: Product[] = [];
     const seenProductIds = new Set<string>();
@@ -43,7 +48,15 @@ export async function fetchVenexProducts(
         signal,
       });
 
-      if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
+      if (!res.ok) {
+        const error: ScrapingError = {
+          code: 'NETWORK_ERROR',
+          message: `HTTP ${res.status}: ${res.statusText}`,
+          url: pageUrl,
+          timestamp: Date.now(),
+        };
+        return fail(error, Date.now() - startTime);
+      }
 
       const html = await res.text();
       const $ = cheerio.load(html);
@@ -98,7 +111,7 @@ export async function fetchVenexProducts(
         });
       });
 
-      console.log(`[Venex Scraper] Pagina ${pageIndex}: ${pageProducts} productos nuevos`);
+      logger.info(`[Venex Scraper] Pagina ${pageIndex}: ${pageProducts} productos nuevos`);
       if (pageProducts === 0) break;
 
       nextPageUrl = findNextPageUrl($, res.url || pageUrl, VENEX_BASE_URL);
@@ -109,18 +122,28 @@ export async function fetchVenexProducts(
       pageIndex += 1;
     }
 
-    return products;
+    return ok(products, Date.now() - startTime);
   } catch (error) {
-    console.error('[Venex Scraper] Error:', error);
-    return [];
+    const scrapingError: ScrapingError = {
+      code: getErrorCode(error),
+      message: error instanceof Error ? error.message : String(error),
+      url: categoryUrl,
+      timestamp: Date.now(),
+    };
+    logger.error('[Venex Scraper] Error', { error: scrapingError });
+    return fail(scrapingError, Date.now() - startTime);
   }
 }
 
+export async function fetchVenexProducts(
+  categoryUrl: string,
+  categorySlug: HardwareCategory,
+  signal?: AbortSignal,
+): Promise<Product[]> {
+  const result = await scrapeVenexProducts(categoryUrl, categorySlug, signal);
+  return result.data;
+}
+
 function extractBrandFromName(name: string): string {
-  const upper = name.toUpperCase();
-  if (upper.includes('AMD')) return 'AMD';
-  if (upper.includes('INTEL')) return 'Intel';
-  if (upper.includes('CORSAIR')) return 'Corsair';
-  if (upper.includes('GIGABYTE')) return 'Gigabyte';
-  return 'Generica';
+  return extractBrandFromNameShared(name) ?? 'Generica';
 }

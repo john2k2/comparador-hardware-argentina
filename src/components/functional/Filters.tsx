@@ -149,6 +149,7 @@ export function Filters({
             <select
               value={filters.sortBy}
               onChange={(e) => handleSortChange(e.target.value)}
+              aria-label="Ordenar por"
               className="w-full h-8 px-2 border-4 border-border bg-background text-foreground text-[8px] uppercase outline-none focus:border-primary appearance-none rounded-none"
             >
               {sortOptions.map((opt) => (
@@ -177,6 +178,7 @@ export function Filters({
             <select
               value={filters.category || ''}
               onChange={(e) => handleCategoryChange(e.target.value)}
+              aria-label="Filtrar por categoría"
               className="w-full h-8 px-2 border-4 border-border bg-background text-foreground text-[8px] uppercase outline-none focus:border-primary appearance-none rounded-none"
             >
               {categoryOptions.map((opt) => (
@@ -209,6 +211,7 @@ export function Filters({
                 placeholder="MIN"
                 value={filters.minPrice || ''}
                 onChange={(e) => handlePriceChange('min', e.target.value)}
+                aria-label="Precio mínimo"
                 className="w-full h-8 px-2 border-4 border-border bg-background text-foreground text-[10px] outline-none focus:border-primary placeholder:text-muted-foreground rounded-none"
               />
               <label className="sr-only">Precio máximo</label>
@@ -217,6 +220,7 @@ export function Filters({
                 placeholder="MAX"
                 value={filters.maxPrice || ''}
                 onChange={(e) => handlePriceChange('max', e.target.value)}
+                aria-label="Precio máximo"
                 className="w-full h-8 px-2 border-4 border-border bg-background text-foreground text-[10px] outline-none focus:border-primary placeholder:text-muted-foreground rounded-none"
               />
             </div>

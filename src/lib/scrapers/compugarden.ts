@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio';
 import type { AnyNode } from 'domhandler';
 import { HardwareCategory, Product, StockStatus } from '../types';
 import { parseLocalizedArsPrice } from '../price-utils';
+import { logger } from '../logger';
 
 const COMPUGARDEN_BASE_URL = 'https://www.compugarden.com.ar';
 
@@ -83,7 +84,7 @@ export async function fetchCompugardenProducts(
   const searchUrl = `${COMPUGARDEN_BASE_URL}/ARTICULOS/m=0/BUS=${encodeURIComponent(searchQuery)};/compugarden.aspx`;
 
   try {
-    console.log(`[Compugarden Scraper] Extrayendo productos de: ${searchUrl}`);
+    logger.info(`[Compugarden Scraper] Extrayendo productos de: ${searchUrl}`);
     const res = await fetch(searchUrl, {
       headers: SCRAPE_HEADERS,
       signal,
@@ -148,10 +149,10 @@ export async function fetchCompugardenProducts(
       });
     });
 
-    console.log(`[Compugarden Scraper] Productos detectados: ${products.length}`);
+    logger.info(`[Compugarden Scraper] Productos detectados: ${products.length}`);
     return products;
   } catch (error) {
-    console.error('[Compugarden Scraper] Error:', error);
+    logger.error('[Compugarden Scraper] Error', { error });
     return [];
   }
 }

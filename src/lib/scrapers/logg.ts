@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio';
 import type { Element } from 'domhandler';
 import { HardwareCategory, Product, StockStatus } from '../types';
 import { normalizeAbsoluteUrl } from './common-pagination';
+import { logger } from '../logger';
 
 const LOGG_BASE_URL = 'https://logg.com.ar';
 const LOGG_PAGE_SIZE = 25;
@@ -220,12 +221,12 @@ export async function fetchLoggProducts(
   const trimmedQuery = query.trim();
   try {
     const maxPages = trimmedQuery ? LOGG_SEARCH_MAX_PAGES : LOGG_CATEGORY_MAX_PAGES;
-    console.log(`[Logg Scraper] Extrayendo productos para ${trimmedQuery || categorySlug}`);
+    logger.info(`[Logg Scraper] Extrayendo productos para ${trimmedQuery || categorySlug}`);
     const products = await scrapeLoggCollection(categorySlug, maxPages, trimmedQuery || undefined, signal);
-    console.log(`[Logg Scraper] Productos detectados: ${products.length}`);
+    logger.info(`[Logg Scraper] Productos detectados: ${products.length}`);
     return products;
   } catch (error) {
-    console.error('[Logg Scraper] Error:', error);
+    logger.error('[Logg Scraper] Error', { error });
     return [];
   }
 }

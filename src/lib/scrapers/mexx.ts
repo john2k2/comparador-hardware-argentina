@@ -6,18 +6,23 @@ import {
   normalizeAbsoluteUrl,
   resolvePaginationBudget,
 } from './common-pagination';
+import { extractBrandFromName as extractBrandFromNameShared } from './brand-utils';
+import { logger } from '../logger';
+import { ScrapingError, ScraperResult, ok, fail, getErrorCode } from './types';
 
 const MEXX_BASE_URL = 'https://www.mexx.com.ar';
 const MEXX_CATEGORY_MAX_PAGES = 5;
 const MEXX_SEARCH_MAX_PAGES = 3;
 
-export async function fetchMexxProducts(
+export async function scrapeMexxProducts(
   categoryUrl: string,
   categorySlug: HardwareCategory,
   signal?: AbortSignal,
-): Promise<Product[]> {
+): Promise<ScraperResult<Product>> {
+  const startTime = Date.now();
+
   try {
-    console.log(`[Mexx Scraper] Extrayendo productos de: ${categoryUrl}`);
+    logger.info(`[Mexx Scraper] Extrayendo productos de: ${categoryUrl}`);
 
     const products: Product[] = [];
     const seenProductIds = new Set<string>();
@@ -46,7 +51,13 @@ export async function fetchMexxProducts(
       });
 
       if (!res.ok) {
-        throw new Error(`Fallo al acceder a Mexx: ${res.statusText}`);
+        const error: ScrapingError = {
+          code: 'NETWORK_ERROR',
+          message: `HTTP ${res.status}: ${res.statusText}`,
+          url: pageUrl,
+          timestamp: Date.now(),
+        };
+        return fail(error, Date.now() - startTime);
       }
 
       const html = await res.text();
@@ -103,7 +114,7 @@ export async function fetchMexxProducts(
         });
       });
 
-      console.log(`[Mexx Scraper] Pagina ${pageIndex}: ${pageProducts} productos nuevos`);
+      logger.info(`[Mexx Scraper] Pagina ${pageIndex}: ${pageProducts} productos nuevos`);
       if (pageProducts === 0) break;
 
       nextPageUrl = findNextPageUrl($, res.url || pageUrl, MEXX_BASE_URL);
@@ -114,22 +125,28 @@ export async function fetchMexxProducts(
       pageIndex += 1;
     }
 
-    return products;
+    return ok(products, Date.now() - startTime);
   } catch (error) {
-    console.error('[Mexx Scraper] Error critico:', error);
-    return [];
+    const scrapingError: ScrapingError = {
+      code: getErrorCode(error),
+      message: error instanceof Error ? error.message : String(error),
+      url: categoryUrl,
+      timestamp: Date.now(),
+    };
+    logger.error('[Mexx Scraper] Error critico', { error: scrapingError });
+    return fail(scrapingError, Date.now() - startTime);
   }
 }
 
+export async function fetchMexxProducts(
+  categoryUrl: string,
+  categorySlug: HardwareCategory,
+  signal?: AbortSignal,
+): Promise<Product[]> {
+  const result = await scrapeMexxProducts(categoryUrl, categorySlug, signal);
+  return result.data;
+}
+
 function extractBrandFromName(name: string): string {
-  const upperName = name.toUpperCase();
-  if (upperName.includes('AMD')) return 'AMD';
-  if (upperName.includes('INTEL')) return 'Intel';
-  if (upperName.includes('ASUS')) return 'ASUS';
-  if (upperName.includes('GIGABYTE')) return 'Gigabyte';
-  if (upperName.includes('MSI')) return 'MSI';
-  if (upperName.includes('CORSAIR')) return 'Corsair';
-  if (upperName.includes('NVIDIA') || upperName.includes('GEFORCE')) return 'NVIDIA';
-  if (upperName.includes('RADEON')) return 'AMD Radeon';
-  return 'Generica';
+  return extractBrandFromNameShared(name) ?? 'Generica';
 }

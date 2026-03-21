@@ -94,7 +94,40 @@ function buildProductJsonLd(product: Product, id: string) {
       itemCondition: 'https://schema.org/NewCondition',
     }));
 
+  // Build breadcrumb schema
+  const breadcrumbItems = [
+    {
+      '@type': 'ListItem',
+      position: 1,
+      name: 'Inicio',
+      item: SITE_URL,
+    },
+    {
+      '@type': 'ListItem',
+      position: 2,
+      name: 'Buscar',
+      item: `${SITE_URL}/search`,
+    },
+    {
+      '@type': 'ListItem',
+      position: 3,
+      name: product.category,
+      item: `${SITE_URL}/search?category=${encodeURIComponent(product.category)}`,
+    },
+    {
+      '@type': 'ListItem',
+      position: 4,
+      name: displayName,
+      item: productUrl,
+    },
+  ];
+
   return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: breadcrumbItems,
+    },
     {
       '@context': 'https://schema.org',
       '@type': 'Organization',

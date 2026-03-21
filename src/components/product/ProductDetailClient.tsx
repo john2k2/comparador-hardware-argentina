@@ -3,112 +3,27 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
-import { ArrowLeft, ExternalLink, Store, Shield, Clock } from 'lucide-react';
-import { PriceDisplay, InstallmentPicker, ProductCard } from '@/components/functional';
-import { cn } from '@/lib/utils';
+import { ArrowLeft } from 'lucide-react';
+import { ProductCard } from '@/components/functional';
 import { saveRecentlyViewedProduct } from '@/lib/client/recently-viewed';
-import { computeComparableStorePriceStats, formatPriceARS } from '@/lib/price-utils';
+import { computeComparableStorePriceStats } from '@/lib/price-utils';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
+import { trackProductView } from '@/lib/analytics';
+import {
+  normalizeFetchedProduct,
+  resolveBackHref,
+  readStoredProduct,
+  writeStoredProduct,
+  setCachedProduct,
+} from '@/lib/product/product-cache-utils';
+import { ProductImage } from './ProductImage';
+import { PriceSummary } from './PriceSummary';
+import { StoresList } from './StoresList';
+import { SpecsTable } from './SpecsTable';
+import { ProductActions } from './ProductActions';
 
 const CLIENT_DETAIL_CACHE_TTL_MS = 5 * 60 * 1000;
-const clientProductDetailCache = new Map<string, { expiresAt: number; product: Product | null }>();
-const PRODUCT_DETAIL_STORAGE_PREFIX = 'product-detail:v2:';
-
-const WHITELISTED_HOSTS = [
-  'mlstatic.com', 'imgur.com', 'unsplash.com', 'vteximg.com.br',
-  's3.amazonaws.com', 'compragamer.com', 'venex.com.ar', 'fullh4rd.com.ar',
-  'compugarden.com.ar',
-  'katech.com.ar', 'dinobyte.ar', 'maxtecno.com.ar', 'thegamershop.com.ar',
-  'hardcorecomputacion.com.ar', 'beings.com.ar', 'liontech-gaming.com',
-  'portalstore.com.ar', 'goldentechstore.com.ar', 'xt-pc.com.ar',
-  'rockethard.com.ar', 'hypergaming.com.ar', 'clickgaming.com.ar',
-  'megasoftargentina.com.ar', 'noxiestore.com', 'armytech.com.ar',
-  'hftecnologia.com.ar', 'spacegamer.com.ar', 'wiztech.com.ar',
-  '37bytes.com.ar', 'vrx.com.ar', 'mitiendanube.com', 'qloud.ar',
-  'qloud.com.ar', 'contabilium.com',
-];
-
-function toDateValue(value: unknown): Date {
-  if (value instanceof Date) return value;
-  if (typeof value === 'string' || typeof value === 'number') {
-    const parsed = new Date(value);
-    if (!Number.isNaN(parsed.getTime())) return parsed;
-  }
-  return new Date(0);
-}
-
-function normalizeFetchedProduct(product: Product): Product {
-  return {
-    ...product,
-    createdAt: toDateValue(product.createdAt),
-    updatedAt: toDateValue(product.updatedAt),
-    prices: (product.prices ?? []).map((price) => ({
-      ...price,
-      lastUpdated: toDateValue(price.lastUpdated),
-    })),
-  };
-}
-
-function isWhitelisted(url: string): boolean {
-  try {
-    const hostname = new URL(url).hostname;
-    return WHITELISTED_HOSTS.some((host) => hostname === host || hostname.endsWith(`.${host}`));
-  } catch {
-    return false;
-  }
-}
-
-function getProductStorageKey(id: string): string {
-  return `${PRODUCT_DETAIL_STORAGE_PREFIX}${id}`;
-}
-
-function readStoredProduct(id: string): { expiresAt: number; product: Product | null } | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.sessionStorage.getItem(getProductStorageKey(id));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { expiresAt?: number; product?: Product | null };
-    if (!parsed.expiresAt) return null;
-    if (parsed.expiresAt <= Date.now()) {
-      window.sessionStorage.removeItem(getProductStorageKey(id));
-      return null;
-    }
-    return {
-      expiresAt: parsed.expiresAt,
-      product: parsed.product ?? null,
-    };
-  } catch {
-    return null;
-  }
-}
-
-function writeStoredProduct(id: string, value: { expiresAt: number; product: Product | null }) {
-  if (typeof window === 'undefined') return;
-  try {
-    window.sessionStorage.setItem(getProductStorageKey(id), JSON.stringify(value));
-  } catch {
-    // Ignore storage quota errors.
-  }
-}
-
-function resolveBackHref(fromParam: string | null): string {
-  if (!fromParam) return '/search';
-
-  let decoded = fromParam;
-  for (let index = 0; index < 3; index += 1) {
-    try {
-      const next = decodeURIComponent(decoded);
-      if (next === decoded) break;
-      decoded = next;
-    } catch {
-      break;
-    }
-  }
-
-  return decoded.startsWith('/search') ? decoded : '/search';
-}
 
 type ProductDetailClientProps = {
   id: string;
@@ -134,17 +49,11 @@ export function ProductDetailClient({ id, initialProduct }: ProductDetailClientP
 
   useEffect(() => {
     const controller = new AbortController();
-    const cached = clientProductDetailCache.get(id);
-    if (cached && cached.expiresAt > Date.now()) {
-      setProduct(cached.product);
-      setIsLoading(false);
-      return () => controller.abort();
-    }
 
-    const stored = readStoredProduct(id);
-    if (stored) {
-      clientProductDetailCache.set(id, stored);
-      setProduct(stored.product);
+    const cached = readStoredProduct(id);
+    if (cached && cached.expiresAt > Date.now()) {
+      setCachedProduct(id, cached.product);
+      setProduct(cached.product);
       setIsLoading(false);
       return () => controller.abort();
     }
@@ -166,7 +75,7 @@ export function ProductDetailClient({ id, initialProduct }: ProductDetailClientP
               expiresAt: Date.now() + CLIENT_DETAIL_CACHE_TTL_MS,
               product: null,
             };
-            clientProductDetailCache.set(id, entry);
+            setCachedProduct(id, null);
             writeStoredProduct(id, entry);
             setProduct(null);
           }
@@ -178,7 +87,7 @@ export function ProductDetailClient({ id, initialProduct }: ProductDetailClientP
           expiresAt: Date.now() + CLIENT_DETAIL_CACHE_TTL_MS,
           product: fetched,
         };
-        clientProductDetailCache.set(id, entry);
+        setCachedProduct(id, fetched);
         writeStoredProduct(id, entry);
         setProduct(fetched);
       } catch (error) {
@@ -201,11 +110,6 @@ export function ProductDetailClient({ id, initialProduct }: ProductDetailClientP
     setIsLoading(!normalizedInitialProduct);
   }, [normalizedInitialProduct]);
 
-  useEffect(() => {
-    if (!product) return;
-    saveRecentlyViewedProduct(product);
-  }, [product]);
-
   const comparableStats = useMemo(
     () => (product
       ? computeComparableStorePriceStats(product.prices)
@@ -219,15 +123,25 @@ export function ProductDetailClient({ id, initialProduct }: ProductDetailClientP
     [product],
   );
   const merchantPrices = comparableStats.comparablePrices;
+
+  useEffect(() => {
+    if (!product) return;
+    saveRecentlyViewedProduct(product);
+    trackProductView({
+      productId: product.id,
+      productName: product.name,
+      category: product.category,
+      brand: product.brand,
+      price: product.lowestPrice,
+      storeCount: merchantPrices.length,
+    });
+  }, [product, merchantPrices.length]);
   const lowestComparablePrice = product
     ? (comparableStats.lowest > 0 ? comparableStats.lowest : product.lowestPrice)
     : 0;
   const highestComparablePrice = product
     ? (comparableStats.highest > 0 ? comparableStats.highest : product.highestPrice)
     : 0;
-  const bestPrice = product
-    ? (merchantPrices[0] ?? product.prices.find((price) => price.price === lowestComparablePrice))
-    : undefined;
   const latestSyncAtMs = merchantPrices.reduce((max, price) => {
     const timestamp = new Date(price.lastUpdated).getTime();
     if (!Number.isFinite(timestamp)) return max;
@@ -286,20 +200,10 @@ export function ProductDetailClient({ id, initialProduct }: ProductDetailClientP
     );
   }
 
-  const installments = bestPrice?.installment ? [bestPrice.installment] : [];
   const displayName = normalizeDisplayText(product.name);
   const displayBrand = normalizeDisplayText(product.brand);
   const displayModel = normalizeDisplayText(product.model);
   const displayDescription = normalizeDisplayText(product.description || product.name);
-  const specsEntries = Object.entries(product.specs ?? {}).map(([key, value]) => ([
-    normalizeDisplayText(key),
-    normalizeDisplayText(String(value)),
-  ] as const));
-  const storesCompared = merchantPrices.length;
-  const priceSpread = Math.max(0, highestComparablePrice - lowestComparablePrice);
-  const spreadPercent = highestComparablePrice > 0
-    ? Math.round((priceSpread / highestComparablePrice) * 100)
-    : 0;
 
   const relatedProducts: Product[] = [];
 
@@ -317,46 +221,11 @@ export function ProductDetailClient({ id, initialProduct }: ProductDetailClientP
 
       <div className="grid lg:grid-cols-2 gap-8 mb-12">
         <div className="flex flex-col gap-6">
-          <div className="relative aspect-square bg-black border-4 border-border pixel-shadow p-4 flex items-center justify-center">
-            <div className="absolute top-2 left-2 w-4 h-4 border-t-4 border-l-4 border-primary" />
-            <div className="absolute top-2 right-2 w-4 h-4 border-t-4 border-r-4 border-primary" />
-            <div className="absolute bottom-2 left-2 w-4 h-4 border-b-4 border-l-4 border-primary" />
-            <div className="absolute bottom-2 right-2 w-4 h-4 border-b-4 border-r-4 border-primary" />
-
-            {product.image ? (
-              <div className="relative w-full h-full">
-                {isWhitelisted(product.image) ? (
-                  <Image
-                    src={product.image}
-                    alt={displayName}
-                    fill
-                    className="object-contain image-pixelated p-4"
-                    priority
-                  />
-                ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={product.image}
-                    alt={displayName}
-                    className="object-contain image-pixelated p-4 w-full h-full"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                  />
-                )}
-              </div>
-            ) : (
-              <div className="relative w-full h-full">
-                <Image
-                  src="/pixel-box.svg"
-                  alt="No image"
-                  fill
-                  className="object-contain image-pixelated p-8 opacity-50"
-                />
-              </div>
-            )}
-            <div className="absolute bottom-0 right-0 bg-primary text-primary-foreground px-3 py-1 text-[8px] font-bold uppercase border-l-4 border-t-4 border-border">
-              {latestSyncLabel ? `ACT: ${latestSyncLabel}` : 'ACT: N/D'}
-            </div>
-          </div>
+          <ProductImage
+            image={product.image}
+            productName={product.name}
+            latestSyncLabel={latestSyncLabel}
+          />
 
           <div className="bg-card border-4 border-border p-6 pixel-shadow">
             <p className="text-[10px] text-secondary font-bold uppercase tracking-widest mb-2">
@@ -375,131 +244,20 @@ export function ProductDetailClient({ id, initialProduct }: ProductDetailClientP
         </div>
 
         <div className="space-y-6">
-          <div className="bg-card border-4 border-border p-6 pixel-shadow">
-            <h3 className="text-[12px] font-bold uppercase mb-4 text-secondary border-b-4 border-secondary inline-block pb-1">
-              RESUMEN COMPARADOR
-            </h3>
+          <PriceSummary
+            product={product}
+            merchantPrices={merchantPrices}
+            lowestComparablePrice={lowestComparablePrice}
+            highestComparablePrice={highestComparablePrice}
+            selectedInstallment={selectedInstallment}
+            onSelectInstallment={setSelectedInstallment}
+          />
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="border-2 border-border bg-muted/40 p-3">
-                <p className="text-[8px] uppercase text-muted-foreground mb-1">Tiendas</p>
-                <p className="text-[12px] font-bold text-foreground">{storesCompared}</p>
-              </div>
-              <div className="border-2 border-border bg-muted/40 p-3">
-                <p className="text-[8px] uppercase text-muted-foreground mb-1">Diferencia</p>
-                <p className="text-[12px] font-bold text-primary">{formatPriceARS(priceSpread)}</p>
-              </div>
-              <div className="border-2 border-border bg-muted/40 p-3">
-                <p className="text-[8px] uppercase text-muted-foreground mb-1">Ahorro Max</p>
-                <p className="text-[12px] font-bold text-secondary">{spreadPercent}%</p>
-              </div>
-            </div>
+          <SpecsTable product={product} />
 
-            <p className="text-[8px] uppercase text-muted-foreground mt-3">
-              {`Rango actual: ${formatPriceARS(lowestComparablePrice)} - ${formatPriceARS(highestComparablePrice)}`}
-            </p>
-          </div>
+          <StoresList product={product} merchantPrices={merchantPrices} />
 
-          <div className="bg-muted border-4 border-border p-6 pixel-shadow flex flex-col gap-4">
-            <div>
-              <p className="text-[10px] uppercase font-bold text-muted-foreground mb-2">MEJOR PRECIO DETECTADO</p>
-              <PriceDisplay
-                price={selectedInstallment ? selectedInstallment.totalAmount : (bestPrice?.price ?? lowestComparablePrice)}
-                originalPrice={bestPrice?.originalPrice}
-                size="lg"
-              />
-            </div>
-
-            {installments.length > 0 && (
-              <div className="pt-4 border-t-4 border-border border-dashed">
-                <InstallmentPicker
-                  installments={installments}
-                  currentPrice={bestPrice?.price ?? lowestComparablePrice}
-                  onSelect={setSelectedInstallment}
-                />
-              </div>
-            )}
-          </div>
-
-          {specsEntries.length > 0 && (
-            <div className="bg-card border-4 border-border p-6 pixel-shadow">
-              <h3 className="text-[12px] font-bold uppercase mb-4 text-primary border-b-4 border-primary inline-block pb-1">
-                STATS DEL ITEM
-              </h3>
-              <dl className="space-y-3">
-                {specsEntries.map(([key, value]) => (
-                  <div key={key} className="flex justify-between text-[10px] uppercase border-b-2 border-muted border-dashed pb-2">
-                    <dt className="text-muted-foreground">{key}</dt>
-                    <dd className="font-bold text-foreground text-right ml-4">{value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          )}
-
-          <div className="bg-card border-4 border-border p-6 pixel-shadow">
-            <h3 className="text-[12px] font-bold uppercase mb-4 text-accent border-b-4 border-accent inline-block pb-1">
-              TIENDAS DISPONIBLES
-            </h3>
-            <div className="space-y-3">
-              {merchantPrices.map((price, index) => (
-                <div
-                  key={price.storeId}
-                  className={cn(
-                    'flex flex-col sm:flex-row sm:items-center justify-between p-3 border-2 gap-3',
-                    index === 0
-                      ? 'border-secondary bg-secondary/10'
-                      : 'border-muted hover:border-border transition-colors',
-                  )}
-                >
-                  <div className="flex flex-col gap-1">
-                    {index === 0 && (
-                      <span className="text-[8px] font-bold uppercase text-secondary">
-                        [ MEJOR PRECIO ]
-                      </span>
-                    )}
-                    <span className="text-[10px] uppercase font-bold text-foreground">
-                      {`@${normalizeDisplayText(price.storeName)}`}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-4 justify-between sm:justify-end w-full sm:w-auto">
-                    <PriceDisplay
-                      price={price.price}
-                      originalPrice={price.originalPrice}
-                      size="sm"
-                    />
-                    <a
-                      href={price.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={cn(
-                        'px-3 py-2 text-[8px] uppercase font-bold transition-transform active:translate-x-1 active:translate-y-1 flex items-center gap-2',
-                        index === 0 ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-foreground border-2 border-border',
-                      )}
-                    >
-                      VER EN TIENDA <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-4 text-[8px] uppercase font-bold text-muted-foreground p-4 bg-muted border-4 border-border">
-            <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-primary" />
-              <span>GARANTIA OK</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Store className="w-4 h-4 text-secondary" />
-              <span>ENLACE A TIENDA</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-accent" />
-              <span>SYNC REAL-TIME</span>
-            </div>
-          </div>
+          <ProductActions />
         </div>
       </div>
 

@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio';
 import type { Element } from 'domhandler';
 import { HardwareCategory, Product, StockStatus } from '../types';
 import { normalizeAbsoluteUrl } from './common-pagination';
+import { logger } from '../logger';
 
 const GAMING_CITY_BASE_URL = 'https://www.gamingcity.com.ar';
 const GAMING_CITY_SEARCH_MAX_PAGES = 3;
@@ -222,12 +223,12 @@ export async function fetchGamingCityProducts(
   const maxPages = rawInput.startsWith('http') ? GAMING_CITY_CATEGORY_MAX_PAGES : GAMING_CITY_SEARCH_MAX_PAGES;
 
   try {
-    console.log(`[Gaming City Scraper] Extrayendo productos de: ${initialUrl}`);
+    logger.info(`[Gaming City Scraper] Extrayendo productos de: ${initialUrl}`);
     const products = await scrapeGamingCityCollection(initialUrl, categorySlug, maxPages, signal);
-    console.log(`[Gaming City Scraper] Productos detectados: ${products.length}`);
+    logger.info(`[Gaming City Scraper] Productos detectados: ${products.length}`);
     return products;
   } catch (error) {
-    console.error('[Gaming City Scraper] Error:', error);
+    logger.error('[Gaming City Scraper] Error', { error });
     return [];
   }
 }

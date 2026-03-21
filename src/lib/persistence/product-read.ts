@@ -22,6 +22,14 @@ interface ReadProductsPageParams extends ReadProductsParams {
   pageSize: number;
 }
 
+type ProductPageResult = {
+  products: Product[];
+  total: number;
+  totalPages: number;
+  page: number;
+  pageSize: number;
+};
+
 interface DbProductPriceRow {
   store_id: string;
   url: string;
@@ -527,30 +535,137 @@ export async function readProductsFromDatabase(params: ReadProductsParams): Prom
   return sortProducts(products, params.sortBy ?? 'relevance');
 }
 
-export async function readProductsPageFromDatabase(params: ReadProductsPageParams): Promise<{
-  products: Product[];
-  total: number;
-  totalPages: number;
-  page: number;
-  pageSize: number;
-}> {
+export async function readProductsPageFromDatabase(params: ReadProductsPageParams): Promise<ProductPageResult> {
   const pageSize = Math.max(1, Math.trunc(params.pageSize) || 1);
   const requestedPage = Math.max(1, Math.trunc(params.page) || 1);
-  const products = await readProductsFromDatabase({
-    ...params,
-    limit: MAX_LIMIT,
-  });
-  const total = products.length;
+  const offset = (requestedPage - 1) * pageSize;
+  const supabase = getServerSupabaseReadClient();
+
+  if (!supabase) {
+    return { products: [], total: 0, totalPages: 0, page: requestedPage, pageSize };
+  }
+
+  const searchTerm = params.query ? sanitizeSearchTerm(params.query) : '';
+
+  let dataQuery = supabase
+    .from('products')
+    .select(`
+      id,
+      name,
+      category,
+      brand,
+      model,
+      description,
+      image,
+      normalized_title,
+      canonical_product_key,
+      family_key,
+      variant_key,
+      refresh_priority,
+      last_scraped_at,
+      last_normalized_at,
+      specs,
+      lowest_price,
+      highest_price,
+      average_price,
+      created_at,
+      updated_at,
+      product_prices (
+        store_id,
+        url,
+        price,
+        original_price,
+        stock,
+        installment_count,
+        installment_amount,
+        last_updated
+      )
+    `, { count: 'exact' })
+    .order('updated_at', { ascending: false })
+    .range(offset, offset + pageSize - 1);
+
+  if (params.category) {
+    dataQuery = dataQuery.eq('category', params.category);
+  }
+  if (params.minPrice !== undefined) {
+    dataQuery = dataQuery.gte('lowest_price', params.minPrice);
+  }
+  if (params.maxPrice !== undefined) {
+    dataQuery = dataQuery.lte('lowest_price', params.maxPrice);
+  }
+  if (searchTerm) {
+    dataQuery = dataQuery.or(
+      `name.ilike.%${searchTerm}%,brand.ilike.%${searchTerm}%,model.ilike.%${searchTerm}%,normalized_title.ilike.%${searchTerm}%,family_key.ilike.%${searchTerm}%,variant_key.ilike.%${searchTerm}%`,
+    );
+  }
+
+  const [{ data, error, count }, totalResult] = await Promise.all([
+    dataQuery,
+    buildTotalCountQuery(supabase, params.category, params.minPrice, params.maxPrice, searchTerm),
+  ]);
+
+  if (error) {
+    if (EMPTY_RESULT_ERROR_CODES.has(error.code ?? '')) {
+      return { products: [], total: 0, totalPages: 0, page: requestedPage, pageSize };
+    }
+    throw new Error(`readProductsPageFromDatabase: ${error.message}`);
+  }
+
+  const total = count ?? totalResult;
   const totalPages = total > 0 ? Math.ceil(total / pageSize) : 0;
   const page = Math.max(1, Math.min(requestedPage, Math.max(totalPages, 1)));
-  const start = (page - 1) * pageSize;
-  const end = page * pageSize;
+
+  let products = (data as DbProductRow[] | null)?.map(mapDbProduct) ?? [];
+
+  if (searchTerm) {
+    products = applyTextFilter(products, searchTerm);
+  }
+
+  products = dedupeProductsByCanonicalName(products);
+
+  if (params.storeIds && params.storeIds.size > 0) {
+    products = products
+      .map((product) => recalculateProductPrices(product, params.storeIds))
+      .filter((product): product is Product => Boolean(product));
+  }
 
   return {
-    products: products.slice(start, end),
+    products: sortProducts(products, params.sortBy ?? 'relevance'),
     total,
     totalPages,
     page,
     pageSize,
   };
 }
+
+async function buildTotalCountQuery(
+  supabase: NonNullable<ReturnType<typeof getServerSupabaseReadClient>>,
+  category?: HardwareCategory,
+  minPrice?: number,
+  maxPrice?: number,
+  searchTerm?: string,
+): Promise<number> {
+  let countQuery = supabase
+    .from('products')
+    .select('id', { count: 'exact', head: true });
+
+  if (category) {
+    countQuery = countQuery.eq('category', category);
+  }
+  if (minPrice !== undefined) {
+    countQuery = countQuery.gte('lowest_price', minPrice);
+  }
+  if (maxPrice !== undefined) {
+    countQuery = countQuery.lte('lowest_price', maxPrice);
+  }
+  if (searchTerm) {
+    countQuery = countQuery.or(
+      `name.ilike.%${searchTerm}%,brand.ilike.%${searchTerm}%,model.ilike.%${searchTerm}%,normalized_title.ilike.%${searchTerm}%,family_key.ilike.%${searchTerm}%,variant_key.ilike.%${searchTerm}%`,
+    );
+  }
+
+  const { count, error } = await countQuery;
+  if (error || count === null) return 0;
+  return count;
+}
+

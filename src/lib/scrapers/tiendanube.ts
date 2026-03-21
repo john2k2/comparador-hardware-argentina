@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio';
 import { Product, HardwareCategory, StockStatus } from '../types';
 import { MonitoredEndpoint, recordStoreScrapeEvent, runObservedStoreScrape } from '../telemetry/operational-metrics';
 import { findNextPageUrl, normalizeAbsoluteUrl as normalizeAbsolutePaginationUrl } from './common-pagination';
+import { logger } from '../logger';
 
 export interface TiendaNubeStore {
   id: string;
@@ -370,7 +371,7 @@ export async function fetchTiendaNubeSearch(
       try {
         const results = await scrapeTiendaNubePages(url, store, category, TIENDANUBE_SEARCH_MAX_PAGES, options);
         if (results.length > 0) storeBackoffUntil.delete(store.id);
-        console.log(`[TiendaNube] ${store.name} -> ${results.length} productos`);
+        logger.info(`[TiendaNube] ${store.name} -> ${results.length} productos`);
         return results;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

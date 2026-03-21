@@ -6,38 +6,23 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import React, { useMemo } from 'react';
 import { computeComparableStorePriceStats, formatPriceARS } from '@/lib/price-utils';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { PriceDisplay } from './PriceDisplay';
+import { isImageHostWhitelisted } from '@/lib/whitelisted-hosts';
 
-// Dominios internos que estan en el whitelist de next/image
-const WHITELISTED_HOSTS = [
-  'mlstatic.com', 'imgur.com', 'unsplash.com', 'vteximg.com.br',
-  's3.amazonaws.com', 'compragamer.com', 'venex.com.ar', 'fullh4rd.com.ar',
-  'compugarden.com.ar',
-  'katech.com.ar', 'dinobyte.ar', 'maxtecno.com.ar', 'thegamershop.com.ar',
-  'hardcorecomputacion.com.ar', 'beings.com.ar', 'liontech-gaming.com',
-  'portalstore.com.ar', 'goldentechstore.com.ar', 'xt-pc.com.ar',
-  'rockethard.com.ar', 'hypergaming.com.ar', 'clickgaming.com.ar',
-  'megasoftargentina.com.ar', 'noxiestore.com', 'armytech.com.ar',
-  'hftecnologia.com.ar', 'spacegamer.com.ar', 'wiztech.com.ar',
-  '37bytes.com.ar', 'vrx.com.ar', 'mitiendanube.com', 'qloud.ar',
-  'qloud.com.ar', 'contabilium.com',
-];
+// Base64 encoded tiny placeholder for blur effect (1x1 pixel, light gray)
+const BLUR_PLACEHOLDER = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAADklEQVQI12NgGAWjAAMAAMwIelQhR6EAAAAASUVORK5CYII=';
 
 const SEARCH_SCROLL_STORAGE_PREFIX = 'search-scroll:v1:';
 const PRICE_DROP_MIN_PERCENT = 5;
 const PRICE_DROP_MIN_AMOUNT_ARS = 10_000;
 
 function isWhitelisted(url: string): boolean {
-  try {
-    const hostname = new URL(url).hostname;
-    return WHITELISTED_HOSTS.some((host) => hostname === host || hostname.endsWith(`.${host}`));
-  } catch {
-    return false;
-  }
+  return isImageHostWhitelisted(url);
 }
 
 export interface ProductCardProps {
@@ -63,14 +48,14 @@ function getPriceDropBaseline(product: Product, highestComparablePrice: number):
   return baseline;
 }
 
-export function ProductCard({ product, showStore = true, className, returnTo = null }: ProductCardProps) {
-  const comparableStats = computeComparableStorePriceStats(product.prices);
+export const ProductCard = React.memo(function ProductCard({ product, showStore = true, className, returnTo = null }: ProductCardProps) {
+  const comparableStats = useMemo(() => computeComparableStorePriceStats(product.prices), [product.prices]);
   const comparablePrices = comparableStats.comparablePrices;
   const comparableStoreCount = comparablePrices.length;
   const lowestComparablePrice = comparableStats.lowest > 0 ? comparableStats.lowest : product.lowestPrice;
   const highestComparablePrice = comparableStats.highest > 0 ? comparableStats.highest : product.highestPrice;
-  const displayName = normalizeDisplayText(product.name);
-  const displayBrand = normalizeDisplayText(product.brand);
+  const displayName = useMemo(() => normalizeDisplayText(product.name), [product.name]);
+  const displayBrand = useMemo(() => normalizeDisplayText(product.brand), [product.brand]);
 
   const bestPrice = comparablePrices[0] ?? product.prices.find((price) => price.price === lowestComparablePrice);
   const hasDiscount = Boolean(bestPrice?.originalPrice && bestPrice.originalPrice > bestPrice.price);
@@ -115,6 +100,8 @@ export function ProductCard({ product, showStore = true, className, returnTo = n
               fill
               className="object-contain image-pixelated p-2 transition-transform duration-300 group-hover:scale-[1.03]"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              placeholder="blur"
+              blurDataURL={BLUR_PLACEHOLDER}
             />
           ) : product.image ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -132,6 +119,8 @@ export function ProductCard({ product, showStore = true, className, returnTo = n
               alt="No image"
               fill
               className="object-contain image-pixelated p-4 opacity-50"
+              placeholder="blur"
+              blurDataURL={BLUR_PLACEHOLDER}
             />
           )}
 
@@ -191,6 +180,6 @@ export function ProductCard({ product, showStore = true, className, returnTo = n
       </article>
     </Link>
   );
-}
+});
 
 export default ProductCard;

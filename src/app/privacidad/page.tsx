@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { RetroPageShell } from '@/components/layout/RetroPageShell';
 import { SITE_NAME, SUPPORT_EMAIL } from '@/lib/site-config';
+import { PRIVACIDAD_FAQ } from '@/lib/seo/faq-schema';
 
 export const metadata: Metadata = {
   title: 'Politica de Privacidad',
@@ -9,6 +10,11 @@ export const metadata: Metadata = {
 
 export default function PrivacidadPage() {
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(PRIVACIDAD_FAQ) }}
+      />
     <RetroPageShell
       title="POLITICA DE PRIVACIDAD"
       subtitle="Documento operativo y honesto sobre el tratamiento basico de datos. Debe revisarse otra vez cuando se active analitica, ads o formularios."
@@ -54,5 +60,6 @@ export default function PrivacidadPage() {
         </div>
       </div>
     </RetroPageShell>
+    </>
   );
 }

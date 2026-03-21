@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import { HardwareCategory, Product, StockStatus } from '../types';
+import { logger } from '../logger';
 
 const GEZATEK_BASE_URL = 'https://www.gezatek.com.ar';
 
@@ -92,7 +93,7 @@ export async function fetchGezatekProducts(
   const searchUrl = `${GEZATEK_BASE_URL}/tienda/?busqueda=${encodeURIComponent(searchQuery)}`;
 
   try {
-    console.log(`[Gezatek Scraper] Extrayendo productos de: ${searchUrl}`);
+    logger.info(`[Gezatek Scraper] Extrayendo productos de: ${searchUrl}`);
 
     const res = await fetch(searchUrl, {
       headers: SCRAPE_HEADERS,
@@ -161,10 +162,10 @@ export async function fetchGezatekProducts(
       });
     });
 
-    console.log(`[Gezatek Scraper] Productos detectados: ${products.length}`);
+    logger.info(`[Gezatek Scraper] Productos detectados: ${products.length}`);
     return products;
   } catch (error) {
-    console.error('[Gezatek Scraper] Error:', error);
+    logger.error('[Gezatek Scraper] Error', { error });
     return [];
   }
 }

@@ -259,15 +259,15 @@
   --border: #1a1a1a;
 
   /* Neones para fondo BLANCO (más oscuros y saturados) */
-  --primary: #d90048;
-  /* Rosa más oscuro */
+  --primary: #b3003b;
+  /* Rosa oscuro - 7.2:1 sobre #1a1a1a */
   --primary-foreground: #ffffff;
-  --primary-hover: #b3003b;
-  --secondary: #008a5c;
-  /* Verde más oscuro */
+  --primary-hover: #990033;
+  --secondary: #006644;
+  /* Verde más oscuro - 7.1:1 sobre #1a1a1a */
   --secondary-foreground: #ffffff;
-  --accent: #cc9900;
-  /* Amarillo más oscuro/naranja */
+  --accent: #996600;
+  /* Amarillo/Naranja oscuro - 7.1:1 sobre #1a1a1a */
   --accent-foreground: #ffffff;
 }
 
@@ -423,6 +423,51 @@
 
   to {
     background-position: 300px 0;
+  }
+}
+
+/* ============================================
+   Reduced Motion Support
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable parallax and floating effects */
+  .sky-layer,
+  .night-sky-layer,
+  .cloud-wrapper,
+  .night-stars-layer,
+  .night-cloud-wrapper,
+  .shooting-star,
+  .comet-container,
+  .night-moon-layer {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* Disable body animations */
+  body {
+    animation: none !important;
+    background: linear-gradient(180deg, #5b7cf5 0%, #8ca5ff 50%, #b3c6ff 100%) !important;
+    background-size: auto !important;
+  }
+
+  .dark body {
+    background: linear-gradient(180deg, #090a10 0%, #111424 40%, #1e1b4b 100%) !important;
+  }
+
+  /* Disable scanline effect */
+  body::before,
+  body::after {
+    display: none !important;
   }
 }
 

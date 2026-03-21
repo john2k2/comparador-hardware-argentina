@@ -6,6 +6,7 @@ import {
   normalizeAbsoluteUrl,
   resolvePaginationBudget,
 } from './common-pagination';
+import { logger } from '../logger';
 
 const FULLH4RD_BASE_URL = 'https://www.fullh4rd.com.ar';
 const FULLH4RD_CATEGORY_MAX_PAGES = 5;
@@ -17,7 +18,7 @@ export async function fetchFullh4rdProducts(
   signal?: AbortSignal,
 ): Promise<Product[]> {
   try {
-    console.log(`[Fullh4rd Scraper] Extrayendo productos de: ${categoryUrl}`);
+    logger.info(`[Fullh4rd Scraper] Extrayendo productos de: ${categoryUrl}`);
 
     const products: Product[] = [];
     const seenProductIds = new Set<string>();
@@ -102,7 +103,7 @@ export async function fetchFullh4rdProducts(
         });
       });
 
-      console.log(`[Fullh4rd Scraper] Pagina ${pageIndex}: ${pageProducts} productos nuevos`);
+      logger.info(`[Fullh4rd Scraper] Pagina ${pageIndex}: ${pageProducts} productos nuevos`);
       if (pageProducts === 0) break;
 
       nextPageUrl = findNextPageUrl($, res.url || pageUrl, FULLH4RD_BASE_URL);
@@ -115,7 +116,7 @@ export async function fetchFullh4rdProducts(
 
     return products;
   } catch (error) {
-    console.error('[Fullh4rd Scraper] Error:', error);
+    logger.error('[Fullh4rd Scraper] Error', { error });
     return [];
   }
 }
