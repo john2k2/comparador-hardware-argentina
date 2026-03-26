@@ -2,10 +2,22 @@
  * Product detail client-side caching utilities
  */
 
+import { hydrateProduct } from '@/lib/product-serialization';
 import type { Product } from '@/lib/types';
 
 const CLIENT_DETAIL_CACHE_TTL_MS = 5 * 60 * 1000;
 const PRODUCT_DETAIL_STORAGE_PREFIX = 'product-detail:v2:';
+
+export type ProductDetailCacheEntry = {
+  expiresAt: number;
+  product: Product | null;
+};
+
+export type InitialProductClientState = {
+  product: Product | null;
+  isLoading: boolean;
+  shouldFetch: boolean;
+};
 
 // ---------------------------------------------------------------------------
 // Date Normalization
@@ -21,15 +33,7 @@ export function toDateValue(value: unknown): Date {
 }
 
 export function normalizeFetchedProduct(product: Product): Product {
-  return {
-    ...product,
-    createdAt: toDateValue(product.createdAt),
-    updatedAt: toDateValue(product.updatedAt),
-    prices: (product.prices ?? []).map((price) => ({
-      ...price,
-      lastUpdated: toDateValue(price.lastUpdated),
-    })),
-  };
+  return hydrateProduct(product);
 }
 
 // ---------------------------------------------------------------------------
@@ -44,14 +48,18 @@ export function getProductStorageKey(id: string): string {
 // In-Memory Cache
 // ---------------------------------------------------------------------------
 
-const clientProductDetailCache = new Map<string, { expiresAt: number; product: Product | null }>();
+const clientProductDetailCache = new Map<string, ProductDetailCacheEntry>();
 
-export function getCachedProduct(id: string) {
+export function getCachedProductEntry(id: string): ProductDetailCacheEntry | null {
   const cached = clientProductDetailCache.get(id);
   if (cached && cached.expiresAt > Date.now()) {
-    return cached.product;
+    return cached;
   }
   return null;
+}
+
+export function getCachedProduct(id: string) {
+  return getCachedProductEntry(id)?.product ?? null;
 }
 
 export function setCachedProduct(id: string, product: Product | null) {
@@ -63,7 +71,7 @@ export function setCachedProduct(id: string, product: Product | null) {
 // Session Storage
 // ---------------------------------------------------------------------------
 
-export function readStoredProduct(id: string): { expiresAt: number; product: Product | null } | null {
+export function readStoredProduct(id: string): ProductDetailCacheEntry | null {
   if (typeof window === 'undefined') return null;
   try {
     const raw = window.sessionStorage.getItem(getProductStorageKey(id));
@@ -74,19 +82,50 @@ export function readStoredProduct(id: string): { expiresAt: number; product: Pro
       window.sessionStorage.removeItem(getProductStorageKey(id));
       return null;
     }
-    return { expiresAt: parsed.expiresAt, product: parsed.product ?? null };
+    return {
+      expiresAt: parsed.expiresAt,
+      product: parsed.product ? normalizeFetchedProduct(parsed.product) : null,
+    };
   } catch {
     return null;
   }
 }
 
-export function writeStoredProduct(id: string, value: { expiresAt: number; product: Product | null }) {
+export function writeStoredProduct(id: string, value: ProductDetailCacheEntry) {
   if (typeof window === 'undefined') return;
   try {
     window.sessionStorage.setItem(getProductStorageKey(id), JSON.stringify(value));
   } catch {
     // Ignore storage quota errors.
   }
+}
+
+export function resolveInitialProductClientState(id: string, initialProduct: Product | null): InitialProductClientState {
+  const memoryEntry = getCachedProductEntry(id);
+  if (memoryEntry) {
+    return {
+      product: memoryEntry.product,
+      isLoading: false,
+      shouldFetch: false,
+    };
+  }
+
+  const storedEntry = readStoredProduct(id);
+  if (storedEntry) {
+    clientProductDetailCache.set(id, storedEntry);
+    return {
+      product: storedEntry.product,
+      isLoading: false,
+      shouldFetch: false,
+    };
+  }
+
+  const normalizedInitial = initialProduct ? normalizeFetchedProduct(initialProduct) : null;
+  return {
+    product: normalizedInitial,
+    isLoading: !normalizedInitial,
+    shouldFetch: true,
+  };
 }
 
 // ---------------------------------------------------------------------------

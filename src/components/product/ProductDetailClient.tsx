@@ -1,29 +1,21 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { ProductCard } from '@/components/functional';
 import { saveRecentlyViewedProduct } from '@/lib/client/recently-viewed';
-import { computeComparableStorePriceStats } from '@/lib/price-utils';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
 import { trackProductView } from '@/lib/analytics';
-import {
-  normalizeFetchedProduct,
-  resolveBackHref,
-  readStoredProduct,
-  writeStoredProduct,
-  setCachedProduct,
-} from '@/lib/product/product-cache-utils';
+import { resolveBackHref } from '@/lib/product/product-cache-utils';
+import { useProductDetailState } from '@/lib/product/product-detail-hooks';
 import { ProductImage } from './ProductImage';
 import { PriceSummary } from './PriceSummary';
 import { StoresList } from './StoresList';
 import { SpecsTable } from './SpecsTable';
 import { ProductActions } from './ProductActions';
-
-const CLIENT_DETAIL_CACHE_TTL_MS = 5 * 60 * 1000;
 
 type ProductDetailClientProps = {
   id: string;
@@ -31,98 +23,26 @@ type ProductDetailClientProps = {
 };
 
 export function ProductDetailClient({ id, initialProduct }: ProductDetailClientProps) {
+  return <ProductDetailClientInner key={id} id={id} initialProduct={initialProduct} />;
+}
+
+function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientProps) {
   const searchParams = useSearchParams();
   const backHref = resolveBackHref(searchParams.get('from'));
-  const normalizedInitialProduct = useMemo(
-    () => (initialProduct ? normalizeFetchedProduct(initialProduct) : null),
-    [initialProduct],
-  );
-  const [product, setProduct] = useState<Product | null>(normalizedInitialProduct);
   const [selectedInstallment, setSelectedInstallment] = useState<{
     count: number;
     amount: number;
     totalAmount: number;
     interest: boolean;
   } | null>(null);
-  const [isLoading, setIsLoading] = useState(!normalizedInitialProduct);
-  const [latestSyncLabel, setLatestSyncLabel] = useState<string | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const cached = readStoredProduct(id);
-    if (cached && cached.expiresAt > Date.now()) {
-      setCachedProduct(id, cached.product);
-      setProduct(cached.product);
-      setIsLoading(false);
-      return () => controller.abort();
-    }
-
-    const shouldShowLoader = !normalizedInitialProduct;
-    if (shouldShowLoader) {
-      setIsLoading(true);
-    }
-
-    const loadProduct = async () => {
-      try {
-        const res = await fetch(`/api/products?id=${encodeURIComponent(id)}`, {
-          signal: controller.signal,
-        });
-
-        if (!res.ok) {
-          if (shouldShowLoader) {
-            const entry = {
-              expiresAt: Date.now() + CLIENT_DETAIL_CACHE_TTL_MS,
-              product: null,
-            };
-            setCachedProduct(id, null);
-            writeStoredProduct(id, entry);
-            setProduct(null);
-          }
-          return;
-        }
-
-        const fetched = normalizeFetchedProduct(await res.json() as Product);
-        const entry = {
-          expiresAt: Date.now() + CLIENT_DETAIL_CACHE_TTL_MS,
-          product: fetched,
-        };
-        setCachedProduct(id, fetched);
-        writeStoredProduct(id, entry);
-        setProduct(fetched);
-      } catch (error) {
-        if ((error as Error).name !== 'AbortError' && shouldShowLoader) {
-          setProduct(null);
-        }
-      } finally {
-        if (!controller.signal.aborted && shouldShowLoader) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    void loadProduct();
-    return () => controller.abort();
-  }, [id, normalizedInitialProduct]);
-
-  useEffect(() => {
-    setProduct(normalizedInitialProduct);
-    setIsLoading(!normalizedInitialProduct);
-  }, [normalizedInitialProduct]);
-
-  const comparableStats = useMemo(
-    () => (product
-      ? computeComparableStorePriceStats(product.prices)
-      : {
-          comparablePrices: [],
-          discardedPrices: [],
-          lowest: 0,
-          highest: 0,
-          average: 0,
-        }),
-    [product],
-  );
-  const merchantPrices = comparableStats.comparablePrices;
+  const {
+    product,
+    isLoading,
+    merchantPrices,
+    lowestComparablePrice,
+    highestComparablePrice,
+    latestSyncLabel,
+  } = useProductDetailState(id, initialProduct);
 
   useEffect(() => {
     if (!product) return;
@@ -136,31 +56,6 @@ export function ProductDetailClient({ id, initialProduct }: ProductDetailClientP
       storeCount: merchantPrices.length,
     });
   }, [product, merchantPrices.length]);
-  const lowestComparablePrice = product
-    ? (comparableStats.lowest > 0 ? comparableStats.lowest : product.lowestPrice)
-    : 0;
-  const highestComparablePrice = product
-    ? (comparableStats.highest > 0 ? comparableStats.highest : product.highestPrice)
-    : 0;
-  const latestSyncAtMs = merchantPrices.reduce((max, price) => {
-    const timestamp = new Date(price.lastUpdated).getTime();
-    if (!Number.isFinite(timestamp)) return max;
-    return Math.max(max, timestamp);
-  }, 0);
-
-  useEffect(() => {
-    if (latestSyncAtMs <= 0) {
-      setLatestSyncLabel(null);
-      return;
-    }
-
-    setLatestSyncLabel(new Intl.DateTimeFormat('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(latestSyncAtMs)));
-  }, [latestSyncAtMs]);
 
   if (isLoading) {
     return (
