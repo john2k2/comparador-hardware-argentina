@@ -14,6 +14,7 @@ import {
   parseScrapedArsPrice,
   slugFromScrapedUrl,
 } from './scraper-helpers';
+import { runWithConcurrency, selectStoresByIds } from './multi-store';
 
 export interface WooStore {
   id: string;
@@ -372,39 +373,8 @@ export async function fetchWooCommerceSearch(
   });
 }
 
-async function runWithConcurrency<T, R>(
-  items: T[],
-  concurrency: number,
-  worker: (item: T) => Promise<R>,
-): Promise<R[]> {
-  const limit = Math.max(1, Math.min(concurrency, items.length));
-  const results: R[] = [];
-  let currentIndex = 0;
-
-  const runners = Array.from({ length: limit }, async () => {
-    while (true) {
-      const index = currentIndex;
-      currentIndex += 1;
-      if (index >= items.length) break;
-      results[index] = await worker(items[index]);
-    }
-  });
-
-  await Promise.all(runners);
-  return results;
-}
-
 function selectWooStores(storeIds?: Iterable<string>): WooStore[] {
-  if (!storeIds) return WOOCOMMERCE_STORES;
-
-  const selected = new Set<string>();
-  for (const id of storeIds) {
-    const normalized = String(id ?? '').trim().toLowerCase();
-    if (normalized) selected.add(normalized);
-  }
-
-  if (selected.size === 0) return WOOCOMMERCE_STORES;
-  return WOOCOMMERCE_STORES.filter((store) => selected.has(store.id.toLowerCase()));
+  return selectStoresByIds(WOOCOMMERCE_STORES, storeIds);
 }
 
 export async function fetchWooCommerceCategory(
