@@ -27,13 +27,37 @@ function shouldLog(methodLevel: Exclude<LogLevel, 'silent'>): boolean {
   return LOG_LEVELS.indexOf(methodLevel) >= levelIndex;
 }
 
+function normalizeContextValue(value: unknown): unknown {
+  if (value instanceof Error) {
+    return {
+      name: value.name,
+      message: value.message,
+      stack: value.stack,
+    };
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeContextValue(item));
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nestedValue]) => [key, normalizeContextValue(nestedValue)]),
+    );
+  }
+
+  return value;
+}
+
 function formatMessage(level: Exclude<LogLevel, 'silent'>, message: string, context?: Record<string, unknown>): string {
+  const normalizedContext = context ? normalizeContextValue(context) as Record<string, unknown> : undefined;
+
   if (isProduction && context) {
-    return JSON.stringify({ level, message, ...context, timestamp: new Date().toISOString() });
+    return JSON.stringify({ level, message, ...normalizedContext, timestamp: new Date().toISOString() });
   }
   const prefix = `[${level.toUpperCase()}]`;
-  if (context) {
-    return `${prefix} ${message} ${JSON.stringify(context)}`;
+  if (normalizedContext) {
+    return `${prefix} ${message} ${JSON.stringify(normalizedContext)}`;
   }
   return `${prefix} ${message}`;
 }

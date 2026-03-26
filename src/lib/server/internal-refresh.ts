@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { withAbortTimeout } from '@/lib/async/with-abort-timeout';
 import { shouldScheduleInternalBackgroundRefresh } from '@/lib/server/background-refresh';
+import { logger } from '@/lib/logger';
 
 type ScheduleInternalRefreshInput = {
   request: NextRequest;
@@ -44,7 +45,11 @@ export function scheduleInternalRefresh({
     timeoutLabel,
   )
     .catch((refreshError) => {
-      console.warn(`${logPrefix} Background refresh error:`, refreshError);
+      logger.warn(`${logPrefix} Background refresh error`, {
+        refreshKey,
+        timeoutMs,
+        error: refreshError,
+      });
     })
     .finally(() => {
       inFlightRefreshes.delete(refreshKey);

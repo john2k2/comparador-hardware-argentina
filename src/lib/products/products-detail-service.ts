@@ -26,6 +26,7 @@ import { fetchAllTiendaNubeSearch, fetchTiendaNubeProductById } from '@/lib/scra
 import { fetchAllWooCommerceSearch, fetchWooCommerceProductById } from '@/lib/scrapers/woocommerce';
 import { fetchWiztechProductById, fetchWiztechProducts } from '@/lib/scrapers/wiztech';
 import { fetchXtpcProductById, fetchXtpcProducts } from '@/lib/scrapers/xtpc';
+import { logger } from '@/lib/logger';
 
 type ObserveSource = (
   storeId: string,
@@ -38,7 +39,11 @@ export async function resolveLiveProductDetail(
   category: string | null,
   observeSource: ObserveSource,
 ): Promise<Product | null> {
-  console.log(`[API Products] Re-scrapeando producto en vivo por ID: ${id}`);
+  logger.info('Re-scraping live product detail', {
+    endpoint: '/api/products',
+    id,
+    category,
+  });
   const storePrefix = id.split('-')[0];
   const cleanQuery = buildDetailSearchQuery(id).substring(0, 60);
   const { code } = extractPrefixAndCode(id);

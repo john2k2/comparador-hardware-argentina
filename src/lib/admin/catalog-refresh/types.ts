@@ -18,6 +18,7 @@ export const DEFAULT_STALE_MINUTES = 180;
 export const MAX_QUERIES_LIMIT = 200;
 export const MAX_STALE_MINUTES = 60 * 24 * 7;
 export const INTERNAL_REFRESH_TIMEOUT_MS = 90_000;
+export const INTERNAL_REFRESH_MAX_ATTEMPTS = 2;
 
 export type RefreshMode = 'cleanup-history' | 'custom' | 'full' | 'hot' | 'tracked';
 export type AccessMode = 'admin' | 'cron';

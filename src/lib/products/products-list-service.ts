@@ -28,6 +28,7 @@ import { fetchVenexProducts } from '@/lib/scrapers/venex';
 import { fetchWiztechCategory, fetchWiztechProducts } from '@/lib/scrapers/wiztech';
 import { fetchAllWooCommerceCategory, fetchAllWooCommerceSearch } from '@/lib/scrapers/woocommerce';
 import { fetchXtpcCategory, fetchXtpcProducts } from '@/lib/scrapers/xtpc';
+import { logger } from '@/lib/logger';
 
 type ObserveSource = (
   storeId: string,
@@ -74,7 +75,11 @@ export async function resolveLiveProductsList(
     gamingCityUrl = getGamingCityCategoryUrl(categorySlug);
   }
 
-  console.log(`[API] Iniciando scraping paralelo para la categoria: ${categorySlug}`);
+  logger.info('Starting live product list scraping', {
+    endpoint: '/api/products',
+    category: categorySlug,
+    query,
+  });
   const results = await Promise.all([
     observeSource('mexx', 'Mexx', (signal) => fetchMexxProducts(mexxUrl, categorySlug, signal)),
     observeSource('venex', 'Venex', (signal) => fetchVenexProducts(venexUrl, categorySlug, signal)),
@@ -152,7 +157,12 @@ export async function resolveLiveProductsList(
   ]);
 
   let liveProducts: Product[] = results.flat();
-  console.log(`[API] Scraping terminado. Total productos extraidos en vivo: ${liveProducts.length}`);
+  logger.info('Live product list scraping completed', {
+    endpoint: '/api/products',
+    category: categorySlug,
+    query,
+    totalProducts: liveProducts.length,
+  });
 
   const uniqueMap = new Map<string, Product>();
   for (const product of liveProducts) {
@@ -161,7 +171,12 @@ export async function resolveLiveProductsList(
     }
   }
   liveProducts = Array.from(uniqueMap.values());
-  console.log(`[API] Tras eliminar duplicados intencionales: ${liveProducts.length}`);
+  logger.info('Live product list dedupe completed', {
+    endpoint: '/api/products',
+    category: categorySlug,
+    query,
+    totalProducts: liveProducts.length,
+  });
 
   if (query) {
     const normalizedQuery = normalizeForQueryMatch(query);
@@ -181,7 +196,12 @@ export async function resolveLiveProductsList(
 
   await withPromiseTimeout(persistProductsSnapshot(liveProducts), PERSISTENCE_TIMEOUT_MS, 'supabase-persist')
     .catch((persistError) => {
-      console.warn('[API Products] Persistencia listado omitida:', persistError);
+      logger.warn('Product list snapshot persistence skipped', {
+        endpoint: '/api/products',
+        category: categorySlug,
+        query,
+        error: persistError,
+      });
     });
 
   snapshotProducts(liveProducts);

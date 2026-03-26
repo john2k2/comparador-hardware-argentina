@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getOperationalMetricsSnapshot } from '@/lib/telemetry/operational-metrics';
 import { resolveAdminAccessFromToken } from '@/lib/server/admin-auth';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +23,10 @@ export async function GET(request: NextRequest) {
     const snapshot = await getOperationalMetricsSnapshot();
     return NextResponse.json(snapshot);
   } catch (error) {
-    console.error('Admin operational API error:', error);
+    logger.error('Admin operational API error', {
+      endpoint: '/api/admin/operational',
+      error,
+    });
     return NextResponse.json(
       { error: 'Error al obtener metricas operativas' },
       { status: 500 },

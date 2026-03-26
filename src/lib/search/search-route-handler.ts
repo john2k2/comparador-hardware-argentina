@@ -26,6 +26,7 @@ import {
 import { snapshotProducts } from '@/lib/cache/search-snapshot';
 import type { SearchApiResponse } from '@/lib/search/search-api';
 import { SEARCH_PAGE_SIZE } from '@/lib/search/search-pagination';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   const requestStartedAtMs = Date.now();
@@ -115,7 +116,12 @@ export async function GET(request: NextRequest) {
         page,
         pageSize: SEARCH_PAGE_SIZE,
       }).catch((databaseError) => {
-        console.warn('[API Search] Lectura DB-first omitida:', databaseError);
+        logger.warn('DB-first search read skipped', {
+          endpoint: '/api/search',
+          query,
+          category,
+          error: databaseError,
+        });
         return { products: [], total: 0, totalPages: 0, page, pageSize: SEARCH_PAGE_SIZE };
       });
 
@@ -176,7 +182,12 @@ export async function GET(request: NextRequest) {
     const missNote = normalizationSummaryNote ? `${isRefreshRequest ? 'REFRESH' : 'MISS'}|${normalizationSummaryNote}` : (isRefreshRequest ? 'REFRESH' : 'MISS');
     return respond(payload, { headers: { 'X-Search-Cache': isRefreshRequest ? 'REFRESH' : 'MISS' } }, { success: true, resultCount: payload.products.length, note: missNote });
   } catch (error) {
-    console.error('Search API error:', error);
+    logger.error('Search API error', {
+      endpoint: '/api/search',
+      query,
+      category,
+      error,
+    });
     return respond({ error: 'Error al buscar productos de manera global' }, { status: 500 }, { success: false, resultCount: 0, note: 'ERROR' });
   }
 }

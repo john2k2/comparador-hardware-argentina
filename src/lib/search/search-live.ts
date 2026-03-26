@@ -34,6 +34,7 @@ import { fetchWiztechProducts } from '@/lib/scrapers/wiztech';
 import { fetchAllWooCommerceSearch } from '@/lib/scrapers/woocommerce';
 import { fetchXtpcProducts } from '@/lib/scrapers/xtpc';
 import { runObservedStoreScrape } from '@/lib/telemetry/operational-metrics';
+import { logger } from '@/lib/logger';
 import {
   type SortBy,
   PERSISTENCE_TIMEOUT_MS,
@@ -69,7 +70,11 @@ export async function runLiveSearch({
   const fullh4rdSearchUrl = `https://www.fullh4rd.com.ar/cat/search/${encodeURIComponent(query)}`;
   const venexSearchUrl = `https://www.venex.com.ar/resultados-busqueda.htm?keywords=${encodeURIComponent(query)}`;
 
-  console.log(`[API Search] Buscando globalmente: ${query}`);
+  logger.info('Running live global search', {
+    endpoint: '/api/search',
+    query,
+    category,
+  });
   const defaultCategory = category ?? inferHardwareCategoryFromName(query);
   const sourceTasks: Promise<Product[]>[] = [];
 
@@ -126,12 +131,20 @@ export async function runLiveSearch({
   let normalizationSummaryNote: string | null = null;
 
   if (allTitles.length > 0) {
-    console.log(`[API Search] Normalizando ${allTitles.length} titulos unicos con Gemini...`);
+    logger.info('Normalizing unique search titles', {
+      endpoint: '/api/search',
+      query,
+      titleCount: allTitles.length,
+    });
     const normalization = await normalizeProductTitlesWithStats(allTitles, {
       useDatabaseCache: !bypassDb,
       queryContext: query,
     }).catch((normalizationError) => {
-      console.warn('[API Search] Normalizacion IA omitida por timeout/error:', normalizationError);
+      logger.warn('AI title normalization skipped', {
+        endpoint: '/api/search',
+        query,
+        error: normalizationError,
+      });
       return {
         map: new Map(allTitles.map((title) => [title, title])),
         stats: {
@@ -165,20 +178,31 @@ export async function runLiveSearch({
     ].join('|');
 
     if (normalization.stats.fallbackCount > 0) {
-      console.warn(
-        `[API Search] Normalizacion con fallback ${normalization.stats.fallbackRatePct}% `
-        + `(${normalization.stats.fallbackCount}/${normalization.stats.uniqueTitles}) `
-        + `reasons=${JSON.stringify(normalization.stats.fallbackReasons)}`,
-      );
+      logger.warn('Search title normalization used fallback', {
+        endpoint: '/api/search',
+        query,
+        fallbackRatePct: normalization.stats.fallbackRatePct,
+        fallbackCount: normalization.stats.fallbackCount,
+        uniqueTitles: normalization.stats.uniqueTitles,
+        fallbackReasons: normalization.stats.fallbackReasons,
+      });
     } else {
-      console.log(
-        `[API Search] Normalizacion completa sin fallback. `
-        + `memory=${normalization.stats.memoryHits} db=${normalization.stats.dbHits} gemini=${normalization.stats.geminiCount}.`,
-      );
+      logger.info('Search title normalization completed without fallback', {
+        endpoint: '/api/search',
+        query,
+        memoryHits: normalization.stats.memoryHits,
+        dbHits: normalization.stats.dbHits,
+        geminiCount: normalization.stats.geminiCount,
+      });
     }
 
     if (normalization.stats.dbUpsertAttempted > 0 && normalization.stats.dbUpserted < normalization.stats.dbUpsertAttempted) {
-      console.warn(`[API Search] Persistencia de normalizaciones parcial: ${normalization.stats.dbUpserted}/${normalization.stats.dbUpsertAttempted}.`);
+      logger.warn('Search normalization persistence was partial', {
+        endpoint: '/api/search',
+        query,
+        dbUpserted: normalization.stats.dbUpserted,
+        dbUpsertAttempted: normalization.stats.dbUpsertAttempted,
+      });
     }
   }
 
@@ -216,7 +240,13 @@ export async function runLiveSearch({
 
   const total = liveProducts.length;
   const pageSlice = paginateProducts(liveProducts, page, SEARCH_PAGE_SIZE);
-  console.log(`[API Search] Busqueda finalizada. Encontrados: ${total}`);
+  logger.info('Live search completed', {
+    endpoint: '/api/search',
+    query,
+    category,
+    totalResults: total,
+    page: pageSlice.currentPage,
+  });
 
   const payload: SearchApiResponse = {
     products: pageSlice.paginatedProducts,
@@ -237,7 +267,11 @@ export async function runLiveSearch({
 
   await withPromiseTimeout(persistProductsSnapshot(liveProducts), PERSISTENCE_TIMEOUT_MS, 'supabase-persist')
     .catch((persistError) => {
-      console.warn('[API Search] Persistencia en Supabase omitida:', persistError);
+      logger.warn('Live search snapshot persistence skipped', {
+        endpoint: '/api/search',
+        query,
+        error: persistError,
+      });
     });
 
   await setCachedSearchResponse(cacheKey, payload);

@@ -16,6 +16,13 @@ async function handleRefresh(request: NextRequest) {
     const input = await parseRefreshInput(request);
     if (input.mode === 'cleanup-history') {
       const cleanup = await cleanupPriceHistory();
+      logger.info('Catalog refresh cleanup completed', {
+        endpoint: '/api/admin/catalog-refresh',
+        requestedBy: access,
+        mode: input.mode,
+        deletedRows: cleanup.deletedRows,
+        remainingRows: cleanup.remainingRows,
+      });
 
       return NextResponse.json({
         refreshedAt: new Date().toISOString(),
@@ -29,6 +36,21 @@ async function handleRefresh(request: NextRequest) {
     const plan = await buildRefreshPlan(input);
     const targets = plan.targets.slice(0, input.maxQueries);
     const results = await runTargets(request, targets, input.stores);
+    const failedTargets = results.filter((item) => !item.ok);
+
+    if (failedTargets.length > 0) {
+      logger.warn('Catalog refresh completed with failed targets', {
+        endpoint: '/api/admin/catalog-refresh',
+        requestedBy: access,
+        mode: input.mode,
+        source: plan.source,
+        failedTargets: failedTargets.map((item) => ({
+          target: item.target,
+          status: item.status,
+          error: item.error,
+        })),
+      });
+    }
 
     logger.info('Catalog refresh completed', {
       endpoint: '/api/admin/catalog-refresh',
@@ -37,7 +59,7 @@ async function handleRefresh(request: NextRequest) {
       source: plan.source,
       totalTargets: results.length,
       okTargets: results.filter((item) => item.ok).length,
-      failedTargets: results.filter((item) => !item.ok).length,
+      failedTargets: failedTargets.length,
     });
 
     return NextResponse.json({
@@ -49,7 +71,7 @@ async function handleRefresh(request: NextRequest) {
       fallbackReason: plan.fallbackReason,
       totalTargets: results.length,
       okTargets: results.filter((item) => item.ok).length,
-      failedTargets: results.filter((item) => !item.ok).length,
+      failedTargets: failedTargets.length,
       input: {
         query: input.query ?? null,
         categories: input.categories,

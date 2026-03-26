@@ -23,6 +23,7 @@ import { normalizeProductContent } from '@/lib/products/normalize-product-conten
 import { resolveAdminAccessFromToken } from '@/lib/server/admin-auth';
 import { buildRateLimitHeaders, checkRateLimit, getRequestIp } from '@/lib/server/rate-limit';
 import { recordEndpointRequestEvent, runObservedStoreScrape } from '@/lib/telemetry/operational-metrics';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   const endpointStartedAtMs = Date.now();
@@ -109,7 +110,11 @@ export async function GET(request: NextRequest) {
         }
 
         const databaseProduct = await readProductByIdFromDatabase(id).catch((databaseError) => {
-          console.warn('[API Products] Lectura DB-first detalle omitida:', databaseError);
+          logger.warn('DB-first product detail read skipped', {
+            endpoint: '/api/products',
+            id,
+            error: databaseError,
+          });
           return null;
         });
 
@@ -176,7 +181,12 @@ export async function GET(request: NextRequest) {
         sortBy: 'relevance',
         limit: 1000,
       }).catch((databaseError) => {
-        console.warn('[API Products] Lectura DB-first listado omitida:', databaseError);
+        logger.warn('DB-first product list read skipped', {
+          endpoint: '/api/products',
+          category: categorySlug,
+          query,
+          error: databaseError,
+        });
         return [];
       });
 
@@ -191,7 +201,13 @@ export async function GET(request: NextRequest) {
     const liveProducts = await resolveLiveProductsList(categorySlug, query || undefined, observeSource);
     return respond({ products: liveProducts, pagination: { limit: liveProducts.length, offset: 0, total: liveProducts.length } }, { headers: { 'X-Product-Cache': isRefreshRequest ? 'REFRESH' : 'MISS' } }, { success: true, resultCount: liveProducts.length, note: isRefreshRequest ? 'CATEGORY_REFRESH' : 'CATEGORY_LIST' });
   } catch (error) {
-    console.error('Products API error:', error);
+    logger.error('Products API error', {
+      endpoint: '/api/products',
+      id,
+      category,
+      query,
+      error,
+    });
     return respond({ error: 'Error al obtener productos' }, { status: 500 }, { success: false, resultCount: 0, note: 'ERROR' });
   }
 }
