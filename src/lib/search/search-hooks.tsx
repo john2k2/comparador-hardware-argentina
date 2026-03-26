@@ -4,7 +4,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef } from 'react';
 import type { SearchPageState } from './search-state';
-import { buildSearchPageParams } from './search-state';
+import { buildSearchRoute } from './search-state';
 import type { SearchApiResponse } from './search-api';
 import {
   readStoredSearch,
@@ -139,20 +139,24 @@ export function useScrollRestoration(
 export function useProductLoader({
   currentState,
   hasSearchIntent,
+  requestKey,
   pageSize,
+  onLoadingChange,
+  onResolvedRequestKey,
   onProductsLoaded,
 }: {
   currentState: SearchPageState;
   hasSearchIntent: boolean;
+  requestKey: string;
   pageSize: number;
+  onLoadingChange: (isLoading: boolean) => void;
+  onResolvedRequestKey: (requestKey: string) => void;
   onProductsLoaded: (products: SearchApiResponse['products'], pagination: SearchApiResponse['pagination']) => void;
 }) {
   const { getCached, setCached, checkStored } = useSearchCache();
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
-    abortControllerRef.current = controller;
 
     const loadProducts = async () => {
       if (!hasSearchIntent) {
@@ -164,33 +168,37 @@ export function useProductLoader({
           page: 1,
           pageSize,
         });
+        onLoadingChange(false);
+        onResolvedRequestKey(requestKey);
         return;
       }
 
-      const cacheKey = `${currentState.query || ''}|${currentState.category || ''}|page=${currentState.page}`;
-
       // Check memory cache
-      const cached = getCached(cacheKey);
+      const cached = getCached(requestKey);
       if (cached) {
         onProductsLoaded(cached.products, cached.pagination);
+        onLoadingChange(false);
+        onResolvedRequestKey(requestKey);
         return;
       }
 
       // Check sessionStorage cache
-      const stored = checkStored(cacheKey);
+      const stored = checkStored(requestKey);
       if (stored) {
         onProductsLoaded(stored.products, stored.pagination);
+        onLoadingChange(false);
+        onResolvedRequestKey(requestKey);
         return;
       }
 
       // Fetch from API
+      onLoadingChange(true);
       try {
-        const searchParams = buildSearchPageParams(currentState).toString();
-        const endpoint = searchParams ? `/api/search?${searchParams}` : '/api/search';
+        const endpoint = buildSearchRoute(currentState).replace('/search', '/api/search');
         const res = await fetch(endpoint, { signal: controller.signal });
         if (!res.ok) throw new Error(`Search request failed: ${res.status}`);
         const data = await res.json() as SearchApiResponse;
-        setCached(cacheKey, data);
+        setCached(requestKey, data);
         onProductsLoaded(data.products, data.pagination);
       } catch (error) {
         if ((error as Error).name !== 'AbortError') {
@@ -203,12 +211,28 @@ export function useProductLoader({
             pageSize,
           });
         }
+      } finally {
+        if (!controller.signal.aborted) {
+          onLoadingChange(false);
+          onResolvedRequestKey(requestKey);
+        }
       }
     };
 
     void loadProducts();
     return () => controller.abort();
-  }, [currentState, hasSearchIntent, pageSize, onProductsLoaded, getCached, setCached, checkStored]);
+  }, [
+    currentState,
+    hasSearchIntent,
+    requestKey,
+    pageSize,
+    onLoadingChange,
+    onResolvedRequestKey,
+    onProductsLoaded,
+    getCached,
+    setCached,
+    checkStored,
+  ]);
 }
 
 // ---------------------------------------------------------------------------

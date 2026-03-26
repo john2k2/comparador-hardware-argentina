@@ -48,34 +48,57 @@ function getPriceDropBaseline(product: Product, highestComparablePrice: number):
 }
 
 export const ProductCard = React.memo(function ProductCard({ product, showStore = true, className, returnTo = null }: ProductCardProps) {
-  const comparableStats = useMemo(() => computeComparableStorePriceStats(product.prices), [product.prices]);
-  const comparablePrices = comparableStats.comparablePrices;
-  const comparableStoreCount = comparablePrices.length;
-  const lowestComparablePrice = comparableStats.lowest > 0 ? comparableStats.lowest : product.lowestPrice;
-  const highestComparablePrice = comparableStats.highest > 0 ? comparableStats.highest : product.highestPrice;
-  const displayName = useMemo(() => normalizeDisplayText(product.name), [product.name]);
-  const displayBrand = useMemo(() => normalizeDisplayText(product.brand), [product.brand]);
+  const {
+    bestPrice,
+    comparableStoreCount,
+    displayBrand,
+    displayName,
+    discountPercent,
+    hasDiscount,
+    hasPriceDrop,
+    lowestComparablePrice,
+    priceDropAmount,
+    priceDropPercent,
+  } = useMemo(() => {
+    const comparableStats = computeComparableStorePriceStats(product.prices);
+    const comparablePrices = comparableStats.comparablePrices;
+    const comparableStoreCount = comparablePrices.length;
+    const lowestComparablePrice = comparableStats.lowest > 0 ? comparableStats.lowest : product.lowestPrice;
+    const highestComparablePrice = comparableStats.highest > 0 ? comparableStats.highest : product.highestPrice;
+    const bestPrice = comparablePrices[0] ?? product.prices.find((price) => price.price === lowestComparablePrice);
+    const hasDiscount = Boolean(bestPrice?.originalPrice && bestPrice.originalPrice > bestPrice.price);
+    const discountPercent = hasDiscount
+      ? Math.round((((bestPrice?.originalPrice ?? 0) - (bestPrice?.price ?? 0)) / (bestPrice?.originalPrice ?? 1)) * 100)
+      : 0;
+    const priceDropBaseline = getPriceDropBaseline(product, highestComparablePrice);
+    const priceDropAmount = priceDropBaseline ? Math.max(0, priceDropBaseline - lowestComparablePrice) : 0;
+    const priceDropPercent = priceDropBaseline ? Math.round((priceDropAmount / priceDropBaseline) * 100) : 0;
+    const hasPriceDrop = Boolean(
+      priceDropBaseline &&
+      priceDropAmount > 0 &&
+      (priceDropAmount >= PRICE_DROP_MIN_AMOUNT_ARS || priceDropPercent >= PRICE_DROP_MIN_PERCENT),
+    );
 
-  const bestPrice = comparablePrices[0] ?? product.prices.find((price) => price.price === lowestComparablePrice);
-  const hasDiscount = Boolean(bestPrice?.originalPrice && bestPrice.originalPrice > bestPrice.price);
-  const discountPercent = hasDiscount
-    ? Math.round((((bestPrice?.originalPrice ?? 0) - (bestPrice?.price ?? 0)) / (bestPrice?.originalPrice ?? 1)) * 100)
-    : 0;
-  const priceDropBaseline = getPriceDropBaseline(product, highestComparablePrice);
-  const priceDropAmount = priceDropBaseline ? Math.max(0, priceDropBaseline - lowestComparablePrice) : 0;
-  const priceDropPercent = priceDropBaseline ? Math.round((priceDropAmount / priceDropBaseline) * 100) : 0;
-  const hasPriceDrop = Boolean(
-    priceDropBaseline &&
-    priceDropAmount > 0 &&
-    (priceDropAmount >= PRICE_DROP_MIN_AMOUNT_ARS || priceDropPercent >= PRICE_DROP_MIN_PERCENT),
-  );
+    return {
+      bestPrice,
+      comparableStoreCount,
+      displayBrand: normalizeDisplayText(product.brand),
+      displayName: normalizeDisplayText(product.name),
+      discountPercent,
+      hasDiscount,
+      hasPriceDrop,
+      lowestComparablePrice,
+      priceDropAmount,
+      priceDropPercent,
+    };
+  }, [product]);
 
   const productHref = returnTo
     ? `/product/${encodeURIComponent(product.id)}?from=${encodeURIComponent(returnTo)}`
     : `/product/${encodeURIComponent(product.id)}`;
 
   return (
-    <Link href={productHref} className={cn('block group', className)}>
+    <Link href={productHref} prefetch={false} className={cn('block group', className)}>
       <article className="h-full flex flex-col bg-card border-[3px] border-border p-3.5 pixel-shadow-primary transition-transform group-hover:-translate-y-1 group-hover:translate-x-1">
         <div className="relative aspect-square mb-3 border-2 border-border bg-background overflow-hidden">
           {product.image && isWhitelisted(product.image) ? (
@@ -94,6 +117,8 @@ export const ProductCard = React.memo(function ProductCard({ product, showStore 
               src={product.image}
               alt={displayName}
               className="object-contain image-pixelated p-2 w-full h-full transition-transform duration-300 group-hover:scale-[1.03]"
+              loading="lazy"
+              decoding="async"
               onError={(event) => {
                 (event.target as HTMLImageElement).style.display = 'none';
               }}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { SearchBar, ProductGrid, Filters } from '@/components/functional';
 import type { SearchApiResponse } from '@/lib/search/search-api';
@@ -10,7 +10,7 @@ import { getCategorySeoCopy, isIndexableCategoryLanding } from '@/lib/search/sea
 import { stores as defaultStores, categories } from '@/lib/scrapers/static-data';
 import type { HardwareCategory, Product, SearchFilters } from '@/lib/types';
 import { trackSearch, trackFilterChange } from '@/lib/analytics';
-import { SearchCacheProvider, useSearchCache, useScrollRestoration } from '@/lib/search/search-hooks';
+import { SearchCacheProvider, useProductLoader, useSearchCache, useScrollRestoration } from '@/lib/search/search-hooks';
 
 export type SearchPageClientProps = {
   initialState: SearchPageState;
@@ -25,9 +25,11 @@ export type SearchPageClientProps = {
 // ---------------------------------------------------------------------------
 
 export function SearchPageClient(props: SearchPageClientProps) {
+  const pageKey = useMemo(() => buildSearchRoute(props.initialState), [props.initialState]);
+
   return (
     <SearchCacheProvider>
-      <SearchPageClientInner {...props} />
+      <SearchPageClientInner key={pageKey} {...props} />
     </SearchCacheProvider>
   );
 }
@@ -40,7 +42,7 @@ function SearchPageClientInner({
   initialHasSearchIntent,
 }: SearchPageClientProps) {
   const router = useRouter();
-  const { setCached, checkStored } = useSearchCache();
+  const { setCached } = useSearchCache();
 
   // State
   const [currentState, setCurrentState] = useState<SearchPageState>(initialState);
@@ -48,16 +50,7 @@ function SearchPageClientInner({
   const [pagination, setPagination] = useState(initialPagination);
   const [isLoading, setIsLoading] = useState(initialHasSearchIntent && initialPagination.total === 0);
   const [resolvedRequestKey, setResolvedRequestKey] = useState<string | null>(initialResolvedRequestKey);
-  const [pendingSearchTrack, setPendingSearchTrack] = useState<{ query: string; category?: string } | null>(null);
-
-  // Sync state when server props change
-  useEffect(() => {
-    setCurrentState(initialState);
-    setBaseProducts(hydrateProducts(initialBaseProducts));
-    setPagination(initialPagination);
-    setResolvedRequestKey(initialResolvedRequestKey);
-    setIsLoading(initialHasSearchIntent && initialPagination.total === 0);
-  }, [initialState, initialBaseProducts, initialPagination, initialResolvedRequestKey, initialHasSearchIntent]);
+  const pendingSearchTrackRef = useRef<{ query: string; category?: string } | null>(null);
 
   // Cache initial products
   useEffect(() => {
@@ -97,63 +90,30 @@ function SearchPageClientInner({
   // Scroll restoration
   useScrollRestoration(isBusy, searchRoute, initialPagination);
 
-  // Product loading
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const loadProducts = async () => {
-      if (!hasSearchIntent) {
-        setBaseProducts([]);
-        setPagination({ limit: 0, offset: 0, total: 0, totalPages: 0, page: 1, pageSize: initialPagination.pageSize });
-        setIsLoading(false);
-        setResolvedRequestKey(requestKey);
-        return;
-      }
-
-      // Check memory cache
-      const cached = checkStored(requestKey);
-      if (cached) {
-        setBaseProducts(cached.products);
-        setPagination(cached.pagination);
-        setIsLoading(false);
-        setResolvedRequestKey(requestKey);
-        return;
-      }
-
-      setIsLoading(true);
-      try {
-        const searchParams = buildSearchRoute(currentState).split('?')[1] || '';
-        const endpoint = searchParams ? `/api/search?${searchParams}` : '/api/search';
-        const res = await fetch(endpoint, { signal: controller.signal });
-        if (!res.ok) throw new Error(`Search failed: ${res.status}`);
-        const data = await res.json() as SearchApiResponse;
-        setBaseProducts(data.products);
-        setPagination(data.pagination);
-        setCached(requestKey, data);
-      } catch (error) {
-        if ((error as Error).name !== 'AbortError') {
-          setBaseProducts([]);
-          setPagination({ limit: 0, offset: 0, total: 0, totalPages: 0, page: currentState.page, pageSize: initialPagination.pageSize });
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setIsLoading(false);
-          setResolvedRequestKey(requestKey);
-        }
-      }
-    };
-
-    void loadProducts();
-    return () => controller.abort();
-  }, [currentState, hasSearchIntent, initialPagination.pageSize, requestKey, checkStored, setCached]);
+  useProductLoader({
+    currentState,
+    hasSearchIntent,
+    requestKey,
+    pageSize: initialPagination.pageSize,
+    onLoadingChange: setIsLoading,
+    onResolvedRequestKey: setResolvedRequestKey,
+    onProductsLoaded: useCallback((products, nextPagination) => {
+      setBaseProducts(hydrateProducts(products));
+      setPagination(nextPagination);
+    }, []),
+  });
 
   // Track search events
   useEffect(() => {
-    if (pendingSearchTrack && totalResults >= 0 && !isBusy) {
-      trackSearch({ searchTerm: pendingSearchTrack.query, category: pendingSearchTrack.category, resultCount: totalResults });
-      setPendingSearchTrack(null);
+    if (pendingSearchTrackRef.current && totalResults >= 0 && !isBusy) {
+      trackSearch({
+        searchTerm: pendingSearchTrackRef.current.query,
+        category: pendingSearchTrackRef.current.category,
+        resultCount: totalResults,
+      });
+      pendingSearchTrackRef.current = null;
     }
-  }, [pendingSearchTrack, totalResults, isBusy]);
+  }, [totalResults, isBusy]);
 
   // Handlers
   const buildStateFromFilters = useCallback((nextFilters: SearchFilters, page = 1): SearchPageState => ({
@@ -173,7 +133,7 @@ function SearchPageClientInner({
 
   const handleSearch = useCallback((query: string) => {
     const nextQuery = query.trim();
-    setPendingSearchTrack({ query: nextQuery, category: filters.category });
+    pendingSearchTrackRef.current = { query: nextQuery, category: filters.category };
     commitState(buildStateFromFilters({ ...filters, query: nextQuery }, 1));
   }, [filters, buildStateFromFilters, commitState]);
 
