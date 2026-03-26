@@ -7,6 +7,13 @@ import {
   normalizeAbsoluteUrl as normalizeAbsolutePaginationUrl,
 } from './common-pagination';
 import { logger } from '../logger';
+import {
+  buildSinglePriceProduct,
+  cleanScrapedText,
+  extractKnownHardwareBrand,
+  parseScrapedArsPrice,
+  slugFromScrapedUrl,
+} from './scraper-helpers';
 
 export interface WooStore {
   id: string;
@@ -57,39 +64,11 @@ type WooRequestOptions = {
   signal?: AbortSignal;
 };
 
-function parseArsPrice(text: string): number {
-  let cleaned = text.replace(/[^0-9,.]/g, '');
-  if (!cleaned) return 0;
-
-  // Si termina con un punto o coma seguido de 1 o 2 dígitos, lo removemos entero (ej: .00 o ,50)
-  cleaned = cleaned.replace(/[,.]\d{1,2}$/, '');
-
-  // Removemos cualquier punto o coma separador de miles que haya quedado
-  cleaned = cleaned.replace(/[,.]/g, '');
-
-  return parseInt(cleaned, 10) || 0;
-}
-
 function cleanName(value: string | undefined): string {
-  const normalized = (value ?? '').replace(/\s+/g, ' ').trim();
+  const normalized = cleanScrapedText(value);
   if (!normalized) return '';
   if (/^ver detalles/i.test(normalized)) return '';
   return normalized;
-}
-
-function extractBrand(name: string): string {
-  const BRANDS = [
-    'AMD', 'Intel', 'NVIDIA', 'ASUS', 'MSI', 'Gigabyte', 'ASRock',
-    'Kingston', 'Corsair', 'G.Skill', 'Samsung', 'WD', 'Seagate',
-    'Crucial', 'Patriot', 'XPG', 'Thermaltake', 'Cooler Master',
-    'be quiet!', 'Noctua', 'Arctic', 'Sapphire', 'PowerColor', 'Zotac',
-    'EVGA', 'PNY', 'HyperX', 'Redragon', 'Logitech', 'Razer',
-  ];
-  const upper = name.toUpperCase();
-  for (const brand of BRANDS) {
-    if (upper.includes(brand.toUpperCase())) return brand;
-  }
-  return 'Generica';
 }
 
 function normalizeAbsoluteUrl(baseUrl: string, href: string): string {
@@ -159,37 +138,28 @@ async function scrapeWooPage(
     const rawAmount = $(el).find('span.amount bdi, span.amount').first().text().trim();
     const classPrice = $(el).find('.price, [class*="price"]').first().text().trim();
     const priceText = insPrice || anyPrice || rawAmount || classPrice;
-    const price = parseArsPrice(priceText);
+    const price = parseScrapedArsPrice(priceText);
     if (price <= 0) return;
 
     const outOfStock = $(el).hasClass('outofstock') || $(el).find('.out-of-stock').length > 0;
-    const slugPartRaw = productUrl.split('/').filter(Boolean).pop() || Date.now().toString();
-    const slugPart = slugPartRaw.split('?')[0].split('#')[0];
-
-    products.push({
+    const slugPart = slugFromScrapedUrl(productUrl) || Date.now().toString();
+    const product = buildSinglePriceProduct({
       id: `${store.id}-${slugPart}`,
       name,
       category,
-      brand: extractBrand(name),
-      model: name,
-      description: name,
-      image: image || undefined,
-      lowestPrice: price,
-      highestPrice: price,
-      averagePrice: price,
-      prices: [{
-        storeId: store.id,
-        storeName: store.name,
-        url: productUrl,
-        price,
-        installment: null,
-        stock: outOfStock ? 'out-of-stock' : 'in-stock',
-        lastUpdated: new Date(),
-      }],
-      specs: {},
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      storeId: store.id,
+      storeName: store.name,
+      storeBaseUrl: store.baseUrl,
+      url: productUrl,
+      price,
+      stock: outOfStock ? 'out-of-stock' : 'in-stock',
+      image,
+      brand: extractKnownHardwareBrand(name),
     });
+
+    if (product) {
+      products.push(product);
+    }
   });
 
   return {
@@ -244,7 +214,7 @@ function parseWooPrice(text: string): number {
   const normalized = text.trim();
   if (!normalized) return 0;
   if (/^\d+(\.\d+)?$/.test(normalized)) return Math.round(Number(normalized));
-  return parseArsPrice(normalized);
+  return parseScrapedArsPrice(normalized);
 }
 
 function parseWooProductDetail(
@@ -288,39 +258,27 @@ function parseWooProductDetail(
 
   const canonical = $('link[rel="canonical"]').attr('href') || pageUrl;
   const productUrl = normalizeAbsoluteUrl(store.baseUrl, canonical);
-  const slugPart = productUrl.split('/').filter(Boolean).pop() || fallbackSlug;
+  const slugPart = slugFromScrapedUrl(productUrl) || fallbackSlug;
   const detailDescription =
-    $('.woocommerce-product-details__short-description').first().text().replace(/\s+/g, ' ').trim() ||
-    $('[itemprop="description"]').first().text().replace(/\s+/g, ' ').trim() ||
-    $('meta[property="og:description"]').attr('content')?.trim() ||
+    cleanScrapedText($('.woocommerce-product-details__short-description').first().text()) ||
+    cleanScrapedText($('[itemprop="description"]').first().text()) ||
+    cleanScrapedText($('meta[property="og:description"]').attr('content')) ||
     '';
 
-  return {
+  return buildSinglePriceProduct({
     id: `${store.id}-${slugPart}`,
     name,
     category,
-    brand: extractBrand(name),
-    model: name,
-    description: detailDescription || name,
+    storeId: store.id,
+    storeName: store.name,
+    storeBaseUrl: store.baseUrl,
+    url: productUrl,
+    price,
+    stock,
     image,
-    lowestPrice: price,
-    highestPrice: price,
-    averagePrice: price,
-    prices: [
-      {
-        storeId: store.id,
-        storeName: store.name,
-        url: productUrl,
-        price,
-        installment: null,
-        stock,
-        lastUpdated: new Date(),
-      },
-    ],
-    specs: {},
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+    description: detailDescription || name,
+    brand: extractKnownHardwareBrand(name),
+  });
 }
 
 export async function fetchWooCommerceProductById(

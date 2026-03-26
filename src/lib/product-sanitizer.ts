@@ -1,3 +1,4 @@
+import { computeComparableStorePriceStats } from '@/lib/price-utils';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product, ProductPrice } from '@/lib/types';
 
@@ -20,17 +21,28 @@ function sanitizeSpecs(specs: Record<string, string> | null | undefined): Record
   return Object.fromEntries(entries);
 }
 
-function sanitizePrice(price: ProductPrice): ProductPrice {
+function sanitizePrice(price: ProductPrice): ProductPrice | null {
+  if (!price.storeId || !Number.isFinite(price.price) || price.price <= 0) {
+    return null;
+  }
+
   return {
     ...price,
     storeName: sanitizeText(price.storeName, price.storeId),
     url: (price.url ?? '').trim(),
+    price: Math.round(price.price),
   };
 }
 
 export function sanitizeProduct(product: Product): Product {
   const name = sanitizeText(product.name);
   const fallbackName = name || product.name.trim();
+  const sanitizedPrices = (product.prices ?? [])
+    .map(sanitizePrice)
+    .filter((price): price is ProductPrice => Boolean(price));
+  const comparableStats = sanitizedPrices.length > 0
+    ? computeComparableStorePriceStats(sanitizedPrices)
+    : null;
 
   return {
     ...product,
@@ -39,7 +51,10 @@ export function sanitizeProduct(product: Product): Product {
     model: sanitizeText(product.model, fallbackName),
     description: sanitizeText(product.description, fallbackName),
     specs: sanitizeSpecs(product.specs),
-    prices: (product.prices ?? []).map(sanitizePrice),
+    prices: comparableStats?.comparablePrices ?? sanitizedPrices,
+    lowestPrice: comparableStats?.lowest ?? product.lowestPrice,
+    highestPrice: comparableStats?.highest ?? product.highestPrice,
+    averagePrice: comparableStats?.average ?? product.averagePrice,
   };
 }
 

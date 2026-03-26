@@ -1,24 +1,33 @@
-const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const;
+const LOG_LEVELS = ['silent', 'debug', 'info', 'warn', 'error'] as const;
 type LogLevel = typeof LOG_LEVELS[number];
 
 const isProduction = process.env.NODE_ENV === 'production';
+const isTest = process.env.NODE_ENV === 'test';
 
 function getLogLevel(): LogLevel {
-  const envLevel = process.env.NEXT_PUBLIC_LOG_LEVEL?.toLowerCase() as LogLevel | undefined;
-  if (envLevel && LOG_LEVELS.includes(envLevel)) {
-    return envLevel;
+  const serverLevel = process.env.LOG_LEVEL?.toLowerCase() as LogLevel | undefined;
+  if (serverLevel && LOG_LEVELS.includes(serverLevel)) {
+    return serverLevel;
   }
+
+  const publicLevel = process.env.NEXT_PUBLIC_LOG_LEVEL?.toLowerCase() as LogLevel | undefined;
+  if (publicLevel && LOG_LEVELS.includes(publicLevel)) {
+    return publicLevel;
+  }
+
+  if (isTest) return 'silent';
   return isProduction ? 'info' : 'debug';
 }
 
 const currentLevel = getLogLevel();
 const levelIndex = LOG_LEVELS.indexOf(currentLevel);
 
-function shouldLog(methodLevel: LogLevel): boolean {
+function shouldLog(methodLevel: Exclude<LogLevel, 'silent'>): boolean {
+  if (currentLevel === 'silent') return false;
   return LOG_LEVELS.indexOf(methodLevel) >= levelIndex;
 }
 
-function formatMessage(level: LogLevel, message: string, context?: Record<string, unknown>): string {
+function formatMessage(level: Exclude<LogLevel, 'silent'>, message: string, context?: Record<string, unknown>): string {
   if (isProduction && context) {
     return JSON.stringify({ level, message, ...context, timestamp: new Date().toISOString() });
   }

@@ -7,6 +7,7 @@ import {
   findBestProductMatch,
   normalizeId,
 } from '@/lib/products/product-detail-helpers';
+import { sanitizeProducts } from '@/lib/product-sanitizer';
 import { fetchCompraGamerByQuery } from '@/lib/products/products-list-service';
 import { SCRAPER_TIMEOUT_MS } from '@/lib/products/products-handler-shared';
 import { fetchMexxProducts } from '@/lib/scrapers/mexx';
@@ -185,6 +186,6 @@ export async function resolveLiveProductDetail(
   }
 
   const idResults = await Promise.all(searchPromises);
-  const foundProducts: Product[] = idResults.flat();
+  const foundProducts: Product[] = sanitizeProducts(idResults.flat());
   return findBestProductMatch(id, foundProducts) ?? null;
 }

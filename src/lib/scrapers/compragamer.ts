@@ -1,5 +1,6 @@
 import { HardwareCategory, Product, StockStatus } from '../types';
 import { logger } from '../logger';
+import { extractKnownHardwareBrand, normalizeScrapedAbsoluteUrl, parseScrapedArsPrice } from './scraper-helpers';
 
 const COMPRAGAMER_PRODUCTS_URL = 'https://static.compragamer.com/productos';
 const COMPRAGAMER_SUBCATEGORIES_URL = 'https://static.compragamer.com/categorias_sub';
@@ -68,15 +69,7 @@ function toPositiveInteger(value: unknown): number | null {
 }
 
 function parseArsPrice(value: unknown): number {
-  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
-    return Math.round(value);
-  }
-
-  const text = String(value ?? '').trim();
-  if (!text) return 0;
-
-  const digits = text.replace(/\D/g, '');
-  return parseInt(digits, 10) || 0;
+  return parseScrapedArsPrice(value);
 }
 
 function normalizeText(value: string): string {
@@ -90,16 +83,9 @@ function normalizeText(value: string): string {
 
 function extractBrandFromName(name: string): string {
   const upperName = name.toUpperCase();
-  if (upperName.includes('AMD')) return 'AMD';
-  if (upperName.includes('INTEL')) return 'Intel';
-  if (upperName.includes('ASUS')) return 'ASUS';
-  if (upperName.includes('GIGABYTE')) return 'Gigabyte';
-  if (upperName.includes('MSI')) return 'MSI';
-  if (upperName.includes('CORSAIR')) return 'Corsair';
-  if (upperName.includes('NVIDIA') || upperName.includes('GEFORCE')) return 'NVIDIA';
   if (upperName.includes('RADEON')) return 'AMD Radeon';
-  if (upperName.includes('ASROCK')) return 'ASRock';
-  return 'Generica';
+  if (upperName.includes('GEFORCE')) return 'NVIDIA';
+  return extractKnownHardwareBrand(name);
 }
 
 function inferCategoryFromName(name: string): HardwareCategory | null {
@@ -251,7 +237,10 @@ function shouldIgnoreBrandName(brand: string): boolean {
 function buildImageUrl(imageName: string | undefined): string | undefined {
   const normalizedName = imageName?.trim();
   if (!normalizedName) return undefined;
-  return `${COMPRAGAMER_IMAGE_BASE_URL}/compragamer_Imganen_general_${normalizedName}-med.jpg`;
+  return normalizeScrapedAbsoluteUrl(
+    COMPRAGAMER_IMAGE_BASE_URL,
+    `/compragamer_Imganen_general_${normalizedName}-med.jpg`,
+  );
 }
 
 function buildProductSlug(name: string): string {

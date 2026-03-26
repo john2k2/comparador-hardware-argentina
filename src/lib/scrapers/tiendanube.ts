@@ -3,6 +3,15 @@ import { Product, HardwareCategory, StockStatus } from '../types';
 import { MonitoredEndpoint, recordStoreScrapeEvent, runObservedStoreScrape } from '../telemetry/operational-metrics';
 import { findNextPageUrl, normalizeAbsoluteUrl as normalizeAbsolutePaginationUrl } from './common-pagination';
 import { logger } from '../logger';
+import {
+  buildSinglePriceProduct,
+  cleanScrapedText,
+  extractFirstSrcSetUrl,
+  extractKnownHardwareBrand,
+  normalizeScrapedAbsoluteUrl,
+  parseScrapedArsPrice,
+  slugFromScrapedUrl,
+} from './scraper-helpers';
 
 export interface TiendaNubeStore {
   id: string;
@@ -69,46 +78,16 @@ function normalizeAbsoluteUrl(baseUrl: string, href: string): string {
   return normalizeAbsolutePaginationUrl(baseUrl, href);
 }
 
-function parseArsPrice(text: string): number {
-  let cleaned = text.replace(/[^0-9,.]/g, '');
-  if (!cleaned) return 0;
-  cleaned = cleaned.replace(/[,.]\d{1,2}$/, '');
-  cleaned = cleaned.replace(/[,.]/g, '');
-  return parseInt(cleaned, 10) || 0;
-}
-
 function cleanName(value: string | undefined): string {
-  return (value ?? '').replace(/\s+/g, ' ').trim();
-}
-
-function extractBrand(name: string): string {
-  const brands = [
-    'AMD', 'Intel', 'NVIDIA', 'ASUS', 'MSI', 'Gigabyte', 'ASRock',
-    'Kingston', 'Corsair', 'G.Skill', 'Samsung', 'WD', 'Seagate',
-    'Crucial', 'Patriot', 'XPG', 'Thermaltake', 'Cooler Master',
-    'be quiet!', 'Noctua', 'Arctic', 'Sapphire', 'PowerColor', 'Zotac',
-    'EVGA', 'PNY', 'HyperX', 'Redragon', 'Logitech', 'Razer', 'Lenovo',
-    'HP', 'Dell', 'Acer',
-  ];
-  const upper = name.toUpperCase();
-  for (const brand of brands) {
-    if (upper.includes(brand.toUpperCase())) return brand;
-  }
-  return 'Generica';
+  return cleanScrapedText(value);
 }
 
 function slugFromUrl(url: string): string {
-  const raw = url.split('/').filter(Boolean).pop() || '';
-  return raw.split('?')[0].split('#')[0];
+  return slugFromScrapedUrl(url);
 }
 
 function extractImageFromSrcSet(srcset: string | undefined): string {
-  if (!srcset) return '';
-  const first = srcset
-    .split(',')
-    .map((item) => item.trim().split(/\s+/)[0])
-    .find(Boolean);
-  return first ?? '';
+  return extractFirstSrcSetUrl(srcset);
 }
 
 function decodeHtmlEntities(value: string): string {
@@ -220,7 +199,7 @@ async function scrapeTiendaNubePage(
     seenIds.add(id);
 
     const priceText = cleanName(card.find('.js-price-display, .product-item-price, .price').first().text());
-    const price = parseArsPrice(priceText);
+    const price = parseScrapedArsPrice(priceText);
     if (price <= 0) return;
 
     const imageRaw =
@@ -234,33 +213,23 @@ async function scrapeTiendaNubePage(
     const stock = stockLabel.includes('sin stock')
       ? 'out-of-stock'
       : inferStockFromVariants(card.attr('data-variants') ?? '');
-
-    products.push({
+    const product = buildSinglePriceProduct({
       id,
       name: title,
       category,
-      brand: extractBrand(title),
-      model: title,
-      description: title,
+      storeId: store.id,
+      storeName: store.name,
+      storeBaseUrl: store.baseUrl,
+      url: productUrl,
+      price,
+      stock,
       image,
-      lowestPrice: price,
-      highestPrice: price,
-      averagePrice: price,
-      prices: [
-        {
-          storeId: store.id,
-          storeName: store.name,
-          url: productUrl,
-          price,
-          installment: null,
-          stock,
-          lastUpdated: new Date(),
-        },
-      ],
-      specs: {},
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      brand: extractKnownHardwareBrand(title),
     });
+
+    if (product) {
+      products.push(product);
+    }
   });
 
   return {
@@ -511,7 +480,7 @@ export async function fetchTiendaNubeProductById(
       const priceText =
         String(offer?.price ?? '') ||
         cleanName($('.js-price-display, .product-price, .price').first().text());
-      const price = parseArsPrice(priceText);
+      const price = parseScrapedArsPrice(priceText);
       if (!title || price <= 0) continue;
 
       const imageRaw = Array.isArray(jsonLd?.image)
@@ -528,34 +497,22 @@ export async function fetchTiendaNubeProductById(
       const stockFromOffer = inferStockFromOffer(offer);
       const stockFromVariants = inferStockFromVariants($('.js-product-container').attr('data-variants') ?? '');
       const stock = stockFromOffer !== 'unknown' ? stockFromOffer : stockFromVariants;
-      const normalizedImage = imageRaw ? normalizeAbsoluteUrl(store.baseUrl, imageRaw) : undefined;
+      const normalizedImage = imageRaw ? normalizeScrapedAbsoluteUrl(store.baseUrl, imageRaw) : undefined;
 
-      return {
+      return buildSinglePriceProduct({
         id: productId,
         name: title,
         category,
-        brand: extractBrand(title),
-        model: title,
-        description,
+        storeId: store.id,
+        storeName: store.name,
+        storeBaseUrl: store.baseUrl,
+        url: res.url || candidateUrl,
+        price,
+        stock,
         image: normalizedImage,
-        lowestPrice: price,
-        highestPrice: price,
-        averagePrice: price,
-        prices: [
-          {
-            storeId: store.id,
-            storeName: store.name,
-            url: res.url || candidateUrl,
-            price,
-            installment: null,
-            stock,
-            lastUpdated: new Date(),
-          },
-        ],
-        specs: {},
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        description,
+        brand: extractKnownHardwareBrand(title),
+      });
     } catch {
       continue;
     }
