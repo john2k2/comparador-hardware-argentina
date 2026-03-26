@@ -88,6 +88,7 @@ export function inferDetailHardwareCategory(value: string): HardwareCategory {
   if (
     normalized.includes('ryzen')
     || normalized.includes('core i')
+    || normalized.includes('core-i')
     || normalized.includes('ultra ')
     || normalized.includes('procesador')
     || normalized.includes('cpu')

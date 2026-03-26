@@ -17,7 +17,7 @@ test('restores scroll when going back from product detail', async ({ page }) => 
   const beforeScroll = await page.evaluate(() => Math.round(window.scrollY));
   expect(beforeScroll).toBeGreaterThan(400);
 
-  await targetLink.click();
+  await targetLink.evaluate((link: HTMLAnchorElement) => link.click());
   await page.waitForURL(/\/product\//);
   await expect(page).toHaveURL(/from=%2Fsearch%3Fcategory%3Dprocesadores%26page%3D2/);
 
@@ -27,5 +27,6 @@ test('restores scroll when going back from product detail', async ({ page }) => 
   await page.waitForTimeout(700);
 
   const restoredScroll = await page.evaluate(() => Math.round(window.scrollY));
-  expect(restoredScroll).toBeGreaterThan(500);
+  expect(restoredScroll).toBeGreaterThan(Math.max(350, beforeScroll - 120));
+  expect(Math.abs(restoredScroll - beforeScroll)).toBeLessThan(180);
 });

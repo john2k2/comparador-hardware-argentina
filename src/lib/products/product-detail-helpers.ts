@@ -15,6 +15,7 @@ export function normalizeId(value: string): string {
   return decoded
     .toLowerCase()
     .replace(/%2e/gi, '.')
+    .replace(/\s+/g, '-')
     .replace(/\+/g, '-')
     .replace(/_/g, '-')
     .replace(/\./g, '-')

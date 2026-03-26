@@ -1,4 +1,3 @@
-const SITE_URL = 'https://comparador-hardware.com.ar';
 const SITE_NAME = 'Comparador Hardware Argentina';
 
 type FaqItem = {

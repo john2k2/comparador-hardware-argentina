@@ -97,3 +97,16 @@ export function clearStoredScrollPosition(searchRoute: string) {
     // Ignore storage failures.
   }
 }
+
+export function writeStoredScrollPosition(searchRoute: string, y: number) {
+  if (typeof window === 'undefined') return;
+  try {
+    const payload: StoredScrollPayload = {
+      y: Math.max(0, Math.round(y)),
+      savedAt: Date.now(),
+    };
+    window.sessionStorage.setItem(`${SEARCH_SCROLL_STORAGE_PREFIX}${searchRoute}`, JSON.stringify(payload));
+  } catch {
+    // Ignore storage failures.
+  }
+}

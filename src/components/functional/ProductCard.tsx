@@ -17,7 +17,6 @@ import { isImageHostWhitelisted } from '@/lib/whitelisted-hosts';
 // Base64 encoded tiny placeholder for blur effect (1x1 pixel, light gray)
 const BLUR_PLACEHOLDER = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAADklEQVQI12NgGAWjAAMAAMwIelQhR6EAAAAASUVORK5CYII=';
 
-const SEARCH_SCROLL_STORAGE_PREFIX = 'search-scroll:v1:';
 const PRICE_DROP_MIN_PERCENT = 5;
 const PRICE_DROP_MIN_AMOUNT_ARS = 10_000;
 
@@ -75,22 +74,8 @@ export const ProductCard = React.memo(function ProductCard({ product, showStore 
     ? `/product/${encodeURIComponent(product.id)}?from=${encodeURIComponent(returnTo)}`
     : `/product/${encodeURIComponent(product.id)}`;
 
-  const handleClick = () => {
-    if (!returnTo || typeof window === 'undefined') return;
-
-    try {
-      const payload = {
-        y: Math.max(0, Math.round(window.scrollY || window.pageYOffset || 0)),
-        savedAt: Date.now(),
-      };
-      window.sessionStorage.setItem(`${SEARCH_SCROLL_STORAGE_PREFIX}${returnTo}`, JSON.stringify(payload));
-    } catch {
-      // Ignore storage failures.
-    }
-  };
-
   return (
-    <Link href={productHref} onClick={handleClick} className={cn('block group', className)}>
+    <Link href={productHref} className={cn('block group', className)}>
       <article className="h-full flex flex-col bg-card border-[3px] border-border p-3.5 pixel-shadow-primary transition-transform group-hover:-translate-y-1 group-hover:translate-x-1">
         <div className="relative aspect-square mb-3 border-2 border-border bg-background overflow-hidden">
           {product.image && isWhitelisted(product.image) ? (

@@ -1,10 +1,8 @@
-import { stores as configuredStores } from '@/lib/scrapers/static-data';
 import type {
   MonitoredEndpoint,
   ScrapeHealthStatus,
   StoreScrapeEvent,
   EndpointRequestEvent,
-  OperationalLogEntry,
 } from './types';
 import {
   STORE_EVENT_LIMIT,
@@ -12,7 +10,6 @@ import {
   SLOW_SCRAPE_THRESHOLD_MS,
   STORE_SCOPE,
   ENDPOINT_SCOPE,
-  SNAPSHOT_WINDOW_MS,
 } from './constants';
 import { getState, pushWithCap } from './state';
 import { buildEventKey, classifyError, statusFromSuccessfulScrape } from './utils';

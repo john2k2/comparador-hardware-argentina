@@ -3,19 +3,17 @@
  */
 
 import { createContext, useCallback, useContext, useEffect, useRef } from 'react';
-import type { SearchFilters } from '@/lib/types';
 import type { SearchPageState } from './search-state';
-import { buildSearchRoute, buildSearchPageParams } from './search-state';
+import { buildSearchPageParams } from './search-state';
 import type { SearchApiResponse } from './search-api';
 import {
   readStoredSearch,
   writeStoredSearch,
   createSearchCacheEntry,
+  writeStoredScrollPosition,
   readStoredScrollPosition,
   clearStoredScrollPosition,
 } from './search-cache-utils';
-
-const CLIENT_SEARCH_CACHE_TTL_MS = 90 * 1000;
 
 type SearchCacheEntry = { expiresAt: number; payload: SearchApiResponse };
 
@@ -77,6 +75,7 @@ export function useScrollRestoration(
   searchRoute: string,
   initialPagination: SearchApiResponse['pagination']
 ) {
+  void initialPagination;
   useEffect(() => {
     if (isBusy || typeof window === 'undefined') return;
 
@@ -104,6 +103,33 @@ export function useScrollRestoration(
       for (const timer of timers) window.clearTimeout(timer);
     };
   }, [isBusy, searchRoute]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const persistScroll = () => {
+      writeStoredScrollPosition(searchRoute, window.scrollY || window.pageYOffset || 0);
+    };
+    let timeoutId: number | null = null;
+    const schedulePersist = () => {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+      timeoutId = window.setTimeout(() => {
+        timeoutId = null;
+        persistScroll();
+      }, 120);
+    };
+
+    window.addEventListener('scroll', schedulePersist, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', schedulePersist);
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [searchRoute]);
 }
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import type { NormalizeProductTitlesStats, NormalizationFallbackReason } from './types';
+import type { NormalizeProductTitlesStats } from './types';
 
 export function createInitialStats(requestedTitles: number, uniqueTitles: number): NormalizeProductTitlesStats {
   return {

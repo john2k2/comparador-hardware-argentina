@@ -13,6 +13,7 @@ import {
   getCachedDetail,
   inFlightDetailRequests,
   normalizeAndEnrichProduct,
+  persistProductDetailSnapshot,
   PRODUCTS_RATE_LIMIT,
   scheduleBackgroundProductsRefresh,
   setCachedDetail,
@@ -146,6 +147,7 @@ export async function GET(request: NextRequest) {
       const liveProduct = await trackedDetailPromise;
       if (liveProduct) {
         const hydrated = await normalizeAndEnrichProduct(liveProduct);
+        await persistProductDetailSnapshot(hydrated);
         await setCachedDetail(detailKey, hydrated);
         snapshotProducts([hydrated]);
         return respond(hydrated, { headers: { 'X-Product-Cache': isRefreshRequest ? 'REFRESH' : 'MISS' } }, { success: true, resultCount: 1, note: isRefreshRequest ? 'DETAIL_REFRESH' : 'DETAIL_MISS' });
@@ -154,6 +156,7 @@ export async function GET(request: NextRequest) {
       const snapshotAfterScrape = getSnapshotProductById(id);
       if (snapshotAfterScrape) {
         const hydrated = await normalizeAndEnrichProduct(snapshotAfterScrape);
+        await persistProductDetailSnapshot(hydrated);
         await setCachedDetail(detailKey, hydrated);
         snapshotProducts([hydrated]);
         return respond(hydrated, { headers: { 'X-Product-Cache': 'SNAPSHOT' } }, { success: true, resultCount: 1, note: 'DETAIL_SNAPSHOT_AFTER_SCRAPE' });

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { type HardwareCategory } from '@/lib/types';
 import { resolveAdminAccessFromToken } from '@/lib/server/admin-auth';
 import { buildRateLimitHeaders, checkRateLimit, getRequestIp } from '@/lib/server/rate-limit';
 import { recordEndpointRequestEvent } from '@/lib/telemetry/operational-metrics';

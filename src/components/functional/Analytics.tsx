@@ -21,6 +21,7 @@ export function Analytics({ nonce }: AnalyticsProps) {
         src={`https://www.googletagmanager.com/gtag/js?id=${GA4_MEASUREMENT_ID}`}
       />
       <Script
+        id="ga4-config"
         nonce={nonce}
         strategy="afterInteractive"
         dangerouslySetInnerHTML={{

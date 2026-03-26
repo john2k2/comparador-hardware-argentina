@@ -1,6 +1,8 @@
 import type { Product } from '@/lib/types';
 import { withAbortTimeout } from '@/lib/async/with-abort-timeout';
+import { withPromiseTimeout } from '@/lib/async/with-abort-timeout';
 import { hydrateProduct } from '@/lib/product-serialization';
+import { persistProductsSnapshot } from '@/lib/persistence/product-catalog';
 import { fetchProductDescriptionFromUrl, isWeakProductDescription } from '@/lib/scrapers/product-description';
 import { scheduleInternalRefresh } from '@/lib/server/internal-refresh';
 import { getSharedCache, setSharedCache } from '@/lib/server/shared-cache';
@@ -59,6 +61,16 @@ export async function normalizeAndEnrichProduct(product: Product): Promise<Produ
   }
 
   return normalized;
+}
+
+export async function persistProductDetailSnapshot(product: Product): Promise<void> {
+  await withPromiseTimeout(
+    persistProductsSnapshot([product]),
+    PERSISTENCE_TIMEOUT_MS,
+    'supabase-persist-detail',
+  ).catch((persistError) => {
+    console.warn('[API Products] Persistencia detalle omitida:', persistError);
+  });
 }
 
 export function createObservedProductsSourceRunner(

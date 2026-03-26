@@ -35,6 +35,7 @@ export function ProductImage({ image, productName, latestSyncLabel }: ProductIma
               priority
             />
           ) : (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={image}
               alt={displayName}

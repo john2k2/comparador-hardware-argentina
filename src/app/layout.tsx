@@ -6,7 +6,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Navigation } from "@/components/layout/Navigation";
 import { ThemeScript } from "@/components/functional/ThemeScript";
-import { GOOGLE_SITE_VERIFICATION, SITE_NAME, SITE_URL } from "@/lib/site-config";
+import { GOOGLE_SITE_VERIFICATION, SITE_NAME, SITE_URL, SUPPORT_EMAIL } from "@/lib/site-config";
 import { Analytics } from "@/components/functional/Analytics";
 
 
@@ -114,7 +114,7 @@ export default async function RootLayout({
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'customer service',
-      email: 'soporte@comparador-hardware.com.ar',
+      email: SUPPORT_EMAIL ?? 'soporte@comparador-hardware.com.ar',
       availableLanguage: 'Spanish',
     },
   };
