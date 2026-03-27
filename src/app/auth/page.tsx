@@ -1,15 +1,13 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { AuthScreen } from '@/components/auth/AuthScreen';
+import { buildNoIndexMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildNoIndexMetadata({
+  path: '/auth',
   title: 'Auth',
   description: 'Iniciar sesion para guardar favoritos y alertas de precio.',
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
+});
 
 export default function AuthPage() {
   return (

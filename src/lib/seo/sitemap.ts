@@ -1,5 +1,4 @@
 import { getServerSupabaseReadClient } from '@/lib/server/supabase-server';
-import { SITE_URL } from '@/lib/site-config';
 
 export const PRODUCT_SITEMAP_PAGE_SIZE = 2000;
 export const INDEXABLE_PRODUCT_ID_PREFIX = 'agrupado-';
@@ -11,17 +10,6 @@ type ProductSitemapRow = {
 
 export function isIndexableProductId(id: string): boolean {
   return id.startsWith(INDEXABLE_PRODUCT_ID_PREFIX);
-}
-
-export function toAbsoluteUrl(path: string): string {
-  return `${SITE_URL}${path.startsWith('/') ? path : `/${path}`}`;
-}
-
-export function toDate(value: string | null | undefined): Date | undefined {
-  if (!value) return undefined;
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return undefined;
-  return parsed;
 }
 
 export async function countIndexedProducts(): Promise<number> {

@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
 import { Mail, MessageSquare, Shield } from 'lucide-react';
 import { RetroPageShell } from '@/components/layout/RetroPageShell';
+import { buildPublicPageMetadata } from '@/lib/seo/metadata';
 import { buildMailtoHref, SITE_NAME, SUPPORT_EMAIL } from '@/lib/site-config';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPublicPageMetadata({
+  path: '/contacto',
   title: 'Contacto',
   description: `Canales de contacto, reportes y consultas sobre ${SITE_NAME}.`,
-};
+});
 
 export default function ContactoPage() {
   const supportMailto = buildMailtoHref(`${SITE_NAME} - Consulta`);

@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
 import { RetroPageShell } from '@/components/layout/RetroPageShell';
+import { buildPublicPageMetadata } from '@/lib/seo/metadata';
 import { SITE_NAME, SUPPORT_EMAIL } from '@/lib/site-config';
 import { PRIVACIDAD_FAQ } from '@/lib/seo/faq-schema';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPublicPageMetadata({
+  path: '/privacidad',
   title: 'Politica de Privacidad',
   description: `Politica de privacidad y tratamiento general de datos de ${SITE_NAME}.`,
-};
+});
 
 export default function PrivacidadPage() {
   return (

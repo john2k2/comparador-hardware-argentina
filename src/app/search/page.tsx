@@ -4,8 +4,7 @@ import { buildApiSearchKey, hasSearchIntent, parseSearchState, type SearchPageSt
 import { readProductsPageFromDatabase } from '@/lib/persistence/product-read';
 import { SEARCH_PAGE_SIZE } from '@/lib/search/search-pagination';
 import type { SearchApiResponse } from '@/lib/search/search-api';
-import { getCategorySeoCopy, isIndexableCategoryLanding } from '@/lib/search/search-seo';
-import { SITE_URL } from '@/lib/site-config';
+import { resolveSearchMetadata } from '@/lib/search/search-page-metadata';
 
 type SearchPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -66,55 +65,6 @@ async function readInitialSearchPage(state: SearchPageState): Promise<{
       },
     };
   }
-}
-
-function resolveSearchMetadata(state: SearchPageState): Metadata {
-  const categorySeoCopy = getCategorySeoCopy(state.category);
-  const hasQuery = state.query.length > 0;
-  const indexableCategoryLanding = isIndexableCategoryLanding(state) && Boolean(categorySeoCopy);
-  const canonical = indexableCategoryLanding
-    ? `${SITE_URL}/search?category=${state.category}`
-    : `${SITE_URL}/search`;
-
-  if (indexableCategoryLanding && categorySeoCopy) {
-    return {
-      title: categorySeoCopy.title,
-      description: categorySeoCopy.description,
-      alternates: {
-        canonical,
-      },
-      robots: {
-        index: true,
-        follow: true,
-      },
-    };
-  }
-
-  if (hasQuery) {
-    return {
-      title: `Busqueda: ${state.query}`,
-      description: `Resultados de busqueda para ${state.query} en el comparador de hardware de Argentina.`,
-      alternates: {
-        canonical,
-      },
-      robots: {
-        index: false,
-        follow: true,
-      },
-    };
-  }
-
-  return {
-    title: 'Buscar hardware',
-    description: 'Explora hardware, precios y tiendas disponibles en Argentina con filtros por categoria, precio y tienda.',
-    alternates: {
-      canonical,
-    },
-    robots: {
-      index: false,
-      follow: true,
-    },
-  };
 }
 
 export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {

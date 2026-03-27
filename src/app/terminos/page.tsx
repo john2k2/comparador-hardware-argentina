@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
 import { RetroPageShell } from '@/components/layout/RetroPageShell';
+import { buildPublicPageMetadata } from '@/lib/seo/metadata';
 import { SITE_NAME } from '@/lib/site-config';
 import { TERMINOS_FAQ } from '@/lib/seo/faq-schema';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPublicPageMetadata({
+  path: '/terminos',
   title: 'Terminos de Uso',
   description: `Terminos de uso generales del comparador ${SITE_NAME}.`,
-};
+});
 
 export default function TerminosPage() {
   return (

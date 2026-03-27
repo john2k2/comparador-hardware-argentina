@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { RetroPageShell } from '@/components/layout/RetroPageShell';
+import { buildPublicPageMetadata } from '@/lib/seo/metadata';
 import { SITE_NAME } from '@/lib/site-config';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPublicPageMetadata({
+  path: '/acerca',
   title: 'Acerca de',
   description: `${SITE_NAME} compara precios de hardware entre multiples tiendas de Argentina para ayudarte a decidir mejor antes de comprar.`,
-};
+});
 
 export default function AcercaPage() {
   return (

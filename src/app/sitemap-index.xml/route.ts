@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { countIndexedProducts, PRODUCT_SITEMAP_PAGE_SIZE, toAbsoluteUrl } from '@/lib/seo/sitemap';
+import { countIndexedProducts, PRODUCT_SITEMAP_PAGE_SIZE } from '@/lib/seo/sitemap';
+import { toAbsoluteUrl } from '@/lib/seo/url-utils';
 
 function escapeXml(value: string): string {
   return value
@@ -11,7 +12,7 @@ function escapeXml(value: string): string {
 
 export async function GET() {
   const totalProducts = await countIndexedProducts();
-  const totalPages = Math.max(1, Math.ceil(totalProducts / PRODUCT_SITEMAP_PAGE_SIZE));
+  const totalPages = totalProducts > 0 ? Math.ceil(totalProducts / PRODUCT_SITEMAP_PAGE_SIZE) : 0;
   const urls = [
     toAbsoluteUrl('/sitemap.xml'),
     ...Array.from({ length: totalPages }, (_, index) => toAbsoluteUrl(`/product-sitemap/${index}.xml`)),

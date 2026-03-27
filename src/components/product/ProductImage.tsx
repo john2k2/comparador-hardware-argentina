@@ -33,6 +33,7 @@ export function ProductImage({ image, productName, latestSyncLabel }: ProductIma
               fill
               className="object-contain image-pixelated p-4"
               priority
+              sizes="(max-width: 1024px) 100vw, 50vw"
             />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
@@ -51,6 +52,7 @@ export function ProductImage({ image, productName, latestSyncLabel }: ProductIma
             alt="No image"
             fill
             className="object-contain image-pixelated p-8 opacity-50"
+            sizes="(max-width: 1024px) 100vw, 50vw"
           />
         </div>
       )}

@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import { HomePageClient } from '@/components/home/HomePageClient';
 import { getHomeSectionsData } from '@/lib/home/home-sections';
+import { buildPublicPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPublicPageMetadata({
+  path: '/',
   title: 'Comparador de precios de hardware en Argentina',
   description: 'Compara precios de hardware en tiendas de Argentina. Procesadores, placas de video, RAM, SSD y mas con enlaces directos a cada tienda.',
-};
+});
 
 export const revalidate = 300;
 

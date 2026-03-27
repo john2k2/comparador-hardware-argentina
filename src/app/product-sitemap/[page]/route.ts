@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readProductSitemapPage, toAbsoluteUrl, toDate } from '@/lib/seo/sitemap';
+import { readProductSitemapPage } from '@/lib/seo/sitemap';
+import { toAbsoluteUrl, toDate } from '@/lib/seo/url-utils';
 
 function escapeXml(value: string): string {
   return value
