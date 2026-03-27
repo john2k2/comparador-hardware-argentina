@@ -165,12 +165,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          BASE_URL="${BASE_URL_SECRET:-$BASE_URL_VAR}"
-
-          if [[ -z "$BASE_URL" ]]; then
-            echo 'Falta definir CATALOG_REFRESH_BASE_URL como repo secret o variable.' >&2
-            exit 1
-          fi
+          BASE_URL="${BASE_URL_SECRET:-${BASE_URL_VAR:-https://www.comparador-hardware.com.ar}}"
 
           if [[ -z "$CRON_SECRET" ]]; then
             echo 'Falta definir CATALOG_REFRESH_CRON_SECRET como repo secret.' >&2

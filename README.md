@@ -185,7 +185,7 @@ Cadencia actual:
 Antes de activarlo en GitHub, configurar:
 
 - repo secret `CATALOG_REFRESH_CRON_SECRET`
-- repo variable o secret `CATALOG_REFRESH_BASE_URL` (por ejemplo `https://www.comparador-hardware.com.ar`)
+- opcional: repo variable o secret `CATALOG_REFRESH_BASE_URL` si queres apuntar a otro dominio; por defecto usa `https://www.comparador-hardware.com.ar`
 
 El workflow tambien soporta `workflow_dispatch` para lanzarlo manualmente desde GitHub Actions.
 
