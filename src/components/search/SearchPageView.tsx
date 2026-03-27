@@ -82,7 +82,15 @@ export function SearchPageView({
           <div id="product-grid-start" className="bg-muted p-4 border-4 border-border relative">
             {showNoResultsState && <NoResultsState searchQuery={searchQuery} hasActiveFilters={hasActiveFilters} onClearFilters={onClearFilters} onRetry={() => onSearch(searchQuery)} />}
             {showIdleState && <IdleState />}
-            {!showNoResultsState && !showIdleState && <ProductGrid products={products} isLoading={isBusy} emptyMessage="No se encontraron productos" returnTo={searchRoute} />}
+            {!showNoResultsState && !showIdleState && (
+              <ProductGrid
+                products={products}
+                isLoading={isBusy}
+                emptyMessage="No se encontraron productos"
+                returnTo={searchRoute}
+                surface="search_results"
+              />
+            )}
             <PaginationControls currentPage={currentPage} totalPages={totalPages} isBusy={isBusy} onPageChange={onPageChange} />
           </div>
         </div>

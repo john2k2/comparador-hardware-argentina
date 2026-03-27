@@ -7,6 +7,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import React, { useMemo } from 'react';
+import { trackProductSelection } from '@/lib/analytics';
 import { computeComparableStorePriceStats, formatPriceARS } from '@/lib/price-utils';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
@@ -29,6 +30,8 @@ export interface ProductCardProps {
   showStore?: boolean;
   className?: string;
   returnTo?: string | null;
+  surface?: 'search_results' | 'home_featured' | 'home_recent' | 'home_price_drop' | 'related_products';
+  position?: number;
 }
 
 function getPriceDropBaseline(product: Product, highestComparablePrice: number): number | null {
@@ -47,7 +50,14 @@ function getPriceDropBaseline(product: Product, highestComparablePrice: number):
   return baseline;
 }
 
-export const ProductCard = React.memo(function ProductCard({ product, showStore = true, className, returnTo = null }: ProductCardProps) {
+export const ProductCard = React.memo(function ProductCard({
+  product,
+  showStore = true,
+  className,
+  returnTo = null,
+  surface,
+  position,
+}: ProductCardProps) {
   const {
     bestPrice,
     comparableStoreCount,
@@ -98,7 +108,23 @@ export const ProductCard = React.memo(function ProductCard({ product, showStore 
     : `/product/${encodeURIComponent(product.id)}`;
 
   return (
-    <Link href={productHref} prefetch={false} className={cn('block group', className)}>
+    <Link
+      href={productHref}
+      prefetch={false}
+      className={cn('block group', className)}
+      onClick={() => {
+        if (!surface || !position) return;
+        trackProductSelection({
+          productId: product.id,
+          productName: product.name,
+          category: product.category,
+          brand: product.brand,
+          price: lowestComparablePrice,
+          position,
+          surface,
+        });
+      }}
+    >
       <article className="h-full flex flex-col bg-card border-[3px] border-border p-3.5 pixel-shadow-primary transition-transform group-hover:-translate-y-1 group-hover:translate-x-1">
         <div className="relative aspect-square mb-3 border-2 border-border bg-background overflow-hidden">
           {product.image && isWhitelisted(product.image) ? (

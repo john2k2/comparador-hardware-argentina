@@ -189,6 +189,7 @@ export function HomePageClient({
         <ProductGrid
           products={recentProducts}
           emptyMessage="Todavia no viste productos."
+          surface="home_recent"
         />
       ) : (
         <div className="border-[3px] border-border bg-card p-8 text-center pixel-shadow">
@@ -220,6 +221,7 @@ export function HomePageClient({
         products={featuredProducts}
         isLoading={isSectionsLoading}
         emptyMessage="No se pudieron cargar destacados en este momento."
+        surface="home_featured"
       />
 
       <PromoBanner
@@ -243,6 +245,7 @@ export function HomePageClient({
         emptyMessage={priceDropFallbackUsed
           ? 'No se pudieron cargar productos activos para esta seccion.'
           : 'No hay productos con baja de precio detectada por ahora.'}
+        surface="home_price_drop"
       />
 
       <PromoBanner

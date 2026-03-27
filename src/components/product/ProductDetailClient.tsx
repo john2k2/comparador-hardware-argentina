@@ -162,8 +162,8 @@ function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientPro
             ITEMS SIMILARES
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {relatedProducts.map((relatedProduct) => (
-              <ProductCard key={relatedProduct.id} product={relatedProduct} />
+            {relatedProducts.map((relatedProduct, index) => (
+              <ProductCard key={relatedProduct.id} product={relatedProduct} surface="related_products" position={index + 1} />
             ))}
           </div>
         </section>

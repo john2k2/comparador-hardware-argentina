@@ -67,6 +67,40 @@ export function trackProductView(params: {
 }
 
 /**
+ * Track a click from a product listing into detail
+ */
+export function trackProductSelection(params: {
+  productId: string;
+  productName: string;
+  category: string;
+  brand?: string;
+  price?: number;
+  position: number;
+  surface: 'search_results' | 'home_featured' | 'home_recent' | 'home_price_drop' | 'related_products';
+}): void {
+  if (!isGA4Available()) return;
+
+  window.gtag('event', 'select_item', {
+    currency: 'ARS',
+    value: params.price || 0,
+    items: [
+      {
+        item_id: params.productId,
+        item_name: params.productName,
+        item_category: params.category,
+        item_brand: params.brand || '',
+        quantity: 1,
+        item_list_name: params.surface,
+        item_list_id: params.surface,
+        index: params.position,
+      },
+    ],
+    selection_surface: params.surface,
+    send_to: GA4_MEASUREMENT_ID,
+  });
+}
+
+/**
  * Track a click to external store
  */
 export function trackStoreClick(params: {

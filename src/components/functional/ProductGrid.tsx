@@ -12,6 +12,7 @@ export interface ProductGridProps {
   emptyMessage?: string;
   className?: string;
   returnTo?: string | null;
+  surface?: 'search_results' | 'home_featured' | 'home_recent' | 'home_price_drop' | 'related_products';
 }
 
 export function ProductGrid({
@@ -20,6 +21,7 @@ export function ProductGrid({
   emptyMessage = 'No se encontraron productos',
   className,
   returnTo,
+  surface,
 }: ProductGridProps) {
   if (isLoading) {
     return <ProductGridSkeleton count={8} />;
@@ -37,8 +39,14 @@ export function ProductGrid({
     <div
       className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 lg:gap-6 ${className || ''}`}
     >
-      {products.map((product) => (
-        <ProductCard key={product.id} product={product} returnTo={returnTo} />
+      {products.map((product, index) => (
+        <ProductCard
+          key={product.id}
+          product={product}
+          returnTo={returnTo}
+          surface={surface}
+          position={index + 1}
+        />
       ))}
     </div>
   );
