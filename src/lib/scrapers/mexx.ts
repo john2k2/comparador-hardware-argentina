@@ -64,11 +64,17 @@ export async function scrapeMexxProducts(
       const $ = cheerio.load(html);
       let pageProducts = 0;
 
-      $('.card-ecommerce, .card').each((_, el) => {
-        const rawTitle = $(el).find('h4').text() || '';
-        const cleanTitle = rawTitle.split('$')[0].trim().replace(/\n/g, ' ');
-        const rawUrl = $(el).find('a').attr('href') || '';
+      $('.card.card-ecommerce').each((_, el) => {
+        const titleAnchor = $(el).find('.card-title a').first();
+        const imageAnchor = $(el).find('.view.overlay a').first();
+        const rawTitle = titleAnchor.text() || $(el).find('h4').first().text() || '';
+        const cleanTitle = rawTitle.split('$')[0].replace(/\s+/g, ' ').trim();
+        const rawUrl = titleAnchor.attr('href') || imageAnchor.attr('href') || '';
+        if (!cleanTitle || !rawUrl || rawUrl.startsWith('#')) return;
+
         const url = normalizeAbsoluteUrl(MEXX_BASE_URL, rawUrl);
+        if (!/\.html(?:[?#].*)?$/i.test(url)) return;
+
         const imageRaw = $(el).find('img').first().attr('src') || '';
         const image = imageRaw ? normalizeAbsoluteUrl(MEXX_BASE_URL, imageRaw) : '';
         const rawPrice = $(el).find('b, strong').first().text() || '';
@@ -78,9 +84,6 @@ export async function scrapeMexxProducts(
         if (!priceClean || rawTitle.toLowerCase().includes('sin stock')) {
           stock = 'out-of-stock';
         }
-
-        if (!cleanTitle || !url) return;
-
         const id = `mexx-${url.split('/').pop()?.replace('.html', '') || Date.now().toString()}`;
         if (seenProductIds.has(id)) return;
         seenProductIds.add(id);
