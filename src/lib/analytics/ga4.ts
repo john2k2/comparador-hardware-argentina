@@ -101,6 +101,34 @@ export function trackProductSelection(params: {
 }
 
 /**
+ * Track an explicitly sponsored store slot click
+ */
+export function trackSponsoredStoreSelection(params: {
+  storeId: string;
+  storeName: string;
+  position: number;
+  surface: 'home_sponsored';
+}): void {
+  if (!isGA4Available()) return;
+
+  window.gtag('event', 'select_promotion', {
+    creative_slot: String(params.position),
+    promotion_id: params.storeId,
+    promotion_name: params.storeName,
+    promotion_surface: params.surface,
+    items: [
+      {
+        item_id: params.storeId,
+        item_name: params.storeName,
+        item_category: 'store_promotion',
+        index: params.position,
+      },
+    ],
+    send_to: GA4_MEASUREMENT_ID,
+  });
+}
+
+/**
  * Track a click to external store
  */
 export function trackStoreClick(params: {

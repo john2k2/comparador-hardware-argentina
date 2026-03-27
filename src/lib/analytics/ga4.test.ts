@@ -65,4 +65,21 @@ describe('ga4 analytics helpers', () => {
       ],
     }));
   });
+
+  it('tracks sponsored store slot clicks as promotions', async () => {
+    const { trackSponsoredStoreSelection } = await import('./ga4');
+
+    trackSponsoredStoreSelection({
+      storeId: 'mexx',
+      storeName: 'Mexx',
+      position: 2,
+      surface: 'home_sponsored',
+    });
+
+    expect(gtag).toHaveBeenCalledWith('event', 'select_promotion', expect.objectContaining({
+      promotion_id: 'mexx',
+      promotion_surface: 'home_sponsored',
+      creative_slot: '2',
+    }));
+  });
 });

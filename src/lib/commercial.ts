@@ -1,3 +1,5 @@
+import type { Store } from './types';
+
 export type OutboundLinkType = 'organic' | 'sponsored';
 
 export function parseSponsoredStoreIds(value: string | null | undefined): string[] {
@@ -27,4 +29,12 @@ export function getOutboundStoreLinkType(storeId: string, sponsoredStoreIds = ge
 
 export function getOutboundStoreRel(linkType: OutboundLinkType): string {
   return linkType === 'sponsored' ? 'sponsored noopener noreferrer' : 'noopener noreferrer';
+}
+
+export function resolveSponsoredStores(
+  stores: Store[],
+  sponsoredStoreIds = getSponsoredStoreIds(),
+): Store[] {
+  const sponsoredIds = new Set(sponsoredStoreIds);
+  return stores.filter((store) => sponsoredIds.has(store.id.toLowerCase()));
 }

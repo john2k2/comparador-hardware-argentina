@@ -4,6 +4,7 @@ import {
   getOutboundStoreRel,
   isSponsoredStore,
   parseSponsoredStoreIds,
+  resolveSponsoredStores,
 } from './commercial';
 
 describe('commercial helpers', () => {
@@ -20,5 +21,14 @@ describe('commercial helpers', () => {
     expect(getOutboundStoreLinkType('mexx', ['mexx'])).toBe('sponsored');
     expect(getOutboundStoreRel('sponsored')).toBe('sponsored noopener noreferrer');
     expect(getOutboundStoreRel('organic')).toBe('noopener noreferrer');
+  });
+
+  it('resolves sponsored stores from the public store catalog', () => {
+    expect(resolveSponsoredStores([
+      { id: 'mexx', name: 'Mexx', url: '', logo: '', color: '#fff' },
+      { id: 'venex', name: 'Venex', url: '', logo: '', color: '#000' },
+    ], ['venex'])).toEqual([
+      { id: 'venex', name: 'Venex', url: '', logo: '', color: '#000' },
+    ]);
   });
 });

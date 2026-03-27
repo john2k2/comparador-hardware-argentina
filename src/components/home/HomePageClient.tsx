@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ProductGrid, SearchBar } from '@/components/functional';
+import { SponsoredStoresSection } from '@/components/home/SponsoredStoresSection';
+import { resolveSponsoredStores } from '@/lib/commercial';
 import { categories, stores as defaultStores } from '@/lib/scrapers/static-data';
 import { readRecentlyViewedProducts } from '@/lib/client/recently-viewed';
 import type { Product } from '@/lib/types';
@@ -108,6 +110,7 @@ export function HomePageClient({
 }: HomePageClientProps) {
   const router = useRouter();
   const stores = useMemo(() => defaultStores, []);
+  const sponsoredStores = useMemo(() => resolveSponsoredStores(defaultStores), []);
 
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
   const [featuredProducts] = useState<Product[]>(normalizeFetchedProducts(initialFeaturedProducts));
@@ -247,6 +250,8 @@ export function HomePageClient({
           : 'No hay productos con baja de precio detectada por ahora.'}
         surface="home_price_drop"
       />
+
+      <SponsoredStoresSection stores={sponsoredStores} />
 
       <PromoBanner
         label="-- AVISO IMPORTANTE --"
