@@ -42,6 +42,8 @@ Variables minimas:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=tu-supabase-url
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=tu-supabase-publishable-key
+# legacy fallback solo para migraciones:
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-supabase-anon-key
 ```
 
@@ -50,6 +52,9 @@ cache compartida, rate limiting y persistencia del catalogo:
 
 ```bash
 SUPABASE_URL=tu-supabase-url
+SUPABASE_PUBLISHABLE_KEY=tu-supabase-publishable-key
+SUPABASE_SECRET_KEY=tu-supabase-secret-key
+# legacy fallback solo para migraciones:
 SUPABASE_ANON_KEY=tu-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
 ```
