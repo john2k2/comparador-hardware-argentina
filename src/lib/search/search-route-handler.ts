@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { resolveAdminAccessFromToken } from '@/lib/server/admin-auth';
 import { buildRateLimitHeaders, checkRateLimit, getRequestIp } from '@/lib/server/rate-limit';
-import { recordEndpointRequestEvent } from '@/lib/telemetry/operational-metrics';
+import { recordEndpointRequestEvent, runObservedStoreScrape } from '@/lib/telemetry/operational-metrics';
 import { hasStaleProducts } from '@/lib/persistence/product-staleness';
 import { readProductsPageFromDatabase } from '@/lib/persistence/product-read';
+import { sortProducts } from '@/lib/persistence/product-read-grouping';
+import { createObservedProductsSourceRunner } from '@/lib/products/products-handler-shared';
+import { resolveLiveProductsList } from '@/lib/products/products-list-service';
 import { isHardwareCategory } from '@/lib/catalog/hardware-categories';
 import { runLiveSearch } from '@/lib/search/search-live';
 import {
@@ -25,8 +28,71 @@ import {
 } from '@/lib/search/search-handler-shared';
 import { snapshotProducts } from '@/lib/cache/search-snapshot';
 import type { SearchApiResponse } from '@/lib/search/search-api';
-import { SEARCH_PAGE_SIZE } from '@/lib/search/search-pagination';
+import { dedupeNearDuplicates, filterProductStores } from '@/lib/search/search-dedupe';
+import { paginateProducts, SEARCH_PAGE_SIZE } from '@/lib/search/search-pagination';
+import type { Product } from '@/lib/types';
 import { logger } from '@/lib/logger';
+
+type DatabasePage = Awaited<ReturnType<typeof readProductsPageFromDatabase>>;
+
+function hasUsableDatabasePage(page: DatabasePage): boolean {
+  return page.total > 0 || page.products.length > 0;
+}
+
+function buildPayloadFromDatabasePage(page: DatabasePage): SearchApiResponse {
+  return {
+    products: page.products,
+    pagination: {
+      limit: page.products.length,
+      offset: (page.page - 1) * page.pageSize,
+      total: page.total,
+      totalPages: page.totalPages,
+      page: page.page,
+      pageSize: page.pageSize,
+    },
+    facets: { categories: [], brands: [], stores: [] },
+  };
+}
+
+function buildPayloadFromProducts(products: Product[], page: number): SearchApiResponse {
+  const pageSlice = paginateProducts(products, page, SEARCH_PAGE_SIZE);
+
+  return {
+    products: pageSlice.paginatedProducts,
+    pagination: {
+      limit: pageSlice.paginatedProducts.length,
+      offset: (pageSlice.currentPage - 1) * SEARCH_PAGE_SIZE,
+      total: products.length,
+      totalPages: pageSlice.totalPages,
+      page: pageSlice.currentPage,
+      pageSize: SEARCH_PAGE_SIZE,
+    },
+    facets: { categories: [], brands: [], stores: [] },
+  };
+}
+
+function filterFallbackCategoryProducts(
+  products: Product[],
+  input: {
+    minPrice?: number;
+    maxPrice?: number;
+    selectedStoreIds: Set<string>;
+    sortBy: SortBy;
+  },
+): Product[] {
+  let next = dedupeNearDuplicates(products);
+
+  if (input.minPrice !== undefined) next = next.filter((product) => product.lowestPrice >= input.minPrice!);
+  if (input.maxPrice !== undefined) next = next.filter((product) => product.lowestPrice <= input.maxPrice!);
+
+  if (input.selectedStoreIds.size > 0) {
+    next = next
+      .map((product) => filterProductStores(product, input.selectedStoreIds))
+      .filter((product): product is Product => Boolean(product));
+  }
+
+  return input.sortBy === 'relevance' ? next : sortProducts(next, input.sortBy);
+}
 
 export async function GET(request: NextRequest) {
   const requestStartedAtMs = Date.now();
@@ -94,7 +160,7 @@ export async function GET(request: NextRequest) {
     return respond(payload, undefined, { success: true, resultCount: payload.products.length, note: 'EMPTY_QUERY' });
   }
 
-  if (!bypassDb) {
+  if (!bypassDb && !isRefreshRequest) {
     const cached = await getCachedSearchResponse(cacheKey);
     if (cached) {
       const staleCache = hasStaleProducts(cached.products, DB_STALE_AFTER_MS);
@@ -125,22 +191,11 @@ export async function GET(request: NextRequest) {
         return { products: [], total: 0, totalPages: 0, page, pageSize: SEARCH_PAGE_SIZE };
       });
 
-      if (databasePage.total > 0) {
+      if (hasUsableDatabasePage(databasePage)) {
         const staleDatabase = hasStaleProducts(databasePage.products, DB_STALE_AFTER_MS);
         if (query && staleDatabase && !isRefreshRequest) scheduleBackgroundSearchRefresh(request, cacheKey);
 
-        const payload: SearchApiResponse = {
-          products: databasePage.products,
-          pagination: {
-            limit: databasePage.products.length,
-            offset: (databasePage.page - 1) * databasePage.pageSize,
-            total: databasePage.total,
-            totalPages: databasePage.totalPages,
-            page: databasePage.page,
-            pageSize: databasePage.pageSize,
-          },
-          facets: { categories: [], brands: [], stores: [] },
-        };
+        const payload = buildPayloadFromDatabasePage(databasePage);
 
         await setCachedSearchResponse(cacheKey, payload);
         snapshotProducts(payload.products);
@@ -148,9 +203,49 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    if (!query && category) {
+      const observeSource = createObservedProductsSourceRunner(runObservedStoreScrape);
+      const liveCategoryProducts = await resolveLiveProductsList(category, undefined, observeSource);
+      const refreshedDatabasePage = await readProductsPageFromDatabase({
+        query: undefined,
+        category,
+        minPrice,
+        maxPrice,
+        storeIds: selectedStoreIds,
+        sortBy,
+        page,
+        pageSize: SEARCH_PAGE_SIZE,
+      }).catch((databaseError) => {
+        logger.warn('DB category reread after live refresh skipped', {
+          endpoint: '/api/search',
+          category,
+          error: databaseError,
+        });
+        return null;
+      });
+
+      if (refreshedDatabasePage && hasUsableDatabasePage(refreshedDatabasePage)) {
+        const payload = buildPayloadFromDatabasePage(refreshedDatabasePage);
+        if (!bypassDb) await setCachedSearchResponse(cacheKey, payload);
+        snapshotProducts(payload.products);
+        return respond(payload, { headers: { 'X-Search-Cache': isRefreshRequest ? 'CATEGORY-REFRESH-DB' : 'CATEGORY-MISS-DB' } }, { success: true, resultCount: payload.products.length, note: isRefreshRequest ? 'CATEGORY_REFRESH_DB' : 'CATEGORY_MISS_DB' });
+      }
+
+      const fallbackProducts = filterFallbackCategoryProducts(liveCategoryProducts, {
+        minPrice,
+        maxPrice,
+        selectedStoreIds,
+        sortBy,
+      });
+      const payload = buildPayloadFromProducts(fallbackProducts, page);
+
+      if (!bypassDb && payload.pagination.total > 0) await setCachedSearchResponse(cacheKey, payload);
+      snapshotProducts(payload.products);
+      return respond(payload, { headers: { 'X-Search-Cache': isRefreshRequest ? 'CATEGORY-REFRESH-LIVE' : 'CATEGORY-MISS-LIVE' } }, { success: true, resultCount: payload.products.length, note: isRefreshRequest ? 'CATEGORY_REFRESH_LIVE' : 'CATEGORY_MISS_LIVE' });
+    }
+
     if (!query) {
       const emptyPayload = emptySearchResponse(page);
-      if (!bypassDb) await setCachedSearchResponse(cacheKey, emptyPayload);
       return respond(emptyPayload, { headers: { 'X-Search-Cache': 'DB-EMPTY' } }, { success: true, resultCount: 0, note: 'DB_EMPTY_FILTER_ONLY' });
     }
 

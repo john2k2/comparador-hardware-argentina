@@ -10,6 +10,10 @@ const mockRecordEndpointRequestEvent = vi.fn();
 const mockRunObservedStoreScrape = vi.fn(async ({ run }) => run());
 const mockReadProductsPageFromDatabase = vi.fn();
 const mockPersistProductsSnapshot = vi.fn();
+const mockCreateObservedProductsSourceRunner = vi.fn(() => async (_storeId, _storeName, run) => run(new AbortController().signal));
+const mockResolveLiveProductsList = vi.fn(async () => []);
+const mockLoggerError = vi.fn();
+const mockLoggerWarn = vi.fn();
 
 vi.mock('@/lib/server/shared-cache', () => ({
   getSharedCache: mockGetSharedCache,
@@ -31,8 +35,25 @@ vi.mock('@/lib/persistence/product-read', () => ({
   readProductsPageFromDatabase: mockReadProductsPageFromDatabase,
 }));
 
+vi.mock('@/lib/products/products-handler-shared', () => ({
+  createObservedProductsSourceRunner: mockCreateObservedProductsSourceRunner,
+}));
+
+vi.mock('@/lib/products/products-list-service', () => ({
+  resolveLiveProductsList: mockResolveLiveProductsList,
+}));
+
 vi.mock('@/lib/persistence/product-catalog', () => ({
   persistProductsSnapshot: mockPersistProductsSnapshot,
+}));
+
+vi.mock('@/lib/logger', () => ({
+  logger: {
+    error: mockLoggerError,
+    warn: mockLoggerWarn,
+    info: vi.fn(),
+    debug: vi.fn(),
+  },
 }));
 
 vi.mock('next/headers', () => ({
@@ -93,6 +114,10 @@ describe('/api/search route', () => {
     mockRecordEndpointRequestEvent.mockReset();
     mockReadProductsPageFromDatabase.mockReset();
     mockPersistProductsSnapshot.mockReset();
+    mockCreateObservedProductsSourceRunner.mockClear();
+    mockResolveLiveProductsList.mockReset();
+    mockLoggerError.mockReset();
+    mockLoggerWarn.mockReset();
 
     mockCheckRateLimit.mockResolvedValue({
       allowed: true,
@@ -109,6 +134,7 @@ describe('/api/search route', () => {
       page: 1,
       pageSize: 24,
     });
+    mockResolveLiveProductsList.mockResolvedValue([]);
   });
 
   it('returns an empty payload without touching DB when there is no search intent', async () => {
@@ -152,5 +178,121 @@ describe('/api/search route', () => {
     expect(response.status).toBe(200);
     expect(payload.pagination.total).toBe(1);
     expect(mockSetSharedCache).toHaveBeenCalled();
+  });
+
+  it('bypasses cached search responses when refresh=1', async () => {
+    mockGetSharedCache.mockResolvedValue({
+      products: [{
+        id: 'cached-cpu',
+        name: 'Cached Ryzen',
+        category: 'procesadores',
+        brand: 'AMD',
+        model: 'cached',
+        description: 'CPU',
+        image: '/pixel-box.svg',
+        specs: {},
+        prices: [],
+        lowestPrice: 1,
+        highestPrice: 1,
+        averagePrice: 1,
+        createdAt: new Date('2026-03-08T12:00:00.000Z'),
+        updatedAt: new Date('2026-03-08T12:00:00.000Z'),
+      }],
+      pagination: {
+        limit: 1,
+        offset: 0,
+        total: 1,
+        totalPages: 1,
+        page: 1,
+        pageSize: 12,
+      },
+      facets: { categories: [], brands: [], stores: [] },
+    });
+
+    mockReadProductsPageFromDatabase.mockResolvedValue({
+      products: [{
+        id: 'fresh-cpu',
+        name: 'Fresh Ryzen',
+        category: 'procesadores',
+        brand: 'AMD',
+        model: 'fresh',
+        description: 'CPU',
+        image: '/pixel-box.svg',
+        specs: {},
+        prices: [],
+        lowestPrice: 2,
+        highestPrice: 2,
+        averagePrice: 2,
+        createdAt: new Date('2026-03-08T12:00:00.000Z'),
+        updatedAt: new Date('2026-03-08T12:00:00.000Z'),
+      }],
+      total: 1,
+      totalPages: 1,
+      page: 1,
+      pageSize: 12,
+    });
+
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest('http://localhost/api/search?q=ryzen&refresh=1'));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.products[0]?.id).toBe('fresh-cpu');
+    expect(response.headers.get('X-Search-Cache')).toBe('DB-STALE');
+    expect(mockReadProductsPageFromDatabase).toHaveBeenCalled();
+  });
+
+  it('falls back to live category products when filter-only DB-first search is empty', async () => {
+    const liveProduct = {
+      id: 'live-cpu',
+      name: 'Ryzen 9600X',
+      category: 'procesadores',
+      brand: 'AMD',
+      model: '9600X',
+      description: 'CPU',
+      image: '/pixel-box.svg',
+      specs: {},
+      prices: [{
+        storeId: 'mexx',
+        storeName: 'Mexx',
+        url: 'https://example.com/cpu',
+        price: 1000,
+        stock: 'in-stock',
+        installment: null,
+        lastUpdated: new Date('2026-03-08T12:00:00.000Z'),
+      }],
+      lowestPrice: 1000,
+      highestPrice: 1000,
+      averagePrice: 1000,
+      createdAt: new Date('2026-03-08T12:00:00.000Z'),
+      updatedAt: new Date('2026-03-08T12:00:00.000Z'),
+    };
+
+    mockReadProductsPageFromDatabase
+      .mockResolvedValueOnce({
+        products: [],
+        total: 0,
+        totalPages: 0,
+        page: 1,
+        pageSize: 12,
+      })
+      .mockResolvedValueOnce({
+        products: [liveProduct],
+        total: 1,
+        totalPages: 1,
+        page: 1,
+        pageSize: 12,
+      });
+    mockResolveLiveProductsList.mockResolvedValue([liveProduct]);
+
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest('http://localhost/api/search?category=procesadores'));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.pagination.total).toBe(1);
+    expect(payload.products[0]?.id).toBe('live-cpu');
+    expect(response.headers.get('X-Search-Cache')).toBe('CATEGORY-MISS-DB');
+    expect(mockResolveLiveProductsList).toHaveBeenCalledWith('procesadores', undefined, expect.any(Function));
   });
 });
