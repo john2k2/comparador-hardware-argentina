@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { CommercialDisclosure } from '@/components/functional/CommercialDisclosure';
 import { RetroPageShell } from '@/components/layout/RetroPageShell';
 import { buildPublicPageMetadata } from '@/lib/seo/metadata';
 import { SITE_NAME } from '@/lib/site-config';
@@ -58,6 +59,8 @@ export default function AcercaPage() {
             </p>
           </div>
         </div>
+
+        <CommercialDisclosure />
 
         <div className="pt-2">
           <Link href="/search" className="pixel-button inline-block">

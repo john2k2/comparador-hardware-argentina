@@ -5,6 +5,7 @@ import { PriceDisplay } from '@/components/functional';
 import { cn } from '@/lib/utils';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import { trackStoreClick } from '@/lib/analytics';
+import { getOutboundStoreLinkType, getOutboundStoreRel } from '@/lib/commercial';
 import type { ProductPrice, Product } from '@/lib/types';
 
 type StoresListProps = {
@@ -19,20 +20,29 @@ export function StoresList({ product, merchantPrices }: StoresListProps) {
         TIENDAS DISPONIBLES
       </h3>
       <div className="space-y-3">
-        {merchantPrices.map((price, index) => (
-          <div
-            key={price.storeId}
-            className={cn(
-              'flex flex-col sm:flex-row sm:items-center justify-between p-3 border-2 gap-3',
-              index === 0
-                ? 'border-secondary bg-secondary/10'
-                : 'border-muted hover:border-border transition-colors',
-            )}
-          >
+        {merchantPrices.map((price, index) => {
+          const linkType = getOutboundStoreLinkType(price.storeId);
+          const isSponsored = linkType === 'sponsored';
+
+          return (
+            <div
+              key={price.storeId}
+              className={cn(
+                'flex flex-col sm:flex-row sm:items-center justify-between p-3 border-2 gap-3',
+                index === 0
+                  ? 'border-secondary bg-secondary/10'
+                  : 'border-muted hover:border-border transition-colors',
+              )}
+            >
             <div className="flex flex-col gap-1">
               {index === 0 && (
                 <span className="text-[8px] font-bold uppercase text-secondary">
                   [ MEJOR PRECIO ]
+                </span>
+              )}
+              {isSponsored && (
+                <span className="text-[8px] font-bold uppercase text-primary">
+                  [ PATROCINADO ]
                 </span>
               )}
               <span className="text-[10px] uppercase font-bold text-foreground">
@@ -49,7 +59,7 @@ export function StoresList({ product, merchantPrices }: StoresListProps) {
               <a
                 href={price.url}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel={getOutboundStoreRel(linkType)}
                 onClick={() => {
                   trackStoreClick({
                     productId: product.id,
@@ -58,18 +68,25 @@ export function StoresList({ product, merchantPrices }: StoresListProps) {
                     storeId: price.storeId,
                     price: price.price,
                     position: index + 1,
+                    surface: 'product_detail',
+                    linkType,
                   });
                 }}
                 className={cn(
                   'px-3 py-2 text-[8px] uppercase font-bold transition-transform active:translate-x-1 active:translate-y-1 flex items-center gap-2',
-                  index === 0 ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-foreground border-2 border-border',
+                  index === 0
+                    ? 'bg-secondary text-secondary-foreground'
+                    : isSponsored
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-foreground border-2 border-border',
                 )}
               >
                 VER EN TIENDA <ExternalLink className="w-3 h-3" />
               </a>
             </div>
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

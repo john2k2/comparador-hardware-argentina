@@ -8,6 +8,7 @@ import { Navigation } from "@/components/layout/Navigation";
 import { ThemeScript } from "@/components/functional/ThemeScript";
 import { GOOGLE_SITE_VERIFICATION, SITE_NAME, SITE_URL, SUPPORT_EMAIL } from "@/lib/site-config";
 import { Analytics } from "@/components/functional/Analytics";
+import { CommercialDisclosure } from "@/components/functional/CommercialDisclosure";
 
 
 const pixelFont = Press_Start_2P({
@@ -247,6 +248,7 @@ export default async function RootLayout({
               <div className="border-t border-border pt-8 text-center text-sm text-muted-foreground">
                 <p>&copy; Comparador Hardware Argentina. Todos los derechos reservados.</p>
                 <p className="mt-2">Precios aproximados sujetos a cambios segun disponibilidad y actualizaciones de cada tienda.</p>
+                <CommercialDisclosure className="mt-6 text-left" compact />
               </div>
             </div>
           </footer>

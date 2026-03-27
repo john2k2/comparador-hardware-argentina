@@ -76,6 +76,8 @@ export function trackStoreClick(params: {
   storeId: string;
   price: number;
   position: number;
+  surface: 'product_detail' | 'search_results' | 'home_section';
+  linkType: 'organic' | 'sponsored';
 }): void {
   if (!isGA4Available()) return;
 
@@ -97,6 +99,8 @@ export function trackStoreClick(params: {
         creative_slot: String(params.position),
       },
     ],
+    outbound_surface: params.surface,
+    outbound_link_type: params.linkType,
     send_to: GA4_MEASUREMENT_ID,
   });
 }
