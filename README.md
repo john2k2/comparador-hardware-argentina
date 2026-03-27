@@ -167,14 +167,27 @@ src/
   - Seguridad:
     - Admin (cookie/bearer) o cron secret (`Authorization: Bearer <CRON_SECRET>`).
 
-## Cron de catalogo (Vercel)
+## Scheduler de catalogo (GitHub Actions)
 
-El repo incluye `vercel.json` con 4 jobs:
+El scheduler se movio a GitHub Actions para no depender de los cron de Vercel (que en Hobby bloquean el deploy si corren mas de 1 vez por dia).
 
-- `tracked` cada 30 minutos.
-- `hot` cada 3 horas.
-- `full` diario (`05:00` UTC).
-- `cleanup-history` diario (`05:30` UTC).
+Workflow:
+
+- `.github/workflows/catalog-refresh.yml`
+
+Cadencia actual:
+
+- `tracked` cada 30 minutos (`:13` y `:43` UTC).
+- `hot` cada 3 horas (`HH:18` UTC).
+- `full` diario (`05:05` UTC).
+- `cleanup-history` diario (`05:35` UTC).
+
+Antes de activarlo en GitHub, configurar:
+
+- repo secret `CATALOG_REFRESH_CRON_SECRET`
+- repo variable o secret `CATALOG_REFRESH_BASE_URL` (por ejemplo `https://www.comparador-hardware.com.ar`)
+
+El workflow tambien soporta `workflow_dispatch` para lanzarlo manualmente desde GitHub Actions.
 
 Ejemplos manuales:
 

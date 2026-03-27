@@ -1,0 +1,235 @@
+name: Catalog refresh scheduler
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Modo de refresh
+        required: true
+        default: tracked
+        type: choice
+        options:
+          - tracked
+          - hot
+          - full
+          - cleanup-history
+          - custom
+      query:
+        description: Query opcional para mode=custom
+        required: false
+        type: string
+      categories:
+        description: CSV de categorias opcional para mode=custom
+        required: false
+        type: string
+      stores:
+        description: CSV de stores opcional
+        required: false
+        type: string
+      max_queries:
+        description: Override opcional de maxQueries
+        required: false
+        type: string
+      stale_minutes:
+        description: Override opcional de staleMinutes
+        required: false
+        type: string
+  schedule:
+    # Offseteados fuera del minuto 0 para evitar picos/colas del scheduler de GitHub Actions.
+    - cron: '13,43 * * * *'
+    - cron: '18 */3 * * *'
+    - cron: '5 5 * * *'
+    - cron: '35 5 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: catalog-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Resolve refresh target
+        id: resolve
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+          INPUT_MODE: ${{ github.event.inputs.mode }}
+          INPUT_QUERY: ${{ github.event.inputs.query }}
+          INPUT_CATEGORIES: ${{ github.event.inputs.categories }}
+          INPUT_STORES: ${{ github.event.inputs.stores }}
+          INPUT_MAX_QUERIES: ${{ github.event.inputs.max_queries }}
+          INPUT_STALE_MINUTES: ${{ github.event.inputs.stale_minutes }}
+        run: |
+          set -euo pipefail
+
+          url_encode() {
+            python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$1"
+          }
+
+          append_param() {
+            local current="$1"
+            local key="$2"
+            local value="$3"
+
+            if [[ -z "$value" ]]; then
+              printf '%s' "$current"
+              return
+            fi
+
+            printf '%s&%s=%s' "$current" "$key" "$(url_encode "$value")"
+          }
+
+          if [[ "$EVENT_NAME" == "schedule" ]]; then
+            case "$EVENT_SCHEDULE" in
+              '13,43 * * * *')
+                MODE='tracked'
+                REQUEST_PATH='/api/admin/catalog-refresh?mode=tracked&maxQueries=30'
+                ;;
+              '18 */3 * * *')
+                MODE='hot'
+                REQUEST_PATH='/api/admin/catalog-refresh?mode=hot&maxQueries=80&staleMinutes=180'
+                ;;
+              '5 5 * * *')
+                MODE='full'
+                REQUEST_PATH='/api/admin/catalog-refresh?mode=full'
+                ;;
+              '35 5 * * *')
+                MODE='cleanup-history'
+                REQUEST_PATH='/api/admin/catalog-refresh?mode=cleanup-history'
+                ;;
+              *)
+                echo "Cron no soportado: $EVENT_SCHEDULE" >&2
+                exit 1
+                ;;
+            esac
+          else
+            MODE="${INPUT_MODE:-tracked}"
+
+            case "$MODE" in
+              tracked)
+                REQUEST_PATH='/api/admin/catalog-refresh?mode=tracked'
+                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'maxQueries' "${INPUT_MAX_QUERIES:-30}")"
+                ;;
+              hot)
+                REQUEST_PATH='/api/admin/catalog-refresh?mode=hot'
+                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'maxQueries' "${INPUT_MAX_QUERIES:-80}")"
+                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'staleMinutes' "${INPUT_STALE_MINUTES:-180}")"
+                ;;
+              full)
+                REQUEST_PATH='/api/admin/catalog-refresh?mode=full'
+                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'maxQueries' "${INPUT_MAX_QUERIES:-}")"
+                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'staleMinutes' "${INPUT_STALE_MINUTES:-}")"
+                ;;
+              cleanup-history)
+                REQUEST_PATH='/api/admin/catalog-refresh?mode=cleanup-history'
+                ;;
+              custom)
+                if [[ -z "${INPUT_QUERY:-}" && -z "${INPUT_CATEGORIES:-}" ]]; then
+                  echo 'mode=custom requiere query o categories' >&2
+                  exit 1
+                fi
+
+                REQUEST_PATH='/api/admin/catalog-refresh?mode=custom'
+                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'query' "${INPUT_QUERY:-}")"
+                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'categories' "${INPUT_CATEGORIES:-}")"
+                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'stores' "${INPUT_STORES:-}")"
+                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'maxQueries' "${INPUT_MAX_QUERIES:-}")"
+                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'staleMinutes' "${INPUT_STALE_MINUTES:-}")"
+                ;;
+              *)
+                echo "Modo manual no soportado: $MODE" >&2
+                exit 1
+                ;;
+            esac
+          fi
+
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "request_path=$REQUEST_PATH" >> "$GITHUB_OUTPUT"
+          echo "Resolved mode=$MODE path=$REQUEST_PATH"
+
+      - name: Invoke catalog refresh endpoint
+        shell: bash
+        env:
+          BASE_URL_SECRET: ${{ secrets.CATALOG_REFRESH_BASE_URL }}
+          BASE_URL_VAR: ${{ vars.CATALOG_REFRESH_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CATALOG_REFRESH_CRON_SECRET }}
+          REQUEST_PATH: ${{ steps.resolve.outputs.request_path }}
+          MODE: ${{ steps.resolve.outputs.mode }}
+        run: |
+          set -euo pipefail
+
+          BASE_URL="${BASE_URL_SECRET:-$BASE_URL_VAR}"
+
+          if [[ -z "$BASE_URL" ]]; then
+            echo 'Falta definir CATALOG_REFRESH_BASE_URL como repo secret o variable.' >&2
+            exit 1
+          fi
+
+          if [[ -z "$CRON_SECRET" ]]; then
+            echo 'Falta definir CATALOG_REFRESH_CRON_SECRET como repo secret.' >&2
+            exit 1
+          fi
+
+          RESPONSE_FILE="$(mktemp)"
+          STATUS_CODE="$(
+            curl \
+              --silent \
+              --show-error \
+              --location \
+              --max-time 1800 \
+              --retry 2 \
+              --retry-delay 5 \
+              --output "$RESPONSE_FILE" \
+              --write-out '%{http_code}' \
+              --header "Authorization: Bearer $CRON_SECRET" \
+              "${BASE_URL%/}${REQUEST_PATH}"
+          )"
+
+          echo "HTTP ${STATUS_CODE}"
+          cat "$RESPONSE_FILE"
+          echo
+
+          STATUS_CODE="$STATUS_CODE" RESPONSE_FILE="$RESPONSE_FILE" MODE="$MODE" python3 - <<'PY'
+          import json
+          import os
+          import sys
+
+          status = int(os.environ["STATUS_CODE"])
+          response_file = os.environ["RESPONSE_FILE"]
+          mode = os.environ["MODE"]
+
+          if status < 200 or status >= 300:
+              print(f"Request failed with HTTP {status}", file=sys.stderr)
+              sys.exit(1)
+
+          raw = open(response_file, encoding="utf-8").read().strip()
+          try:
+              payload = json.loads(raw) if raw else {}
+          except json.JSONDecodeError as exc:
+              print(f"Response was not valid JSON: {exc}", file=sys.stderr)
+              sys.exit(1)
+
+          if mode == "cleanup-history":
+              cleanup = payload.get("cleanup") or {}
+              deleted = cleanup.get("deletedRows")
+              retained = cleanup.get("retainedRows", cleanup.get("remainingRows"))
+              print(f"Cleanup summary: deletedRows={deleted} retainedRows={retained}")
+              sys.exit(0)
+
+          failed = payload.get("failedTargets")
+          ok = payload.get("okTargets")
+          total = payload.get("totalTargets")
+          source = payload.get("source")
+
+          print(f"Refresh summary: source={source} totalTargets={total} okTargets={ok} failedTargets={failed}")
+
+          if isinstance(failed, int) and failed > 0:
+              sys.exit(1)
+          PY

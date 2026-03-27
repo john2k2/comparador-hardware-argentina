@@ -1,20 +1,3 @@
 {
-  "crons": [
-    {
-      "path": "/api/admin/catalog-refresh?mode=tracked&maxQueries=30",
-      "schedule": "*/30 * * * *"
-    },
-    {
-      "path": "/api/admin/catalog-refresh?mode=hot&maxQueries=80&staleMinutes=180",
-      "schedule": "0 */3 * * *"
-    },
-    {
-      "path": "/api/admin/catalog-refresh?mode=full",
-      "schedule": "0 5 * * *"
-    },
-    {
-      "path": "/api/admin/catalog-refresh?mode=cleanup-history",
-      "schedule": "30 5 * * *"
-    }
-  ]
+  "$schema": "https://openapi.vercel.sh/vercel.json"
 }
