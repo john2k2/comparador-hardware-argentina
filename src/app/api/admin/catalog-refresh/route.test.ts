@@ -114,4 +114,33 @@ describe('/api/admin/catalog-refresh route', () => {
     expect(payload.results).toHaveLength(1);
     expect(mockLoggerInfo).toHaveBeenCalled();
   });
+
+  it('skips execution when the refresh plan has no targets', async () => {
+    mockEnsureAccess.mockResolvedValue('cron');
+    mockParseRefreshInput.mockResolvedValue({
+      mode: 'tracked',
+      categories: [],
+      stores: [],
+      maxQueries: 30,
+      staleMinutes: 180,
+    });
+    mockBuildRefreshPlan.mockResolvedValue({
+      source: 'tracked-idle',
+      targets: [],
+      fallbackApplied: false,
+      fallbackReason: null,
+    });
+
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest('http://localhost/api/admin/catalog-refresh?mode=tracked'));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.source).toBe('tracked-idle');
+    expect(payload.totalTargets).toBe(0);
+    expect(payload.okTargets).toBe(0);
+    expect(payload.failedTargets).toBe(0);
+    expect(payload.results).toEqual([]);
+    expect(mockRunTargets).not.toHaveBeenCalled();
+  });
 });

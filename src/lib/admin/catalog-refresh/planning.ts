@@ -8,9 +8,17 @@ import {
   type RefreshTarget,
 } from '@/lib/admin/catalog-refresh/types';
 
+export type RefreshTargetLoadStatus = 'ready' | 'empty' | 'unavailable';
+
+export type RefreshTargetLoadResult = {
+  status: RefreshTargetLoadStatus;
+  targets: RefreshTarget[];
+  reason?: string;
+};
+
 export type RefreshTargetLoader = {
-  loadTrackedTargets: (maxQueries: number) => Promise<RefreshTarget[]>;
-  loadHotTargets: (maxQueries: number, staleMinutes: number) => Promise<RefreshTarget[]>;
+  loadTrackedTargets: (maxQueries: number) => Promise<RefreshTargetLoadResult>;
+  loadHotTargets: (maxQueries: number, staleMinutes: number) => Promise<RefreshTargetLoadResult>;
 };
 
 export function dedupeTargets(targets: RefreshTarget[]): RefreshTarget[] {
@@ -58,9 +66,38 @@ export function toQueryTarget(product: { name: string; category: string | null }
   };
 }
 
-export async function loadTrackedTargets(maxQueries: number): Promise<RefreshTarget[]> {
+function readyResult(targets: RefreshTarget[]): RefreshTargetLoadResult {
+  return {
+    status: 'ready',
+    targets,
+  };
+}
+
+function emptyResult(reason: string): RefreshTargetLoadResult {
+  return {
+    status: 'empty',
+    targets: [],
+    reason,
+  };
+}
+
+function unavailableResult(reason: string): RefreshTargetLoadResult {
+  return {
+    status: 'unavailable',
+    targets: [],
+    reason,
+  };
+}
+
+export async function loadTrackedTargets(maxQueries: number): Promise<RefreshTargetLoadResult> {
   const supabase = getServerSupabaseServiceClient();
-  if (!supabase) return [];
+  if (!supabase) {
+    logger.warn('Catalog refresh: tracked target load unavailable', {
+      endpoint: '/api/admin/catalog-refresh',
+      reason: 'service_client_unavailable',
+    });
+    return unavailableResult('service_client_unavailable');
+  }
 
   const [favoritesResult, alertsResult] = await Promise.all([
     supabase
@@ -74,6 +111,15 @@ export async function loadTrackedTargets(maxQueries: number): Promise<RefreshTar
       .limit(Math.max(maxQueries * 4, 100)),
   ]);
 
+  if (favoritesResult.error || alertsResult.error) {
+    logger.warn('Catalog refresh: tracked source query failed', {
+      endpoint: '/api/admin/catalog-refresh',
+      favoritesError: favoritesResult.error?.message ?? null,
+      alertsError: alertsResult.error?.message ?? null,
+    });
+    return unavailableResult('tracked_source_query_failed');
+  }
+
   const trackedIds = new Set<string>();
 
   for (const row of favoritesResult.data ?? []) {
@@ -86,7 +132,7 @@ export async function loadTrackedTargets(maxQueries: number): Promise<RefreshTar
     if (id) trackedIds.add(id);
   }
 
-  if (trackedIds.size === 0) return [];
+  if (trackedIds.size === 0) return emptyResult('no_tracked_ids');
 
   const ids = Array.from(trackedIds).slice(0, Math.max(maxQueries * 2, 50));
   const { data: products, error } = await supabase
@@ -100,10 +146,10 @@ export async function loadTrackedTargets(maxQueries: number): Promise<RefreshTar
       endpoint: '/api/admin/catalog-refresh',
       error: error?.message ?? 'unknown',
     });
-    return [];
+    return unavailableResult('tracked_products_query_failed');
   }
 
-  return dedupeTargets(
+  const targets = dedupeTargets(
     products
       .map((row) => toQueryTarget({
         name: String(row.name ?? ''),
@@ -112,11 +158,21 @@ export async function loadTrackedTargets(maxQueries: number): Promise<RefreshTar
       .filter((target): target is RefreshTarget => Boolean(target))
       .slice(0, maxQueries),
   );
+
+  if (targets.length === 0) return emptyResult('no_valid_tracked_queries');
+
+  return readyResult(targets);
 }
 
-export async function loadHotTargets(maxQueries: number, staleMinutes: number): Promise<RefreshTarget[]> {
+export async function loadHotTargets(maxQueries: number, staleMinutes: number): Promise<RefreshTargetLoadResult> {
   const supabase = getServerSupabaseServiceClient();
-  if (!supabase) return [];
+  if (!supabase) {
+    logger.warn('Catalog refresh: hot target load unavailable', {
+      endpoint: '/api/admin/catalog-refresh',
+      reason: 'service_client_unavailable',
+    });
+    return unavailableResult('service_client_unavailable');
+  }
 
   const staleCutoff = new Date(Date.now() - staleMinutes * 60_000).toISOString();
   const { data, error } = await supabase
@@ -132,10 +188,10 @@ export async function loadHotTargets(maxQueries: number, staleMinutes: number): 
       endpoint: '/api/admin/catalog-refresh',
       error: error?.message ?? 'unknown',
     });
-    return [];
+    return unavailableResult('hot_target_query_failed');
   }
 
-  return dedupeTargets(
+  const targets = dedupeTargets(
     data
       .map((row) => toQueryTarget({
         name: String(row.name ?? ''),
@@ -144,6 +200,10 @@ export async function loadHotTargets(maxQueries: number, staleMinutes: number): 
       .filter((target): target is RefreshTarget => Boolean(target))
       .slice(0, maxQueries),
   );
+
+  if (targets.length === 0) return emptyResult('no_stale_hot_targets');
+
+  return readyResult(targets);
 }
 
 export async function buildRefreshPlan(
@@ -188,10 +248,19 @@ export async function buildRefreshPlan(
 
   if (input.mode === 'tracked') {
     const trackedTargets = await loaders.loadTrackedTargets(input.maxQueries);
-    if (trackedTargets.length > 0) {
+    if (trackedTargets.status === 'ready' && trackedTargets.targets.length > 0) {
       return {
         source: 'tracked-db',
-        targets: trackedTargets,
+        targets: trackedTargets.targets,
+        fallbackApplied: false,
+        fallbackReason: null,
+      };
+    }
+
+    if (trackedTargets.status === 'empty') {
+      return {
+        source: 'tracked-idle',
+        targets: [],
         fallbackApplied: false,
         fallbackReason: null,
       };
@@ -201,15 +270,24 @@ export async function buildRefreshPlan(
       source: 'tracked-fallback-categories',
       targets: toCategoryTargets(input.categories),
       fallbackApplied: true,
-      fallbackReason: 'tracked_targets_empty_or_unavailable',
+      fallbackReason: trackedTargets.reason ?? 'tracked_targets_unavailable',
     };
   }
 
   const hotTargets = await loaders.loadHotTargets(input.maxQueries, input.staleMinutes);
-  if (hotTargets.length > 0) {
+  if (hotTargets.status === 'ready' && hotTargets.targets.length > 0) {
     return {
       source: 'hot-db',
-      targets: hotTargets,
+      targets: hotTargets.targets,
+      fallbackApplied: false,
+      fallbackReason: null,
+    };
+  }
+
+  if (hotTargets.status === 'empty') {
+    return {
+      source: 'hot-idle',
+      targets: [],
       fallbackApplied: false,
       fallbackReason: null,
     };
@@ -219,6 +297,6 @@ export async function buildRefreshPlan(
     source: 'hot-fallback-categories',
     targets: toCategoryTargets(input.categories),
     fallbackApplied: true,
-    fallbackReason: 'hot_targets_empty_or_unavailable',
+    fallbackReason: hotTargets.reason ?? 'hot_targets_unavailable',
   };
 }

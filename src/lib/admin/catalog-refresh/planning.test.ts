@@ -51,23 +51,78 @@ describe('catalog-refresh planning', () => {
 
   it('falls back to categories when tracked targets are unavailable', async () => {
     await expect(buildRefreshPlan(baseInput, {
-      loadTrackedTargets: vi.fn(async () => []),
-      loadHotTargets: vi.fn(async () => []),
+      loadTrackedTargets: vi.fn(async () => ({
+        status: 'unavailable',
+        targets: [],
+        reason: 'service_client_unavailable',
+      })),
+      loadHotTargets: vi.fn(async () => ({
+        status: 'empty',
+        targets: [],
+        reason: 'no_stale_hot_targets',
+      })),
     })).resolves.toEqual({
       source: 'tracked-fallback-categories',
       targets: [{ kind: 'category', value: 'procesadores', category: 'procesadores' }],
       fallbackApplied: true,
-      fallbackReason: 'tracked_targets_empty_or_unavailable',
+      fallbackReason: 'service_client_unavailable',
+    });
+  });
+
+  it('returns idle tracked plan when there are no tracked targets', async () => {
+    await expect(buildRefreshPlan(baseInput, {
+      loadTrackedTargets: vi.fn(async () => ({
+        status: 'empty',
+        targets: [],
+        reason: 'no_tracked_ids',
+      })),
+      loadHotTargets: vi.fn(async () => ({
+        status: 'empty',
+        targets: [],
+        reason: 'no_stale_hot_targets',
+      })),
+    })).resolves.toEqual({
+      source: 'tracked-idle',
+      targets: [],
+      fallbackApplied: false,
+      fallbackReason: null,
     });
   });
 
   it('uses loader-backed targets for hot mode when available', async () => {
     await expect(buildRefreshPlan({ ...baseInput, mode: 'hot' }, {
-      loadTrackedTargets: vi.fn(async () => []),
-      loadHotTargets: vi.fn(async () => [{ kind: 'query', value: 'Ryzen 7600', category: 'procesadores' }]),
+      loadTrackedTargets: vi.fn(async () => ({
+        status: 'empty',
+        targets: [],
+        reason: 'no_tracked_ids',
+      })),
+      loadHotTargets: vi.fn(async () => ({
+        status: 'ready',
+        targets: [{ kind: 'query', value: 'Ryzen 7600', category: 'procesadores' }],
+      })),
     })).resolves.toEqual({
       source: 'hot-db',
       targets: [{ kind: 'query', value: 'Ryzen 7600', category: 'procesadores' }],
+      fallbackApplied: false,
+      fallbackReason: null,
+    });
+  });
+
+  it('returns idle hot plan when there are no stale hot targets', async () => {
+    await expect(buildRefreshPlan({ ...baseInput, mode: 'hot' }, {
+      loadTrackedTargets: vi.fn(async () => ({
+        status: 'empty',
+        targets: [],
+        reason: 'no_tracked_ids',
+      })),
+      loadHotTargets: vi.fn(async () => ({
+        status: 'empty',
+        targets: [],
+        reason: 'no_stale_hot_targets',
+      })),
+    })).resolves.toEqual({
+      source: 'hot-idle',
+      targets: [],
       fallbackApplied: false,
       fallbackReason: null,
     });

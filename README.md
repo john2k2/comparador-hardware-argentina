@@ -187,6 +187,12 @@ Cadencia actual:
 - `full` diario (`05:05` UTC).
 - `cleanup-history` diario (`05:35` UTC).
 
+Comportamiento operativo actual:
+
+- `tracked` y `hot` hacen **no-op** si no hay targets reales en DB.
+- Solo hacen fallback a categorias si la carga de targets desde Supabase esta realmente no disponible o falla.
+- `full` sigue siendo el barrido diario que mantiene cobertura general del catalogo.
+
 Antes de activarlo en GitHub, configurar:
 
 - repo secret `CATALOG_REFRESH_CRON_SECRET`

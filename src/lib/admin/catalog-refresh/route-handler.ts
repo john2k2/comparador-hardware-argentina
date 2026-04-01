@@ -34,6 +34,35 @@ async function handleRefresh(request: NextRequest) {
     }
 
     const plan = await buildRefreshPlan(input);
+    if (plan.targets.length === 0) {
+      logger.info('Catalog refresh skipped: no targets selected', {
+        endpoint: '/api/admin/catalog-refresh',
+        requestedBy: access,
+        mode: input.mode,
+        source: plan.source,
+      });
+
+      return NextResponse.json({
+        refreshedAt: new Date().toISOString(),
+        requestedBy: access,
+        mode: input.mode,
+        source: plan.source,
+        fallbackApplied: plan.fallbackApplied,
+        fallbackReason: plan.fallbackReason,
+        totalTargets: 0,
+        okTargets: 0,
+        failedTargets: 0,
+        input: {
+          query: input.query ?? null,
+          categories: input.categories,
+          stores: input.stores,
+          maxQueries: input.maxQueries,
+          staleMinutes: input.staleMinutes,
+        },
+        results: [],
+      });
+    }
+
     const targets = plan.targets.slice(0, input.maxQueries);
     const results = await runTargets(request, targets, input.stores);
     const failedTargets = results.filter((item) => !item.ok);
