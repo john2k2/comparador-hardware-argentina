@@ -10,8 +10,8 @@ describe('robots route', () => {
       expect.arrayContaining(['/admin', '/admin/', '/api', '/api/', '/auth', '/auth/']),
     );
     expect(output.sitemap).toEqual([
-      'https://comparador-hardware.com.ar/sitemap.xml',
-      'https://comparador-hardware.com.ar/sitemap-index.xml',
+      'https://www.comparador-hardware.com.ar/sitemap.xml',
+      'https://www.comparador-hardware.com.ar/sitemap-index.xml',
     ]);
   });
 });

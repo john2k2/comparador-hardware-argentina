@@ -3,8 +3,8 @@ import { buildCanonicalUrl, buildNoIndexMetadata, buildPublicPageMetadata } from
 
 describe('seo metadata helpers', () => {
   it('builds absolute canonical urls from relative paths', () => {
-    expect(buildCanonicalUrl('/acerca')).toBe('https://comparador-hardware.com.ar/acerca');
-    expect(buildCanonicalUrl('contacto')).toBe('https://comparador-hardware.com.ar/contacto');
+    expect(buildCanonicalUrl('/acerca')).toBe('https://www.comparador-hardware.com.ar/acerca');
+    expect(buildCanonicalUrl('contacto')).toBe('https://www.comparador-hardware.com.ar/contacto');
   });
 
   it('builds indexable public metadata with canonical and robots', () => {
@@ -14,7 +14,7 @@ describe('seo metadata helpers', () => {
       description: 'Info publica del comparador',
     });
 
-    expect(metadata.alternates?.canonical).toBe('https://comparador-hardware.com.ar/acerca');
+    expect(metadata.alternates?.canonical).toBe('https://www.comparador-hardware.com.ar/acerca');
     expect(metadata.robots).toMatchObject({ index: true, follow: true });
   });
 
@@ -25,7 +25,7 @@ describe('seo metadata helpers', () => {
       description: 'Ingreso privado',
     });
 
-    expect(metadata.alternates?.canonical).toBe('https://comparador-hardware.com.ar/auth');
+    expect(metadata.alternates?.canonical).toBe('https://www.comparador-hardware.com.ar/auth');
     expect(metadata.robots).toMatchObject({ index: false, follow: false });
   });
 });

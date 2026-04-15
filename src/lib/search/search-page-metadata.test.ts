@@ -11,7 +11,7 @@ describe('search page metadata', () => {
       page: 1,
     });
 
-    expect(metadata.alternates?.canonical).toBe('https://comparador-hardware.com.ar/search?category=procesadores');
+    expect(metadata.alternates?.canonical).toBe('https://www.comparador-hardware.com.ar/search?category=procesadores');
     expect(metadata.robots).toMatchObject({ index: true, follow: true });
   });
 
@@ -24,7 +24,7 @@ describe('search page metadata', () => {
       page: 1,
     });
 
-    expect(metadata.alternates?.canonical).toBe('https://comparador-hardware.com.ar/search');
+    expect(metadata.alternates?.canonical).toBe('https://www.comparador-hardware.com.ar/search');
     expect(metadata.robots).toMatchObject({ index: false, follow: true });
   });
 });
