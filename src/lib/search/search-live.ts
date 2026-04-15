@@ -1,5 +1,6 @@
 import type { HardwareCategory, Product } from '@/lib/types';
 import { withAbortTimeout, withPromiseTimeout } from '@/lib/async/with-abort-timeout';
+import { withConcurrencyLimit } from '@/lib/async/concurrency';
 import { normalizeProductTitlesWithStats } from '@/lib/ai/normalize-products';
 import { snapshotProducts } from '@/lib/cache/search-snapshot';
 import { inferHardwareCategoryFromName } from '@/lib/catalog/hardware-categories';
@@ -16,29 +17,14 @@ import {
   shouldKeepByQueryIntent,
   sortProductsBySearchRelevance,
 } from '@/lib/search/search-ranking';
-import { fetchCompugardenProducts } from '@/lib/scrapers/compugarden';
-import { searchCompraGamerProducts } from '@/lib/scrapers/compragamer';
-import { fetchAllFoxtiendaSearch } from '@/lib/scrapers/foxtienda';
-import { fetchFullh4rdProducts } from '@/lib/scrapers/fullh4rd';
-import { fetchGamingCityProducts } from '@/lib/scrapers/gamingcity';
-import { fetchGezatekProducts } from '@/lib/scrapers/gezatek';
-import { fetchLoggProducts } from '@/lib/scrapers/logg';
-import { fetchMaximusProducts } from '@/lib/scrapers/maximus';
-import { fetchMexxProducts } from '@/lib/scrapers/mexx';
-import { fetchPortalTechProducts } from '@/lib/scrapers/portaltech';
-import { fetchAllPrestashopSearch } from '@/lib/scrapers/prestashop';
-import { fetchAllQloudSearch } from '@/lib/scrapers/qloud';
-import { fetchAllTiendaNubeSearch } from '@/lib/scrapers/tiendanube';
-import { fetchVenexProducts } from '@/lib/scrapers/venex';
-import { fetchWiztechProducts } from '@/lib/scrapers/wiztech';
-import { fetchAllWooCommerceSearch } from '@/lib/scrapers/woocommerce';
-import { fetchXtpcProducts } from '@/lib/scrapers/xtpc';
+import { STORE_SCRAPERS, FRAMEWORK_SCRAPERS } from '@/lib/scrapers/scraper-registry';
 import { runObservedStoreScrape } from '@/lib/telemetry/operational-metrics';
 import { logger } from '@/lib/logger';
 import {
   type SortBy,
   PERSISTENCE_TIMEOUT_MS,
   SCRAPER_TIMEOUT_MS,
+  MAX_CONCURRENT_SCRAPERS,
   setCachedSearchResponse,
   shouldRunStore,
 } from '@/lib/search/search-handler-shared';
@@ -66,10 +52,6 @@ export async function runLiveSearch({
   cacheKey,
   bypassDb,
 }: RunLiveSearchInput): Promise<{ payload: SearchApiResponse; normalizationSummaryNote: string | null }> {
-  const mexxSearchUrl = `https://www.mexx.com.ar/buscar/?p=${encodeURIComponent(query)}`;
-  const fullh4rdSearchUrl = `https://www.fullh4rd.com.ar/cat/search/${encodeURIComponent(query)}`;
-  const venexSearchUrl = `https://www.venex.com.ar/resultados-busqueda.htm?keywords=${encodeURIComponent(query)}`;
-
   logger.info('Running live global search', {
     endpoint: '/api/search',
     query,
@@ -78,53 +60,60 @@ export async function runLiveSearch({
   const defaultCategory = category ?? inferHardwareCategoryFromName(query);
   const sourceTasks: Promise<Product[]>[] = [];
 
-  const observeSearchSource = (
-    storeId: string,
-    storeName: string,
-    run: (signal: AbortSignal) => Promise<Product[]>,
-  ) =>
-    runObservedStoreScrape({
-      endpoint: '/api/search',
-      storeId,
-      storeName,
-      run: () => withAbortTimeout(
-        (signal) => run(signal),
+  // Scrapers de tiendas individuales (via registry)
+  for (const scraper of STORE_SCRAPERS) {
+    if (!shouldRunStore(selectedStoreIds, scraper.id)) continue;
+
+    const searchUrl = scraper.buildSearchUrl
+      ? scraper.buildSearchUrl(query)
+      : query;
+
+    sourceTasks.push(
+      runObservedStoreScrape({
+        endpoint: '/api/search',
+        storeId: scraper.id,
+        storeName: scraper.displayName,
+        run: () => withAbortTimeout(
+          (signal) => scraper.fn({ query, searchUrl, category: defaultCategory, signal }),
+          SCRAPER_TIMEOUT_MS,
+          scraper.id,
+        ),
+      }),
+    );
+  }
+
+  // Framework scrapers (manejan multiples tiendas internas)
+  // P0: Pasar selectedStoreIds para filtrar tiendas internas
+  for (const scraper of FRAMEWORK_SCRAPERS) {
+    sourceTasks.push(
+      withAbortTimeout(
+        (signal) => scraper.fn({ query, searchUrl: query, category: defaultCategory, selectedStoreIds, signal }),
         SCRAPER_TIMEOUT_MS,
-        storeId,
-      ),
-    });
+        scraper.id,
+      ).catch(() => [] as Product[]),
+    );
+  }
 
-  if (shouldRunStore(selectedStoreIds, 'mexx')) sourceTasks.push(observeSearchSource('mexx', 'Mexx', (signal) => fetchMexxProducts(mexxSearchUrl, defaultCategory, signal)));
-  if (shouldRunStore(selectedStoreIds, 'venex')) sourceTasks.push(observeSearchSource('venex', 'Venex', (signal) => fetchVenexProducts(venexSearchUrl, defaultCategory, signal)));
-  if (shouldRunStore(selectedStoreIds, 'fullh4rd')) sourceTasks.push(observeSearchSource('fullh4rd', 'FullH4rd', (signal) => fetchFullh4rdProducts(fullh4rdSearchUrl, defaultCategory, signal)));
-  if (shouldRunStore(selectedStoreIds, 'maximus')) sourceTasks.push(observeSearchSource('maximus', 'Maximus', (signal) => fetchMaximusProducts(query, defaultCategory, signal)));
-  if (shouldRunStore(selectedStoreIds, 'gamingcity')) sourceTasks.push(observeSearchSource('gamingcity', 'Gaming City', (signal) => fetchGamingCityProducts(query, defaultCategory, signal)));
-  if (shouldRunStore(selectedStoreIds, 'gezatek')) sourceTasks.push(observeSearchSource('gezatek', 'Gezatek', (signal) => fetchGezatekProducts(query, defaultCategory, signal)));
-  if (shouldRunStore(selectedStoreIds, 'compugarden')) sourceTasks.push(observeSearchSource('compugarden', 'Compugarden', (signal) => fetchCompugardenProducts(query, defaultCategory, signal)));
-  if (shouldRunStore(selectedStoreIds, 'logg')) sourceTasks.push(observeSearchSource('logg', 'Logg', (signal) => fetchLoggProducts(query, defaultCategory, signal)));
-  if (shouldRunStore(selectedStoreIds, 'portaltech')) sourceTasks.push(observeSearchSource('portaltech', 'Portal Tech', (signal) => fetchPortalTechProducts(query, defaultCategory, signal)));
-  if (shouldRunStore(selectedStoreIds, 'compragamer')) sourceTasks.push(observeSearchSource('compragamer', 'CompraGamer', (signal) => searchCompraGamerProducts(query, defaultCategory, signal)));
-  if (shouldRunStore(selectedStoreIds, 'xtpc')) sourceTasks.push(observeSearchSource('xtpc', 'Xt-PC', (signal) => fetchXtpcProducts(query, defaultCategory, signal)));
-  if (shouldRunStore(selectedStoreIds, 'wiztech')) sourceTasks.push(observeSearchSource('wiztech', 'WizTech', (signal) => fetchWiztechProducts(query, defaultCategory, signal)));
-
-  sourceTasks.push(
-    withAbortTimeout((signal) => fetchAllFoxtiendaSearch(query, defaultCategory, '/api/search', selectedStoreIds, { signal }), SCRAPER_TIMEOUT_MS, 'foxtienda').catch(() => [] as Product[]),
-    withAbortTimeout((signal) => fetchAllQloudSearch(query, defaultCategory, '/api/search', selectedStoreIds, { signal }), SCRAPER_TIMEOUT_MS, 'qloud').catch(() => [] as Product[]),
-    withAbortTimeout((signal) => fetchAllPrestashopSearch(query, defaultCategory, '/api/search', selectedStoreIds, { signal }), SCRAPER_TIMEOUT_MS, 'prestashop').catch(() => [] as Product[]),
-    withAbortTimeout((signal) => fetchAllTiendaNubeSearch(query, defaultCategory, '/api/search', selectedStoreIds, { signal }), SCRAPER_TIMEOUT_MS, 'tiendanube').catch(() => [] as Product[]),
-    withAbortTimeout((signal) => fetchAllWooCommerceSearch(query, defaultCategory, '/api/search', selectedStoreIds, { signal }), SCRAPER_TIMEOUT_MS, 'woocommerce').catch(() => [] as Product[]),
+  // Ejecutar con limite de concurrencia para no sobrecargar el servidor
+  const sourceResults = await withConcurrencyLimit(
+    sourceTasks.map((task) => () => task),
+    MAX_CONCURRENT_SCRAPERS,
   );
-
-  const sourceResults = sourceTasks.length > 0 ? await Promise.all(sourceTasks) : [];
   let liveProducts: Product[] = sanitizeProducts(sourceResults.flat());
 
-  const queryWords = normalizeSearchText(query).split(/\s+/).filter((word) => word.length > 1);
-  const singleCharVariants = parseSingleCharQueryVariants(query);
-  const strictVariants = parseStrictVariantQueryTokens(query);
-
-  if (queryWords.length > 0) {
-    liveProducts = liveProducts.filter((product) => shouldKeepByQueryIntent(product.name, queryWords, singleCharVariants, strictVariants));
+  // P0: Aplicar filtros baratos ANTES de la normalización AI para reducir
+  // la cantidad de titulos que necesitan procesamiento costoso
+  if (category) liveProducts = liveProducts.filter((product) => product.category === category);
+  if (minPrice !== undefined) liveProducts = liveProducts.filter((product) => product.lowestPrice >= minPrice);
+  if (maxPrice !== undefined) liveProducts = liveProducts.filter((product) => product.lowestPrice <= maxPrice);
+  if (selectedStoreIds.size > 0) {
+    liveProducts = liveProducts
+      .map((product) => filterProductStores(product, selectedStoreIds))
+      .filter((product): product is Product => Boolean(product));
   }
+
+  // P0: Eliminado el primer filtro shouldKeepByQueryIntent que era redundante
+  // (se aplicaba sobre nombres sin normalizar, antes del grouping)
 
   const allTitles = Array.from(new Set(liveProducts.map((product) => product.name)));
   let normalizedTitlesMap = new Map<string, string>();
@@ -206,6 +195,10 @@ export async function runLiveSearch({
     }
   }
 
+  const queryWords = normalizeSearchText(query).split(/\s+/).filter((word) => word.length > 1);
+  const singleCharVariants = parseSingleCharQueryVariants(query);
+  const strictVariants = parseStrictVariantQueryTokens(query);
+
   liveProducts = groupSearchProducts(
     liveProducts.map((product) => normalizeProductContent(product)),
     normalizedTitlesMap,
@@ -214,16 +207,9 @@ export async function runLiveSearch({
     category,
   );
 
+  // P0: Unico filtro shouldKeepByQueryIntent, despues del grouping (nombres ya normalizados)
   if (queryWords.length > 0) {
     liveProducts = liveProducts.filter((product) => shouldKeepByQueryIntent(product.name, queryWords, singleCharVariants, strictVariants));
-  }
-  if (category) liveProducts = liveProducts.filter((product) => product.category === category);
-  if (minPrice !== undefined) liveProducts = liveProducts.filter((product) => product.lowestPrice >= minPrice);
-  if (maxPrice !== undefined) liveProducts = liveProducts.filter((product) => product.lowestPrice <= maxPrice);
-  if (selectedStoreIds.size > 0) {
-    liveProducts = liveProducts
-      .map((product) => filterProductStores(product, selectedStoreIds))
-      .filter((product): product is Product => Boolean(product));
   }
 
   if (sortBy === 'price-asc') {
