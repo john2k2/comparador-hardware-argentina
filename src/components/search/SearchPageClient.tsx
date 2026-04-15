@@ -45,7 +45,9 @@ function SearchPageClientInner({
   const [pagination, setPagination] = useState(initialPagination);
   const [isLoading, setIsLoading] = useState(initialHasSearchIntent && initialPagination.total === 0);
   const [resolvedRequestKey, setResolvedRequestKey] = useState<string | null>(initialResolvedRequestKey);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const pendingSearchTrackRef = useRef<{ query: string; category?: string } | null>(null);
+  const filterDebounceRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!initialResolvedRequestKey || initialPagination.total === 0) return;
@@ -85,7 +87,12 @@ function SearchPageClientInner({
     pageSize: initialPagination.pageSize,
     onLoadingChange: setIsLoading,
     onResolvedRequestKey: setResolvedRequestKey,
+    onError: useCallback((error: string) => {
+      setSearchError(error);
+      setIsLoading(false);
+    }, []),
     onProductsLoaded: useCallback((products, nextPagination) => {
+      setSearchError(null);
       setBaseProducts(hydrateProducts(products));
       setPagination(nextPagination);
     }, []),
@@ -134,8 +141,25 @@ function SearchPageClientInner({
     if (newFilters.stores && filters.stores && newFilters.stores.length !== filters.stores.length) {
       trackFilterChange({ filterType: 'store', filterValue: newFilters.stores.join(',') });
     }
-    commitState(buildStateFromFilters(nextFilters, 1));
+
+    // P2: Debounce de 250ms para evitar navegaciones excesivas al cambiar filtros
+    if (filterDebounceRef.current !== null) {
+      window.clearTimeout(filterDebounceRef.current);
+    }
+    filterDebounceRef.current = window.setTimeout(() => {
+      filterDebounceRef.current = null;
+      commitState(buildStateFromFilters(nextFilters, 1));
+    }, 250);
   }, [filters, searchQuery, buildStateFromFilters, commitState]);
+
+  // Cleanup del debounce de filtros al desmontar
+  useEffect(() => {
+    return () => {
+      if (filterDebounceRef.current !== null) {
+        window.clearTimeout(filterDebounceRef.current);
+      }
+    };
+  }, []);
 
   const handlePageChange = useCallback((nextPage: number) => {
     const clamped = Math.max(1, Math.min(Math.max(totalPages, 1), nextPage));
@@ -168,8 +192,9 @@ function SearchPageClientInner({
       categorySeoCopy={categorySeoCopy}
       searchRoute={searchRoute}
       availableStores={availableStores}
-      showNoResultsState={!isBusy && totalResults === 0 && hasSearchIntent}
-      showIdleState={!isBusy && totalResults === 0 && !hasSearchIntent}
+      searchError={searchError}
+      showNoResultsState={!isBusy && totalResults === 0 && hasSearchIntent && !searchError}
+      showIdleState={!isBusy && totalResults === 0 && !hasSearchIntent && !searchError}
       onSearch={handleSearch}
       onFiltersChange={handleFiltersChange}
       onClearFilters={handleClearFilters}

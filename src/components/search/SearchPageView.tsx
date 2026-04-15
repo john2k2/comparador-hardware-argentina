@@ -19,6 +19,7 @@ type SearchPageViewProps = {
   categorySeoCopy: ReturnType<typeof getCategorySeoCopy>;
   searchRoute: string;
   availableStores: typeof defaultStores;
+  searchError: string | null;
   showNoResultsState: boolean;
   showIdleState: boolean;
   onSearch: (query: string) => void;
@@ -40,6 +41,7 @@ export function SearchPageView({
   categorySeoCopy,
   searchRoute,
   availableStores,
+  searchError,
   showNoResultsState,
   showIdleState,
   onSearch,
@@ -80,9 +82,10 @@ export function SearchPageView({
           <SearchHeader totalResults={totalResults} searchQuery={searchQuery} isBusy={isBusy} />
           {isBusy && <LoadingState searchQuery={searchQuery} />}
           <div id="product-grid-start" className="bg-muted p-4 border-4 border-border relative">
+            {searchError && <SearchErrorState error={searchError} onRetry={() => onSearch(searchQuery)} />}
             {showNoResultsState && <NoResultsState searchQuery={searchQuery} hasActiveFilters={hasActiveFilters} onClearFilters={onClearFilters} onRetry={() => onSearch(searchQuery)} />}
             {showIdleState && <IdleState />}
-            {!showNoResultsState && !showIdleState && (
+            {!searchError && !showNoResultsState && !showIdleState && (
               <ProductGrid
                 products={products}
                 isLoading={isBusy}
@@ -177,6 +180,18 @@ function IdleState() {
     <div className="border-4 border-border bg-card p-8 text-center pixel-shadow">
       <p className="text-[10px] uppercase font-bold text-primary">[ LISTO PARA BUSCAR ]</p>
       <p className="text-[9px] uppercase text-muted-foreground mt-2">Escribi un producto para empezar (ej: RTX 5060, Ryzen 7600).</p>
+    </div>
+  );
+}
+
+function SearchErrorState({ error, onRetry }: { error: string; onRetry: () => void }) {
+  return (
+    <div className="border-4 border-destructive bg-card p-8 text-center pixel-shadow">
+      <p className="text-[10px] uppercase font-bold text-destructive">[ ERROR EN LA BUSQUEDA ]</p>
+      <p className="text-[9px] uppercase text-muted-foreground mt-2 mb-4">{error}</p>
+      <button onClick={onRetry} className="pixel-button text-[10px]">
+        REINTENTAR
+      </button>
     </div>
   );
 }
