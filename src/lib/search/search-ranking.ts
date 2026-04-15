@@ -9,14 +9,23 @@ const STRICT_VARIANT_QUERY_TOKENS = new Set([
   'hero', 'lightspeed',
 ]);
 
+// Cache simple para normalizacion de texto (evita recomputar en loops calientes)
+const NORMALIZE_CACHE = new Map<string, string>();
+
 export function normalizeSearchText(value: string): string {
-  return value
+  const cached = NORMALIZE_CACHE.get(value);
+  if (cached !== undefined) return cached;
+
+  const result = value
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9+\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+
+  NORMALIZE_CACHE.set(value, result);
+  return result;
 }
 
 export function countMatchedQueryWords(name: string, queryWords: string[]): number {
@@ -126,16 +135,20 @@ export function sortProductsBySearchRelevance(
     .filter((word) => word.length > 1);
   const queryLooksBundle = isBundleLikeTitle(query);
 
-  return [...products].sort((a, b) => {
-    if (!queryLooksBundle) {
-      const aBundle = isBundleLikeTitle(a.name);
-      const bBundle = isBundleLikeTitle(b.name);
-      if (aBundle !== bBundle) return aBundle ? 1 : -1;
-    }
+  // P2: Schwartzian transform — computar score una vez por producto,
+  // luego ordenar por score. Evita O(n log n) llamadas a scoreProductRelevance.
+  const scored = products.map((product) => ({
+    product,
+    score: scoreProductRelevance(product, queryWords, query, requestedCategory),
+    isBundle: !queryLooksBundle && isBundleLikeTitle(product.name),
+  }));
 
-    const scoreDiff = scoreProductRelevance(b, queryWords, query, requestedCategory)
-      - scoreProductRelevance(a, queryWords, query, requestedCategory);
+  scored.sort((a, b) => {
+    if (a.isBundle !== b.isBundle) return a.isBundle ? 1 : -1;
+    const scoreDiff = b.score - a.score;
     if (scoreDiff !== 0) return scoreDiff;
-    return a.lowestPrice - b.lowestPrice;
+    return a.product.lowestPrice - b.product.lowestPrice;
   });
+
+  return scored.map((entry) => entry.product);
 }
