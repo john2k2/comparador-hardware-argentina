@@ -1,5 +1,6 @@
 import type { HardwareCategory, Product, StockStatus } from '../types';
 import { extractKnownHardwareBrand, normalizeScrapedAbsoluteUrl, parseScrapedArsPrice } from './scraper-helpers';
+import { extractBrandFromName as extractBrandFromNameShared } from './brand-utils';
 import type { CompraGamerProductResponse } from './compragamer-catalog';
 
 const COMPRAGAMER_IMAGE_BASE_URL = 'https://imagenes.compragamer.com/productos';
@@ -20,10 +21,7 @@ function normalizeText(value: string): string {
 }
 
 function extractBrandFromName(name: string): string {
-  const upperName = name.toUpperCase();
-  if (upperName.includes('RADEON')) return 'AMD Radeon';
-  if (upperName.includes('GEFORCE')) return 'NVIDIA';
-  return extractKnownHardwareBrand(name);
+  return extractBrandFromNameShared(name) ?? extractKnownHardwareBrand(name);
 }
 
 function inferCategoryFromName(name: string): HardwareCategory | null {
