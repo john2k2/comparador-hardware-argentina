@@ -41,14 +41,18 @@ export async function scrapeMexxProducts(
       if (seenPageUrls.has(pageUrl)) break;
       seenPageUrls.add(pageUrl);
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20_000);
+
       const res = await fetch(pageUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
           'Accept-Language': 'es-AR,es;q=0.9,en-US;q=0.8,en;q=0.7',
         },
-        signal,
+        signal: signal ? AbortSignal.any([signal, controller.signal]) : controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!res.ok) {
         const error: ScrapingError = {
