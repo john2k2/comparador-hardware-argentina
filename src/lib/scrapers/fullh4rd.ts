@@ -6,6 +6,7 @@ import {
   normalizeAbsoluteUrl,
   resolvePaginationBudget,
 } from './common-pagination';
+import { extractBrandFromName as extractBrandFromNameShared } from './brand-utils';
 import { logger } from '../logger';
 
 const FULLH4RD_BASE_URL = 'https://www.fullh4rd.com.ar';
@@ -37,12 +38,16 @@ export async function fetchFullh4rdProducts(
       if (seenPageUrls.has(pageUrl)) break;
       seenPageUrls.add(pageUrl);
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20_000);
+
       const res = await fetch(pageUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36',
         },
-        signal,
+        signal: signal ? AbortSignal.any([signal, controller.signal]) : controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
 
@@ -122,11 +127,5 @@ export async function fetchFullh4rdProducts(
 }
 
 function extractBrandFromName(name: string): string {
-  const upper = name.toUpperCase();
-  if (upper.includes('AMD')) return 'AMD';
-  if (upper.includes('INTEL')) return 'Intel';
-  if (upper.includes('ASUS')) return 'ASUS';
-  if (upper.includes('GIGABYTE')) return 'Gigabyte';
-  if (upper.includes('MSI')) return 'MSI';
-  return 'Generica';
+  return extractBrandFromNameShared(name) ?? 'Generica';
 }

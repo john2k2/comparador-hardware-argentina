@@ -1,5 +1,6 @@
 import { HardwareCategory, Product } from '../types';
 import { logger } from '../logger';
+import { extractBrandFromName as extractBrandFromNameShared } from './brand-utils';
 
 const MAXIMUS_BASE_URL = 'https://www.maximus.com.ar';
 const MAXIMUS_SEARCH_SCRIPT = 'web.MAX.GetItemList4Search_v3';
@@ -86,37 +87,7 @@ function slugify(value: string): string {
 }
 
 function extractBrandFromName(name: string): string {
-  const brands = [
-    'AMD',
-    'Intel',
-    'NVIDIA',
-    'ASUS',
-    'MSI',
-    'Gigabyte',
-    'ASRock',
-    'Kingston',
-    'Corsair',
-    'G.Skill',
-    'Samsung',
-    'WD',
-    'Seagate',
-    'Crucial',
-    'Patriot',
-    'XPG',
-    'Thermaltake',
-    'Cooler Master',
-    'be quiet!',
-    'Noctua',
-    'Arctic',
-    'Sapphire',
-    'PowerColor',
-    'Zotac',
-  ];
-  const upper = name.toUpperCase();
-  for (const brand of brands) {
-    if (upper.includes(brand.toUpperCase())) return brand;
-  }
-  return 'Generica';
+  return extractBrandFromNameShared(name) ?? 'Generica';
 }
 
 function buildMaximusSearchUrl(query: string): string {
