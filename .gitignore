@@ -34,23 +34,21 @@
 CLAUDE.md
 skills-lock.json
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-debug-*.js
-debug-*.json
-test-*.js
-test-*.mjs
-test_*.js
-test_*.mjs
-take_screenshots.mjs
-remove_bg.py
-mexx_*.html
-scrape_mexx.js
-page-review.png
-screenshot-*.png
+# python test scripts
+test-all-stores.py
+test-search-playwright.py
+
+# AI tools settings (not for sharing)
+.qwen/
+.gemini/
+.agents/
+.firecrawl/
+
+# local docs and audits
+AUDITORIA_EXHAUSTIVA*.md
+
+# deprecated/removed scripts
+scripts/start-engram.*
 
 # env files (can opt-in for committing if needed)
 .env*
