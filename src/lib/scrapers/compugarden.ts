@@ -2,9 +2,14 @@ import * as cheerio from 'cheerio';
 import type { AnyNode } from 'domhandler';
 import { HardwareCategory, Product, StockStatus } from '../types';
 import { parseLocalizedArsPrice } from '../price-utils';
+import { extractBrandFromName as extractBrandFromNameShared } from './brand-utils';
 import { logger } from '../logger';
 
 const COMPUGARDEN_BASE_URL = 'https://www.compugarden.com.ar';
+
+// Limite superior razonable para precios de hardware en ARS (10 millones)
+// Precios por encima de esto son casi seguramente errores de parseo
+const MAX_PLAUSIBLE_PRICE_ARS = 10_000_000;
 
 const SCRAPE_HEADERS = {
   'User-Agent':
@@ -29,39 +34,8 @@ function slugify(value: string): string {
     .replace(/^-+|-+$/g, '')
     .replace(/-+/g, '-');
 }
-
 function extractBrandFromName(name: string): string {
-  const brands = [
-    'AMD',
-    'Intel',
-    'NVIDIA',
-    'ASUS',
-    'MSI',
-    'Gigabyte',
-    'ASRock',
-    'Kingston',
-    'Corsair',
-    'G.Skill',
-    'Samsung',
-    'WD',
-    'Seagate',
-    'Crucial',
-    'Patriot',
-    'XPG',
-    'Thermaltake',
-    'Cooler Master',
-    'be quiet!',
-    'Noctua',
-    'Arctic',
-    'Sapphire',
-    'PowerColor',
-    'Zotac',
-  ];
-  const upper = name.toUpperCase();
-  for (const brand of brands) {
-    if (upper.includes(brand.toUpperCase())) return brand;
-  }
-  return 'Generica';
+  return extractBrandFromNameShared(name) ?? 'Generica';
 }
 
 function inferStock(card: cheerio.Cheerio<AnyNode>): StockStatus {
@@ -118,6 +92,12 @@ export async function fetchCompugardenProducts(
       const priceText = card.find('.price').first().text().trim();
       const price = parseLocalizedArsPrice(priceText);
       if (price <= 0) return;
+
+      // Rechazar precios imposibles (errores de parseo)
+      if (price > MAX_PLAUSIBLE_PRICE_ARS) {
+        logger.warn(`[Compugarden Scraper] Precio imposible detectado: $${price} para "${title}"`);
+        return;
+      }
 
       const stock = inferStock(card);
 
