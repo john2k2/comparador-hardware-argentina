@@ -74,17 +74,26 @@ export async function setSharedCache<T>(scope: string, key: string, value: T, tt
   const supabase = getServerSupabaseServiceClient();
   if (!supabase) return;
 
-  await supabase
-    .from('api_cache_entries')
-    .upsert({
-      cache_key: scopedKey,
-      scope,
-      payload: value,
-      expires_at: new Date(expiresAt).toISOString(),
-      updated_at: new Date().toISOString(),
-    }, {
-      onConflict: 'cache_key',
-    });
+  // P2: Fire-and-forget — no bloquear la respuesta en la escritura a Supabase.
+  // El cache local ya sirve la siguiente request.
+  void (async () => {
+    try {
+      await supabase
+        .from('api_cache_entries')
+        .upsert({
+          cache_key: scopedKey,
+          scope,
+          payload: value,
+          expires_at: new Date(expiresAt).toISOString(),
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'cache_key',
+        });
+    } catch (dbError) {
+      // Fallos de cache persistente son no-críticos; el cache local sigue funcionando.
+      console.warn('[SharedCache] DB upsert failed (non-critical):', dbError);
+    }
+  })();
 }
 
 export async function deleteSharedCache(scope: string, key: string): Promise<void> {
