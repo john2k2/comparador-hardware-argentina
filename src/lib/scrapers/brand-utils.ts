@@ -26,14 +26,14 @@ const BRAND_DISPLAY_NAMES: Record<string, string> = {
 
 export function isKnownBrand(word: string): boolean {
   const upper = word.toUpperCase();
-  return BRANDS.some((brand) => upper.includes(brand));
+  return BRANDS.some((brand) => upper.includes(brand.toUpperCase()));
 }
 
 export function extractBrandFromName(name: string): string | null {
   const upper = name.toUpperCase();
 
   for (const brand of BRANDS) {
-    if (upper.includes(brand)) {
+    if (upper.includes(brand.toUpperCase())) {
       return BRAND_DISPLAY_NAMES[brand] ?? brand;
     }
   }
