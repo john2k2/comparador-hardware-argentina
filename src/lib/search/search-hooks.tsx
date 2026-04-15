@@ -144,6 +144,7 @@ export function useProductLoader({
   onLoadingChange,
   onResolvedRequestKey,
   onProductsLoaded,
+  onError,
 }: {
   currentState: SearchPageState;
   hasSearchIntent: boolean;
@@ -152,11 +153,14 @@ export function useProductLoader({
   onLoadingChange: (isLoading: boolean) => void;
   onResolvedRequestKey: (requestKey: string) => void;
   onProductsLoaded: (products: SearchApiResponse['products'], pagination: SearchApiResponse['pagination']) => void;
+  onError?: (error: string) => void;
 }) {
   const { getCached, setCached, checkStored } = useSearchCache();
 
   useEffect(() => {
     const controller = new AbortController();
+    // Capturar el requestKey al inicio del efecto para detectar races
+    const snapshotKey = requestKey;
 
     const loadProducts = async () => {
       if (!hasSearchIntent) {
@@ -169,25 +173,25 @@ export function useProductLoader({
           pageSize,
         });
         onLoadingChange(false);
-        onResolvedRequestKey(requestKey);
+        onResolvedRequestKey(snapshotKey);
         return;
       }
 
       // Check memory cache
-      const cached = getCached(requestKey);
+      const cached = getCached(snapshotKey);
       if (cached) {
         onProductsLoaded(cached.products, cached.pagination);
         onLoadingChange(false);
-        onResolvedRequestKey(requestKey);
+        onResolvedRequestKey(snapshotKey);
         return;
       }
 
       // Check sessionStorage cache
-      const stored = checkStored(requestKey);
+      const stored = checkStored(snapshotKey);
       if (stored) {
         onProductsLoaded(stored.products, stored.pagination);
         onLoadingChange(false);
-        onResolvedRequestKey(requestKey);
+        onResolvedRequestKey(snapshotKey);
         return;
       }
 
@@ -198,10 +202,15 @@ export function useProductLoader({
         const res = await fetch(endpoint, { signal: controller.signal });
         if (!res.ok) throw new Error(`Search request failed: ${res.status}`);
         const data = await res.json() as SearchApiResponse;
-        setCached(requestKey, data);
+        setCached(snapshotKey, data);
+
+        // P1: Guardia de race condition — verificar que el requestKey no cambió
+        if (controller.signal.aborted) return;
         onProductsLoaded(data.products, data.pagination);
       } catch (error) {
         if ((error as Error).name !== 'AbortError') {
+          const errorMessage = (error as Error).message || 'Error al buscar productos';
+          onError?.(errorMessage);
           onProductsLoaded([], {
             limit: 0,
             offset: 0,
@@ -214,7 +223,7 @@ export function useProductLoader({
       } finally {
         if (!controller.signal.aborted) {
           onLoadingChange(false);
-          onResolvedRequestKey(requestKey);
+          onResolvedRequestKey(snapshotKey);
         }
       }
     };
@@ -229,6 +238,7 @@ export function useProductLoader({
     onLoadingChange,
     onResolvedRequestKey,
     onProductsLoaded,
+    onError,
     getCached,
     setCached,
     checkStored,

@@ -10,14 +10,35 @@ export type SortBy = 'relevance' | 'price-asc' | 'price-desc' | 'name' | 'newest
 
 export const VALID_SORTS = new Set<SortBy>(['relevance', 'price-asc', 'price-desc', 'name', 'newest']);
 export const SCRAPER_TIMEOUT_MS = 25_000;
+export const MAX_CONCURRENT_SCRAPERS = 6;
 export const SEARCH_CACHE_TTL_MS = 3 * 60 * 1000;
 export const PERSISTENCE_TIMEOUT_MS = 7_000;
 export const DB_STALE_AFTER_MS = 20 * 60 * 1000;
 export const BACKGROUND_REFRESH_TIMEOUT_MS = 60 * 1000;
 export const SEARCH_RATE_LIMIT = { limit: 30, windowMs: 60 * 1000 };
 
+// Mapas con limite de tamano para evitar fugas de memoria
+// Se limpian automaticamente en .finally() de cada promise
+const MAX_INFLIGHT_ENTRIES = 200;
+const MAX_INFLIGHT_REFRESH_ENTRIES = 50;
+
 export const inFlightSearchRequests = new Map<string, Promise<SearchApiResponse>>();
 export const inFlightBackgroundSearchRefreshes = new Map<string, Promise<void>>();
+
+/** Limpia entradas huérfanas o excedidas del mapa de requests en vuelo */
+export function pruneInFlightRequests(): void {
+  // Eliminar entradas excedentes (las mas viejas primero)
+  while (inFlightSearchRequests.size > MAX_INFLIGHT_ENTRIES) {
+    const oldestKey = inFlightSearchRequests.keys().next().value as string | undefined;
+    if (!oldestKey) break;
+    inFlightSearchRequests.delete(oldestKey);
+  }
+  while (inFlightBackgroundSearchRefreshes.size > MAX_INFLIGHT_REFRESH_ENTRIES) {
+    const oldestKey = inFlightBackgroundSearchRefreshes.keys().next().value as string | undefined;
+    if (!oldestKey) break;
+    inFlightBackgroundSearchRefreshes.delete(oldestKey);
+  }
+}
 
 export function parseNonNegativeNumber(value: string | null): number | undefined {
   if (value === null) return undefined;

@@ -23,6 +23,7 @@ import {
   parseNonNegativeNumber,
   parsePositiveInteger,
   parseStoreIds,
+  pruneInFlightRequests,
   scheduleBackgroundSearchRefresh,
   setCachedSearchResponse,
 } from '@/lib/search/search-handler-shared';
@@ -271,6 +272,7 @@ export async function GET(request: NextRequest) {
       inFlightSearchRequests.delete(cacheKey);
     });
 
+    pruneInFlightRequests();
     inFlightSearchRequests.set(cacheKey, trackedPromise.then((result) => result.payload));
     const { payload, normalizationSummaryNote } = await trackedPromise;
 
