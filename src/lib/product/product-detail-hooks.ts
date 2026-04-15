@@ -96,12 +96,14 @@ export function useProductDetailState(id: string, initialProduct: Product | null
   const latestSyncLabel = useMemo(() => {
     if (latestSyncAtMs <= 0) return null;
 
-    return new Intl.DateTimeFormat('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(latestSyncAtMs));
+    // Formato deterministico usando UTC para evitar hydration mismatch
+    // entre server (posiblemente UTC) y client (timezone local)
+    const date = new Date(latestSyncAtMs);
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    return `${day}/${month} ${hours}:${minutes}`;
   }, [latestSyncAtMs]);
 
   return {

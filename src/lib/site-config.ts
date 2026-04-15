@@ -1,4 +1,4 @@
-const DEFAULT_SITE_URL = 'https://comparador-hardware.com.ar';
+const DEFAULT_SITE_URL = 'https://www.comparador-hardware.com.ar';
 const DEFAULT_SITE_NAME = 'Comparador Hardware Argentina';
 
 function normalizeSiteUrl(value: string | undefined): string | null {
