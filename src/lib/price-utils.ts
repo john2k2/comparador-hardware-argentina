@@ -11,6 +11,16 @@ type StorePriceLike = PriceLike & {
   stock?: string | null;
 };
 
+// Umbrales para deteccion de outliers en precios
+// UPPER_OUTLIER_RATIO = 2.6 → un precio 2.6x por encima de la mediana se considera outlier
+// LOWER_OUTLIER_RATIO = 0.38 → un precio 0.38x por debajo de la mediana se considera outlier
+// OUTLIER_MIN_DELTA_ARS = 50.000 → diferencia minima en ARS para considerar outlier (evita falsos positivos en productos baratos)
+// PAIR_OUTLIER_RATIO = 4 → cuando solo hay 2 precios, si uno es 4x mayor se descarta
+// PAIR_OUTLIER_MIN_DELTA_ARS = 150.000 → diferencia minima para par de 2 precios
+//
+// Estos valores se ajustaron empiricamente con datos reales de tiendas argentinas
+// para balancear entre eliminar errores absurdos (ej: $24.849.611 en vez de $248.496)
+// y no descartar variaciones legitimas de precio entre tiendas.
 const UPPER_OUTLIER_RATIO = 2.6;
 const LOWER_OUTLIER_RATIO = 0.38;
 const OUTLIER_MIN_DELTA_ARS = 50_000;
@@ -60,10 +70,18 @@ export function parseLocalizedArsPrice(value: string): number {
   if (!value) return 0;
 
   let normalized = value
-    .replace(/[^\d.,-]/g, '')
+    .replace(/[^\d.,$-]/g, ' ')
     .trim();
 
   if (!normalized) return 0;
+
+  // Extraer solo el ultimo monto numerico (evita concatenar cuotas u otros numeros)
+  // Busca patrones como: 248.496, 248496, 248.496,50, $248496
+  const priceMatches = normalized.match(/[\d]+(?:[\.,]\d{3})*(?:[\.,]\d{1,2})?/g);
+  if (!priceMatches || priceMatches.length === 0) return 0;
+
+  // Tomar el ultimo numero (generalmente el precio real, no las cuotas)
+  normalized = priceMatches[priceMatches.length - 1];
 
   const hasComma = normalized.includes(',');
   const hasDot = normalized.includes('.');
@@ -214,24 +232,29 @@ export function getComparableStorePrices(prices: ProductPrice[]): ProductPrice[]
   return computeComparableStorePriceStats(prices).comparablePrices;
 }
 
+// Instancias reutilizables para formateo de precios (evitar creacion en cada llamada)
+const ARS_FORMATTER = new Intl.NumberFormat('es-AR', {
+  style: 'currency',
+  currency: 'ARS',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
+const ARS_FORMATTER_DECIMALS = new Intl.NumberFormat('es-AR', {
+  style: 'currency',
+  currency: 'ARS',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 // Formatear precio en ARS
 export function formatPriceARS(amount: number): string {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return ARS_FORMATTER.format(amount);
 }
 
 // Formatear precio con decimales
 export function formatPriceARSWithDecimals(amount: number): string {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  return ARS_FORMATTER_DECIMALS.format(amount);
 }
 
 // Calcular precio por cuota
@@ -380,8 +403,11 @@ export function getBestInstallmentOption(
   };
 }
 
-// Convertir precio USD a ARS (tasa fija para demo)
-export function convertUSDtoARS(usdPrice: number, rate: number = 1250): number {
+// Convertir precio USD a ARS
+// NOTA: La tasa de cambio en Argentina es muy volatil.
+// Este valor deberia actualizarse periodicamente o leerse de una fuente externa.
+// Tasa de referencia aproximada (blue/informal) a abril 2026.
+export function convertUSDtoARS(usdPrice: number, rate: number = 1300): number {
   return Math.round(usdPrice * rate);
 }
 

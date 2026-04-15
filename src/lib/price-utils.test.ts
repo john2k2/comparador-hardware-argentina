@@ -26,6 +26,12 @@ describe('price-utils', () => {
     expect(parseLocalizedArsPrice('ARS 248496,50')).toBe(248_497);
   });
 
+  it('parseLocalizedArsPrice no concatena numeros de cuotas con el precio', () => {
+    // Bug fix: antes "3 cuotas de $82.832" se parseaba como 382832
+    expect(parseLocalizedArsPrice('3 cuotas de $82.832')).toBe(82_832);
+    expect(parseLocalizedArsPrice('Antes: $300.000 Ahora: $248.496')).toBe(248_496);
+  });
+
   it('pickBestStorePrices deja la mejor opcion por tienda', () => {
     const picked = pickBestStorePrices([
       buildPrice({
