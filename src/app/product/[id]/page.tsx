@@ -2,7 +2,7 @@ import { cache } from 'react';
 import type { Metadata } from 'next';
 import { ProductDetailClient } from '@/components/product/ProductDetailClient';
 import { readProductByIdFromDatabase } from '@/lib/persistence/product-read';
-import { getComparableStorePrices } from '@/lib/price-utils';
+import { formatPriceARS, getComparableStorePrices } from '@/lib/price-utils';
 import { isIndexableProductId } from '@/lib/seo/sitemap';
 import { SITE_URL } from '@/lib/site-config';
 import { normalizeDisplayText } from '@/lib/text-utils';
@@ -26,15 +26,6 @@ function buildCanonicalUrl(id: string): string {
   return `${SITE_URL}/product/${encodeURIComponent(id)}`;
 }
 
-function formatPriceArs(price: number): string {
-  if (!Number.isFinite(price) || price <= 0) return 'ARS 0';
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 0,
-  }).format(price);
-}
-
 function resolveProductImage(product: Product | null): string {
   const rawImage = (product?.image ?? '').trim();
   if (!rawImage) return DEFAULT_OG_IMAGE;
@@ -55,7 +46,7 @@ function buildProductDescription(product: Product): string {
   const brand = normalizeDisplayText(product.brand);
   const model = normalizeDisplayText(product.model);
   const storesCompared = getComparableStorePrices(product.prices).length;
-  const bestPrice = formatPriceArs(product.lowestPrice);
+  const bestPrice = formatPriceARS(product.lowestPrice);
 
   return [
     `Compara precios de ${name} en ${storesCompared} tiendas de Argentina.`,

@@ -18,10 +18,10 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'msedge',
+      name: 'chromium',
       use: {
-        ...devices['Desktop Edge'],
-        channel: 'msedge',
+        ...devices['Desktop Chrome'],
+        channel: 'chrome',
       },
     },
   ],

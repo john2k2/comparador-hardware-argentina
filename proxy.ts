@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { buildCspImgSrc } from '@/lib/image-domains';
 
 function generateNonce(): string {
   return crypto.randomUUID().replace(/-/g, '');
@@ -18,7 +19,7 @@ export function proxy() {
     `script-src ${cspScriptSrc}`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
-    "img-src 'self' data: https://*.mlstatic.com https://i.imgur.com https://images.unsplash.com https://*.vteximg.com.br https://mexx-img-2019.s3.amazonaws.com https://imagenes.compragamer.com https://www.venex.com.ar https://www.fullh4rd.com.ar https://compugarden.com.ar https://*.compugarden.com.ar https://gamingcity.com.ar https://www.gamingcity.com.ar https://logg.api.cygnus.market https://katech.com.ar https://dinobyte.ar https://maxtecno.com.ar https://thegamershop.com.ar https://hardcorecomputacion.com.ar https://goldentechstore.com.ar https://www.armytech.com.ar https://beings.com.ar https://rockethard.com.ar https://hypergaming.com.ar https://hftecnologia.com.ar https://clickgaming.com.ar https://megasoftargentina.com.ar https://noxiestore.com https://nb.com.ar https://invidcomputers.com https://portalstore.com.ar https://*.acdn-us.mitiendanube.com https://www.acuarioinsumos.com.ar https://www.gamerspoint.com.ar https://liontech.com.ar https://www.scphardstore.com https://spacegamer.com.ar https://vrx.com.ar https://wiztech.com.ar https://www.xt-pc.com.ar https://cdn.qloud.ar https://statics.qloud.ar https://statics.qloud.com.ar https://statics2.qloud.com.ar https://app.contabilium.com",
+    buildCspImgSrc(),
     `script-src-elem 'self' 'nonce-${nonce}' https://www.googletagmanager.com https://www.google-analytics.com`,
     "connect-src 'self' https://www.google-analytics.com https://analytics.google.com",
     "frame-ancestors 'none'",
