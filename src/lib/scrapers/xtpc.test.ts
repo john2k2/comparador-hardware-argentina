@@ -109,6 +109,7 @@ describe('xtpc scraper', () => {
 
       const result = await fetchXtpcCategory('procesadores');
       expect(mockFetch).toHaveBeenCalled();
+      expect(result).toBeDefined();
     });
 
     it('deduplicates products from multiple pages', async () => {

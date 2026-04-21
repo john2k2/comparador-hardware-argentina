@@ -30,7 +30,7 @@ const mockCatalogItem = {
 };
 
 const mockCatalog = [mockCatalogItem];
-const mockSubcategoryMap = new Map([[1, 'procesadores']]);
+const mockSubcategoryMap = new Map<number, HardwareCategory>([[1, 'procesadores']]);
 const mockBrandMap = new Map([[1, 'AMD']]);
 
 describe('compragamer scraper', () => {
@@ -69,8 +69,9 @@ describe('compragamer scraper', () => {
         id_producto: 99999,
         id_subcategoria: 2,
       };
+      const diffSubcategoryMap = new Map<number, HardwareCategory>([[2, 'tarjetas-graficas']]);
       vi.spyOn(compragamerCatalog, 'getCompraGamerCatalog').mockResolvedValue([differentCategoryItem]);
-      vi.spyOn(compragamerCatalog, 'getCompraGamerSubcategoryMap').mockResolvedValue(new Map([[2, 'tarjetas-graficas']]));
+      vi.spyOn(compragamerCatalog, 'getCompraGamerSubcategoryMap').mockResolvedValue(diffSubcategoryMap);
       vi.spyOn(compragamerCatalog, 'getCompraGamerBrandMap').mockResolvedValue(mockBrandMap);
 
       const result = await fetchCompraGamerProducts(2, 'tarjetas-graficas');
@@ -122,9 +123,11 @@ describe('compragamer scraper', () => {
         id_producto: 99999,
         nombre: 'Procesador Intel i9',
       };
+      const intelSubcategoryMap = new Map<number, HardwareCategory>([[1, 'procesadores']]);
+      const intelBrandMap = new Map([[1, 'Intel']]);
       vi.spyOn(compragamerCatalog, 'getCompraGamerCatalog').mockResolvedValue([nonMatchingItem]);
-      vi.spyOn(compragamerCatalog, 'getCompraGamerSubcategoryMap').mockResolvedValue(new Map([[1, 'procesadores']]));
-      vi.spyOn(compragamerCatalog, 'getCompraGamerBrandMap').mockResolvedValue(new Map([[1, 'Intel']]));
+      vi.spyOn(compragamerCatalog, 'getCompraGamerSubcategoryMap').mockResolvedValue(intelSubcategoryMap);
+      vi.spyOn(compragamerCatalog, 'getCompraGamerBrandMap').mockResolvedValue(intelBrandMap);
 
       const result = await searchCompraGamerProducts('ryzen');
       expect(result).toEqual([]);

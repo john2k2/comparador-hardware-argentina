@@ -32,11 +32,6 @@ const validProductHtml = `
 </div>
 `;
 
-const rateLimitResponse = {
-  success: false,
-  errors: [{ code: 2001, message: 'Rate limit exceeded' }],
-};
-
 const successResponse = {
   success: true,
   result: validProductHtml,
