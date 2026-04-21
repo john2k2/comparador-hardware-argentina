@@ -10,33 +10,34 @@ test.describe('Auth Flow', () => {
 
     // Formulario de login visible
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await expect(page.getByPlaceholder(/email/i)).toBeVisible();
-    // El placeholder de password es "******" - verificar que hay un input de tipo password
-    await expect(page.locator('input[type="password"]').first()).toBeVisible();
-    await expect(page.getByRole('button', { name: /ingresar|login|iniciar/i })).toBeVisible();
+    await expect(page.locator('input[type="email"]')).toBeVisible();
+    await expect(page.locator('input[type="password"]')).toBeVisible();
+    // Submit button es type="submit" y dice "INGRESAR" en modo sign-in
+    await expect(page.locator('button[type="submit"]')).toBeVisible();
 
-    // Opción de registro
-    await expect(page.getByText(/registrate|registro|crear cuenta/i).first()).toBeVisible();
+    // Opción de registro - el tab dice "CREAR CUENTA"
+    await expect(page.getByText('CREAR CUENTA')).toBeVisible();
 
     // Login con Google
-    await expect(page.getByText(/google/i).first()).toBeVisible();
+    await expect(page.getByText('CONTINUAR CON GOOGLE')).toBeVisible();
   });
 
   test('login con credenciales invalidas muestra error', async ({ page }) => {
     await page.goto('/auth');
 
-    const emailInput = page.getByPlaceholder(/email/i);
-    const passwordInput = page.locator('input[type="password"]').first();
+    const emailInput = page.locator('input[type="email"]');
+    const passwordInput = page.locator('input[type="password"]');
+    const submitButton = page.locator('button[type="submit"]');
 
     await emailInput.fill('invalid@test.com');
     await passwordInput.fill('wrongpassword123');
 
-    await page.getByRole('button', { name: /ingresar|login|iniciar/i }).click();
+    await submitButton.click();
 
-    // Debería mostrar error o redirigir (depende del comportamiento)
-    await page.waitForTimeout(2000);
-    const hasError = await page.getByText(/error|invalida|incorrecta/i).first().isVisible().catch(() => false);
+    // Esperar a que aparezca el mensaje de error
+    await expect(page.getByText(/error/i)).toBeVisible({ timeout: 5000 }).catch(() => {});
     // Puede mostrar error o simplemente no loguearse
+    const hasError = await page.getByText(/error/i).isVisible().catch(() => false);
     expect(hasError || page.url().includes('/auth')).toBe(true);
   });
 

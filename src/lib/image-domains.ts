@@ -24,6 +24,7 @@ export const IMAGE_DOMAINS = [
   'logg.api.cygnus.market',
   'katech.com.ar',
   'dinobyte.ar',
+  'maximus.com.ar',
   'maxtecno.com.ar',
   'thegamershop.com.ar',
   'hardcorecomputacion.com.ar',

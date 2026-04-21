@@ -106,15 +106,15 @@ test.describe('Static Pages', () => {
     for (const p of pages) {
       await page.goto(p);
 
-      // Footer presente
-      const footer = page.locator('footer');
+      // Footer presente (usar .first() por si hay múltiples)
+      const footer = page.locator('footer').first();
       await expect(footer).toBeVisible();
 
-      // Links del footer
-      await expect(page.getByRole('link', { name: 'Acerca de' })).toBeVisible();
-      await expect(page.getByRole('link', { name: 'Politica de Privacidad' })).toBeVisible();
-      await expect(page.getByRole('link', { name: 'Terminos de Uso' })).toBeVisible();
-      await expect(page.getByRole('link', { name: 'Contacto' })).toBeVisible();
+      // Links del footer (usar .first() por si hay duplicados)
+      await expect(page.getByRole('link', { name: 'Acerca de' }).first()).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Politica de Privacidad' }).first()).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Terminos de Uso' }).first()).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Contacto' }).first()).toBeVisible();
     }
   });
 });

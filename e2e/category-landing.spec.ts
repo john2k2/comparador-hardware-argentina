@@ -29,20 +29,21 @@ test.describe('Category Landing Pages', () => {
       test('muestra panel de filtros', async ({ page }) => {
         await page.goto(`/search?category=${cat.slug}`);
 
-        // Panel de filtros visible (usar heading para evitar strict mode)
-        await expect(page.getByRole('heading', { name: 'FILTROS' })).toBeVisible();
+        // Panel de filtros visible (buscar el heading FILTROS)
+        await expect(page.locator('h2:has-text("FILTROS")').first()).toBeVisible();
 
-        // Panel de categorías
-        await expect(page.getByRole('heading', { name: 'CATEGORIAS' })).toBeVisible();
+        // Panel de categorías (buscar el heading CATEGORIAS)
+        await expect(page.locator('h3:has-text("CATEGORIAS")').first()).toBeVisible();
       });
 
       test('puede navegar a otras categorías desde sidebar', async ({ page }) => {
         await page.goto(`/search?category=${cat.slug}`);
 
-        // Click en otra categoría
+        // Click en otra categoría usando el texto del botón
         const otherCategory = categories.find(c => c.slug !== cat.slug);
         if (otherCategory) {
-          await page.getByRole('button', { name: otherCategory.name }).click();
+          // Usar texto exacto del botón en el sidebar
+          await page.locator(`button:has-text("${otherCategory.name}")`).first().click();
           await page.waitForURL(new RegExp(`/search\\?category=${otherCategory.slug}`));
           await expect(page).toHaveURL(new RegExp(`/search\\?category=${otherCategory.slug}`));
         }

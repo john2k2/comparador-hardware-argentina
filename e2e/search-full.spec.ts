@@ -6,11 +6,11 @@ import { expect, test } from '@playwright/test';
 // ============================================================================
 
 test.describe('Search Full Flow', () => {
-  
+
   test.beforeEach(async ({ page }) => {
-    // Navigate and wait for network idle before each test
+    // Navigate and wait for DOM content to load (not networkidle - can timeout)
     await page.goto('/search');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
   });
 
   test('búsqueda con query retorna resultados', async ({ page }) => {
@@ -18,9 +18,9 @@ test.describe('Search Full Flow', () => {
     await searchInput.fill('ryzen');
     await searchInput.press('Enter');
 
-    // Wait for either results or searching state
-    await page.waitForLoadState('networkidle');
-    
+    // Wait for either results or searching state (with timeout)
+    await page.waitForTimeout(2000);
+
     // Should show results or searching
     const hasResults = await page.locator('#product-grid-start a[href^="/product/"]').first().isVisible().catch(() => false);
     const isSearching = await page.getByText(/ESCANEANDO|BUSCANDO/i).first().isVisible().catch(() => false);
@@ -35,7 +35,8 @@ test.describe('Search Full Flow', () => {
     await searchInput.fill('xyznonexistentproduct123456');
     await searchInput.press('Enter');
 
-    await page.waitForLoadState('networkidle');
+    // Wait for response (with timeout)
+    await page.waitForTimeout(3000);
 
     // Should show no results or no products
     const noResults = await page.getByText('[ SIN RESULTADOS ]').isVisible().catch(() => false);
@@ -44,8 +45,8 @@ test.describe('Search Full Flow', () => {
   });
 
   test('estado idle sin intención de búsqueda', async ({ page }) => {
-    await expect(page.getByText('[ LISTO PARA BUSCAR ]')).toBeVisible();
-    await expect(page.getByText(/escribi un producto|para empezar/i)).toBeVisible();
+    await expect(page.getByText('[ LISTO PARA BUSCAR ]')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/escribi un producto|para empezar/i).first()).toBeVisible();
   });
 
   test('estado de búsqueda en progreso', async ({ page }) => {
@@ -53,13 +54,13 @@ test.describe('Search Full Flow', () => {
     await searchInput.fill('rtx 4060');
     await searchInput.press('Enter');
 
-    // Should show searching state
-    await expect(page.getByText(/ESCANEANDO|BUSCANDO|Consultando/i).first()).toBeVisible();
+    // Should show searching state immediately
+    await expect(page.getByText(/ESCANEANDO|BUSCANDO|Consultando/i).first()).toBeVisible({ timeout: 3000 });
   });
 
   test('limpiar filtros desde estado sin resultados', async ({ page }) => {
     await page.goto('/search?category=procesadores');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Verify products exist first
     const productLinks = page.locator('#product-grid-start a[href^="/product/"]');
@@ -73,7 +74,7 @@ test.describe('Search Full Flow', () => {
       await maxPriceInput.fill('1');
       await maxPriceInput.press('Enter');
 
-      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(2000);
 
       // Should show no results or empty products
       const noResults = await page.getByText('[ SIN RESULTADOS ]').isVisible().catch(() => false);
@@ -84,7 +85,7 @@ test.describe('Search Full Flow', () => {
         const clearButton = page.getByRole('button', { name: 'LIMPIAR FILTROS' });
         if (await clearButton.isVisible()) {
           await clearButton.click();
-          await page.waitForLoadState('networkidle');
+          await page.waitForTimeout(1000);
         }
       }
     }
@@ -95,7 +96,7 @@ test.describe('Search Full Flow', () => {
     await searchInput.fill('testquery123');
     await searchInput.press('Enter');
 
-    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(3000);
 
     const noResults = await page.getByText('[ SIN RESULTADOS ]').isVisible().catch(() => false);
     if (noResults) {
@@ -106,7 +107,7 @@ test.describe('Search Full Flow', () => {
 
   test('navegación de paginación mantiene categoría', async ({ page }) => {
     await page.goto('/search?category=procesadores');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     const nextButton = page.getByRole('button', { name: 'NEXT >>' });
     const hasNext = await nextButton.isVisible().catch(() => false);
@@ -121,7 +122,7 @@ test.describe('Search Full Flow', () => {
 
   test('productos tienen cards con información completa', async ({ page }) => {
     await page.goto('/search?category=procesadores');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     const productCards = page.locator('#product-grid-start [class*="border"]').filter({ hasText: /@/ });
     const cardCount = await productCards.count();
@@ -140,7 +141,7 @@ test.describe('Search Full Flow', () => {
 
   test('ordenamiento por precio funciona', async ({ page }) => {
     await page.goto('/search?category=procesadores&sortBy=price-asc');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // URL should maintain order
     await expect(page).toHaveURL(/sortBy=price-asc/);
@@ -148,13 +149,14 @@ test.describe('Search Full Flow', () => {
 
   test('búsqueda preserva filtros en URL', async ({ page }) => {
     await page.goto('/search?category=procesadores');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     const searchInput = page.getByPlaceholder(/BUSCAR|NUEVA/i);
     await searchInput.fill('5600x');
     await searchInput.press('Enter');
 
-    await page.waitForLoadState('networkidle');
+    // Wait a bit for URL to update
+    await page.waitForTimeout(1000);
 
     // URL should maintain category
     const url = page.url();

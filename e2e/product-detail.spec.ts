@@ -11,14 +11,13 @@ test('opens product detail from search and preserves the way back', async ({ pag
   await productLinks.first().click();
   await page.waitForURL(/\/product\//);
 
-  await expect(page.getByRole('link', { name: /\[ VOLVER AL INVENTARIO \]/ })).toHaveAttribute(
-    'href',
-    '/search?category=procesadores',
-  );
+  // El link tiene texto "[ VOLVER AL INVENTARIO ]"
+  const backLink = page.locator('a:has-text("VOLVER AL INVENTARIO")');
+  await expect(backLink).toHaveAttribute('href', '/search?category=procesadores');
   await expect(page.getByText('RESUMEN COMPARADOR')).toBeVisible();
   await expect(page.getByText('TIENDAS DISPONIBLES')).toBeVisible();
 
-  await page.getByRole('link', { name: /\[ VOLVER AL INVENTARIO \]/ }).click();
+  await backLink.click();
   await page.waitForURL(/\/search\?category=procesadores$/);
   await expect(productLinks.first()).toBeVisible();
 });

@@ -24,6 +24,7 @@ export const WHITELISTED_IMAGE_HOSTS = [
   'hypergaming.com.ar',
   'katech.com.ar',
   'liontech.com.ar',
+  'maximus.com.ar',
   'maxtecno.com.ar',
   'megasoftargentina.com.ar',
   'mexx.com.ar',
