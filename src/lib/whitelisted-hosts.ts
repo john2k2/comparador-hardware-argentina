@@ -12,7 +12,7 @@ export const WHITELISTED_IMAGE_HOSTS = [
   'armytech.com.ar',
   'beings.com.ar',
   'clickgaming.com.ar',
-  'compragamer.com',
+  // 'compragamer.com',  // REMOVIDO: imagenes.compragamer.com responde 502 via Next.js image optimization
   'compugarden.com.ar',
   'contabilium.com',
   'dinobyte.ar',

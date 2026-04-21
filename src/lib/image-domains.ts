@@ -12,8 +12,10 @@ export const IMAGE_DOMAINS = [
   'images.unsplash.com',
   '*.vteximg.com.br',
   'mexx-img-2019.s3.amazonaws.com',
-  'imagenes.compragamer.com',
-  'www.venex.com.ar',
+  // 'imagenes.compragamer.com' - REMOVIDO: el servidor responde 502
+  // cuando Next.js intenta optimizar, causando errores en producción.
+  // Los productos de CompraGamer ahora cargan directamente sin optimization.
+  // 'www.venex.com.ar',
   'www.fullh4rd.com.ar',
   'compugarden.com.ar',
   '*.compugarden.com.ar',
