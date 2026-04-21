@@ -76,10 +76,10 @@ export class SearchPage extends BasePage {
   }
 
   async clickNextPage(): Promise<void> {
-    const nextButton = this.page.getByRole('button', { name: /NEXT >>|>>/i);
+    const nextButton = this.page.getByRole('button', { name: /NEXT\s*>>|>>/i });
     if (await nextButton.isVisible()) {
       await nextButton.click();
-      await this.page.waitForURL(/page=2/);
+      await this.page.waitForURL(/\/page=2/);
     }
   }
 

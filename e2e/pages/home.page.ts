@@ -39,7 +39,7 @@ export class HomePage extends BasePage {
 
   async expectTickerVisible(): Promise<void> {
     await expect(this.tickerSection).toBeVisible();
-    await expect(page.getByText('@ Mexx').first()).toBeVisible();
+    await expect(this.page.getByText('@ Mexx').first()).toBeVisible();
   }
 
   async expectQuickCategoriesVisible(): Promise<void> {
