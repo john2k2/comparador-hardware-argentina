@@ -1,7 +1,8 @@
-import { expect, test } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
 // ============================================================================
 // E2E: HOME PAGE - Carga, secciones, búsqueda, navegación
+// Usando Page Object Model pattern
 // ============================================================================
 
 test.describe('Home Page', () => {

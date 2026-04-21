@@ -18,6 +18,8 @@ const eslintConfig = defineConfig([
     "test-*.js",
     "test*.mjs",
     "take_screenshots.mjs",
+    // E2E tests - usando Playwright, no React
+    "e2e/**",
   ]),
 ]);
 
