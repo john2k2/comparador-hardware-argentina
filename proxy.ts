@@ -1,18 +1,29 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { buildCspImgSrc } from '@/lib/image-domains';
 
 function generateNonce(): string {
   return crypto.randomUUID().replace(/-/g, '');
 }
 
-export function proxy() {
-  const nonce = generateNonce();
-  const cspScriptSrc = [
+function buildScriptSources(nonce: string): string {
+  const sources = [
     "'self'",
     `'nonce-${nonce}'`,
     'https://www.googletagmanager.com',
     'https://www.google-analytics.com',
-  ].join(' ');
+  ];
+
+  if (process.env.NODE_ENV !== 'production') {
+    sources.push("'unsafe-eval'");
+  }
+
+  return sources.join(' ');
+}
+
+export function proxy(request: NextRequest) {
+  const nonce = generateNonce();
+  const cspScriptSrc = buildScriptSources(nonce);
 
   const cspPolicy = [
     "default-src 'self'",
@@ -27,7 +38,14 @@ export function proxy() {
     "form-action 'self'",
   ].join('; ');
 
-  const response = NextResponse.next();
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-content-security-policy-nonce', nonce);
+
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
   response.headers.set('Content-Security-Policy', cspPolicy);
   response.headers.set('x-content-security-policy-nonce', nonce);
   response.headers.set('X-Content-Type-Options', 'nosniff');
@@ -37,7 +55,7 @@ export function proxy() {
   return response;
 }
 
-export const proxyConfig = {
+export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff|woff2|ttf)).*)',
   ],

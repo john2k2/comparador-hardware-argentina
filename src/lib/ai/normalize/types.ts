@@ -1,16 +1,14 @@
-export type NormalizationSource = 'gemini' | 'database' | 'fallback';
-export type NormalizationFallbackReason = 'no_ai' | 'quota_backoff' | 'deferred_budget' | 'batch_error';
+export type NormalizationSource = 'heuristic' | 'database' | 'memory';
+export type NormalizationFallbackReason = 'heuristic' | 'deferred' | 'error';
 
 export interface NormalizeProductTitlesStats {
   requestedTitles: number;
   uniqueTitles: number;
   memoryHits: number;
   dbHits: number;
-  geminiCount: number;
+  heuristicCount: number;
   fallbackCount: number;
-  deferredFallbackCount: number;
-  geminiBatches: number;
-  geminiBatchFailures: number;
+  deferredCount: number;
   dbUpsertAttempted: number;
   dbUpserted: number;
   fallbackRatePct: number;

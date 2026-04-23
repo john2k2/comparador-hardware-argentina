@@ -58,6 +58,8 @@ export const ProductCard = React.memo(function ProductCard({
   surface,
   position,
 }: ProductCardProps) {
+  const shouldPrioritizeImage = position !== undefined && position <= 4;
+
   const {
     bestPrice,
     comparableStoreCount,
@@ -131,19 +133,24 @@ export const ProductCard = React.memo(function ProductCard({
             <Image
               src={product.image}
               alt={displayName}
-              fill
-              className="object-contain image-pixelated p-2 transition-transform duration-300 group-hover:scale-[1.03]"
+              width={400}
+              height={400}
+              className="object-contain image-pixelated p-2 transition-transform duration-300 group-hover:scale-[1.03] w-full h-full"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
               placeholder="blur"
               blurDataURL={BLUR_PLACEHOLDER}
+              priority={shouldPrioritizeImage}
             />
           ) : product.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={product.image}
               alt={displayName}
+              width={400}
+              height={400}
               className="object-contain image-pixelated p-2 w-full h-full transition-transform duration-300 group-hover:scale-[1.03]"
-              loading="lazy"
+              loading={shouldPrioritizeImage ? 'eager' : 'lazy'}
+              fetchPriority={shouldPrioritizeImage ? 'high' : 'auto'}
               decoding="async"
               onError={(event) => {
                 (event.target as HTMLImageElement).style.display = 'none';
@@ -153,10 +160,12 @@ export const ProductCard = React.memo(function ProductCard({
             <Image
               src="/pixel-box.svg"
               alt="No image"
-              fill
-              className="object-contain image-pixelated p-4 opacity-50"
+              width={400}
+              height={400}
+              className="object-contain image-pixelated p-4 opacity-50 w-full h-full"
               placeholder="blur"
               blurDataURL={BLUR_PLACEHOLDER}
+              priority={shouldPrioritizeImage}
             />
           )}
 

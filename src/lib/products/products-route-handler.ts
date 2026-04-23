@@ -24,6 +24,8 @@ import { resolveAdminAccessFromToken } from '@/lib/server/admin-auth';
 import { buildRateLimitHeaders, checkRateLimit, getRequestIp } from '@/lib/server/rate-limit';
 import { recordEndpointRequestEvent, runObservedStoreScrape } from '@/lib/telemetry/operational-metrics';
 import { logger } from '@/lib/logger';
+import { shouldSkipLiveScraping } from '@/lib/server/runtime-flags';
+import { getStableFixtureProducts } from '@/lib/server/stable-search-fixtures';
 
 export async function GET(request: NextRequest) {
   const endpointStartedAtMs = Date.now();
@@ -34,6 +36,7 @@ export async function GET(request: NextRequest) {
   const bypassDb = searchParams.get('bypassDb') === '1';
   const internalRefreshRequest = request.headers.get('x-internal-refresh') === '1';
   const isRefreshRequest = searchParams.get('refresh') === '1';
+  const stableRuntimeMode = shouldSkipLiveScraping();
   let defaultRateLimitHeaders: Record<string, string> | null = null;
 
   const respond = <T>(body: T, init?: ResponseInit, meta?: { success?: boolean; resultCount?: number; note?: string }) => {
@@ -133,6 +136,23 @@ export async function GET(request: NextRequest) {
         }
       }
 
+      if (stableRuntimeMode) {
+        const fixtureProduct = getStableFixtureProducts({}).find((product) => product.id === id) ?? null;
+        if (fixtureProduct) {
+          return respond(
+            fixtureProduct,
+            { headers: { 'X-Product-Cache': 'STABLE-FIXTURE' } },
+            { success: true, resultCount: 1, note: 'DETAIL_STABLE_FIXTURE' },
+          );
+        }
+
+        return respond(
+          { error: 'Producto no disponible en modo estable sin datos persistidos' },
+          { status: 404, headers: { 'X-Product-Cache': 'STABLE-NO-LIVE' } },
+          { success: false, resultCount: 0, note: 'DETAIL_STABLE_SKIP_LIVE' },
+        );
+      }
+
       const pendingDetail = inFlightDetailRequests.get(detailKey);
       if (pendingDetail) {
         const sharedProduct = await pendingDetail;
@@ -196,6 +216,26 @@ export async function GET(request: NextRequest) {
         snapshotProducts(databaseProducts);
         return respond({ products: databaseProducts, pagination: { limit: databaseProducts.length, offset: 0, total: databaseProducts.length } }, { headers: { 'X-Product-Cache': staleDatabaseProducts ? 'DB-STALE' : 'DB' } }, { success: true, resultCount: databaseProducts.length, note: staleDatabaseProducts ? 'CATEGORY_DB_STALE' : 'CATEGORY_DB' });
       }
+    }
+
+    if (stableRuntimeMode) {
+      const fixtureProducts = getStableFixtureProducts({
+        query: query || undefined,
+        category: categorySlug,
+        sortBy: 'relevance',
+      });
+      return respond(
+        {
+          products: fixtureProducts,
+          pagination: { limit: fixtureProducts.length, offset: 0, total: fixtureProducts.length },
+        },
+        { headers: { 'X-Product-Cache': fixtureProducts.length > 0 ? 'STABLE-FIXTURE' : 'STABLE-EMPTY' } },
+        {
+          success: true,
+          resultCount: fixtureProducts.length,
+          note: fixtureProducts.length > 0 ? 'CATEGORY_STABLE_FIXTURE' : 'CATEGORY_STABLE_SKIP_LIVE',
+        },
+      );
     }
 
     const liveProducts = await resolveLiveProductsList(categorySlug, query || undefined, observeSource);

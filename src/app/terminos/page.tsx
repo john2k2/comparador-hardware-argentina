@@ -58,6 +58,26 @@ export default function TerminosPage() {
             </p>
           </div>
         </div>
+
+        <div className="border-2 border-border p-4 bg-muted/30 space-y-3">
+          <p className="text-secondary font-bold">[ NATURALEZA DEL SERVICIO ]</p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            El comparador funciona como una capa de descubrimiento y referencia. Su valor está en ordenar información pública o capturada desde tiendas para que el usuario tenga una base más clara antes de decidir. Eso no implica garantía absoluta de exactitud permanente, porque el ecosistema de precios, stock y URLs de producto cambia de manera continua.
+          </p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            Usar el sitio implica entender esa naturaleza dinámica. Hacemos esfuerzos razonables para limpiar errores y mejorar agrupaciones, pero siempre puede existir desfase entre la última actualización visible y el estado real del comercio enlazado.
+          </p>
+        </div>
+
+        <div className="border-2 border-border p-4 bg-muted/30 space-y-3">
+          <p className="text-secondary font-bold">[ LIMITACION OPERATIVA ]</p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            No garantizamos disponibilidad ininterrumpida, cobertura total de todas las tiendas ni ausencia completa de errores en precios, especificaciones o stock. Parte del trabajo del proyecto consiste precisamente en detectar, auditar y reducir esos problemas con el tiempo.
+          </p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            Si utilizas la información del comparador para tomar una decisión de compra, la verificación final debe hacerse siempre en la página oficial del comercio. Los términos de esa tienda, y no los de este sitio, son los que regulan la operación económica final.
+          </p>
+        </div>
       </div>
     </RetroPageShell>
     </>

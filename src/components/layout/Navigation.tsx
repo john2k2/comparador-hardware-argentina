@@ -119,7 +119,7 @@ export function Navigation() {
             <Link
               href="/"
               className="flex items-center gap-3 hover:-translate-y-1 transition-transform group"
-              aria-label="HardwareAR - Inicio"
+              aria-label="HARDWAREAR V1.0_READY - Inicio"
             >
               {/* Logo Icon Box */}
               <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0" style={{ boxShadow: '4px 4px 0px 0px #1a1a1a' }}>
@@ -201,7 +201,7 @@ export function Navigation() {
               <button
                 onClick={toggleTheme}
                 className="group relative flex items-center justify-center w-12 h-12 bg-card border-4 border-border pixel-shadow-primary hover:bg-muted active:translate-x-1 active:translate-y-1 transition-all"
-                aria-label={isDark ? 'MODO CLARO' : 'MODO OSCURO'}
+                aria-label={isDark ? '[ TOGGLE_OS ] MODO CLARO' : '[ TOGGLE_OS ] MODO OSCURO'}
               >
                 {isDark ? (
                   <Sun className="w-6 h-6 text-accent" aria-hidden="true" />
@@ -209,7 +209,7 @@ export function Navigation() {
                   <Moon className="w-6 h-6 text-primary" aria-hidden="true" />
                 )}
 
-                <span className="absolute -bottom-10 right-0 hidden group-hover:block bg-black text-white text-[8px] p-2 whitespace-nowrap border-2 border-white">
+                <span aria-hidden="true" className="absolute -bottom-10 right-0 hidden group-hover:block bg-black text-white text-[8px] p-2 whitespace-nowrap border-2 border-white">
                   [ TOGGLE_OS ]
                 </span>
               </button>

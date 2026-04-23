@@ -63,6 +63,26 @@ export default function ContactoPage() {
             No hay SLA formal todavia. Mientras el proyecto siga en etapa de mejora, las respuestas y correcciones dependen de disponibilidad operativa.
           </p>
         </div>
+
+        <div className="border-2 border-border p-4 bg-muted/30 space-y-3">
+          <p className="text-secondary font-bold">[ REPORTES UTILES ]</p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            Los reportes más valiosos son los que ayudan a verificar problemas concretos: producto mal agrupado, enlace roto, precio imposible, stock inconsistente o una categoría que no refleja bien la intención de búsqueda. Si envías capturas o ejemplos específicos, el análisis suele ser mucho más rápido.
+          </p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            También es útil indicar si el error aparece en desktop o mobile, si se repite en varias páginas y si el problema impacta comparación, confianza o navegación. Eso permite priorizar mejor entre correcciones editoriales, técnicas o de scraping.
+          </p>
+        </div>
+
+        <div className="border-2 border-border p-4 bg-muted/30 space-y-3">
+          <p className="text-secondary font-bold">[ ALCANCE DEL CONTACTO ]</p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            Este canal está pensado para consultas relacionadas con el comparador. No gestionamos ventas, cobros, garantías, devoluciones ni soporte post compra de las tiendas enlazadas. Para cualquier operación comercial concreta, la referencia válida siempre es el comercio de destino.
+          </p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            Si en el futuro el proyecto suma analytics, newsletters o integraciones comerciales más complejas, esta página se ampliará con canales y tiempos de respuesta más formales para mantener expectativas claras.
+          </p>
+        </div>
       </div>
     </RetroPageShell>
   );

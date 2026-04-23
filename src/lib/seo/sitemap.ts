@@ -6,6 +6,7 @@ export const INDEXABLE_PRODUCT_ID_PREFIX = 'agrupado-';
 type ProductSitemapRow = {
   id: string;
   updated_at: string | null;
+  canonical_product_key: string | null;
 };
 
 export function isIndexableProductId(id: string): boolean {
@@ -13,42 +14,44 @@ export function isIndexableProductId(id: string): boolean {
 }
 
 export async function countIndexedProducts(): Promise<number> {
-  const supabase = getServerSupabaseReadClient();
-  if (!supabase) return 0;
-
-  const { count: groupedCount, error: groupedError } = await supabase
-    .from('products')
-    .select('id', { count: 'exact', head: true })
-    .like('id', `${INDEXABLE_PRODUCT_ID_PREFIX}%`);
-
-  if (groupedError) {
-    console.warn('[sitemap] grouped product count omitted:', groupedError.message);
-    return 0;
-  }
-
-  return groupedCount ?? 0;
+  const rows = await readAllIndexableProductRows();
+  return rows.length;
 }
 
-export async function readProductSitemapPage(page: number, pageSize = PRODUCT_SITEMAP_PAGE_SIZE): Promise<ProductSitemapRow[]> {
+async function readAllIndexableProductRows(): Promise<ProductSitemapRow[]> {
   const supabase = getServerSupabaseReadClient();
   if (!supabase) return [];
 
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, updated_at, canonical_product_key')
+    .like('id', `${INDEXABLE_PRODUCT_ID_PREFIX}%`)
+    .order('updated_at', { ascending: false })
+    .order('id', { ascending: true })
+    .range(0, 4999);
+
+  if (error) {
+    console.warn('[sitemap] grouped products omitted:', error.message);
+    return [];
+  }
+
+  const winners = new Map<string, ProductSitemapRow>();
+
+  for (const row of (data ?? []) as ProductSitemapRow[]) {
+    const dedupeKey = row.canonical_product_key?.trim() || row.id;
+    if (!winners.has(dedupeKey)) {
+      winners.set(dedupeKey, row);
+    }
+  }
+
+  return [...winners.values()];
+}
+
+export async function readProductSitemapPage(page: number, pageSize = PRODUCT_SITEMAP_PAGE_SIZE): Promise<ProductSitemapRow[]> {
   const safePageSize = Math.max(1, pageSize);
   const safePage = Math.max(0, Math.trunc(page));
   const from = safePage * safePageSize;
   const to = from + safePageSize - 1;
-
-  const { data, error } = await supabase
-    .from('products')
-    .select('id, updated_at')
-    .like('id', `${INDEXABLE_PRODUCT_ID_PREFIX}%`)
-    .order('updated_at', { ascending: false })
-    .range(from, to);
-
-  if (error) {
-    console.warn('[sitemap] product page omitted:', error.message);
-    return [];
-  }
-
-  return (data ?? []) as ProductSitemapRow[];
+  const rows = await readAllIndexableProductRows();
+  return rows.slice(from, to + 1);
 }

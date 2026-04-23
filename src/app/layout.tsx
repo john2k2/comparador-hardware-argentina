@@ -95,7 +95,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const nonce = (await headers()).get('x-content-security-policy-nonce');
+  const nonce = (await headers()).get('x-content-security-policy-nonce') ?? undefined;
 
   const organizationSchema = {
     '@context': 'https://schema.org',
@@ -125,7 +125,7 @@ export default async function RootLayout({
       <head>
         <script
           type="application/ld+json"
-          nonce={nonce ?? undefined}
+          nonce={nonce}
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
       </head>
@@ -135,8 +135,8 @@ export default async function RootLayout({
           "min-h-screen bg-background text-foreground font-pixel flex flex-col"
         )}
       >
-        <ThemeScript nonce={nonce ?? undefined} />
-        <Analytics nonce={nonce ?? undefined} />
+        <ThemeScript nonce={nonce} />
+        <Analytics nonce={nonce} />
 
         {/* Preload SVG sprites for parallax background */}
         <link rel="preload" href="/sprites/pixel-art.svg" as="image" type="image/svg+xml" />

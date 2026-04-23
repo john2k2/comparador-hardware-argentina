@@ -60,6 +60,26 @@ export default function AcercaPage() {
           </div>
         </div>
 
+        <div className="border-2 border-border p-4 bg-muted/30 space-y-3">
+          <p className="text-secondary font-bold">[ CRITERIO EDITORIAL ]</p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            El objetivo del proyecto no es listar cualquier resultado sin contexto, sino priorizar coincidencias útiles entre tiendas para que la comparación sea defendible. Cuando una ficha parece duplicada, ambigua o mezcla variantes incompatibles, preferimos marcarla como trabajo en curso antes que mostrar una falsa equivalencia.
+          </p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            También buscamos que cada página pública tenga una función clara: la home como puerta de entrada, las categorías como landings útiles, y las páginas de producto como comparativas concretas. Ese enfoque guía tanto la indexación como las mejoras de SEO, accesibilidad y rendimiento.
+          </p>
+        </div>
+
+        <div className="border-2 border-border p-4 bg-muted/30 space-y-3">
+          <p className="text-secondary font-bold">[ QUE ESPERAR DEL SITIO ]</p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            Vas a encontrar enlaces a tiendas, referencias de precio, señales de stock y, cuando aplica, diferencias entre ofertas comparables. Aun así, la decision final siempre debe validarse dentro de la tienda de destino porque disponibilidad, cuotas, costos de envio y condiciones comerciales pueden cambiar sin previo aviso.
+          </p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            Si notas errores de agrupación, fichas débiles o precios evidentemente rotos, ese feedback es útil para mejorar la calidad del catálogo. La meta es que el comparador sea cada vez más confiable y menos ruidoso para compras reales en Argentina.
+          </p>
+        </div>
+
         <CommercialDisclosure />
 
         <div className="pt-2">

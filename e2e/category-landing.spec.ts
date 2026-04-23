@@ -79,24 +79,23 @@ test.describe('Category Landing Pages', () => {
 
     // Aplicar filtro de precio mínimo
     const minPriceInput = page.getByLabel('Precio mínimo');
-    if (await minPriceInput.isVisible()) {
-      await minPriceInput.fill('100000');
-      await minPriceInput.press('Enter');
+    await expect(minPriceInput).toBeVisible();
+    await minPriceInput.fill('100000');
+    await minPriceInput.press('Enter');
 
-      await page.waitForTimeout(1000);
-
-      // URL debería incluir el filtro
-      const url = page.url();
-      expect(url).toContain('minPrice=100000');
-    }
+    await page.waitForURL(/minPrice=100000/);
+    await expect(page).toHaveURL(/minPrice=100000/);
   });
 
   test('categoría con filtro de tiendas', async ({ page }) => {
     await page.goto('/search?category=procesadores');
 
-    // Verificar que hay checkboxes de tiendas
-    const storeCheckboxes = page.locator('input[type="checkbox"]');
-    const count = await storeCheckboxes.count();
-    expect(count).toBeGreaterThan(0);
+    // La UI usa botones de tiendas, no checkboxes nativos.
+    const storesSection = page.locator('button:has-text("TIENDAS")').first();
+    await expect(storesSection).toBeVisible();
+
+    const storeButtons = page.locator('button', { hasText: /^\[\s?\]\s.+/ });
+    await expect(storeButtons.first()).toBeVisible();
+    expect(await storeButtons.count()).toBeGreaterThan(0);
   });
 });

@@ -16,9 +16,9 @@ type StoresListProps = {
 export function StoresList({ product, merchantPrices }: StoresListProps) {
   return (
     <div className="bg-card border-4 border-border p-6 pixel-shadow">
-      <h3 className="text-[12px] font-bold uppercase mb-4 text-accent border-b-4 border-accent inline-block pb-1">
+      <h2 className="text-[12px] font-bold uppercase mb-4 text-accent border-b-4 border-accent inline-block pb-1">
         TIENDAS DISPONIBLES
-      </h3>
+      </h2>
       <div className="space-y-3">
         {merchantPrices.map((price, index) => {
           const linkType = getOutboundStoreLinkType(price.storeId);
@@ -60,6 +60,7 @@ export function StoresList({ product, merchantPrices }: StoresListProps) {
                 href={price.url}
                 target="_blank"
                 rel={getOutboundStoreRel(linkType)}
+                aria-label={`VER EN TIENDA: ${normalizeDisplayText(price.storeName || price.storeId)}`}
                 onClick={() => {
                   trackStoreClick({
                     productId: product.id,

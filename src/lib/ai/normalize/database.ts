@@ -37,7 +37,7 @@ export async function readNormalizationsFromDatabase(titles: string[]): Promise<
   } catch (error) {
     dbCacheRetryAfterMs = Date.now() + DB_CACHE_RETRY_AFTER_MS;
     console.warn(
-      `[Gemini Normalizer] DB cache read unavailable, fallback to in-memory only for ${Math.round(dbCacheRetryAfterMs / 1000)}s: ${formatError(error)}`,
+      `[Heuristic Normalizer] DB cache read unavailable, fallback to in-memory only for ${Math.round(dbCacheRetryAfterMs / 1000)}s: ${formatError(error)}`,
     );
   }
 
@@ -54,7 +54,7 @@ export async function saveNormalizationsToDatabase(entries: Array<{ rawTitle: st
     const payload = entries.map((entry) => ({
       raw_title: entry.rawTitle,
       normalized_title: entry.normalizedTitle,
-      source: 'gemini',
+      source: 'heuristic',
       updated_at: new Date().toISOString(),
     }));
 
@@ -75,7 +75,7 @@ export async function saveNormalizationsToDatabase(entries: Array<{ rawTitle: st
   } catch (error) {
     dbCacheRetryAfterMs = Date.now() + DB_CACHE_RETRY_AFTER_MS;
     console.warn(
-      `[Gemini Normalizer] DB cache upsert unavailable, continuing with memory cache only for ${Math.round(dbCacheRetryAfterMs / 1000)}s: ${formatError(error)}`,
+      `[Heuristic Normalizer] DB cache upsert unavailable, continuing with memory cache only for ${Math.round(dbCacheRetryAfterMs / 1000)}s: ${formatError(error)}`,
     );
     return 0;
   }

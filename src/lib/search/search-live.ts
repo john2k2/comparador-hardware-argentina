@@ -141,19 +141,16 @@ export async function runLiveSearch({
           uniqueTitles: allTitles.length,
           memoryHits: 0,
           dbHits: 0,
-          geminiCount: 0,
+          heuristicCount: 0,
           fallbackCount: allTitles.length,
-          deferredFallbackCount: 0,
-          geminiBatches: 0,
-          geminiBatchFailures: 1,
+          deferredCount: 0,
           dbUpsertAttempted: 0,
           dbUpserted: 0,
           fallbackRatePct: 100,
           fallbackReasons: {
-            no_ai: 0,
-            quota_backoff: 0,
-            deferred_budget: 0,
-            batch_error: allTitles.length,
+            heuristic: 0,
+            deferred: 0,
+            error: allTitles.length,
           },
         },
       };
@@ -162,7 +159,7 @@ export async function runLiveSearch({
     normalizedTitlesMap = normalization.map;
     normalizationSummaryNote = [
       `NORM_FB_${normalization.stats.fallbackRatePct.toFixed(1)}PCT`,
-      `NORM_GEM_${normalization.stats.geminiCount}`,
+      `NORM_HEUR_${normalization.stats.heuristicCount}`,
       `NORM_DB_${normalization.stats.dbHits}`,
     ].join('|');
 
@@ -181,7 +178,7 @@ export async function runLiveSearch({
         query,
         memoryHits: normalization.stats.memoryHits,
         dbHits: normalization.stats.dbHits,
-        geminiCount: normalization.stats.geminiCount,
+        heuristicCount: normalization.stats.heuristicCount,
       });
     }
 

@@ -9,17 +9,16 @@ test.describe('Auth Flow', () => {
     await page.goto('/auth');
 
     // Formulario de login visible
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await expect(page.locator('input[type="email"]')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /entrar o crear cuenta/i })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Email' })).toBeVisible();
     await expect(page.locator('input[type="password"]')).toBeVisible();
-    // Submit button es type="submit" y dice "INGRESAR" en modo sign-in
-    await expect(page.locator('button[type="submit"]')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'INGRESAR' })).toBeVisible();
 
     // Opción de registro - el tab dice "CREAR CUENTA"
-    await expect(page.getByText('CREAR CUENTA')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'CREAR CUENTA' })).toBeVisible();
 
     // Login con Google
-    await expect(page.getByText('CONTINUAR CON GOOGLE')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'CONTINUAR CON GOOGLE' })).toBeVisible();
   });
 
   test('login con credenciales invalidas muestra error', async ({ page }) => {

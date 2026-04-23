@@ -1,7 +1,7 @@
 import { cache } from 'react';
 import type { Metadata } from 'next';
 import { ProductDetailClient } from '@/components/product/ProductDetailClient';
-import { readProductByIdFromDatabase } from '@/lib/persistence/product-read';
+import { readCanonicalProductIdByKey, readProductByIdFromDatabase } from '@/lib/persistence/product-read';
 import { formatPriceARS, getComparableStorePrices } from '@/lib/price-utils';
 import { isIndexableProductId } from '@/lib/seo/sitemap';
 import { SITE_URL } from '@/lib/site-config';
@@ -150,7 +150,6 @@ function buildProductJsonLd(product: Product, id: string) {
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { id } = await params;
   const product = await getProductForPage(id);
-  const indexableProduct = isIndexableProductId(id);
 
   if (!product) {
     return {
@@ -165,7 +164,13 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
   const title = normalizeDisplayText(product.name);
   const description = buildProductDescription(product);
-  const url = buildCanonicalUrl(id);
+  const canonicalProductId = product.canonicalProductKey
+    ? await readCanonicalProductIdByKey(product.canonicalProductKey)
+    : null;
+  const resolvedCanonicalId = canonicalProductId ?? id;
+  const comparableStoreCount = getComparableStorePrices(product.prices).length;
+  const indexableProduct = isIndexableProductId(id) && resolvedCanonicalId === id && comparableStoreCount >= 2;
+  const url = buildCanonicalUrl(resolvedCanonicalId);
   const image = resolveProductImage(product);
 
   return {
@@ -204,7 +209,13 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 export default async function ProductDetailPage({ params }: ProductPageProps) {
   const { id } = await params;
   const product = await getProductForPage(id);
-  const jsonLd = product && isIndexableProductId(id) ? buildProductJsonLd(product, id) : null;
+  const canonicalProductId = product?.canonicalProductKey
+    ? await readCanonicalProductIdByKey(product.canonicalProductKey)
+    : null;
+  const resolvedCanonicalId = canonicalProductId ?? id;
+  const jsonLd = product && isIndexableProductId(id) && resolvedCanonicalId === id && getComparableStorePrices(product.prices).length >= 2
+    ? buildProductJsonLd(product, id)
+    : null;
 
   return (
     <>

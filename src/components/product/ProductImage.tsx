@@ -30,8 +30,9 @@ export function ProductImage({ image, productName, latestSyncLabel }: ProductIma
             <Image
               src={image}
               alt={displayName}
-              fill
-              className="object-contain image-pixelated p-4"
+              width={800}
+              height={800}
+              className="object-contain image-pixelated p-4 w-full h-full"
               priority
               sizes="(max-width: 1024px) 100vw, 50vw"
             />
@@ -40,7 +41,11 @@ export function ProductImage({ image, productName, latestSyncLabel }: ProductIma
             <img
               src={image}
               alt={displayName}
+              width={800}
+              height={800}
               className="object-contain image-pixelated p-4 w-full h-full"
+              loading="eager"
+              fetchPriority="high"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
           )}
@@ -50,8 +55,9 @@ export function ProductImage({ image, productName, latestSyncLabel }: ProductIma
           <Image
             src="/pixel-box.svg"
             alt="No image"
-            fill
-            className="object-contain image-pixelated p-8 opacity-50"
+            width={800}
+            height={800}
+            className="object-contain image-pixelated p-8 opacity-50 w-full h-full"
             sizes="(max-width: 1024px) 100vw, 50vw"
           />
         </div>

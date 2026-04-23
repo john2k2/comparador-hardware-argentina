@@ -92,6 +92,9 @@ export function Filters({
     { value: 'newest', label: 'MÁS RECIENTES' },
   ];
 
+  const selectedSortLabel = sortOptions.find((opt) => opt.value === filters.sortBy)?.label ?? sortOptions[0].label;
+  const selectedCategoryLabel = categoryOptions.find((opt) => opt.value === (filters.category || ''))?.label ?? categoryOptions[0].label;
+
   return (
     <div className={cn('space-y-4', className)}>
       {/* Header de filtros */}
@@ -149,7 +152,7 @@ export function Filters({
             <select
               value={filters.sortBy}
               onChange={(e) => handleSortChange(e.target.value)}
-              aria-label="Ordenar por"
+              aria-label={`ORDENAR POR: ${selectedSortLabel}`}
               className="w-full h-8 px-2 border-4 border-border bg-background text-foreground text-[8px] uppercase outline-none focus:border-primary appearance-none rounded-none"
             >
               {sortOptions.map((opt) => (
@@ -178,7 +181,7 @@ export function Filters({
             <select
               value={filters.category || ''}
               onChange={(e) => handleCategoryChange(e.target.value)}
-              aria-label="Filtrar por categoría"
+              aria-label={`CATEGORÍA: ${selectedCategoryLabel}`}
               className="w-full h-8 px-2 border-4 border-border bg-background text-foreground text-[8px] uppercase outline-none focus:border-primary appearance-none rounded-none"
             >
               {categoryOptions.map((opt) => (

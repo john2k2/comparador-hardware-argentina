@@ -42,9 +42,9 @@ export function PriceSummary({
   return (
     <>
       <div className="bg-card border-4 border-border p-6 pixel-shadow">
-        <h3 className="text-[12px] font-bold uppercase mb-4 text-secondary border-b-4 border-secondary inline-block pb-1">
+        <h2 className="text-[12px] font-bold uppercase mb-4 text-secondary border-b-4 border-secondary inline-block pb-1">
           RESUMEN COMPARADOR
-        </h3>
+        </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="border-2 border-border bg-muted/40 p-3">

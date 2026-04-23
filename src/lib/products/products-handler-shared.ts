@@ -9,6 +9,7 @@ import { getSharedCache, setSharedCache } from '@/lib/server/shared-cache';
 import { pickDescriptionUrls } from '@/lib/products/product-detail-helpers';
 import { normalizeProductContent } from '@/lib/products/normalize-product-content';
 import { logger } from '@/lib/logger';
+import { shouldSkipLiveScraping } from '@/lib/server/runtime-flags';
 
 export const DETAIL_CACHE_TTL_MS = 5 * 60 * 1000;
 export const SCRAPER_TIMEOUT_MS = 25_000;
@@ -46,6 +47,10 @@ export function scheduleBackgroundProductsRefresh(
 
 export async function normalizeAndEnrichProduct(product: Product): Promise<Product> {
   const normalized = normalizeProductContent(product);
+  if (shouldSkipLiveScraping()) {
+    return normalized;
+  }
+
   if (!isWeakProductDescription(normalized.description, normalized.name)) {
     return normalized;
   }

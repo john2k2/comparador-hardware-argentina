@@ -36,6 +36,28 @@ export async function readProductByIdFromDatabase(id: string) {
   return mapDbProduct(data as DbProductRow);
 }
 
+export async function readCanonicalProductIdByKey(canonicalProductKey: string) {
+  const supabase = getServerSupabaseReadClient();
+  if (!supabase || !canonicalProductKey) return null;
+
+  const { data, error } = await supabase
+    .from('products')
+    .select('id')
+    .eq('canonical_product_key', canonicalProductKey)
+    .like('id', 'agrupado-%')
+    .order('updated_at', { ascending: false })
+    .order('id', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    if (EMPTY_RESULT_ERROR_CODES.has(error.code ?? '')) return null;
+    throw new Error(`readCanonicalProductIdByKey: ${error.message}`);
+  }
+
+  return data?.id ?? null;
+}
+
 export async function readProductsFromDatabase(params: ReadProductsParams) {
   const supabase = getServerSupabaseReadClient();
   if (!supabase) return [];

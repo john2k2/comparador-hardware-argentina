@@ -60,6 +60,26 @@ export default function PrivacidadPage() {
             </p>
           </div>
         </div>
+
+        <div className="border-2 border-border p-4 bg-muted/30 space-y-3">
+          <p className="text-secondary font-bold">[ BASE OPERATIVA ]</p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            La información tratada hoy responde sobre todo a necesidades técnicas: funcionamiento del sitio, consultas de búsqueda, estabilidad del catálogo, prevención de abuso y diagnóstico de errores. No vendemos una base de datos de usuarios ni construimos perfiles comerciales personalizados a partir de la navegación dentro del comparador.
+          </p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            Si en etapas futuras incorporamos analítica avanzada, publicidad, cuentas con más funciones o automatizaciones de marketing, esta política deberá actualizarse para reflejar con mayor detalle qué datos se recopilan, bajo qué fundamento y con qué opciones de control para el usuario.
+          </p>
+        </div>
+
+        <div className="border-2 border-border p-4 bg-muted/30 space-y-3">
+          <p className="text-secondary font-bold">[ DERECHOS Y CONTACTO ]</p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            Si necesitas hacer una consulta vinculada a privacidad, rectificación o eliminación de información asociada a una interacción concreta con el sitio, conviene incluir el máximo contexto posible: fecha aproximada, URL, acción realizada y un canal válido para responder. Eso facilita identificar registros técnicos sin sobredimensionar la retención de datos.
+          </p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            Nuestro enfoque es minimizar datos, conservar solo lo útil para operar y revisar periódicamente qué registros siguen siendo necesarios. La política real debe acompañar la evolución técnica del producto, no prometer más de lo que hoy existe ni ocultar limitaciones operativas actuales.
+          </p>
+        </div>
       </div>
     </RetroPageShell>
     </>

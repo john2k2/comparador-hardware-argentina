@@ -1,7 +1,48 @@
 import type { Metadata } from 'next';
 import type { SearchPageState } from './search-state';
 import { getCategorySeoCopy, isIndexableCategoryLanding } from './search-seo';
-import { SITE_URL } from '@/lib/site-config';
+import { SITE_NAME, SITE_URL } from '@/lib/site-config';
+
+const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.svg`;
+
+function buildSearchMetadata(input: {
+  title: string;
+  description: string;
+  canonical: string;
+  index: boolean;
+}): Metadata {
+  return {
+    title: input.title,
+    description: input.description,
+    alternates: {
+      canonical: input.canonical,
+    },
+    openGraph: {
+      type: 'website',
+      url: input.canonical,
+      title: `${input.title} | ${SITE_NAME}`,
+      description: input.description,
+      images: [
+        {
+          url: DEFAULT_OG_IMAGE,
+          width: 1200,
+          height: 630,
+          alt: `${input.title} | ${SITE_NAME}`,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${input.title} | ${SITE_NAME}`,
+      description: input.description,
+      images: [DEFAULT_OG_IMAGE],
+    },
+    robots: {
+      index: input.index,
+      follow: true,
+    },
+  };
+}
 
 export function resolveSearchMetadata(state: SearchPageState): Metadata {
   const categorySeoCopy = getCategorySeoCopy(state.category);
@@ -12,42 +53,27 @@ export function resolveSearchMetadata(state: SearchPageState): Metadata {
     : `${SITE_URL}/search`;
 
   if (indexableCategoryLanding && categorySeoCopy) {
-    return {
+    return buildSearchMetadata({
       title: categorySeoCopy.title,
       description: categorySeoCopy.description,
-      alternates: {
-        canonical,
-      },
-      robots: {
-        index: true,
-        follow: true,
-      },
-    };
+      canonical,
+      index: true,
+    });
   }
 
   if (hasQuery) {
-    return {
+    return buildSearchMetadata({
       title: `Busqueda: ${state.query}`,
       description: `Resultados de busqueda para ${state.query} en el comparador de hardware de Argentina.`,
-      alternates: {
-        canonical,
-      },
-      robots: {
-        index: false,
-        follow: true,
-      },
-    };
+      canonical,
+      index: false,
+    });
   }
 
-  return {
+  return buildSearchMetadata({
     title: 'Buscar hardware',
     description: 'Explora hardware, precios y tiendas disponibles en Argentina con filtros por categoria, precio y tienda.',
-    alternates: {
-      canonical,
-    },
-    robots: {
-      index: false,
-      follow: true,
-    },
-  };
+    canonical,
+    index: false,
+  });
 }

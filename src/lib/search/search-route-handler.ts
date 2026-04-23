@@ -5,10 +5,11 @@ import { buildRateLimitHeaders, checkRateLimit, getRequestIp } from '@/lib/serve
 import { recordEndpointRequestEvent, runObservedStoreScrape } from '@/lib/telemetry/operational-metrics';
 import { hasStaleProducts } from '@/lib/persistence/product-staleness';
 import { readProductsPageFromDatabase } from '@/lib/persistence/product-read';
+import { readProductsFromDatabase } from '@/lib/persistence/product-read';
 import { sortProducts } from '@/lib/persistence/product-read-grouping';
 import { createObservedProductsSourceRunner } from '@/lib/products/products-handler-shared';
 import { resolveLiveProductsList } from '@/lib/products/products-list-service';
-import { isHardwareCategory } from '@/lib/catalog/hardware-categories';
+import { inferHardwareCategoryFromName, isHardwareCategory } from '@/lib/catalog/hardware-categories';
 import { runLiveSearch } from '@/lib/search/search-live';
 import {
   type SortBy,
@@ -31,8 +32,11 @@ import { snapshotProducts } from '@/lib/cache/search-snapshot';
 import type { SearchApiResponse } from '@/lib/search/search-api';
 import { dedupeNearDuplicates, filterProductStores } from '@/lib/search/search-dedupe';
 import { paginateProducts, SEARCH_PAGE_SIZE } from '@/lib/search/search-pagination';
-import type { Product } from '@/lib/types';
+import type { HardwareCategory, Product } from '@/lib/types';
 import { logger } from '@/lib/logger';
+import { shouldSkipLiveScraping } from '@/lib/server/runtime-flags';
+import { normalizeSearchText } from '@/lib/search/search-ranking';
+import { getStableFixtureProducts } from '@/lib/server/stable-search-fixtures';
 
 type DatabasePage = Awaited<ReturnType<typeof readProductsPageFromDatabase>>;
 
@@ -95,6 +99,54 @@ function filterFallbackCategoryProducts(
   return input.sortBy === 'relevance' ? next : sortProducts(next, input.sortBy);
 }
 
+async function buildStableSearchFallback(input: {
+  query: string;
+  category?: HardwareCategory;
+  minPrice?: number;
+  maxPrice?: number;
+  selectedStoreIds: Set<string>;
+  sortBy: SortBy;
+  page: number;
+}): Promise<SearchApiResponse> {
+  const fallbackCategory = input.category ?? inferHardwareCategoryFromName(input.query);
+  const baseProducts = await readProductsFromDatabase({
+    category: fallbackCategory,
+    minPrice: input.minPrice,
+    maxPrice: input.maxPrice,
+    storeIds: input.selectedStoreIds,
+    sortBy: input.sortBy,
+    limit: 250,
+  }).catch(() => []);
+
+  const normalizedQuery = normalizeSearchText(input.query);
+  const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
+
+  const filteredProducts = baseProducts.filter((product) => {
+    const normalizedName = normalizeSearchText(product.name);
+    if (normalizedQuery && normalizedName.includes(normalizedQuery)) return true;
+    return queryWords.every((word) => normalizedName.includes(word));
+  });
+
+  if (filteredProducts.length === 0) {
+    const fixtureProducts = getStableFixtureProducts({
+      query: input.query,
+      category: fallbackCategory,
+      selectedStoreIds: input.selectedStoreIds,
+      minPrice: input.minPrice,
+      maxPrice: input.maxPrice,
+      sortBy: input.sortBy,
+    });
+
+    if (fixtureProducts.length === 0) {
+      return emptySearchResponse(input.page);
+    }
+
+    return buildPayloadFromProducts(fixtureProducts, input.page);
+  }
+
+  return buildPayloadFromProducts(filteredProducts, input.page);
+}
+
 export async function GET(request: NextRequest) {
   const requestStartedAtMs = Date.now();
   const searchParams = request.nextUrl.searchParams;
@@ -155,6 +207,7 @@ export async function GET(request: NextRequest) {
 
   const hasFilterIntent = hasSearchFiltersIntent({ category, minPrice, maxPrice, stores: selectedStoreIds });
   const hasSearchIntent = Boolean(query || hasFilterIntent);
+  const stableRuntimeMode = shouldSkipLiveScraping();
 
   if (!hasSearchIntent) {
     const payload = emptySearchResponse(page);
@@ -205,6 +258,15 @@ export async function GET(request: NextRequest) {
     }
 
     if (!query && category) {
+      if (stableRuntimeMode) {
+        const emptyPayload = emptySearchResponse(page);
+        return respond(
+          emptyPayload,
+          { headers: { 'X-Search-Cache': 'STABLE-EMPTY' } },
+          { success: true, resultCount: 0, note: 'STABLE_MODE_SKIP_CATEGORY_LIVE' },
+        );
+      }
+
       const observeSource = createObservedProductsSourceRunner(runObservedStoreScrape);
       const liveCategoryProducts = await resolveLiveProductsList(category, undefined, observeSource);
       const refreshedDatabasePage = await readProductsPageFromDatabase({
@@ -248,6 +310,27 @@ export async function GET(request: NextRequest) {
     if (!query) {
       const emptyPayload = emptySearchResponse(page);
       return respond(emptyPayload, { headers: { 'X-Search-Cache': 'DB-EMPTY' } }, { success: true, resultCount: 0, note: 'DB_EMPTY_FILTER_ONLY' });
+    }
+
+    if (stableRuntimeMode) {
+      const stablePayload = await buildStableSearchFallback({
+        query,
+        category,
+        minPrice,
+        maxPrice,
+        selectedStoreIds,
+        sortBy,
+        page,
+      });
+      return respond(
+        stablePayload,
+        { headers: { 'X-Search-Cache': stablePayload.products.length > 0 ? 'STABLE-DB-FALLBACK' : 'STABLE-EMPTY' } },
+        {
+          success: true,
+          resultCount: stablePayload.products.length,
+          note: stablePayload.products.length > 0 ? 'STABLE_MODE_DB_FALLBACK' : 'STABLE_MODE_SKIP_LIVE_SEARCH',
+        },
+      );
     }
 
     const pending = inFlightSearchRequests.get(cacheKey);
