@@ -343,6 +343,11 @@ export async function getHomeSectionsData(): Promise<HomeSectionsData> {
     : [];
   const featuredProducts = featuredPrimary.length > 0 ? featuredPrimary : featuredFallback;
   const featuredFallbackUsed = featuredPrimary.length === 0 && featuredFallback.length > 0;
+
+  // Si todavia no hay productos destacados, usar cualquier producto disponible
+  if (featuredProducts.length === 0 && products.length > 0) {
+    featuredProducts.push(...products.slice(0, FEATURED_PRODUCTS_LIMIT));
+  }
   const historyRows = await readRecentHistoryRows(dropWindowStartIso).catch((historyError) => {
     console.warn('[Home Sections] Historial de precios no disponible:', historyError);
     return [] as HistoryRow[];
@@ -359,6 +364,13 @@ export async function getHomeSectionsData(): Promise<HomeSectionsData> {
     : [];
   const priceDropProducts = priceDropPrimary.length > 0 ? priceDropPrimary : priceDropFallback;
   const priceDropFallbackUsed = priceDropPrimary.length === 0 && priceDropFallback.length > 0;
+
+  // Si todavia no hay productos con bajada de precio, usar cualquier producto disponible (excluyendo destacados)
+  if (priceDropProducts.length === 0 && products.length > 0) {
+    const featuredIds = new Set(featuredProducts.map((product) => product.id));
+    const remainingProducts = products.filter((product) => !featuredIds.has(product.id));
+    priceDropProducts.push(...remainingProducts.slice(0, PRICE_DROP_PRODUCTS_LIMIT));
+  }
 
   const payload: HomeSectionsData = {
     featuredProducts,
