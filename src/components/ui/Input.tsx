@@ -25,15 +25,15 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           aria-label={props['aria-label'] || props.placeholder || 'Campo de texto'}
           autoComplete={autoComplete || (type === 'search' ? 'off' : undefined)}
           className={cn(
-            'flex h-10 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500',
+            'flex min-h-12 w-full rounded-none border-4 border-border bg-background px-3 py-3 text-[10px] uppercase text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary focus:ring-4 focus:ring-secondary/20 disabled:cursor-not-allowed disabled:opacity-50',
             icon && 'pl-10',
-            error && 'border-red-500 focus:ring-red-500',
+            error && 'border-destructive focus:border-destructive focus:ring-destructive/20',
             className
           )}
           {...props}
         />
         {error && (
-          <p className="mt-1 text-xs text-red-500">{error}</p>
+          <p className="mt-2 text-[9px] uppercase text-destructive">{error}</p>
         )}
       </div>
     );

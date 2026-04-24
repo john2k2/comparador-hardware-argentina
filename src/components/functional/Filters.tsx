@@ -92,9 +92,6 @@ export function Filters({
     { value: 'newest', label: 'MÁS RECIENTES' },
   ];
 
-  const selectedSortLabel = sortOptions.find((opt) => opt.value === filters.sortBy)?.label ?? sortOptions[0].label;
-  const selectedCategoryLabel = categoryOptions.find((opt) => opt.value === (filters.category || ''))?.label ?? categoryOptions[0].label;
-
   return (
     <div className={cn('space-y-4', className)}>
       {/* Header de filtros */}
@@ -112,16 +109,16 @@ export function Filters({
         </div>
         <div className="flex gap-2">
           {activeFiltersCount > 0 && (
-            <button
-              onClick={handleClearFilters}
-              className="text-[8px] uppercase text-muted-foreground hover:text-primary transition-colors"
+          <button
+            onClick={handleClearFilters}
+              className="min-h-11 px-2 text-[8px] uppercase text-muted-foreground hover:text-primary transition-colors"
             >
               [ LIMPIAR ]
             </button>
           )}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden text-[8px] uppercase bg-card border-2 border-border px-2 py-1 pixel-shadow"
+            className="lg:hidden min-h-11 text-[8px] uppercase bg-card border-2 border-border px-3 py-2 pixel-shadow"
           >
             {isOpen ? 'OCULTAR' : 'MOSTRAR'}
           </button>
@@ -138,8 +135,9 @@ export function Filters({
         {/* Ordenar por */}
         <div className="space-y-2">
           <button
+            id="sort-filter-label"
             onClick={() => toggleSection('sort')}
-            className="flex items-center justify-between w-full text-[10px] font-bold text-foreground uppercase tracking-wider"
+            className="min-h-11 flex items-center justify-between w-full text-[10px] font-bold text-foreground uppercase tracking-wider"
           >
             ORDENAR POR
             {expandedSections.includes('sort') ? (
@@ -152,8 +150,8 @@ export function Filters({
             <select
               value={filters.sortBy}
               onChange={(e) => handleSortChange(e.target.value)}
-              aria-label={`ORDENAR POR: ${selectedSortLabel}`}
-              className="w-full h-8 px-2 border-4 border-border bg-background text-foreground text-[8px] uppercase outline-none focus:border-primary appearance-none rounded-none"
+              aria-labelledby="sort-filter-label"
+              className="w-full min-h-11 px-2 border-4 border-border bg-background text-foreground text-[8px] uppercase outline-none focus:border-primary appearance-none rounded-none"
             >
               {sortOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -167,8 +165,9 @@ export function Filters({
         {/* Categoría */}
         <div className="space-y-2">
           <button
+            id="category-filter-label"
             onClick={() => toggleSection('category')}
-            className="flex items-center justify-between w-full text-[10px] font-bold text-foreground uppercase tracking-wider"
+            className="min-h-11 flex items-center justify-between w-full text-[10px] font-bold text-foreground uppercase tracking-wider"
           >
             CATEGORÍA
             {expandedSections.includes('category') ? (
@@ -181,8 +180,8 @@ export function Filters({
             <select
               value={filters.category || ''}
               onChange={(e) => handleCategoryChange(e.target.value)}
-              aria-label={`CATEGORÍA: ${selectedCategoryLabel}`}
-              className="w-full h-8 px-2 border-4 border-border bg-background text-foreground text-[8px] uppercase outline-none focus:border-primary appearance-none rounded-none"
+              aria-labelledby="category-filter-label"
+              className="w-full min-h-11 px-2 border-4 border-border bg-background text-foreground text-[8px] uppercase outline-none focus:border-primary appearance-none rounded-none"
             >
               {categoryOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -197,7 +196,7 @@ export function Filters({
         <div className="space-y-2">
           <button
             onClick={() => toggleSection('price')}
-            className="flex items-center justify-between w-full text-[10px] font-bold text-foreground uppercase tracking-wider"
+            className="min-h-11 flex items-center justify-between w-full text-[10px] font-bold text-foreground uppercase tracking-wider"
           >
             RANGO PRECIO
             {expandedSections.includes('price') ? (
@@ -215,7 +214,7 @@ export function Filters({
                 value={filters.minPrice || ''}
                 onChange={(e) => handlePriceChange('min', e.target.value)}
                 aria-label="Precio mínimo"
-                className="w-full h-8 px-2 border-4 border-border bg-background text-foreground text-[10px] outline-none focus:border-primary placeholder:text-muted-foreground rounded-none"
+                className="w-full min-h-11 px-2 border-4 border-border bg-background text-foreground text-[10px] outline-none focus:border-primary placeholder:text-muted-foreground rounded-none"
               />
               <label className="sr-only">Precio máximo</label>
               <input
@@ -224,7 +223,7 @@ export function Filters({
                 value={filters.maxPrice || ''}
                 onChange={(e) => handlePriceChange('max', e.target.value)}
                 aria-label="Precio máximo"
-                className="w-full h-8 px-2 border-4 border-border bg-background text-foreground text-[10px] outline-none focus:border-primary placeholder:text-muted-foreground rounded-none"
+                className="w-full min-h-11 px-2 border-4 border-border bg-background text-foreground text-[10px] outline-none focus:border-primary placeholder:text-muted-foreground rounded-none"
               />
             </div>
           )}
@@ -235,7 +234,7 @@ export function Filters({
           <div className="space-y-2">
             <button
               onClick={() => toggleSection('stores')}
-              className="flex items-center justify-between w-full text-[10px] font-bold text-foreground uppercase tracking-wider"
+              className="min-h-11 flex items-center justify-between w-full text-[10px] font-bold text-foreground uppercase tracking-wider"
             >
               TIENDAS
               {expandedSections.includes('stores') ? (
@@ -252,6 +251,7 @@ export function Filters({
                     onClick={() => handleStoreToggle(store.id)}
                     className={cn(
                       'text-left px-2 py-1 text-[8px] uppercase transition-colors border-2 shrink-0',
+                      'min-h-11',
                       filters.stores?.includes(store.id)
                         ? 'bg-secondary text-secondary-foreground border-secondary font-bold'
                         : 'bg-background text-muted-foreground border-transparent hover:border-border'

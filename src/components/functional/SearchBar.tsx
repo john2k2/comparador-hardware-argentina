@@ -59,7 +59,7 @@ export function SearchBar({
     >
       <div
         className={cn(
-          'flex items-center gap-2 border-4 bg-background px-4 py-3 transition-all',
+          'flex items-center gap-2 border-4 bg-background px-4 py-3 min-h-14 transition-all',
           isFocused
             ? 'border-secondary pixel-shadow'
             : 'border-border',
@@ -93,7 +93,7 @@ export function SearchBar({
             onClick={handleClear}
             disabled={isLoading}
             aria-label="Limpiar busqueda"
-            className="text-foreground hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="min-h-11 min-w-11 inline-flex items-center justify-center text-foreground hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <X className="h-4 w-4" />
           </button>
@@ -103,7 +103,7 @@ export function SearchBar({
           disabled={isLoading}
           aria-busy={isLoading}
           className={cn(
-            'hidden sm:block bg-primary text-primary-foreground px-4 py-1 text-[10px] uppercase font-bold pixel-shadow transition-transform disabled:opacity-80 disabled:cursor-wait',
+            'hidden sm:block bg-primary text-primary-foreground px-4 py-3 min-h-11 text-[10px] uppercase font-bold pixel-shadow transition-transform disabled:opacity-80 disabled:cursor-wait',
             isLoading
               ? 'animate-pulse'
               : 'active:translate-x-1 active:translate-y-1',

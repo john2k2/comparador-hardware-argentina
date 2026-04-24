@@ -107,7 +107,7 @@ function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientPro
       <nav className="mb-6">
         <Link
           href={backHref}
-          className="inline-flex items-center gap-2 text-[10px] uppercase text-muted-foreground hover:text-primary transition-colors font-bold"
+          className="inline-flex min-h-11 items-center gap-2 text-[10px] uppercase text-muted-foreground hover:text-primary transition-colors font-bold"
         >
           <ArrowLeft className="w-4 h-4" />
           [ VOLVER AL INVENTARIO ]

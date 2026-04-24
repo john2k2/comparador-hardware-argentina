@@ -4,6 +4,7 @@ import type {
   NormalizeProductTitlesResult,
   NormalizationSource,
   NormalizationFallbackReason,
+  NormalizationMapping,
   NormalizeProductTitlesOptions,
   MemoryCacheEntry,
   DbNormalizationRow,
@@ -41,6 +42,7 @@ export type {
   NormalizeProductTitlesResult,
   NormalizationSource,
   NormalizationFallbackReason,
+  NormalizationMapping,
   NormalizeProductTitlesOptions,
   MemoryCacheEntry,
   DbNormalizationRow,
@@ -79,7 +81,7 @@ let dbCacheRetryAfterMs = 0;
 
 function upsertMemoryCache(rawTitle: string, normalizedTitle: string, source: NormalizationSource): void {
   const now = Date.now();
-  const expiresAtMs = source === 'fallback' ? now + FALLBACK_CACHE_TTL_MS : null;
+  const expiresAtMs = source === 'heuristic' ? now + FALLBACK_CACHE_TTL_MS : null;
 
   if (normalizedTitlesCache.has(rawTitle)) {
     normalizedTitlesCache.delete(rawTitle);

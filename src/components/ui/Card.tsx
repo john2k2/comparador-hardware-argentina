@@ -14,9 +14,9 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ className, variant = 'default', padding = 'md', hoverable = false, children, ...props }, ref) => {
     const variants = {
-      default: 'bg-white dark:bg-zinc-900',
-      bordered: 'border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900',
-      elevated: 'shadow-md bg-white dark:bg-zinc-900',
+      default: 'bg-card border-4 border-border',
+      bordered: 'border-4 border-border bg-card',
+      elevated: 'border-4 border-border bg-card pixel-shadow',
     };
 
     const paddings = {
@@ -30,10 +30,10 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          'rounded-xl',
+          'rounded-none',
           variants[variant],
           paddings[padding],
-          hoverable && 'transition-shadow hover:shadow-lg cursor-pointer',
+          hoverable && 'transition-transform hover:-translate-y-1 hover:translate-x-1 cursor-pointer',
           className
         )}
         {...props}
@@ -66,7 +66,7 @@ const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(
   ({ className, ...props }, ref) => (
     <h3
       ref={ref}
-      className={cn('text-lg font-semibold leading-none tracking-tight', className)}
+      className={cn('text-[12px] uppercase font-bold leading-relaxed tracking-wide text-primary', className)}
       {...props}
     />
   )
@@ -80,7 +80,7 @@ const CardDescription = forwardRef<HTMLParagraphElement, CardDescriptionProps>(
   ({ className, ...props }, ref) => (
     <p
       ref={ref}
-      className={cn('text-sm text-zinc-500 dark:text-zinc-400', className)}
+      className={cn('text-[10px] uppercase text-muted-foreground leading-relaxed', className)}
       {...props}
     />
   )

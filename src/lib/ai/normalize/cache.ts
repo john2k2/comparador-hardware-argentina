@@ -5,7 +5,7 @@ const normalizedTitlesCache = new Map<string, MemoryCacheEntry>();
 
 export function upsertMemoryCache(rawTitle: string, normalizedTitle: string, source: NormalizationSource): void {
   const now = Date.now();
-  const expiresAtMs = source === 'fallback' ? now + FALLBACK_CACHE_TTL_MS : null;
+  const expiresAtMs = source === 'heuristic' ? now + FALLBACK_CACHE_TTL_MS : null;
 
   if (normalizedTitlesCache.has(rawTitle)) {
     normalizedTitlesCache.delete(rawTitle);

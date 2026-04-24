@@ -7,7 +7,7 @@ import { TERMINOS_FAQ } from '@/lib/seo/faq-schema';
 export const metadata: Metadata = buildPublicPageMetadata({
   path: '/terminos',
   title: 'Terminos de Uso',
-  description: `Terminos de uso generales del comparador ${SITE_NAME}.`,
+  description: `Leé los términos de uso de ${SITE_NAME}: alcance del comparador, precios aproximados, tiendas externas, responsabilidades y uso razonable.`,
 });
 
 export default function TerminosPage() {
@@ -23,21 +23,21 @@ export default function TerminosPage() {
     >
       <div className="space-y-4 text-[10px] uppercase text-foreground">
         <div className="border-2 border-border p-4 bg-muted/30">
-          <p className="text-secondary font-bold mb-2">[ ALCANCE ]</p>
+          <h2 className="text-secondary font-bold mb-2">[ ALCANCE ]</h2>
           <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
             {SITE_NAME} muestra comparacion de precios, informacion de stock y enlaces hacia tiendas externas. No actua como vendedor, distribuidor ni procesador de pagos.
           </p>
         </div>
 
         <div className="border-2 border-border p-4 bg-muted/30">
-          <p className="text-secondary font-bold mb-2">[ PRECIOS ]</p>
+          <h2 className="text-secondary font-bold mb-2">[ PRECIOS ]</h2>
           <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
             Los precios pueden cambiar sin aviso y pueden diferir respecto de la ultima actualizacion capturada. El importe final, stock, medios de pago y cuotas validos son los publicados por la tienda de destino.
           </p>
         </div>
 
         <div className="border-2 border-border p-4 bg-muted/30">
-          <p className="text-secondary font-bold mb-2">[ RESPONSABILIDAD ]</p>
+          <h2 className="text-secondary font-bold mb-2">[ RESPONSABILIDAD ]</h2>
           <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
             Cada compra se realiza fuera del comparador. La relacion comercial, el despacho, la garantia, los tiempos de entrega y las devoluciones dependen exclusivamente del comercio elegido.
           </p>
@@ -45,14 +45,14 @@ export default function TerminosPage() {
 
         <div className="grid md:grid-cols-2 gap-4">
           <div className="border-2 border-border p-4 bg-muted/30">
-            <p className="text-secondary font-bold mb-2">[ USO RAZONABLE ]</p>
+            <h2 className="text-secondary font-bold mb-2">[ USO RAZONABLE ]</h2>
             <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
               No debes usar el sitio para interferir con su funcionamiento, automatizar abuso, intentar extraer datos de forma perjudicial o afectar la experiencia del resto de usuarios.
             </p>
           </div>
 
           <div className="border-2 border-border p-4 bg-muted/30">
-            <p className="text-secondary font-bold mb-2">[ CAMBIOS ]</p>
+            <h2 className="text-secondary font-bold mb-2">[ CAMBIOS ]</h2>
             <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
               Estos terminos pueden actualizarse cuando cambie el producto, la monetizacion o la infraestructura. La version publicada en el sitio es la vigente en cada momento.
             </p>
@@ -60,7 +60,7 @@ export default function TerminosPage() {
         </div>
 
         <div className="border-2 border-border p-4 bg-muted/30 space-y-3">
-          <p className="text-secondary font-bold">[ NATURALEZA DEL SERVICIO ]</p>
+          <h2 className="text-secondary font-bold">[ NATURALEZA DEL SERVICIO ]</h2>
           <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
             El comparador funciona como una capa de descubrimiento y referencia. Su valor está en ordenar información pública o capturada desde tiendas para que el usuario tenga una base más clara antes de decidir. Eso no implica garantía absoluta de exactitud permanente, porque el ecosistema de precios, stock y URLs de producto cambia de manera continua.
           </p>
@@ -70,7 +70,7 @@ export default function TerminosPage() {
         </div>
 
         <div className="border-2 border-border p-4 bg-muted/30 space-y-3">
-          <p className="text-secondary font-bold">[ LIMITACION OPERATIVA ]</p>
+          <h2 className="text-secondary font-bold">[ LIMITACION OPERATIVA ]</h2>
           <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
             No garantizamos disponibilidad ininterrumpida, cobertura total de todas las tiendas ni ausencia completa de errores en precios, especificaciones o stock. Parte del trabajo del proyecto consiste precisamente en detectar, auditar y reducir esos problemas con el tiempo.
           </p>

@@ -20,15 +20,15 @@ export interface NormalizeProductTitlesResult {
   stats: NormalizeProductTitlesStats;
 }
 
+export type NormalizationMapping = {
+  originalTitle: string;
+  standardTitle: string;
+};
+
 export type MemoryCacheEntry = {
   normalizedTitle: string;
   source: NormalizationSource;
   expiresAtMs: number | null;
-};
-
-export type NormalizationMapping = {
-  originalTitle: string;
-  standardTitle: string;
 };
 
 export type DbNormalizationRow = {

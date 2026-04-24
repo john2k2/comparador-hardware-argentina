@@ -184,7 +184,7 @@ export function AuthScreen() {
       <section className="w-full max-w-xl mx-auto py-12 px-4">
         <div className="border-4 border-border bg-card p-6 pixel-shadow">
           <p className="text-[9px] uppercase text-secondary font-bold mb-2">[ Cuenta activa ]</p>
-          <h1 className="text-[13px] uppercase text-foreground mb-4">Bienvenido, {getUserDisplayName(user)}</h1>
+          <h2 className="text-[13px] uppercase text-foreground mb-4">Bienvenido, {getUserDisplayName(user)}</h2>
           <p className="text-[9px] uppercase text-muted-foreground mb-6">{user.email}</p>
 
           <div className="flex flex-wrap gap-3">
@@ -215,7 +215,7 @@ export function AuthScreen() {
     <section className="w-full max-w-xl mx-auto py-12 px-4">
       <div className="border-4 border-border bg-card p-6 pixel-shadow">
         <p className="text-[9px] uppercase text-secondary font-bold mb-2">[ Auth ]</p>
-        <h1 className="text-[13px] uppercase text-foreground mb-4">Entrar o crear cuenta</h1>
+        <h2 className="text-[13px] uppercase text-foreground mb-4">Entrar o crear cuenta</h2>
         <p className="text-[9px] uppercase text-muted-foreground mb-6">
           Necesario para favoritos y alertas cuando baje de precio.
         </p>
@@ -224,14 +224,14 @@ export function AuthScreen() {
           <button
             type="button"
             onClick={() => setMode('sign-in')}
-            className={`px-3 py-2 border-2 text-[9px] uppercase font-bold ${mode === 'sign-in' ? 'border-primary text-primary' : 'border-border text-muted-foreground'}`}
+            className={`min-h-11 px-3 py-2 border-2 text-[9px] uppercase font-bold ${mode === 'sign-in' ? 'border-primary text-primary' : 'border-border text-muted-foreground'}`}
           >
             INICIAR SESION
           </button>
           <button
             type="button"
             onClick={() => setMode('sign-up')}
-            className={`px-3 py-2 border-2 text-[9px] uppercase font-bold ${mode === 'sign-up' ? 'border-primary text-primary' : 'border-border text-muted-foreground'}`}
+            className={`min-h-11 px-3 py-2 border-2 text-[9px] uppercase font-bold ${mode === 'sign-up' ? 'border-primary text-primary' : 'border-border text-muted-foreground'}`}
           >
             CREAR CUENTA
           </button>
@@ -244,7 +244,7 @@ export function AuthScreen() {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="w-full mt-2 border-2 border-border bg-background px-3 py-2 text-[10px] uppercase"
+              className="w-full min-h-11 mt-2 border-2 border-border bg-background px-3 py-2 text-[10px] uppercase"
               placeholder="usuario@email.com"
               autoComplete="email"
               required
@@ -257,7 +257,7 @@ export function AuthScreen() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="w-full mt-2 border-2 border-border bg-background px-3 py-2 text-[10px]"
+              className="w-full min-h-11 mt-2 border-2 border-border bg-background px-3 py-2 text-[10px]"
               placeholder="******"
               autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
               required
@@ -267,7 +267,7 @@ export function AuthScreen() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="pixel-button text-[10px] w-full !inline-flex !items-center !justify-center gap-2 leading-none disabled:opacity-70"
+            className="pixel-button text-[10px] w-full min-h-11 !inline-flex !items-center !justify-center gap-2 leading-none disabled:opacity-70"
           >
             <span className="inline-flex items-center justify-center gap-2 leading-none">
               <LogIn className="w-4 h-4 shrink-0" />
@@ -282,7 +282,7 @@ export function AuthScreen() {
           type="button"
           onClick={handleGoogleSignIn}
           disabled={isSubmitting}
-          className="w-full border-2 border-border px-3 py-2 text-[10px] uppercase font-bold inline-flex items-center justify-center gap-2 hover:border-secondary hover:text-secondary transition-colors disabled:opacity-70"
+          className="w-full min-h-11 border-2 border-border px-3 py-2 text-[10px] uppercase font-bold inline-flex items-center justify-center gap-2 hover:border-secondary hover:text-secondary transition-colors disabled:opacity-70"
         >
           <Mail className="w-4 h-4" />
           CONTINUAR CON GOOGLE

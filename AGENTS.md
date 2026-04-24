@@ -29,7 +29,7 @@ El estilo visual es **pixel-art retro** (fuentes pixeladas, bordes cuadrados sin
 | PostCSS | `@tailwindcss/postcss` | 4.x |
 | Base de datos | Supabase (PostgreSQL) | SDK `@supabase/supabase-js` 2.98 |
 | Scraping | `fetch` nativo + `cheerio` | — |
-| Normalización IA | Google Gemini (`@google/genai`) | opcional |
+| Normalización de títulos | Heurística local determinística | — |
 | Testing unitario | Vitest | 4.0.18 |
 | Testing E2E | Playwright | 1.59 |
 | Lint | ESLint 9 + `eslint-config-next` | — |
@@ -117,7 +117,7 @@ src/
     analytics/            # GA4 helpers
     metrics/              # Métricas operativas en memoria
     telemetry/            # Métricas expuestas
-    ai/                   # Normalización de productos con Gemini
+    ai/                   # Normalización de títulos con heurística local
     client/               # Hooks y lógica cliente (auth, recientes)
 supabase/migrations/      # Migraciones SQL (ordenadas por timestamp)
 e2e/                      # Tests E2E con Playwright (Page Object Model)
@@ -293,6 +293,6 @@ Ver `.env.example` para el listado completo. Las más importantes:
 ## Notas operativas
 
 - El monitoreo actual es **en memoria de proceso** (no persistente entre reinicios/deploy).
-- La normalización de títulos de productos usa Gemini de forma opcional; si falla o no está configurado, el sistema sigue funcionando con lógica local.
+- La normalización de títulos de productos usa heurística local determinística (extracción de marca, modelo, variantes, memoria, etc.). No requiere servicios externos.
 - El estado de auditoría, backlog técnico y evidencia operativa vive en `AUDITORIA_Y_PLAN.md` (no en este archivo).
 - Los sprites SVG de fondo parallax se precargan en `layout.tsx` vía `<link rel="preload">`.

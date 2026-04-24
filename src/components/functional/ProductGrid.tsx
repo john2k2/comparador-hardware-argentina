@@ -29,8 +29,8 @@ export function ProductGrid({
 
   if (products.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <p className="text-zinc-500 dark:text-zinc-400">{emptyMessage}</p>
+      <div className="flex flex-col items-center justify-center py-12 px-4 text-center border-2 border-dashed border-border bg-card/70">
+        <p className="text-[10px] uppercase text-muted-foreground leading-relaxed">{emptyMessage}</p>
       </div>
     );
   }

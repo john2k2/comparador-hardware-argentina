@@ -15,6 +15,11 @@ export function buildPublicSitemapEntries(): MetadataRoute.Sitemap {
       priority: 0.3,
     },
     {
+      url: toAbsoluteUrl('/about'),
+      changeFrequency: 'monthly',
+      priority: 0.2,
+    },
+    {
       url: toAbsoluteUrl('/contacto'),
       changeFrequency: 'monthly',
       priority: 0.3,

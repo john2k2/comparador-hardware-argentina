@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { SearchPageState } from './search-state';
 import { getCategorySeoCopy, isIndexableCategoryLanding } from './search-seo';
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
+import { stores as defaultStores } from '@/lib/scrapers/static-data';
 
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.svg`;
 
@@ -48,6 +49,11 @@ export function resolveSearchMetadata(state: SearchPageState): Metadata {
   const categorySeoCopy = getCategorySeoCopy(state.category);
   const hasQuery = state.query.length > 0;
   const indexableCategoryLanding = isIndexableCategoryLanding(state) && Boolean(categorySeoCopy);
+  const selectedStoreNames = state.stores
+    .map((storeId) => defaultStores.find((store) => store.id === storeId)?.name ?? storeId)
+    .filter(Boolean);
+  const hasStoreFilter = selectedStoreNames.length > 0;
+  const hasSortOnly = !hasQuery && !state.category && !hasStoreFilter && state.sortBy !== 'relevance';
   const canonical = indexableCategoryLanding
     ? `${SITE_URL}/search?category=${state.category}`
     : `${SITE_URL}/search`;
@@ -64,7 +70,34 @@ export function resolveSearchMetadata(state: SearchPageState): Metadata {
   if (hasQuery) {
     return buildSearchMetadata({
       title: `Busqueda: ${state.query}`,
-      description: `Resultados de busqueda para ${state.query} en el comparador de hardware de Argentina.`,
+      description: `Resultados de busqueda para ${state.query} en tiendas argentinas de hardware, con precios comparados, stock disponible, filtros por comercio y enlaces directos.`,
+      canonical,
+      index: false,
+    });
+  }
+
+  if (hasStoreFilter) {
+    const storeLabel = selectedStoreNames.slice(0, 2).join(' y ');
+    return buildSearchMetadata({
+      title: `Ofertas en ${storeLabel}`,
+      description: `Explorá hardware disponible en ${storeLabel}, compará precios publicados, revisá categorías y usá filtros para encontrar productos de PC en Argentina.`,
+      canonical,
+      index: false,
+    });
+  }
+
+  if (hasSortOnly) {
+    const sortLabel = state.sortBy === 'price-asc'
+      ? 'menor precio'
+      : state.sortBy === 'price-desc'
+        ? 'mayor precio'
+        : state.sortBy === 'newest'
+          ? 'más recientes'
+          : 'nombre';
+
+    return buildSearchMetadata({
+      title: `Hardware por ${sortLabel}`,
+      description: `Explorá el catálogo de hardware ordenado por ${sortLabel}, con filtros por tienda, categoría y rango de precios para comparar opciones en Argentina.`,
       canonical,
       index: false,
     });
@@ -72,7 +105,7 @@ export function resolveSearchMetadata(state: SearchPageState): Metadata {
 
   return buildSearchMetadata({
     title: 'Buscar hardware',
-    description: 'Explora hardware, precios y tiendas disponibles en Argentina con filtros por categoria, precio y tienda.',
+    description: 'Buscá hardware en Argentina y compará precios por categoría, tienda y rango de precio. Encontrá procesadores, placas de video, RAM, SSD y más.',
     canonical,
     index: false,
   });

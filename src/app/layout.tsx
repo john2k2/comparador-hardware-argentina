@@ -6,7 +6,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Navigation } from "@/components/layout/Navigation";
 import { ThemeScript } from "@/components/functional/ThemeScript";
-import { GOOGLE_SITE_VERIFICATION, SITE_NAME, SITE_URL, SUPPORT_EMAIL } from "@/lib/site-config";
+import { GOOGLE_SITE_VERIFICATION, SITE_NAME, SITE_URL } from "@/lib/site-config";
 import { Analytics } from "@/components/functional/Analytics";
 import { CommercialDisclosure } from "@/components/functional/CommercialDisclosure";
 
@@ -97,38 +97,8 @@ export default async function RootLayout({
 }>) {
   const nonce = (await headers()).get('x-content-security-policy-nonce') ?? undefined;
 
-  const organizationSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    '@id': `${SITE_URL}#organization`,
-    name: SITE_NAME,
-    url: SITE_URL,
-    logo: `${SITE_URL}/og-image.svg`,
-    description: 'Comparador de precios de hardware en Argentina. Compara precios de procesadores, tarjetas graficas, motherboards, memoria RAM y mas.',
-    foundingDate: '2024',
-    areaServed: {
-      '@type': 'Country',
-      name: 'Argentina',
-    },
-    sameAs: [
-    ],
-    contactPoint: {
-      '@type': 'ContactPoint',
-      contactType: 'customer service',
-      email: SUPPORT_EMAIL ?? 'soporte@comparador-hardware.com.ar',
-      availableLanguage: 'Spanish',
-    },
-  };
-
   return (
     <html lang="es" suppressHydrationWarning>
-      <head>
-        <script
-          type="application/ld+json"
-          nonce={nonce}
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
-        />
-      </head>
       <body
         className={cn(
           pixelFont.variable,
@@ -210,42 +180,43 @@ export default async function RootLayout({
             <div className="w-full max-w-[1800px] mx-auto px-4 xl:px-8">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
                 <div>
-                  <h3 className="font-semibold text-card-foreground mb-4">Comparador Hardware</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h2 className="font-semibold text-card-foreground mb-4 text-[12px] uppercase">Comparador Hardware</h2>
+                  <p className="text-[11px] md:text-sm text-muted-foreground leading-relaxed">
                     Encontra los mejores precios de hardware en las principales tiendas de Argentina.
                   </p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-card-foreground mb-4">Categorias</h4>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li><Link href="/search?category=procesadores" className="hover:text-primary transition-colors">Procesadores</Link></li>
-                    <li><Link href="/search?category=tarjetas-graficas" className="hover:text-primary transition-colors">Tarjetas Graficas</Link></li>
-                    <li><Link href="/search?category=motherboards" className="hover:text-primary transition-colors">Motherboards</Link></li>
-                    <li><Link href="/search?category=memoria-ram" className="hover:text-primary transition-colors">Memoria RAM</Link></li>
-                    <li><Link href="/search?category=perifericos" className="hover:text-primary transition-colors">Perifericos</Link></li>
+                  <h2 className="font-semibold text-card-foreground mb-4 text-[12px] uppercase">Categorias</h2>
+                  <ul className="space-y-1 text-[11px] md:text-sm text-muted-foreground">
+                    <li><Link href="/search?category=procesadores" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Procesadores</Link></li>
+                    <li><Link href="/search?category=tarjetas-graficas" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Tarjetas Graficas</Link></li>
+                    <li><Link href="/search?category=motherboards" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Motherboards</Link></li>
+                    <li><Link href="/search?category=memoria-ram" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Memoria RAM</Link></li>
+                    <li><Link href="/search?category=perifericos" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Perifericos</Link></li>
                   </ul>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-card-foreground mb-4">Tiendas</h4>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li><Link href="/search?stores=mexx" className="hover:text-primary transition-colors">Mexx</Link></li>
-                    <li><Link href="/search?stores=venex" className="hover:text-primary transition-colors">Venex</Link></li>
-                    <li><Link href="/search?stores=fullh4rd" className="hover:text-primary transition-colors">FullH4rd</Link></li>
-                    <li><Link href="/search?stores=compragamer" className="hover:text-primary transition-colors">CompraGamer</Link></li>
-                    <li><Link href="/search?stores=katech" className="hover:text-primary transition-colors">Katech</Link></li>
+                  <h2 className="font-semibold text-card-foreground mb-4 text-[12px] uppercase">Tiendas</h2>
+                  <ul className="space-y-1 text-[11px] md:text-sm text-muted-foreground">
+                    <li><Link href="/search?stores=mexx" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Mexx</Link></li>
+                    <li><Link href="/search?stores=venex" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Venex</Link></li>
+                    <li><Link href="/search?stores=fullh4rd" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">FullH4rd</Link></li>
+                    <li><Link href="/search?stores=compragamer" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">CompraGamer</Link></li>
+                    <li><Link href="/search?stores=katech" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Katech</Link></li>
                   </ul>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-card-foreground mb-4">Informacion</h4>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li><Link href="/acerca" className="hover:text-primary transition-colors">Acerca de</Link></li>
-                    <li><Link href="/privacidad" className="hover:text-primary transition-colors">Politica de Privacidad</Link></li>
-                    <li><Link href="/terminos" className="hover:text-primary transition-colors">Terminos de Uso</Link></li>
-                    <li><Link href="/contacto" className="hover:text-primary transition-colors">Contacto</Link></li>
+                  <h2 className="font-semibold text-card-foreground mb-4 text-[12px] uppercase">Informacion</h2>
+                  <ul className="space-y-1 text-[11px] md:text-sm text-muted-foreground">
+                    <li><Link href="/acerca" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Acerca de</Link></li>
+                    <li><Link href="/about" hrefLang="en" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">About</Link></li>
+                    <li><Link href="/privacidad" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Politica de Privacidad</Link></li>
+                    <li><Link href="/terminos" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Terminos de Uso</Link></li>
+                    <li><Link href="/contacto" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Contacto</Link></li>
                   </ul>
                 </div>
               </div>
-              <div className="border-t border-border pt-8 text-center text-sm text-muted-foreground">
+              <div className="border-t border-border pt-8 text-center text-[11px] md:text-sm text-muted-foreground leading-relaxed">
                 <p>&copy; Comparador Hardware Argentina. Todos los derechos reservados.</p>
                 <p className="mt-2">Precios aproximados sujetos a cambios segun disponibilidad y actualizaciones de cada tienda.</p>
                 <CommercialDisclosure className="mt-6 text-left" compact />

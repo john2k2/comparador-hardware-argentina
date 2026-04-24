@@ -13,20 +13,20 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', isLoading, children, disabled, ...props }, ref) => {
-    const baseStyles = 'inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
+    const baseStyles = 'inline-flex items-center justify-center border-4 border-border rounded-none uppercase font-bold transition-transform focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-secondary disabled:opacity-50 disabled:pointer-events-none active:translate-x-1 active:translate-y-1';
     
     const variants = {
-      primary: 'bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500',
-      secondary: 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200 focus-visible:ring-zinc-500 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700',
-      outline: 'border border-zinc-300 bg-transparent hover:bg-zinc-100 focus-visible:ring-zinc-500 dark:border-zinc-600 dark:hover:bg-zinc-800',
-      ghost: 'bg-transparent hover:bg-zinc-100 focus-visible:ring-zinc-500 dark:hover:bg-zinc-800',
-      danger: 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500',
+      primary: 'bg-primary text-primary-foreground pixel-shadow hover:bg-primary-hover',
+      secondary: 'bg-secondary text-secondary-foreground pixel-shadow hover:brightness-95',
+      outline: 'bg-card text-foreground hover:bg-muted',
+      ghost: 'border-transparent bg-transparent text-foreground hover:border-border hover:bg-muted',
+      danger: 'bg-destructive text-white pixel-shadow hover:brightness-95',
     };
     
     const sizes = {
-      sm: 'h-8 px-3 text-sm',
-      md: 'h-10 px-4 text-sm',
-      lg: 'h-12 px-6 text-base',
+      sm: 'min-h-11 px-3 py-2 text-[9px]',
+      md: 'min-h-12 px-4 py-3 text-[10px]',
+      lg: 'min-h-14 px-6 py-4 text-[11px]',
     };
 
     return (

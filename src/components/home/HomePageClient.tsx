@@ -60,7 +60,7 @@ function SectionTitle({
       {actionHref && actionLabel && (
         <Link
           href={actionHref}
-          className="inline-flex items-center justify-center border-2 border-secondary text-secondary text-[9px] font-bold uppercase px-3 py-2 hover:bg-secondary hover:text-secondary-foreground transition-colors min-w-[110px]"
+          className="inline-flex min-h-11 items-center justify-center border-2 border-secondary text-secondary text-[9px] font-bold uppercase px-3 py-2 hover:bg-secondary hover:text-secondary-foreground transition-colors min-w-[110px]"
         >
           {actionLabel}
         </Link>
@@ -89,7 +89,7 @@ function PromoBanner({
         <p className="text-[11px] md:text-sm uppercase font-bold text-primary text-center md:text-left leading-relaxed">
           {title}
         </p>
-        <Link href={href} className="pixel-button text-[9px] px-4 py-2 min-w-[120px] text-center">{cta}</Link>
+        <Link href={href} className="pixel-button text-[9px] px-4 py-3 min-h-11 min-w-[120px] text-center">{cta}</Link>
       </div>
     </section>
   );
@@ -199,7 +199,7 @@ export function HomePageClient({
           <p className="text-[10px] uppercase text-muted-foreground mb-4">
             Todavia no hay productos vistos.
           </p>
-          <Link href="/search" className="pixel-button inline-flex text-[9px] px-4 py-2">
+          <Link href="/search" className="pixel-button inline-flex text-[9px] px-4 py-3 min-h-11">
             VER PRODUCTOS
           </Link>
         </div>
@@ -220,12 +220,20 @@ export function HomePageClient({
         actionHref="/search?q=rtx"
         actionLabel="VER TODO"
       />
-      <ProductGrid
-        products={featuredProducts}
-        isLoading={isSectionsLoading}
-        emptyMessage="No se pudieron cargar destacados en este momento."
-        surface="home_featured"
-      />
+      {featuredProducts.length > 0 || isSectionsLoading ? (
+        <ProductGrid
+          products={featuredProducts}
+          isLoading={isSectionsLoading}
+          emptyMessage="No se pudieron cargar destacados en este momento."
+          surface="home_featured"
+        />
+      ) : (
+        <HomeEmptyCatalogState
+          message="Todavia no hay destacados cargados en esta instancia."
+          href="/search?category=tarjetas-graficas"
+          cta="EXPLORAR GPUS"
+        />
+      )}
 
       <PromoBanner
         label="-- ACTUALIZACION --"
@@ -242,14 +250,24 @@ export function HomePageClient({
         actionHref="/search?sortBy=price-asc"
         actionLabel={priceDropFallbackUsed ? 'VER CATALOGO' : 'MAS BARATOS'}
       />
-      <ProductGrid
-        products={priceDropProducts}
-        isLoading={isSectionsLoading}
-        emptyMessage={priceDropFallbackUsed
-          ? 'No se pudieron cargar productos activos para esta seccion.'
-          : 'No hay productos con baja de precio detectada por ahora.'}
-        surface="home_price_drop"
-      />
+      {priceDropProducts.length > 0 || isSectionsLoading ? (
+        <ProductGrid
+          products={priceDropProducts}
+          isLoading={isSectionsLoading}
+          emptyMessage={priceDropFallbackUsed
+            ? 'No se pudieron cargar productos activos para esta seccion.'
+            : 'No hay productos con baja de precio detectada por ahora.'}
+          surface="home_price_drop"
+        />
+      ) : (
+        <HomeEmptyCatalogState
+          message={priceDropFallbackUsed
+            ? 'No se pudieron cargar productos activos para esta seccion.'
+            : 'No hay bajas detectadas por ahora; podes buscar los mas baratos por categoria.'}
+          href="/search?sortBy=price-asc"
+          cta="VER MAS BARATOS"
+        />
+      )}
 
       <SponsoredStoresSection stores={sponsoredStores} />
 
@@ -261,19 +279,45 @@ export function HomePageClient({
       />
 
       <section className="mt-10 bg-card border-[3px] border-border pixel-shadow p-4">
-        <h3 className="text-[11px] uppercase text-primary font-bold mb-3">[ CATEGORIAS RAPIDAS ]</h3>
+        <h2 className="text-[11px] uppercase text-primary font-bold mb-3">[ CATEGORIAS RAPIDAS ]</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {categories.map((category) => (
             <Link
               key={category.id}
               href={`/search?category=${category.id}`}
-              className="border-2 border-border p-3 text-[9px] uppercase font-bold text-center bg-muted/40 hover:border-secondary hover:text-secondary transition-colors"
+              className="min-h-11 border-2 border-border p-3 text-[9px] uppercase font-bold text-center bg-muted/40 hover:border-secondary hover:text-secondary transition-colors flex items-center justify-center"
             >
               {category.name}
             </Link>
           ))}
         </div>
       </section>
+    </div>
+  );
+}
+
+function HomeEmptyCatalogState({
+  message,
+  href,
+  cta,
+}: {
+  message: string;
+  href: string;
+  cta: string;
+}) {
+  return (
+    <div className="border-[3px] border-border bg-card p-6 text-center pixel-shadow">
+      <p className="text-[10px] uppercase text-muted-foreground leading-relaxed mb-4">
+        {message}
+      </p>
+      <div className="flex flex-wrap justify-center gap-3">
+        <Link href={href} className="pixel-button inline-flex items-center justify-center text-[9px] px-4 py-3 min-h-11">
+          {cta}
+        </Link>
+        <Link href="/search" className="inline-flex min-h-11 items-center justify-center border-2 border-secondary px-4 py-3 text-[9px] uppercase font-bold text-secondary hover:bg-secondary hover:text-secondary-foreground transition-colors">
+          BUSCAR MANUALMENTE
+        </Link>
+      </div>
     </div>
   );
 }

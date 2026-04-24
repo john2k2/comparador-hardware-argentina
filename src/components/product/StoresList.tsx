@@ -74,7 +74,7 @@ export function StoresList({ product, merchantPrices }: StoresListProps) {
                   });
                 }}
                 className={cn(
-                  'px-3 py-2 text-[8px] uppercase font-bold transition-transform active:translate-x-1 active:translate-y-1 flex items-center gap-2',
+                  'min-h-11 px-3 py-2 text-[8px] uppercase font-bold transition-transform active:translate-x-1 active:translate-y-1 flex items-center justify-center gap-2',
                   index === 0
                     ? 'bg-secondary text-secondary-foreground'
                     : isSponsored

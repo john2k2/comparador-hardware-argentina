@@ -49,6 +49,12 @@ export function SearchPageView({
   onClearFilters,
   onPageChange,
 }: SearchPageViewProps) {
+  const pageHeading = isSeoCategoryLanding && categorySeoCopy
+    ? categorySeoCopy.heading
+    : searchQuery
+      ? `Resultados para ${searchQuery}`
+      : 'Buscar hardware en tiendas argentinas';
+
   return (
     <div className="w-full max-w-[1800px] mx-auto px-4 xl:px-8 py-6">
       {isSeoCategoryLanding && categorySeoCopy && (
@@ -56,7 +62,22 @@ export function SearchPageView({
           <p className="text-[8px] uppercase tracking-[0.3em] text-secondary font-bold mb-3">LANDING DE CATEGORIA</p>
           <h1 className="text-sm md:text-lg uppercase font-bold leading-relaxed text-foreground">{categorySeoCopy.heading}</h1>
           <p className="mt-4 text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/80 font-mono">{categorySeoCopy.intro}</p>
+          <div className="mt-4 grid md:grid-cols-2 gap-3 text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/80 font-mono">
+            <p>
+              Para comparar mejor, revisá si el producto publicado corresponde exactamente a la variante que buscás:
+              capacidad, generación, conectividad, garantía, accesorios incluidos y condiciones finales pueden cambiar entre
+              tiendas aunque el título sea parecido.
+            </p>
+            <p>
+              El ordenamiento y los filtros ayudan a reducir ruido, pero la validación final siempre conviene hacerla en el
+              comercio de destino. Confirmá stock, cuotas, costo de envío y política de cambios antes de completar la compra.
+            </p>
+          </div>
         </header>
+      )}
+
+      {!isSeoCategoryLanding && (
+        <h1 className="sr-only">{pageHeading}</h1>
       )}
 
       <div className="flex flex-col md:flex-row gap-6 mb-8 items-center">
@@ -73,12 +94,12 @@ export function SearchPageView({
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
-        <aside className="lg:w-72 flex-shrink-0 lg:sticky lg:top-8 max-h-[calc(100vh-4rem)] overflow-y-auto scrollbar-thin pr-2 pb-4 flex flex-col gap-8">
+        <aside className="lg:w-72 flex-shrink-0 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto scrollbar-thin lg:pr-2 pb-4 flex flex-col gap-5 lg:gap-8 order-2 lg:order-1">
           <FiltersPanel filters={filters} stores={availableStores} onChange={onFiltersChange} />
           <CategoriesPanel filters={filters} onChange={onFiltersChange} />
         </aside>
 
-        <div className="flex-1">
+        <div className="flex-1 order-1 lg:order-2">
           <SearchHeader totalResults={totalResults} searchQuery={searchQuery} isBusy={isBusy} />
           {isBusy && <LoadingState searchQuery={searchQuery} />}
           <div id="product-grid-start" className="bg-muted p-4 border-4 border-border relative">
@@ -115,13 +136,13 @@ function CategoriesPanel({ filters, onChange }: { filters: ReturnType<typeof toS
   return (
     <div className="bg-card border-4 border-border p-4 flex-shrink-0">
       <h3 className="text-[10px] uppercase font-bold text-primary mb-3 border-b-2 border-muted pb-2">CATEGORIAS</h3>
-      <div className="flex flex-col gap-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-col gap-2">
         {categories.map((category) => (
           <button
             key={category.id}
             onClick={() => onChange({ category: category.id as HardwareCategory })}
             aria-label={`Filtrar por categoría: ${category.name}`}
-            className={`text-left text-[9px] uppercase font-bold px-2 py-1.5 transition-colors ${filters.category === category.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+            className={`min-h-11 text-left text-[9px] uppercase font-bold px-3 py-2 transition-colors ${filters.category === category.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
           >
             {category.name}
           </button>
@@ -168,8 +189,8 @@ function NoResultsState({ searchQuery, hasActiveFilters, onClearFilters, onRetry
       </p>
       <p className="text-[8px] uppercase text-muted-foreground mt-2 leading-relaxed">Proba otra palabra, una marca/modelo mas corto o amplia los filtros.</p>
       <div className="mt-4 flex flex-wrap justify-center gap-2">
-        {hasActiveFilters && <button onClick={onClearFilters} className="pixel-button text-[9px] px-3 py-2">LIMPIAR FILTROS</button>}
-        <button onClick={onRetry} className="pixel-button text-[9px] px-3 py-2">REINTENTAR BUSQUEDA</button>
+        {hasActiveFilters && <button onClick={onClearFilters} className="pixel-button text-[9px] px-4 py-3 min-h-11">LIMPIAR FILTROS</button>}
+        <button onClick={onRetry} className="pixel-button text-[9px] px-4 py-3 min-h-11">REINTENTAR BUSQUEDA</button>
       </div>
     </div>
   );
@@ -189,7 +210,7 @@ function SearchErrorState({ error, onRetry }: { error: string; onRetry: () => vo
     <div className="border-4 border-destructive bg-card p-8 text-center pixel-shadow">
       <p className="text-[10px] uppercase font-bold text-destructive">[ ERROR EN LA BUSQUEDA ]</p>
       <p className="text-[9px] uppercase text-muted-foreground mt-2 mb-4">{error}</p>
-      <button onClick={onRetry} className="pixel-button text-[10px]">
+      <button onClick={onRetry} className="pixel-button text-[10px] min-h-11">
         REINTENTAR
       </button>
     </div>
@@ -203,7 +224,7 @@ function PaginationControls({ currentPage, totalPages, isBusy, onPageChange }: {
       <button
         onClick={() => { onPageChange(currentPage - 1); document.getElementById('product-grid-start')?.scrollIntoView({ behavior: 'smooth' }); }}
         disabled={currentPage === 1}
-        className="pixel-button disabled:opacity-50 disabled:active:translate-y-0 disabled:active:translate-x-0 disabled:cursor-not-allowed text-[10px]"
+        className="pixel-button disabled:opacity-50 disabled:active:translate-y-0 disabled:active:translate-x-0 disabled:cursor-not-allowed text-[10px] min-h-11"
       >
         {`<< PREV`}
       </button>
@@ -213,7 +234,7 @@ function PaginationControls({ currentPage, totalPages, isBusy, onPageChange }: {
       <button
         onClick={() => { onPageChange(currentPage + 1); document.getElementById('product-grid-start')?.scrollIntoView({ behavior: 'smooth' }); }}
         disabled={currentPage === totalPages}
-        className="pixel-button disabled:opacity-50 disabled:active:translate-y-0 disabled:active:translate-x-0 disabled:cursor-not-allowed text-[10px]"
+        className="pixel-button disabled:opacity-50 disabled:active:translate-y-0 disabled:active:translate-x-0 disabled:cursor-not-allowed text-[10px] min-h-11"
       >
         {`NEXT >>`}
       </button>
