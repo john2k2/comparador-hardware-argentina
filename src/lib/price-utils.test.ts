@@ -32,6 +32,12 @@ describe('price-utils', () => {
     expect(parseLocalizedArsPrice('Antes: $300.000 Ahora: $248.496')).toBe(248_496);
   });
 
+  it('parseLocalizedArsPrice maneja precio con cuotas de Compugarden', () => {
+    // Caso real de Compugarden: precio principal + cuotas
+    expect(parseLocalizedArsPrice('$ 38.188,80 3 cuotas de $ 15.084,58')).toBe(38_189);
+    expect(parseLocalizedArsPrice('$ 59.849,81 6 cuotas de $ 12.668,21')).toBe(59_850);
+  });
+
   it('pickBestStorePrices deja la mejor opcion por tienda', () => {
     const picked = pickBestStorePrices([
       buildPrice({

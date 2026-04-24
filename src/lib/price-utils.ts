@@ -75,33 +75,60 @@ export function parseLocalizedArsPrice(value: string): number {
 
   if (!normalized) return 0;
 
-  // Extraer solo el ultimo monto numerico (evita concatenar cuotas u otros numeros)
+  // Extraer todos los montos numericos (evita concatenar cuotas u otros numeros)
   // Busca patrones como: 248.496, 248496, 248.496,50, $248496
   const priceMatches = normalized.match(/[\d]+(?:[\.,]\d{3})*(?:[\.,]\d{1,2})?/g);
   if (!priceMatches || priceMatches.length === 0) return 0;
 
-  // Tomar el ultimo numero (generalmente el precio real, no las cuotas)
-  normalized = priceMatches[priceMatches.length - 1];
+  // Convertir todos los matches a numeros
+  const prices = priceMatches.map(match => {
+    let num = match;
+    const hasComma = num.includes(',');
+    const hasDot = num.includes('.');
+    const hasThousandsDot = /^\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?$/.test(num);
+    const hasThousandsComma = /^\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?$/.test(num);
 
-  const hasComma = normalized.includes(',');
-  const hasDot = normalized.includes('.');
-  const hasThousandsDot = /^\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?$/.test(normalized);
-  const hasThousandsComma = /^\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?$/.test(normalized);
+    if (hasThousandsDot) {
+      num = num.replace(/\./g, '').replace(',', '.');
+    } else if (hasThousandsComma) {
+      num = num.replace(/,/g, '');
+    } else if (hasComma && !hasDot) {
+      num = /,\d{1,2}$/.test(num)
+        ? num.replace(',', '.')
+        : num.replace(/,/g, '');
+    } else if (!hasComma && hasDot && /^\d{1,3}(?:\.\d{3})+$/.test(num)) {
+      num = num.replace(/\./g, '');
+    }
 
-  if (hasThousandsDot) {
-    normalized = normalized.replace(/\./g, '').replace(',', '.');
-  } else if (hasThousandsComma) {
-    normalized = normalized.replace(/,/g, '');
-  } else if (hasComma && !hasDot) {
-    normalized = /,\d{1,2}$/.test(normalized)
-      ? normalized.replace(',', '.')
-      : normalized.replace(/,/g, '');
-  } else if (!hasComma && hasDot && /^\d{1,3}(?:\.\d{3})+$/.test(normalized)) {
-    normalized = normalized.replace(/\./g, '');
+    return Number.parseFloat(num);
+  }).filter(n => Number.isFinite(n) && n > 0);
+
+  if (prices.length === 0) return 0;
+  if (prices.length === 1) return Math.round(prices[0]);
+
+  // Estrategia inteligente para multiples numeros:
+  // 1. Si hay "antes/ahora" o similar, tomar el ultimo (precio actual)
+  const lowerValue = value.toLowerCase();
+  const hasBeforeAfter = /antes|before|precio\s*anterior|precio\s*lista/i.test(lowerValue);
+  const hasNow = /ahora|now|oferta|descuento|precio\s*final/i.test(lowerValue);
+  
+  if (hasBeforeAfter || hasNow) {
+    // Tomar el ultimo numero (precio actual despues del descuento)
+    return Math.round(prices[prices.length - 1]);
   }
 
-  const parsed = Number.parseFloat(normalized);
-  return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : 0;
+  // 2. Si hay palabras de cuotas, filtrar numeros muy pequenos (cuotas)
+  const hasInstallments = /cuota|cuotas|pago|mes/i.test(lowerValue);
+  if (hasInstallments) {
+    // Filtrar cuotas (generalmente menores a 100.000)
+    const nonInstallmentPrices = prices.filter(p => p >= 100_000);
+    if (nonInstallmentPrices.length > 0) {
+      return Math.round(Math.min(...nonInstallmentPrices));
+    }
+  }
+
+  // 3. Por defecto: tomar el mayor (precio principal vs cuotas)
+  return Math.round(Math.max(...prices));
 }
 
 export function pickBestStorePrices<T extends StorePriceLike>(prices: T[]): T[] {
