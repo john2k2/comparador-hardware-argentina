@@ -5,6 +5,7 @@ import { readProductsPageFromDatabase } from '@/lib/persistence/product-read';
 import { SEARCH_PAGE_SIZE } from '@/lib/search/search-pagination';
 import type { SearchApiResponse } from '@/lib/search/search-api';
 import { resolveSearchMetadata } from '@/lib/search/search-page-metadata';
+import { isIndexableCategoryLanding } from '@/lib/search/search-seo';
 
 type SearchPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -78,6 +79,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     ? `${buildApiSearchKey(state) ?? '__empty__'}|page=${initialPage.pagination.page}`
     : null;
 
+  const isCategoryLanding = isIndexableCategoryLanding(state);
+
   return (
     <SearchPageClient
       initialState={state}
@@ -85,6 +88,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       initialPagination={initialPage.pagination}
       initialResolvedRequestKey={initialResolvedRequestKey}
       initialHasSearchIntent={hasSearchIntent(state)}
+      initialIsCategoryLanding={isCategoryLanding}
     />
   );
 }

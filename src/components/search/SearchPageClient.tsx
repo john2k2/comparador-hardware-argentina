@@ -18,6 +18,7 @@ export type SearchPageClientProps = {
   initialPagination: SearchApiResponse['pagination'];
   initialResolvedRequestKey: string | null;
   initialHasSearchIntent: boolean;
+  initialIsCategoryLanding: boolean;
 };
 
 export function SearchPageClient(props: SearchPageClientProps) {
@@ -36,6 +37,7 @@ function SearchPageClientInner({
   initialPagination,
   initialResolvedRequestKey,
   initialHasSearchIntent,
+  initialIsCategoryLanding,
 }: SearchPageClientProps) {
   const router = useRouter();
   const { setCached } = useSearchCache();
@@ -72,7 +74,7 @@ function SearchPageClientInner({
   const isBusy = isLoading || isSearchSyncing;
   const searchRoute = useMemo(() => buildSearchRoute(currentState), [currentState]);
   const categorySeoCopy = useMemo(() => getCategorySeoCopy(currentState.category), [currentState.category]);
-  const isSeoCategoryLanding = useMemo(() => isIndexableCategoryLanding(currentState), [currentState]);
+  const isSeoCategoryLanding = initialIsCategoryLanding;
 
   const totalResults = pagination.total;
   const totalPages = pagination.totalPages;
