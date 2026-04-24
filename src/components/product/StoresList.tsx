@@ -60,7 +60,7 @@ export function StoresList({ product, merchantPrices }: StoresListProps) {
                 href={price.url}
                 target="_blank"
                 rel={getOutboundStoreRel(linkType)}
-                aria-label={`VER EN TIENDA: ${normalizeDisplayText(price.storeName || price.storeId)}`}
+                aria-label={`Ver ${normalizeDisplayText(product.name)} en ${normalizeDisplayText(price.storeName || price.storeId)}`}
                 onClick={() => {
                   trackStoreClick({
                     productId: product.id,
@@ -82,7 +82,7 @@ export function StoresList({ product, merchantPrices }: StoresListProps) {
                       : 'bg-muted text-foreground border-2 border-border',
                 )}
               >
-                VER EN TIENDA <ExternalLink className="w-3 h-3" />
+                {`VER EN ${normalizeDisplayText(price.storeName || price.storeId)}`} <ExternalLink className="w-3 h-3" />
               </a>
             </div>
             </div>

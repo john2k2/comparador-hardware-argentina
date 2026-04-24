@@ -7,6 +7,11 @@ type ProductSitemapRow = {
   id: string;
   updated_at: string | null;
   canonical_product_key: string | null;
+  product_prices?: Array<{
+    store_id: string | null;
+    price: number | string | null;
+    url: string | null;
+  }> | null;
 };
 
 export function isIndexableProductId(id: string): boolean {
@@ -24,7 +29,7 @@ async function readAllIndexableProductRows(): Promise<ProductSitemapRow[]> {
 
   const { data, error } = await supabase
     .from('products')
-    .select('id, updated_at, canonical_product_key')
+    .select('id, updated_at, canonical_product_key, product_prices(store_id, price, url)')
     .like('id', `${INDEXABLE_PRODUCT_ID_PREFIX}%`)
     .order('updated_at', { ascending: false })
     .order('id', { ascending: true })
@@ -35,9 +40,20 @@ async function readAllIndexableProductRows(): Promise<ProductSitemapRow[]> {
     return [];
   }
 
+  const eligibleRows = ((data ?? []) as ProductSitemapRow[]).filter((row) => {
+    const comparableStores = new Set(
+      (row.product_prices ?? [])
+        .filter((price) => Number(price.price ?? 0) > 0 && Boolean(price.url))
+        .map((price) => price.store_id)
+        .filter(Boolean),
+    );
+
+    return comparableStores.size >= 2;
+  });
+
   const winners = new Map<string, ProductSitemapRow>();
 
-  for (const row of (data ?? []) as ProductSitemapRow[]) {
+  for (const row of eligibleRows) {
     const dedupeKey = row.canonical_product_key?.trim() || row.id;
     if (!winners.has(dedupeKey)) {
       winners.set(dedupeKey, row);

@@ -2,7 +2,7 @@ import type { NextConfig } from 'next';
 import withBundleAnalyzer from '@next/bundle-analyzer';
 import { buildRemotePatterns } from '@/lib/image-domains';
 
-const htmlLimitedBots = /Googlebot|Bingbot|Slurp|DuckDuckBot|Baiduspider|YandexBot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot|SquirrelScan|squirrel/i;
+const htmlLimitedBots = /.*/;
 
 const withAnalyzer = withBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',

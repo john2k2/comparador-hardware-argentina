@@ -13,7 +13,7 @@ import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { PriceDisplay } from './PriceDisplay';
-import { isImageHostWhitelisted } from '@/lib/whitelisted-hosts';
+import { isImageHostWhitelisted, isKnownBlockedImageHost } from '@/lib/whitelisted-hosts';
 
 // Base64 encoded tiny placeholder for blur effect (1x1 pixel, light gray)
 const BLUR_PLACEHOLDER = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAADklEQVQI12NgGAWjAAMAAMwIelQhR6EAAAAASUVORK5CYII=';
@@ -141,7 +141,7 @@ export const ProductCard = React.memo(function ProductCard({
               blurDataURL={BLUR_PLACEHOLDER}
               priority={shouldPrioritizeImage}
             />
-          ) : product.image ? (
+          ) : product.image && !isKnownBlockedImageHost(product.image) ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={product.image}

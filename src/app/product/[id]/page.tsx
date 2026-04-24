@@ -8,6 +8,7 @@ import { SITE_URL } from '@/lib/site-config';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.svg`;
+const PRODUCT_TITLE_SUFFIX = ' | HardwareAR';
 
 type ProductPageProps = {
   params: Promise<{ id: string }>;
@@ -24,6 +25,24 @@ const getProductForPage = cache(async (id: string): Promise<Product | null> => {
 
 function buildCanonicalUrl(id: string): string {
   return `${SITE_URL}/product/${encodeURIComponent(id)}`;
+}
+
+function truncateText(value: string, maxLength: number): string {
+  const normalized = value.replace(/\s+/g, ' ').trim();
+  if (normalized.length <= maxLength) return normalized;
+  const sliced = normalized.slice(0, Math.max(0, maxLength - 1)).trimEnd();
+  const lastSpace = sliced.lastIndexOf(' ');
+  const safeSlice = lastSpace > maxLength * 0.55 ? sliced.slice(0, lastSpace) : sliced;
+  return `${safeSlice.trimEnd()}…`;
+}
+
+function buildShortProductTitle(product: Product): string {
+  const brand = normalizeDisplayText(product.brand);
+  const model = normalizeDisplayText(product.model);
+  const fallbackName = normalizeDisplayText(product.name);
+  const compact = [brand, model].filter(Boolean).join(' ').trim() || fallbackName;
+
+  return truncateText(compact, 46);
 }
 
 function resolveProductImage(product: Product | null): string {
@@ -43,16 +62,13 @@ function resolveProductImage(product: Product | null): string {
 
 function buildProductDescription(product: Product): string {
   const name = normalizeDisplayText(product.name);
-  const brand = normalizeDisplayText(product.brand);
-  const model = normalizeDisplayText(product.model);
   const storesCompared = getComparableStorePrices(product.prices).length;
   const bestPrice = formatPriceARS(product.lowestPrice);
 
-  return [
-    `Compara precios de ${name} en ${storesCompared} tiendas de Argentina.`,
-    `Mejor precio detectado: ${bestPrice}.`,
-    `Marca ${brand}. Modelo ${model}.`,
-  ].join(' ');
+  return truncateText(
+    `Compara ${name} en ${storesCompared} tiendas de Argentina. Mejor precio detectado: ${bestPrice}. Revisa stock, cuotas y condiciones en la tienda final.`,
+    155,
+  );
 }
 
 function stockToSchemaAvailability(stock: Product['prices'][number]['stock']): string {
@@ -162,7 +178,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     };
   }
 
-  const title = normalizeDisplayText(product.name);
+  const title = buildShortProductTitle(product);
   const description = buildProductDescription(product);
   const canonicalProductId = product.canonicalProductKey
     ? await readCanonicalProductIdByKey(product.canonicalProductKey)
@@ -174,7 +190,9 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const image = resolveProductImage(product);
 
   return {
-    title,
+    title: {
+      absolute: `${title}${PRODUCT_TITLE_SUFFIX}`,
+    },
     description,
     alternates: indexableProduct
       ? {
@@ -188,7 +206,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     openGraph: {
       type: 'website',
       url,
-      title,
+      title: `${title}${PRODUCT_TITLE_SUFFIX}`,
       description,
       images: [
         {
@@ -199,7 +217,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     },
     twitter: {
       card: 'summary_large_image',
-      title,
+      title: `${title}${PRODUCT_TITLE_SUFFIX}`,
       description,
       images: [image],
     },
@@ -226,6 +244,36 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         />
       )}
       <ProductDetailClient id={id} initialProduct={product} />
+      {product && <ProductSeoSupport product={product} />}
     </>
+  );
+}
+
+function ProductSeoSupport({ product }: { product: Product }) {
+  const displayName = normalizeDisplayText(product.name);
+  const displayBrand = normalizeDisplayText(product.brand);
+  const storeCount = getComparableStorePrices(product.prices).length;
+  const bestPrice = formatPriceARS(product.lowestPrice);
+
+  return (
+    <section className="container mx-auto px-4 pb-10">
+      <div className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow">
+        <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-3">
+          [ GUIA RAPIDA DE COMPARACION ]
+        </h2>
+        <div className="grid md:grid-cols-2 gap-4 text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
+          <p>
+            Esta ficha compara {displayName} {displayBrand ? `de ${displayBrand}` : ''} entre {storeCount} tiendas disponibles.
+            El mejor valor detectado al momento de la última actualización es {bestPrice}, pero el importe final puede cambiar
+            por stock, promociones, cuotas, envío o condiciones propias de cada comercio.
+          </p>
+          <p>
+            Antes de comprar, verificá que la variante coincida exactamente con lo que necesitás: modelo, capacidad,
+            compatibilidad, garantía y accesorios incluidos. El comparador ayuda a encontrar diferencias rápido, pero la
+            confirmación final siempre debe hacerse en la tienda de destino.
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }

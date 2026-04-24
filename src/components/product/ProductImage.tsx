@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { isImageHostWhitelisted } from '@/lib/whitelisted-hosts';
+import { isImageHostWhitelisted, isKnownBlockedImageHost } from '@/lib/whitelisted-hosts';
 import { normalizeDisplayText } from '@/lib/text-utils';
 
 type ProductImageProps = {
@@ -36,7 +36,7 @@ export function ProductImage({ image, productName, latestSyncLabel }: ProductIma
               priority
               sizes="(max-width: 1024px) 100vw, 50vw"
             />
-          ) : (
+          ) : !isKnownBlockedImageHost(image) ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={image}
@@ -47,6 +47,15 @@ export function ProductImage({ image, productName, latestSyncLabel }: ProductIma
               loading="eager"
               fetchPriority="high"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+          ) : (
+            <Image
+              src="/pixel-box.svg"
+              alt="Imagen no disponible"
+              width={800}
+              height={800}
+              className="object-contain image-pixelated p-8 opacity-50 w-full h-full"
+              sizes="(max-width: 1024px) 100vw, 50vw"
             />
           )}
         </div>

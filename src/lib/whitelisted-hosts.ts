@@ -24,7 +24,7 @@ export const WHITELISTED_IMAGE_HOSTS = [
   'hypergaming.com.ar',
   'katech.com.ar',
   'liontech.com.ar',
-  'maximus.com.ar',
+  // 'maximus.com.ar', // Next image optimizer devuelve 400 para varias rutas de producto.
   'maxtecno.com.ar',
   'megasoftargentina.com.ar',
   'mexx.com.ar',
@@ -36,7 +36,7 @@ export const WHITELISTED_IMAGE_HOSTS = [
   'scphardstore.com',
   'spacegamer.com.ar',
   'thegamershop.com.ar',
-  'venex.com.ar',
+  // 'venex.com.ar', // Thumbnails sin extensión rompen optimización; usar fallback directo/no imagen.
   'vrx.com.ar',
   'wiztech.com.ar',
   'xt-pc.com.ar',
@@ -66,6 +66,21 @@ export function isImageHostWhitelisted(url: string): boolean {
     const hostname = new URL(url).hostname;
     return WHITELISTED_IMAGE_HOSTS.some(
       (host) => hostname === host || hostname.endsWith(`.${host}`)
+    );
+  } catch {
+    return false;
+  }
+}
+
+const BLOCKED_DIRECT_IMAGE_HOSTS = [
+  'imagenes.compragamer.com',
+] as const;
+
+export function isKnownBlockedImageHost(url: string): boolean {
+  try {
+    const hostname = new URL(url).hostname;
+    return BLOCKED_DIRECT_IMAGE_HOSTS.some(
+      (host) => hostname === host || hostname.endsWith(`.${host}`),
     );
   } catch {
     return false;
