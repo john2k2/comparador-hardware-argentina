@@ -93,25 +93,12 @@ export function useProductDetailState(id: string, initialProduct: Product | null
     }, 0),
     [merchantPrices],
   );
-  const latestSyncLabel = useMemo(() => {
-    if (latestSyncAtMs <= 0) return null;
-
-    // Formato deterministico usando UTC para evitar hydration mismatch
-    // entre server (posiblemente UTC) y client (timezone local)
-    const date = new Date(latestSyncAtMs);
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const hours = String(date.getUTCHours()).padStart(2, '0');
-    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-    return `${day}/${month} ${hours}:${minutes}`;
-  }, [latestSyncAtMs]);
-
   return {
     product,
     isLoading,
     merchantPrices,
     lowestComparablePrice,
     highestComparablePrice,
-    latestSyncLabel,
+    latestSyncAtMs,
   };
 }

@@ -41,7 +41,7 @@ function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientPro
     merchantPrices,
     lowestComparablePrice,
     highestComparablePrice,
-    latestSyncLabel,
+    latestSyncAtMs,
   } = useProductDetailState(id, initialProduct);
 
   useEffect(() => {
@@ -119,7 +119,7 @@ function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientPro
           <ProductImage
             image={product.image}
             productName={product.name}
-            latestSyncLabel={latestSyncLabel}
+            latestSyncAtMs={latestSyncAtMs}
           />
 
           <div className="bg-card border-4 border-border p-6 pixel-shadow">

@@ -3,18 +3,19 @@
 import Image from 'next/image';
 import { isImageHostWhitelisted, isKnownBlockedImageHost } from '@/lib/whitelisted-hosts';
 import { normalizeDisplayText } from '@/lib/text-utils';
+import { SyncTimestamp } from './SyncTimestamp';
 
 type ProductImageProps = {
   image: string | null | undefined;
   productName: string;
-  latestSyncLabel: string | null;
+  latestSyncAtMs: number;
 };
 
 function isWhitelisted(url: string): boolean {
   return isImageHostWhitelisted(url);
 }
 
-export function ProductImage({ image, productName, latestSyncLabel }: ProductImageProps) {
+export function ProductImage({ image, productName, latestSyncAtMs }: ProductImageProps) {
   const displayName = normalizeDisplayText(productName);
 
   return (
@@ -72,7 +73,7 @@ export function ProductImage({ image, productName, latestSyncLabel }: ProductIma
         </div>
       )}
       <div className="absolute bottom-0 right-0 bg-primary text-primary-foreground px-3 py-1 text-[8px] font-bold uppercase border-l-4 border-t-4 border-border">
-        {latestSyncLabel ? `ACT: ${latestSyncLabel}` : 'ACT: N/D'}
+        <SyncTimestamp timestamp={latestSyncAtMs} />
       </div>
     </div>
   );
