@@ -49,6 +49,9 @@ export default function AboutPage() {
           <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
             Users save time by starting from one searchable catalog instead of opening many stores manually. Builders can inspect processors, graphics cards, memory, storage and peripherals with a consistent interface, then leave the site only when they are ready to validate details with the selected shop.
           </p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono mt-3">
+            This makes the site useful for quick checks, planned upgrades and price monitoring across stores with very different catalogs.
+          </p>
         </div>
       </div>
     </RetroPageShell>

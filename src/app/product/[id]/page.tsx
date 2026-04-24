@@ -36,13 +36,15 @@ function truncateText(value: string, maxLength: number): string {
   return `${safeSlice.trimEnd()}…`;
 }
 
-function buildShortProductTitle(product: Product): string {
+function buildShortProductTitle(product: Product, id: string): string {
   const brand = normalizeDisplayText(product.brand);
   const model = normalizeDisplayText(product.model);
   const fallbackName = normalizeDisplayText(product.name);
   const compact = [brand, model].filter(Boolean).join(' ').trim() || fallbackName;
+  const suffix = id.split('-').at(-1)?.slice(0, 6) ?? '';
+  const base = truncateText(compact, suffix ? 38 : 46);
 
-  return truncateText(compact, 46);
+  return suffix ? `${base} #${suffix}` : base;
 }
 
 function resolveProductImage(product: Product | null): string {
@@ -178,7 +180,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     };
   }
 
-  const title = buildShortProductTitle(product);
+  const title = buildShortProductTitle(product, id);
   const description = buildProductDescription(product);
   const canonicalProductId = product.canonicalProductKey
     ? await readCanonicalProductIdByKey(product.canonicalProductKey)
@@ -271,6 +273,11 @@ function ProductSeoSupport({ product }: { product: Product }) {
             Antes de comprar, verificá que la variante coincida exactamente con lo que necesitás: modelo, capacidad,
             compatibilidad, garantía y accesorios incluidos. El comparador ayuda a encontrar diferencias rápido, pero la
             confirmación final siempre debe hacerse en la tienda de destino.
+          </p>
+          <p>
+            También conviene revisar si la publicación incluye fotos reales, número de parte, versión del fabricante y
+            disponibilidad inmediata. Si dos ofertas parecen iguales pero tienen mucha diferencia de valor, abrí ambas
+            tiendas y confirmá que no cambien condiciones clave como cuotas, envío, garantía o retiro en sucursal.
           </p>
         </div>
       </div>
