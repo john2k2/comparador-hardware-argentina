@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { SearchApiResponse } from '@/lib/search/search-api';
 import { hydrateProducts } from '@/lib/product-serialization';
 import { buildApiSearchKey, buildSearchRoute, toSearchFilters, type SearchPageState } from '@/lib/search/search-state';
-import { getCategorySeoCopy, isIndexableCategoryLanding } from '@/lib/search/search-seo';
+import { getCategorySeoCopy } from '@/lib/search/search-seo';
 import { stores as defaultStores } from '@/lib/scrapers/static-data';
 import type { Product, SearchFilters } from '@/lib/types';
 import { trackFilterChange, trackSearch } from '@/lib/analytics';

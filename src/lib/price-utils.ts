@@ -69,7 +69,7 @@ function isLowerOutlier(price: number, medianPrice: number): boolean {
 export function parseLocalizedArsPrice(value: string): number {
   if (!value) return 0;
 
-  let normalized = value
+  const normalized = value
     .replace(/[^\d.,$-]/g, ' ')
     .trim();
 

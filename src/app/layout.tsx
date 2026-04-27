@@ -108,8 +108,8 @@ export default async function RootLayout({
         <ThemeScript nonce={nonce} />
         <Analytics nonce={nonce} />
 
-        {/* Preload SVG sprites for parallax background */}
-        <link rel="preload" href="/sprites/pixel-art.svg" as="image" type="image/svg+xml" />
+        {/* Prefetch SVG sprites for parallax background (not preload to avoid unused resource warning) */}
+        <link rel="prefetch" href="/sprites/pixel-art.svg" as="fetch" type="image/svg+xml" crossOrigin="anonymous" />
 
         {/* --- CAPA FONDO PARALLAX --- */}
         <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 0 }} className="sky-bg sky-layer">
