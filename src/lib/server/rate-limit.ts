@@ -1,11 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 
-type Bucket = {
-  count: number;
-  windowEndMs: number;
-};
-
 export type RateLimitRule = {
   limit: number;
   windowMs: number;
@@ -19,46 +14,40 @@ export type RateLimitResult = {
   retryAfterSeconds: number;
 };
 
-const buckets = new Map<string, Bucket>();
-const MAX_BUCKETS = 10_000;
+// Fallback en memoria SOLO para desarrollo o cuando Supabase no está disponible
+// En producción con Vercel, esto es inefectivo pero mejor que nada como último recurso
+type MemoryBucket = {
+  count: number;
+  windowEndMs: number;
+};
 
-function compactBuckets(nowMs: number): void {
-  if (buckets.size <= MAX_BUCKETS) return;
+const memoryBuckets = new Map<string, MemoryBucket>();
+const MAX_MEMORY_BUCKETS = 1_000;
 
-  for (const [key, bucket] of buckets) {
+function compactMemoryBuckets(nowMs: number): void {
+  if (memoryBuckets.size <= MAX_MEMORY_BUCKETS) return;
+
+  for (const [key, bucket] of memoryBuckets) {
     if (bucket.windowEndMs <= nowMs) {
-      buckets.delete(key);
+      memoryBuckets.delete(key);
     }
   }
 
-  while (buckets.size > MAX_BUCKETS) {
-    const oldestKey = buckets.keys().next().value as string | undefined;
+  while (memoryBuckets.size > MAX_MEMORY_BUCKETS) {
+    const oldestKey = memoryBuckets.keys().next().value as string | undefined;
     if (!oldestKey) break;
-    buckets.delete(oldestKey);
+    memoryBuckets.delete(oldestKey);
   }
-}
-
-export function getRequestIp(request: NextRequest): string {
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    const first = forwardedFor.split(',')[0]?.trim();
-    if (first) return first;
-  }
-
-  const realIp = request.headers.get('x-real-ip')?.trim();
-  if (realIp) return realIp;
-
-  return 'unknown';
 }
 
 function checkRateLimitInMemory(key: string, rule: RateLimitRule): RateLimitResult {
   const nowMs = Date.now();
-  compactBuckets(nowMs);
+  compactMemoryBuckets(nowMs);
 
-  const existing = buckets.get(key);
+  const existing = memoryBuckets.get(key);
   if (!existing || existing.windowEndMs <= nowMs) {
     const resetAtMs = nowMs + rule.windowMs;
-    buckets.set(key, { count: 1, windowEndMs: resetAtMs });
+    memoryBuckets.set(key, { count: 1, windowEndMs: resetAtMs });
     return {
       allowed: true,
       limit: rule.limit,
@@ -79,7 +68,7 @@ function checkRateLimitInMemory(key: string, rule: RateLimitRule): RateLimitResu
   }
 
   existing.count += 1;
-  buckets.set(key, existing);
+  memoryBuckets.set(key, existing);
 
   return {
     allowed: true,
@@ -90,29 +79,52 @@ function checkRateLimitInMemory(key: string, rule: RateLimitRule): RateLimitResu
   };
 }
 
+export function getRequestIp(request: NextRequest): string {
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    const first = forwardedFor.split(',')[0]?.trim();
+    if (first) return first;
+  }
+
+  const realIp = request.headers.get('x-real-ip')?.trim();
+  if (realIp) return realIp;
+
+  return 'unknown';
+}
+
 export async function checkRateLimit(key: string, rule: RateLimitRule): Promise<RateLimitResult> {
   const supabase = getServerSupabaseServiceClient();
+  
+  // Si no hay Supabase, usar fallback en memoria (con advertencia)
   if (!supabase) {
+    console.warn('[RateLimit] Supabase no disponible, usando fallback en memoria (INSEGURO en serverless)');
     return checkRateLimitInMemory(key, rule);
   }
 
-  const { data, error } = await supabase.rpc('check_api_rate_limit', {
-    p_bucket_key: key,
-    p_limit: rule.limit,
-    p_window_seconds: Math.max(1, Math.ceil(rule.windowMs / 1000)),
-  });
+  try {
+    // Intentar usar la función RPC de Supabase para rate limiting distribuido
+    const { data, error } = await supabase.rpc('check_api_rate_limit', {
+      p_bucket_key: key,
+      p_limit: rule.limit,
+      p_window_seconds: Math.max(1, Math.ceil(rule.windowMs / 1000)),
+    });
 
-  if (error || !data || typeof data !== 'object') {
+    if (error || !data || typeof data !== 'object') {
+      console.warn('[RateLimit] Error en RPC, usando fallback:', error?.message);
+      return checkRateLimitInMemory(key, rule);
+    }
+
+    return {
+      allowed: Boolean((data as { allowed?: boolean }).allowed),
+      limit: Number((data as { limit?: number }).limit ?? rule.limit),
+      remaining: Number((data as { remaining?: number }).remaining ?? 0),
+      resetAtMs: Number((data as { resetAtMs?: number }).resetAtMs ?? Date.now() + rule.windowMs),
+      retryAfterSeconds: Number((data as { retryAfterSeconds?: number }).retryAfterSeconds ?? Math.ceil(rule.windowMs / 1000)),
+    };
+  } catch (err) {
+    console.warn('[RateLimit] Excepción, usando fallback:', err);
     return checkRateLimitInMemory(key, rule);
   }
-
-  return {
-    allowed: Boolean((data as { allowed?: boolean }).allowed),
-    limit: Number((data as { limit?: number }).limit ?? rule.limit),
-    remaining: Number((data as { remaining?: number }).remaining ?? 0),
-    resetAtMs: Number((data as { resetAtMs?: number }).resetAtMs ?? Date.now() + rule.windowMs),
-    retryAfterSeconds: Number((data as { retryAfterSeconds?: number }).retryAfterSeconds ?? Math.ceil(rule.windowMs / 1000)),
-  };
 }
 
 export function buildRateLimitHeaders(result: RateLimitResult): Record<string, string> {
