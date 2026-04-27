@@ -1,0 +1,264 @@
+import type { Product } from '@/lib/types';
+
+export type ComparisonDefinition = {
+  slug: string;
+  title: string;
+  description: string;
+  keywords: string[];
+  product1: {
+    name: string;
+    searchTerms: string[];
+    specs: string;
+    pros: string[];
+    cons: string[];
+  };
+  product2: {
+    name: string;
+    searchTerms: string[];
+    specs: string;
+    pros: string[];
+    cons: string[];
+  };
+  conclusion: string;
+  faqs: Array<{ question: string; answer: string }>;
+};
+
+export const COMPARISONS: ComparisonDefinition[] = [
+  {
+    slug: 'rtx-4060-vs-rx-7600',
+    title: 'RTX 4060 vs RX 7600: Comparativa Argentina 2026',
+    description: 'Compará precios de RTX 4060 vs RX 7600 en 20+ tiendas de Argentina. Encontrá la mejor placa de video para gaming 1080p al precio más bajo.',
+    keywords: ['rtx 4060 vs rx 7600', '4060 vs 7600 argentina', 'mejor placa video 1080p', 'rtx 4060 precio argentina'],
+    product1: {
+      name: 'RTX 4060',
+      searchTerms: ['rtx 4060'],
+      specs: '8GB GDDR6 | 115W TDP | DLSS 3 | Ray Tracing',
+      pros: ['DLSS 3 y Frame Generation', 'Mejor Ray Tracing', 'Menor consumo energético', 'NVENC para streaming'],
+      cons: ['Bus de memoria de 128-bit', 'Precio más alto en Argentina'],
+    },
+    product2: {
+      name: 'RX 7600',
+      searchTerms: ['rx 7600'],
+      specs: '8GB GDDR6 | 165W TDP | FSR 3 | Mejor precio',
+      pros: ['Mejor precio por performance', 'Bus de memoria 128-bit', 'FSR funciona en más juegos', 'Más stock disponible'],
+      cons: ['Sin DLSS 3', 'Ray Tracing inferior', 'Mayor consumo energético'],
+    },
+    conclusion: 'Para gaming 1080p, ambas son excelentes. Elegí RTX 4060 si usás DLSS 3 o hacés streaming. Elegí RX 7600 si buscás el mejor precio por FPS.',
+    faqs: [
+      {
+        question: '¿RTX 4060 o RX 7600 para gaming 1080p?',
+        answer: 'Ambas rinden 60+ FPS en 1080p Ultra. La RTX 4060 tiene ventaja con DLSS 3 activado, mientras que la RX 7600 ofrece mejor precio por performance bruta.',
+      },
+      {
+        question: '¿Cuánto cuesta la RTX 4060 en Argentina?',
+        answer: 'El precio varía entre tiendas. Usá nuestro comparador para ver el precio actualizado en tiempo real.',
+      },
+      {
+        question: '¿La RX 7600 es mejor que la RTX 3060?',
+        answer: 'Sí, la RX 7600 supera a la RTX 3060 en la mayoría de juegos, especialmente en 1080p. Ofrece mejor performance por menos dinero.',
+      },
+    ],
+  },
+  {
+    slug: 'ryzen-5-7600x-vs-ryzen-7-5700x',
+    title: 'Ryzen 5 7600X vs Ryzen 7 5700X: Comparativa Argentina 2026',
+    description: '¿AM5 con DDR5 o AM4 con DDR4? Compará precios de Ryzen 5 7600X vs Ryzen 7 5700X en tiendas argentinas.',
+    keywords: ['7600x vs 5700x', 'ryzen 5 vs ryzen 7', 'mejor procesador gaming argentina', 'am5 vs am4'],
+    product1: {
+      name: 'Ryzen 5 7600X',
+      searchTerms: ['ryzen 5 7600x', '7600x'],
+      specs: '6 núcleos / 12 hilos | 4.7-5.3 GHz | AM5 | DDR5 | 105W',
+      pros: ['Mayor IPC y frecuencia', 'Plataforma AM5 futura', 'Soporte hasta 2027+', 'PCIe 5.0'],
+      cons: ['No incluye cooler stock', 'Motherboards AM5 más caras', 'RAM DDR5 más cara'],
+    },
+    product2: {
+      name: 'Ryzen 7 5700X',
+      searchTerms: ['ryzen 7 5700x', '5700x'],
+      specs: '8 núcleos / 16 hilos | 3.4-4.6 GHz | AM4 | DDR4 | 65W',
+      pros: ['Más núcleos (8 vs 6)', 'Plataforma AM4 madura', 'Motherboards y RAM más baratas', 'Incluye cooler stock'],
+      cons: ['Menor IPC', 'Plataforma sin futuro upgrades', 'Frecuencia más baja'],
+    },
+    conclusion: 'Para nuevos builds, el 7600X es mejor inversión a largo plazo. Para upgrades AM4, el 5700X ofrece excelente valor con más núcleos.',
+    faqs: [
+      {
+        question: '¿Vale la pena AM5 sobre AM4 en 2026?',
+        answer: 'Sí, AM5 es la plataforma futura de AMD con soporte garantizado hasta 2027+. Si armás una PC nueva, AM5 es la mejor inversión.',
+      },
+      {
+        question: '¿Cuánto cuesta el Ryzen 5 7600X en Argentina?',
+        answer: 'El precio varía según la tienda. Consultá nuestro comparador para ver precios actualizados en tiempo real.',
+      },
+      {
+        question: '¿El Ryzen 7 5700X es mejor para streaming?',
+        answer: 'Sí, los 8 núcleos del 5700X ayudan en tareas multitarea como streaming mientras jugás. Sin embargo, el 7600X con su mayor IPC también rinde bien.',
+      },
+    ],
+  },
+  {
+    slug: 'rtx-5070-vs-rtx-4070',
+    title: 'RTX 5070 vs RTX 4070: ¿Vale la pena el upgrade? [2026]',
+    description: 'Comparativa RTX 5070 vs RTX 4070. Precios actualizados, rendimiento en juegos y análisis de valor en Argentina.',
+    keywords: ['rtx 5070 vs 4070', '5070 vs 4070 argentina', 'mejor placa video 1440p', 'rtx 5070 precio'],
+    product1: {
+      name: 'RTX 5070',
+      searchTerms: ['rtx 5070'],
+      specs: '12GB GDDR7 | 250W TDP | DLSS 4 | Frame Generation 2',
+      pros: ['DLSS 4 con mejor calidad', 'GDDR7 más rápida', 'Mejor Ray Tracing', 'Frame Generation 2'],
+      cons: ['Precio más alto', 'Mayor consumo energético', 'Stock limitado inicialmente'],
+    },
+    product2: {
+      name: 'RTX 4070',
+      searchTerms: ['rtx 4070'],
+      specs: '12GB GDDR6X | 200W TDP | DLSS 3 | Buena relación precio',
+      pros: ['Mejor precio actual', 'Menor consumo energético', 'Stock estable', 'Suficiente para 1440p'],
+      cons: ['Sin DLSS 4', 'GDDR6X más lenta', 'Menor performance en RT'],
+    },
+    conclusion: 'La RTX 5070 es ~25-30% más rápida pero cuesta más. Si ya tenés una 4070, no vale el upgrade. Si comprás nueva, la 5070 es mejor inversión.',
+    faqs: [
+      {
+        question: '¿Cuánto más rápida es la RTX 5070 vs 4070?',
+        answer: 'Aproximadamente 25-30% más rápida en gaming 1440p, con mejoras significativas en Ray Tracing y DLSS 4.',
+      },
+      {
+        question: '¿Vale la pena upgradear de 4070 a 5070?',
+        answer: 'No, la diferencia no justifica el costo. Si tenés una 4070, esperá a la próxima generación o saltá a una 5080/5090.',
+      },
+      {
+        question: '¿La RTX 5070 sirve para 4K?',
+        answer: 'Sí, con DLSS 4 rinde bien en 4K en la mayoría de juegos. Para 4K nativo ultra, considerá una 5080 o 5090.',
+      },
+    ],
+  },
+  {
+    slug: 'ryzen-7-9800x3d-vs-i9-14900k',
+    title: 'Ryzen 7 9800X3D vs i9-14900K: El mejor para gaming [2026]',
+    description: 'Comparativa definitiva: Ryzen 7 9800X3D vs Intel i9-14900K. Precios en Argentina, rendimiento en juegos y productividad.',
+    keywords: ['9800x3d vs 14900k', 'ryzen vs intel gaming', 'mejor procesador 2026 argentina', '9800x3d precio'],
+    product1: {
+      name: 'Ryzen 7 9800X3D',
+      searchTerms: ['ryzen 7 9800x3d', '9800x3d'],
+      specs: '8 núcleos / 16 hilos | 4.7-5.2 GHz | 104MB Cache | AM5 | 120W',
+      pros: ['Mejor procesador para gaming', 'X3D V-Cache enorme', 'Eficiencia energética', 'Temperaturas controladas'],
+      cons: ['Precio muy alto', 'Menor performance en productividad', 'Stock limitado'],
+    },
+    product2: {
+      name: 'Intel Core i9-14900K',
+      searchTerms: ['i9-14900k', '14900k', 'intel core i9'],
+      specs: '24 núcleos / 32 hilos | 3.2-6.0 GHz | 36MB Cache | LGA1700 | 253W',
+      pros: ['Mejor en productividad', 'Más núcleos', 'Overclocking extremo', 'Precio más bajo'],
+      cons: ['Consumo energético muy alto', 'Temperaturas altas', 'Necesita cooler premium', 'Menor performance en gaming vs 9800X3D'],
+    },
+    conclusion: 'Para gaming puro, el 9800X3D es imbatible. Para productividad (video, render, compilación), el i9-14900K es superior. La mayoría de gamers debería elegir el 9800X3D.',
+    faqs: [
+      {
+        question: '¿El 9800X3D es el mejor procesador para gaming?',
+        answer: 'Sí, actualmente el Ryzen 7 9800X3D es el procesador más rápido para gaming gracias a su enorme caché X3D V-Cache de 104MB.',
+      },
+      {
+        question: '¿Cuánto cuesta el 9800X3D en Argentina?',
+        answer: 'Es uno de los procesadores más caros. Consultá nuestro comparador para ver precios actualizados en tiempo real.',
+      },
+      {
+        question: '¿El i9-14900K es mejor para streaming?',
+        answer: 'Sí, los 24 núcleos del i9-14900K son superiores para streaming mientras jugás y tareas de productividad pesadas.',
+      },
+    ],
+  },
+  {
+    slug: 'i5-14600k-vs-ryzen-5-7600x',
+    title: 'Intel i5-14600K vs Ryzen 5 7600X: Comparativa Gaming [2026]',
+    description: '¿Intel o AMD para gaming? Compará precios de i5-14600K vs Ryzen 5 7600X en tiendas argentinas.',
+    keywords: ['14600k vs 7600x', 'intel vs amd', 'mejor procesador gaming 2026', 'i5 14600k precio argentina'],
+    product1: {
+      name: 'Intel Core i5-14600K',
+      searchTerms: ['i5-14600k', '14600k', 'intel core i5'],
+      specs: '14 núcleos / 20 hilos | 3.5-5.3 GHz | LGA1700 | DDR4/DDR5 | 125W',
+      pros: ['Más núcleos (14 vs 6)', 'Compatible DDR4', 'Mejor en productividad', 'Precio competitivo'],
+      cons: ['Mayor consumo energético', 'Temperaturas altas', 'Plataforma sin futuro'],
+    },
+    product2: {
+      name: 'Ryzen 5 7600X',
+      searchTerms: ['ryzen 5 7600x', '7600x'],
+      specs: '6 núcleos / 12 hilos | 4.7-5.3 GHz | AM5 | DDR5 | 105W',
+      pros: ['Mayor IPC en gaming', 'Plataforma AM5 futura', 'Eficiencia energética', 'PCIe 5.0'],
+      cons: ['Menos núcleos', 'Solo DDR5', 'Motherboards más caras'],
+    },
+    conclusion: 'Para gaming, el 7600X tiene mejor IPC. Para multitarea/productividad, el 14600K con sus 14 núcleos es superior. Elegí según tu uso principal.',
+    faqs: [
+      {
+        question: '¿i5-14600K o Ryzen 5 7600X para gaming?',
+        answer: 'El 7600X tiene mejor performance en gaming por su mayor IPC, aunque el 14600K tiene más núcleos. La diferencia en FPS es de 5-10% a favor del 7600X.',
+      },
+      {
+        question: '¿Cuánto cuesta el i5-14600K en Argentina?',
+        answer: 'El precio varía según la tienda. Usá nuestro comparador para ver precios actualizados en tiempo real.',
+      },
+      {
+        question: '¿El i5-14600K se calienta mucho?',
+        answer: 'Sí, puede alcanzar 90-100°C bajo carga. Se recomienda un cooler de gama alta (AIO 240mm o torre premium).',
+      },
+    ],
+  },
+  {
+    slug: 'ddr5-vs-ddr4',
+    title: 'DDR5 vs DDR4: ¿Vale la pena el upgrade en Argentina? [2026]',
+    description: 'Comparativa DDR5 vs DDR4. Diferencias de precio, rendimiento y compatibilidad. Encontrá el mejor precio en tiendas argentinas.',
+    keywords: ['ddr5 vs ddr4', 'memoria ddr5 precio argentina', 'ddr5 vale la pena', 'memoria ram gaming'],
+    product1: {
+      name: 'DDR5',
+      searchTerms: ['ddr5', 'memoria ddr5'],
+      specs: '4800-6400 MHz | Menor latencia | Más eficiente | AM5/LGA1700',
+      pros: ['Mayor ancho de banda', 'Mejor eficiencia energética', 'Futuro del mercado', 'Mejor para integrados'],
+      cons: ['Precio más alto', 'Requiere plataforma nueva', 'Latencia inicial más alta'],
+    },
+    product2: {
+      name: 'DDR4',
+      searchTerms: ['ddr4', 'memoria ddr4'],
+      specs: '3200-3600 MHz | Latencia baja | Madura | AM4/LGA1200',
+      pros: ['Precio más bajo', 'Plataformas maduras', 'Mucho stock', 'Latencia optimizada'],
+      cons: ['Ancho de banda limitado', 'Sin futuro upgrades', 'Obsoleta en 2-3 años'],
+    },
+    conclusion: 'Para nuevos builds AM5/LGA1700, DDR5 es obligatoria. Para upgrades AM4, DDR4 sigue siendo excelente. La diferencia de performance en gaming es de 3-8%.',
+    faqs: [
+      {
+        question: '¿Vale la pena upgradear de DDR4 a DDR5?',
+        answer: 'Solo si cambiás de plataforma (AM4→AM5 o LGA1200→LGA1700). No vale la pena cambiar motherboard solo por RAM.',
+      },
+      {
+        question: '¿Cuánto cuesta la DDR5 en Argentina?',
+        answer: 'Aproximadamente 30-50% más cara que DDR4 equivalente. Consultá nuestro comparador para precios actualizados.',
+      },
+      {
+        question: '¿DDR5 mejora el FPS en juegos?',
+        answer: 'Sí, pero la diferencia es de 3-8% dependiendo del juego. No es un upgrade revolucionario por sí solo.',
+      },
+    ],
+  },
+];
+
+export function getComparisonBySlug(slug: string): ComparisonDefinition | undefined {
+  return COMPARISONS.find(c => c.slug === slug);
+}
+
+export function getAllComparisonSlugs(): string[] {
+  return COMPARISONS.map(c => c.slug);
+}
+
+export function findProductInComparison(comparison: ComparisonDefinition, allProducts: Product[]): {
+  product1?: Product;
+  product2?: Product;
+} {
+  const product1 = allProducts.find(p => 
+    comparison.product1.searchTerms.some(term => 
+      p.name.toLowerCase().includes(term.toLowerCase())
+    )
+  );
+
+  const product2 = allProducts.find(p => 
+    comparison.product2.searchTerms.some(term => 
+      p.name.toLowerCase().includes(term.toLowerCase())
+    )
+  );
+
+  return { product1, product2 };
+}

@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { categories } from '@/lib/scrapers/static-data';
 import { toAbsoluteUrl } from '@/lib/seo/url-utils';
+import { COMPARISONS } from '@/lib/seo/comparisons-data';
+import { BUDGET_GUIDES } from '@/lib/seo/budget-guides-data';
 
 export function buildPublicSitemapEntries(): MetadataRoute.Sitemap {
   const staticEntries: MetadataRoute.Sitemap = [
@@ -34,6 +36,16 @@ export function buildPublicSitemapEntries(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.2,
     },
+    {
+      url: toAbsoluteUrl('/comparativa'),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: toAbsoluteUrl('/guia'),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
   ];
 
   const categoryEntries: MetadataRoute.Sitemap = categories.map((category) => ({
@@ -42,5 +54,17 @@ export function buildPublicSitemapEntries(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  return [...staticEntries, ...categoryEntries];
+  const comparisonEntries: MetadataRoute.Sitemap = COMPARISONS.map((comparison) => ({
+    url: toAbsoluteUrl(`/comparativa/${comparison.slug}`),
+    changeFrequency: 'daily',
+    priority: 0.85,
+  }));
+
+  const budgetGuideEntries: MetadataRoute.Sitemap = BUDGET_GUIDES.map((guide) => ({
+    url: toAbsoluteUrl(`/guia/${guide.slug}`),
+    changeFrequency: 'daily',
+    priority: 0.85,
+  }));
+
+  return [...staticEntries, ...categoryEntries, ...comparisonEntries, ...budgetGuideEntries];
 }
