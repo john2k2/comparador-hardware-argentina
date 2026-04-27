@@ -47,7 +47,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
       pros: ['Mejor precio por performance', 'Bus de memoria 128-bit', 'FSR funciona en más juegos', 'Más stock disponible'],
       cons: ['Sin DLSS 3', 'Ray Tracing inferior', 'Mayor consumo energético'],
     },
-    conclusion: 'Para gaming 1080p, ambas son excelentes. Elegí RTX 4060 si usás DLSS 3 o hacés streaming. Elegí RX 7600 si buscás el mejor precio por FPS.',
+    conclusion: 'Para jugar en 1080p Ultra a 60+ FPS, cualquiera de las dos sirve. Elegí RTX 4060 si te interesa el DLSS 3 o hacés streaming. Elegí RX 7600 si buscás la mejor relación precio/poder de fuego.',
     faqs: [
       {
         question: '¿RTX 4060 o RX 7600 para gaming 1080p?',
@@ -84,7 +84,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
       pros: ['Más núcleos (8 vs 6)', 'Plataforma AM4 madura', 'Motherboards y RAM más baratas', 'Incluye cooler stock'],
       cons: ['Menor IPC', 'Plataforma sin futuro upgrades', 'Frecuencia más baja'],
     },
-    conclusion: 'Para nuevos builds, el 7600X es mejor inversión a largo plazo. Para upgrades AM4, el 5700X ofrece excelente valor con más núcleos.',
+    conclusion: 'Armando una PC desde cero, el Ryzen 5 7600X es la mejor inversión por su plataforma AM5 con futuro. Si ya tenés una PC con socket AM4 y querés upgradear sin cambiar todo, el Ryzen 7 5700X te da 8 núcleos por menos plata.',
     faqs: [
       {
         question: '¿Vale la pena AM5 sobre AM4 en 2026?',
@@ -121,7 +121,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
       pros: ['Mejor precio actual', 'Menor consumo energético', 'Stock estable', 'Suficiente para 1440p'],
       cons: ['Sin DLSS 4', 'GDDR6X más lenta', 'Menor performance en RT'],
     },
-    conclusion: 'La RTX 5070 es ~25-30% más rápida pero cuesta más. Si ya tenés una 4070, no vale el upgrade. Si comprás nueva, la 5070 es mejor inversión.',
+    conclusion: 'La RTX 5070 rinde un 25-30% más que la 4070, ideal si estás armando una PC nueva. Si ya tenés una RTX 4070, no vale la pena cambiarla. Para juegos en 1440p Ultra, ambas son excelentes opciones.',
     faqs: [
       {
         question: '¿Cuánto más rápida es la RTX 5070 vs 4070?',
@@ -158,7 +158,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
       pros: ['Mejor en productividad', 'Más núcleos', 'Overclocking extremo', 'Precio más bajo'],
       cons: ['Consumo energético muy alto', 'Temperaturas altas', 'Necesita cooler premium', 'Menor performance en gaming vs 9800X3D'],
     },
-    conclusion: 'Para gaming puro, el 9800X3D es imbatible. Para productividad (video, render, compilación), el i9-14900K es superior. La mayoría de gamers debería elegir el 9800X3D.',
+    conclusion: 'Si tu prioridad es el gaming, el Ryzen 7 9800X3D es la opción más rápida del mercado. Para trabajo pesado como edición de video o renders 3D, el i9-14900K es mejor opción por sus 24 núcleos. Para la mayoría de gamers, el 9800X3D es la mejor elección.',
     faqs: [
       {
         question: '¿El 9800X3D es el mejor procesador para gaming?',
@@ -195,7 +195,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
       pros: ['Mayor IPC en gaming', 'Plataforma AM5 futura', 'Eficiencia energética', 'PCIe 5.0'],
       cons: ['Menos núcleos', 'Solo DDR5', 'Motherboards más caras'],
     },
-    conclusion: 'Para gaming, el 7600X tiene mejor IPC. Para multitarea/productividad, el 14600K con sus 14 núcleos es superior. Elegí según tu uso principal.',
+    conclusion: 'Para gaming puro, el Ryzen 5 7600X tiene mejor rendimiento por su arquitectura más moderna. Para streaming, edición de video o multitarea pesada, el i5-14600K con sus 14 núcleos es superior. Elegí según qué hagas más tiempo: jugar o trabajar.',
     faqs: [
       {
         question: '¿i5-14600K o Ryzen 5 7600X para gaming?',
@@ -232,7 +232,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
       pros: ['Precio más bajo', 'Plataformas maduras', 'Mucho stock', 'Latencia optimizada'],
       cons: ['Ancho de banda limitado', 'Sin futuro upgrades', 'Obsoleta en 2-3 años'],
     },
-    conclusion: 'Para nuevos builds AM5/LGA1700, DDR5 es obligatoria. Para upgrades AM4, DDR4 sigue siendo excelente. La diferencia de performance en gaming es de 3-8%.',
+    conclusion: 'Si estás armando una PC nueva con AM5 o Intel 12va/13va generación, DDR5 es el camino. Si tenés una PC con AM4 o Intel 10ma/11va generación, quedate con DDR4 que sigue rindiendo perfecto. La diferencia en juegos es mínima (3-8%), así que no vale cambiar todo solo por la RAM.',
     faqs: [
       {
         question: '¿Vale la pena upgradear de DDR4 a DDR5?',
@@ -261,7 +261,8 @@ export function getAllComparisonSlugs(): string[] {
 function isPcBuild(name: string): boolean {
   const pcBuildTerms = [
     'pc gamer', 'combo', 'armado', 'pc completa', 'computadora', 'desktop', 'workstation',
-    'notebook', 'laptop', 'all in one', 'aio ', 'netbook', 'chromebook'
+    'notebook', 'laptop', 'all in one', 'aio ', 'netbook', 'chromebook',
+    'kit ', 'bundle', 'paquete', 'gaming pc', 'cpu +', 'procesador +'
   ];
   const lowerName = name.toLowerCase();
   return pcBuildTerms.some(term => lowerName.includes(term));
