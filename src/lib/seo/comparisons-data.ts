@@ -8,6 +8,7 @@ export type ComparisonDefinition = {
   product1: {
     name: string;
     searchTerms: string[];
+    category: string;
     specs: string;
     pros: string[];
     cons: string[];
@@ -15,6 +16,7 @@ export type ComparisonDefinition = {
   product2: {
     name: string;
     searchTerms: string[];
+    category: string;
     specs: string;
     pros: string[];
     cons: string[];
@@ -32,6 +34,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
     product1: {
       name: 'RTX 4060',
       searchTerms: ['rtx 4060'],
+      category: 'tarjetas-graficas',
       specs: '8GB GDDR6 | 115W TDP | DLSS 3 | Ray Tracing',
       pros: ['DLSS 3 y Frame Generation', 'Mejor Ray Tracing', 'Menor consumo energético', 'NVENC para streaming'],
       cons: ['Bus de memoria de 128-bit', 'Precio más alto en Argentina'],
@@ -39,6 +42,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
     product2: {
       name: 'RX 7600',
       searchTerms: ['rx 7600'],
+      category: 'tarjetas-graficas',
       specs: '8GB GDDR6 | 165W TDP | FSR 3 | Mejor precio',
       pros: ['Mejor precio por performance', 'Bus de memoria 128-bit', 'FSR funciona en más juegos', 'Más stock disponible'],
       cons: ['Sin DLSS 3', 'Ray Tracing inferior', 'Mayor consumo energético'],
@@ -67,6 +71,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
     product1: {
       name: 'Ryzen 5 7600X',
       searchTerms: ['ryzen 5 7600x', '7600x'],
+      category: 'procesadores',
       specs: '6 núcleos / 12 hilos | 4.7-5.3 GHz | AM5 | DDR5 | 105W',
       pros: ['Mayor IPC y frecuencia', 'Plataforma AM5 futura', 'Soporte hasta 2027+', 'PCIe 5.0'],
       cons: ['No incluye cooler stock', 'Motherboards AM5 más caras', 'RAM DDR5 más cara'],
@@ -74,6 +79,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
     product2: {
       name: 'Ryzen 7 5700X',
       searchTerms: ['ryzen 7 5700x', '5700x'],
+      category: 'procesadores',
       specs: '8 núcleos / 16 hilos | 3.4-4.6 GHz | AM4 | DDR4 | 65W',
       pros: ['Más núcleos (8 vs 6)', 'Plataforma AM4 madura', 'Motherboards y RAM más baratas', 'Incluye cooler stock'],
       cons: ['Menor IPC', 'Plataforma sin futuro upgrades', 'Frecuencia más baja'],
@@ -102,6 +108,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
     product1: {
       name: 'RTX 5070',
       searchTerms: ['rtx 5070'],
+      category: 'tarjetas-graficas',
       specs: '12GB GDDR7 | 250W TDP | DLSS 4 | Frame Generation 2',
       pros: ['DLSS 4 con mejor calidad', 'GDDR7 más rápida', 'Mejor Ray Tracing', 'Frame Generation 2'],
       cons: ['Precio más alto', 'Mayor consumo energético', 'Stock limitado inicialmente'],
@@ -109,6 +116,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
     product2: {
       name: 'RTX 4070',
       searchTerms: ['rtx 4070'],
+      category: 'tarjetas-graficas',
       specs: '12GB GDDR6X | 200W TDP | DLSS 3 | Buena relación precio',
       pros: ['Mejor precio actual', 'Menor consumo energético', 'Stock estable', 'Suficiente para 1440p'],
       cons: ['Sin DLSS 4', 'GDDR6X más lenta', 'Menor performance en RT'],
@@ -137,6 +145,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
     product1: {
       name: 'Ryzen 7 9800X3D',
       searchTerms: ['ryzen 7 9800x3d', '9800x3d'],
+      category: 'procesadores',
       specs: '8 núcleos / 16 hilos | 4.7-5.2 GHz | 104MB Cache | AM5 | 120W',
       pros: ['Mejor procesador para gaming', 'X3D V-Cache enorme', 'Eficiencia energética', 'Temperaturas controladas'],
       cons: ['Precio muy alto', 'Menor performance en productividad', 'Stock limitado'],
@@ -144,6 +153,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
     product2: {
       name: 'Intel Core i9-14900K',
       searchTerms: ['i9-14900k', '14900k', 'intel core i9'],
+      category: 'procesadores',
       specs: '24 núcleos / 32 hilos | 3.2-6.0 GHz | 36MB Cache | LGA1700 | 253W',
       pros: ['Mejor en productividad', 'Más núcleos', 'Overclocking extremo', 'Precio más bajo'],
       cons: ['Consumo energético muy alto', 'Temperaturas altas', 'Necesita cooler premium', 'Menor performance en gaming vs 9800X3D'],
@@ -172,6 +182,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
     product1: {
       name: 'Intel Core i5-14600K',
       searchTerms: ['i5-14600k', '14600k', 'intel core i5'],
+      category: 'procesadores',
       specs: '14 núcleos / 20 hilos | 3.5-5.3 GHz | LGA1700 | DDR4/DDR5 | 125W',
       pros: ['Más núcleos (14 vs 6)', 'Compatible DDR4', 'Mejor en productividad', 'Precio competitivo'],
       cons: ['Mayor consumo energético', 'Temperaturas altas', 'Plataforma sin futuro'],
@@ -179,6 +190,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
     product2: {
       name: 'Ryzen 5 7600X',
       searchTerms: ['ryzen 5 7600x', '7600x'],
+      category: 'procesadores',
       specs: '6 núcleos / 12 hilos | 4.7-5.3 GHz | AM5 | DDR5 | 105W',
       pros: ['Mayor IPC en gaming', 'Plataforma AM5 futura', 'Eficiencia energética', 'PCIe 5.0'],
       cons: ['Menos núcleos', 'Solo DDR5', 'Motherboards más caras'],
@@ -207,6 +219,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
     product1: {
       name: 'DDR5',
       searchTerms: ['ddr5', 'memoria ddr5'],
+      category: 'memoria-ram',
       specs: '4800-6400 MHz | Menor latencia | Más eficiente | AM5/LGA1700',
       pros: ['Mayor ancho de banda', 'Mejor eficiencia energética', 'Futuro del mercado', 'Mejor para integrados'],
       cons: ['Precio más alto', 'Requiere plataforma nueva', 'Latencia inicial más alta'],
@@ -214,6 +227,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
     product2: {
       name: 'DDR4',
       searchTerms: ['ddr4', 'memoria ddr4'],
+      category: 'memoria-ram',
       specs: '3200-3600 MHz | Latencia baja | Madura | AM4/LGA1200',
       pros: ['Precio más bajo', 'Plataformas maduras', 'Mucho stock', 'Latencia optimizada'],
       cons: ['Ancho de banda limitado', 'Sin futuro upgrades', 'Obsoleta en 2-3 años'],
@@ -249,12 +263,14 @@ export function findProductInComparison(comparison: ComparisonDefinition, allPro
   product2?: Product;
 } {
   const product1 = allProducts.find(p => 
+    p.category === comparison.product1.category &&
     comparison.product1.searchTerms.some(term => 
       p.name.toLowerCase().includes(term.toLowerCase())
     )
   );
 
   const product2 = allProducts.find(p => 
+    p.category === comparison.product2.category &&
     comparison.product2.searchTerms.some(term => 
       p.name.toLowerCase().includes(term.toLowerCase())
     )
