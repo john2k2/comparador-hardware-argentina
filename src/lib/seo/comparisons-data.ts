@@ -259,9 +259,17 @@ export function getAllComparisonSlugs(): string[] {
 }
 
 function isPcBuild(name: string): boolean {
-  const pcBuildTerms = ['pc gamer', 'combo', 'armado', 'pc completa', 'computadora', 'desktop', 'workstation'];
+  const pcBuildTerms = [
+    'pc gamer', 'combo', 'armado', 'pc completa', 'computadora', 'desktop', 'workstation',
+    'notebook', 'laptop', 'all in one', 'aio ', 'netbook', 'chromebook'
+  ];
   const lowerName = name.toLowerCase();
   return pcBuildTerms.some(term => lowerName.includes(term));
+}
+
+function isMatchingProduct(product: Product, searchTerms: string[]): boolean {
+  const lowerName = product.name.toLowerCase();
+  return searchTerms.some(term => lowerName.includes(term.toLowerCase()));
 }
 
 export function findProductInComparison(comparison: ComparisonDefinition, allProducts: Product[]): {
@@ -271,34 +279,26 @@ export function findProductInComparison(comparison: ComparisonDefinition, allPro
   // Primero intentar con filtro de categoría exacta
   let product1 = allProducts.find(p => 
     p.category === comparison.product1.category &&
-    comparison.product1.searchTerms.some(term => 
-      p.name.toLowerCase().includes(term.toLowerCase())
-    )
+    isMatchingProduct(p, comparison.product1.searchTerms)
   );
 
   let product2 = allProducts.find(p => 
     p.category === comparison.product2.category &&
-    comparison.product2.searchTerms.some(term => 
-      p.name.toLowerCase().includes(term.toLowerCase())
-    )
+    isMatchingProduct(p, comparison.product2.searchTerms)
   );
 
-  // Si no encontró con categoría, buscar sin categoría pero descartando PCs armadas
+  // Si no encontró con categoría, buscar sin categoría pero descartando PCs armadas y notebooks
   if (!product1) {
     product1 = allProducts.find(p => 
       !isPcBuild(p.name) &&
-      comparison.product1.searchTerms.some(term => 
-        p.name.toLowerCase().includes(term.toLowerCase())
-      )
+      isMatchingProduct(p, comparison.product1.searchTerms)
     );
   }
 
   if (!product2) {
     product2 = allProducts.find(p => 
       !isPcBuild(p.name) &&
-      comparison.product2.searchTerms.some(term => 
-        p.name.toLowerCase().includes(term.toLowerCase())
-      )
+      isMatchingProduct(p, comparison.product2.searchTerms)
     );
   }
 
