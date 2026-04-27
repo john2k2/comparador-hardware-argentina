@@ -18,21 +18,6 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     const securityHeaders = [
-      {
-        key: 'Content-Security-Policy',
-        value: [
-          "default-src 'self'",
-          "script-src 'self' 'nonce-{nonce}' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com",
-          "style-src 'self' 'unsafe-inline'",
-          "img-src 'self' data: blob: https:",
-          "font-src 'self' data: https://fonts.gstatic.com",
-          "connect-src 'self' https: wss:",
-          "frame-ancestors 'none'",
-          "base-uri 'self'",
-          "form-action 'self'",
-          "upgrade-insecure-requests",
-        ].join('; '),
-      },
       { key: 'X-Frame-Options', value: 'DENY' },
       { key: 'X-Content-Type-Options', value: 'nosniff' },
       { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
