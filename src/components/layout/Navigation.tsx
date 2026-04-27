@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { LogIn, LogOut, Moon, Sun, UserRound } from 'lucide-react';
+import { LogIn, LogOut, Menu, Moon, Sun, UserRound, X } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -47,6 +47,7 @@ export function Navigation() {
   const [isWiping, setIsWiping] = useState(false);
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(Boolean(supabase));
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -162,7 +163,38 @@ export function Navigation() {
               </div>
             </Link>
 
+            {/* Navegación central */}
+            <nav className="hidden md:flex items-center gap-1">
+              <Link
+                href="/comparativa"
+                className="px-3 py-2 text-[10px] uppercase font-bold text-secondary hover:text-primary hover:bg-muted border-2 border-transparent hover:border-border transition-colors"
+              >
+                Comparativas
+              </Link>
+              <Link
+                href="/guia"
+                className="px-3 py-2 text-[10px] uppercase font-bold text-secondary hover:text-primary hover:bg-muted border-2 border-transparent hover:border-border transition-colors"
+              >
+                Guías de Presupuesto
+              </Link>
+            </nav>
+
             <div className="flex items-center gap-2">
+              {/* Botón menú móvil */}
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="md:hidden min-h-11 min-w-11 px-3 py-2 border-2 border-border bg-card text-[8px] uppercase font-bold text-secondary inline-flex items-center justify-center gap-2 hover:bg-muted transition-colors"
+                aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+                aria-expanded={isMobileMenuOpen}
+              >
+                {isMobileMenuOpen ? (
+                  <X className="w-4 h-4" aria-hidden="true" />
+                ) : (
+                  <Menu className="w-4 h-4" aria-hidden="true" />
+                )}
+              </button>
+
               {isAuthLoading ? (
                 <div className="px-3 py-2 border-2 border-border text-[8px] uppercase text-muted-foreground">
                   AUTH...
@@ -214,6 +246,28 @@ export function Navigation() {
               </button>
             </div>
           </div>
+
+          {/* Menú móvil desplegable */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden border-t-2 border-border bg-background">
+              <nav className="flex flex-col py-2">
+                <Link
+                  href="/comparativa"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-4 py-3 text-[10px] uppercase font-bold text-secondary hover:text-primary hover:bg-muted transition-colors border-b border-border"
+                >
+                  Comparativas
+                </Link>
+                <Link
+                  href="/guia"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-4 py-3 text-[10px] uppercase font-bold text-secondary hover:text-primary hover:bg-muted transition-colors"
+                >
+                  Guías de Presupuesto
+                </Link>
+              </nav>
+            </div>
+          )}
         </div>
       </header>
     </>
