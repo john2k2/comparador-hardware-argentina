@@ -35,11 +35,10 @@ on:
         required: false
         type: string
   schedule:
-    # Offseteados fuera del minuto 0 para evitar picos/colas del scheduler de GitHub Actions.
-    - cron: '13,43 * * * *'
-    - cron: '18 */3 * * *'
+    # Frecuencia reducida a 1 vez al dia para cuenta gratuita
+    # (limite: 2000 minutos/mes de GitHub Actions)
+    # Todos los modos se ejecutan en secuencia una vez al dia
     - cron: '5 5 * * *'
-    - cron: '35 5 * * *'
 
 permissions:
   contents: read
@@ -88,21 +87,9 @@ jobs:
 
           if [[ "$EVENT_NAME" == "schedule" ]]; then
             case "$EVENT_SCHEDULE" in
-              '13,43 * * * *')
-                MODE='tracked'
-                REQUEST_PATH='/api/admin/catalog-refresh?mode=tracked&maxQueries=30'
-                ;;
-              '18 */3 * * *')
-                MODE='hot'
-                REQUEST_PATH='/api/admin/catalog-refresh?mode=hot&maxQueries=80&staleMinutes=180'
-                ;;
               '5 5 * * *')
                 MODE='full'
                 REQUEST_PATH='/api/admin/catalog-refresh?mode=full'
-                ;;
-              '35 5 * * *')
-                MODE='cleanup-history'
-                REQUEST_PATH='/api/admin/catalog-refresh?mode=cleanup-history'
                 ;;
               *)
                 echo "Cron no soportado: $EVENT_SCHEDULE" >&2
