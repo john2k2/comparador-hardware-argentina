@@ -258,23 +258,49 @@ export function getAllComparisonSlugs(): string[] {
   return COMPARISONS.map(c => c.slug);
 }
 
+function isPcBuild(name: string): boolean {
+  const pcBuildTerms = ['pc gamer', 'combo', 'armado', 'pc completa', 'computadora', 'desktop', 'workstation'];
+  const lowerName = name.toLowerCase();
+  return pcBuildTerms.some(term => lowerName.includes(term));
+}
+
 export function findProductInComparison(comparison: ComparisonDefinition, allProducts: Product[]): {
   product1?: Product;
   product2?: Product;
 } {
-  const product1 = allProducts.find(p => 
+  // Primero intentar con filtro de categoría exacta
+  let product1 = allProducts.find(p => 
     p.category === comparison.product1.category &&
     comparison.product1.searchTerms.some(term => 
       p.name.toLowerCase().includes(term.toLowerCase())
     )
   );
 
-  const product2 = allProducts.find(p => 
+  let product2 = allProducts.find(p => 
     p.category === comparison.product2.category &&
     comparison.product2.searchTerms.some(term => 
       p.name.toLowerCase().includes(term.toLowerCase())
     )
   );
+
+  // Si no encontró con categoría, buscar sin categoría pero descartando PCs armadas
+  if (!product1) {
+    product1 = allProducts.find(p => 
+      !isPcBuild(p.name) &&
+      comparison.product1.searchTerms.some(term => 
+        p.name.toLowerCase().includes(term.toLowerCase())
+      )
+    );
+  }
+
+  if (!product2) {
+    product2 = allProducts.find(p => 
+      !isPcBuild(p.name) &&
+      comparison.product2.searchTerms.some(term => 
+        p.name.toLowerCase().includes(term.toLowerCase())
+      )
+    );
+  }
 
   return { product1, product2 };
 }
