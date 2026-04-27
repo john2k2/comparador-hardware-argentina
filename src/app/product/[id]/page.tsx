@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { ProductDetailClient } from '@/components/product/ProductDetailClient';
 import { readCanonicalProductIdByKey, readProductByIdFromDatabase } from '@/lib/persistence/product-read';
 import { formatPriceARS, getComparableStorePrices } from '@/lib/price-utils';
@@ -229,11 +230,17 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 export default async function ProductDetailPage({ params }: ProductPageProps) {
   const { id } = await params;
   const product = await getProductForPage(id);
-  const canonicalProductId = product?.canonicalProductKey
-    ? await readCanonicalProductIdByKey(product.canonicalProductKey)
-    : null;
-  const resolvedCanonicalId = canonicalProductId ?? id;
-  const jsonLd = product && isIndexableProductId(id) && resolvedCanonicalId === id && getComparableStorePrices(product.prices).length >= 2
+  
+  // Si el producto tiene canonicalProductKey, redirigir al producto agrupado
+  // para evitar mostrar precios del producto individual vs el agrupado
+  if (product?.canonicalProductKey) {
+    const canonicalProductId = await readCanonicalProductIdByKey(product.canonicalProductKey);
+    if (canonicalProductId && canonicalProductId !== id) {
+      redirect(`/product/${encodeURIComponent(canonicalProductId)}`);
+    }
+  }
+  
+  const jsonLd = product && isIndexableProductId(id) && getComparableStorePrices(product.prices).length >= 2
     ? buildProductJsonLd(product, id)
     : null;
 
