@@ -262,7 +262,8 @@ function isPcBuild(name: string): boolean {
   const pcBuildTerms = [
     'pc gamer', 'combo', 'armado', 'pc completa', 'computadora', 'desktop', 'workstation',
     'notebook', 'laptop', 'all in one', 'aio ', 'netbook', 'chromebook',
-    'kit ', 'bundle', 'paquete', 'gaming pc', 'cpu +', 'procesador +'
+    'kit ', 'bundle', 'paquete', 'gaming pc', 'cpu +', 'procesador +',
+    'usado', 'refurbished', 'open box', 'reacondicionado', 'segunda mano'
   ];
   const lowerName = name.toLowerCase();
   return pcBuildTerms.some(term => lowerName.includes(term));
