@@ -212,6 +212,43 @@ export const COMPARISONS: ComparisonDefinition[] = [
     ],
   },
   {
+    slug: 'rtx-5090-vs-rx-9070-xt',
+    title: 'RTX 5090 vs RX 9070 XT: Comparativa Argentina 2026',
+    description: 'Compará precios de RTX 5090 vs RX 9070 XT en tiendas argentinas. La RTX 5090 es la placa más potente de NVIDIA, mientras que la RX 9070 XT ofrece performance high-end de AMD a mejor precio.',
+    keywords: ['rtx 5090 vs rx 9070 xt', '5090 vs 9070 xt argentina', 'mejor placa video 4k', 'rtx 5090 precio argentina'],
+    product1: {
+      name: 'RTX 5090',
+      searchTerms: ['rtx 5090', '5090'],
+      category: 'tarjetas-graficas',
+      specs: '32GB GDDR7 | 575W TDP | DLSS 4 | Frame Generation 2 | 4K 120+ FPS',
+      pros: ['Mejor performance del mercado', 'DLSS 4 con mejor calidad', '32GB VRAM para 4K/8K', 'Ray Tracing de nueva generación'],
+      cons: ['Precio extremadamente alto', 'Consumo energético muy alto', 'Requiere fuente 1000W+', 'Stock muy limitado'],
+    },
+    product2: {
+      name: 'RX 9070 XT',
+      searchTerms: ['rx 9070 xt', '9070 xt', 'rx 9070'],
+      category: 'tarjetas-graficas',
+      specs: '24GB GDDR6 | 350W TDP | FSR 4 | Ray Tracing mejorado | 4K 60+ FPS',
+      pros: ['Mejor relación precio/performance', 'FSR 4 funciona en más juegos', 'Consumo energético moderado', '24GB VRAM suficiente para 4K'],
+      cons: ['Sin DLSS 4', 'Ray Tracing inferior a NVIDIA', 'Menor performance bruta', 'Stock limitado inicialmente'],
+    },
+    conclusion: 'La RTX 5090 es la placa más potente del mercado, ideal para 4K Ultra a 120+ FPS y trabajo profesional. La RX 9070 XT es la opción inteligente si buscás jugar en 4K 60 FPS sin gastar el triple. Elegí RTX 5090 si necesitás la máxima performance y DLSS 4. Elegí RX 9070 XT si buscás la mejor relación precio/calidad en high-end.',
+    faqs: [
+      {
+        question: '¿RTX 5090 o RX 9070 XT para gaming 4K?',
+        answer: 'Ambas rinden en 4K. La RTX 5090 llega a 120+ FPS en la mayoría de juegos, mientras que la RX 9070 XT mantiene 60+ FPS en 4K Ultra. La diferencia es de aproximadamente 40-50% a favor de la 5090.',
+      },
+      {
+        question: '¿Cuánto cuesta la RTX 5090 en Argentina?',
+        answer: 'Es la placa más cara del mercado. Usá nuestro comparador para ver precios actualizados en tiempo real.',
+      },
+      {
+        question: '¿La RX 9070 XT sirve para 4K?',
+        answer: 'Sí, rinde 60+ FPS en 4K Ultra en la mayoría de juegos. Para juegos más exigentes, bajando algunos settings a Alto mantiene 60 FPS estables.',
+      },
+    ],
+  },
+  {
     slug: 'ddr5-vs-ddr4',
     title: 'DDR5 vs DDR4: ¿Vale la pena el upgrade en Argentina? [2026]',
     description: 'Comparativa DDR5 vs DDR4. Diferencias de precio, rendimiento y compatibilidad. Encontrá el mejor precio en tiendas argentinas.',
@@ -269,13 +306,42 @@ function isPcBuild(name: string): boolean {
   return pcBuildTerms.some(term => lowerName.includes(term));
 }
 
-function isMatchingProduct(product: Product, searchTerms: string[]): boolean {
-  const lowerName = product.name.toLowerCase();
-  return searchTerms.some(term => lowerName.includes(term.toLowerCase()));
-}
-
 function isGroupedProduct(product: Product): boolean {
   return product.id.startsWith('agrupado-');
+}
+
+function normalizeSearchText(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function productMatchesTerms(product: Product, searchTerms: string[]): boolean {
+  const searchable = [
+    product.name,
+    product.brand,
+    product.model,
+    product.normalizedTitle ?? '',
+    product.canonicalProductKey ?? '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const normalizedSearchable = normalizeSearchText(searchable);
+
+  return searchTerms.some(term => {
+    const normalizedTerm = normalizeSearchText(term);
+    const termWords = normalizedTerm.split(/\s+/).filter(w => w.length > 1);
+
+    if (termWords.length === 0) return false;
+
+    // Todas las palabras del término deben aparecer en el producto
+    return termWords.every(word => normalizedSearchable.includes(word));
+  });
 }
 
 export function findProductInComparison(comparison: ComparisonDefinition, allProducts: Product[]): {
@@ -287,30 +353,30 @@ export function findProductInComparison(comparison: ComparisonDefinition, allPro
   const individualProducts = allProducts.filter(p => !isGroupedProduct(p));
 
   // Primero buscar en productos AGRUPADOS (tienen todos los precios fusionados)
-  let product1 = groupedProducts.find(p => 
+  let product1 = groupedProducts.find(p =>
     p.category === comparison.product1.category &&
-    isMatchingProduct(p, comparison.product1.searchTerms)
+    productMatchesTerms(p, comparison.product1.searchTerms)
   );
 
-  let product2 = groupedProducts.find(p => 
+  let product2 = groupedProducts.find(p =>
     p.category === comparison.product2.category &&
-    isMatchingProduct(p, comparison.product2.searchTerms)
+    productMatchesTerms(p, comparison.product2.searchTerms)
   );
 
   // Si no encontró en agrupados, buscar en individuales con filtros estrictos
   if (!product1) {
-    product1 = individualProducts.find(p => 
+    product1 = individualProducts.find(p =>
       p.category === comparison.product1.category &&
       !isPcBuild(p.name) &&
-      isMatchingProduct(p, comparison.product1.searchTerms)
+      productMatchesTerms(p, comparison.product1.searchTerms)
     );
   }
 
   if (!product2) {
-    product2 = individualProducts.find(p => 
+    product2 = individualProducts.find(p =>
       p.category === comparison.product2.category &&
       !isPcBuild(p.name) &&
-      isMatchingProduct(p, comparison.product2.searchTerms)
+      productMatchesTerms(p, comparison.product2.searchTerms)
     );
   }
 
