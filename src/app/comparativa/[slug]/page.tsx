@@ -9,7 +9,7 @@ import {
   type ComparisonDefinition 
 } from '@/lib/seo/comparisons-data';
 import Link from 'next/link';
-import type { Product } from '@/lib/types';
+import type { HardwareCategory, Product } from '@/lib/types';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -57,7 +57,18 @@ export default async function ComparisonPage({ params }: Props) {
     notFound();
   }
 
-  const allProducts = await readProductsFromDatabase({ limit: 2000 });
+  // Fetch products from both categories (usually the same) with a high limit.
+  // Comparison products are often buried deep in the catalog, so we need
+  // enough headroom to find them after grouping/filtering.
+  const categories = new Set([comparison.product1.category, comparison.product2.category]);
+  const allProducts = (
+    await Promise.all(
+      Array.from(categories).map((category) =>
+        readProductsFromDatabase({ limit: 3000, category: category as HardwareCategory }),
+      ),
+    )
+  ).flat();
+
   const { product1, product2 } = findProductInComparison(comparison, allProducts);
 
   const p1Prices = product1?.prices.filter(p => p.price > 0).sort((a, b) => a.price - b.price) || [];
