@@ -134,6 +134,7 @@ export async function GET(request: NextRequest) {
   const isRefreshRequest = searchParams.get('refresh') === '1';
   const categoryParam = searchParams.get('category');
   const category = isHardwareCategory(categoryParam) ? categoryParam : undefined;
+  const effectiveCategory = category ?? (query ? inferHardwareCategoryFromName(query) : undefined);
   const rawSortBy = searchParams.get('sortBy');
   const sortBy: SortBy = rawSortBy && VALID_SORTS.has(rawSortBy as SortBy) ? (rawSortBy as SortBy) : 'relevance';
   const page = parsePositiveInteger(searchParams.get('page'));
@@ -142,7 +143,7 @@ export async function GET(request: NextRequest) {
   const rawMaxPrice = parseNonNegativeNumber(searchParams.get('maxPrice'));
   const minPrice = rawMinPrice !== undefined && rawMaxPrice !== undefined ? Math.min(rawMinPrice, rawMaxPrice) : rawMinPrice;
   const maxPrice = rawMinPrice !== undefined && rawMaxPrice !== undefined ? Math.max(rawMinPrice, rawMaxPrice) : rawMaxPrice;
-  const cacheKey = buildSearchCacheKey({ query, category, sortBy, page, minPrice, maxPrice, stores: selectedStoreIds });
+  const cacheKey = buildSearchCacheKey({ query, category: effectiveCategory, sortBy, page, minPrice, maxPrice, stores: selectedStoreIds });
   let defaultRateLimitHeaders: Record<string, string> | null = null;
 
   const respond = <T>(body: T, init?: ResponseInit, meta?: { success?: boolean; resultCount?: number; note?: string }) => {
@@ -183,7 +184,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const hasFilterIntent = hasSearchFiltersIntent({ category, minPrice, maxPrice, stores: selectedStoreIds });
+  const hasFilterIntent = hasSearchFiltersIntent({ category: effectiveCategory, minPrice, maxPrice, stores: selectedStoreIds });
   const hasSearchIntent = Boolean(query || hasFilterIntent);
   const stableRuntimeMode = shouldSkipLiveScraping();
 
@@ -206,7 +207,7 @@ export async function GET(request: NextRequest) {
     if (!bypassDb) {
       const databaseProducts = await readProductsFromDatabase({
         query: query || undefined,
-        category,
+        category: effectiveCategory,
         minPrice,
         maxPrice,
         storeIds: selectedStoreIds,
@@ -216,7 +217,7 @@ export async function GET(request: NextRequest) {
         logger.warn('DB-first search read skipped', {
           endpoint: '/api/search',
           query,
-          category,
+          category: effectiveCategory,
           error: databaseError,
         });
         return [];
@@ -234,7 +235,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (!query && category) {
+    if (!query && effectiveCategory) {
       if (stableRuntimeMode) {
         const emptyPayload = emptySearchResponse(page);
         return respond(
@@ -245,10 +246,10 @@ export async function GET(request: NextRequest) {
       }
 
       const observeSource = createObservedProductsSourceRunner(runObservedStoreScrape);
-      const liveCategoryProducts = await resolveLiveProductsList(category, undefined, observeSource);
+      const liveCategoryProducts = await resolveLiveProductsList(effectiveCategory, undefined, observeSource);
       const refreshedDatabaseProducts = await readProductsFromDatabase({
         query: undefined,
-        category,
+        category: effectiveCategory,
         minPrice,
         maxPrice,
         storeIds: selectedStoreIds,
@@ -257,7 +258,7 @@ export async function GET(request: NextRequest) {
       }).catch((databaseError) => {
         logger.warn('DB category reread after live refresh skipped', {
           endpoint: '/api/search',
-          category,
+          category: effectiveCategory,
           error: databaseError,
         });
         return [];
@@ -291,7 +292,7 @@ export async function GET(request: NextRequest) {
     if (stableRuntimeMode) {
       const stablePayload = await buildStableSearchFallback({
         query,
-        category,
+        category: effectiveCategory,
         minPrice,
         maxPrice,
         selectedStoreIds,
@@ -317,7 +318,7 @@ export async function GET(request: NextRequest) {
 
     const searchPromise = runLiveSearch({
       query,
-      category,
+      category: effectiveCategory,
       selectedStoreIds,
       minPrice,
       maxPrice,
@@ -341,7 +342,7 @@ export async function GET(request: NextRequest) {
     logger.error('Search API error', {
       endpoint: '/api/search',
       query,
-      category,
+        category: effectiveCategory,
       error,
     });
     return respond({ error: 'Error al buscar productos de manera global' }, { status: 500 }, { success: false, resultCount: 0, note: 'ERROR' });

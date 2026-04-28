@@ -8,6 +8,34 @@ const DEDUPE_STOPWORDS = new Set([
   'vga', 'placa', 'video', 'procesador', 'micro', 'cpu', 'gpu', 'gamer',
 ]);
 
+const COMPONENT_BUNDLE_TERMS = [
+  'pc gamer',
+  'combo',
+  'armado',
+  'pc completa',
+  'computadora',
+  'desktop',
+  'workstation',
+  'notebook',
+  'laptop',
+  'all in one',
+  'netbook',
+  'chromebook',
+  'kit ',
+  'bundle',
+  'paquete',
+];
+
+function isStandaloneComponentProduct(product: Product): boolean {
+  if (!['procesadores', 'tarjetas-graficas', 'memoria-ram'].includes(product.category)) return true;
+  const normalizedName = normalizeGroupName(product.name);
+  return !COMPONENT_BUNDLE_TERMS.some((term) => normalizedName.includes(term));
+}
+
+function hasDisplayableComparablePrice(product: Product): boolean {
+  return product.prices.length > 0 && Number.isFinite(product.lowestPrice) && product.lowestPrice > 0;
+}
+
 export function applyTextFilter(products: Product[], query: string): Product[] {
   const normalizedQuery = normalizeIdentityText(query);
   const words = normalizedQuery
@@ -250,6 +278,8 @@ export function applyDatabaseReadTransforms(
   }
 
   next = dedupeProductsByCanonicalName(next);
+
+  next = next.filter((product) => isStandaloneComponentProduct(product) && hasDisplayableComparablePrice(product));
 
   if (params.storeIds && params.storeIds.size > 0) {
     next = next
