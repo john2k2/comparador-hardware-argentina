@@ -73,8 +73,8 @@ export async function readProductsFromDatabase(params: ReadProductsParams) {
 
   queryBuilder = applySharedProductFilters(queryBuilder, {
     category: params.category,
-    minPrice: params.minPrice,
-    maxPrice: params.maxPrice,
+    // Price filters are applied after grouping/recalculating prices so the UI
+    // filters the same comparable price that it displays.
     searchTerm: searchTerm || undefined,
   });
 
@@ -90,6 +90,8 @@ export async function readProductsFromDatabase(params: ReadProductsParams) {
     {
       searchTerm: searchTerm || undefined,
       storeIds: params.storeIds,
+      minPrice: params.minPrice,
+      maxPrice: params.maxPrice,
       sortBy: params.sortBy ?? 'relevance',
     },
   );
@@ -142,6 +144,8 @@ export async function readProductsPageFromDatabase(params: ReadProductsPageParam
       {
         searchTerm: searchTerm || undefined,
         storeIds: params.storeIds,
+        minPrice: params.minPrice,
+        maxPrice: params.maxPrice,
         sortBy: params.sortBy ?? 'relevance',
       },
     ),

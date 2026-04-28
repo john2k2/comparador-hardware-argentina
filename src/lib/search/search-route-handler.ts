@@ -4,7 +4,6 @@ import { resolveAdminAccessFromToken } from '@/lib/server/admin-auth';
 import { buildRateLimitHeaders, checkRateLimit, getRequestIp } from '@/lib/server/rate-limit';
 import { recordEndpointRequestEvent, runObservedStoreScrape } from '@/lib/telemetry/operational-metrics';
 import { hasStaleProducts } from '@/lib/persistence/product-staleness';
-import { readProductsPageFromDatabase } from '@/lib/persistence/product-read';
 import { readProductsFromDatabase } from '@/lib/persistence/product-read';
 import { sortProducts } from '@/lib/persistence/product-read-grouping';
 import { createObservedProductsSourceRunner } from '@/lib/products/products-handler-shared';
@@ -37,27 +36,6 @@ import { logger } from '@/lib/logger';
 import { shouldSkipLiveScraping } from '@/lib/server/runtime-flags';
 import { normalizeSearchText } from '@/lib/search/search-ranking';
 import { getStableFixtureProducts } from '@/lib/server/stable-search-fixtures';
-
-type DatabasePage = Awaited<ReturnType<typeof readProductsPageFromDatabase>>;
-
-function hasUsableDatabasePage(page: DatabasePage): boolean {
-  return page.total > 0 || page.products.length > 0;
-}
-
-function buildPayloadFromDatabasePage(page: DatabasePage): SearchApiResponse {
-  return {
-    products: page.products,
-    pagination: {
-      limit: page.products.length,
-      offset: (page.page - 1) * page.pageSize,
-      total: page.total,
-      totalPages: page.totalPages,
-      page: page.page,
-      pageSize: page.pageSize,
-    },
-    facets: { categories: [], brands: [], stores: [] },
-  };
-}
 
 function buildPayloadFromProducts(products: Product[], page: number): SearchApiResponse {
   const pageSlice = paginateProducts(products, page, SEARCH_PAGE_SIZE);
@@ -226,15 +204,14 @@ export async function GET(request: NextRequest) {
 
   try {
     if (!bypassDb) {
-      const databasePage = await readProductsPageFromDatabase({
+      const databaseProducts = await readProductsFromDatabase({
         query: query || undefined,
         category,
         minPrice,
         maxPrice,
         storeIds: selectedStoreIds,
         sortBy,
-        page,
-        pageSize: SEARCH_PAGE_SIZE,
+        limit: 1000,
       }).catch((databaseError) => {
         logger.warn('DB-first search read skipped', {
           endpoint: '/api/search',
@@ -242,14 +219,14 @@ export async function GET(request: NextRequest) {
           category,
           error: databaseError,
         });
-        return { products: [], total: 0, totalPages: 0, page, pageSize: SEARCH_PAGE_SIZE };
+        return [];
       });
 
-      if (hasUsableDatabasePage(databasePage)) {
-        const staleDatabase = hasStaleProducts(databasePage.products, DB_STALE_AFTER_MS);
+      if (databaseProducts.length > 0) {
+        const staleDatabase = hasStaleProducts(databaseProducts, DB_STALE_AFTER_MS);
         if (query && staleDatabase && !isRefreshRequest) scheduleBackgroundSearchRefresh(request, cacheKey);
 
-        const payload = buildPayloadFromDatabasePage(databasePage);
+        const payload = buildPayloadFromProducts(databaseProducts, page);
 
         await setCachedSearchResponse(cacheKey, payload);
         snapshotProducts(payload.products);
@@ -269,26 +246,25 @@ export async function GET(request: NextRequest) {
 
       const observeSource = createObservedProductsSourceRunner(runObservedStoreScrape);
       const liveCategoryProducts = await resolveLiveProductsList(category, undefined, observeSource);
-      const refreshedDatabasePage = await readProductsPageFromDatabase({
+      const refreshedDatabaseProducts = await readProductsFromDatabase({
         query: undefined,
         category,
         minPrice,
         maxPrice,
         storeIds: selectedStoreIds,
         sortBy,
-        page,
-        pageSize: SEARCH_PAGE_SIZE,
+        limit: 1000,
       }).catch((databaseError) => {
         logger.warn('DB category reread after live refresh skipped', {
           endpoint: '/api/search',
           category,
           error: databaseError,
         });
-        return null;
+        return [];
       });
 
-      if (refreshedDatabasePage && hasUsableDatabasePage(refreshedDatabasePage)) {
-        const payload = buildPayloadFromDatabasePage(refreshedDatabasePage);
+      if (refreshedDatabaseProducts.length > 0) {
+        const payload = buildPayloadFromProducts(refreshedDatabaseProducts, page);
         if (!bypassDb) await setCachedSearchResponse(cacheKey, payload);
         snapshotProducts(payload.products);
         return respond(payload, { headers: { 'X-Search-Cache': isRefreshRequest ? 'CATEGORY-REFRESH-DB' : 'CATEGORY-MISS-DB' } }, { success: true, resultCount: payload.products.length, note: isRefreshRequest ? 'CATEGORY_REFRESH_DB' : 'CATEGORY_MISS_DB' });

@@ -101,6 +101,21 @@ export function writeStoredProduct(id: string, value: ProductDetailCacheEntry) {
 }
 
 export function resolveInitialProductClientState(id: string, initialProduct: Product | null): InitialProductClientState {
+  const normalizedInitial = initialProduct ? normalizeFetchedProduct(initialProduct) : null;
+  if (normalizedInitial) {
+    const entry = {
+      expiresAt: Date.now() + CLIENT_DETAIL_CACHE_TTL_MS,
+      product: normalizedInitial,
+    };
+    clientProductDetailCache.set(id, entry);
+    writeStoredProduct(id, entry);
+    return {
+      product: normalizedInitial,
+      isLoading: false,
+      shouldFetch: false,
+    };
+  }
+
   const memoryEntry = getCachedProductEntry(id);
   if (memoryEntry) {
     return {
@@ -120,11 +135,10 @@ export function resolveInitialProductClientState(id: string, initialProduct: Pro
     };
   }
 
-  const normalizedInitial = initialProduct ? normalizeFetchedProduct(initialProduct) : null;
   return {
     product: normalizedInitial,
     isLoading: !normalizedInitial,
-    shouldFetch: true,
+    shouldFetch: !normalizedInitial,
   };
 }
 

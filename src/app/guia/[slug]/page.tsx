@@ -3,10 +3,7 @@ import { notFound } from 'next/navigation';
 import { readProductsFromDatabase } from '@/lib/persistence/product-read';
 import { SITE_URL } from '@/lib/site-config';
 import { formatPriceARS } from '@/lib/price-utils';
-import { 
-  getBudgetGuideBySlug,
-  type BudgetGuideDefinition 
-} from '@/lib/seo/budget-guides-data';
+import { getBudgetGuideBySlug } from '@/lib/seo/budget-guides-data';
 import Link from 'next/link';
 
 type Props = {

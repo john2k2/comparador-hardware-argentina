@@ -274,31 +274,41 @@ function isMatchingProduct(product: Product, searchTerms: string[]): boolean {
   return searchTerms.some(term => lowerName.includes(term.toLowerCase()));
 }
 
+function isGroupedProduct(product: Product): boolean {
+  return product.id.startsWith('agrupado-');
+}
+
 export function findProductInComparison(comparison: ComparisonDefinition, allProducts: Product[]): {
   product1?: Product;
   product2?: Product;
 } {
-  // Primero intentar con filtro de categoría exacta
-  let product1 = allProducts.find(p => 
+  // Separar productos agrupados de individuales
+  const groupedProducts = allProducts.filter(isGroupedProduct);
+  const individualProducts = allProducts.filter(p => !isGroupedProduct(p));
+
+  // Primero buscar en productos AGRUPADOS (tienen todos los precios fusionados)
+  let product1 = groupedProducts.find(p => 
     p.category === comparison.product1.category &&
     isMatchingProduct(p, comparison.product1.searchTerms)
   );
 
-  let product2 = allProducts.find(p => 
+  let product2 = groupedProducts.find(p => 
     p.category === comparison.product2.category &&
     isMatchingProduct(p, comparison.product2.searchTerms)
   );
 
-  // Si no encontró con categoría, buscar sin categoría pero descartando PCs armadas y notebooks
+  // Si no encontró en agrupados, buscar en individuales con filtros estrictos
   if (!product1) {
-    product1 = allProducts.find(p => 
+    product1 = individualProducts.find(p => 
+      p.category === comparison.product1.category &&
       !isPcBuild(p.name) &&
       isMatchingProduct(p, comparison.product1.searchTerms)
     );
   }
 
   if (!product2) {
-    product2 = allProducts.find(p => 
+    product2 = individualProducts.find(p => 
+      p.category === comparison.product2.category &&
       !isPcBuild(p.name) &&
       isMatchingProduct(p, comparison.product2.searchTerms)
     );

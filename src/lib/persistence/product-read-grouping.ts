@@ -238,6 +238,8 @@ export function applyDatabaseReadTransforms(
   params: {
     searchTerm?: string;
     storeIds?: Set<string>;
+    minPrice?: number;
+    maxPrice?: number;
     sortBy: ProductSort;
   },
 ): Product[] {
@@ -253,6 +255,14 @@ export function applyDatabaseReadTransforms(
     next = next
       .map((product) => recalculateProductPrices(product, params.storeIds))
       .filter((product): product is Product => Boolean(product));
+  }
+
+  if (params.minPrice !== undefined) {
+    next = next.filter((product) => product.lowestPrice >= params.minPrice!);
+  }
+
+  if (params.maxPrice !== undefined) {
+    next = next.filter((product) => product.lowestPrice <= params.maxPrice!);
   }
 
   return sortProducts(next, params.sortBy);
