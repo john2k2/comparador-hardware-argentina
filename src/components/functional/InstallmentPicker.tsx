@@ -110,7 +110,7 @@ export function InstallmentPicker({
 
       <div className="flex items-start gap-2 text-xs text-zinc-500 dark:text-zinc-400 pt-2">
         <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
-        <p>Los precios y disponibilidad pueden variar según la tienda. Las cuotas son aproximadas.</p>
+        <p>Los valores pueden variar según el comercio. Las cuotas son aproximadas.</p>
       </div>
     </div>
   );

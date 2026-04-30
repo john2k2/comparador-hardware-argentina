@@ -214,7 +214,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
   {
     slug: 'rtx-5090-vs-rx-9070-xt',
     title: 'RTX 5090 vs RX 9070 XT',
-    description: 'Compará precios de RTX 5090 vs RX 9070 XT en Argentina. Rendimiento 4K, ray tracing, DLSS 4 vs FSR 4.',
+    description: 'Compará precios de RTX 5090 vs RX 9070 XT en 20+ comercios argentinos. Rendimiento 4K, ray tracing, DLSS 4 vs FSR 4 y cuál elegir.',
     keywords: ['rtx 5090 vs rx 9070 xt', '5090 vs 9070 xt argentina', 'mejor placa video 4k', 'rtx 5090 precio argentina'],
     product1: {
       name: 'RTX 5090',

@@ -27,7 +27,7 @@ export function SearchBar({
   className,
   autoFocus = false,
   isLoading = false,
-  loadingText = 'Consultando tiendas y precios...',
+  loadingText = 'Consultando comercios...',
 }: SearchBarProps) {
   const [internalQuery, setInternalQuery] = useState(initialValue);
   const [isFocused, setIsFocused] = useState(false);

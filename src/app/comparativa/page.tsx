@@ -4,8 +4,8 @@ import { COMPARISONS } from '@/lib/seo/comparisons-data';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Comparativas Hardware',
-  description: 'Comparativas de hardware en Argentina: GPUs, CPUs y más. Encontrá el mejor componente al precio más bajo entre 20+ tiendas.',
+  title: 'Comparaciones Hardware',
+  description: 'Comparaciones de hardware en Argentina: GPUs, CPUs y más. Encontrá el mejor componente al mejor costo entre 20+ locales.',
   keywords: ['comparativa hardware', 'comparar precios componentes pc', 'mejor placa video', 'mejor procesador gaming'],
   alternates: {
     canonical: `${SITE_URL}/comparativa`,
@@ -19,10 +19,10 @@ export default function ComparativasIndexPage() {
     <div className="container mx-auto px-4 py-8">
       <header className="mb-8">
         <h1 className="text-[16px] md:text-[20px] font-pixel text-primary mb-3 leading-tight">
-          Comparativas de Hardware
+          Comparaciones de Hardware
         </h1>
         <p className="text-[11px] md:text-[12px] text-muted-foreground font-mono leading-relaxed">
-          Compará precios y rendimiento de los componentes más buscados en Argentina. 
+          Contrastá costos y rendimiento de los componentes más buscados en Argentina.
           Encontrá la mejor opción para tu presupuesto.
         </p>
       </header>
@@ -51,7 +51,7 @@ export default function ComparativasIndexPage() {
               ))}
             </div>
             <div className="mt-3 text-[10px] text-primary font-mono">
-              VER COMPARATIVA →
+              VER →
             </div>
           </Link>
         ))}

@@ -19,7 +19,7 @@ export function BestPriceBadge({ className, showText = true }: BestPriceBadgePro
       )}
     >
       <Trophy className="h-3 w-3" />
-      {showText && <span>Mejor precio</span>}
+      {showText && <span>Mejor valor</span>}
     </div>
   );
 }
