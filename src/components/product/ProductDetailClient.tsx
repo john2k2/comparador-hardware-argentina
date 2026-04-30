@@ -120,6 +120,7 @@ function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientPro
             image={product.image}
             productName={product.name}
             latestSyncAtMs={latestSyncAtMs}
+            priority
           />
 
           <div className="bg-card border-4 border-border p-6 pixel-shadow">

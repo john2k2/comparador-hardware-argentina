@@ -16,7 +16,7 @@ export const revalidate = 300;
 
 export default function ComparativasIndexPage() {
   return (
-    <main className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8">
       <header className="mb-8">
         <h1 className="text-[16px] md:text-[20px] font-pixel text-primary mb-3 leading-tight">
           Comparativas de Hardware
@@ -56,6 +56,6 @@ export default function ComparativasIndexPage() {
           </Link>
         ))}
       </div>
-    </main>
+    </div>
   );
 }

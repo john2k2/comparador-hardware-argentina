@@ -17,7 +17,7 @@ export const revalidate = 300;
 
 export default function GuiasIndexPage() {
   return (
-    <main className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8">
       <header className="mb-8">
         <h1 className="text-[16px] md:text-[20px] font-pixel text-primary mb-3 leading-tight">
           Guías de PC Gamer
@@ -66,6 +66,6 @@ export default function GuiasIndexPage() {
           </Link>
         ))}
       </div>
-    </main>
+    </div>
   );
 }

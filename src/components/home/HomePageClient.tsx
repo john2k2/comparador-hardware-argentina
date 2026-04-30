@@ -269,6 +269,74 @@ export function HomePageClient({
         />
       )}
 
+      <SectionTitle
+        title="COMPARATIVAS POPULARES"
+        subtitle="ANALISIS DETALLADO DE PRECIOS Y RENDIMIENTO"
+        actionHref="/comparativa"
+        actionLabel="VER TODAS"
+      />
+      <section className="mb-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[
+          { slug: 'rtx-4060-vs-rx-7600', title: 'RTX 4060 vs RX 7600', category: 'GPUs' },
+          { slug: 'ryzen-5-7600x-vs-ryzen-7-5700x', title: 'Ryzen 5 7600X vs 7 5700X', category: 'CPUs' },
+          { slug: 'rtx-5070-vs-rtx-4070', title: 'RTX 5070 vs RTX 4070', category: 'GPUs' },
+          { slug: 'i5-14600k-vs-ryzen-5-7600x', title: 'Intel i5-14600K vs Ryzen 5 7600X', category: 'CPUs' },
+          { slug: 'ddr5-vs-ddr4', title: 'DDR5 vs DDR4', category: 'RAM' },
+          { slug: 'ryzen-7-9800x3d-vs-i9-14900k', title: 'Ryzen 7 9800X3D vs i9-14900K', category: 'CPUs' },
+        ].map((comparison) => (
+          <Link
+            key={comparison.slug}
+            href={`/comparativa/${comparison.slug}`}
+            className="block group"
+          >
+            <article className="bg-card border-4 border-border p-4 pixel-shadow transition-transform group-hover:-translate-y-1 group-hover:translate-x-1">
+              <div className="text-[7px] uppercase tracking-widest text-secondary font-bold mb-2">
+                {comparison.category}
+              </div>
+              <h3 className="text-[11px] font-bold uppercase text-foreground leading-tight">
+                {comparison.title}
+              </h3>
+              <div className="mt-2 text-[8px] uppercase font-bold text-primary">
+                VER COMPARATIVA →
+              </div>
+            </article>
+          </Link>
+        ))}
+      </section>
+
+      <SectionTitle
+        title="GUIAS PC GAMER"
+        subtitle="BUILDS RECOMENDADAS POR PRESUPUESTO"
+        actionHref="/guia"
+        actionLabel="VER TODAS"
+      />
+      <section className="mb-8 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { slug: 'pc-gamer-1-millon', title: '$1.000.000', target: '1080p 60fps' },
+          { slug: 'pc-gamer-1-5-millones', title: '$1.500.000', target: '1080p 144Hz' },
+          { slug: 'pc-gamer-3-millones', title: '$3.000.000', target: '1440p 144Hz' },
+          { slug: 'pc-gamer-4-millones', title: '$4.000.000+', target: '4K Gaming' },
+        ].map((guide) => (
+          <Link
+            key={guide.slug}
+            href={`/guia/${guide.slug}`}
+            className="block group"
+          >
+            <article className="bg-card border-4 border-border p-4 pixel-shadow transition-transform group-hover:-translate-y-1 group-hover:translate-x-1 text-center">
+              <h3 className="text-[14px] font-bold uppercase text-primary mb-1">
+                {guide.title}
+              </h3>
+              <p className="text-[9px] uppercase text-muted-foreground mb-2">
+                {guide.target}
+              </p>
+              <div className="text-[8px] uppercase font-bold text-secondary">
+                VER BUILD →
+              </div>
+            </article>
+          </Link>
+        ))}
+      </section>
+
       <SponsoredStoresSection stores={sponsoredStores} />
 
       <PromoBanner

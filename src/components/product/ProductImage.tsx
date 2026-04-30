@@ -9,13 +9,14 @@ type ProductImageProps = {
   image: string | null | undefined;
   productName: string;
   latestSyncAtMs: number;
+  priority?: boolean;
 };
 
 function isWhitelisted(url: string): boolean {
   return isImageHostWhitelisted(url);
 }
 
-export function ProductImage({ image, productName, latestSyncAtMs }: ProductImageProps) {
+export function ProductImage({ image, productName, latestSyncAtMs, priority = false }: ProductImageProps) {
   const displayName = normalizeDisplayText(productName);
 
   return (
@@ -34,8 +35,9 @@ export function ProductImage({ image, productName, latestSyncAtMs }: ProductImag
               width={800}
               height={800}
               className="object-contain image-pixelated p-4 w-full h-full"
-              priority
-              sizes="(max-width: 1024px) 100vw, 50vw"
+              priority={priority}
+              loading={priority ? 'eager' : 'lazy'}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             />
           ) : !isKnownBlockedImageHost(image) ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -45,8 +47,8 @@ export function ProductImage({ image, productName, latestSyncAtMs }: ProductImag
               width={800}
               height={800}
               className="object-contain image-pixelated p-4 w-full h-full"
-              loading="eager"
-              fetchPriority="high"
+              loading={priority ? 'eager' : 'lazy'}
+              fetchPriority={priority ? 'high' : 'auto'}
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
           ) : (

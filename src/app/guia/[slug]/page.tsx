@@ -76,7 +76,7 @@ export default async function BudgetGuidePage({ params }: Props) {
     guide.components.case.estimatedPrice;
 
   return (
-    <main className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <nav className="text-[10px] md:text-[11px] text-muted-foreground mb-6 font-mono">
         <Link href="/" className="hover:text-primary transition-colors">Inicio</Link>
@@ -256,7 +256,7 @@ export default async function BudgetGuidePage({ params }: Props) {
           }),
         }}
       />
-    </main>
+    </div>
   );
 }
 
