@@ -48,6 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export const revalidate = 300;
+export const dynamic = 'force-static';
 
 export default async function ComparisonPage({ params }: Props) {
   const { slug } = await params;
@@ -64,7 +65,7 @@ export default async function ComparisonPage({ params }: Props) {
   const allProducts = (
     await Promise.all(
       Array.from(categories).map((category) =>
-        readProductsFromDatabase({ limit: 3000, category: category as HardwareCategory }),
+        readProductsFromDatabase({ limit: 1000, category: category as HardwareCategory }),
       ),
     )
   ).flat();

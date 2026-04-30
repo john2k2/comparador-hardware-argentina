@@ -43,6 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export const revalidate = 300;
+export const dynamic = 'force-static';
 
 export default async function BudgetGuidePage({ params }: Props) {
   const { slug } = await params;
@@ -52,7 +53,7 @@ export default async function BudgetGuidePage({ params }: Props) {
     notFound();
   }
 
-  const allProducts = await readProductsFromDatabase({ limit: 2000 });
+  const allProducts = await readProductsFromDatabase({ limit: 1000 });
   
   // Buscar productos reales
   const findProduct = (searchTerms: string[]) => {

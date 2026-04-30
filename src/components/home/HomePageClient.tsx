@@ -283,6 +283,7 @@ export function HomePageClient({
           { slug: 'i5-14600k-vs-ryzen-5-7600x', title: 'Intel i5-14600K vs Ryzen 5 7600X', category: 'CPUs' },
           { slug: 'ddr5-vs-ddr4', title: 'DDR5 vs DDR4', category: 'RAM' },
           { slug: 'ryzen-7-9800x3d-vs-i9-14900k', title: 'Ryzen 7 9800X3D vs i9-14900K', category: 'CPUs' },
+          { slug: 'rtx-5090-vs-rx-9070-xt', title: 'RTX 5090 vs RX 9070 XT', category: 'GPUs' },
         ].map((comparison) => (
           <Link
             key={comparison.slug}
@@ -314,6 +315,7 @@ export function HomePageClient({
         {[
           { slug: 'pc-gamer-1-millon', title: '$1.000.000', target: '1080p 60fps' },
           { slug: 'pc-gamer-1-5-millones', title: '$1.500.000', target: '1080p 144Hz' },
+          { slug: 'pc-gamer-2-millones', title: '$2.000.000', target: '1440p 60fps' },
           { slug: 'pc-gamer-3-millones', title: '$3.000.000', target: '1440p 144Hz' },
           { slug: 'pc-gamer-4-millones', title: '$4.000.000+', target: '4K Gaming' },
         ].map((guide) => (

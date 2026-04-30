@@ -140,6 +140,7 @@ export const ProductCard = React.memo(function ProductCard({
               placeholder="blur"
               blurDataURL={BLUR_PLACEHOLDER}
               priority={shouldPrioritizeImage}
+              loading={shouldPrioritizeImage ? 'eager' : 'lazy'}
             />
           ) : product.image && !isKnownBlockedImageHost(product.image) ? (
             // eslint-disable-next-line @next/next/no-img-element

@@ -5,8 +5,8 @@ import { formatPriceARS } from '@/lib/price-utils';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Guías de PC Gamer por Presupuesto: Argentina 2026',
-  description: 'Armá la mejor PC gamer según tu presupuesto. Configuraciones recomendadas desde $1.000.000 hasta $3.000.000 con precios actualizados.',
+  title: 'Guías PC Gamer Argentina',
+  description: 'Armá tu PC gamer según presupuesto. Configuraciones recomendadas desde $1.000.000 con precios actualizados de 20+ tiendas.',
   keywords: ['guia pc gamer', 'armar pc argentina', 'pc gamer presupuesto', 'configuracion pc gaming'],
   alternates: {
     canonical: `${SITE_URL}/guia`,

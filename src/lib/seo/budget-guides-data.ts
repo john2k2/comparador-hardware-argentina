@@ -192,7 +192,7 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
   {
     slug: 'pc-gamer-3-millones',
     title: 'PC Gamer por $3.000.000: Alta Gama en Argentina [2026]',
-    description: 'PC gamer de alta gama por 3 millones. RTX 5070, Ryzen 7 9800X3D y más. Precios actualizados de tiendas argentinas.',
+    description: 'PC gamer alta gama por 3 millones: RTX 5070, Ryzen 7 9800X3D, 32GB DDR5. Configuración recomendada con precios de 20+ tiendas argentinas.',
     keywords: ['pc gamer 3 millones', 'pc alta gama argentina', 'pc gamer rtx 5070', 'pc gaming 1440p'],
     budget: 3000000,
     performance: '1440p Ultra 120FPS+ | 4K 60FPS+',

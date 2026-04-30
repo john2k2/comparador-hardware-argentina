@@ -4,8 +4,8 @@ import { COMPARISONS } from '@/lib/seo/comparisons-data';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Comparativas de Hardware: Precios y Rendimiento Argentina 2026',
-  description: 'Comparativas de placas de video, procesadores y más. Encontrá el mejor hardware al precio más bajo en tiendas de Argentina.',
+  title: 'Comparativas Hardware',
+  description: 'Comparativas de hardware en Argentina: GPUs, CPUs y más. Encontrá el mejor componente al precio más bajo entre 20+ tiendas.',
   keywords: ['comparativa hardware', 'comparar precios componentes pc', 'mejor placa video', 'mejor procesador gaming'],
   alternates: {
     canonical: `${SITE_URL}/comparativa`,

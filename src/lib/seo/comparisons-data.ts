@@ -28,8 +28,8 @@ export type ComparisonDefinition = {
 export const COMPARISONS: ComparisonDefinition[] = [
   {
     slug: 'rtx-4060-vs-rx-7600',
-    title: 'RTX 4060 vs RX 7600: Comparativa Argentina 2026',
-    description: 'Compará precios de RTX 4060 vs RX 7600 en 20+ tiendas de Argentina. Encontrá la mejor placa de video para gaming 1080p al precio más bajo.',
+    title: 'RTX 4060 vs RX 7600',
+    description: 'Compará precios de RTX 4060 vs RX 7600 en 20+ tiendas de Argentina. Encontrá la mejor placa de video para gaming 1080p al mejor precio.',
     keywords: ['rtx 4060 vs rx 7600', '4060 vs 7600 argentina', 'mejor placa video 1080p', 'rtx 4060 precio argentina'],
     product1: {
       name: 'RTX 4060',
@@ -65,8 +65,8 @@ export const COMPARISONS: ComparisonDefinition[] = [
   },
   {
     slug: 'ryzen-5-7600x-vs-ryzen-7-5700x',
-    title: 'Ryzen 5 7600X vs Ryzen 7 5700X: Comparativa Argentina 2026',
-    description: '¿AM5 con DDR5 o AM4 con DDR4? Compará precios de Ryzen 5 7600X vs Ryzen 7 5700X en tiendas argentinas.',
+    title: 'Ryzen 5 7600X vs 7 5700X',
+    description: '¿AM5 con DDR5 o AM4 con DDR4? Compará precios de Ryzen 5 7600X vs Ryzen 7 5700X en tiendas argentinas y elegí el mejor procesador.',
     keywords: ['7600x vs 5700x', 'ryzen 5 vs ryzen 7', 'mejor procesador gaming argentina', 'am5 vs am4'],
     product1: {
       name: 'Ryzen 5 7600X',
@@ -102,8 +102,8 @@ export const COMPARISONS: ComparisonDefinition[] = [
   },
   {
     slug: 'rtx-5070-vs-rtx-4070',
-    title: 'RTX 5070 vs RTX 4070: ¿Vale la pena el upgrade? [2026]',
-    description: 'Comparativa RTX 5070 vs RTX 4070. Precios actualizados, rendimiento en juegos y análisis de valor en Argentina.',
+    title: 'RTX 5070 vs RTX 4070',
+    description: 'Comparativa RTX 5070 vs RTX 4070. Precios actualizados, rendimiento en juegos y análisis de valor para elegir la mejor GPU en Argentina.',
     keywords: ['rtx 5070 vs 4070', '5070 vs 4070 argentina', 'mejor placa video 1440p', 'rtx 5070 precio'],
     product1: {
       name: 'RTX 5070',
@@ -139,8 +139,8 @@ export const COMPARISONS: ComparisonDefinition[] = [
   },
   {
     slug: 'ryzen-7-9800x3d-vs-i9-14900k',
-    title: 'Ryzen 7 9800X3D vs i9-14900K: El mejor para gaming [2026]',
-    description: 'Comparativa definitiva: Ryzen 7 9800X3D vs Intel i9-14900K. Precios en Argentina, rendimiento en juegos y productividad.',
+    title: 'Ryzen 7 9800X3D vs i9-14900K',
+    description: 'Comparativa definitiva: Ryzen 7 9800X3D vs Intel i9-14900K. Precios actualizados en Argentina, rendimiento gaming y productividad.',
     keywords: ['9800x3d vs 14900k', 'ryzen vs intel gaming', 'mejor procesador 2026 argentina', '9800x3d precio'],
     product1: {
       name: 'Ryzen 7 9800X3D',
@@ -176,8 +176,8 @@ export const COMPARISONS: ComparisonDefinition[] = [
   },
   {
     slug: 'i5-14600k-vs-ryzen-5-7600x',
-    title: 'Intel i5-14600K vs Ryzen 5 7600X: Comparativa Gaming [2026]',
-    description: '¿Intel o AMD para gaming? Compará precios de i5-14600K vs Ryzen 5 7600X en tiendas argentinas.',
+    title: 'i5-14600K vs Ryzen 5 7600X',
+    description: '¿Intel o AMD para gaming? Compará precios de i5-14600K vs Ryzen 5 7600X en tiendas argentinas y elegí el mejor procesador.',
     keywords: ['14600k vs 7600x', 'intel vs amd', 'mejor procesador gaming 2026', 'i5 14600k precio argentina'],
     product1: {
       name: 'Intel Core i5-14600K',
@@ -213,8 +213,8 @@ export const COMPARISONS: ComparisonDefinition[] = [
   },
   {
     slug: 'rtx-5090-vs-rx-9070-xt',
-    title: 'RTX 5090 vs RX 9070 XT: Comparativa Argentina 2026',
-    description: 'Compará precios de RTX 5090 vs RX 9070 XT en tiendas argentinas. La RTX 5090 es la placa más potente de NVIDIA, mientras que la RX 9070 XT ofrece performance high-end de AMD a mejor precio.',
+    title: 'RTX 5090 vs RX 9070 XT',
+    description: 'Compará precios de RTX 5090 vs RX 9070 XT en tiendas argentinas. La placa más potente de NVIDIA vs AMD high-end.',
     keywords: ['rtx 5090 vs rx 9070 xt', '5090 vs 9070 xt argentina', 'mejor placa video 4k', 'rtx 5090 precio argentina'],
     product1: {
       name: 'RTX 5090',
@@ -250,7 +250,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
   },
   {
     slug: 'ddr5-vs-ddr4',
-    title: 'DDR5 vs DDR4: ¿Vale la pena el upgrade en Argentina? [2026]',
+    title: 'DDR5 vs DDR4',
     description: 'Comparativa DDR5 vs DDR4. Diferencias de precio, rendimiento y compatibilidad. Encontrá el mejor precio en tiendas argentinas.',
     keywords: ['ddr5 vs ddr4', 'memoria ddr5 precio argentina', 'ddr5 vale la pena', 'memoria ram gaming'],
     product1: {
