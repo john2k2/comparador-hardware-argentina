@@ -100,6 +100,7 @@ type HomePageClientProps = {
   initialPriceDropProducts: Product[];
   initialFeaturedFallbackUsed: boolean;
   initialPriceDropFallbackUsed: boolean;
+  initialPopularProducts: Product[];
 };
 
 export function HomePageClient({
@@ -107,6 +108,7 @@ export function HomePageClient({
   initialPriceDropProducts,
   initialFeaturedFallbackUsed,
   initialPriceDropFallbackUsed,
+  initialPopularProducts,
 }: HomePageClientProps) {
   const router = useRouter();
   const stores = useMemo(() => defaultStores, []);
@@ -115,6 +117,7 @@ export function HomePageClient({
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
   const [featuredProducts] = useState<Product[]>(normalizeFetchedProducts(initialFeaturedProducts));
   const [priceDropProducts] = useState<Product[]>(normalizeFetchedProducts(initialPriceDropProducts));
+  const [popularProducts] = useState<Product[]>(normalizeFetchedProducts(initialPopularProducts));
   const [featuredFallbackUsed] = useState(initialFeaturedFallbackUsed);
   const [priceDropFallbackUsed] = useState(initialPriceDropFallbackUsed);
   const [isSectionsLoading] = useState(false);
@@ -304,6 +307,22 @@ export function HomePageClient({
           href="/search?sortBy=price-asc"
           cta="VER MAS BARATOS"
         />
+      )}
+
+      {popularProducts.length > 0 && (
+        <>
+          <SectionTitle
+            title="PRODUCTOS POPULARES"
+            subtitle="LOS MAS BUSCADOS Y COMPARADOS"
+            actionHref="/search"
+            actionLabel="VER CATALOGO"
+          />
+          <ProductGrid
+            products={popularProducts}
+            emptyMessage="No hay productos populares para mostrar."
+            surface="home_popular"
+          />
+        </>
       )}
 
       <SectionTitle

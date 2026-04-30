@@ -76,7 +76,7 @@ export function trackProductSelection(params: {
   brand?: string;
   price?: number;
   position: number;
-  surface: 'search_results' | 'home_featured' | 'home_recent' | 'home_price_drop' | 'related_products';
+  surface: 'search_results' | 'home_featured' | 'home_recent' | 'home_price_drop' | 'home_popular' | 'related_products';
 }): void {
   if (!isGA4Available()) return;
 

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { HomePageClient } from '@/components/home/HomePageClient';
 import { getHomeSectionsData } from '@/lib/home/home-sections';
+import { readPopularProductsFromDatabase } from '@/lib/persistence/product-read';
 import { buildPublicPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = buildPublicPageMetadata({
@@ -12,16 +13,22 @@ export const metadata: Metadata = buildPublicPageMetadata({
 export const revalidate = 300;
 
 export default async function HomePage() {
-  const sections = await getHomeSectionsData().catch((error) => {
-    console.warn('[Home Page] Initial sections unavailable:', error);
-    return {
-      featuredProducts: [],
-      priceDropProducts: [],
-      featuredFallbackUsed: false,
-      priceDropFallbackUsed: false,
-      rules: null,
-    };
-  });
+  const [sections, popularProducts] = await Promise.all([
+    getHomeSectionsData().catch((error) => {
+      console.warn('[Home Page] Initial sections unavailable:', error);
+      return {
+        featuredProducts: [],
+        priceDropProducts: [],
+        featuredFallbackUsed: false,
+        priceDropFallbackUsed: false,
+        rules: null,
+      };
+    }),
+    readPopularProductsFromDatabase(8).catch((error) => {
+      console.warn('[Home Page] Popular products unavailable:', error);
+      return [];
+    }),
+  ]);
 
   return (
     <HomePageClient
@@ -29,6 +36,7 @@ export default async function HomePage() {
       initialPriceDropProducts={sections.priceDropProducts}
       initialFeaturedFallbackUsed={sections.featuredFallbackUsed}
       initialPriceDropFallbackUsed={sections.priceDropFallbackUsed}
+      initialPopularProducts={popularProducts}
     />
   );
 }

@@ -14,6 +14,7 @@ import type {
   ReadProductsPageParams,
   ReadProductsParams,
 } from '@/lib/persistence/product-read-types';
+import type { Product } from '@/lib/types';
 
 export type { ProductSort } from '@/lib/persistence/product-read-types';
 
@@ -178,5 +179,27 @@ async function buildTotalCountQuery(
   const { count, error } = await countQuery;
   if (error || count === null) return 0;
   return count;
+}
+
+export async function readPopularProductsFromDatabase(limit: number = 8): Promise<Product[]> {
+  const supabase = getServerSupabaseReadClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from('products')
+    .select(PRODUCT_SELECT_FIELDS)
+    .like('id', 'agrupado-%')
+    .gt('lowest_price', 0)
+    .order('updated_at', { ascending: false })
+    .limit(clampLimit(limit));
+
+  if (error) {
+    if (EMPTY_RESULT_ERROR_CODES.has(error.code ?? '')) return [];
+    throw new Error(`readPopularProductsFromDatabase: ${error.message}`);
+  }
+
+  return ((data as DbProductRow[] | null) ?? [])
+    .map(mapDbProduct)
+    .filter((p) => p.prices.length >= 2);
 }
 
