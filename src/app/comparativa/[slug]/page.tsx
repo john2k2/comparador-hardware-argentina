@@ -102,6 +102,32 @@ export default async function ComparisonPage({ params }: Props) {
         </p>
       </header>
 
+      {/* Introducción */}
+      <section className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow mb-8">
+        <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">
+          [ INTRODUCCION ]
+        </h2>
+        <div className="space-y-3 text-[11px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono">
+          <p>
+            Elegir entre <strong>{comparison.product1.name}</strong> y <strong>{comparison.product2.name}</strong> 
+            es una de las decisiones más comunes para gamers argentinos en 2026. Ambos componentes compiten 
+            en el mismo segmento de mercado pero con enfoques distintos que pueden marcar la diferencia 
+            según tu presupuesto y necesidades específicas.
+          </p>
+          <p>
+            En esta comparativa analizamos precios reales de más de 20 tiendas de Argentina, rendimiento 
+            en juegos populares, eficiencia energética, temperaturas y valor a largo plazo. 
+            Los precios se actualizan diariamente para reflejar las fluctuaciones del mercado local.
+          </p>
+          <p>
+            {comparison.product1.name} destaca por {comparison.product1.pros[0].toLowerCase()} y {comparison.product1.pros[1].toLowerCase()}, 
+            mientras que {comparison.product2.name} se posiciona con {comparison.product2.pros[0].toLowerCase()} y {comparison.product2.pros[1].toLowerCase()}. 
+            La diferencia de precio entre ambos puede llegar a ser significativa en el mercado argentino, 
+            por eso es crucial comparar antes de comprar.
+          </p>
+        </div>
+      </section>
+
       {/* Quick Comparison */}
       <section className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow mb-8">
         <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">

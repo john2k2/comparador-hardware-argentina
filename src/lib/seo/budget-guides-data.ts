@@ -23,7 +23,7 @@ export type BudgetGuideDefinition = {
 export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
   {
     slug: 'pc-gamer-1-millon',
-    title: 'PC Gamer por $1.000.000: Mejor Configuración Argentina 2026',
+    title: 'PC Gamer $1.000.000 Argentina 2026',
     description: 'Armá la mejor PC gamer por 1 millón de pesos. Componentes recomendados con precios actualizados de 20+ tiendas de Argentina.',
     keywords: ['pc gamer 1 millon', 'pc gamer barata argentina', 'armar pc 1 millon pesos', 'pc gaming economica'],
     budget: 1000000,
@@ -107,7 +107,7 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
   },
   {
     slug: 'pc-gamer-2-millones',
-    title: 'PC Gamer por $2.000.000: Configuración Ideal Argentina 2026',
+    title: 'PC Gamer $2.000.000 Argentina 2026',
     description: 'La mejor PC gamer por 2 millones de pesos. RTX 4060 o RX 7600, Ryzen 5 7600X y más. Precios actualizados de 20+ tiendas.',
     keywords: ['pc gamer 2 millones', 'pc gaming argentina 2m', 'mejor pc gamer precio calidad', 'pc gamer rtx 4060'],
     budget: 2000000,
@@ -191,7 +191,7 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
   },
   {
     slug: 'pc-gamer-3-millones',
-    title: 'PC Gamer por $3.000.000: Alta Gama en Argentina [2026]',
+    title: 'PC Gamer $3.000.000 Argentina 2026',
     description: 'PC gamer alta gama por 3 millones: RTX 5070, Ryzen 7 9800X3D, 32GB DDR5. Configuración recomendada con precios de 20+ tiendas argentinas.',
     keywords: ['pc gamer 3 millones', 'pc alta gama argentina', 'pc gamer rtx 5070', 'pc gaming 1440p'],
     budget: 3000000,
