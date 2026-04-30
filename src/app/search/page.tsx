@@ -68,6 +68,8 @@ async function readInitialSearchPage(state: SearchPageState): Promise<{
   }
 }
 
+export const revalidate = 120;
+
 export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
   return resolveSearchMetadata(parseSearchState(await searchParams));
 }

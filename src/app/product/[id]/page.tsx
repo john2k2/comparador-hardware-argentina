@@ -167,6 +167,9 @@ function buildProductJsonLd(product: Product, id: string) {
   ];
 }
 
+export const revalidate = 3600;
+export const dynamicParams = true;
+
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { id } = await params;
   const product = await getProductForPage(id);
