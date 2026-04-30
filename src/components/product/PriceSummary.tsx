@@ -48,27 +48,27 @@ export function PriceSummary({
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="border-2 border-border bg-muted/40 p-3">
-            <p className="text-[8px] uppercase text-muted-foreground mb-1">Tiendas</p>
+            <p className="text-[8px] uppercase text-foreground/80 mb-1">Tiendas</p>
             <p className="text-[12px] font-bold text-foreground">{storesCompared}</p>
           </div>
           <div className="border-2 border-border bg-muted/40 p-3">
-            <p className="text-[8px] uppercase text-muted-foreground mb-1">Diferencia</p>
+            <p className="text-[8px] uppercase text-foreground/80 mb-1">Diferencia</p>
             <p className="text-[12px] font-bold text-primary">{formatPriceARS(priceSpread)}</p>
           </div>
           <div className="border-2 border-border bg-muted/40 p-3">
-            <p className="text-[8px] uppercase text-muted-foreground mb-1">Ahorro Max</p>
+            <p className="text-[8px] uppercase text-foreground/80 mb-1">Ahorro Max</p>
             <p className="text-[12px] font-bold text-secondary">{spreadPercent}%</p>
           </div>
         </div>
 
-        <p className="text-[8px] uppercase text-muted-foreground mt-3">
+        <p className="text-[8px] uppercase text-foreground/80 mt-3">
           {`Rango actual: ${formatPriceARS(lowestComparablePrice)} - ${formatPriceARS(highestComparablePrice)}`}
         </p>
       </div>
 
       <div className="bg-muted border-4 border-border p-6 pixel-shadow flex flex-col gap-4">
         <div>
-          <p className="text-[10px] uppercase font-bold text-muted-foreground mb-2">MEJOR PRECIO DETECTADO</p>
+          <p className="text-[10px] uppercase font-bold text-foreground/80 mb-2">MEJOR PRECIO DETECTADO</p>
           <PriceDisplay
             price={selectedInstallment ? selectedInstallment.totalAmount : (bestPrice?.price ?? lowestComparablePrice)}
             originalPrice={bestPrice?.originalPrice}

@@ -8,6 +8,7 @@ import { isIndexableProductId } from '@/lib/seo/sitemap';
 import { SITE_URL } from '@/lib/site-config';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
+import { getProductContent } from '@/lib/product/product-seo-content';
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.svg`;
 const PRODUCT_TITLE_SUFFIX = ' | HardwareAR';
 
@@ -263,23 +264,25 @@ function ProductSeoSupport({ product }: { product: Product }) {
   const displayBrand = normalizeDisplayText(product.brand);
   const storeCount = getComparableStorePrices(product.prices).length;
   const bestPrice = formatPriceARS(product.lowestPrice);
+  const content = getProductContent(product);
 
   return (
-    <section className="container mx-auto px-4 pb-10">
+    <section className="container mx-auto px-4 pb-10 space-y-6">
+      {/* Guía rápida original */}
       <div className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow">
         <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-3">
           [ GUIA RAPIDA DE COMPARACION ]
         </h2>
         <div className="grid md:grid-cols-2 gap-4 text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
           <p>
-            Esta ficha compara {displayName} {displayBrand ? `de ${displayBrand}` : ''} entre {storeCount} tiendas disponibles.
+            Esta ficha compara {displayName} {displayBrand ? `de ${displayBrand}` : ''} entre {storeCount} comercios disponibles.
             El mejor valor detectado al momento de la última actualización es {bestPrice}, pero el importe final puede cambiar
-            por stock, promociones, cuotas, envío o condiciones propias de cada comercio.
+            por stock, promociones, cuotas, envío o condiciones propias de cada local.
           </p>
           <p>
             Antes de comprar, verificá que la variante coincida exactamente con lo que necesitás: modelo, capacidad,
             compatibilidad, garantía y accesorios incluidos. El comparador ayuda a encontrar diferencias rápido, pero la
-            confirmación final siempre debe hacerse en la tienda de destino.
+            confirmación final siempre debe hacerse en el sitio de destino.
           </p>
           <p>
             También conviene revisar si la publicación incluye fotos reales, número de parte, versión del fabricante y
@@ -287,6 +290,57 @@ function ProductSeoSupport({ product }: { product: Product }) {
             tiendas y confirmá que no cambien condiciones clave como cuotas, envío, garantía o retiro en sucursal.
           </p>
         </div>
+      </div>
+
+      {/* Contenido enriquecido por categoría */}
+      <div className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow">
+        <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-3">
+          [ DESCRIPCION Y CONTEXTO ]
+        </h2>
+        <div className="text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono space-y-4">
+          <p>{content.intro}</p>
+          <div>
+            <h3 className="text-[11px] uppercase font-bold text-primary mb-2">Consejos de compra</h3>
+            <ul className="list-disc pl-5 space-y-1">
+              {content.tips.map((tip, i) => (
+                <li key={i}>{tip}</li>
+              ))}
+            </ul>
+          </div>
+          {content.relatedTerms.length > 0 && (
+            <div>
+              <h3 className="text-[11px] uppercase font-bold text-primary mb-2">Componentes relacionados</h3>
+              <p>
+                Al comprar {displayName}, también necesitás considerar:{' '}
+                {content.relatedTerms.join(', ')}.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* FAQs */}
+      <div className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow">
+        <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-3">
+          [ PREGUNTAS FRECUENTES ]
+        </h2>
+        <div className="space-y-4">
+          {content.faqs.map((faq, i) => (
+            <div key={i} className="text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
+              <h3 className="font-bold text-primary mb-1">{faq.question}</h3>
+              <p>{faq.answer}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Disclaimer final */}
+      <div className="bg-muted border-2 border-border p-4">
+        <p className="text-[10px] text-muted-foreground font-mono leading-relaxed">
+          HardwareAR es un comparador independiente. No vendemos productos ni recibimos comisiones por las compras.
+          Los valores mostrados son referenciales y pueden variar. Siempre confirmá el importe final, disponibilidad
+          y condiciones en el comercio antes de comprar.
+        </p>
       </div>
     </section>
   );

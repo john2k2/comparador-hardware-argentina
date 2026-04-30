@@ -54,7 +54,7 @@ function SectionTitle({
         <h2 className="text-[12px] md:text-[14px] font-bold uppercase text-primary tracking-wide">
           {`[ ${title} ]`}
         </h2>
-        <p className="text-[9px] uppercase text-muted-foreground mt-1 tracking-wide">{subtitle}</p>
+        <p className="text-[9px] uppercase text-foreground/80 mt-1 tracking-wide">{subtitle}</p>
       </div>
 
       {actionHref && actionLabel && (
@@ -82,7 +82,7 @@ function PromoBanner({
 }) {
   return (
     <section className="my-8 border-[3px] border-dashed border-muted bg-card p-2">
-      <div className="text-[8px] uppercase tracking-[0.2em] text-muted-foreground font-bold mb-2 text-center">
+      <div className="text-[8px] uppercase tracking-[0.2em] text-foreground/80 font-bold mb-2 text-center">
         {label}
       </div>
       <div className="border-[3px] border-border bg-gradient-to-r from-background via-muted/60 to-background min-h-[120px] md:min-h-[140px] px-4 py-5 flex flex-col md:flex-row items-center justify-between gap-4 pixel-shadow">
@@ -148,7 +148,7 @@ export function HomePageClient({
           <p className="text-[10px] md:text-xs uppercase text-secondary font-bold mt-2 tracking-[0.14em]">
             PROCESADORES, GPUS, RAM, SSD Y MAS EN MULTIPLES TIENDAS
           </p>
-          <p className="text-[8px] md:text-[9px] uppercase text-muted-foreground mt-2 tracking-wide">
+          <p className="text-[8px] md:text-[9px] uppercase text-foreground/80 mt-2 tracking-wide">
             COMPARADOR INDEPENDIENTE: NO VENDEMOS, SOLO MOSTRAMOS PRECIOS, DISPONIBILIDAD Y ENLACES A TIENDAS
           </p>
         </div>
@@ -196,7 +196,7 @@ export function HomePageClient({
         />
       ) : (
         <div className="border-[3px] border-border bg-card p-8 text-center pixel-shadow">
-          <p className="text-[10px] uppercase text-muted-foreground mb-4">
+          <p className="text-[10px] uppercase text-foreground/80 mb-4">
             Todavia no hay productos vistos.
           </p>
           <Link href="/search" className="pixel-button inline-flex text-[9px] px-4 py-3 min-h-11">
@@ -211,6 +211,43 @@ export function HomePageClient({
         cta="COMO FUNCIONA"
         href="/acerca"
       />
+
+      <SectionTitle
+        title="CATEGORIAS POPULARES"
+        subtitle="EXPLORA POR TIPO DE COMPONENTE"
+        actionHref="/search"
+        actionLabel="VER TODO"
+      />
+      <section className="mb-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        {[
+          { id: 'tarjetas-graficas', name: 'Placas de Video', icon: 'GPU' },
+          { id: 'procesadores', name: 'Procesadores', icon: 'CPU' },
+          { id: 'memoria-ram', name: 'Memoria RAM', icon: 'RAM' },
+          { id: 'almacenamiento', name: 'SSD / Discos', icon: 'SSD' },
+          { id: 'motherboards', name: 'Motherboards', icon: 'MB' },
+          { id: 'fuentes-alimentacion', name: 'Fuentes', icon: 'PSU' },
+          { id: 'gabinetes', name: 'Gabinetes', icon: 'CASE' },
+          { id: 'refrigeracion', name: 'Coolers', icon: 'FAN' },
+        ].map((cat) => (
+          <Link
+            key={cat.id}
+            href={`/search?category=${cat.id}`}
+            className="block group"
+          >
+            <article className="bg-card border-4 border-border p-3 pixel-shadow transition-transform group-hover:-translate-y-1 group-hover:translate-x-1 text-center">
+              <div className="text-[8px] uppercase tracking-widest text-secondary font-bold mb-1">
+                {cat.icon}
+              </div>
+              <h3 className="text-[11px] font-bold uppercase text-foreground leading-tight">
+                {cat.name}
+              </h3>
+              <div className="mt-1 text-[8px] uppercase font-bold text-primary">
+                EXPLORAR →
+              </div>
+            </article>
+          </Link>
+        ))}
+      </section>
 
       <SectionTitle
         title="PRODUCTOS DESTACADOS"
@@ -328,7 +365,7 @@ export function HomePageClient({
               <h3 className="text-[14px] font-bold uppercase text-primary mb-1">
                 {guide.title}
               </h3>
-              <p className="text-[9px] uppercase text-muted-foreground mb-2">
+              <p className="text-[9px] uppercase text-foreground/80 mb-2">
                 {guide.target}
               </p>
               <div className="text-[8px] uppercase font-bold text-secondary">
@@ -377,7 +414,7 @@ function HomeEmptyCatalogState({
 }) {
   return (
     <div className="border-[3px] border-border bg-card p-6 text-center pixel-shadow">
-      <p className="text-[10px] uppercase text-muted-foreground leading-relaxed mb-4">
+      <p className="text-[10px] uppercase text-foreground/80 leading-relaxed mb-4">
         {message}
       </p>
       <div className="flex flex-wrap justify-center gap-3">

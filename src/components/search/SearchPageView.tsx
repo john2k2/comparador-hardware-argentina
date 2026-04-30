@@ -142,7 +142,7 @@ function CategoriesPanel({ filters, onChange }: { filters: ReturnType<typeof toS
             key={category.id}
             onClick={() => onChange({ category: category.id as HardwareCategory })}
             aria-label={`Filtrar por categoría: ${category.name}`}
-            className={`min-h-11 text-left text-[9px] uppercase font-bold px-3 py-2 transition-colors ${filters.category === category.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+            className={`min-h-11 text-left text-[9px] uppercase font-bold px-3 py-2 transition-colors ${filters.category === category.id ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground hover:bg-muted'}`}
           >
             {category.name}
           </button>
@@ -159,7 +159,7 @@ function SearchHeader({ totalResults, searchQuery, isBusy }: { totalResults: num
         <p className="text-[10px] uppercase font-bold" aria-live="polite">{isBusy ? 'BUSCANDO...' : `RESULTADOS: ${totalResults} ITEMS`}</p>
       </div>
       {searchQuery && (
-        <div className="text-[10px] uppercase font-bold text-muted-foreground">
+        <div className="text-[10px] uppercase font-bold text-foreground/80">
           BUSQUEDA: <span className="text-secondary">&quot;{searchQuery}&quot;</span>
         </div>
       )}
@@ -173,7 +173,7 @@ function LoadingState({ searchQuery }: { searchQuery: string }) {
       <p className="text-[10px] uppercase font-bold text-secondary tracking-wide">
         {searchQuery ? `ESCANEANDO TIENDAS PARA "${searchQuery}"...` : 'ESCANEANDO TIENDAS Y PRECIOS...'}
       </p>
-      <p className="text-[8px] uppercase text-muted-foreground mt-1 tracking-wide">
+      <p className="text-[8px] uppercase text-foreground/80 mt-1 tracking-wide">
         Espera a que termine la busqueda antes de asumir que no hay stock o resultados.
       </p>
     </div>
@@ -184,10 +184,10 @@ function NoResultsState({ searchQuery, hasActiveFilters, onClearFilters, onRetry
   return (
     <div className="border-4 border-primary bg-card p-6 md:p-8 text-center pixel-shadow">
       <p className="text-[11px] uppercase font-bold text-primary">[ SIN RESULTADOS ]</p>
-      <p className="text-[9px] uppercase text-muted-foreground mt-2 leading-relaxed">
+      <p className="text-[9px] uppercase text-foreground/80 mt-2 leading-relaxed">
         {searchQuery ? `No encontramos coincidencias para "${searchQuery}".` : 'No encontramos coincidencias con los filtros actuales.'}
       </p>
-      <p className="text-[8px] uppercase text-muted-foreground mt-2 leading-relaxed">Proba otra palabra, una marca/modelo mas corto o amplia los filtros.</p>
+      <p className="text-[8px] uppercase text-foreground/80 mt-2 leading-relaxed">Proba otra palabra, una marca/modelo mas corto o amplia los filtros.</p>
       <div className="mt-4 flex flex-wrap justify-center gap-2">
         {hasActiveFilters && <button onClick={onClearFilters} className="pixel-button text-[9px] px-4 py-3 min-h-11">LIMPIAR FILTROS</button>}
         <button onClick={onRetry} className="pixel-button text-[9px] px-4 py-3 min-h-11">REINTENTAR BUSQUEDA</button>
@@ -200,7 +200,7 @@ function IdleState() {
   return (
     <div className="border-4 border-border bg-card p-8 text-center pixel-shadow">
       <p className="text-[10px] uppercase font-bold text-primary">[ LISTO PARA BUSCAR ]</p>
-      <p className="text-[9px] uppercase text-muted-foreground mt-2">Escribi un producto para empezar (ej: RTX 5060, Ryzen 7600).</p>
+      <p className="text-[9px] uppercase text-foreground/80 mt-2">Escribi un producto para empezar (ej: RTX 5060, Ryzen 7600).</p>
     </div>
   );
 }
@@ -209,7 +209,7 @@ function SearchErrorState({ error, onRetry }: { error: string; onRetry: () => vo
   return (
     <div className="border-4 border-destructive bg-card p-8 text-center pixel-shadow">
       <p className="text-[10px] uppercase font-bold text-destructive">[ ERROR EN LA BUSQUEDA ]</p>
-      <p className="text-[9px] uppercase text-muted-foreground mt-2 mb-4">{error}</p>
+      <p className="text-[9px] uppercase text-foreground/80 mt-2 mb-4">{error}</p>
       <button onClick={onRetry} className="pixel-button text-[10px] min-h-11">
         REINTENTAR
       </button>

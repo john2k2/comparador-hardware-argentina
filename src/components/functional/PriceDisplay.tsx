@@ -33,7 +33,7 @@ export function PriceDisplay({
       {/* Precio Original Retro */}
       {showDiscount && originalPrice && originalPrice > price && (
         <div className="flex items-center gap-2">
-          <span className="text-[8px] text-muted-foreground line-through decoration-primary decoration-2">
+          <span className="text-[8px] text-foreground/80 line-through decoration-primary decoration-2">
             {formatPriceARS(originalPrice)}
           </span>
           <span className="text-[8px] text-primary font-bold">

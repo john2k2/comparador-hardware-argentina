@@ -188,7 +188,7 @@ export const ProductCard = React.memo(function ProductCard({
             <p className="text-[8px] text-secondary uppercase tracking-widest font-bold truncate">
               {`// ${displayBrand}`}
             </p>
-            <span className="text-[7px] uppercase text-muted-foreground tracking-wide shrink-0">
+            <span className="text-[7px] uppercase text-foreground/80 tracking-wide shrink-0">
               {comparableStoreCount} STORES
             </span>
           </div>
@@ -204,7 +204,7 @@ export const ProductCard = React.memo(function ProductCard({
           )}
 
           <div className="mt-auto pt-3 border-t-2 border-muted">
-            <p className="text-[8px] uppercase text-muted-foreground mb-1">MEJOR PRECIO</p>
+            <p className="text-[8px] uppercase text-foreground/80 mb-1">MEJOR PRECIO</p>
             <PriceDisplay
               price={lowestComparablePrice}
               originalPrice={hasDiscount ? bestPrice?.originalPrice : undefined}
@@ -212,7 +212,7 @@ export const ProductCard = React.memo(function ProductCard({
             />
           </div>
 
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-[8px] uppercase text-muted-foreground pt-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-[8px] uppercase text-foreground/80 pt-2">
             {showStore && bestPrice ? (
               <span className="min-w-0 flex items-center gap-1 text-accent font-bold truncate">
                 {`@${normalizeDisplayText(bestPrice.storeName)}`}

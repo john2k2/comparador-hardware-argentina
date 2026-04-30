@@ -111,7 +111,7 @@ export function Filters({
           {activeFiltersCount > 0 && (
           <button
             onClick={handleClearFilters}
-              className="min-h-11 px-2 text-[8px] uppercase text-muted-foreground hover:text-primary transition-colors"
+              className="min-h-11 px-2 text-[8px] uppercase text-foreground/80 hover:text-primary transition-colors"
             >
               [ LIMPIAR ]
             </button>
@@ -214,7 +214,7 @@ export function Filters({
                 value={filters.minPrice || ''}
                 onChange={(e) => handlePriceChange('min', e.target.value)}
                 aria-label="Precio mínimo"
-                className="w-full min-h-11 px-2 border-4 border-border bg-background text-foreground text-[10px] outline-none focus:border-primary placeholder:text-muted-foreground rounded-none"
+                className="w-full min-h-11 px-2 border-4 border-border bg-background text-foreground text-[10px] outline-none focus:border-primary placeholder:text-foreground/80 rounded-none"
               />
               <label className="sr-only">Precio máximo</label>
               <input
@@ -223,7 +223,7 @@ export function Filters({
                 value={filters.maxPrice || ''}
                 onChange={(e) => handlePriceChange('max', e.target.value)}
                 aria-label="Precio máximo"
-                className="w-full min-h-11 px-2 border-4 border-border bg-background text-foreground text-[10px] outline-none focus:border-primary placeholder:text-muted-foreground rounded-none"
+                className="w-full min-h-11 px-2 border-4 border-border bg-background text-foreground text-[10px] outline-none focus:border-primary placeholder:text-foreground/80 rounded-none"
               />
             </div>
           )}

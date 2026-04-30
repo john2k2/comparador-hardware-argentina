@@ -196,7 +196,7 @@ export function Navigation() {
               </button>
 
               {isAuthLoading ? (
-                <div className="px-3 py-2 border-2 border-border text-[8px] uppercase text-muted-foreground">
+                <div className="px-3 py-2 border-2 border-border text-[8px] uppercase text-foreground/80">
                   AUTH...
                 </div>
               ) : authUser ? (
