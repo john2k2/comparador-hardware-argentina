@@ -56,7 +56,7 @@ export function PriceDisplay({
         <span className={cn(
           "ml-1 text-[8px] text-secondary/60 uppercase",
           size === 'lg' && 'animate-pixel-blink'
-        )}>ARS</span>
+        )}>$</span>
       </div>
     </div>
   );

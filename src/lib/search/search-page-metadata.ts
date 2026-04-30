@@ -70,7 +70,7 @@ export function resolveSearchMetadata(state: SearchPageState): Metadata {
   if (hasQuery) {
     return buildSearchMetadata({
       title: `Busqueda: ${state.query}`,
-      description: `Resultados de busqueda para ${state.query} en tiendas argentinas de hardware, con precios comparados, stock disponible, filtros por comercio y enlaces directos.`,
+      description: `Resultados de busqueda para ${state.query} en comercios argentinos de hardware, con valores comparados, stock disponible, filtros por local y enlaces directos.`,
       canonical,
       index: false,
     });
@@ -80,7 +80,7 @@ export function resolveSearchMetadata(state: SearchPageState): Metadata {
     const storeLabel = selectedStoreNames.slice(0, 2).join(' y ');
     return buildSearchMetadata({
       title: `Ofertas en ${storeLabel}`,
-      description: `Explorá hardware disponible en ${storeLabel}, compará precios publicados, revisá categorías y usá filtros para encontrar productos de PC en Argentina.`,
+      description: `Explorá hardware disponible en ${storeLabel}, compará valores publicados, revisá categorías y usá filtros para encontrar productos de PC en Argentina.`,
       canonical,
       index: false,
     });
@@ -97,7 +97,7 @@ export function resolveSearchMetadata(state: SearchPageState): Metadata {
 
     return buildSearchMetadata({
       title: `Hardware por ${sortLabel}`,
-      description: `Explorá el catálogo de hardware ordenado por ${sortLabel}, con filtros por tienda, categoría y rango de precios para comparar opciones en Argentina.`,
+      description: `Explorá el catálogo de hardware ordenado por ${sortLabel}, con filtros por local, categoría y rango de costos para comparar opciones en Argentina.`,
       canonical,
       index: false,
     });
@@ -105,7 +105,7 @@ export function resolveSearchMetadata(state: SearchPageState): Metadata {
 
   return buildSearchMetadata({
     title: 'Buscar hardware',
-    description: 'Buscá hardware en Argentina y compará precios por categoría, tienda y rango de precio. Encontrá procesadores, placas de video, RAM, SSD y más.',
+    description: 'Buscá hardware en Argentina y compará costos por categoría, local y rango de gasto. Encontrá procesadores, placas de video, RAM, SSD y más.',
     canonical,
     index: false,
   });
