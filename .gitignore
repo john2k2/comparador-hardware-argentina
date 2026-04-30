@@ -62,3 +62,7 @@ next-env.d.ts
 
 # agent team lite
 .atl/
+.codebuddy/
+.continue/
+.junie/
+.kiro/

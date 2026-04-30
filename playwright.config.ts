@@ -13,7 +13,7 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'npm run build && PORT=3100 npm run start',
+    command: 'npm run build && npx cross-env PORT=3100 npm run start',
     url: 'http://127.0.0.1:3100',
     reuseExistingServer: false,
     timeout: 180_000,

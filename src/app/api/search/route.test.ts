@@ -8,7 +8,7 @@ const mockBuildRateLimitHeaders = vi.fn(() => ({}));
 const mockGetRequestIp = vi.fn(() => '127.0.0.1');
 const mockRecordEndpointRequestEvent = vi.fn();
 const mockRunObservedStoreScrape = vi.fn(async ({ run }) => run());
-const mockReadProductsPageFromDatabase = vi.fn();
+const mockReadProductsFromDatabase = vi.fn();
 const mockPersistProductsSnapshot = vi.fn();
 const mockCreateObservedProductsSourceRunner = vi.fn(() => async (_storeId, _storeName, run) => run(new AbortController().signal));
 const mockResolveLiveProductsList = vi.fn(async () => []);
@@ -32,7 +32,7 @@ vi.mock('@/lib/telemetry/operational-metrics', () => ({
 }));
 
 vi.mock('@/lib/persistence/product-read', () => ({
-  readProductsPageFromDatabase: mockReadProductsPageFromDatabase,
+  readProductsFromDatabase: mockReadProductsFromDatabase,
 }));
 
 vi.mock('@/lib/products/products-handler-shared', () => ({
@@ -109,7 +109,7 @@ describe('/api/search route', () => {
     mockSetSharedCache.mockReset();
     mockCheckRateLimit.mockReset();
     mockRecordEndpointRequestEvent.mockReset();
-    mockReadProductsPageFromDatabase.mockReset();
+    mockReadProductsFromDatabase.mockReset();
     mockPersistProductsSnapshot.mockReset();
     mockCreateObservedProductsSourceRunner.mockClear();
     mockResolveLiveProductsList.mockReset();
@@ -124,13 +124,7 @@ describe('/api/search route', () => {
       retryAfterSeconds: 60,
     });
     mockGetSharedCache.mockResolvedValue(undefined);
-    mockReadProductsPageFromDatabase.mockResolvedValue({
-      products: [],
-      total: 0,
-      totalPages: 0,
-      page: 1,
-      pageSize: 24,
-    });
+    mockReadProductsFromDatabase.mockResolvedValue([]);
     mockResolveLiveProductsList.mockResolvedValue([]);
   });
 
@@ -141,32 +135,26 @@ describe('/api/search route', () => {
 
     expect(response.status).toBe(200);
     expect(payload.products).toEqual([]);
-    expect(mockReadProductsPageFromDatabase).not.toHaveBeenCalled();
+    expect(mockReadProductsFromDatabase).not.toHaveBeenCalled();
   });
 
   it('serves DB-first search results before falling back to live scraping', async () => {
-    mockReadProductsPageFromDatabase.mockResolvedValue({
-      products: [{
-        id: 'cpu-1',
-        name: 'Ryzen 7600',
-        category: 'procesadores',
-        brand: 'AMD',
-        model: '7600',
-        description: 'CPU',
-        image: '/pixel-box.svg',
-        specs: {},
-        prices: [],
-        lowestPrice: 1,
-        highestPrice: 1,
-        averagePrice: 1,
-        createdAt: new Date('2026-03-08T12:00:00.000Z'),
-        updatedAt: new Date('2026-03-08T12:00:00.000Z'),
-      }],
-      total: 1,
-      totalPages: 1,
-      page: 1,
-      pageSize: 24,
-    });
+    mockReadProductsFromDatabase.mockResolvedValue([{
+      id: 'cpu-1',
+      name: 'Ryzen 7600',
+      category: 'procesadores',
+      brand: 'AMD',
+      model: '7600',
+      description: 'CPU',
+      image: '/pixel-box.svg',
+      specs: {},
+      prices: [],
+      lowestPrice: 1,
+      highestPrice: 1,
+      averagePrice: 1,
+      createdAt: new Date('2026-03-08T12:00:00.000Z'),
+      updatedAt: new Date('2026-03-08T12:00:00.000Z'),
+    }]);
 
     const { GET } = await import('./route');
     const response = await GET(new NextRequest('http://localhost/api/search?q=ryzen'));
@@ -206,28 +194,22 @@ describe('/api/search route', () => {
       facets: { categories: [], brands: [], stores: [] },
     });
 
-    mockReadProductsPageFromDatabase.mockResolvedValue({
-      products: [{
-        id: 'fresh-cpu',
-        name: 'Fresh Ryzen',
-        category: 'procesadores',
-        brand: 'AMD',
-        model: 'fresh',
-        description: 'CPU',
-        image: '/pixel-box.svg',
-        specs: {},
-        prices: [],
-        lowestPrice: 2,
-        highestPrice: 2,
-        averagePrice: 2,
-        createdAt: new Date('2026-03-08T12:00:00.000Z'),
-        updatedAt: new Date('2026-03-08T12:00:00.000Z'),
-      }],
-      total: 1,
-      totalPages: 1,
-      page: 1,
-      pageSize: 12,
-    });
+    mockReadProductsFromDatabase.mockResolvedValue([{
+      id: 'fresh-cpu',
+      name: 'Fresh Ryzen',
+      category: 'procesadores',
+      brand: 'AMD',
+      model: 'fresh',
+      description: 'CPU',
+      image: '/pixel-box.svg',
+      specs: {},
+      prices: [],
+      lowestPrice: 2,
+      highestPrice: 2,
+      averagePrice: 2,
+      createdAt: new Date('2026-03-08T12:00:00.000Z'),
+      updatedAt: new Date('2026-03-08T12:00:00.000Z'),
+    }]);
 
     const { GET } = await import('./route');
     const response = await GET(new NextRequest('http://localhost/api/search?q=ryzen&refresh=1'));
@@ -236,7 +218,7 @@ describe('/api/search route', () => {
     expect(response.status).toBe(200);
     expect(payload.products[0]?.id).toBe('fresh-cpu');
     expect(response.headers.get('X-Search-Cache')).toBe('DB-STALE');
-    expect(mockReadProductsPageFromDatabase).toHaveBeenCalled();
+    expect(mockReadProductsFromDatabase).toHaveBeenCalled();
   });
 
   it('falls back to live category products when filter-only DB-first search is empty', async () => {
@@ -265,21 +247,9 @@ describe('/api/search route', () => {
       updatedAt: new Date('2026-03-08T12:00:00.000Z'),
     };
 
-    mockReadProductsPageFromDatabase
-      .mockResolvedValueOnce({
-        products: [],
-        total: 0,
-        totalPages: 0,
-        page: 1,
-        pageSize: 12,
-      })
-      .mockResolvedValueOnce({
-        products: [liveProduct],
-        total: 1,
-        totalPages: 1,
-        page: 1,
-        pageSize: 12,
-      });
+    mockReadProductsFromDatabase
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([liveProduct]);
     mockResolveLiveProductsList.mockResolvedValue([liveProduct]);
 
     const { GET } = await import('./route');

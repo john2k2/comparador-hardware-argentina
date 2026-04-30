@@ -59,7 +59,9 @@ describe('product-cache-utils', () => {
   it('usa el producto inicial cuando no hay cache cliente', () => {
     const resolved = resolveInitialProductClientState('gpu-initial', buildProduct({ id: 'gpu-initial' }));
 
-    expect(resolved.shouldFetch).toBe(true);
+    // When initialProduct is provided from SSR, we should NOT refetch
+    // to avoid unnecessary network requests and hydration mismatches.
+    expect(resolved.shouldFetch).toBe(false);
     expect(resolved.isLoading).toBe(false);
     expect(resolved.product?.id).toBe('gpu-initial');
     expect(resolved.product?.createdAt).toBeInstanceOf(Date);
