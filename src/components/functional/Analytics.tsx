@@ -1,7 +1,6 @@
 'use client';
 
 import Script from 'next/script';
-import { pageview } from '@/lib/analytics/ga4';
 
 const GA4_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID;
 
@@ -37,10 +36,6 @@ export function Analytics({ nonce }: AnalyticsProps) {
       />
     </>
   );
-}
-
-export function trackPageview(url: string) {
-  pageview(url);
 }
 
 declare global {

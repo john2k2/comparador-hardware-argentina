@@ -1,3 +1,0 @@
-[GET] https://www.comparador-hardware.com.ar/_next/image?url=https%3A%2F%2Fwiztech.com.ar%2Fassets%2Fimages%2Fproducts%2Fprocesador%2Fryzen_5600xt_a.png&w=640&q=75 => [200] 
-[GET] https://www.comparador-hardware.com.ar/_next/image?url=https%3A%2F%2Fkatech.com.ar%2Fwp-content%2Fuploads%2F80P024-jpg-webp.webp&w=640&q=75 => [200] 
-[GET] https://www.comparador-hardware.com.ar/_next/image?url=https%3A%2F%2Fkatech.com.ar%2Fwp-content%2Fuploads%2F2026%2F04%2FCABLE-TEROS-USB-A-A-USB-C-GREY-215x215.png&w=640&q=75 => [200] 

@@ -2,13 +2,16 @@
 
 Plataforma web para comparar precios de hardware en tiendas argentinas, con scraping multi-fuente y panel operativo.
 
-## Estado actual (2026-03-16)
+## Estado actual (2026-04-30)
 
+- **SEO Score: 89/100** (squirrelscan) — Core SEO 100, Accessibility 99, Mobile 100.
 - Base funcional de busqueda y detalle operativa.
 - Cache server/client activa para mejorar estabilidad y navegacion.
 - Integracion WooCommerce consolidada con backoff ante bloqueos (403/429).
 - Integraciones no-Woo activas (Maximus, Gezatek, Compugarden, entre otras).
 - Dashboard admin operativo con metricas reales por tienda y endpoint.
+- **Nuevas paginas de contenido**: Comparativas de hardware, Guias PC Gamer, Categorias populares en home.
+- **Productos populares** en home para reducir orphan pages y mejorar internal linking.
 
 ## Stack real del proyecto
 
@@ -137,10 +140,16 @@ src/
       alerts/page.tsx
     search/page.tsx
     product/[id]/page.tsx
+    comparativa/page.tsx           # Indice de comparativas
+    comparativa/[slug]/page.tsx    # Comparativa especifica
+    guia/page.tsx                  # Indice de guias PC Gamer
+    guia/[slug]/page.tsx           # Guia especifica
   lib/
     scrapers/
     cache/
     telemetry/
+    seo/                           # Metadata, sitemaps, contenido SEO
+    product/product-seo-content.ts # Contenido enriquecido por categoria
 ```
 
 ## Endpoints API
