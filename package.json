@@ -9,7 +9,8 @@
     "lint": "eslint src e2e next.config.ts eslint.config.mjs playwright.config.ts vitest.config.ts --no-error-on-unmatched-pattern",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "cache:warm": "node -e \"require('./src/lib/server/cache-warming').warmHomePageCache().then(r => console.log(JSON.stringify(r, null, 2)))\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",

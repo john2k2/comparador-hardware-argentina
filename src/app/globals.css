@@ -430,6 +430,47 @@
 }
 
 /* ============================================
+   Mobile Optimizations - Disable heavy animations
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Disable parallax and floating effects on mobile */
+  .sky-layer,
+  .night-sky-layer,
+  .cloud-wrapper,
+  .night-stars-layer,
+  .night-cloud-wrapper,
+  .shooting-star,
+  .comet-container,
+  .night-moon-layer {
+    animation: none !important;
+    display: none !important;
+  }
+
+  /* Simplify body background */
+  body {
+    animation: none !important;
+    background: linear-gradient(180deg, #5b7cf5 0%, #8ca5ff 50%, #b3c6ff 100%) !important;
+    background-size: auto !important;
+  }
+
+  .dark body {
+    background: linear-gradient(180deg, #090a10 0%, #111424 40%, #1e1b4b 100%) !important;
+  }
+
+  /* Disable scanline effect on mobile */
+  body::before,
+  body::after {
+    display: none !important;
+  }
+
+  /* Reduce motion for all animated elements */
+  .animate-marquee {
+    animation-duration: 40s !important;
+  }
+}
+
+/* ============================================
    Reduced Motion Support
    ============================================ */
 

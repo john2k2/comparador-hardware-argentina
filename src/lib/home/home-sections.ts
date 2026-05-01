@@ -59,9 +59,9 @@ const PRICE_DROP_WINDOW_HOURS = 24;
 const PRICE_DROP_WINDOW_MS = PRICE_DROP_WINDOW_HOURS * 60 * 60 * 1000;
 const PRICE_DROP_MIN_PERCENT = 0.05;
 const PRICE_DROP_MIN_AMOUNT_ARS = 10_000;
-const DB_PRODUCTS_LIMIT = 600;
-const MAX_HISTORY_ROWS = 20_000;
-const HOME_SECTIONS_CACHE_TTL_MS = 5 * 60 * 1000;
+const DB_PRODUCTS_LIMIT = 200;
+const MAX_HISTORY_ROWS = 5_000;
+const HOME_SECTIONS_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min fresh + 2.5 min stale-while-revalidate
 
 function toNumber(value: number | string | null | undefined, fallback = 0): number {
   if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;

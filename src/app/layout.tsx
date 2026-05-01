@@ -108,6 +108,14 @@ export default async function RootLayout({
         <ThemeScript nonce={nonce} />
         <Analytics nonce={nonce} />
 
+        {/* Preconnect to critical image domains for faster loading */}
+        <link rel="preconnect" href="https://mexx-img-2019.s3.amazonaws.com" />
+        <link rel="preconnect" href="https://www.fullh4rd.com.ar" />
+        <link rel="preconnect" href="https://cdn.qloud.ar" />
+        <link rel="preconnect" href="https://katech.com.ar" />
+        <link rel="preconnect" href="https://compugarden.com.ar" />
+        <link rel="dns-prefetch" href="https://i.imgur.com" />
+
         {/* Prefetch SVG sprites for parallax background (not preload to avoid unused resource warning) */}
         <link rel="prefetch" href="/sprites/pixel-art.svg" as="fetch" type="image/svg+xml" crossOrigin="anonymous" />
 

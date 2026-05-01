@@ -12,9 +12,13 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: [
     '127.0.0.1',
   ],
+  compress: true,
+  poweredByHeader: false,
   htmlLimitedBots,
   images: {
     remotePatterns: buildRemotePatterns(),
+    formats: ['image/webp', 'image/avif'],
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 dias
   },
   async headers() {
     const securityHeaders = [

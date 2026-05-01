@@ -2,13 +2,19 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { ProductGrid, SearchBar } from '@/components/functional';
-import { SponsoredStoresSection } from '@/components/home/SponsoredStoresSection';
 import { resolveSponsoredStores } from '@/lib/commercial';
 import { categories, stores as defaultStores } from '@/lib/scrapers/static-data';
 import { readRecentlyViewedProducts } from '@/lib/client/recently-viewed';
 import type { Product } from '@/lib/types';
+
+// Lazy load below-fold sections to reduce initial bundle
+const SponsoredStoresSection = dynamic(
+  () => import('@/components/home/SponsoredStoresSection').then((mod) => mod.SponsoredStoresSection),
+  { ssr: false, loading: () => <div className="h-32 bg-card/50 border-2 border-border animate-pulse" /> }
+);
 
 const RECENT_PRODUCTS_LIMIT = 4;
 
@@ -101,6 +107,7 @@ type HomePageClientProps = {
   initialFeaturedFallbackUsed: boolean;
   initialPriceDropFallbackUsed: boolean;
   initialPopularProducts: Product[];
+  staticMode?: boolean;
 };
 
 export function HomePageClient({
@@ -109,6 +116,7 @@ export function HomePageClient({
   initialFeaturedFallbackUsed,
   initialPriceDropFallbackUsed,
   initialPopularProducts,
+  staticMode = false,
 }: HomePageClientProps) {
   const router = useRouter();
   const stores = useMemo(() => defaultStores, []);
@@ -252,76 +260,80 @@ export function HomePageClient({
         ))}
       </section>
 
-      <SectionTitle
-        title="PRODUCTOS DESTACADOS"
-        subtitle={featuredFallbackUsed
-          ? 'SELECCION ACTIVA DEL CATALOGO MIENTRAS SE RECONSTRUYE LA CURACION AUTOMATICA'
-          : 'EN STOCK + ACTUALIZADOS < 24H + MEJOR PRECIO POR CATEGORIA'}
-        actionHref="/search?q=rtx"
-        actionLabel="VER TODO"
-      />
-      {featuredProducts.length > 0 || isSectionsLoading ? (
-        <ProductGrid
-          products={featuredProducts}
-          isLoading={isSectionsLoading}
-          emptyMessage="No se pudieron cargar destacados en este momento."
-          surface="home_featured"
-        />
-      ) : (
-        <HomeEmptyCatalogState
-          message="Todavia no hay destacados cargados en esta instancia."
-          href="/search?category=tarjetas-graficas"
-          cta="EXPLORAR GPUS"
-        />
-      )}
-
-      <PromoBanner
-        label="-- ACTUALIZACION --"
-        title="ACTUALIZAMOS PRECIOS Y STOCK EN TIEMPO REAL PARA AYUDARTE A DECIDIR MEJOR"
-        cta="VER METODO"
-        href="/acerca"
-      />
-
-      <SectionTitle
-        title={priceDropFallbackUsed ? 'RECIEN ACTUALIZADOS' : 'BAJARON DE PRECIO'}
-        subtitle={priceDropFallbackUsed
-          ? 'FALLBACK HONESTO: MOSTRAMOS PRODUCTOS ACTIVOS HASTA TENER HISTORIAL SUFICIENTE'
-          : 'PRODUCTOS CON BAJA REAL EN HISTORIAL DE 24H'}
-        actionHref="/search?sortBy=price-asc"
-        actionLabel={priceDropFallbackUsed ? 'VER CATALOGO' : 'MAS BARATOS'}
-      />
-      {priceDropProducts.length > 0 || isSectionsLoading ? (
-        <ProductGrid
-          products={priceDropProducts}
-          isLoading={isSectionsLoading}
-          emptyMessage={priceDropFallbackUsed
-            ? 'No se pudieron cargar productos activos para esta seccion.'
-            : 'No hay productos con baja de precio detectada por ahora.'}
-          surface="home_price_drop"
-        />
-      ) : (
-        <HomeEmptyCatalogState
-          message={priceDropFallbackUsed
-            ? 'No se pudieron cargar productos activos para esta seccion.'
-            : 'No hay bajas detectadas por ahora; podes buscar los mas baratos por categoria.'}
-          href="/search?sortBy=price-asc"
-          cta="VER MAS BARATOS"
-        />
-      )}
-
-      {popularProducts.length > 0 && (
+      {!staticMode && (
         <>
           <SectionTitle
-            title="PRODUCTOS POPULARES"
-            subtitle="LOS MAS BUSCADOS Y COMPARADOS"
-            actionHref="/search"
-            actionLabel="VER CATALOGO"
+            title="PRODUCTOS DESTACADOS"
+            subtitle={featuredFallbackUsed
+              ? 'SELECCION ACTIVA DEL CATALOGO MIENTRAS SE RECONSTRUYE LA CURACION AUTOMATICA'
+              : 'EN STOCK + ACTUALIZADOS < 24H + MEJOR PRECIO POR CATEGORIA'}
+            actionHref="/search?q=rtx"
+            actionLabel="VER TODO"
           />
-          <ProductGrid
-            products={popularProducts}
-            emptyMessage="No hay productos populares para mostrar."
-            surface="home_popular"
+          {featuredProducts.length > 0 || isSectionsLoading ? (
+            <ProductGrid
+              products={featuredProducts}
+              isLoading={isSectionsLoading}
+              emptyMessage="No se pudieron cargar destacados en este momento."
+              surface="home_featured"
+            />
+          ) : (
+            <HomeEmptyCatalogState
+              message="Todavia no hay destacados cargados en esta instancia."
+              href="/search?category=tarjetas-graficas"
+              cta="EXPLORAR GPUS"
+            />
+          )}
+
+          <PromoBanner
+            label="-- ACTUALIZACION --"
+            title="ACTUALIZAMOS PRECIOS Y STOCK EN TIEMPO REAL PARA AYUDARTE A DECIDIR MEJOR"
+            cta="VER METODO"
+            href="/acerca"
           />
+
+          <SectionTitle
+            title={priceDropFallbackUsed ? 'RECIEN ACTUALIZADOS' : 'BAJARON DE PRECIO'}
+            subtitle={priceDropFallbackUsed
+              ? 'FALLBACK HONESTO: MOSTRAMOS PRODUCTOS ACTIVOS HASTA TENER HISTORIAL SUFICIENTE'
+              : 'PRODUCTOS CON BAJA REAL EN HISTORIAL DE 24H'}
+            actionHref="/search?sortBy=price-asc"
+            actionLabel={priceDropFallbackUsed ? 'VER CATALOGO' : 'MAS BARATOS'}
+          />
+          {priceDropProducts.length > 0 || isSectionsLoading ? (
+            <ProductGrid
+              products={priceDropProducts}
+              isLoading={isSectionsLoading}
+              emptyMessage={priceDropFallbackUsed
+                ? 'No se pudieron cargar productos activos para esta seccion.'
+                : 'No hay productos con baja de precio detectada por ahora.'}
+              surface="home_price_drop"
+            />
+          ) : (
+            <HomeEmptyCatalogState
+              message={priceDropFallbackUsed
+                ? 'No se pudieron cargar productos activos para esta seccion.'
+                : 'No hay bajas detectadas por ahora; podes buscar los mas baratos por categoria.'}
+              href="/search?sortBy=price-asc"
+              cta="VER MAS BARATOS"
+            />
+          )}
+
+          {popularProducts.length > 0 && (
+            <>
+              <SectionTitle
+                title="PRODUCTOS POPULARES"
+                subtitle="LOS MAS BUSCADOS Y COMPARADOS"
+                actionHref="/search"
+                actionLabel="VER CATALOGO"
+              />
+              <ProductGrid
+                products={popularProducts}
+                emptyMessage="No hay productos populares para mostrar."
+                surface="home_popular"
+              />
+            </>
+          )}
         </>
       )}
 
