@@ -19,6 +19,11 @@ const pixelFont = Press_Start_2P({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
   title: {
     default: "Comparador de Precios Hardware Argentina | Encuentra las Mejores Ofertas",
     template: `%s | ${SITE_NAME}`,
