@@ -1,5 +1,6 @@
 import { getCacheMetrics, resetCacheMetrics } from '@/lib/server/shared-cache';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
+import { isRedisEnabled } from '@/lib/server/redis-cache';
 
 export type CacheHealthMetrics = {
   memory: {
@@ -8,6 +9,12 @@ export type CacheHealthMetrics = {
     staleHits: number;
     hitRate: string;
     staleRate: string;
+  };
+  redis: {
+    hits: number;
+    misses: number;
+    hitRate: string;
+    enabled: boolean;
   };
   database: {
     hits: number;
@@ -23,6 +30,7 @@ export async function getCacheHealthMetrics(): Promise<CacheHealthMetrics> {
   const metrics = getCacheMetrics();
   const totalMemory = metrics.hits + metrics.staleHits + metrics.misses;
   const totalDb = metrics.dbHits + metrics.dbMisses;
+  const totalRedis = metrics.redisHits + metrics.redisMisses;
   
   const supabase = getServerSupabaseServiceClient();
   let cacheEntries = 0;
@@ -68,6 +76,12 @@ export async function getCacheHealthMetrics(): Promise<CacheHealthMetrics> {
       staleHits: metrics.staleHits,
       hitRate: totalMemory > 0 ? `${((metrics.hits / totalMemory) * 100).toFixed(1)}%` : 'N/A',
       staleRate: totalMemory > 0 ? `${((metrics.staleHits / totalMemory) * 100).toFixed(1)}%` : 'N/A',
+    },
+    redis: {
+      hits: metrics.redisHits,
+      misses: metrics.redisMisses,
+      hitRate: totalRedis > 0 ? `${((metrics.redisHits / totalRedis) * 100).toFixed(1)}%` : 'N/A',
+      enabled: isRedisEnabled(),
     },
     database: {
       hits: metrics.dbHits,

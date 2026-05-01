@@ -1,4 +1,5 @@
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
+import { getRedisCache, setRedisCache, isRedisEnabled } from '@/lib/server/redis-cache';
 
 type CacheEntry = {
   value: unknown;
@@ -10,6 +11,8 @@ type CacheMetrics = {
   hits: number;
   misses: number;
   staleHits: number;
+  redisHits: number;
+  redisMisses: number;
   dbHits: number;
   dbMisses: number;
 };
@@ -22,6 +25,8 @@ const metrics: CacheMetrics = {
   hits: 0,
   misses: 0,
   staleHits: 0,
+  redisHits: 0,
+  redisMisses: 0,
   dbHits: 0,
   dbMisses: 0,
 };
@@ -100,6 +105,27 @@ export async function getSharedCache<T>(
   pruneLocalCache(now);
   metrics.misses++;
 
+  // Try Redis cache (distributed, survives deploys)
+  if (isRedisEnabled()) {
+    try {
+      const redisValue = await getRedisCache<T>(scopedKey);
+      if (redisValue !== null) {
+        metrics.redisHits++;
+        // Store in local cache for faster subsequent access
+        const ttl = 60 * 1000; // 1 minute in local cache
+        localCache.set(scopedKey, {
+          value: redisValue,
+          expiresAt: now + ttl,
+          staleAt: now + (ttl * 0.8),
+        });
+        return redisValue;
+      }
+    } catch (error) {
+      console.warn('[SharedCache] Redis get failed:', error);
+    }
+    metrics.redisMisses++;
+  }
+
   // Try database cache
   const supabase = getServerSupabaseServiceClient();
   if (!supabase) return undefined;
@@ -161,6 +187,15 @@ export async function setSharedCache<T>(
     staleAt,
   });
   pruneLocalCache();
+
+  // Write to Redis (distributed cache)
+  if (isRedisEnabled()) {
+    try {
+      await setRedisCache(scopedKey, value, Math.ceil(ttlMs / 1000));
+    } catch (error) {
+      console.warn('[SharedCache] Redis set failed:', error);
+    }
+  }
 
   // Skip DB write for ultra-fast local-only cache
   if (options?.skipDbWrite) return;
@@ -242,6 +277,16 @@ export async function deleteSharedCache(scope: string, key: string): Promise<voi
   const scopedKey = buildScopedKey(scope, key);
   localCache.delete(scopedKey);
 
+  // Delete from Redis
+  if (isRedisEnabled()) {
+    try {
+      const { deleteRedisCache } = await import('@/lib/server/redis-cache');
+      await deleteRedisCache(scopedKey);
+    } catch (error) {
+      console.warn('[SharedCache] Redis delete failed:', error);
+    }
+  }
+
   const supabase = getServerSupabaseServiceClient();
   if (!supabase) return;
 
@@ -256,6 +301,16 @@ export async function clearScopeCache(scope: string): Promise<void> {
   for (const [key] of localCache.entries()) {
     if (key.startsWith(`${scope}:`)) {
       localCache.delete(key);
+    }
+  }
+
+  // Clear Redis cache
+  if (isRedisEnabled()) {
+    try {
+      const { deleteRedisPattern } = await import('@/lib/server/redis-cache');
+      await deleteRedisPattern(`${scope}:*`);
+    } catch (error) {
+      console.warn('[SharedCache] Redis clear scope failed:', error);
     }
   }
 
