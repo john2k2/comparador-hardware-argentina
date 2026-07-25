@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 
-const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.svg`;
+const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 export function buildCanonicalUrl(path: string): string {
   return `${SITE_URL}${path.startsWith('/') ? path : `/${path}`}`;

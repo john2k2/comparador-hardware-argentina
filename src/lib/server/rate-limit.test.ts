@@ -12,6 +12,34 @@ vi.mock('@/lib/server/supabase-server', () => ({
   getServerSupabaseServiceClient: vi.fn(() => null),
 }));
 
+const redisMockState = {
+  enabled: false,
+  failIncr: false,
+  counters: new Map<string, { count: number; expiresAtMs: number }>(),
+};
+
+vi.mock('@/lib/server/redis-cache', () => ({
+  isRedisEnabled: () => redisMockState.enabled,
+  incrWithExpiry: vi.fn(async (key: string, ttlSeconds: number) => {
+    if (!redisMockState.enabled || redisMockState.failIncr) return null;
+    const nowMs = Date.now();
+    const existing = redisMockState.counters.get(key);
+    if (!existing || existing.expiresAtMs <= nowMs) {
+      redisMockState.counters.set(key, { count: 1, expiresAtMs: nowMs + ttlSeconds * 1000 });
+      return 1;
+    }
+    existing.count += 1;
+    return existing.count;
+  }),
+  getRedisTtlSeconds: vi.fn(async (key: string) => {
+    const existing = redisMockState.counters.get(key);
+    if (!existing) return 0;
+    return Math.max(0, Math.ceil((existing.expiresAtMs - Date.now()) / 1000));
+  }),
+}));
+
+import * as redisCacheMock from '@/lib/server/redis-cache';
+
 // Acceder al mapa interno de buckets para tests de estado
 // (no se exporta, pero podemos testear comportamiento observable)
 
@@ -189,6 +217,68 @@ describe('rate-limit', () => {
       const r4 = await checkRateLimit('test-user-5', rule2);
       expect(r4.allowed).toBe(false);
       expect(r4.remaining).toBe(0);
+    });
+  });
+
+  describe('checkRateLimit (Redis)', () => {
+    const rule: RateLimitRule = { limit: 5, windowMs: 60_000 };
+
+    beforeEach(() => {
+      redisMockState.enabled = true;
+      redisMockState.failIncr = false;
+      redisMockState.counters.clear();
+      vi.mocked(redisCacheMock.incrWithExpiry).mockClear();
+      vi.mocked(redisCacheMock.getRedisTtlSeconds).mockClear();
+    });
+
+    afterEach(() => {
+      redisMockState.enabled = false;
+      redisMockState.failIncr = false;
+    });
+
+    it('usa Redis (incrWithExpiry) en vez del fallback cuando esta habilitado', async () => {
+      await checkRateLimit('redis-user-0', rule);
+      expect(redisCacheMock.incrWithExpiry).toHaveBeenCalledWith('redis-user-0', 60);
+    });
+
+    it('permite requests dentro del limite usando Redis', async () => {
+      for (let i = 0; i < 5; i++) {
+        const result = await checkRateLimit('redis-user-1', rule);
+        expect(result.allowed).toBe(true);
+        expect(result.remaining).toBe(4 - i);
+      }
+    });
+
+    it('bloquea cuando se supera el limite en Redis', async () => {
+      for (let i = 0; i < 5; i++) {
+        await checkRateLimit('redis-user-2', rule);
+      }
+
+      const result = await checkRateLimit('redis-user-2', rule);
+      expect(result.allowed).toBe(false);
+      expect(result.remaining).toBe(0);
+      expect(result.retryAfterSeconds).toBeGreaterThan(0);
+    });
+
+    it('reinicia despues de la ventana de tiempo en Redis', async () => {
+      for (let i = 0; i < 5; i++) {
+        await checkRateLimit('redis-user-3', rule);
+      }
+      const blocked = await checkRateLimit('redis-user-3', rule);
+      expect(blocked.allowed).toBe(false);
+
+      vi.advanceTimersByTime(61_000);
+
+      const result = await checkRateLimit('redis-user-3', rule);
+      expect(result.allowed).toBe(true);
+      expect(result.remaining).toBe(4);
+    });
+
+    it('cae al fallback en memoria si Redis esta habilitado pero incrWithExpiry falla', async () => {
+      redisMockState.failIncr = true;
+      const result = await checkRateLimit('redis-user-4', rule);
+      expect(result.allowed).toBe(true);
+      expect(result.remaining).toBe(4);
     });
   });
 

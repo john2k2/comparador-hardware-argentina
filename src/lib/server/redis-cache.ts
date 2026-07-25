@@ -102,3 +102,37 @@ export async function deleteRedisPattern(pattern: string): Promise<void> {
 export function isRedisEnabled(): boolean {
   return !!getRedisClient();
 }
+
+/**
+ * Incrementa un contador atomicamente y le pone TTL solo la primera vez
+ * (cuando el contador pasa de no existir a 1). Base para rate limiting
+ * de ventana fija distribuido entre instancias de Vercel.
+ */
+export async function incrWithExpiry(key: string, ttlSeconds: number): Promise<number | null> {
+  const redis = getRedisClient();
+  if (!redis) return null;
+
+  try {
+    const count = await redis.incr(key);
+    if (count === 1) {
+      await redis.expire(key, ttlSeconds);
+    }
+    return count;
+  } catch (error) {
+    console.warn('[Redis] Incr error:', error);
+    return null;
+  }
+}
+
+export async function getRedisTtlSeconds(key: string): Promise<number> {
+  const redis = getRedisClient();
+  if (!redis) return 0;
+
+  try {
+    const ttl = await redis.ttl(key);
+    return ttl > 0 ? ttl : 0;
+  } catch (error) {
+    console.warn('[Redis] TTL error:', error);
+    return 0;
+  }
+}

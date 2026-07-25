@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: `${SITE_URL}/comparativa/${slug}`,
       title: comparison.title,
       description: comparison.description,
-      images: [`${SITE_URL}/og-image.svg`],
+      images: [`${SITE_URL}/og-image.png`],
     },
   };
 }

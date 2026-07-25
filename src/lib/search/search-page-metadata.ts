@@ -4,7 +4,7 @@ import { getCategorySeoCopy, isIndexableCategoryLanding } from './search-seo';
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { stores as defaultStores } from '@/lib/scrapers/static-data';
 
-const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.svg`;
+const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 function buildSearchMetadata(input: {
   title: string;

@@ -9,6 +9,7 @@ import { ThemeScript } from "@/components/functional/ThemeScript";
 import { GOOGLE_SITE_VERIFICATION, SITE_NAME, SITE_URL } from "@/lib/site-config";
 import { Analytics } from "@/components/functional/Analytics";
 import { CommercialDisclosure } from "@/components/functional/CommercialDisclosure";
+import { buildSiteJsonLd } from "@/lib/seo/site-jsonld";
 
 
 const pixelFont = Press_Start_2P({
@@ -57,7 +58,7 @@ export const metadata: Metadata = {
     description: "Compara precios de hardware de las mejores tiendas de Argentina. Procesadores, tarjetas graficas, motherboards y mas. Encuentra el mejor precio.",
     images: [
       {
-        url: "/og-image.svg",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "Comparador de Precios Hardware Argentina",
@@ -68,7 +69,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SITE_NAME,
     description: "Compara precios de hardware y encuentra las mejores ofertas en Argentina",
-    images: ["/og-image.svg"],
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,
@@ -101,6 +102,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const nonce = (await headers()).get('x-content-security-policy-nonce') ?? undefined;
+  const siteJsonLd = buildSiteJsonLd();
 
   return (
     <html lang="es" suppressHydrationWarning>
@@ -110,6 +112,11 @@ export default async function RootLayout({
           "min-h-screen bg-background text-foreground font-pixel flex flex-col"
         )}
       >
+        <script
+          type="application/ld+json"
+          nonce={nonce}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
+        />
         <ThemeScript nonce={nonce} />
         <Analytics nonce={nonce} />
 

@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
+import { isRedisEnabled, incrWithExpiry, getRedisTtlSeconds } from '@/lib/server/redis-cache';
 
 export type RateLimitRule = {
   limit: number;
@@ -93,8 +94,28 @@ export function getRequestIp(request: NextRequest): string {
 }
 
 export async function checkRateLimit(key: string, rule: RateLimitRule): Promise<RateLimitResult> {
+  if (isRedisEnabled()) {
+    const windowSeconds = Math.max(1, Math.ceil(rule.windowMs / 1000));
+    const count = await incrWithExpiry(key, windowSeconds);
+
+    if (count !== null) {
+      const ttlSeconds = await getRedisTtlSeconds(key);
+      const effectiveTtlSeconds = ttlSeconds > 0 ? ttlSeconds : windowSeconds;
+
+      return {
+        allowed: count <= rule.limit,
+        limit: rule.limit,
+        remaining: Math.max(0, rule.limit - count),
+        resetAtMs: Date.now() + effectiveTtlSeconds * 1000,
+        retryAfterSeconds: effectiveTtlSeconds,
+      };
+    }
+
+    console.warn('[RateLimit] Redis no disponible, usando fallback (Supabase RPC / memoria)');
+  }
+
   const supabase = getServerSupabaseServiceClient();
-  
+
   // Si no hay Supabase, usar fallback en memoria (con advertencia)
   if (!supabase) {
     console.warn('[RateLimit] Supabase no disponible, usando fallback en memoria (INSEGURO en serverless)');
