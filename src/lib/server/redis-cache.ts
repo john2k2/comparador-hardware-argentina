@@ -23,10 +23,13 @@ const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
 
 let redisClient: Redis | null = null;
 let warnedMissing = false;
+let warnedInvalid = false;
+let triedInit = false;
 
 function getRedisClient(): Redis | null {
   if (redisClient) return redisClient;
-  
+  if (triedInit) return null;
+
   if (!redisUrl || !redisToken) {
     if (!warnedMissing) {
       warnedMissing = true;
@@ -34,12 +37,22 @@ function getRedisClient(): Redis | null {
     }
     return null;
   }
-  
-  redisClient = new Redis({
-    url: redisUrl,
-    token: redisToken,
-  });
-  
+
+  triedInit = true;
+
+  try {
+    redisClient = new Redis({
+      url: redisUrl,
+      token: redisToken,
+    });
+  } catch (error) {
+    if (!warnedInvalid) {
+      warnedInvalid = true;
+      console.warn('[Redis] No se pudo inicializar el cliente (config invalida). Cache distribuido desactivado:', error);
+    }
+    return null;
+  }
+
   return redisClient;
 }
 
