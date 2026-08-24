@@ -26,6 +26,7 @@ export const IMAGE_DOMAINS = [
   'dinobyte.ar',
   // 'maximus.com.ar' - REMOVIDO: varias URLs devuelven 400 vía Next image optimizer.
   'maxtecno.com.ar',
+  'www.maxtecno.com.ar',
   'thegamershop.com.ar',
   'hardcorecomputacion.com.ar',
   'goldentechstore.com.ar',

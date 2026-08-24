@@ -26,7 +26,7 @@ function createProduct(id: string, name: string): Product {
       {
         storeId: 'mexx',
         storeName: 'Mexx',
-        url: 'https://store.example.com/product',
+        url: 'https://www.mexx.com.ar/producto',
         price: 1000,
         stock: 'in-stock',
         installment: null,
@@ -64,15 +64,16 @@ describe('product-detail-helpers', () => {
   it('deduplicates and validates description urls', () => {
     const product = createProduct('mexx-1', 'AMD Ryzen 7');
     product.prices = [
-      { ...product.prices[0], price: 900, url: 'https://store.example.com/a' },
+      { ...product.prices[0], price: 900, url: 'https://www.mexx.com.ar/a' },
       { ...product.prices[0], price: 950, url: 'invalid-url' },
-      { ...product.prices[0], price: 990, url: 'https://store.example.com/a' },
-      { ...product.prices[0], price: 1100, url: 'https://store.example.com/b' },
+      { ...product.prices[0], price: 975, url: 'http://127.0.0.1/admin' },
+      { ...product.prices[0], price: 990, url: 'https://www.mexx.com.ar/a' },
+      { ...product.prices[0], price: 1100, url: 'https://www.venex.com.ar/b' },
     ];
 
     expect(pickDescriptionUrls(product)).toEqual([
-      'https://store.example.com/a',
-      'https://store.example.com/b',
+      'https://www.mexx.com.ar/a',
+      'https://www.venex.com.ar/b',
     ]);
   });
 

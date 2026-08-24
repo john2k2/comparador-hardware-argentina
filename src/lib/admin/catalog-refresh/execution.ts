@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { logger } from '@/lib/logger';
+import { buildInternalRefreshHeaders } from '@/lib/server/internal-refresh-auth';
 import {
   INTERNAL_REFRESH_MAX_ATTEMPTS,
   INTERNAL_REFRESH_TIMEOUT_MS,
@@ -68,9 +69,7 @@ export async function runInternalRefresh(
       const response = await fetch(url.toString(), {
         method: 'GET',
         cache: 'no-store',
-        headers: {
-          'x-internal-refresh': '1',
-        },
+        headers: buildInternalRefreshHeaders(),
         signal: timeoutController.signal,
       }).finally(() => {
         clearTimeout(timeoutId);

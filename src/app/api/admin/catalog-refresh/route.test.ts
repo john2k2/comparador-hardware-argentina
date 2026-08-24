@@ -50,13 +50,13 @@ describe('/api/admin/catalog-refresh route', () => {
     mockLoggerError.mockReset();
   });
 
-  it('returns 401 when the request has no valid access', async () => {
-    mockEnsureAccess.mockResolvedValue(null);
+  it('rejects GET because refresh is a mutating operation', async () => {
     const { GET } = await import('./route');
     const response = await GET(new NextRequest('http://localhost/api/admin/catalog-refresh'));
 
-    expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toEqual({ error: 'No autorizado' });
+    expect(response.status).toBe(405);
+    expect(response.headers.get('Allow')).toBe('POST,OPTIONS');
+    expect(mockEnsureAccess).not.toHaveBeenCalled();
   });
 
   it('handles cleanup-history mode without invoking refresh targets', async () => {
@@ -101,8 +101,8 @@ describe('/api/admin/catalog-refresh route', () => {
       { target: 'ryzen 7600', kind: 'query', status: 200, productCount: 5, ok: true },
     ]);
 
-    const { GET } = await import('./route');
-    const response = await GET(new NextRequest('http://localhost/api/admin/catalog-refresh?mode=custom&q=ryzen%207600'));
+    const { POST } = await import('./route');
+    const response = await POST(new NextRequest('http://localhost/api/admin/catalog-refresh?mode=custom&q=ryzen%207600', { method: 'POST' }));
     const payload = await response.json();
 
     expect(response.status).toBe(200);
@@ -131,8 +131,8 @@ describe('/api/admin/catalog-refresh route', () => {
       fallbackReason: null,
     });
 
-    const { GET } = await import('./route');
-    const response = await GET(new NextRequest('http://localhost/api/admin/catalog-refresh?mode=tracked'));
+    const { POST } = await import('./route');
+    const response = await POST(new NextRequest('http://localhost/api/admin/catalog-refresh?mode=tracked', { method: 'POST' }));
     const payload = await response.json();
 
     expect(response.status).toBe(200);

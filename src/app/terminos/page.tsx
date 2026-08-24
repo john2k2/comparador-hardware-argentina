@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { RetroPageShell } from '@/components/layout/RetroPageShell';
 import { buildPublicPageMetadata } from '@/lib/seo/metadata';
 import { SITE_NAME } from '@/lib/site-config';
+import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import { TERMINOS_FAQ } from '@/lib/seo/faq-schema';
 
 export const metadata: Metadata = buildPublicPageMetadata({
@@ -10,12 +12,15 @@ export const metadata: Metadata = buildPublicPageMetadata({
   description: `Leé los términos de uso de ${SITE_NAME}: alcance del comparador, precios aproximados, tiendas externas, responsabilidades y uso razonable.`,
 });
 
-export default function TerminosPage() {
+export default async function TerminosPage() {
+  const nonce = (await headers()).get('x-content-security-policy-nonce') ?? undefined;
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(TERMINOS_FAQ) }}
+        nonce={nonce}
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(TERMINOS_FAQ) }}
       />
     <RetroPageShell
       title="TERMINOS DE USO"

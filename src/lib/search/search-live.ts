@@ -3,7 +3,10 @@ import { withAbortTimeout, withPromiseTimeout } from '@/lib/async/with-abort-tim
 import { withConcurrencyLimit } from '@/lib/async/concurrency';
 import { normalizeProductTitlesWithStats } from '@/lib/ai/normalize-products';
 import { snapshotProducts } from '@/lib/cache/search-snapshot';
-import { inferHardwareCategoryFromName } from '@/lib/catalog/hardware-categories';
+import {
+  inferHardwareCategoryFromName,
+  resolveHardwareCategoryForProduct,
+} from '@/lib/catalog/hardware-categories';
 import { persistProductsSnapshot } from '@/lib/persistence/product-catalog';
 import { normalizeProductContent } from '@/lib/products/normalize-product-content';
 import { sanitizeProducts } from '@/lib/product-sanitizer';
@@ -57,7 +60,7 @@ export async function runLiveSearch({
     query,
     category,
   });
-  const defaultCategory = category ?? inferHardwareCategoryFromName(query);
+  const defaultCategory = category ?? inferHardwareCategoryFromName(query) ?? 'perifericos';
   const sourceTasks: Promise<Product[]>[] = [];
 
   // Scrapers de tiendas individuales (via registry)
@@ -99,7 +102,10 @@ export async function runLiveSearch({
     sourceTasks.map((task) => () => task),
     MAX_CONCURRENT_SCRAPERS,
   );
-  let liveProducts: Product[] = sanitizeProducts(sourceResults.flat());
+  let liveProducts: Product[] = sanitizeProducts(sourceResults.flat()).map((product) => ({
+    ...product,
+    category: resolveHardwareCategoryForProduct(product.name, category),
+  }));
 
   // P0: Aplicar filtros baratos ANTES de la normalización AI para reducir
   // la cantidad de titulos que necesitan procesamiento costoso

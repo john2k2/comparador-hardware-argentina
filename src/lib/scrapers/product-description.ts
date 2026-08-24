@@ -1,8 +1,10 @@
 import * as cheerio from 'cheerio';
 import { withAbortTimeout } from '@/lib/async/with-abort-timeout';
+import { isTrustedStorefrontUrl, resolveTrustedStorefrontRedirect } from '@/lib/storefront-url';
 
 const DESCRIPTION_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 const DESCRIPTION_TIMEOUT_MS = 9000;
+const MAX_DESCRIPTION_REDIRECTS = 3;
 
 const SCRAPE_HEADERS = {
   'User-Agent':
@@ -172,10 +174,34 @@ function pruneExpiredCache(now = Date.now()): void {
   }
 }
 
+async function fetchTrustedStorefrontPage(initialUrl: string, signal: AbortSignal): Promise<Response | null> {
+  let currentUrl = initialUrl;
+
+  for (let redirectCount = 0; redirectCount <= MAX_DESCRIPTION_REDIRECTS; redirectCount += 1) {
+    const response = await fetch(currentUrl, {
+      headers: SCRAPE_HEADERS,
+      redirect: 'manual',
+      signal,
+    });
+
+    if (response.status < 300 || response.status >= 400) return response;
+
+    const location = response.headers.get('location');
+    if (!location || redirectCount === MAX_DESCRIPTION_REDIRECTS) return null;
+
+    const nextUrl = resolveTrustedStorefrontRedirect(location, currentUrl);
+    if (!nextUrl) return null;
+    currentUrl = nextUrl;
+  }
+
+  return null;
+}
+
 export async function fetchProductDescriptionFromUrl(
   rawUrl: string,
   fallbackName?: string,
 ): Promise<string | null> {
+  if (!isTrustedStorefrontUrl(rawUrl)) return null;
   const key = normalizeUrlKey(rawUrl);
   if (!key) return null;
 
@@ -193,14 +219,11 @@ export async function fetchProductDescriptionFromUrl(
   const task = (async () => {
     try {
       const res = await withAbortTimeout(
-        (signal) => fetch(key, {
-          headers: SCRAPE_HEADERS,
-          signal,
-        }),
+        (signal) => fetchTrustedStorefrontPage(key, signal),
         DESCRIPTION_TIMEOUT_MS,
         'description',
       );
-      if (!res.ok) {
+      if (!res?.ok) {
         descriptionCache.set(key, {
           value: null,
           expiresAt: Date.now() + DESCRIPTION_CACHE_TTL_MS,

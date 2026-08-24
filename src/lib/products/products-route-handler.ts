@@ -21,6 +21,7 @@ import {
 import { resolveLiveProductsList } from '@/lib/products/products-list-service';
 import { normalizeProductContent } from '@/lib/products/normalize-product-content';
 import { resolveAdminAccessFromToken } from '@/lib/server/admin-auth';
+import { isTrustedInternalRefreshRequest } from '@/lib/server/internal-refresh-auth';
 import { buildRateLimitHeaders, checkRateLimit, getRequestIp } from '@/lib/server/rate-limit';
 import { recordEndpointRequestEvent, runObservedStoreScrape } from '@/lib/telemetry/operational-metrics';
 import { logger } from '@/lib/logger';
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
   const category = searchParams.get('category');
   const query = searchParams.get('q')?.trim();
   const bypassDb = searchParams.get('bypassDb') === '1';
-  const internalRefreshRequest = request.headers.get('x-internal-refresh') === '1';
+  const internalRefreshRequest = isTrustedInternalRefreshRequest(request);
   const isRefreshRequest = searchParams.get('refresh') === '1';
   const stableRuntimeMode = shouldSkipLiveScraping();
   let defaultRateLimitHeaders: Record<string, string> | null = null;

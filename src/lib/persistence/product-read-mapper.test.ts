@@ -53,4 +53,32 @@ describe('product-read-mapper', () => {
       interest: false,
     });
   });
+
+  it('repairs a stale stored category when the product name is unambiguous', () => {
+    const row = {
+      id: 'legacy-ryzen',
+      name: 'AMD Ryzen 7 5700X AM4',
+      category: 'tarjetas-graficas',
+      brand: 'AMD',
+      model: 'Ryzen 7 5700X',
+      description: null,
+      image: null,
+      normalized_title: null,
+      canonical_product_key: null,
+      family_key: null,
+      variant_key: null,
+      refresh_priority: null,
+      last_scraped_at: null,
+      last_normalized_at: null,
+      specs: null,
+      lowest_price: 200000,
+      highest_price: 200000,
+      average_price: 200000,
+      created_at: '2026-03-20T10:00:00.000Z',
+      updated_at: '2026-03-26T11:10:00.000Z',
+      product_prices: [],
+    } satisfies DbProductRow;
+
+    expect(mapDbProduct(row).category).toBe('procesadores');
+  });
 });

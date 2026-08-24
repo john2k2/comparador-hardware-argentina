@@ -145,12 +145,15 @@ export function pickBestStorePrices<T extends StorePriceLike>(prices: T[]): T[] 
       continue;
     }
 
-    if (price.price < currentBest.price) {
-      bestByStore.set(storeKey, price);
+    const currentUnavailable = currentBest.stock === 'out-of-stock';
+    const candidateUnavailable = price.stock === 'out-of-stock';
+
+    if (currentUnavailable !== candidateUnavailable) {
+      if (!candidateUnavailable) bestByStore.set(storeKey, price);
       continue;
     }
 
-    if (currentBest.stock === 'out-of-stock' && price.stock !== 'out-of-stock') {
+    if (price.price < currentBest.price) {
       bestByStore.set(storeKey, price);
       continue;
     }

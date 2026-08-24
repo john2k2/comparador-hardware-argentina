@@ -124,7 +124,11 @@ async function handleRefresh(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  return handleRefresh(request);
+  void request;
+  return NextResponse.json(
+    { error: 'Metodo no permitido' },
+    { status: 405, headers: { Allow: 'POST,OPTIONS' } },
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -136,9 +140,8 @@ export async function OPTIONS() {
     { ok: true },
     {
       headers: {
-        Allow: 'GET,POST,OPTIONS',
+        Allow: 'POST,OPTIONS',
       },
     },
   );
 }
-

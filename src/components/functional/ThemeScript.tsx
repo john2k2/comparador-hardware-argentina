@@ -27,6 +27,7 @@ export function ThemeScript({ nonce }: ThemeScriptProps) {
     <script
       id="theme-init"
       nonce={nonce}
+      suppressHydrationWarning
       dangerouslySetInnerHTML={{ __html: themeInitScript }}
     />
   );

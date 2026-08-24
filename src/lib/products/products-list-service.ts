@@ -4,6 +4,7 @@ import { hardwareCategoryToSearchTerm } from '@/lib/catalog/hardware-categories'
 import { snapshotProducts } from '@/lib/cache/search-snapshot';
 import { persistProductsSnapshot } from '@/lib/persistence/product-catalog';
 import { normalizeProductContent } from '@/lib/products/normalize-product-content';
+import { buildCoreStoreCategoryUrls } from '@/lib/products/products-list-targets';
 import {
   countMatchedQueryWords,
   normalizeForQueryMatch,
@@ -11,7 +12,7 @@ import {
   tokenizeQueryWords,
 } from '@/lib/products/product-detail-helpers';
 import { PERSISTENCE_TIMEOUT_MS, SCRAPER_TIMEOUT_MS } from '@/lib/products/products-handler-shared';
-import { fetchCompraGamerProducts, searchCompraGamerProducts } from '@/lib/scrapers/compragamer';
+import { searchCompraGamerProducts } from '@/lib/scrapers/compragamer';
 import { fetchCompugardenProducts } from '@/lib/scrapers/compugarden';
 import { fetchAllFoxtiendaCategory, fetchAllFoxtiendaSearch } from '@/lib/scrapers/foxtienda';
 import { fetchFullh4rdProducts } from '@/lib/scrapers/fullh4rd';
@@ -51,27 +52,13 @@ export async function resolveLiveProductsList(
 ): Promise<Product[]> {
   const categorySearchTerm = hardwareCategoryToSearchTerm(categorySlug);
   const nonWooQuery = query || categorySearchTerm;
-  let mexxUrl = 'https://www.mexx.com.ar/productos-rubro/procesadores/';
-  let fullh4rdUrl = 'https://www.fullh4rd.com.ar/cat/search/procesador';
-  let venexUrl = 'https://www.venex.com.ar/componentes-de-pc/microprocesadores';
+  const coreStoreUrls = buildCoreStoreCategoryUrls(categorySlug, query);
+  const mexxUrl = coreStoreUrls.mexx;
+  const fullh4rdUrl = coreStoreUrls.fullh4rd;
+  const venexUrl = coreStoreUrls.venex;
   let gamingCityUrl = getGamingCityCategoryUrl(categorySlug);
-  let cgCategoryId = 27;
 
-  if (categorySlug === 'tarjetas-graficas') {
-    mexxUrl = 'https://www.mexx.com.ar/productos-rubro/placas-de-video/';
-    fullh4rdUrl = 'https://www.fullh4rd.com.ar/cat/search/video';
-    venexUrl = 'https://www.venex.com.ar/componentes-de-pc/placas-de-video';
-    cgCategoryId = 6;
-  } else if (categorySlug === 'motherboards') {
-    mexxUrl = 'https://www.mexx.com.ar/productos-rubro/motherboards/';
-    fullh4rdUrl = 'https://www.fullh4rd.com.ar/cat/search/mother';
-    venexUrl = 'https://www.venex.com.ar/componentes-de-pc/mothers';
-    cgCategoryId = 26;
-  } else if (categorySlug === 'perifericos') {
-    const encodedPeripheralQuery = encodeURIComponent(nonWooQuery);
-    mexxUrl = `https://www.mexx.com.ar/buscar/?p=${encodedPeripheralQuery}`;
-    fullh4rdUrl = `https://www.fullh4rd.com.ar/cat/search/${encodedPeripheralQuery}`;
-    venexUrl = `https://www.venex.com.ar/resultados-busqueda.htm?keywords=${encodedPeripheralQuery}`;
+  if (categorySlug === 'perifericos') {
     gamingCityUrl = getGamingCityCategoryUrl(categorySlug);
   }
 
@@ -89,7 +76,7 @@ export async function resolveLiveProductsList(
     observeSource('gezatek', 'Gezatek', (signal) => fetchGezatekProducts(nonWooQuery, categorySlug, signal)),
     observeSource('compugarden', 'Compugarden', (signal) => fetchCompugardenProducts(nonWooQuery, categorySlug, signal)),
     observeSource('logg', 'Logg', (signal) => fetchLoggProducts(query || '', categorySlug, signal)),
-    observeSource('compragamer', 'CompraGamer', (signal) => fetchCompraGamerProducts(cgCategoryId, categorySlug, signal)),
+    observeSource('compragamer', 'CompraGamer', (signal) => searchCompraGamerProducts(nonWooQuery, categorySlug, signal)),
     query
       ? observeSource('portaltech', 'Portal Tech', (signal) => fetchPortalTechProducts(query, categorySlug, signal))
       : observeSource('portaltech', 'Portal Tech', (signal) => fetchPortalTechCategory(categorySlug, signal)),

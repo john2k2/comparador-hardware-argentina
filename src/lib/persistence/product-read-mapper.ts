@@ -1,4 +1,5 @@
 import { stores as staticStores } from '@/lib/scrapers/static-data';
+import { inferHardwareCategoryFromName } from '@/lib/catalog/hardware-categories';
 import { computeComparableStorePriceStats } from '@/lib/price-utils';
 import { sanitizeProduct } from '@/lib/product-sanitizer';
 import type { Product } from '@/lib/types';
@@ -37,7 +38,7 @@ export function mapDbProduct(row: DbProductRow): Product {
   const mapped: Product = {
     id: row.id,
     name: row.name,
-    category: row.category as Product['category'],
+    category: inferHardwareCategoryFromName(row.name) ?? row.category as Product['category'],
     brand: row.brand || 'Generica',
     model: row.model || row.name,
     description: row.description ?? row.name,

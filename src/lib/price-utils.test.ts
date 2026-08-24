@@ -66,6 +66,16 @@ describe('price-utils', () => {
     ]);
   });
 
+  it('pickBestStorePrices nunca deja que una oferta sin stock desplace una disponible', () => {
+    const picked = pickBestStorePrices([
+      buildPrice({ storeId: 'venex', price: 250_000, stock: 'in-stock' }),
+      buildPrice({ storeId: 'venex', price: 190_000, stock: 'out-of-stock' }),
+    ]);
+
+    expect(picked).toHaveLength(1);
+    expect(picked[0]).toMatchObject({ price: 250_000, stock: 'in-stock' });
+  });
+
   it('computeComparableStorePriceStats filtra outliers altos absurdos sin romper precios reales', () => {
     const stats = computeComparableStorePriceStats([
       buildPrice({ storeId: 'venex', storeName: 'Venex', price: 260_000 }),

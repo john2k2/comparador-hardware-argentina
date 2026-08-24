@@ -10,6 +10,7 @@ import { GOOGLE_SITE_VERIFICATION, SITE_NAME, SITE_URL } from "@/lib/site-config
 import { Analytics } from "@/components/functional/Analytics";
 import { CommercialDisclosure } from "@/components/functional/CommercialDisclosure";
 import { buildSiteJsonLd } from "@/lib/seo/site-jsonld";
+import { serializeJsonLd } from "@/lib/seo/serialize-jsonld";
 
 
 const pixelFont = Press_Start_2P({
@@ -115,7 +116,8 @@ export default async function RootLayout({
         <script
           type="application/ld+json"
           nonce={nonce}
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(siteJsonLd) }}
         />
         <ThemeScript nonce={nonce} />
         <Analytics nonce={nonce} />

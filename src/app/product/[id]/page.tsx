@@ -1,10 +1,12 @@
 import { cache } from 'react';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import { ProductDetailClient } from '@/components/product/ProductDetailClient';
 import { readCanonicalProductIdByKey, readProductByIdFromDatabase } from '@/lib/persistence/product-read';
 import { formatPriceARS, getComparableStorePrices } from '@/lib/price-utils';
 import { isIndexableProductId } from '@/lib/seo/sitemap';
+import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
 import { getProductContent } from '@/lib/product/product-seo-content';
@@ -110,13 +112,16 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const jsonLd = product && isIndexableProductId(id) && getComparableStorePrices(product.prices).length >= 2
     ? buildProductJsonLd(product, id)
     : null;
+  const nonce = (await headers()).get('x-content-security-policy-nonce') ?? undefined;
 
   return (
     <>
       {jsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
         />
       )}
       <ProductDetailClient id={id} initialProduct={product} />

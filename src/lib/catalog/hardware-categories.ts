@@ -16,7 +16,7 @@ export function isHardwareCategory(value: string | null | undefined): value is H
   return value !== null && value !== undefined && HARDWARE_CATEGORIES.includes(value as HardwareCategory);
 }
 
-export function inferHardwareCategoryFromName(name: string): HardwareCategory {
+export function inferHardwareCategoryFromName(name: string): HardwareCategory | undefined {
   const lowerName = name.toLowerCase();
   if (lowerName.includes('ryzen') || lowerName.includes('core i') || lowerName.includes('procesador')) {
     return 'procesadores';
@@ -68,7 +68,7 @@ export function inferHardwareCategoryFromName(name: string): HardwareCategory {
   ) {
     return 'perifericos';
   }
-  return 'perifericos';
+  return undefined;
 }
 
 export function inferDetailHardwareCategory(value: string): HardwareCategory {
@@ -121,6 +121,13 @@ export function inferDetailHardwareCategory(value: string): HardwareCategory {
   }
 
   return 'perifericos';
+}
+
+export function resolveHardwareCategoryForProduct(
+  productName: string,
+  explicitCategory?: HardwareCategory,
+): HardwareCategory {
+  return explicitCategory ?? inferDetailHardwareCategory(productName);
 }
 
 export function hardwareCategoryToSearchTerm(category: HardwareCategory): string {

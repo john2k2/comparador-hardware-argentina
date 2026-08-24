@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { buildCspImgSrc } from '@/lib/image-domains';
+import {
+  INTERNAL_REFRESH_HEADER,
+  isTrustedInternalRefreshRequest,
+} from '@/lib/server/internal-refresh-auth';
 
 function generateNonce(): string {
   return crypto.randomUUID().replace(/-/g, '');
@@ -21,6 +25,16 @@ function buildScriptSources(nonce: string): string {
   return sources.join(' ');
 }
 
+function buildConnectSrc(): string {
+  return [
+    "'self'",
+    'https://www.google-analytics.com',
+    'https://analytics.google.com',
+    'https://*.supabase.co',
+    'wss://*.supabase.co',
+  ].join(' ');
+}
+
 export function proxy(request: NextRequest) {
   const nonce = generateNonce();
   const cspScriptSrc = buildScriptSources(nonce);
@@ -32,7 +46,7 @@ export function proxy(request: NextRequest) {
     "font-src 'self' https://fonts.gstatic.com",
     buildCspImgSrc(),
     `script-src-elem 'self' 'nonce-${nonce}' https://www.googletagmanager.com https://www.google-analytics.com`,
-    "connect-src 'self' https://www.google-analytics.com https://analytics.google.com",
+    `connect-src ${buildConnectSrc()}`,
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -40,6 +54,12 @@ export function proxy(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-content-security-policy-nonce', nonce);
+  if (
+    requestHeaders.has(INTERNAL_REFRESH_HEADER)
+    && !isTrustedInternalRefreshRequest(request)
+  ) {
+    requestHeaders.delete(INTERNAL_REFRESH_HEADER);
+  }
 
   const response = NextResponse.next({
     request: {

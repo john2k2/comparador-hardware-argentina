@@ -262,4 +262,15 @@ describe('/api/search route', () => {
     expect(response.headers.get('X-Search-Cache')).toBe('CATEGORY-MISS-DB');
     expect(mockResolveLiveProductsList).toHaveBeenCalledWith('procesadores', undefined, expect.any(Function));
   });
+
+  it('rejects bypassDb when x-internal-refresh is the spoofable value 1', async () => {
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest('http://localhost/api/search?q=ryzen&bypassDb=1', {
+      headers: { 'x-internal-refresh': '1' },
+    }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload.error).toMatch(/admin/i);
+  });
 });

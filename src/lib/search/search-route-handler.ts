@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
 import { resolveAdminAccessFromToken } from '@/lib/server/admin-auth';
+import { isTrustedInternalRefreshRequest } from '@/lib/server/internal-refresh-auth';
 import { buildRateLimitHeaders, checkRateLimit, getRequestIp } from '@/lib/server/rate-limit';
 import { recordEndpointRequestEvent, runObservedStoreScrape } from '@/lib/telemetry/operational-metrics';
 import { hasStaleProducts } from '@/lib/persistence/product-staleness';
@@ -130,7 +131,7 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const query = (searchParams.get('q') ?? '').trim();
   const bypassDb = searchParams.get('bypassDb') === '1';
-  const internalRefreshRequest = request.headers.get('x-internal-refresh') === '1';
+  const internalRefreshRequest = isTrustedInternalRefreshRequest(request);
   const isRefreshRequest = searchParams.get('refresh') === '1';
   const categoryParam = searchParams.get('category');
   const category = isHardwareCategory(categoryParam) ? categoryParam : undefined;

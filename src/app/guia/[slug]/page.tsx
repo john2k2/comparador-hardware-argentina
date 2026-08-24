@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { readProductsFromDatabase } from '@/lib/persistence/product-read';
 import { SITE_URL } from '@/lib/site-config';
 import { formatPriceARS } from '@/lib/price-utils';
 import { getBudgetGuideBySlug } from '@/lib/seo/budget-guides-data';
+import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import Link from 'next/link';
 
 type Props = {
@@ -43,7 +45,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export const revalidate = 300;
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 export default async function BudgetGuidePage({ params }: Props) {
   const { slug } = await params;
@@ -53,7 +55,8 @@ export default async function BudgetGuidePage({ params }: Props) {
     notFound();
   }
 
-  const allProducts = await readProductsFromDatabase({ limit: 1000 });
+  const allProducts = await readProductsFromDatabase({ limit: 1000 }).catch(() => []);
+  const nonce = (await headers()).get('x-content-security-policy-nonce') ?? undefined;
   
   // Buscar productos reales
   const findProduct = (searchTerms: string[]) => {
@@ -242,8 +245,10 @@ export default async function BudgetGuidePage({ params }: Props) {
       {/* FAQ Schema */}
       <script
         type="application/ld+json"
+        nonce={nonce}
+        suppressHydrationWarning
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: serializeJsonLd({
             '@context': 'https://schema.org',
             '@type': 'FAQPage',
             mainEntity: guide.faqs.map(faq => ({

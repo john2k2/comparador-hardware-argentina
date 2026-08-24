@@ -1,4 +1,5 @@
 import type { Product } from '@/lib/types';
+import { isTrustedStorefrontUrl } from '@/lib/storefront-url';
 
 export function normalizeId(value: string): string {
   let decoded = value.trim();
@@ -104,18 +105,10 @@ export function findBestProductMatch(targetId: string, products: Product[]): Pro
   return sameStoreProducts.find((product) => normalizeId(product.id).includes(normalizedTarget));
 }
 
-function isValidHttpUrl(value: string): boolean {
-  if (!value) return false;
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
-
 export function pickDescriptionUrls(product: Product): string[] {
   const orderedPrices = [...(product.prices ?? [])].sort((a, b) => a.price - b.price);
-  const candidates = orderedPrices.map((price) => price.url).filter((url): url is string => isValidHttpUrl(url));
+  const candidates = orderedPrices
+    .map((price) => price.url)
+    .filter((url): url is string => isTrustedStorefrontUrl(url));
   return Array.from(new Set(candidates)).slice(0, 2);
 }

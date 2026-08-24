@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { readProductsFromDatabase } from '@/lib/persistence/product-read';
 import { SITE_URL } from '@/lib/site-config';
@@ -8,6 +9,7 @@ import {
   findProductInComparison,
   type ComparisonDefinition 
 } from '@/lib/seo/comparisons-data';
+import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import Link from 'next/link';
 import type { HardwareCategory, Product } from '@/lib/types';
 
@@ -48,7 +50,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export const revalidate = 300;
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 export default async function ComparisonPage({ params }: Props) {
   const { slug } = await params;
@@ -65,10 +67,11 @@ export default async function ComparisonPage({ params }: Props) {
   const allProducts = (
     await Promise.all(
       Array.from(categories).map((category) =>
-        readProductsFromDatabase({ limit: 1000, category: category as HardwareCategory }),
+        readProductsFromDatabase({ limit: 1000, category: category as HardwareCategory }).catch(() => []),
       ),
     )
   ).flat();
+  const nonce = (await headers()).get('x-content-security-policy-nonce') ?? undefined;
 
   const { product1, product2 } = findProductInComparison(comparison, allProducts);
 
@@ -272,8 +275,10 @@ export default async function ComparisonPage({ params }: Props) {
       {/* FAQ Schema */}
       <script
         type="application/ld+json"
+        nonce={nonce}
+        suppressHydrationWarning
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: serializeJsonLd({
             '@context': 'https://schema.org',
             '@type': 'FAQPage',
             mainEntity: comparison.faqs.map(faq => ({

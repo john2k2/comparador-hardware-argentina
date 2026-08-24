@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { withAbortTimeout } from '@/lib/async/with-abort-timeout';
 import { shouldScheduleInternalBackgroundRefresh } from '@/lib/server/background-refresh';
+import { buildInternalRefreshHeaders } from '@/lib/server/internal-refresh-auth';
 import { logger } from '@/lib/logger';
 
 type ScheduleInternalRefreshInput = {
@@ -32,9 +33,7 @@ export function scheduleInternalRefresh({
       const response = await fetch(refreshUrl.toString(), {
         method: 'GET',
         cache: 'no-store',
-        headers: {
-          'x-internal-refresh': '1',
-        },
+        headers: buildInternalRefreshHeaders(),
         signal,
       });
       if (!response.ok) {

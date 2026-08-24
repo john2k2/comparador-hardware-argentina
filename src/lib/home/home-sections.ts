@@ -3,17 +3,13 @@ import { hydrateProducts } from '@/lib/product-serialization';
 import { getSharedCache, setSharedCache } from '@/lib/server/shared-cache';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 import type { Product } from '@/lib/types';
+import { resolveBaselineFromHistory, type HistoryPoint } from '@/lib/home/price-drop-baseline';
 
 type HistoryRow = {
   product_id: string;
   store_id: string;
   price: number | string;
   recorded_at: string;
-};
-
-type HistoryPoint = {
-  price: number;
-  recordedAtMs: number;
 };
 
 type CurrentPricePoint = {
@@ -235,25 +231,6 @@ function buildHistoryMap(rows: HistoryRow[]): Map<string, HistoryPoint[]> {
   }
 
   return historyByPair;
-}
-
-function resolveBaselineFromHistory(history: HistoryPoint[], current: CurrentPricePoint): number | null {
-  if (history.length === 0) return null;
-
-  for (const point of history) {
-    const olderThanCurrent = point.recordedAtMs < current.currentUpdatedAtMs - 1000;
-    if (olderThanCurrent && point.price > current.currentPrice) {
-      return point.price;
-    }
-  }
-
-  for (const point of history) {
-    if (point.price > current.currentPrice) {
-      return point.price;
-    }
-  }
-
-  return null;
 }
 
 function pickPriceDropProductsFromHistory(
