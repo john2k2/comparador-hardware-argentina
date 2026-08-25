@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   return {
-    title: comparison.title,
+    title: comparison.metadataTitle ? { absolute: comparison.metadataTitle } : comparison.title,
     description: comparison.description,
     keywords: comparison.keywords,
     alternates: {

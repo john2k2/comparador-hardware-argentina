@@ -3,6 +3,7 @@ import type { Product } from '@/lib/types';
 export type ComparisonDefinition = {
   slug: string;
   title: string;
+  metadataTitle?: string;
   description: string;
   keywords: string[];
   product1: {
@@ -65,8 +66,9 @@ export const COMPARISONS: ComparisonDefinition[] = [
   },
   {
     slug: 'ryzen-5-7600x-vs-ryzen-7-5700x',
-    title: 'Ryzen 5 7600X vs 7 5700X',
-    description: '¿AM5 con DDR5 o AM4 con DDR4? Compará precios de Ryzen 5 7600X vs Ryzen 7 5700X en tiendas argentinas y elegí el mejor procesador.',
+    title: 'Ryzen 7600X vs 5700X: precios y cuál conviene',
+    metadataTitle: 'Ryzen 7600X vs 5700X: cuál conviene | HardwareAR',
+    description: 'Compará Ryzen 5 7600X vs Ryzen 7 5700X, sus precios y plataformas para decidir si conviene armar en AM5 o actualizar una PC AM4.',
     keywords: ['7600x vs 5700x', 'ryzen 5 vs ryzen 7', 'mejor procesador gaming argentina', 'am5 vs am4'],
     product1: {
       name: 'Ryzen 5 7600X',

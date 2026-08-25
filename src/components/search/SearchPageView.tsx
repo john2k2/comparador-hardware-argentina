@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { SearchBar, ProductGrid, Filters } from '@/components/functional';
 import { getCategorySeoCopy } from '@/lib/search/search-seo';
 import { categories, stores as defaultStores } from '@/lib/scrapers/static-data';
@@ -73,6 +74,24 @@ export function SearchPageView({
               comercio de destino. Confirmá stock, cuotas, costo de envío y política de cambios antes de completar la compra.
             </p>
           </div>
+          {categorySeoCopy.relatedLinks && categorySeoCopy.relatedLinks.length > 0 && (
+            <nav aria-label="Comparativas y guías relacionadas" className="mt-5 border-t-2 border-border pt-4">
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-secondary mb-3">
+                Seguí comparando
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {categorySeoCopy.relatedLinks.map((relatedLink) => (
+                  <Link
+                    key={relatedLink.href}
+                    href={relatedLink.href}
+                    className="min-h-11 inline-flex items-center border-2 border-border bg-background px-3 py-2 text-[10px] md:text-[11px] font-bold text-foreground hover:border-primary hover:text-primary transition-colors"
+                  >
+                    {relatedLink.label} →
+                  </Link>
+                ))}
+              </div>
+            </nav>
+          )}
         </header>
       )}
 

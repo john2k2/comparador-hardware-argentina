@@ -8,12 +8,13 @@ const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 function buildSearchMetadata(input: {
   title: string;
+  absoluteTitle?: string;
   description: string;
   canonical: string;
   index: boolean;
 }): Metadata {
   return {
-    title: input.title,
+    title: input.absoluteTitle ? { absolute: input.absoluteTitle } : input.title,
     description: input.description,
     alternates: {
       canonical: input.canonical,
@@ -61,6 +62,7 @@ export function resolveSearchMetadata(state: SearchPageState): Metadata {
   if (indexableCategoryLanding && categorySeoCopy) {
     return buildSearchMetadata({
       title: categorySeoCopy.title,
+      absoluteTitle: `${categorySeoCopy.title} | HardwareAR`,
       description: categorySeoCopy.description,
       canonical,
       index: true,

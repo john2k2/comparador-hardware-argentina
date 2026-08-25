@@ -7,20 +7,48 @@ type CategorySeoCopy = {
   description: string;
   heading: string;
   intro: string;
+  relatedLinks?: Array<{
+    href: string;
+    label: string;
+  }>;
 };
 
 const CATEGORY_SEO_COPY: Record<HardwareCategory, CategorySeoCopy> = {
   'procesadores': {
-    title: 'Procesadores en Argentina',
-    description: 'Compará costos de CPUs AMD Ryzen e Intel Core en Argentina, revisá stock, diferencias entre comercios y enlaces directos para comprar mejor.',
-    heading: 'Comparador de precios de procesadores en Argentina',
-    intro: 'Explora CPUs AMD Ryzen e Intel Core con valores actualizados, diferencias entre locales y opciones para armar o mejorar tu PC sin pagar de mas. Esta categoría sirve para comparar gamas de entrada, modelos para gaming, chips con gráficos integrados y procesadores orientados a productividad. Revisá siempre compatibilidad con motherboard, memoria y refrigeración antes de decidir, porque el gasto final del upgrade depende del conjunto completo y no solo del micro elegido.',
+    title: 'Procesadores AMD e Intel: precios',
+    description: 'Compará precios de procesadores AMD Ryzen e Intel Core en tiendas de Argentina. Revisá stock, modelos y ofertas actuales antes de comprar.',
+    heading: 'Compará precios de procesadores AMD e Intel',
+    intro: 'Encontrá y compará precios de procesadores AMD Ryzen e Intel Core publicados por tiendas argentinas. Revisá modelos para gaming, trabajo y PCs con gráficos integrados, junto con su stock y mejor precio disponible. Antes de decidir, confirmá el socket, la compatibilidad con motherboard y memoria, el cooler incluido y el costo total de la plataforma: un micro más barato no siempre produce el upgrade más conveniente.',
+    relatedLinks: [
+      {
+        href: '/comparativa/ryzen-5-7600x-vs-ryzen-7-5700x',
+        label: 'Ryzen 7600X vs 5700X: cuál conviene',
+      },
+      {
+        href: '/guia/pc-gamer-2-millones',
+        label: 'PC gamer por $2 millones',
+      },
+    ],
   },
   'tarjetas-graficas': {
-    title: 'Placas de video en Argentina',
-    description: 'Compará costos de placas de video NVIDIA GeForce RTX y AMD Radeon RX en comercios argentinos, con stock, diferencias y enlaces directos a cada local.',
-    heading: 'Comparador de precios de tarjetas graficas en Argentina',
-    intro: 'Revisa GPUs GeForce y Radeon con stock y ofertas comparadas entre locales argentinos para encontrar la mejor opcion para gaming, streaming o trabajo. Además de mirar el valor final, conviene validar memoria VRAM, consumo, tamaño físico, garantía, fuente recomendada y rendimiento esperado para tu monitor. Esta landing ayuda a separar modelos similares, detectar variantes convenientes y evitar compras apuradas cuando distintos sitios publican placas con nombres muy parecidos.',
+    title: 'Placas de video RTX y Radeon: precios',
+    description: 'Compará precios de placas de video NVIDIA GeForce RTX y AMD Radeon en Argentina. Encontrá stock y ofertas actuales en múltiples tiendas.',
+    heading: 'Compará precios de placas de video RTX y Radeon',
+    intro: 'Compará precios de placas de video NVIDIA GeForce RTX y AMD Radeon publicadas por tiendas argentinas. Encontrá modelos para gaming, streaming y trabajo, con stock y mejor precio disponible. Además del importe final, revisá VRAM, consumo, tamaño físico, garantía, fuente recomendada y rendimiento para la resolución de tu monitor. Así podés distinguir variantes parecidas y evitar pagar de más por una publicación con menos memoria o refrigeración inferior.',
+    relatedLinks: [
+      {
+        href: '/comparativa/rtx-4060-vs-rx-7600',
+        label: 'RTX 4060 vs RX 7600',
+      },
+      {
+        href: '/guia/pc-gamer-2-millones',
+        label: 'PC gamer por $2 millones',
+      },
+      {
+        href: '/guia/pc-gamer-3-millones',
+        label: 'PC gamer por $3 millones',
+      },
+    ],
   },
   'motherboards': {
     title: 'Motherboards en Argentina',
