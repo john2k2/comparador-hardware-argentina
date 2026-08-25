@@ -2,6 +2,7 @@ import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 import { stores as staticStores } from '@/lib/scrapers/static-data';
 import type { Product } from '@/lib/types';
 import { buildCatalogMetadata } from '@/lib/catalog/catalog-metadata';
+import { resolveHardwareCategoryForProduct } from '@/lib/catalog/hardware-categories';
 import {
   buildProductPriceRowKey,
   planPriceRowPersistence,
@@ -52,6 +53,7 @@ type ProductPriceRow = {
 type PriceHistoryRow = {
   product_id: string;
   store_id: string;
+  offer_url: string;
   price: number;
   original_price: number | null;
   stock: 'in-stock' | 'low-stock' | 'out-of-stock' | 'unknown';
@@ -244,7 +246,11 @@ export async function persistProductsSnapshot(products: Product[]): Promise<void
     supabase,
     Array.from(new Set(products.map((product) => product.id).filter(Boolean))),
   );
-  const enrichedProducts = await buildCatalogMetadata(products, trackedProductIds);
+  const categoryNormalizedProducts = products.map((product) => ({
+    ...product,
+    category: resolveHardwareCategoryForProduct(product.name, product.category),
+  }));
+  const enrichedProducts = await buildCatalogMetadata(categoryNormalizedProducts, trackedProductIds);
   const now = new Date();
   const candidateProductRowsById = new Map<string, ProductRow>();
   const candidatePriceRowsByKey = new Map<string, ProductPriceRow>();
@@ -365,6 +371,7 @@ export async function persistProductsSnapshot(products: Product[]): Promise<void
       historyRows.push({
         product_id: row.product_id,
         store_id: row.store_id,
+        offer_url: row.url,
         price: row.price,
         original_price: row.original_price,
         stock: row.stock,

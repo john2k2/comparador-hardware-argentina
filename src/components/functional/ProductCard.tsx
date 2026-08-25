@@ -4,7 +4,6 @@
 
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import React, { useMemo } from 'react';
 import { trackProductSelection } from '@/lib/analytics';
@@ -13,17 +12,10 @@ import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { PriceDisplay } from './PriceDisplay';
-import { isImageHostWhitelisted, isKnownBlockedImageHost } from '@/lib/whitelisted-hosts';
-
-// Base64 encoded tiny placeholder for blur effect (1x1 pixel, light gray)
-const BLUR_PLACEHOLDER = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAADklEQVQI12NgGAWjAAMAAMwIelQhR6EAAAAASUVORK5CYII=';
+import { ProductImageWithFallback } from './ProductImageWithFallback';
 
 const PRICE_DROP_MIN_PERCENT = 5;
 const PRICE_DROP_MIN_AMOUNT_ARS = 10_000;
-
-function isWhitelisted(url: string): boolean {
-  return isImageHostWhitelisted(url);
-}
 
 export interface ProductCardProps {
   product: Product;
@@ -34,19 +26,9 @@ export interface ProductCardProps {
   position?: number;
 }
 
-function getPriceDropBaseline(product: Product, highestComparablePrice: number): number | null {
-  let baseline = highestComparablePrice;
-
-  for (const price of product.prices) {
-    if (typeof price.originalPrice === 'number' && Number.isFinite(price.originalPrice)) {
-      baseline = Math.max(baseline, price.originalPrice);
-    }
-  }
-
-  if (!Number.isFinite(baseline) || baseline <= product.lowestPrice) {
-    return null;
-  }
-
+function getPriceDropBaseline(bestPrice: Product['prices'][number] | undefined): number | null {
+  const baseline = bestPrice?.originalPrice;
+  if (!bestPrice || typeof baseline !== 'number' || !Number.isFinite(baseline) || baseline <= bestPrice.price) return null;
   return baseline;
 }
 
@@ -76,13 +58,14 @@ export const ProductCard = React.memo(function ProductCard({
     const comparablePrices = comparableStats.comparablePrices;
     const comparableStoreCount = comparablePrices.length;
     const lowestComparablePrice = comparableStats.lowest > 0 ? comparableStats.lowest : product.lowestPrice;
-    const highestComparablePrice = comparableStats.highest > 0 ? comparableStats.highest : product.highestPrice;
     const bestPrice = comparablePrices[0] ?? product.prices.find((price) => price.price === lowestComparablePrice);
     const hasDiscount = Boolean(bestPrice?.originalPrice && bestPrice.originalPrice > bestPrice.price);
     const discountPercent = hasDiscount
       ? Math.round((((bestPrice?.originalPrice ?? 0) - (bestPrice?.price ?? 0)) / (bestPrice?.originalPrice ?? 1)) * 100)
       : 0;
-    const priceDropBaseline = getPriceDropBaseline(product, highestComparablePrice);
+    // Solo se compara contra el precio anterior informado por la misma oferta.
+    // Comparar tiendas distintas produciria una supuesta baja inexistente.
+    const priceDropBaseline = getPriceDropBaseline(bestPrice);
     const priceDropAmount = priceDropBaseline ? Math.max(0, priceDropBaseline - lowestComparablePrice) : 0;
     const priceDropPercent = priceDropBaseline ? Math.round((priceDropAmount / priceDropBaseline) * 100) : 0;
     const hasPriceDrop = Boolean(
@@ -129,46 +112,13 @@ export const ProductCard = React.memo(function ProductCard({
     >
       <article className="h-full flex flex-col bg-card border-[3px] border-border p-3.5 pixel-shadow-primary transition-transform group-hover:-translate-y-1 group-hover:translate-x-1">
         <div className="relative aspect-square mb-3 border-2 border-border bg-background overflow-hidden">
-          {product.image && isWhitelisted(product.image) ? (
-            <Image
-              src={product.image}
-              alt={displayName}
-              width={400}
-              height={400}
-              className="object-contain image-pixelated p-2 transition-transform duration-300 group-hover:scale-[1.03] w-full h-full"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-              placeholder="blur"
-              blurDataURL={BLUR_PLACEHOLDER}
-              priority={shouldPrioritizeImage}
-              loading={shouldPrioritizeImage ? 'eager' : 'lazy'}
-            />
-          ) : product.image && !isKnownBlockedImageHost(product.image) ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={product.image}
-              alt={displayName}
-              width={400}
-              height={400}
-              className="object-contain image-pixelated p-2 w-full h-full transition-transform duration-300 group-hover:scale-[1.03]"
-              loading={shouldPrioritizeImage ? 'eager' : 'lazy'}
-              fetchPriority={shouldPrioritizeImage ? 'high' : 'auto'}
-              decoding="async"
-              onError={(event) => {
-                (event.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-          ) : (
-            <Image
-              src="/pixel-box.svg"
-              alt="No image"
-              width={400}
-              height={400}
-              className="object-contain image-pixelated p-4 opacity-50 w-full h-full"
-              placeholder="blur"
-              blurDataURL={BLUR_PLACEHOLDER}
-              priority={shouldPrioritizeImage}
-            />
-          )}
+          <ProductImageWithFallback
+            src={product.image}
+            alt={displayName}
+            eager={shouldPrioritizeImage}
+            className="object-contain p-2 w-full h-full transition-transform duration-300 group-hover:scale-[1.03]"
+            fallbackClassName="p-4 opacity-50 image-pixelated"
+          />
 
           {hasDiscount && (
             <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-2 py-1 text-[8px] uppercase font-bold border-b-2 border-l-2 border-border animate-pulse">
@@ -188,12 +138,12 @@ export const ProductCard = React.memo(function ProductCard({
             <p className="text-[8px] text-secondary uppercase tracking-widest font-bold truncate">
               {`// ${displayBrand}`}
             </p>
-            <span className="text-[7px] uppercase text-foreground/80 tracking-wide shrink-0">
-              {comparableStoreCount} STORES
+            <span className="text-[11px] uppercase text-foreground/75 tracking-wide shrink-0">
+              {comparableStoreCount} TIENDAS
             </span>
           </div>
 
-          <h3 className="text-[11px] uppercase leading-snug line-clamp-3 min-h-[3.5rem] mb-2 text-foreground font-bold">
+          <h3 className="font-body text-[15px] normal-case tracking-normal leading-snug line-clamp-3 min-h-[3.9rem] mb-2 text-foreground font-bold">
             {displayName}
           </h3>
 

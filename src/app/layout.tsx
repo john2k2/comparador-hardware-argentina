@@ -110,7 +110,7 @@ export default async function RootLayout({
       <body
         className={cn(
           pixelFont.variable,
-          "min-h-screen bg-background text-foreground font-pixel flex flex-col"
+          "min-h-screen bg-background text-foreground flex flex-col"
         )}
       >
         <script

@@ -52,5 +52,6 @@ export const categories: CategoryConfig[] = [
   { id: 'fuentes-alimentacion', name: 'Fuentes de Alimentacion', icon: 'zap', slug: 'fuentes' },
   { id: 'gabinetes', name: 'Gabinetes', icon: 'box', slug: 'gabinetes' },
   { id: 'refrigeracion', icon: 'thermometer', name: 'Refrigeracion', slug: 'refrigeracion' },
+  { id: 'computadoras', icon: 'monitor', name: 'Computadoras', slug: 'computadoras' },
   { id: 'perifericos', icon: 'keyboard', name: 'Perifericos', slug: 'perifericos' },
 ];

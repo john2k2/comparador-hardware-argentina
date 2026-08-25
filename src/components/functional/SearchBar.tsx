@@ -59,7 +59,7 @@ export function SearchBar({
     >
       <div
         className={cn(
-          'flex items-center gap-2 border-4 bg-background px-4 py-3 min-h-14 transition-all',
+          'flex min-w-0 items-center gap-2 border-4 bg-background px-2 sm:px-4 py-2 sm:py-3 min-h-14 transition-all',
           isFocused
             ? 'border-secondary pixel-shadow'
             : 'border-border',
@@ -85,7 +85,7 @@ export function SearchBar({
           autoComplete="off"
           aria-busy={isLoading}
           aria-label="Buscar productos"
-          className="flex-1 bg-transparent text-[12px] uppercase outline-none placeholder:text-foreground/70 placeholder:opacity-90 text-foreground tracking-wider"
+          className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-foreground/70 placeholder:opacity-90 text-foreground tracking-normal"
         />
         {query && (
           <button
@@ -103,13 +103,14 @@ export function SearchBar({
           disabled={isLoading}
           aria-busy={isLoading}
           className={cn(
-            'hidden sm:block bg-primary text-primary-foreground px-4 py-3 min-h-11 text-[10px] uppercase font-bold pixel-shadow transition-transform disabled:opacity-80 disabled:cursor-wait',
+            'inline-flex shrink-0 items-center justify-center bg-primary text-primary-foreground px-3 sm:px-4 py-3 min-h-11 min-w-11 text-[10px] uppercase font-bold pixel-shadow transition-transform disabled:opacity-80 disabled:cursor-wait',
             isLoading
               ? 'animate-pulse'
               : 'active:translate-x-1 active:translate-y-1',
           )}
         >
-          {isLoading ? 'BUSCANDO...' : 'SEARCH'}
+          <Search className="h-4 w-4 sm:hidden" aria-hidden="true" />
+          <span className="sr-only sm:not-sr-only">{isLoading ? 'BUSCANDO...' : 'BUSCAR'}</span>
         </button>
       </div>
       {isLoading && (

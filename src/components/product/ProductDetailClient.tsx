@@ -153,7 +153,7 @@ function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientPro
 
           <StoresList product={product} merchantPrices={merchantPrices} />
 
-          <ProductActions />
+          <ProductActions latestSyncAtMs={latestSyncAtMs} />
         </div>
       </div>
 

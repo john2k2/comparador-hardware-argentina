@@ -104,6 +104,7 @@ export type Database = {
       price_history: {
         Row: {
           id: string
+          offer_url: string | null
           original_price: number | null
           price: number
           product_id: string
@@ -113,6 +114,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          offer_url?: string | null
           original_price?: number | null
           price: number
           product_id: string
@@ -122,6 +124,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          offer_url?: string | null
           original_price?: number | null
           price?: number
           product_id?: string

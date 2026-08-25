@@ -1,6 +1,15 @@
 import type { HardwareCategory } from '@/lib/types';
 
-const BUNDLE_TERMS = ['combo', 'kit', 'armado', 'pc gamer', 'build'];
+const BUNDLE_TERMS = [
+  'combo', 'kit', 'armado', 'armada', 'pc gamer', 'pc completa', 'pc creadores',
+  'computadora', 'desktop', 'workstation', 'notebook', 'laptop', 'all in one',
+  'netbook', 'chromebook', 'build', 'bundle', 'paquete',
+];
+const COMPLETE_COMPUTER_TERMS = [
+  'pc armado', 'pc armada', 'pc gamer', 'pc completa', 'pc creadores',
+  'computadora', 'desktop', 'workstation', 'notebook', 'laptop',
+  'all in one', 'netbook', 'chromebook', 'build',
+];
 const BRAND_PATTERN = /\b(asus|gigabyte|msi|zotac|palit|inno3d|asrock|pny|xfx|sapphire|intel|amd|logitech|razer|hyperx|corsair|steelseries|redragon|keychron|cooler\s*master|benq|aoc|viewsonic|samsung|lg|dell|hp|lenovo)\b/;
 const GPU_VARIANTS = [
   'aorus', 'strix', 'tuf', 'dual', 'prime', 'proart', 'eagle', 'windforce',
@@ -162,6 +171,25 @@ export function isBundleLikeTitle(value: string): boolean {
 
   const wrapped = ` ${normalized} `;
   return BUNDLE_TERMS.some((term) => wrapped.includes(` ${term} `));
+}
+
+export function isCompleteComputerTitle(value: string): boolean {
+  const normalized = normalizeIdentityText(value);
+  if (!normalized) return false;
+  const wrapped = ` ${normalized} `;
+  if (COMPLETE_COMPUTER_TERMS.some((term) => wrapped.includes(` ${term} `))) return true;
+
+  const hasBundleMarker = normalized.includes('+') || /\b(combo|kit|bundle|paquete)\b/.test(normalized);
+  if (!hasBundleMarker) return false;
+
+  const componentFamilies = [
+    /\b(ryzen|core\s*i[3579]|procesador|cpu)\b/,
+    /\b(rtx|gtx|radeon|geforce|rx\s*\d{3,4}|gpu)\b/,
+    /\b(motherboard|mother|placa\s+madre)\b/,
+    /\b(ddr4|ddr5|ram|memoria)\b/,
+    /\b(ssd|nvme|hdd|disco)\b/,
+  ];
+  return componentFamilies.filter((pattern) => pattern.test(normalized)).length >= 2;
 }
 
 export function extractCpuModelKey(value: string): string | null {

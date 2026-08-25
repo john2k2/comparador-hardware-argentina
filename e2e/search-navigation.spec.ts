@@ -13,7 +13,9 @@ test('restores scroll when going back from product detail', async ({ page }) => 
   });
   await page.waitForTimeout(200);
 
-  const targetLink = productLinks.nth(5);
+  // La restauración no depende de una cantidad mínima de productos: una página
+  // válida puede tener pocos resultados después de aplicar filtros de integridad.
+  const targetLink = productLinks.last();
   await expect(targetLink).toBeVisible();
 
   const beforeScroll = await page.evaluate(() => Math.round(window.scrollY));

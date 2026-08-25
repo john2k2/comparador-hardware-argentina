@@ -54,7 +54,7 @@ describe('product-read-mapper', () => {
     });
   });
 
-  it('repairs a stale stored category when the product name is unambiguous', () => {
+  it('keeps the persisted category so count, pagination and mapped rows agree', () => {
     const row = {
       id: 'legacy-ryzen',
       name: 'AMD Ryzen 7 5700X AM4',
@@ -79,6 +79,6 @@ describe('product-read-mapper', () => {
       product_prices: [],
     } satisfies DbProductRow;
 
-    expect(mapDbProduct(row).category).toBe('procesadores');
+    expect(mapDbProduct(row).category).toBe('tarjetas-graficas');
   });
 });

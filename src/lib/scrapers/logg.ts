@@ -26,6 +26,7 @@ const LOGG_CATEGORY_NAMES: Record<HardwareCategory, string> = {
   'fuentes-alimentacion': 'Fuentesdealimentacion',
   gabinetes: 'Gabinetes',
   refrigeracion: 'Refrigeracion',
+  computadoras: 'Computadoras',
   perifericos: 'Perifericos',
 };
 

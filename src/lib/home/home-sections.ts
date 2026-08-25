@@ -3,11 +3,12 @@ import { hydrateProducts } from '@/lib/product-serialization';
 import { getSharedCache, setSharedCache } from '@/lib/server/shared-cache';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 import type { Product } from '@/lib/types';
-import { resolveBaselineFromHistory, type HistoryPoint } from '@/lib/home/price-drop-baseline';
+import { buildOfferIdentity, resolveBaselineFromHistory, type HistoryPoint } from '@/lib/home/price-drop-baseline';
 
 type HistoryRow = {
   product_id: string;
   store_id: string;
+  offer_url: string | null;
   price: number | string;
   recorded_at: string;
 };
@@ -15,6 +16,7 @@ type HistoryRow = {
 type CurrentPricePoint = {
   product: Product;
   storeId: string;
+  offerUrl: string;
   currentPrice: number;
   currentUpdatedAtMs: number;
 };
@@ -169,13 +171,14 @@ function selectCurrentPricePoints(products: Product[], minUpdatedAtMs: number): 
         : product.updatedAt.getTime();
       if (!Number.isFinite(normalizedUpdatedAtMs) || normalizedUpdatedAtMs < minUpdatedAtMs) continue;
 
-      const key = `${product.id}|${price.storeId}`;
+      const key = buildOfferIdentity(product.id, price.storeId, price.url);
       const existing = byPair.get(key);
 
       if (!existing) {
         byPair.set(key, {
           product,
           storeId: price.storeId,
+          offerUrl: price.url,
           currentPrice,
           currentUpdatedAtMs: normalizedUpdatedAtMs,
         });
@@ -186,6 +189,7 @@ function selectCurrentPricePoints(products: Product[], minUpdatedAtMs: number): 
         byPair.set(key, {
           product,
           storeId: price.storeId,
+          offerUrl: price.url,
           currentPrice,
           currentUpdatedAtMs: normalizedUpdatedAtMs,
         });
@@ -196,6 +200,7 @@ function selectCurrentPricePoints(products: Product[], minUpdatedAtMs: number): 
         byPair.set(key, {
           product,
           storeId: price.storeId,
+          offerUrl: price.url,
           currentPrice,
           currentUpdatedAtMs: normalizedUpdatedAtMs,
         });
@@ -216,7 +221,7 @@ function buildHistoryMap(rows: HistoryRow[]): Map<string, HistoryPoint[]> {
     const recordedAtMs = new Date(row.recorded_at).getTime();
     if (!Number.isFinite(recordedAtMs)) continue;
 
-    const key = `${row.product_id}|${row.store_id}`;
+    const key = buildOfferIdentity(row.product_id, row.store_id, row.offer_url);
     const bucket = historyByPair.get(key);
 
     if (bucket) {
@@ -233,6 +238,11 @@ function buildHistoryMap(rows: HistoryRow[]): Map<string, HistoryPoint[]> {
   return historyByPair;
 }
 
+export function resolveOfferHistory(historyByPair: Map<string, HistoryPoint[]>, productId: string, storeId: string, offerUrl: string): HistoryPoint[] | undefined {
+  return historyByPair.get(buildOfferIdentity(productId, storeId, offerUrl))
+    ?? historyByPair.get(buildOfferIdentity(productId, storeId, null));
+}
+
 function pickPriceDropProductsFromHistory(
   products: Product[],
   rows: HistoryRow[],
@@ -246,8 +256,7 @@ function pickPriceDropProductsFromHistory(
   const bestByProductId = new Map<string, DropCandidate>();
 
   for (const current of currentPricePoints) {
-    const key = `${current.product.id}|${current.storeId}`;
-    const history = historyByPair.get(key);
+    const history = resolveOfferHistory(historyByPair, current.product.id, current.storeId, current.offerUrl);
     if (!history || history.length === 0) continue;
 
     const baseline = resolveBaselineFromHistory(history, current);
@@ -285,7 +294,7 @@ async function readRecentHistoryRows(sinceIso: string): Promise<HistoryRow[]> {
 
   const { data, error } = await supabase
     .from('price_history')
-    .select('product_id,store_id,price,recorded_at')
+    .select('product_id,store_id,offer_url,price,recorded_at')
     .gte('recorded_at', sinceIso)
     .order('recorded_at', { ascending: false })
     .limit(MAX_HISTORY_ROWS);

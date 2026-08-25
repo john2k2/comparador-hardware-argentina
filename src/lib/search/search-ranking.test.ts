@@ -92,4 +92,15 @@ describe('search ranking', () => {
       'Combo Mouse Logitech G502 X + Mousepad',
     ]);
   });
+
+  it('ranks a complete model token ahead of suffix and GPU lookalikes', () => {
+    const products = [
+      buildProduct('AMD Ryzen 5 5600XT', { category: 'procesadores' }),
+      buildProduct('Radeon RX 5600 XT', { category: 'tarjetas-graficas' }),
+      buildProduct('AMD Ryzen 5 5600X', { category: 'procesadores' }),
+    ];
+
+    expect(sortProductsBySearchRelevance(products, '5600X', 'procesadores')[0]?.name)
+      .toBe('AMD Ryzen 5 5600X');
+  });
 });

@@ -1,4 +1,5 @@
 import type { HardwareCategory } from '@/lib/types';
+import { isCompleteComputerTitle } from '@/lib/product-identity';
 
 export const HARDWARE_CATEGORIES: HardwareCategory[] = [
   'procesadores',
@@ -9,6 +10,7 @@ export const HARDWARE_CATEGORIES: HardwareCategory[] = [
   'fuentes-alimentacion',
   'gabinetes',
   'refrigeracion',
+  'computadoras',
   'perifericos',
 ];
 
@@ -17,6 +19,7 @@ export function isHardwareCategory(value: string | null | undefined): value is H
 }
 
 export function inferHardwareCategoryFromName(name: string): HardwareCategory | undefined {
+  if (isCompleteComputerTitle(name)) return 'computadoras';
   const lowerName = name.toLowerCase();
   if (lowerName.includes('ryzen') || lowerName.includes('core i') || lowerName.includes('procesador')) {
     return 'procesadores';
@@ -72,6 +75,7 @@ export function inferHardwareCategoryFromName(name: string): HardwareCategory | 
 }
 
 export function inferDetailHardwareCategory(value: string): HardwareCategory {
+  if (isCompleteComputerTitle(value.replace(/-/g, ' '))) return 'computadoras';
   const normalized = value.toLowerCase();
 
   if (
@@ -127,7 +131,8 @@ export function resolveHardwareCategoryForProduct(
   productName: string,
   explicitCategory?: HardwareCategory,
 ): HardwareCategory {
-  return explicitCategory ?? inferDetailHardwareCategory(productName);
+  if (isCompleteComputerTitle(productName)) return 'computadoras';
+  return inferHardwareCategoryFromName(productName) ?? explicitCategory ?? inferDetailHardwareCategory(productName);
 }
 
 export function hardwareCategoryToSearchTerm(category: HardwareCategory): string {
@@ -139,5 +144,6 @@ export function hardwareCategoryToSearchTerm(category: HardwareCategory): string
   if (category === 'gabinetes') return 'gabinete';
   if (category === 'refrigeracion') return 'cooler';
   if (category === 'perifericos') return 'perifericos';
+  if (category === 'computadoras') return 'pc armada';
   return 'procesador';
 }

@@ -40,6 +40,7 @@ const CATEGORY_COMPONENT_TERMS: Record<HardwareCategory, string[]> = {
   'fuentes-alimentacion': ['fuente', 'psu'],
   gabinetes: ['gabinete', 'case'],
   refrigeracion: ['refrigeracion', 'cooler'],
+  computadoras: ['pc armada', 'notebook', 'computadora'],
   perifericos: ['monitor', 'mouse', 'teclado', 'auricular', 'microfono', 'parlante', 'mousepad'],
 };
 

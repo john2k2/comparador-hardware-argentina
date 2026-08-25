@@ -102,7 +102,7 @@ export function SearchPageView({
         <div className="flex-1 order-1 lg:order-2">
           <SearchHeader totalResults={totalResults} searchQuery={searchQuery} isBusy={isBusy} />
           {isBusy && <LoadingState searchQuery={searchQuery} />}
-          <div id="product-grid-start" className="bg-muted p-4 border-4 border-border relative">
+          <div id="product-grid-start" className="min-w-0 bg-muted p-3 sm:p-4 border-4 border-border relative overflow-hidden">
             {searchError && <SearchErrorState error={searchError} onRetry={() => onSearch(searchQuery)} />}
             {showNoResultsState && <NoResultsState searchQuery={searchQuery} hasActiveFilters={hasActiveFilters} onClearFilters={onClearFilters} onRetry={() => onSearch(searchQuery)} />}
             {showIdleState && <IdleState />}
@@ -169,8 +169,8 @@ function SearchHeader({ totalResults, searchQuery, isBusy }: { totalResults: num
 
 function LoadingState({ searchQuery }: { searchQuery: string }) {
   return (
-    <div className="mb-4 border-2 border-secondary bg-card px-4 py-3 pixel-shadow animate-pulse">
-      <p className="text-[10px] uppercase font-bold text-secondary tracking-wide">
+    <div className="min-w-0 mb-4 border-2 border-secondary bg-card px-3 sm:px-4 py-3 pixel-shadow animate-pulse overflow-hidden">
+      <p className="text-[10px] uppercase font-bold text-secondary tracking-wide break-words">
         {searchQuery ? `ESCANEANDO TIENDAS PARA "${searchQuery}"...` : 'ESCANEANDO TIENDAS Y PRECIOS...'}
       </p>
       <p className="text-[8px] uppercase text-foreground/80 mt-1 tracking-wide">

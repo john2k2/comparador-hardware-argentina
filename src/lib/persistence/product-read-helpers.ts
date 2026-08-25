@@ -76,7 +76,14 @@ export function sanitizeSearchTerm(value: string): string {
 }
 
 export function buildSearchOrFilter(searchTerm: string): string {
-  return `name.ilike.%${searchTerm}%,brand.ilike.%${searchTerm}%,model.ilike.%${searchTerm}%,normalized_title.ilike.%${searchTerm}%,family_key.ilike.%${searchTerm}%,variant_key.ilike.%${searchTerm}%`;
+  const tokens = searchTerm.split(/\s+/).filter(Boolean);
+  const databaseCandidate = [...tokens].sort((first, second) => {
+    const firstHasDigit = /\d/.test(first) ? 1 : 0;
+    const secondHasDigit = /\d/.test(second) ? 1 : 0;
+    return secondHasDigit - firstHasDigit || second.length - first.length;
+  })[0] ?? searchTerm;
+
+  return `name.ilike.%${databaseCandidate}%,brand.ilike.%${databaseCandidate}%,model.ilike.%${databaseCandidate}%,normalized_title.ilike.%${databaseCandidate}%,family_key.ilike.%${databaseCandidate}%,variant_key.ilike.%${databaseCandidate}%`;
 }
 
 export function applySharedProductFilters<TQuery>(queryBuilder: TQuery, filters: SharedProductQueryFilters): TQuery {

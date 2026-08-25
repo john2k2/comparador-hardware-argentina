@@ -58,6 +58,12 @@ const CATEGORY_SEO_COPY: Record<HardwareCategory, CategorySeoCopy> = {
     heading: 'Comparador de precios de refrigeracion para PC en Argentina',
     intro: 'Compara soluciones de aire y liquido para mantener tu PC fria, revisando opciones reales en comercios argentinos. Antes de elegir, considerá socket compatible, altura disponible, tamaño del radiador, ruido, mantenimiento y capacidad térmica del procesador. Un cooler adecuado evita thermal throttling, mejora estabilidad y puede extender la vida útil del equipo. Para builds compactas o CPUs exigentes, la compatibilidad física es tan importante como el rendimiento anunciado.',
   },
+  'computadoras': {
+    title: 'Computadoras armadas en Argentina',
+    description: 'Compará precios de PCs armadas, notebooks y equipos completos en comercios argentinos sin mezclarlos con componentes individuales.',
+    heading: 'Comparador de precios de computadoras en Argentina',
+    intro: 'Compará equipos completos por procesador, placa de video, memoria y almacenamiento. Verificá que la publicación incluya exactamente los componentes indicados, el sistema operativo, la garantía de la tienda y las posibilidades de actualización antes de comprar.',
+  },
   'perifericos': {
     title: 'Periféricos en Argentina',
     description: 'Compará costos de mouse, teclados, auriculares, monitores y periféricos en Argentina, revisando disponibilidad y enlaces directos a comercios.',

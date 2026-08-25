@@ -44,6 +44,30 @@ describe('product-read-grouping', () => {
     expect(applyTextFilter(products, 'ryzen 7600').map((product) => product.id)).toEqual(['1']);
   });
 
+  it('requires the complete model token and excludes component bundles', () => {
+    const priced = (id: string, name: string, category: Product['category']) => createProduct({
+      id,
+      name,
+      category,
+      prices: [{
+        storeId: 'test', storeName: 'Test', url: `https://example.com/${id}`, price: 100,
+        stock: 'in-stock', installment: null, lastUpdated: new Date('2026-03-26T12:00:00.000Z'),
+      }],
+      lowestPrice: 100,
+      highestPrice: 100,
+      averagePrice: 100,
+    });
+    const products = [
+      priced('exact', 'AMD Ryzen 5 5600X', 'procesadores'),
+      priced('suffix', 'AMD Ryzen 5 5600XT', 'procesadores'),
+      priced('gpu', 'Radeon RX 5600 XT', 'tarjetas-graficas'),
+      priced('pc', 'PC Armada Gamer Ryzen 5 5600X RTX 4060', 'procesadores'),
+    ];
+
+    expect(applyDatabaseReadTransforms(products, { searchTerm: '5600X', sortBy: 'relevance' }).map((p) => p.id))
+      .toEqual(['exact']);
+  });
+
   it('dedupes products sharing canonical identity and same-store prices', () => {
     const olderDate = new Date('2026-03-25T12:00:00.000Z');
     const newerDate = new Date('2026-03-26T12:00:00.000Z');

@@ -57,6 +57,7 @@ export const CATEGORY_SLUGS: Record<HardwareCategory, string[]> = {
   'fuentes-alimentacion': ['fuentes-de-alimentacion', 'fuentes', 'psu'],
   gabinetes: ['gabinetes', 'cases', 'gabinete'],
   refrigeracion: ['refrigeracion', 'coolers', 'cooling'],
+  computadoras: ['computadoras', 'pc-armadas', 'notebooks', 'pcs'],
   perifericos: ['perifericos', 'accesorios', 'teclados', 'mouse', 'mouses', 'monitores', 'audio', 'auriculares', 'headsets'],
 };
 

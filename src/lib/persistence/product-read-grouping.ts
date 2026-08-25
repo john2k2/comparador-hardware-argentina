@@ -1,5 +1,5 @@
 import { computeComparableStorePriceStats } from '@/lib/price-utils';
-import { buildProductIdentityKey, extractExactModelIdentity, normalizeIdentityText } from '@/lib/product-identity';
+import { buildProductIdentityKey, extractExactModelIdentity, isCompleteComputerTitle, normalizeIdentityText } from '@/lib/product-identity';
 import type { Product } from '@/lib/types';
 import type { ProductSort } from '@/lib/persistence/product-read-types';
 
@@ -12,7 +12,9 @@ const COMPONENT_BUNDLE_TERMS = [
   'pc gamer',
   'combo',
   'armado',
+  'armada',
   'pc completa',
+  'pc creadores',
   'computadora',
   'desktop',
   'workstation',
@@ -21,7 +23,6 @@ const COMPONENT_BUNDLE_TERMS = [
   'all in one',
   'netbook',
   'chromebook',
-  'kit ',
   'bundle',
   'paquete',
 ];
@@ -29,7 +30,13 @@ const COMPONENT_BUNDLE_TERMS = [
 function isStandaloneComponentProduct(product: Product): boolean {
   if (!['procesadores', 'tarjetas-graficas', 'memoria-ram'].includes(product.category)) return true;
   const normalizedName = normalizeGroupName(product.name);
-  return !COMPONENT_BUNDLE_TERMS.some((term) => normalizedName.includes(term));
+  return !isCompleteComputerTitle(product.name)
+    && !COMPONENT_BUNDLE_TERMS.some((term) => normalizedName.includes(term));
+}
+
+function matchesQueryToken(searchable: string, word: string): boolean {
+  const escaped = word.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+  return new RegExp(`(?:^|\\s)${escaped}(?:$|\\s)`).test(searchable);
 }
 
 function hasDisplayableComparablePrice(product: Product): boolean {
@@ -56,7 +63,7 @@ export function applyTextFilter(products: Product[], query: string): Product[] {
     ]
       .map((value) => normalizeIdentityText(value))
       .join(' ');
-    return words.some((word) => searchable.includes(word));
+    return words.every((word) => matchesQueryToken(searchable, word));
   });
 }
 

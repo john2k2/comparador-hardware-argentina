@@ -12,6 +12,7 @@ export type HardwareCategory =
   | 'fuentes-alimentacion'
   | 'gabinetes'
   | 'refrigeracion'
+  | 'computadoras'
   | 'perifericos';
 
 // Tiendas disponibles

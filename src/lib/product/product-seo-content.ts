@@ -227,6 +227,24 @@ const CATEGORY_CONTENT: Record<HardwareCategory, (product: Product) => ProductCo
       relatedTerms: ['procesador', 'gabinete', 'motherboard', 'fuente de alimentación'],
     };
   },
+  'computadoras': (product) => {
+    const name = normalizeDisplayText(product.name);
+    return {
+      intro: `${name} es un equipo completo. Para compararlo correctamente, revisá la configuración exacta de procesador, placa de video, memoria, almacenamiento y fuente, además de la garantía informada por cada tienda.`,
+      tips: [
+        'Compará la configuración completa, no solo el procesador o la placa de video.',
+        'Confirmá marca y modelo de fuente, motherboard, RAM y almacenamiento.',
+        'Revisá posibilidades de ampliación y condiciones de garantía de la tienda.',
+        'Validá si incluye sistema operativo, periféricos y envío.',
+      ],
+      faqs: [
+        { question: '¿La PC viene lista para usar?', answer: 'Depende de la publicación. Confirmá armado, sistema operativo y accesorios incluidos directamente con la tienda.' },
+        { question: '¿Se pueden cambiar los componentes?', answer: 'Las posibilidades de actualización dependen de la motherboard, fuente, gabinete y condiciones de garantía del vendedor.' },
+        { question: '¿Cómo comparo dos equipos?', answer: 'Compará cada componente identificable, la garantía y el precio final. Dos PCs con el mismo CPU o GPU pueden tener diferencias importantes en el resto del armado.' },
+      ],
+      relatedTerms: ['pc armada', 'notebook', 'procesador', 'placa de video'],
+    };
+  },
   'perifericos': (product) => {
     const name = normalizeDisplayText(product.name);
     return {

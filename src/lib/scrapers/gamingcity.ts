@@ -25,6 +25,7 @@ const GAMING_CITY_CATEGORY_URLS: Record<HardwareCategory, string> = {
   'fuentes-alimentacion': `${GAMING_CITY_BASE_URL}/fuentes-componentes--prod--10`,
   gabinetes: `${GAMING_CITY_BASE_URL}/gabinetes--prod--9`,
   refrigeracion: `${GAMING_CITY_BASE_URL}/refrigeracion-componentes--prod--129`,
+  computadoras: `${GAMING_CITY_BASE_URL}/busqueda_avanzada.php?buscar=1&palabra=pc%20armada`,
   perifericos: `${GAMING_CITY_BASE_URL}/perifericos--prod--178`,
 };
 

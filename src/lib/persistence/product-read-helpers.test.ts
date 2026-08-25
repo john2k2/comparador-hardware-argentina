@@ -15,8 +15,9 @@ describe('product-read-helpers', () => {
   });
 
   it('builds the OR filter expression used by DB-first queries', () => {
-    expect(buildSearchOrFilter('ryzen 7600')).toContain('name.ilike.%ryzen 7600%');
-    expect(buildSearchOrFilter('ryzen 7600')).toContain('variant_key.ilike.%ryzen 7600%');
+    expect(buildSearchOrFilter('ryzen 7600')).toContain('name.ilike.%7600%');
+    expect(buildSearchOrFilter('ryzen 7600')).toContain('variant_key.ilike.%7600%');
+    expect(buildSearchOrFilter('ryzen 7600')).not.toContain('%ryzen 7600%');
   });
 
   it('applies shared filters without changing call order semantics', () => {

@@ -33,6 +33,7 @@ const CATEGORY_SEARCH_TERMS: Record<HardwareCategory, string[]> = {
   'fuentes-alimentacion': ['fuente', 'psu'],
   gabinetes: ['gabinete', 'case'],
   refrigeracion: ['cooler', 'watercooler'],
+  computadoras: ['pc armada', 'notebook'],
   perifericos: ['monitor', 'teclado'],
 };
 

@@ -30,7 +30,10 @@ export function normalizeSearchText(value: string): string {
 
 export function countMatchedQueryWords(name: string, queryWords: string[]): number {
   const normalizedName = normalizeSearchText(name);
-  return queryWords.reduce((acc, word) => acc + (normalizedName.includes(word) ? 1 : 0), 0);
+  return queryWords.reduce((acc, word) => {
+    const escaped = word.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+    return acc + (new RegExp(`(?:^|\\s)${escaped}(?:$|\\s)`).test(normalizedName) ? 1 : 0);
+  }, 0);
 }
 
 function shouldKeepByQueryWords(name: string, queryWords: string[]): boolean {
@@ -110,7 +113,9 @@ export function scoreProductRelevance(
   const allWordsMatched = queryWords.length > 0 && matchedWords === queryWords.length;
   const queryLooksBundle = isBundleLikeTitle(rawQuery);
   const productIsBundle = isBundleLikeTitle(product.name);
-  const isExactPhrase = normalizedQuery.length > 0 && normalizedName.includes(normalizedQuery);
+  const escapedQuery = normalizedQuery.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&').replace(/\\ /g, '\\s+');
+  const isExactPhrase = normalizedQuery.length > 0
+    && new RegExp(`(?:^|\\s)${escapedQuery}(?:$|\\s)`).test(normalizedName);
 
   let score = 0;
   score += matchedWords * 25;

@@ -51,6 +51,9 @@ describe('product identity', () => {
         'Logitech MK120 Combo Teclado + Mouse',
       ),
     ).toBe('perifericos::bundle');
+    expect(isBundleLikeTitle('PC Armada Ryzen 5 9600X 32GB RTX 5070')).toBe(true);
+    expect(isBundleLikeTitle('PC Creadores Intel Ultra 7 RTX 4070')).toBe(true);
+    expect(isBundleLikeTitle('Computadora de escritorio Ryzen 7')).toBe(true);
   });
 
   it('extracts exact identities only for non-bundle titles', () => {
