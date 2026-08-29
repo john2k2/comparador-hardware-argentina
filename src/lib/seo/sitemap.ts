@@ -1,7 +1,8 @@
 import { getServerSupabaseReadClient } from '@/lib/server/supabase-server';
+import { INDEXABLE_PRODUCT_ID_PREFIX } from '@/lib/seo/product-indexing';
 
 export const PRODUCT_SITEMAP_PAGE_SIZE = 2000;
-export const INDEXABLE_PRODUCT_ID_PREFIX = 'agrupado-';
+export { INDEXABLE_PRODUCT_ID_PREFIX, isIndexableProductId } from '@/lib/seo/product-indexing';
 
 type ProductSitemapRow = {
   id: string;
@@ -13,10 +14,6 @@ type ProductSitemapRow = {
     url: string | null;
   }> | null;
 };
-
-export function isIndexableProductId(id: string): boolean {
-  return id.startsWith(INDEXABLE_PRODUCT_ID_PREFIX);
-}
 
 export async function countIndexedProducts(): Promise<number> {
   const rows = await readAllIndexableProductRows();

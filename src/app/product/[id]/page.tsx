@@ -1,11 +1,11 @@
 import { cache } from 'react';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { ProductDetailClient } from '@/components/product/ProductDetailClient';
 import { readCanonicalProductIdByKey, readProductByIdFromDatabase } from '@/lib/persistence/product-read';
 import { formatPriceARS, getComparableStorePrices } from '@/lib/price-utils';
-import { isIndexableProductId } from '@/lib/seo/sitemap';
+import { decideProductPageIndexing } from '@/lib/seo/product-indexing';
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
       description: 'El producto solicitado no esta disponible en este momento.',
       robots: {
         index: false,
-        follow: true,
+        follow: false,
       },
     };
   }
@@ -57,7 +57,12 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     : null;
   const resolvedCanonicalId = canonicalProductId ?? id;
   const comparableStoreCount = getComparableStorePrices(product.prices).length;
-  const indexableProduct = isIndexableProductId(id) && resolvedCanonicalId === id && comparableStoreCount >= 2;
+  const indexing = decideProductPageIndexing({
+    product,
+    resolvedCanonicalId,
+    comparableStoreCount,
+  });
+  const indexableProduct = indexing.status === 'index';
   const url = buildCanonicalUrl(resolvedCanonicalId);
   const image = resolveProductImage(product);
 
@@ -99,17 +104,26 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 export default async function ProductDetailPage({ params }: ProductPageProps) {
   const { id } = await params;
   const product = await getProductForPage(id);
-  
+  if (!product) {
+    notFound();
+  }
+
   // Si el producto tiene canonicalProductKey, redirigir al producto agrupado
   // para evitar mostrar precios del producto individual vs el agrupado
-  if (product?.canonicalProductKey) {
+  if (product.canonicalProductKey) {
     const canonicalProductId = await readCanonicalProductIdByKey(product.canonicalProductKey);
     if (canonicalProductId && canonicalProductId !== id) {
       redirect(`/product/${encodeURIComponent(canonicalProductId)}`);
     }
   }
   
-  const jsonLd = product && isIndexableProductId(id) && getComparableStorePrices(product.prices).length >= 2
+  const comparableStoreCount = getComparableStorePrices(product.prices).length;
+  const indexing = decideProductPageIndexing({
+    product,
+    resolvedCanonicalId: id,
+    comparableStoreCount,
+  });
+  const jsonLd = indexing.status === 'index'
     ? buildProductJsonLd(product, id)
     : null;
   const nonce = (await headers()).get('x-content-security-policy-nonce') ?? undefined;
