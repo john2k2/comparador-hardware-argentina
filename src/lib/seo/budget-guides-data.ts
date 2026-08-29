@@ -1,3 +1,11 @@
+import type { HardwareCategory } from '@/lib/types';
+import type { GuideSlotSpec } from '@/lib/seo/budget-guide-pricing';
+
+export type BudgetGuideComponentSpec = GuideSlotSpec & {
+  searchTerms: string[];
+  category: HardwareCategory;
+};
+
 export type BudgetGuideDefinition = {
   slug: string;
   title: string;
@@ -7,13 +15,13 @@ export type BudgetGuideDefinition = {
   budget: number;
   performance: string;
   components: {
-    cpu: { name: string; searchTerms: string[]; description: string; estimatedPrice: number };
-    gpu: { name: string; searchTerms: string[]; description: string; estimatedPrice: number };
-    ram: { name: string; searchTerms: string[]; description: string; estimatedPrice: number };
-    ssd: { name: string; searchTerms: string[]; description: string; estimatedPrice: number };
-    motherboard: { name: string; description: string; estimatedPrice: number };
-    psu: { name: string; description: string; estimatedPrice: number };
-    case: { name: string; description: string; estimatedPrice: number };
+    cpu: BudgetGuideComponentSpec;
+    gpu: BudgetGuideComponentSpec;
+    ram: BudgetGuideComponentSpec;
+    ssd: BudgetGuideComponentSpec;
+    motherboard: BudgetGuideComponentSpec;
+    psu: BudgetGuideComponentSpec;
+    case: BudgetGuideComponentSpec;
   };
   gamesPerformance: Array<{ game: string; fps: string; settings: string }>;
   productivity: Array<{ task: string; performance: string }>;
@@ -33,39 +41,49 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
       cpu: {
         name: 'AMD Ryzen 5 5600 / 5500',
         searchTerms: ['ryzen 5 5600', 'ryzen 5 5500'],
+        category: 'procesadores',
         description: '6 núcleos / 12 hilos | Socket AM4',
         estimatedPrice: 150000,
       },
       gpu: {
         name: 'AMD RX 6600 8GB',
         searchTerms: ['rx 6600'],
+        category: 'tarjetas-graficas',
         description: '8GB GDDR6 | Gaming 1080p Ultra',
         estimatedPrice: 300000,
       },
       ram: {
         name: '16GB DDR4 3200MHz (2x8GB)',
-        searchTerms: ['16gb ddr4', '16gb 3200mhz'],
+        searchTerms: ['16gb ddr4'],
+        category: 'memoria-ram',
         description: 'Dual Channel | Ideal para gaming',
         estimatedPrice: 50000,
       },
       ssd: {
         name: 'SSD NVMe 500GB',
         searchTerms: ['ssd 500gb', 'nvme 500gb'],
+        category: 'almacenamiento',
         description: 'NVMe M.2 | Velocidad SSD',
         estimatedPrice: 40000,
       },
       motherboard: {
         name: 'AM4 B450/B550',
+        searchTerms: ['b450', 'b550'],
+        category: 'motherboards',
         description: 'Compatible con Ryzen 5000 | PCIe 3.0/4.0',
         estimatedPrice: 80000,
       },
       psu: {
         name: '550W 80 Plus Bronze',
+        searchTerms: ['550w'],
+        category: 'fuentes-alimentacion',
         description: 'Certificada | Suficiente para esta config',
         estimatedPrice: 50000,
       },
       case: {
         name: 'Mid Tower con airflow',
+        searchTerms: ['mid tower'],
+        category: 'gabinetes',
         description: '2-3 fans incluidos | Buena ventilación',
         estimatedPrice: 40000,
       },
@@ -118,39 +136,49 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
       cpu: {
         name: 'AMD Ryzen 5 7600X / 7500F',
         searchTerms: ['ryzen 5 7600x', 'ryzen 5 7500f'],
+        category: 'procesadores',
         description: '6 núcleos / 12 hilos | AM5 | DDR5 | Hasta 5.3 GHz',
         estimatedPrice: 350000,
       },
       gpu: {
         name: 'RTX 4060 / RX 7600',
         searchTerms: ['rtx 4060', 'rx 7600'],
+        category: 'tarjetas-graficas',
         description: '8GB GDDR6 | DLSS 3 / FSR 3 | 1080p Ultra / 1440p High',
         estimatedPrice: 500000,
       },
       ram: {
         name: '32GB DDR5 5600MHz (2x16GB)',
-        searchTerms: ['32gb ddr5', 'ddr5 5600mhz'],
+        searchTerms: ['32gb ddr5'],
+        category: 'memoria-ram',
         description: 'Dual Channel DDR5 | Futuro proof',
         estimatedPrice: 150000,
       },
       ssd: {
         name: 'SSD NVMe 1TB',
         searchTerms: ['ssd 1tb', 'nvme 1tb'],
+        category: 'almacenamiento',
         description: 'NVMe Gen4 | Velocidad ultrarrápida',
         estimatedPrice: 80000,
       },
       motherboard: {
         name: 'AM5 B650',
+        searchTerms: ['b650'],
+        category: 'motherboards',
         description: 'Compatible Ryzen 7000 | PCIe 4.0/5.0 | DDR5',
         estimatedPrice: 200000,
       },
       psu: {
         name: '650W 80 Plus Gold',
+        searchTerms: ['650w'],
+        category: 'fuentes-alimentacion',
         description: 'Alta eficiencia | Cabeza para upgrades',
         estimatedPrice: 100000,
       },
       case: {
         name: 'Mid Tower premium con airflow',
+        searchTerms: ['mid tower'],
+        category: 'gabinetes',
         description: '4 fans | Panel mesh | Buena gestión cables',
         estimatedPrice: 80000,
       },
@@ -203,39 +231,49 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
       cpu: {
         name: 'AMD Ryzen 7 7700X / 7800X3D',
         searchTerms: ['ryzen 7 7700x', 'ryzen 7 7800x3d'],
+        category: 'procesadores',
         description: '8 núcleos / 16 hilos | AM5 | DDR5 | Hasta 5.4 GHz',
         estimatedPrice: 500000,
       },
       gpu: {
         name: 'RTX 5070 / RX 7800 XT',
         searchTerms: ['rtx 5070', 'rx 7800 xt'],
+        category: 'tarjetas-graficas',
         description: '12-16GB GDDR6/GDDR7 | 1440p Ultra / 4K High',
         estimatedPrice: 900000,
       },
       ram: {
         name: '32GB DDR5 6000MHz (2x16GB)',
-        searchTerms: ['32gb ddr5', 'ddr5 6000mhz'],
+        searchTerms: ['32gb ddr5'],
+        category: 'memoria-ram',
         description: 'Dual Channel DDR5 | Baja latencia CL30',
         estimatedPrice: 200000,
       },
       ssd: {
         name: 'SSD NVMe 2TB Gen4',
         searchTerms: ['ssd 2tb', 'nvme 2tb'],
+        category: 'almacenamiento',
         description: 'NVMe Gen4 x4 | 7000+ MB/s lectura',
         estimatedPrice: 150000,
       },
       motherboard: {
         name: 'AM5 X670 / B650E',
+        searchTerms: ['x670', 'b650e'],
+        category: 'motherboards',
         description: 'VRMs premium | PCIe 5.0 | WiFi 6E | USB-C',
         estimatedPrice: 350000,
       },
       psu: {
         name: '850W 80 Plus Gold Modular',
+        searchTerms: ['850w'],
+        category: 'fuentes-alimentacion',
         description: 'Cableado modular | Eficiencia | Futuro proof',
         estimatedPrice: 150000,
       },
       case: {
         name: 'Full Tower premium',
+        searchTerms: ['full tower'],
+        category: 'gabinetes',
         description: '6+ fans | Radiador 360mm | Panel cristal templado',
         estimatedPrice: 120000,
       },

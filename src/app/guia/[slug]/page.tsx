@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { readProductsFromDatabase } from '@/lib/persistence/product-read';
 import { SITE_URL } from '@/lib/site-config';
 import { formatPriceARS } from '@/lib/price-utils';
+import { GUIDE_CATALOG_CATEGORIES, resolveGuideSlots, type ResolvedGuideComponent } from '@/lib/seo/budget-guide-pricing';
 import { getBudgetGuideBySlug } from '@/lib/seo/budget-guides-data';
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import Link from 'next/link';
@@ -55,34 +56,29 @@ export default async function BudgetGuidePage({ params }: Props) {
     notFound();
   }
 
-  const allProducts = await readProductsFromDatabase({ limit: 1000 }).catch(() => []);
+  const catalogProducts = (
+    await Promise.all(
+      GUIDE_CATALOG_CATEGORIES.map((category) =>
+        readProductsFromDatabase({ limit: 400, category }).catch(() => []),
+      ),
+    )
+  ).flat();
   const nonce = (await headers()).get('x-content-security-policy-nonce') ?? undefined;
-  
-  // Buscar productos reales
-  const findProduct = (searchTerms: string[]) => {
-    return allProducts.find(p => 
-      searchTerms.some(term => p.name.toLowerCase().includes(term.toLowerCase()))
-    );
-  };
-
-  const cpu = findProduct(guide.components.cpu.searchTerms);
-  const gpu = findProduct(guide.components.gpu.searchTerms);
-  const ram = findProduct(guide.components.ram.searchTerms);
-  const ssd = findProduct(guide.components.ssd.searchTerms);
-
-  const totalEstimate = 
-    (cpu?.lowestPrice || guide.components.cpu.estimatedPrice) +
-    (gpu?.lowestPrice || guide.components.gpu.estimatedPrice) +
-    (ram?.lowestPrice || guide.components.ram.estimatedPrice) +
-    (ssd?.lowestPrice || guide.components.ssd.estimatedPrice) +
-    guide.components.motherboard.estimatedPrice +
-    guide.components.psu.estimatedPrice +
-    guide.components.case.estimatedPrice;
+  const resolved = resolveGuideSlots(guide.components, catalogProducts);
+  const slots = [
+    { label: 'PROCESADOR', item: resolved.cpu },
+    { label: 'PLACA DE VIDEO', item: resolved.gpu },
+    { label: 'MEMORIA RAM', item: resolved.ram },
+    { label: 'ALMACENAMIENTO', item: resolved.ssd },
+    { label: 'MOTHERBOARD', item: resolved.motherboard },
+    { label: 'FUENTE', item: resolved.psu },
+    { label: 'GABINETE', item: resolved.case },
+  ];
 
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
-      <nav className="text-[10px] md:text-[11px] text-muted-foreground mb-6 font-mono">
+      <nav className="text-[10px] md:text-[11px] text-muted-foreground mb-6 font-mono flex flex-wrap gap-x-1 break-words">
         <Link href="/" className="hover:text-primary transition-colors">Inicio</Link>
         <span className="mx-2">/</span>
         <Link href="/guia" className="hover:text-primary transition-colors">Guías</Link>
@@ -92,36 +88,47 @@ export default async function BudgetGuidePage({ params }: Props) {
 
       {/* Header */}
       <header className="mb-8">
-        <h1 className="text-[16px] md:text-[20px] font-pixel text-primary mb-3 leading-tight">
+        <h1 className="font-mono! text-base md:text-[20px] md:font-pixel! text-primary mb-3 leading-snug tracking-normal break-words max-w-full">
           PC Gamer por {formatPriceARS(guide.budget)}
         </h1>
         <p className="text-[11px] md:text-[12px] text-muted-foreground font-mono leading-relaxed">
-          {guide.description}
+          {guide.description} Solo usamos ofertas del catálogo con stock confirmado.
         </p>
       </header>
 
       {/* Price Summary */}
       <section className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow mb-8">
         <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">
-          [ PRESUPUESTO ESTIMADO ]
+          [ PRESUPUESTO Y STOCK ]
         </h2>
         
         <div className="grid md:grid-cols-3 gap-4">
           <div className="border-2 border-border p-4 text-center">
             <div className="text-[10px] text-muted-foreground mb-1">PRESUPUESTO</div>
-            <div className="text-[20px] md:text-[24px] font-pixel text-primary">{formatPriceARS(guide.budget)}</div>
+            <div className="text-[16px] md:text-[24px] font-pixel text-primary break-words">{formatPriceARS(guide.budget)}</div>
           </div>
           
           <div className="border-2 border-border p-4 text-center">
-            <div className="text-[10px] text-muted-foreground mb-1">ESTIMADO TOTAL</div>
-            <div className="text-[20px] md:text-[24px] font-pixel text-primary">{formatPriceARS(totalEstimate)}</div>
+            <div className="text-[10px] text-muted-foreground mb-1">TOTAL CON STOCK</div>
+            <div className="text-[16px] md:text-[24px] font-pixel text-primary break-words">{formatPriceARS(resolved.catalogTotal)}</div>
+            <p className="mt-2 text-[10px] uppercase text-muted-foreground">
+              {resolved.inStockSlots} de {slots.length} {slots.length === 1 ? 'parte comprable' : 'partes comprables'}
+            </p>
           </div>
           
           <div className="border-2 border-border p-4 text-center">
             <div className="text-[10px] text-muted-foreground mb-1">RENDIMIENTO</div>
-            <div className="text-[16px] md:text-[20px] font-pixel text-primary">{guide.performance}</div>
+            <div className="text-[12px] md:text-[16px] font-mono normal-case tracking-normal text-primary break-words">{guide.performance}</div>
           </div>
         </div>
+        {resolved.hasEstimates && (
+          <p className="mt-4 text-[10px] md:text-[11px] uppercase text-muted-foreground font-mono leading-relaxed">
+            {slots.length - resolved.inStockSlots === 1
+              ? 'Falta 1 parte sin oferta en stock.'
+              : `Faltan ${slots.length - resolved.inStockSlots} partes sin oferta en stock.`}
+            Esas filas no entran al total comprable y muestran un estimado de referencia.
+          </p>
+        )}
       </section>
 
       {/* Components */}
@@ -131,66 +138,13 @@ export default async function BudgetGuidePage({ params }: Props) {
         </h2>
         
         <div className="space-y-4">
-          <ComponentRow 
-            label="PROCESADOR"
-            name={cpu?.name || guide.components.cpu.name}
-            description={guide.components.cpu.description}
-            price={cpu?.lowestPrice || guide.components.cpu.estimatedPrice}
-            storeCount={cpu?.prices.length || 0}
-            productId={cpu?.id}
-          />
-          
-          <ComponentRow 
-            label="PLACA DE VIDEO"
-            name={gpu?.name || guide.components.gpu.name}
-            description={guide.components.gpu.description}
-            price={gpu?.lowestPrice || guide.components.gpu.estimatedPrice}
-            storeCount={gpu?.prices.length || 0}
-            productId={gpu?.id}
-          />
-          
-          <ComponentRow 
-            label="MEMORIA RAM"
-            name={ram?.name || guide.components.ram.name}
-            description={guide.components.ram.description}
-            price={ram?.lowestPrice || guide.components.ram.estimatedPrice}
-            storeCount={ram?.prices.length || 0}
-            productId={ram?.id}
-          />
-          
-          <ComponentRow 
-            label="ALMACENAMIENTO"
-            name={ssd?.name || guide.components.ssd.name}
-            description={guide.components.ssd.description}
-            price={ssd?.lowestPrice || guide.components.ssd.estimatedPrice}
-            storeCount={ssd?.prices.length || 0}
-            productId={ssd?.id}
-          />
-          
-          <ComponentRow 
-            label="MOTHERBOARD"
-            name={guide.components.motherboard.name}
-            description={guide.components.motherboard.description}
-            price={guide.components.motherboard.estimatedPrice}
-            storeCount={0}
-          />
-          
-          <ComponentRow 
-            label="FUENTE"
-            name={guide.components.psu.name}
-            description={guide.components.psu.description}
-            price={guide.components.psu.estimatedPrice}
-            storeCount={0}
-          />
-          
-          <ComponentRow 
-            label="GABINETE"
-            name={guide.components.case.name}
-            description={guide.components.case.description}
-            price={guide.components.case.estimatedPrice}
-            storeCount={0}
-          />
+          {slots.map((slot) => (
+            <ComponentRow key={slot.label} label={slot.label} item={slot.item} />
+          ))}
         </div>
+        <p className="mt-4 text-[10px] uppercase text-muted-foreground font-mono leading-relaxed">
+          Cada precio de catálogo sale de una tienda con stock. Los avisos sin stock no se recomiendan.
+        </p>
       </section>
 
       {/* Performance */}
@@ -204,9 +158,9 @@ export default async function BudgetGuidePage({ params }: Props) {
             <h3 className="text-[11px] font-bold mb-3">Gaming</h3>
             <div className="space-y-2">
               {guide.gamesPerformance.map((game, i) => (
-                <div key={i} className="flex justify-between text-[10px] font-mono">
-                  <span>{game.game}</span>
-                  <span>{game.fps} FPS ({game.settings})</span>
+                <div key={i} className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-[10px] font-mono">
+                  <span className="min-w-0 break-words">{game.game}</span>
+                  <span className="shrink-0">{game.fps} FPS ({game.settings})</span>
                 </div>
               ))}
             </div>
@@ -216,9 +170,9 @@ export default async function BudgetGuidePage({ params }: Props) {
             <h3 className="text-[11px] font-bold mb-3">Productividad</h3>
             <div className="space-y-2">
               {guide.productivity.map((task, i) => (
-                <div key={i} className="flex justify-between text-[10px] font-mono">
-                  <span>{task.task}</span>
-                  <span>{task.performance}</span>
+                <div key={i} className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-[10px] font-mono">
+                  <span className="min-w-0 break-words">{task.task}</span>
+                  <span className="shrink-0">{task.performance}</span>
                 </div>
               ))}
             </div>
@@ -241,6 +195,26 @@ export default async function BudgetGuidePage({ params }: Props) {
           ))}
         </div>
       </section>
+
+      {guide.faqs.length > 0 && (
+        <section className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow mb-8">
+          <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">
+            [ PREGUNTAS FRECUENTES ]
+          </h2>
+          <div className="space-y-4">
+            {guide.faqs.map((faq) => (
+              <div key={faq.question}>
+                <h3 className="text-[11px] md:text-[12px] font-bold normal-case tracking-normal text-foreground font-mono">
+                  {faq.question}
+                </h3>
+                <p className="mt-1 text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
+                  {faq.answer}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* FAQ Schema */}
       <script
@@ -266,41 +240,67 @@ export default async function BudgetGuidePage({ params }: Props) {
   );
 }
 
-function ComponentRow({ 
-  label, 
-  name, 
-  description, 
-  price, 
-  storeCount,
-  productId 
-}: { 
+function ComponentRow({
+  label,
+  item,
+}: {
   label: string;
-  name: string;
-  description: string;
-  price: number;
-  storeCount: number;
-  productId?: string;
+  item: ResolvedGuideComponent;
 }) {
+  const extraOffers = item.offers.slice(1, 3);
+  const isCatalog = item.priceSource === 'catalog';
+
   return (
-    <div className="border-2 border-border p-4 flex flex-col md:flex-row md:items-center gap-4">
-      <div className="flex-1">
-        <div className="text-[10px] text-muted-foreground mb-1">{label}</div>
-        <h3 className="text-[12px] font-bold">{name}</h3>
-        <p className="text-[10px] text-muted-foreground mt-1">{description}</p>
+    <div className={`border-2 p-4 flex flex-col md:flex-row md:items-center gap-4 ${isCatalog ? 'border-border' : 'border-dashed border-muted'}`}>
+      <div className="flex-1 min-w-0">
+        <div className="flex flex-wrap items-center gap-2 mb-1">
+          <span className="text-[10px] text-muted-foreground">{label}</span>
+          <span className={`text-[8px] uppercase font-bold px-2 py-1 border-2 ${isCatalog ? 'border-secondary text-secondary' : 'border-muted text-muted-foreground'}`}>
+            {isCatalog ? (item.offers[0]?.stock === 'low-stock' ? 'STOCK BAJO' : 'EN STOCK') : 'SIN STOCK'}
+          </span>
+        </div>
+        <h3 className="text-[12px] font-bold break-words">{item.name}</h3>
+        <p className="text-[10px] text-muted-foreground mt-1">{item.description}</p>
+        {isCatalog && item.bestStoreName && (
+          <p className="text-[10px] uppercase text-accent font-bold mt-2 break-words">
+            {`Mejor precio: @${item.bestStoreName}`}
+          </p>
+        )}
+        {extraOffers.length > 0 && (
+          <p className="text-[10px] uppercase text-muted-foreground mt-1 break-words">
+            {extraOffers.map((offer) => `@${offer.storeName} ${formatPriceARS(offer.price)}`).join(' · ')}
+          </p>
+        )}
       </div>
-      <div className="text-right">
-        <div className="text-[16px] font-pixel text-primary">{formatPriceARS(price)}</div>
-        {storeCount > 0 && (
-          <div className="text-[10px] text-muted-foreground">{storeCount} tiendas</div>
+      <div className="text-left md:text-right shrink-0 min-w-0">
+        <div className="text-[14px] sm:text-[16px] font-pixel text-primary break-words">{formatPriceARS(item.price)}</div>
+        {isCatalog ? (
+          <div className="text-[10px] text-muted-foreground">
+            {item.storeCount === 1 ? '1 tienda con stock' : `${item.storeCount} tiendas con stock`}
+          </div>
+        ) : (
+          <div className="text-[10px] uppercase text-muted-foreground">Estimado. No recomendar compra.</div>
         )}
-        {productId && (
-          <Link 
-            href={`/product/${productId}`} 
-            className="text-[10px] text-primary hover:underline"
-          >
-            Ver precios →
-          </Link>
-        )}
+        <div className="flex flex-col md:items-end gap-1 mt-1">
+          {item.bestStoreUrl && (
+            <a
+              href={item.bestStoreUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center text-[10px] text-secondary hover:underline"
+            >
+              Ver en tienda →
+            </a>
+          )}
+          {item.productId && (
+            <Link
+              href={`/product/${item.productId}`}
+              className="inline-flex min-h-11 items-center text-[10px] text-primary hover:underline"
+            >
+              Comparar tiendas →
+            </Link>
+          )}
+        </div>
       </div>
     </div>
   );

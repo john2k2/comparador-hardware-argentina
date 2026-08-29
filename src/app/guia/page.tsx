@@ -127,7 +127,7 @@ export default function GuiasIndexPage() {
         <div className="space-y-3 text-[11px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono">
           <div>
             <p className="font-bold text-primary mb-1">¿Se pueden comprar las partes por separado?</p>
-            <p>Sí, cada componente tiene link directo a la tienda con mejor precio. Podés comprar todo junto o en partes según tu presupuesto mensual.</p>
+            <p>Sí. En cada guía, las partes con stock tienen enlace a la tienda de la oferta y a la ficha para comparar.</p>
           </div>
           <div>
             <p className="font-bold text-primary mb-1">¿Los precios incluyen envío?</p>
@@ -135,7 +135,7 @@ export default function GuiasIndexPage() {
           </div>
           <div>
             <p className="font-bold text-primary mb-1">¿Qué pasa si un componente no tiene stock?</p>
-            <p>Te sugerimos alternativas equivalentes dentro de la misma guía. También podés suscribirte a alertas de precio para saber cuándo vuelve el stock.</p>
+            <p>Esa parte no entra al total comprable. Mostramos un estimado de referencia y no recomendamos comprarla hasta que haya stock.</p>
           </div>
         </div>
       </section>
