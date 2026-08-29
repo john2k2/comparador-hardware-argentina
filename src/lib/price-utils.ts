@@ -254,8 +254,25 @@ export function computeComparablePriceStats<T extends PriceLike>(
   };
 }
 
+function isUnavailableStock(stock?: string | null): boolean {
+  return stock === 'out-of-stock';
+}
+
 export function computeComparableStorePriceStats(prices: ProductPrice[]) {
-  return computeComparablePriceStats(pickBestStorePrices(prices));
+  const bestPerStore = pickBestStorePrices(prices);
+  const available = bestPerStore.filter((price) => !isUnavailableStock(price.stock));
+
+  if (available.length === 0) {
+    return computeComparablePriceStats(bestPerStore);
+  }
+
+  const availableStats = computeComparablePriceStats(available);
+  const unavailable = bestPerStore.filter((price) => isUnavailableStock(price.stock));
+
+  return {
+    ...availableStats,
+    comparablePrices: [...availableStats.comparablePrices, ...unavailable],
+  };
 }
 
 export function getComparableStorePrices(prices: ProductPrice[]): ProductPrice[] {

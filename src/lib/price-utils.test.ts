@@ -76,6 +76,29 @@ describe('price-utils', () => {
     expect(picked[0]).toMatchObject({ price: 250_000, stock: 'in-stock' });
   });
 
+  it('computeComparableStorePriceStats no deja que un OOS mas barato de otra tienda gane el lowest', () => {
+    const stats = computeComparableStorePriceStats([
+      buildPrice({ storeId: 'venex', storeName: 'Venex', price: 190_000, stock: 'out-of-stock' }),
+      buildPrice({ storeId: 'mexx', storeName: 'Mexx', price: 250_000, stock: 'in-stock' }),
+    ]);
+
+    expect(stats.lowest).toBe(250_000);
+    expect(stats.highest).toBe(250_000);
+    expect(stats.average).toBe(250_000);
+    expect(stats.comparablePrices[0]).toMatchObject({ storeId: 'mexx', price: 250_000, stock: 'in-stock' });
+    expect(stats.comparablePrices.map((price) => price.storeId)).toEqual(['mexx', 'venex']);
+  });
+
+  it('computeComparableStorePriceStats usa el OOS mas barato solo si ninguna tienda tiene stock', () => {
+    const stats = computeComparableStorePriceStats([
+      buildPrice({ storeId: 'venex', storeName: 'Venex', price: 190_000, stock: 'out-of-stock' }),
+      buildPrice({ storeId: 'mexx', storeName: 'Mexx', price: 250_000, stock: 'out-of-stock' }),
+    ]);
+
+    expect(stats.lowest).toBe(190_000);
+    expect(stats.comparablePrices[0]).toMatchObject({ storeId: 'venex', price: 190_000 });
+  });
+
   it('computeComparableStorePriceStats filtra outliers altos absurdos sin romper precios reales', () => {
     const stats = computeComparableStorePriceStats([
       buildPrice({ storeId: 'venex', storeName: 'Venex', price: 260_000 }),
