@@ -97,22 +97,106 @@ const CATEGORY_SEO_COPY: Record<HardwareCategory, CategorySeoCopy> = {
     ],
   },
   'motherboards': {
-    title: 'Motherboards en Argentina',
-    description: 'Compará costos de placas madre AMD e Intel en Argentina, revisá disponibilidad por local y encontrá opciones convenientes para armar o actualizar tu PC.',
-    heading: 'Comparador de precios de motherboards en Argentina',
-    intro: 'Encuentra placas madre para plataformas AMD e Intel comparando disponibilidad y alternativas en distintos comercios del pais. Antes de elegir, revisá socket, chipset, tamaño, soporte de memoria, ranuras M.2, conectividad, fases de alimentación y actualizaciones de BIOS. Una motherboard barata puede ser suficiente para una PC simple, pero una configuración exigente necesita mejores prestaciones para sostener procesadores potentes, almacenamiento rápido y futuras ampliaciones sin quedar limitada.',
+    title: 'Motherboards AMD e Intel: precios',
+    description: 'Compará precios de motherboards AMD e Intel en tiendas de Argentina. Revisá socket, chipset, stock y ofertas actuales antes de comprar.',
+    heading: 'Compará precios de motherboards AMD e Intel',
+    intro: 'Compará precios de motherboards AMD e Intel publicadas por tiendas argentinas. Antes de elegir, revisá socket, chipset, tamaño, soporte de memoria, ranuras M.2, conectividad y fases de alimentación. Una motherboard barata puede alcanzar para una PC simple, pero un procesador exigente necesita mejor VRM y BIOS al día.',
+    relatedLinks: [
+      {
+        href: '/comparativa/ddr5-vs-ddr4',
+        label: 'DDR5 vs DDR4: cuál conviene',
+      },
+      {
+        href: '/search?category=procesadores',
+        label: 'Comparar procesadores',
+      },
+      {
+        href: '/guia/pc-gamer-2-millones',
+        label: 'PC gamer por $2 millones',
+      },
+    ],
+    faqs: [
+      {
+        question: '¿Cómo comparar motherboards en Argentina?',
+        answer: 'Primero filtrá por el mismo socket y chipset. Después compará precio, stock, cantidad de M.2, soporte de RAM y si la publicación es el modelo exacto. Un nombre parecido puede cambiar VRM, puertos o BIOS.',
+      },
+      {
+        question: '¿Qué motherboard conviene para AM5 o LGA 1700?',
+        answer: 'En AM5 un B650 suele alcanzar para Ryzen 5 y 7. En Intel LGA 1700, B760 o Z790 según si vas a overclockear. Compará el costo total con procesador y RAM, no solo la placa.',
+      },
+      {
+        question: '¿Qué mirar además del precio de la motherboard?',
+        answer: 'Socket, formato (ATX, mATX, ITX), ranuras RAM, M.2, USB y si necesita update de BIOS. Una placa más barata puede limitar el procesador o pedirte un flash previo.',
+      },
+    ],
   },
   'memoria-ram': {
-    title: 'Memoria RAM en Argentina',
-    description: 'Compará valores de memoria RAM DDR4 y DDR5 en comercios argentinos, revisá stock, capacidades y alternativas para actualizar tu computadora.',
-    heading: 'Comparador de precios de memoria RAM en Argentina',
-    intro: 'Busca modulos DDR4 y DDR5 con ofertas comparadas entre locales argentinos para actualizar tu PC con mejor gasto y disponibilidad. Mirá capacidad, frecuencia, latencias, cantidad de módulos y compatibilidad con tu plataforma antes de comprar. Para gaming suele convenir priorizar kits dual channel equilibrados, mientras que edición, virtualización o trabajo pesado pueden necesitar más capacidad total. Esta página ayuda a filtrar opciones repetidas y encontrar alternativas razonables.',
+    title: 'Memoria RAM DDR4 y DDR5: precios',
+    description: 'Compará precios de memoria RAM DDR4 y DDR5 en tiendas de Argentina. Revisá kits, capacidad, frecuencia y stock actual antes de comprar.',
+    heading: 'Compará precios de memoria RAM DDR4 y DDR5',
+    intro: 'Compará precios de módulos DDR4 y DDR5 publicados por tiendas argentinas. Mirá capacidad, frecuencia, latencias, cantidad de módulos y compatibilidad con tu plataforma. Para gaming suele convenir un kit dual channel; edición o virtualización pueden pedir más capacidad total.',
+    relatedLinks: [
+      {
+        href: '/comparativa/ddr5-vs-ddr4',
+        label: 'DDR5 vs DDR4: cuál conviene',
+      },
+      {
+        href: '/search?category=procesadores',
+        label: 'Comparar procesadores',
+      },
+      {
+        href: '/guia/pc-gamer-2-millones',
+        label: 'PC gamer por $2 millones',
+      },
+    ],
+    faqs: [
+      {
+        question: '¿Cómo comparar memoria RAM en Argentina?',
+        answer: 'Compará el mismo kit: tipo (DDR4 o DDR5), capacidad total, frecuencia y cantidad de módulos. Después mirá precio, stock y si la publicación es 1x16 o 2x8. No son intercambiables si tu motherboard pide dual channel.',
+      },
+      {
+        question: '¿DDR5 o DDR4, cuál conviene?',
+        answer: 'Si armás en AM5 o Intel reciente, DDR5 es el camino. Si tu plataforma es AM4 o LGA 1200, quedate en DDR4. La diferencia en juegos es chica; el salto caro es cambiar motherboard y procesador.',
+      },
+      {
+        question: '¿Qué mirar además del precio de la RAM?',
+        answer: 'Capacidad, frecuencia, latencia y que el kit sea compatible con tu motherboard. Un módulo suelto puede salir más barato y después no rendir en dual channel.',
+      },
+    ],
   },
   'almacenamiento': {
-    title: 'SSD y discos en Argentina',
-    description: 'Compará importes de SSD NVMe, SATA y discos rígidos en Argentina, con disponibilidad por local y enlaces directos para decidir mejor.',
-    heading: 'Comparador de precios de almacenamiento en Argentina',
-    intro: 'Compara SSD SATA, NVMe y discos HDD entre distintos comercios para elegir almacenamiento segun capacidad, velocidad y presupuesto. Un NVMe rápido mejora cargas y transferencias, pero un SATA o HDD todavía puede servir para bibliotecas grandes, backups o equipos económicos. Revisá formato, interfaz, garantía, TBW y espacio real necesario. La mejor compra suele combinar unidad principal veloz con almacenamiento secundario amplio y confiable.',
+    title: 'SSD NVMe y SATA: precios',
+    description: 'Compará precios de SSD NVMe, SATA y discos en tiendas de Argentina. Revisá capacidad, velocidad y stock actual antes de comprar.',
+    heading: 'Compará precios de SSD NVMe y SATA',
+    intro: 'Compará precios de SSD NVMe, SATA y discos HDD publicados por tiendas argentinas. Un NVMe rápido mejora cargas; un SATA o HDD todavía sirve para bibliotecas grandes o backups. Revisá formato, interfaz, garantía y espacio real que necesitás.',
+    relatedLinks: [
+      {
+        href: '/guia/pc-gamer-2-millones',
+        label: 'PC gamer por $2 millones',
+      },
+      {
+        href: '/guia/pc-gamer-3-millones',
+        label: 'PC gamer por $3 millones',
+      },
+      {
+        href: '/search?category=procesadores',
+        label: 'Comparar procesadores',
+      },
+    ],
+    faqs: [
+      {
+        question: '¿Cómo comparar SSD en Argentina?',
+        answer: 'Filtrá por la misma capacidad e interfaz (NVMe M.2 o SATA). Después compará precio, stock, garantía y si la publicación es Gen3 o Gen4. Un nombre parecido puede cambiar velocidad y TBW.',
+      },
+      {
+        question: '¿NVMe o SATA, cuál conviene?',
+        answer: 'NVMe es la mejor unidad principal para Windows y juegos. SATA alcanza para archivos o PCs más viejas. Si tu motherboard tiene M.2, conviene comparar SSD NVMe del tamaño que vas a llenar.',
+      },
+      {
+        question: '¿Qué mirar además del precio del SSD?',
+        answer: 'Capacidad usable, interfaz, DRAM o no, garantía y TBW. Un NVMe barato de 512 GB puede quedar corto si instalás pocos juegos AAA.',
+      },
+    ],
   },
   'fuentes-alimentacion': {
     title: 'Fuentes de PC en Argentina',

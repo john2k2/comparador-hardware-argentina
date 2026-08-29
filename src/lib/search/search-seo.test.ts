@@ -49,4 +49,19 @@ describe('search-seo', () => {
       expect.objectContaining({ href: '/comparativa/rtx-5070-vs-rtx-4070' }),
     ]));
   });
+
+  it.each([
+    ['motherboards', 'Motherboards AMD e Intel: precios', 'comparar motherboards', '/comparativa/ddr5-vs-ddr4'],
+    ['memoria-ram', 'Memoria RAM DDR4 y DDR5: precios', 'comparar memoria ram', '/comparativa/ddr5-vs-ddr4'],
+    ['almacenamiento', 'SSD NVMe y SATA: precios', 'comparar ssd', '/guia/pc-gamer-2-millones'],
+  ] as const)('agrega title y FAQ de %s sin tocar las landings de CPU/GPU', (category, title, faqNeedle, relatedHref) => {
+    const copy = getCategorySeoCopy(category);
+
+    expect(copy?.title).toBe(title);
+    expect(copy?.heading.toLowerCase()).toContain('compará precios');
+    expect(copy?.faqs?.some((faq) => faq.question.toLowerCase().includes(faqNeedle))).toBe(true);
+    expect(copy?.relatedLinks).toEqual(expect.arrayContaining([
+      expect.objectContaining({ href: relatedHref }),
+    ]));
+  });
 });

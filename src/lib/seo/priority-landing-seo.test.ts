@@ -41,6 +41,25 @@ describe('priority SEO landings', () => {
     expect(answers.some((answer) => answer.includes('comparar procesadores'))).toBe(true);
   });
 
+  it('en las comparativas no manda el snippet a “nuestro comparador”', () => {
+    const slugs = [
+      'rtx-4060-vs-rx-7600',
+      'rtx-5070-vs-rtx-4070',
+      'ryzen-7-9800x3d-vs-i9-14900k',
+      'i5-14600k-vs-ryzen-5-7600x',
+      'rtx-5090-vs-rx-9070-xt',
+      'ddr5-vs-ddr4',
+    ] as const;
+
+    for (const slug of slugs) {
+      const answers = getComparisonBySlug(slug)?.faqs.map((faq) => faq.answer.toLowerCase()) ?? [];
+      expect(answers.length, slug).toBeGreaterThanOrEqual(2);
+      for (const answer of answers) {
+        expect(answer, slug).not.toMatch(/nuestro comparador/);
+      }
+    }
+  });
+
   it.each([
     ['pc-gamer-2-millones', 'PC Gamer por $2 millones: componentes y precios'],
     ['pc-gamer-3-millones', 'PC Gamer por $3 millones: componentes y precios'],

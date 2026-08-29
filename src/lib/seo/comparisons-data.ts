@@ -56,7 +56,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
       },
       {
         question: '¿Cuánto cuesta la RTX 4060 en Argentina?',
-        answer: 'El precio varía entre tiendas. Usá nuestro comparador para ver el precio actualizado en tiempo real.',
+        answer: 'El precio cambia entre tiendas. Compará placas de video del mismo chip y VRAM para ver el valor publicado hoy.',
       },
       {
         question: '¿La RX 7600 es mejor que la RTX 3060?',
@@ -168,7 +168,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
       },
       {
         question: '¿Cuánto cuesta el 9800X3D en Argentina?',
-        answer: 'Es uno de los procesadores más caros. Consultá nuestro comparador para ver precios actualizados en tiempo real.',
+        answer: 'Es de los procesadores más caros. Compará procesadores del mismo modelo para ver el precio publicado hoy en Argentina.',
       },
       {
         question: '¿El i9-14900K es mejor para streaming?',
@@ -205,7 +205,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
       },
       {
         question: '¿Cuánto cuesta el i5-14600K en Argentina?',
-        answer: 'El precio varía según la tienda. Usá nuestro comparador para ver precios actualizados en tiempo real.',
+        answer: 'El precio cambia según la tienda. Compará procesadores del mismo modelo para ver el valor publicado hoy.',
       },
       {
         question: '¿El i5-14600K se calienta mucho?',
@@ -242,7 +242,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
       },
       {
         question: '¿Cuánto cuesta la RTX 5090 en Argentina?',
-        answer: 'Es la placa más cara del mercado. Usá nuestro comparador para ver precios actualizados en tiempo real.',
+        answer: 'Es la placa más cara del mercado. Compará placas de video del mismo modelo para ver el precio publicado hoy.',
       },
       {
         question: '¿La RX 9070 XT sirve para 4K?',
@@ -279,7 +279,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
       },
       {
         question: '¿Cuánto cuesta la DDR5 en Argentina?',
-        answer: 'Aproximadamente 30-50% más cara que DDR4 equivalente. Consultá nuestro comparador para precios actualizados.',
+        answer: 'Suele salir 30-50% más cara que DDR4 equivalente. Compará memoria RAM del mismo kit y frecuencia para ver el precio actual.',
       },
       {
         question: '¿DDR5 mejora el FPS en juegos?',

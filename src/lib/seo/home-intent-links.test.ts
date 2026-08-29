@@ -7,6 +7,8 @@ describe('home intent links', () => {
       { href: '/search?category=procesadores', label: 'Comparar procesadores' },
       { href: '/search?category=tarjetas-graficas', label: 'Placas de video' },
       { href: '/comparativa/ryzen-5-7600x-vs-ryzen-7-5700x', label: 'Ryzen 7600X vs 5700X' },
+      { href: '/search?category=motherboards', label: 'Comparar motherboards' },
+      { href: '/search?category=memoria-ram', label: 'Comparar memoria RAM' },
     ]);
   });
 
