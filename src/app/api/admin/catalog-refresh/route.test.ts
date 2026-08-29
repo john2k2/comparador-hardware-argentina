@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockEnsureAccess = vi.fn();
 const mockParseRefreshInput = vi.fn();
 const mockCleanupPriceHistory = vi.fn();
+const mockPruneGhostStorePrices = vi.fn();
 const mockBuildRefreshPlan = vi.fn();
 const mockRunTargets = vi.fn();
 const mockLoggerInfo = vi.fn();
@@ -19,6 +20,10 @@ vi.mock('@/lib/admin/catalog-refresh/input', () => ({
 
 vi.mock('@/lib/persistence/price-history-maintenance', () => ({
   cleanupPriceHistory: mockCleanupPriceHistory,
+}));
+
+vi.mock('@/lib/persistence/stale-product-prices-maintenance', () => ({
+  pruneGhostStorePrices: mockPruneGhostStorePrices,
 }));
 
 vi.mock('@/lib/admin/catalog-refresh/planning', () => ({
@@ -44,6 +49,7 @@ describe('/api/admin/catalog-refresh route', () => {
     mockEnsureAccess.mockReset();
     mockParseRefreshInput.mockReset();
     mockCleanupPriceHistory.mockReset();
+    mockPruneGhostStorePrices.mockReset();
     mockBuildRefreshPlan.mockReset();
     mockRunTargets.mockReset();
     mockLoggerInfo.mockReset();
@@ -69,6 +75,7 @@ describe('/api/admin/catalog-refresh route', () => {
       staleMinutes: 180,
     });
     mockCleanupPriceHistory.mockResolvedValue({ deletedRows: 12, retainedRows: 34 });
+    mockPruneGhostStorePrices.mockResolvedValue({ deletedRows: 4, scannedRows: 80, executedAt: '2026-08-29T18:00:00.000Z' });
 
     const { POST } = await import('./route');
     const response = await POST(new NextRequest('http://localhost/api/admin/catalog-refresh', { method: 'POST' }));
@@ -78,6 +85,12 @@ describe('/api/admin/catalog-refresh route', () => {
     expect(payload.mode).toBe('cleanup-history');
     expect(payload.source).toBe('price-history-retention');
     expect(payload.cleanup).toEqual({ deletedRows: 12, retainedRows: 34 });
+    expect(payload.stalePrices).toEqual({
+      deletedRows: 4,
+      scannedRows: 80,
+      executedAt: '2026-08-29T18:00:00.000Z',
+    });
+    expect(mockPruneGhostStorePrices).toHaveBeenCalledOnce();
     expect(mockRunTargets).not.toHaveBeenCalled();
   });
 
@@ -112,7 +125,47 @@ describe('/api/admin/catalog-refresh route', () => {
     expect(payload.okTargets).toBe(1);
     expect(payload.failedTargets).toBe(0);
     expect(payload.results).toHaveLength(1);
+    expect(payload.stalePrices).toBeNull();
+    expect(mockPruneGhostStorePrices).not.toHaveBeenCalled();
     expect(mockLoggerInfo).toHaveBeenCalled();
+  });
+
+  it('prunes ghost store prices after a full refresh', async () => {
+    mockEnsureAccess.mockResolvedValue('cron');
+    mockParseRefreshInput.mockResolvedValue({
+      mode: 'full',
+      categories: [],
+      stores: [],
+      maxQueries: 40,
+      staleMinutes: 180,
+    });
+    mockBuildRefreshPlan.mockResolvedValue({
+      source: 'full-categories',
+      targets: [{ kind: 'category', value: 'procesadores' }],
+      fallbackApplied: false,
+      fallbackReason: null,
+    });
+    mockRunTargets.mockResolvedValue([
+      { target: 'procesadores', kind: 'category', status: 200, productCount: 8, ok: true },
+    ]);
+    mockPruneGhostStorePrices.mockResolvedValue({
+      deletedRows: 7,
+      scannedRows: 120,
+      executedAt: '2026-08-29T18:00:00.000Z',
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(new NextRequest('http://localhost/api/admin/catalog-refresh?mode=full', { method: 'POST' }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.mode).toBe('full');
+    expect(payload.stalePrices).toEqual({
+      deletedRows: 7,
+      scannedRows: 120,
+      executedAt: '2026-08-29T18:00:00.000Z',
+    });
+    expect(mockPruneGhostStorePrices).toHaveBeenCalledOnce();
   });
 
   it('skips execution when the refresh plan has no targets', async () => {

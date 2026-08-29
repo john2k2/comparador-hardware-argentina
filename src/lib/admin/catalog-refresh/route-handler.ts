@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cleanupPriceHistory } from '@/lib/persistence/price-history-maintenance';
+import { pruneGhostStorePrices } from '@/lib/persistence/stale-product-prices-maintenance';
 import { logger } from '@/lib/logger';
 import { ensureAccess } from '@/lib/admin/catalog-refresh/access';
 import { parseRefreshInput } from '@/lib/admin/catalog-refresh/input';
@@ -16,12 +17,14 @@ async function handleRefresh(request: NextRequest) {
     const input = await parseRefreshInput(request);
     if (input.mode === 'cleanup-history') {
       const cleanup = await cleanupPriceHistory();
+      const stalePrices = await pruneGhostStorePrices();
       logger.info('Catalog refresh cleanup completed', {
         endpoint: '/api/admin/catalog-refresh',
         requestedBy: access,
         mode: input.mode,
         deletedRows: cleanup.deletedRows,
         remainingRows: cleanup.remainingRows,
+        stalePriceRows: stalePrices.deletedRows,
       });
 
       return NextResponse.json({
@@ -30,6 +33,7 @@ async function handleRefresh(request: NextRequest) {
         mode: input.mode,
         source: 'price-history-retention',
         cleanup,
+        stalePrices,
       });
     }
 
@@ -81,6 +85,8 @@ async function handleRefresh(request: NextRequest) {
       });
     }
 
+    const stalePrices = input.mode === 'full' ? await pruneGhostStorePrices() : null;
+
     logger.info('Catalog refresh completed', {
       endpoint: '/api/admin/catalog-refresh',
       requestedBy: access,
@@ -89,6 +95,7 @@ async function handleRefresh(request: NextRequest) {
       totalTargets: results.length,
       okTargets: results.filter((item) => item.ok).length,
       failedTargets: failedTargets.length,
+      stalePriceRows: stalePrices?.deletedRows ?? 0,
     });
 
     return NextResponse.json({
@@ -109,6 +116,7 @@ async function handleRefresh(request: NextRequest) {
         staleMinutes: input.staleMinutes,
       },
       results,
+      stalePrices,
     });
   } catch (error) {
     logger.error('Catalog refresh failed', {

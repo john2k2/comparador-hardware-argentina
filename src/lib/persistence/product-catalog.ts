@@ -8,6 +8,8 @@ import {
   planPriceRowPersistence,
   planProductRowPersistence,
 } from '@/lib/persistence/product-write-dedupe';
+import { selectStaleProductPricesToPrune } from '@/lib/persistence/stale-product-prices';
+import { deleteProductPriceIdentities } from '@/lib/persistence/stale-product-prices-maintenance';
 
 const UPSERT_CHUNK_SIZE = 250;
 const HISTORY_CHUNK_SIZE = 500;
@@ -402,6 +404,26 @@ export async function persistProductsSnapshot(products: Product[]): Promise<void
       throw new Error(`Error upsert product_prices: ${error.message}`);
     }
   }
+
+  const stalePrices = selectStaleProductPricesToPrune({
+    persisted: Array.from(pricesByKey.values()).map((row) => ({
+      product_id: row.product_id,
+      store_id: row.store_id,
+      url: row.url,
+      last_updated: row.last_updated,
+    })),
+    snapshot: Array.from(candidatePriceRowsByKey.values()).map((row) => ({
+      product_id: row.product_id,
+      store_id: row.store_id,
+      url: row.url,
+    })),
+    products: productIds.map((id) => ({
+      id,
+      last_scraped_at: now.toISOString(),
+    })),
+    now,
+  });
+  await deleteProductPriceIdentities(supabase, stalePrices);
 
   for (const batch of chunk(historyRows, HISTORY_CHUNK_SIZE)) {
     const { error } = await supabase.from('price_history').insert(batch);
