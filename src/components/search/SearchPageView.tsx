@@ -92,6 +92,23 @@ export function SearchPageView({
               </div>
             </nav>
           )}
+          {categorySeoCopy.faqs && categorySeoCopy.faqs.length > 0 && (
+            <section aria-label="Preguntas frecuentes" className="mt-5 border-t-2 border-border pt-4 space-y-3">
+              <h2 className="text-[9px] font-bold uppercase tracking-[0.2em] text-secondary">
+                Preguntas frecuentes
+              </h2>
+              {categorySeoCopy.faqs.map((faq) => (
+                <div key={faq.question}>
+                  <h3 className="text-[11px] md:text-[12px] font-bold normal-case tracking-normal text-foreground font-mono">
+                    {faq.question}
+                  </h3>
+                  <p className="mt-1 text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/80 font-mono">
+                    {faq.answer}
+                  </p>
+                </div>
+              ))}
+            </section>
+          )}
         </header>
       )}
 

@@ -12,6 +12,7 @@ import {
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import Link from 'next/link';
 import type { HardwareCategory, Product } from '@/lib/types';
+import { getCategoryLabel } from '@/lib/search/search-seo';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -91,6 +92,13 @@ export default async function ComparisonPage({ params }: Props) {
         <Link href="/" className="hover:text-primary transition-colors">Inicio</Link>
         <span className="mx-2">/</span>
         <Link href="/comparativa" className="hover:text-primary transition-colors">Comparativas</Link>
+        <span className="mx-2">/</span>
+        <Link
+          href={`/search?category=${comparison.product1.category}`}
+          className="hover:text-primary transition-colors"
+        >
+          {comparison.product1.category === 'procesadores' ? 'Comparar procesadores' : (getCategoryLabel(comparison.product1.category as HardwareCategory) ?? comparison.product1.category)}
+        </Link>
         <span className="mx-2">/</span>
         <span className="text-foreground">{comparison.product1.name} vs {comparison.product2.name}</span>
       </nav>
@@ -271,6 +279,34 @@ export default async function ComparisonPage({ params }: Props) {
           {comparison.conclusion}
         </p>
       </section>
+
+      {comparison.faqs.length > 0 && (
+        <section className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow mb-8">
+          <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">
+            [ PREGUNTAS FRECUENTES ]
+          </h2>
+          <div className="space-y-4">
+            {comparison.faqs.map((faq) => (
+              <div key={faq.question}>
+                <h3 className="text-[11px] md:text-[12px] font-bold normal-case tracking-normal text-foreground font-mono">
+                  {faq.question}
+                </h3>
+                <p className="mt-1 text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
+                  {faq.answer}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-5">
+            <Link
+              href={`/search?category=${comparison.product1.category}`}
+              className="text-[10px] md:text-[11px] font-bold uppercase text-primary hover:underline"
+            >
+              {comparison.product1.category === 'procesadores' ? 'Comparar procesadores →' : 'Ver precios de la categoría →'}
+            </Link>
+          </p>
+        </section>
+      )}
 
       {/* FAQ Schema */}
       <script

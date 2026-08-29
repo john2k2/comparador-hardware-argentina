@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { SearchPageClient } from '@/components/search/SearchPageClient';
 import { buildApiSearchKey, hasSearchIntent, parseSearchState, type SearchPageState } from '@/lib/search/search-state';
 import { readProductsPageFromDatabase } from '@/lib/persistence/product-read';
 import { SEARCH_PAGE_SIZE } from '@/lib/search/search-pagination';
 import type { SearchApiResponse } from '@/lib/search/search-api';
 import { resolveSearchMetadata } from '@/lib/search/search-page-metadata';
-import { isIndexableCategoryLanding } from '@/lib/search/search-seo';
+import { getCategorySeoCopy, isIndexableCategoryLanding } from '@/lib/search/search-seo';
+import { buildFaqSchema } from '@/lib/seo/faq-schema';
+import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 
 type SearchPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -82,15 +85,29 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     : null;
 
   const isCategoryLanding = isIndexableCategoryLanding(state);
+  const categorySeoCopy = isCategoryLanding ? getCategorySeoCopy(state.category) : null;
+  const faqJsonLd = categorySeoCopy?.faqs?.length ? buildFaqSchema(categorySeoCopy.faqs) : null;
+  const nonce = faqJsonLd
+    ? (await headers()).get('x-content-security-policy-nonce') ?? undefined
+    : undefined;
 
   return (
-    <SearchPageClient
-      initialState={state}
-      initialBaseProducts={initialPage.products}
-      initialPagination={initialPage.pagination}
-      initialResolvedRequestKey={initialResolvedRequestKey}
-      initialHasSearchIntent={hasSearchIntent(state)}
-      initialIsCategoryLanding={isCategoryLanding}
-    />
+    <>
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          nonce={nonce}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
+        />
+      )}
+      <SearchPageClient
+        initialState={state}
+        initialBaseProducts={initialPage.products}
+        initialPagination={initialPage.pagination}
+        initialResolvedRequestKey={initialResolvedRequestKey}
+        initialHasSearchIntent={hasSearchIntent(state)}
+        initialIsCategoryLanding={isCategoryLanding}
+      />
+    </>
   );
 }

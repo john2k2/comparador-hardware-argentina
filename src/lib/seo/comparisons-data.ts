@@ -94,7 +94,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
       },
       {
         question: '¿Cuánto cuesta el Ryzen 5 7600X en Argentina?',
-        answer: 'El precio varía según la tienda. Consultá nuestro comparador para ver precios actualizados en tiempo real.',
+        answer: 'El 7600X suele salir más caro que el 5700X porque pide motherboard AM5 y RAM DDR5. El precio del micro cambia entre tiendas; para decidir, usá la página de comparar procesadores y mirá el costo total de la plataforma, no una sola publicación.',
       },
       {
         question: '¿El Ryzen 7 5700X es mejor para streaming?',

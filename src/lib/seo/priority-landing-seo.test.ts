@@ -30,6 +30,17 @@ describe('priority SEO landings', () => {
     expect(comparison?.description).toContain('AM5 o actualizar una PC AM4');
   });
 
+  it('responde las FAQ del Ryzen y apunta a comparar procesadores', () => {
+    const comparison = getComparisonBySlug('ryzen-5-7600x-vs-ryzen-7-5700x');
+    const answers = comparison?.faqs.map((faq) => faq.answer.toLowerCase()) ?? [];
+
+    expect(answers.length).toBeGreaterThanOrEqual(3);
+    for (const answer of answers) {
+      expect(answer).not.toMatch(/consult[aá] nuestro comparador/);
+    }
+    expect(answers.some((answer) => answer.includes('comparar procesadores'))).toBe(true);
+  });
+
   it.each([
     ['pc-gamer-2-millones', 'PC Gamer por $2 millones: componentes y precios'],
     ['pc-gamer-3-millones', 'PC Gamer por $3 millones: componentes y precios'],

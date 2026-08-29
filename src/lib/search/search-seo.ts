@@ -2,6 +2,11 @@ import { categories } from '@/lib/scrapers/static-data';
 import type { HardwareCategory } from '@/lib/types';
 import type { SearchPageState } from './search-state';
 
+type CategoryFaq = {
+  question: string;
+  answer: string;
+};
+
 type CategorySeoCopy = {
   title: string;
   description: string;
@@ -11,6 +16,7 @@ type CategorySeoCopy = {
     href: string;
     label: string;
   }>;
+  faqs?: CategoryFaq[];
 };
 
 const CATEGORY_SEO_COPY: Record<HardwareCategory, CategorySeoCopy> = {
@@ -25,8 +31,30 @@ const CATEGORY_SEO_COPY: Record<HardwareCategory, CategorySeoCopy> = {
         label: 'Ryzen 7600X vs 5700X: cuál conviene',
       },
       {
+        href: '/comparativa/i5-14600k-vs-ryzen-5-7600x',
+        label: 'i5-14600K vs Ryzen 5 7600X',
+      },
+      {
+        href: '/comparativa/ryzen-7-9800x3d-vs-i9-14900k',
+        label: '9800X3D vs i9-14900K',
+      },
+      {
         href: '/guia/pc-gamer-2-millones',
         label: 'PC gamer por $2 millones',
+      },
+    ],
+    faqs: [
+      {
+        question: '¿Cómo comparar procesadores en Argentina?',
+        answer: 'Compará el mismo modelo entre tiendas: precio publicado, stock, garantía y si incluye cooler. Después mirá socket, generación y el costo de motherboard más RAM. Un micro más barato puede salir más caro si obliga a cambiar toda la plataforma.',
+      },
+      {
+        question: '¿AMD Ryzen o Intel Core, cuál conviene?',
+        answer: 'Para armar una PC nueva, Ryzen AM5 suele rendir mejor a futuro. Intel puede convivir si ya tenés motherboard y memoria compatibles, o si un modelo puntual está mucho más barato. Compará el total de plataforma, no solo el procesador.',
+      },
+      {
+        question: '¿Qué mirar además del precio del procesador?',
+        answer: 'Socket (AM4, AM5, LGA 1700 o 1851), TDP, cooler incluido y si necesitás DDR4 o DDR5. También confirmá que la publicación sea exactamente el modelo que buscás: tray, box o con gráficos integrados no son intercambiables.',
       },
     ],
   },
@@ -47,6 +75,24 @@ const CATEGORY_SEO_COPY: Record<HardwareCategory, CategorySeoCopy> = {
       {
         href: '/guia/pc-gamer-3-millones',
         label: 'PC gamer por $3 millones',
+      },
+      {
+        href: '/comparativa/rtx-5070-vs-rtx-4070',
+        label: 'RTX 5070 vs RTX 4070',
+      },
+    ],
+    faqs: [
+      {
+        question: '¿Cómo comparar placas de video en Argentina?',
+        answer: 'Filtrá por el mismo chip y la misma cantidad de VRAM. Entre tiendas cambian el cooler, el tamaño y el consumo, aunque el nombre sea parecido. Después compará precio, stock y garantía de cada publicación.',
+      },
+      {
+        question: '¿RTX o Radeon, cuál conviene?',
+        answer: 'NVIDIA suele ganar en Ray Tracing, DLSS y encoding para streaming. AMD Radeon a veces ofrece más rendimiento raster por peso. La decisión correcta sale de tu resolución, fuente y del precio real de cada modelo en el comparador.',
+      },
+      {
+        question: '¿Qué mirar además del precio de la GPU?',
+        answer: 'VRAM, largo de la placa, conector de alimentación y watts recomendados de la fuente. Una 8 GB puede alcanzar en 1080p, pero 1440p o texturas altas piden más memoria y mejor refrigeración.',
       },
     ],
   },

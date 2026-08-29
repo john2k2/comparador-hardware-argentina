@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { ProductGrid, SearchBar } from '@/components/functional';
 import { resolveSponsoredStores } from '@/lib/commercial';
+import { HOME_INTENT_LINKS, HOME_PROCESSOR_PROMO } from '@/lib/seo/home-intent-links';
 import { categories, stores as defaultStores } from '@/lib/scrapers/static-data';
 import { readRecentlyViewedProducts } from '@/lib/client/recently-viewed';
 import type { Product } from '@/lib/types';
@@ -162,6 +163,17 @@ export function HomePageClient({
           <p className="text-[8px] md:text-[9px] uppercase text-foreground/80 mt-2 tracking-wide">
             COMPARADOR INDEPENDIENTE: NO VENDEMOS, SOLO MOSTRAMOS PRECIOS, DISPONIBILIDAD Y ENLACES A TIENDAS
           </p>
+          <nav aria-label="Comparar por categoría" className="mt-4 flex flex-wrap gap-2">
+            {HOME_INTENT_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="min-h-11 inline-flex items-center border-2 border-border bg-background px-3 py-2 text-[10px] font-bold uppercase text-foreground hover:border-primary hover:text-primary transition-colors"
+              >
+                {link.label} →
+              </Link>
+            ))}
+          </nav>
         </div>
 
         <div className="w-full lg:w-[480px] border-[3px] border-primary p-1 bg-background">
@@ -218,9 +230,9 @@ export function HomePageClient({
 
       <PromoBanner
         label="-- INFO COMPARADOR --"
-        title="COMPARA EL MISMO PRODUCTO ENTRE MULTIPLES TIENDAS Y ENTRA A LA OPCION MAS CONVENIENTE"
-        cta="COMO FUNCIONA"
-        href="/acerca"
+        title={HOME_PROCESSOR_PROMO.title}
+        cta={HOME_PROCESSOR_PROMO.cta}
+        href={HOME_PROCESSOR_PROMO.href}
       />
 
       <SectionTitle
@@ -287,9 +299,9 @@ export function HomePageClient({
 
           <PromoBanner
             label="-- ACTUALIZACION --"
-            title="ACTUALIZAMOS PRECIOS Y STOCK EN TIEMPO REAL PARA AYUDARTE A DECIDIR MEJOR"
-            cta="VER METODO"
-            href="/acerca"
+            title={HOME_PROCESSOR_PROMO.title}
+            cta={HOME_PROCESSOR_PROMO.cta}
+            href={HOME_PROCESSOR_PROMO.href}
           />
 
           <SectionTitle

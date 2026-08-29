@@ -28,4 +28,25 @@ describe('search-seo', () => {
     expect(copy?.heading).toContain('procesadores');
     expect(copy?.description).toContain('Argentina');
   });
+
+  it('agrega FAQ de comparar procesadores sin cambiar el title', () => {
+    const copy = getCategorySeoCopy('procesadores');
+
+    expect(copy?.title).toBe('Procesadores AMD e Intel: precios');
+    expect(copy?.faqs?.some((faq) => faq.question.toLowerCase().includes('comparar procesadores'))).toBe(true);
+    expect(copy?.relatedLinks).toEqual(expect.arrayContaining([
+      expect.objectContaining({ href: '/comparativa/i5-14600k-vs-ryzen-5-7600x' }),
+      expect.objectContaining({ href: '/comparativa/ryzen-7-9800x3d-vs-i9-14900k' }),
+    ]));
+  });
+
+  it('agrega FAQ de placas de video y otra comparativa de GPU', () => {
+    const copy = getCategorySeoCopy('tarjetas-graficas');
+
+    expect(copy?.title).toBe('Placas de video RTX y Radeon: precios');
+    expect(copy?.faqs?.length).toBeGreaterThanOrEqual(2);
+    expect(copy?.relatedLinks).toEqual(expect.arrayContaining([
+      expect.objectContaining({ href: '/comparativa/rtx-5070-vs-rtx-4070' }),
+    ]));
+  });
 });
