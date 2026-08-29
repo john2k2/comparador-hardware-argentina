@@ -24,9 +24,9 @@ export function SpecsTable({ product }: SpecsTableProps) {
       </h2>
       <dl className="space-y-3">
         {specsEntries.map(([key, value]) => (
-          <div key={key} className="flex justify-between text-[10px] uppercase border-b-2 border-muted border-dashed pb-2">
-            <dt className="text-muted-foreground">{key}</dt>
-            <dd className="font-bold text-foreground text-right ml-4">{value}</dd>
+          <div key={key} className="flex justify-between gap-2 min-w-0 text-[10px] uppercase border-b-2 border-muted border-dashed pb-2">
+            <dt className="text-muted-foreground min-w-0 break-words">{key}</dt>
+            <dd className="font-bold text-foreground text-right min-w-0 break-words">{value}</dd>
           </div>
         ))}
       </dl>

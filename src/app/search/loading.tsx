@@ -45,7 +45,7 @@ export default function SearchLoading() {
 
           <div className="border-2 border-secondary bg-card px-4 py-3 pixel-shadow animate-pulse mb-4">
             <div className="h-3 w-64 bg-secondary/30 animate-pulse" />
-            <div className="h-2 w-96 bg-muted/50 animate-pulse mt-2" />
+            <div className="h-2 w-full max-w-96 bg-muted/50 animate-pulse mt-2" />
           </div>
 
           <div className="bg-muted p-4 border-4 border-border relative">

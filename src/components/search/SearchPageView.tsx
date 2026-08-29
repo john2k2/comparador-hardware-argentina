@@ -59,9 +59,9 @@ export function SearchPageView({
   return (
     <div className="w-full max-w-[1800px] mx-auto px-4 xl:px-8 py-6">
       {isSeoCategoryLanding && categorySeoCopy && (
-        <header className="mb-8 bg-card border-4 border-border p-5 md:p-6 pixel-shadow">
-          <p className="text-[8px] uppercase tracking-[0.3em] text-secondary font-bold mb-3">LANDING DE CATEGORIA</p>
-          <h1 className="text-sm md:text-lg uppercase font-bold leading-relaxed text-foreground">{categorySeoCopy.heading}</h1>
+        <header className="mb-8 min-w-0 max-w-full bg-card border-4 border-border p-4 sm:p-5 md:p-6 pixel-shadow">
+          <p className="text-[8px] uppercase tracking-wide md:tracking-[0.3em] text-secondary font-bold mb-3">LANDING DE CATEGORIA</p>
+          <h1 className="font-mono! text-base md:text-lg md:font-pixel! uppercase font-bold leading-snug text-foreground tracking-normal break-words max-w-full">{categorySeoCopy.heading}</h1>
           <p className="mt-4 text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/80 font-mono">{categorySeoCopy.intro}</p>
           <div className="mt-4 grid md:grid-cols-2 gap-3 text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/80 font-mono">
             <p>
@@ -76,7 +76,7 @@ export function SearchPageView({
           </div>
           {categorySeoCopy.relatedLinks && categorySeoCopy.relatedLinks.length > 0 && (
             <nav aria-label="Comparativas y guías relacionadas" className="mt-5 border-t-2 border-border pt-4">
-              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-secondary mb-3">
+              <p className="text-[9px] font-bold uppercase tracking-wide md:tracking-[0.2em] text-secondary mb-3">
                 Seguí comparando
               </p>
               <div className="flex flex-wrap gap-2">
@@ -84,7 +84,7 @@ export function SearchPageView({
                   <Link
                     key={relatedLink.href}
                     href={relatedLink.href}
-                    className="min-h-11 inline-flex items-center border-2 border-border bg-background px-3 py-2 text-[10px] md:text-[11px] font-bold text-foreground hover:border-primary hover:text-primary transition-colors"
+                    className="min-h-11 w-full sm:w-auto inline-flex items-center border-2 border-border bg-background px-3 py-2 text-[10px] md:text-[11px] font-bold text-foreground hover:border-primary hover:text-primary transition-colors break-words"
                   >
                     {relatedLink.label} →
                   </Link>
@@ -130,15 +130,17 @@ export function SearchPageView({
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
-        <aside className="lg:w-72 flex-shrink-0 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto scrollbar-thin lg:pr-2 pb-4 flex flex-col gap-5 lg:gap-8 order-2 lg:order-1">
+        <aside className="lg:w-72 flex-shrink-0 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto scrollbar-thin lg:pr-2 pb-4 flex flex-col gap-5 lg:gap-8 order-1">
           <FiltersPanel filters={filters} stores={availableStores} onChange={onFiltersChange} />
-          <CategoriesPanel filters={filters} onChange={onFiltersChange} />
+          <div className="hidden lg:block">
+            <CategoriesPanel filters={filters} onChange={onFiltersChange} />
+          </div>
         </aside>
 
-        <div className="flex-1 order-1 lg:order-2">
+        <div className="flex-1 min-w-0 order-2">
           <SearchHeader totalResults={totalResults} searchQuery={searchQuery} isBusy={isBusy} />
           {isBusy && <LoadingState searchQuery={searchQuery} />}
-          <div id="product-grid-start" className="min-w-0 bg-muted p-3 sm:p-4 border-4 border-border relative overflow-hidden">
+          <div id="product-grid-start" className="min-w-0 scroll-mt-24 bg-muted p-3 sm:p-4 border-4 border-border relative overflow-hidden">
             {searchError && <SearchErrorState error={searchError} onRetry={() => onSearch(searchQuery)} />}
             {showNoResultsState && <NoResultsState searchQuery={searchQuery} hasActiveFilters={hasActiveFilters} onClearFilters={onClearFilters} onRetry={() => onSearch(searchQuery)} />}
             {showIdleState && <IdleState />}
@@ -161,8 +163,7 @@ export function SearchPageView({
 
 function FiltersPanel({ filters, stores, onChange }: { filters: ReturnType<typeof toSearchFilters>; stores: typeof defaultStores; onChange: (f: Partial<SearchFilters>) => void }) {
   return (
-    <div className="bg-card border-4 border-border p-4 flex-shrink-0">
-      <h2 className="text-[12px] mb-6 border-b-4 border-primary pb-2 uppercase font-bold text-primary">FILTROS</h2>
+    <div className="bg-card border-4 border-border p-4 flex-shrink-0 min-w-0">
       <Filters filters={filters} onChange={onChange} categories={categories} stores={stores} />
     </div>
   );
@@ -195,7 +196,7 @@ function SearchHeader({ totalResults, searchQuery, isBusy }: { totalResults: num
         <p className="text-[10px] uppercase font-bold" aria-live="polite">{isBusy ? 'BUSCANDO...' : `RESULTADOS: ${totalResults} ITEMS`}</p>
       </div>
       {searchQuery && (
-        <div className="text-[10px] uppercase font-bold text-foreground/80">
+        <div className="min-w-0 text-[10px] uppercase font-bold text-foreground/80 break-words">
           BUSQUEDA: <span className="text-secondary">&quot;{searchQuery}&quot;</span>
         </div>
       )}

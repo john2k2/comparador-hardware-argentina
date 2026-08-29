@@ -15,9 +15,9 @@ export interface SkeletonProps extends HTMLAttributes<HTMLDivElement> {
 const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(
   ({ className, variant = 'rectangular', animation = 'pulse', width, height, style, ...props }, ref) => {
     const variants = {
-      text: 'rounded',
-      circular: 'rounded-full',
-      rectangular: 'rounded-lg',
+      text: 'rounded-none',
+      circular: 'rounded-none',
+      rectangular: 'rounded-none',
     };
 
     const animations = {
@@ -30,7 +30,7 @@ const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(
       <div
         ref={ref}
         className={cn(
-          'bg-zinc-200 dark:bg-zinc-700',
+          'bg-muted',
           variants[variant],
           animations[animation],
           className
@@ -53,7 +53,7 @@ export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="rounded-xl border border-zinc-200 dark:border-zinc-700 p-4 space-y-3">
+        <div key={i} className="rounded-none border-4 border-border bg-card p-4 space-y-3 pixel-shadow">
           <Skeleton variant="rectangular" height={160} />
           <Skeleton variant="text" width="80%" height={20} />
           <Skeleton variant="text" width="60%" height={16} />

@@ -88,7 +88,7 @@ export default async function ComparisonPage({ params }: Props) {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
-      <nav className="text-[10px] md:text-[11px] text-muted-foreground mb-6 font-mono">
+      <nav className="text-[10px] md:text-[11px] text-muted-foreground mb-6 font-mono flex flex-wrap gap-x-1 break-words">
         <Link href="/" className="hover:text-primary transition-colors">Inicio</Link>
         <span className="mx-2">/</span>
         <Link href="/comparativa" className="hover:text-primary transition-colors">Comparativas</Link>
@@ -105,7 +105,7 @@ export default async function ComparisonPage({ params }: Props) {
 
       {/* Header */}
       <header className="mb-8">
-        <h1 className="text-[16px] md:text-[20px] font-pixel text-primary mb-3 leading-tight">
+        <h1 className="font-mono! text-base md:text-[20px] md:font-pixel! text-primary mb-3 leading-snug tracking-normal break-words max-w-full">
           {comparison.product1.name} vs {comparison.product2.name}
         </h1>
         <p className="text-[11px] md:text-[12px] text-muted-foreground font-mono leading-relaxed">
@@ -347,7 +347,7 @@ function ProductCard({
     <div className="border-2 border-border p-4">
       <h3 className="text-[12px] font-bold text-foreground mb-2">{product.name}</h3>
       <div className="text-[10px] text-muted-foreground mb-2 font-mono">{product.specs}</div>
-      <div className="text-[24px] md:text-[28px] font-pixel text-primary mb-1">
+      <div className="text-[16px] sm:text-[24px] md:text-[28px] font-pixel text-primary mb-1 break-words">
         {bestPrice > 0 ? formatPriceARS(bestPrice) : 'Consultar'}
       </div>
       <p className="text-[10px] text-muted-foreground font-mono">
@@ -356,7 +356,7 @@ function ProductCard({
       {realProduct && (
         <Link 
           href={`/product/${realProduct.id}`}
-          className="inline-block mt-3 text-[10px] bg-primary text-primary-foreground px-3 py-2 hover:bg-primary/90 transition-colors"
+          className="inline-flex min-h-11 items-center mt-3 text-[10px] bg-primary text-primary-foreground px-3 py-2 hover:bg-primary/90 transition-colors"
         >
           VER DETALLES →
         </Link>

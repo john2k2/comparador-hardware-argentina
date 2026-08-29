@@ -57,11 +57,11 @@ function SectionTitle({
 }) {
   return (
     <header className="mb-4 bg-card border-[3px] border-border pixel-shadow p-4 md:p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h2 className="text-[12px] md:text-[14px] font-bold uppercase text-primary tracking-wide">
+      <div className="min-w-0">
+        <h2 className="text-[12px] md:text-[14px] font-bold uppercase text-primary tracking-wide break-words">
           {`[ ${title} ]`}
         </h2>
-        <p className="text-[9px] uppercase text-foreground/80 mt-1 tracking-wide">{subtitle}</p>
+        <p className="text-[9px] uppercase text-foreground/80 mt-1 tracking-wide break-words">{subtitle}</p>
       </div>
 
       {actionHref && actionLabel && (
@@ -151,24 +151,24 @@ export function HomePageClient({
   };
 
   return (
-    <div className="w-full max-w-[1760px] mx-auto px-4 xl:px-8 py-8">
-      <section className="mb-6 bg-card/95 border-[3px] border-border pixel-shadow p-4 md:p-6 flex flex-col lg:flex-row gap-5 lg:items-center lg:justify-between backdrop-blur-[1px]">
-        <div>
-          <h1 className="text-xl md:text-3xl font-bold uppercase text-foreground tracking-tight">
+    <>
+      <section className="mb-6 min-w-0 max-w-full bg-card/95 border-[3px] border-border pixel-shadow p-4 md:p-6 flex flex-col lg:flex-row gap-5 lg:items-center lg:justify-between backdrop-blur-[1px]">
+        <div className="min-w-0">
+          <h1 className="font-mono! text-base sm:text-lg md:text-3xl md:font-pixel! font-bold uppercase text-foreground tracking-normal md:tracking-tight break-words max-w-full">
             [ COMPARA PRECIOS DE HARDWARE EN ARGENTINA ]
           </h1>
-          <p className="text-[10px] md:text-xs uppercase text-secondary font-bold mt-2 tracking-[0.14em]">
+          <p className="text-[10px] md:text-xs uppercase text-secondary font-bold mt-2 tracking-normal md:tracking-[0.14em] break-words">
             PROCESADORES, GPUS, RAM, SSD Y MAS EN MULTIPLES TIENDAS
           </p>
-          <p className="text-[8px] md:text-[9px] uppercase text-foreground/80 mt-2 tracking-wide">
+          <p className="text-[10px] md:text-[9px] uppercase text-foreground/80 mt-2 tracking-normal break-words">
             COMPARADOR INDEPENDIENTE: NO VENDEMOS, SOLO MOSTRAMOS PRECIOS, DISPONIBILIDAD Y ENLACES A TIENDAS
           </p>
-          <nav aria-label="Comparar por categoría" className="mt-4 flex flex-wrap gap-2">
+          <nav aria-label="Comparar por categoría" className="mt-4 flex flex-wrap gap-3">
             {HOME_INTENT_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="min-h-11 inline-flex items-center border-2 border-border bg-background px-3 py-2 text-[10px] font-bold uppercase text-foreground hover:border-primary hover:text-primary transition-colors"
+                className="min-h-11 w-full sm:w-auto inline-flex items-center justify-center border-2 border-border bg-background px-3 py-2 text-[10px] font-bold uppercase text-foreground hover:border-primary hover:text-primary transition-colors"
               >
                 {link.label} →
               </Link>
@@ -176,7 +176,7 @@ export function HomePageClient({
           </nav>
         </div>
 
-        <div className="w-full lg:w-[480px] border-[3px] border-primary p-1 bg-background">
+        <div className="w-full min-w-0 lg:w-[480px]">
           <SearchBar
             onSearch={handleSearch}
             placeholder="[ BUSCAR PRODUCTO... ]"
@@ -184,8 +184,8 @@ export function HomePageClient({
         </div>
       </section>
 
-      <section className="mb-8 border-y-[3px] border-muted py-2 overflow-hidden bg-transparent w-screen relative left-1/2 right-1/2 -mx-[50vw]">
-        <div className="relative flex overflow-hidden">
+      <section className="mb-8 border-y-[3px] border-muted py-2 overflow-hidden bg-transparent -mx-4 xl:-mx-8">
+        <div className="relative flex overflow-hidden marquee-fade">
           <div className="flex w-max animate-marquee">
             <div className="flex items-center gap-6 pr-6 shrink-0">
               {stores.map((store) => (
@@ -442,7 +442,7 @@ export function HomePageClient({
           ))}
         </div>
       </section>
-    </div>
+    </>
   );
 }
 

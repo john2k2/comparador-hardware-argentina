@@ -17,7 +17,7 @@ export const revalidate = 300;
 
 export default function HomePage() {
   return (
-    <div className="w-full max-w-[1760px] mx-auto px-4 xl:px-8 py-8">
+    <div className="w-full min-w-0 max-w-[1760px] mx-auto px-4 xl:px-8 py-8">
       {/* Static content - loads immediately */}
       <HomePageClient 
         initialFeaturedProducts={[]}

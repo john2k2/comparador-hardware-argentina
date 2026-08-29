@@ -15,7 +15,7 @@ export function ProductImage({ image, productName, latestSyncAtMs, priority = fa
   const displayName = normalizeDisplayText(productName);
 
   return (
-    <div className="relative aspect-square bg-black border-4 border-border pixel-shadow p-4 flex items-center justify-center">
+    <div className="relative aspect-square overflow-hidden bg-black border-4 border-border pixel-shadow p-4 flex items-center justify-center">
       <div className="absolute top-2 left-2 w-4 h-4 border-t-4 border-l-4 border-primary" />
       <div className="absolute top-2 right-2 w-4 h-4 border-t-4 border-r-4 border-primary" />
       <div className="absolute bottom-2 left-2 w-4 h-4 border-b-4 border-l-4 border-primary" />

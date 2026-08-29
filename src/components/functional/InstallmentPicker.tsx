@@ -1,7 +1,3 @@
-// ============================================
-// InstallmentPicker - Selector de cuotas
-// ============================================
-
 import { useState } from 'react';
 import { CreditCard, Info } from 'lucide-react';
 import { formatPriceARS } from '@/lib/price-utils';
@@ -22,9 +18,7 @@ export function InstallmentPicker({
   className,
 }: InstallmentPickerProps) {
   const [selectedInstallment, setSelectedInstallment] = useState<number | null>(null);
-
-  // Encontrar mejor opción (sin interés primero)
-  const bestOption = installments.find(i => !i.interest) || installments[0];
+  const bestOption = installments.find((item) => !item.interest) || installments[0];
 
   const handleSelect = (installment: InstallmentInfo, index: number) => {
     setSelectedInstallment(index);
@@ -37,29 +31,27 @@ export function InstallmentPicker({
 
   return (
     <div className={cn('space-y-3', className)}>
-      <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-        <CreditCard className="h-4 w-4" />
+      <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-foreground/80">
+        <CreditCard className="h-4 w-4 text-secondary" />
         <span>Medios de pago</span>
       </div>
 
       <div className="space-y-2">
-        {/* Precio al contado */}
         <button
           onClick={() => handleSelect({ count: 1, amount: currentPrice, totalAmount: currentPrice, interest: false }, -1)}
           className={cn(
-            'w-full flex items-center justify-between p-3 rounded-lg border transition-colors',
+            'w-full min-h-11 flex items-center justify-between gap-3 p-3 border-2 transition-colors',
             selectedInstallment === -1
-              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-              : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600'
+              ? 'border-secondary bg-secondary/10'
+              : 'border-border bg-card hover:border-secondary',
           )}
         >
-          <span className="font-medium">Precio de contado</span>
-          <span className="font-semibold text-green-600 dark:text-green-400">
+          <span className="text-[10px] uppercase font-bold">Precio de contado</span>
+          <span className="text-[10px] font-bold text-secondary break-words">
             {formatPriceARS(currentPrice)}
           </span>
         </button>
 
-        {/* Opciones de cuotas */}
         {installments.map((installment, index) => {
           const isBest = bestOption.count === installment.count && !installment.interest;
           const isSelected = selectedInstallment === index;
@@ -69,36 +61,33 @@ export function InstallmentPicker({
               key={index}
               onClick={() => handleSelect(installment, index)}
               className={cn(
-                'w-full flex items-center justify-between p-3 rounded-lg border transition-colors relative',
+                'w-full min-h-11 flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 border-2 transition-colors text-left',
                 isSelected
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                  : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600'
+                  ? 'border-secondary bg-secondary/10'
+                  : 'border-border bg-card hover:border-secondary',
               )}
             >
-              <div className="flex items-center gap-2">
-                <span className={cn(
-                  'font-medium',
-                  installment.interest ? 'text-zinc-600 dark:text-zinc-400' : ''
-                )}>
+              <div className="flex flex-wrap items-center gap-2 min-w-0">
+                <span className="text-[10px] uppercase font-bold break-words">
                   {installment.count} cuotas de {formatPriceARS(installment.amount)}
                 </span>
                 {installment.interest && (
-                  <span className="text-xs px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                  <span className="text-[8px] uppercase font-bold px-1.5 py-0.5 border-2 border-accent text-accent">
                     con interés
                   </span>
                 )}
                 {isBest && (
-                  <span className="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                  <span className="text-[8px] uppercase font-bold px-1.5 py-0.5 border-2 border-secondary text-secondary">
                     mejor opción
                   </span>
                 )}
               </div>
-              <div className="text-right">
-                <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+              <div className="text-left sm:text-right min-w-0">
+                <span className="text-[10px] font-bold text-foreground break-words">
                   {formatPriceARS(installment.totalAmount)}
                 </span>
                 {installment.interest && (
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-[8px] uppercase text-foreground/70">
                     +{formatPriceARS(installment.totalAmount - currentPrice)} de interés
                   </p>
                 )}
@@ -108,7 +97,7 @@ export function InstallmentPicker({
         })}
       </div>
 
-      <div className="flex items-start gap-2 text-xs text-zinc-500 dark:text-zinc-400 pt-2">
+      <div className="flex items-start gap-2 text-[8px] uppercase text-foreground/70 pt-2">
         <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
         <p>Los valores pueden variar según el comercio. Las cuotas son aproximadas.</p>
       </div>

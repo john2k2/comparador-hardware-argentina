@@ -11,11 +11,11 @@ export function SectionTitle({
 }) {
   return (
     <header className="mb-4 bg-card border-[3px] border-border pixel-shadow p-4 md:p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h2 className="text-[12px] md:text-[14px] font-bold uppercase text-primary tracking-wide">
+      <div className="min-w-0">
+        <h2 className="text-[12px] md:text-[14px] font-bold uppercase text-primary tracking-wide break-words">
           {`[ ${title} ]`}
         </h2>
-        <p className="text-[9px] uppercase text-foreground/80 mt-1 tracking-wide">{subtitle}</p>
+        <p className="text-[9px] uppercase text-foreground/80 mt-1 tracking-wide break-words">{subtitle}</p>
       </div>
 
       {actionHref && actionLabel && (

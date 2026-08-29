@@ -15,7 +15,7 @@ type StoresListProps = {
 
 export function StoresList({ product, merchantPrices }: StoresListProps) {
   return (
-    <div className="bg-card border-4 border-border p-6 pixel-shadow">
+    <div className="bg-card border-4 border-border p-4 md:p-6 pixel-shadow min-w-0">
       <h2 className="text-[12px] font-bold uppercase mb-4 text-accent border-b-4 border-accent inline-block pb-1">
         TIENDAS DISPONIBLES
       </h2>
@@ -50,7 +50,7 @@ export function StoresList({ product, merchantPrices }: StoresListProps) {
               </span>
             </div>
 
-            <div className="flex items-center gap-4 justify-between sm:justify-end w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-between sm:justify-end w-full sm:w-auto min-w-0">
               <PriceDisplay
                 price={price.price}
                 originalPrice={price.originalPrice}
@@ -73,7 +73,7 @@ export function StoresList({ product, merchantPrices }: StoresListProps) {
                   });
                 }}
                 className={cn(
-                  'min-h-11 px-3 py-2 text-[8px] uppercase font-bold transition-transform active:translate-x-1 active:translate-y-1 flex items-center justify-center gap-2',
+                  'min-h-11 min-w-0 max-w-full px-3 py-2 text-[8px] uppercase font-bold transition-transform active:translate-x-1 active:translate-y-1 inline-flex items-center justify-center gap-2',
                   index === 0
                     ? 'bg-secondary text-secondary-foreground'
                     : isSponsored
@@ -81,7 +81,11 @@ export function StoresList({ product, merchantPrices }: StoresListProps) {
                       : 'bg-muted text-foreground border-2 border-border',
                 )}
               >
-                {`VER EN ${normalizeDisplayText(price.storeName || price.storeId)}`} <ExternalLink className="w-3 h-3" />
+                <span className="sm:hidden">VER EN TIENDA</span>
+                <span className="hidden sm:inline truncate">
+                  {`VER EN ${normalizeDisplayText(price.storeName || price.storeId)}`}
+                </span>
+                <ExternalLink className="w-3 h-3 shrink-0" />
               </a>
             </div>
             </div>

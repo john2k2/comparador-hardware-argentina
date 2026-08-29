@@ -119,7 +119,7 @@ export function Navigation() {
           <div className="flex h-20 items-center justify-between">
             <Link
               href="/"
-              className="flex items-center gap-3 hover:-translate-y-1 transition-transform group"
+              className="flex min-w-0 items-center gap-3 hover:-translate-y-1 transition-transform group"
             >
               {/* Logo Icon Box */}
               <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0" style={{ boxShadow: '4px 4px 0px 0px #1a1a1a' }}>
@@ -150,10 +150,9 @@ export function Navigation() {
               </div>
 
               {/* Logo Text */}
-              <div className="flex flex-col justify-center">
+              <div className="min-w-0 flex flex-col justify-center">
                 <span
-                  className="font-bold text-[14px] md:text-[18px] text-foreground uppercase tracking-wider"
-                  style={{ textShadow: '4px 4px 0px #88c0d0' }}
+                  className="font-bold text-[14px] md:text-[18px] text-foreground uppercase tracking-wider truncate md:[text-shadow:4px_4px_0_#88c0d0]"
                 >
                   HARDWARE<span className="text-primary group-hover:animate-blink-pink transition-colors ml-[1px]">AR</span>
                 </span>
@@ -196,17 +195,17 @@ export function Navigation() {
               </button>
 
               {isAuthLoading ? (
-                <div className="px-3 py-2 border-2 border-border text-[8px] uppercase text-foreground/80">
+                <div className="hidden sm:block px-3 py-2 border-2 border-border text-[8px] uppercase text-foreground/80">
                   AUTH...
                 </div>
               ) : authUser ? (
                 <>
                   <Link
                     href="/auth"
-                    className="min-h-11 px-3 py-2 border-2 border-border bg-card text-[8px] uppercase font-bold text-secondary hidden sm:inline-flex items-center gap-2"
+                    className="min-h-11 max-w-[7rem] px-3 py-2 border-2 border-border bg-card text-[8px] uppercase font-bold text-secondary hidden sm:inline-flex items-center gap-2"
                   >
-                    <UserRound className="w-3 h-3" />
-                    {getUserDisplayName(authUser)}
+                    <UserRound className="w-3 h-3 shrink-0" />
+                    <span className="truncate">{getUserDisplayName(authUser)}</span>
                   </Link>
                   <button
                     type="button"
@@ -221,7 +220,7 @@ export function Navigation() {
               ) : (
                 <Link
                   href="/auth"
-                  className="min-h-11 min-w-11 px-3 py-2 border-2 border-border bg-card text-[8px] uppercase font-bold text-secondary inline-flex items-center gap-2 hover:bg-muted transition-colors"
+                  className="hidden md:inline-flex min-h-11 min-w-11 px-3 py-2 border-2 border-border bg-card text-[8px] uppercase font-bold text-secondary items-center gap-2 hover:bg-muted transition-colors"
                   aria-label="LOGIN - Iniciar sesion"
                 >
                   <LogIn className="w-3 h-3" />
@@ -231,7 +230,7 @@ export function Navigation() {
 
               <button
                 onClick={toggleTheme}
-                className="group relative flex items-center justify-center w-12 h-12 bg-card border-4 border-border pixel-shadow-primary hover:bg-muted active:translate-x-1 active:translate-y-1 transition-all"
+                className="group relative flex items-center justify-center w-11 h-11 min-h-11 bg-card border-4 border-border pixel-shadow-primary hover:bg-muted active:translate-x-1 active:translate-y-1 transition-all"
                 aria-label={isDark ? '[ TOGGLE_OS ] MODO CLARO' : '[ TOGGLE_OS ] MODO OSCURO'}
               >
                 {isDark ? (
@@ -261,9 +260,16 @@ export function Navigation() {
                 <Link
                   href="/guia"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="px-4 py-3 text-[10px] uppercase font-bold text-secondary hover:text-primary hover:bg-muted transition-colors"
+                  className="px-4 py-3 text-[10px] uppercase font-bold text-secondary hover:text-primary hover:bg-muted transition-colors border-b border-border"
                 >
                   Guías de Presupuesto
+                </Link>
+                <Link
+                  href="/auth"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-4 py-3 text-[10px] uppercase font-bold text-secondary hover:text-primary hover:bg-muted transition-colors"
+                >
+                  {authUser ? 'Mi cuenta' : 'Iniciar sesion'}
                 </Link>
               </nav>
             </div>

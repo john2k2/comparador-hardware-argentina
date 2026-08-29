@@ -187,15 +187,14 @@ export default async function RootLayout({
 
         {/* Resto de la aplicación por encima del parallax */}
         <div className="relative z-10 flex flex-col flex-1">
-          <Navigation />
-          {/* Skip to main content link for accessibility */}
           <a
             href="#main-content"
             className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           >
             Saltar al contenido principal
           </a>
-          <main id="main-content" className="flex-1" tabIndex={-1}>
+          <Navigation />
+          <main id="main-content" className="flex-1 min-w-0" tabIndex={-1}>
             {children}
           </main>
           <footer className="border-t border-border py-12 mt-16 bg-card relative z-10">

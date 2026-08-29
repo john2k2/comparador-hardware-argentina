@@ -15,7 +15,7 @@ export default function NotFound() {
             Puede que el producto haya sido removido o nunca existio.
           </p>
           <Link href="/">
-            <button className="pixel-button">
+            <button className="pixel-button min-h-11">
               {`< VOLVER AL INICIO `}
             </button>
           </Link>

@@ -86,7 +86,7 @@ function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientPro
             El item ha sido dropeado o ya no existe en la base de datos.
           </p>
           <Link href={backHref}>
-            <button className="pixel-button">
+            <button className="pixel-button min-h-11">
               {`< VOLVER A LA BASE `}
             </button>
           </Link>
@@ -123,11 +123,11 @@ function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientPro
             priority
           />
 
-          <div className="bg-card border-4 border-border p-6 pixel-shadow">
+          <div className="bg-card border-4 border-border p-4 md:p-6 pixel-shadow min-w-0">
             <p className="text-[10px] text-secondary font-bold uppercase tracking-widest mb-2">
               {`// BRAND: ${displayBrand}`}
             </p>
-            <h1 className="text-xl md:text-2xl font-bold text-foreground uppercase leading-tight mb-2">
+            <h1 className="font-mono! text-base md:text-2xl md:font-pixel! font-bold text-foreground uppercase leading-snug mb-2 break-words tracking-normal max-w-full">
               {displayName}
             </h1>
             <p className="text-[8px] text-muted-foreground uppercase">

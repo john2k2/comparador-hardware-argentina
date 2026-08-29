@@ -43,20 +43,15 @@ export function PriceDisplay({
       )}
 
       {/* Precio Principal Neón */}
-      <div className="flex items-baseline">
+      <div className="flex items-baseline min-w-0">
         <span
           className={cn(
-            'text-secondary font-bold tracking-tighter',
-            size === 'lg' && 'animate-pixel-blink',
+            'text-secondary font-bold tracking-tighter break-words',
             sizes[size]
           )}
         >
           {formatPriceARS(price)}
         </span>
-        <span className={cn(
-          "ml-1 text-[8px] text-secondary/60 uppercase",
-          size === 'lg' && 'animate-pixel-blink'
-        )}>$</span>
       </div>
     </div>
   );
