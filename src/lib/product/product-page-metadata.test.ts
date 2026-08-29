@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  PRODUCT_TITLE_SUFFIX,
   buildCanonicalUrl,
   buildProductDescription,
   buildProductJsonLd,
@@ -89,6 +90,16 @@ describe('buildShortProductTitle', () => {
     });
     const title = buildShortProductTitle(product);
     expect(title.length).toBeLessThanOrEqual(46);
+    expect(title).not.toContain('…');
+    expect(`${title}${PRODUCT_TITLE_SUFFIX}`.length).toBeLessThanOrEqual(60);
+  });
+
+  it('orienta el snippet a comparar precios sin meter el importe en el title', () => {
+    const title = buildShortProductTitle(makeProduct());
+
+    expect(title.endsWith(': precios')).toBe(true);
+    expect(title).not.toMatch(/\$|363/);
+    expect(`${title}${PRODUCT_TITLE_SUFFIX}`).toContain('| HardwareAR');
   });
 });
 
@@ -105,7 +116,39 @@ describe('buildProductDescription', () => {
   it('incluye el precio cuando el nombre es corto', () => {
     const product = makeProduct({ name: 'RTX 4060' });
     const description = buildProductDescription(product);
-    expect(description).toContain('Mejor precio detectado');
+    expect(description).toContain('Compará precios de RTX 4060 en 2 tiendas');
+    expect(description).toContain('Mejor precio:');
+    expect(description).toContain('$');
+  });
+
+  it('no deja que un OOS mas barato aparezca como mejor precio del snippet', () => {
+    const product = makeProduct({
+      name: 'RTX 4060',
+      lowestPrice: 190_000,
+      prices: [
+        {
+          storeId: 'venex',
+          storeName: 'Venex',
+          url: 'https://venex.com.ar/rtx-4060',
+          price: 190_000,
+          stock: 'out-of-stock',
+          installment: null,
+          lastUpdated: new Date('2026-05-01'),
+        },
+        {
+          storeId: 'mexx',
+          storeName: 'Mexx',
+          url: 'https://mexx.com.ar/rtx-4060',
+          price: 250_000,
+          stock: 'in-stock',
+          installment: null,
+          lastUpdated: new Date('2026-05-01'),
+        },
+      ],
+    });
+
+    expect(buildProductDescription(product)).toContain('250.000');
+    expect(buildProductDescription(product)).not.toContain('190.000');
   });
 });
 

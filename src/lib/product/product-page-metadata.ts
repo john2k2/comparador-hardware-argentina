@@ -1,4 +1,4 @@
-import { formatPriceARS, getComparableStorePrices } from '@/lib/price-utils';
+import { computeComparableStorePriceStats, formatPriceARS, getComparableStorePrices } from '@/lib/price-utils';
 import { SITE_URL } from '@/lib/site-config';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
@@ -32,6 +32,18 @@ function stripBrandFromModel(model: string, brand: string): string {
   return model.replace(pattern, '').replace(/\s{2,}/g, ' ').trim();
 }
 
+const PRODUCT_TITLE_INTENT = ': precios';
+const PRODUCT_TITLE_NAME_MAX = 46 - PRODUCT_TITLE_INTENT.length;
+
+function truncateTitleName(value: string, maxLength: number): string {
+  const normalized = value.replace(/\s+/g, ' ').trim();
+  if (normalized.length <= maxLength) return normalized;
+
+  const sliced = normalized.slice(0, maxLength).trimEnd();
+  const lastSpace = sliced.lastIndexOf(' ');
+  return (lastSpace > maxLength * 0.55 ? sliced.slice(0, lastSpace) : sliced).trimEnd();
+}
+
 export function buildShortProductTitle(product: Product): string {
   const brand = normalizeDisplayText(product.brand);
   const rawModel = normalizeDisplayText(product.model);
@@ -39,7 +51,7 @@ export function buildShortProductTitle(product: Product): string {
   const fallbackName = normalizeDisplayText(product.name);
   const compact = [brand, model].filter(Boolean).join(' ').trim() || fallbackName;
 
-  return truncateText(compact, 46);
+  return `${truncateTitleName(compact, PRODUCT_TITLE_NAME_MAX)}${PRODUCT_TITLE_INTENT}`;
 }
 
 export function resolveProductImage(product: Product | null): string {
@@ -59,11 +71,17 @@ export function resolveProductImage(product: Product | null): string {
 
 export function buildProductDescription(product: Product): string {
   const name = normalizeDisplayText(product.name);
-  const storesCompared = getComparableStorePrices(product.prices).length;
-  const bestPrice = formatPriceARS(product.lowestPrice);
-
-  const core = truncateText(`Compara ${name} en ${storesCompared} tiendas de Argentina.`, 120);
-  const withPrice = `${core} Mejor precio detectado: ${bestPrice}.`;
+  const comparableStats = computeComparableStorePriceStats(product.prices);
+  const storesCompared = comparableStats.comparablePrices.length;
+  const lowest = comparableStats.lowest > 0 ? comparableStats.lowest : product.lowestPrice;
+  const storeLabel = storesCompared === 1 ? '1 tienda' : `${storesCompared} tiendas`;
+  const core = truncateText(
+    storesCompared > 0
+      ? `Compará precios de ${name} en ${storeLabel} de Argentina.`
+      : `Compará precios de ${name} en tiendas de Argentina.`,
+    120,
+  );
+  const withPrice = lowest > 0 ? `${core} Mejor precio: ${formatPriceARS(lowest)}.` : core;
 
   return withPrice.length <= 160 ? withPrice : core;
 }
