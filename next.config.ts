@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 import withBundleAnalyzer from '@next/bundle-analyzer';
 import { buildRemotePatterns } from '@/lib/image-domains';
+import { PUBLIC_REDIRECTS } from './src/lib/seo/public-redirects';
 
 const htmlLimitedBots = /.*/;
 
@@ -19,6 +20,9 @@ const nextConfig: NextConfig = {
     remotePatterns: buildRemotePatterns(),
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30 dias
+  },
+  async redirects() {
+    return [...PUBLIC_REDIRECTS];
   },
   async headers() {
     const securityHeaders = [

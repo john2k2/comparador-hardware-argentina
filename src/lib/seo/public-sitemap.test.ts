@@ -8,6 +8,7 @@ describe('public sitemap surface', () => {
 
     expect(urls).toContain('https://www.comparador-hardware.com.ar/');
     expect(urls).toContain('https://www.comparador-hardware.com.ar/acerca');
+    expect(urls).not.toContain('https://www.comparador-hardware.com.ar/about');
     expect(urls).toContain('https://www.comparador-hardware.com.ar/search?category=procesadores');
     expect(urls.some((url) => url.includes('/admin'))).toBe(false);
     expect(urls.some((url) => url.includes('/auth'))).toBe(false);
