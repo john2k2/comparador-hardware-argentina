@@ -3,6 +3,7 @@ import {
   hasRequiredSingleCharVariants,
   parseSingleCharQueryVariants,
   parseStrictVariantQueryTokens,
+  queryAgreesWithProductModel,
   scoreProductRelevance,
   shouldKeepByQueryIntent,
   sortProductsBySearchRelevance,
@@ -102,5 +103,89 @@ describe('search ranking', () => {
 
     expect(sortProductsBySearchRelevance(products, '5600X', 'procesadores')[0]?.name)
       .toBe('AMD Ryzen 5 5600X');
+  });
+
+  it('rejects marketing copy that mentions the queried model on a different SKU', () => {
+    expect(queryAgreesWithProductModel(
+      'ryzen 5600x',
+      'Micro AMD Ryzen 5 5600XT 4.7 Ghz AM4 (Mejor que 5600x)',
+    )).toBe(false);
+    expect(queryAgreesWithProductModel(
+      'ryzen 5600x',
+      'Micro AMD Ryzen 5 5600T 4.5 Ghz AM4 (Similar 5600xt - mejor que 5600x)',
+    )).toBe(false);
+    expect(queryAgreesWithProductModel(
+      'ryzen 5600x',
+      'Procesador Amd Am4 Ryzen 5 5600X C/Cooler',
+    )).toBe(true);
+    expect(queryAgreesWithProductModel('5600', 'AMD Ryzen 5 5600X')).toBe(true);
+    expect(queryAgreesWithProductModel('5600', 'AMD Ryzen 5 5600XT')).toBe(true);
+  });
+
+  it('requires exact GPU suffixes when the query specifies them', () => {
+    expect(queryAgreesWithProductModel(
+      'rtx 4070 ti',
+      'Placa De Video Gigabyte Rtx 4070 Ti Super Aero Oc 16gb',
+    )).toBe(false);
+    expect(queryAgreesWithProductModel(
+      'rtx 4070 ti super',
+      'Placa De Video Gigabyte Rtx 4070 Ti Super Aero Oc 16gb',
+    )).toBe(true);
+    expect(queryAgreesWithProductModel('rtx 4070 ti', 'Video Geforce Msi Ventus 3X RTX 4070 TI 12GB OC')).toBe(true);
+    expect(queryAgreesWithProductModel('rtx 4070 ti', 'PLACA DE VIDEO ASUS TUF RTX 4070 TI S OC 16GB GAMING')).toBe(false);
+    expect(queryAgreesWithProductModel('rtx 4070 ti super', 'PLACA DE VIDEO ASUS TUF RTX 4070 TI S OC 16GB GAMING')).toBe(true);
+    expect(queryAgreesWithProductModel('rtx 4070', 'Placa De Video Gigabyte Rtx 4070 Ti Super Aero Oc 16gb')).toBe(true);
+  });
+
+  it('hides a desktop-named kit if a store URL is SODIMM', () => {
+    expect(queryAgreesWithProductModel(
+      'ddr5 32gb',
+      'Memoria PC Fury DDR5 32GB 5600 Beast RGB Negra',
+      ['https://katech.com.ar/producto/memoria-ram-sodimm-32gb-ddr5-4800-crucial-ct/'],
+    )).toBe(false);
+  });
+
+  it('hides SODIMM unless the query asks for portable RAM', () => {
+    expect(queryAgreesWithProductModel(
+      'ddr5 32gb',
+      'MEMORIA RAM SODIMM 32GB DDR5 4800 CRUCIAL CT',
+    )).toBe(false);
+    expect(queryAgreesWithProductModel(
+      'ddr5 32gb sodimm',
+      'MEMORIA RAM SODIMM 32GB DDR5 4800 CRUCIAL CT',
+    )).toBe(true);
+    expect(queryAgreesWithProductModel(
+      'ddr5 32gb',
+      'Memoria Ram Adata XPG Lancer Black 32GB 5600Mhz DDR5 CL46',
+    )).toBe(true);
+  });
+
+  it('enforces G502 X via query intent including the raw query', () => {
+    const words = ['g502'];
+    expect(shouldKeepByQueryIntent('Mouse Logitech G502 Gaming HERO', words, ['x'], [], 'g502 x')).toBe(false);
+    expect(shouldKeepByQueryIntent('Mouse Logitech G502 X Gaming Black', words, ['x'], [], 'g502 x')).toBe(true);
+  });
+
+  it('ranks all-OOS matches behind products with stock', () => {
+    const oos = buildProduct('AMD Ryzen 5 5600X Box', {
+      category: 'procesadores',
+      lowestPrice: 200000,
+      prices: [{
+        storeId: 'mexx',
+        storeName: 'Mexx',
+        url: 'https://example.com/oos',
+        price: 200000,
+        stock: 'out-of-stock',
+        installment: null,
+        lastUpdated: new Date('2026-03-06T12:00:00.000Z'),
+      }],
+    });
+    const inStock = buildProduct('AMD Ryzen 5 5600X Tray', {
+      category: 'procesadores',
+      lowestPrice: 400000,
+    });
+
+    expect(sortProductsBySearchRelevance([oos, inStock], '5600X', 'procesadores')[0]?.name)
+      .toBe('AMD Ryzen 5 5600X Tray');
   });
 });

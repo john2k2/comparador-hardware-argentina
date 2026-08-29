@@ -15,9 +15,7 @@ import { filterProductStores, groupSearchProducts } from '@/lib/search/search-de
 import { SEARCH_PAGE_SIZE, paginateProducts } from '@/lib/search/search-pagination';
 import {
   normalizeSearchText,
-  parseSingleCharQueryVariants,
-  parseStrictVariantQueryTokens,
-  shouldKeepByQueryIntent,
+  matchesSearchQueryIntent,
   sortProductsBySearchRelevance,
 } from '@/lib/search/search-ranking';
 import { STORE_SCRAPERS, FRAMEWORK_SCRAPERS } from '@/lib/scrapers/scraper-registry';
@@ -199,8 +197,6 @@ export async function runLiveSearch({
   }
 
   const queryWords = normalizeSearchText(query).split(/\s+/).filter((word) => word.length > 1);
-  const singleCharVariants = parseSingleCharQueryVariants(query);
-  const strictVariants = parseStrictVariantQueryTokens(query);
 
   liveProducts = groupSearchProducts(
     liveProducts.map((product) => normalizeProductContent(product)),
@@ -212,7 +208,11 @@ export async function runLiveSearch({
 
   // P0: Unico filtro shouldKeepByQueryIntent, despues del grouping (nombres ya normalizados)
   if (queryWords.length > 0) {
-    liveProducts = liveProducts.filter((product) => shouldKeepByQueryIntent(product.name, queryWords, singleCharVariants, strictVariants));
+    liveProducts = liveProducts.filter((product) => matchesSearchQueryIntent(
+      product.name,
+      query,
+      product.prices.map((price) => price.url),
+    ));
   }
 
   if (sortBy === 'price-asc') {

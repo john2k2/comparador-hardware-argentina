@@ -14,6 +14,7 @@ import type {
   ReadProductsPageParams,
   ReadProductsParams,
 } from '@/lib/persistence/product-read-types';
+import { paginateProducts } from '@/lib/search/search-pagination';
 import type { Product } from '@/lib/types';
 
 export type { ProductSort } from '@/lib/persistence/product-read-types';
@@ -101,84 +102,26 @@ export async function readProductsFromDatabase(params: ReadProductsParams) {
 export async function readProductsPageFromDatabase(params: ReadProductsPageParams): Promise<ProductPageResult> {
   const pageSize = Math.max(1, Math.trunc(params.pageSize) || 1);
   const requestedPage = Math.max(1, Math.trunc(params.page) || 1);
-  const offset = (requestedPage - 1) * pageSize;
-  const supabase = getServerSupabaseReadClient();
 
-  if (!supabase) {
-    return { products: [], total: 0, totalPages: 0, page: requestedPage, pageSize };
-  }
-
-  const searchTerm = params.query ? sanitizeSearchTerm(params.query) : '';
-
-  let dataQuery = supabase
-    .from('products')
-    .select(PRODUCT_SELECT_FIELDS, { count: 'exact' })
-    .order('updated_at', { ascending: false })
-    .range(offset, offset + pageSize - 1);
-
-  dataQuery = applySharedProductFilters(dataQuery, {
+  const products = await readProductsFromDatabase({
+    query: params.query,
     category: params.category,
     minPrice: params.minPrice,
     maxPrice: params.maxPrice,
-    searchTerm: searchTerm || undefined,
+    storeIds: params.storeIds,
+    sortBy: params.sortBy,
+    limit: params.limit ?? 1000,
   });
 
-  const [{ data, error, count }, totalResult] = await Promise.all([
-    dataQuery,
-    buildTotalCountQuery(supabase, params.category, params.minPrice, params.maxPrice, searchTerm),
-  ]);
-
-  if (error) {
-    if (EMPTY_RESULT_ERROR_CODES.has(error.code ?? '')) {
-      return { products: [], total: 0, totalPages: 0, page: requestedPage, pageSize };
-    }
-    throw new Error(`readProductsPageFromDatabase: ${error.message}`);
-  }
-
-  const total = count ?? totalResult;
-  const totalPages = total > 0 ? Math.ceil(total / pageSize) : 0;
-  const page = Math.max(1, Math.min(requestedPage, Math.max(totalPages, 1)));
+  const pageSlice = paginateProducts(products, requestedPage, pageSize);
 
   return {
-    products: applyDatabaseReadTransforms(
-      (data as DbProductRow[] | null)?.map(mapDbProduct) ?? [],
-      {
-        searchTerm: searchTerm || undefined,
-        storeIds: params.storeIds,
-        minPrice: params.minPrice,
-        maxPrice: params.maxPrice,
-        sortBy: params.sortBy ?? 'relevance',
-      },
-    ),
-    total,
-    totalPages,
-    page,
+    products: pageSlice.paginatedProducts,
+    total: products.length,
+    totalPages: pageSlice.totalPages,
+    page: pageSlice.currentPage,
     pageSize,
   };
-}
-
-async function buildTotalCountQuery(
-  supabase: NonNullable<ReturnType<typeof getServerSupabaseReadClient>>,
-  category?: ReadProductsParams['category'],
-  minPrice?: ReadProductsParams['minPrice'],
-  maxPrice?: ReadProductsParams['maxPrice'],
-  searchTerm?: string,
-): Promise<number> {
-  const countQuery = applySharedProductFilters(
-    supabase
-      .from('products')
-      .select('id', { count: 'exact', head: true }),
-    {
-      category,
-      minPrice,
-      maxPrice,
-      searchTerm: searchTerm || undefined,
-    },
-  );
-
-  const { count, error } = await countQuery;
-  if (error || count === null) return 0;
-  return count;
 }
 
 export async function readPopularProductsFromDatabase(limit: number = 8): Promise<Product[]> {

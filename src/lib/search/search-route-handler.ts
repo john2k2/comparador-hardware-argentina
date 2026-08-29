@@ -7,6 +7,7 @@ import { recordEndpointRequestEvent, runObservedStoreScrape } from '@/lib/teleme
 import { hasStaleProducts } from '@/lib/persistence/product-staleness';
 import { readProductsFromDatabase } from '@/lib/persistence/product-read';
 import { sortProducts } from '@/lib/persistence/product-read-grouping';
+import { sortProductsBySearchRelevance } from '@/lib/search/search-ranking';
 import { createObservedProductsSourceRunner } from '@/lib/products/products-handler-shared';
 import { resolveLiveProductsList } from '@/lib/products/products-list-service';
 import { inferHardwareCategoryFromName, isHardwareCategory } from '@/lib/catalog/hardware-categories';
@@ -58,6 +59,7 @@ function buildPayloadFromProducts(products: Product[], page: number): SearchApiR
 function filterFallbackCategoryProducts(
   products: Product[],
   input: {
+    query?: string;
     minPrice?: number;
     maxPrice?: number;
     selectedStoreIds: Set<string>;
@@ -73,6 +75,10 @@ function filterFallbackCategoryProducts(
     next = next
       .map((product) => filterProductStores(product, input.selectedStoreIds))
       .filter((product): product is Product => Boolean(product));
+  }
+
+  if (input.sortBy === 'relevance' && input.query) {
+    return sortProductsBySearchRelevance(next, input.query);
   }
 
   return input.sortBy === 'relevance' ? next : sortProducts(next, input.sortBy);
@@ -273,6 +279,7 @@ export async function GET(request: NextRequest) {
       }
 
       const fallbackProducts = filterFallbackCategoryProducts(liveCategoryProducts, {
+        query,
         minPrice,
         maxPrice,
         selectedStoreIds,

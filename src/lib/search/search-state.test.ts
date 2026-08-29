@@ -61,6 +61,13 @@ describe('search state', () => {
     });
   });
 
+  it('infers category from the query and accepts computadoras', () => {
+    expect(parseSearchState({ q: 'ryzen 5600x' }).category).toBe('procesadores');
+    expect(parseSearchState({ q: 'rtx 4070 ti', category: 'tarjetas-graficas' }).category).toBe('tarjetas-graficas');
+    expect(parseSearchState({ category: 'computadoras' }).category).toBe('computadoras');
+    expect(parseSearchState({ q: 'ryzen 5600x', category: 'perifericos' }).category).toBe('perifericos');
+  });
+
   it('treats a fully empty state as no search intent', () => {
     const state = parseSearchState({});
 

@@ -24,6 +24,9 @@ describe('hardware-categories', () => {
     expect(inferHardwareCategoryFromName('producto sin categoria')).toBeUndefined();
     expect(inferHardwareCategoryFromName('PC Armada Gamer AMD Ryzen 7 7800X3D RTX 5070')).toBe('computadoras');
     expect(inferHardwareCategoryFromName('PC Creadores Intel Core Ultra 7 RTX 4070')).toBe('computadoras');
+    expect(inferHardwareCategoryFromName(
+      'PC AMD Ryzen 5 3400G 16GB RAM 512GB SSD wifi Gabinete RGB 650W Monitor 20"',
+    )).toBe('computadoras');
   });
 
   it('infers detail categories more defensively', () => {

@@ -1,3 +1,4 @@
+import { inferHardwareCategoryFromName } from '@/lib/catalog/hardware-categories';
 import type { HardwareCategory, SearchFilters } from '@/lib/types';
 
 const VALID_CATEGORIES: HardwareCategory[] = [
@@ -9,6 +10,7 @@ const VALID_CATEGORIES: HardwareCategory[] = [
   'fuentes-alimentacion',
   'gabinetes',
   'refrigeracion',
+  'computadoras',
   'perifericos',
 ];
 
@@ -61,9 +63,10 @@ function parseStores(value: string | null): string[] {
 export function parseSearchState(params: Record<string, string | string[] | undefined>): SearchPageState {
   const query = (getSingleParam(params.q) ?? '').trim();
   const categoryParam = getSingleParam(params.category);
-  const category = categoryParam && VALID_CATEGORIES.includes(categoryParam as HardwareCategory)
+  const explicitCategory = categoryParam && VALID_CATEGORIES.includes(categoryParam as HardwareCategory)
     ? categoryParam as HardwareCategory
     : undefined;
+  const category = explicitCategory ?? (query ? inferHardwareCategoryFromName(query) : undefined);
 
   const rawMinPrice = parseNonNegativeNumber(getSingleParam(params.minPrice));
   const rawMaxPrice = parseNonNegativeNumber(getSingleParam(params.maxPrice));

@@ -58,7 +58,46 @@ describe('search-dedupe', () => {
       expect(dedupeNearDuplicates(single)).toEqual(single);
     });
 
-    it('mergea productos con misma tienda y mismo precio', () => {
+    it('no mergea Dual vs TUF aunque compartan tienda y precio', () => {
+      const productA = buildProduct('ASUS GeForce RTX 4060 Dual OC 8GB', {
+        category: 'tarjetas-graficas',
+        brand: 'ASUS',
+        lowestPrice: 500_000,
+        prices: [
+          {
+            storeId: 'mexx',
+            storeName: 'Mexx',
+            url: 'https://mexx.com/rtx4060-dual',
+            price: 500_000,
+            stock: 'in-stock',
+            installment: null,
+            lastUpdated: new Date('2026-03-06T12:00:00.000Z'),
+          },
+        ],
+      });
+
+      const productB = buildProduct('ASUS TUF Gaming RTX 4060 8GB', {
+        category: 'tarjetas-graficas',
+        brand: 'ASUS',
+        lowestPrice: 500_000,
+        prices: [
+          {
+            storeId: 'mexx',
+            storeName: 'Mexx',
+            url: 'https://mexx.com/rtx4060-tuf',
+            price: 500_000,
+            stock: 'in-stock',
+            installment: null,
+            lastUpdated: new Date('2026-03-06T12:00:00.000Z'),
+          },
+        ],
+      });
+
+      const result = dedupeNearDuplicates([productA, productB]);
+      expect(result).toHaveLength(2);
+    });
+
+    it('no mergea Dual vs modelo base aunque compartan tienda y precio', () => {
       const productA = buildProduct('Placa de Video ASUS RTX 4060 8GB', {
         category: 'tarjetas-graficas',
         brand: 'ASUS',
@@ -94,8 +133,20 @@ describe('search-dedupe', () => {
       });
 
       const result = dedupeNearDuplicates([productA, productB]);
-      expect(result).toHaveLength(1);
-      expect(result[0].prices).toHaveLength(1);
+      expect(result).toHaveLength(2);
+    });
+
+    it('no mergea SODIMM con DIMM aunque la identity generica se parezca', () => {
+      const dimm = buildProduct('Corsair Vengeance 16GB DDR5 DIMM', {
+        category: 'memoria-ram',
+        brand: 'Corsair',
+      });
+      const sodimm = buildProduct('Corsair Vengeance 16GB DDR5 SODIMM', {
+        category: 'memoria-ram',
+        brand: 'Corsair',
+      });
+
+      expect(dedupeNearDuplicates([dimm, sodimm])).toHaveLength(2);
     });
 
     it('no mergea productos de categorias distintas', () => {

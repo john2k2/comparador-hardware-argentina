@@ -7,10 +7,17 @@ const BUNDLE_TERMS = [
 ];
 const COMPLETE_COMPUTER_TERMS = [
   'pc armado', 'pc armada', 'pc gamer', 'pc completa', 'pc creadores',
-  'computadora', 'desktop', 'workstation', 'notebook', 'laptop',
+  'computadora', 'desktop', 'escritorio', 'workstation', 'notebook', 'laptop',
   'all in one', 'netbook', 'chromebook', 'build',
 ];
-const BRAND_PATTERN = /\b(asus|gigabyte|msi|zotac|palit|inno3d|asrock|pny|xfx|sapphire|intel|amd|logitech|razer|hyperx|corsair|steelseries|redragon|keychron|cooler\s*master|benq|aoc|viewsonic|samsung|lg|dell|hp|lenovo)\b/;
+const BRAND_PATTERN = /\b(asus|gigabyte|msi|zotac|palit|inno3d|asrock|pny|xfx|sapphire|intel|amd|logitech|razer|hyperx|corsair|kingston|adata|patriot|crucial|gskill|hiksemi|klevv|steelseries|redragon|keychron|cooler\s*master|benq|aoc|viewsonic|samsung|lg|dell|hp|lenovo|team)\b/;
+const CPU_SUFFIX_ALTERNATION = 'x3d|gt|ge|xt|x|g|f|t';
+
+export type ChipSignature = {
+  family: string;
+  number: string;
+  suffixes: string[];
+};
 const GPU_VARIANTS = [
   'aorus', 'strix', 'tuf', 'dual', 'prime', 'proart', 'eagle', 'windforce',
   'gaming', 'ventus', 'shadow', 'suprim', 'trinity', 'phoenix', 'pulse',
@@ -179,9 +186,6 @@ export function isCompleteComputerTitle(value: string): boolean {
   const wrapped = ` ${normalized} `;
   if (COMPLETE_COMPUTER_TERMS.some((term) => wrapped.includes(` ${term} `))) return true;
 
-  const hasBundleMarker = normalized.includes('+') || /\b(combo|kit|bundle|paquete)\b/.test(normalized);
-  if (!hasBundleMarker) return false;
-
   const componentFamilies = [
     /\b(ryzen|core\s*i[3579]|procesador|cpu)\b/,
     /\b(rtx|gtx|radeon|geforce|rx\s*\d{3,4}|gpu)\b/,
@@ -189,45 +193,144 @@ export function isCompleteComputerTitle(value: string): boolean {
     /\b(ddr4|ddr5|ram|memoria)\b/,
     /\b(ssd|nvme|hdd|disco)\b/,
   ];
-  return componentFamilies.filter((pattern) => pattern.test(normalized)).length >= 2;
+  const familyCount = componentFamilies.filter((pattern) => pattern.test(normalized)).length;
+  const hasCpuOrGpu = componentFamilies[0].test(normalized) || componentFamilies[1].test(normalized);
+  const pcHints = [
+    /\b\d{1,2}\s*gb\b/,
+    /\b(?:\d+\s*tb|\d{3,4}\s*gb)\b/,
+    /\b[abhx]\d{3}[a-z]?\b/,
+    /\b(?:arc|b580)\b/,
+  ].filter((pattern) => pattern.test(normalized)).length;
+  if (/\bpc\b/.test(normalized) && hasCpuOrGpu && familyCount + pcHints >= 2) return true;
+
+  const hasBundleMarker = normalized.includes('+') || /\b(combo|kit|bundle|paquete)\b/.test(normalized);
+  if (!hasBundleMarker) return false;
+
+  return familyCount >= 2;
 }
 
-export function extractCpuModelKey(value: string): string | null {
+export function parseCpuModelSignature(value: string): ChipSignature | null {
   const normalized = normalizeIdentityText(value);
   if (!normalized) return null;
 
-  const ryzenMatch = normalized.match(/\bryzen\s*([3579])\s*(\d{3,5}(?:x3d|gt|ge|xt|x|g|f)?)\b/);
-  if (ryzenMatch) {
-    const tier = ryzenMatch[1];
-    const model = ryzenMatch[2];
-    return `cpu:ryzen${tier}${model}`;
+  const ryzen = normalized.match(new RegExp(`\\bryzen\\s*(?:([3579])\\s+)?(\\d{3,5})(${CPU_SUFFIX_ALTERNATION})?\\b`));
+  if (ryzen) {
+    return {
+      family: ryzen[1] ? `ryzen${ryzen[1]}` : 'ryzen',
+      number: ryzen[2],
+      suffixes: ryzen[3] ? [ryzen[3]] : [],
+    };
   }
 
-  const intelMatch = normalized.match(/\bcore\s*i([3579])\s*(\d{4,5}[a-z]{0,2})\b/);
-  if (intelMatch) {
-    const tier = intelMatch[1];
-    const model = intelMatch[2];
-    return `cpu:corei${tier}${model}`;
+  const intel = normalized.match(/\bcore\s*i([3579])\s*(\d{4,5})([a-z]{0,2})\b/);
+  if (intel) {
+    return {
+      family: `corei${intel[1]}`,
+      number: intel[2],
+      suffixes: intel[3] ? [intel[3]] : [],
+    };
+  }
+
+  const bareSuffixed = normalized.match(new RegExp(`\\b(\\d{3,5})(${CPU_SUFFIX_ALTERNATION})\\b`));
+  if (bareSuffixed) {
+    return { family: 'unknown', number: bareSuffixed[1], suffixes: [bareSuffixed[2]] };
+  }
+
+  if (/\b(ryzen|core|procesador|micro)\b/.test(normalized)) {
+    const number = normalized.match(/\b(\d{3,5})\b/);
+    if (number) return { family: 'unknown', number: number[1], suffixes: [] };
+  }
+
+  if (/^\d{3,5}$/.test(normalized)) {
+    return { family: 'unknown', number: normalized, suffixes: [] };
   }
 
   return null;
+}
+
+export function parseGpuChipSignature(value: string): ChipSignature | null {
+  const normalized = normalizeIdentityText(value);
+  if (!normalized) return null;
+
+  const nvidia = normalized.match(/\b(?:geforce\s+)?(rtx|gtx)\s*(\d{3,4})(?:\s*(ti))?(?:\s*(super)|\s+s(?=\s|$))?\b/);
+  if (nvidia) {
+    const suffixes: string[] = [];
+    if (nvidia[3]) suffixes.push('ti');
+    if (nvidia[4] === 'super' || (nvidia[3] && /\b(?:rtx|gtx)\s*\d{3,4}\s*ti\s+s(?:\s|$)/.test(normalized))) {
+      suffixes.push('super');
+    }
+    return { family: nvidia[1], number: nvidia[2], suffixes };
+  }
+
+  const amd = normalized.match(/\b(?:radeon\s+)?rx\s*(\d{3,4})(?:\s*(xtx|xt))?\b/);
+  if (amd) {
+    return {
+      family: 'rx',
+      number: amd[1],
+      suffixes: amd[2] ? [amd[2]] : [],
+    };
+  }
+
+  const arc = normalized.match(/\barc\s*([a-z]?\d{3})\b/);
+  if (arc) {
+    return { family: 'arc', number: arc[1], suffixes: [] };
+  }
+
+  return null;
+}
+
+export function compactGpuChip(signature: ChipSignature): string {
+  return `${signature.family}${signature.number}${signature.suffixes.join('')}`;
+}
+
+function detectRamFormFactor(normalized: string): 'sodimm' | 'dimm' | 'unk' {
+  if (/\b(sodimm|so\s*dimm|notebook|laptop)\b/.test(normalized)) return 'sodimm';
+  if (/\b(udimm|dimm|desktop)\b/.test(normalized)) return 'dimm';
+  return 'unk';
+}
+
+function detectRamFamily(normalized: string): string {
+  if (/\bimpact\b/.test(normalized)) return 'impact';
+  if (/\bbeast\b/.test(normalized)) return 'beast';
+  if (/\bvengeance\b/.test(normalized)) return 'vengeance';
+  if (/\blancer\b/.test(normalized)) return 'lancer';
+  if (/\bviper\b/.test(normalized)) return 'viper';
+  if (/\bvenom\b/.test(normalized)) return 'venom';
+  if (/\bvulcan\b/.test(normalized)) return 'vulcan';
+  return 'other';
+}
+
+export function extractRamModelKey(value: string): string | null {
+  const normalized = normalizeIdentityText(value);
+  if (!normalized) return null;
+
+  const brand = firstMatch(BRAND_PATTERN, normalized) ?? 'na';
+  const form = detectRamFormFactor(normalized);
+  const family = detectRamFamily(normalized);
+  const capacity = firstMatch(/\b(\d{1,2}\s*gb)\b/, normalized) ?? 'na';
+  const gen = firstMatch(/\b(ddr[45])\b/, normalized) ?? 'na';
+  const speed = firstMatch(/\b(4800|5200|5600|6000|6400|6800|7200|7600|8000|8200|8400)\b/, normalized) ?? 'na';
+  return `ram:${brand}:${family}:${capacity}:${gen}:${speed}:${form}`;
+}
+
+export function extractCpuModelKey(value: string): string | null {
+  const signature = parseCpuModelSignature(value);
+  if (!signature || signature.family === 'unknown') return null;
+  return `cpu:${signature.family}${signature.number}${signature.suffixes.join('')}`;
 }
 
 export function extractGpuModelKey(value: string): string | null {
   const normalized = normalizeIdentityText(value);
   if (!normalized) return null;
 
-  const chip = firstMatch(
-    /\b(rtx\s*\d{3,4}(?:\s*(?:ti|super))?|gtx\s*\d{3,4}(?:\s*(?:ti|super))?|rx\s*\d{3,4}(?:\s*xt)?|arc\s*[a-z]?\s*\d{3})\b/,
-    normalized,
-  );
+  const chip = parseGpuChipSignature(normalized);
   if (!chip) return null;
 
   const memory = firstMatch(/\b(\d{1,2}\s*gb)\b/, normalized) ?? 'na';
   const brand = firstMatch(BRAND_PATTERN, normalized) ?? 'na';
   const variant = pickVariant(normalized, GPU_VARIANTS) ?? 'base';
 
-  return `gpu:${chip}:${memory}:${brand}:${variant}`;
+  return `gpu:${compactGpuChip(chip)}:${memory}:${brand}:${variant}`;
 }
 
 export function extractMotherboardModelKey(value: string): string | null {
@@ -295,6 +398,11 @@ export function buildProductIdentityKey(
     if (motherboardKey) return `${category}::${motherboardKey}`;
   }
 
+  if (category === 'memoria-ram') {
+    const ramKey = extractRamModelKey(source);
+    if (ramKey) return `${category}::${ramKey}`;
+  }
+
   const genericKey = extractGenericModelKey(source, { allowSoftTokens: true });
   if (genericKey) return `${category}::${genericKey}`;
 
@@ -315,6 +423,9 @@ export function extractExactModelIdentity(
   }
   if (category === 'motherboards') {
     return extractMotherboardModelKey(title);
+  }
+  if (category === 'memoria-ram') {
+    return extractRamModelKey(title);
   }
 
   return extractGenericModelKey(title, { allowSoftTokens: false });
@@ -338,16 +449,9 @@ function extractCpuFamilyKey(value: string): string | null {
 }
 
 function extractGpuFamilyKey(value: string): string | null {
-  const normalized = normalizeIdentityText(value);
-  if (!normalized) return null;
-
-  const chip = firstMatch(
-    /\b(rtx\s*\d{3,4}(?:\s*(?:ti|super))?|gtx\s*\d{3,4}(?:\s*(?:ti|super))?|rx\s*\d{3,4}(?:\s*xt)?|arc\s*[a-z]?\s*\d{3})\b/,
-    normalized,
-  );
+  const chip = parseGpuChipSignature(value);
   if (!chip) return null;
-
-  return `gpu-family:${chip}`;
+  return `gpu-family:${compactGpuChip(chip)}`;
 }
 
 function extractMotherboardFamilyKey(value: string): string | null {

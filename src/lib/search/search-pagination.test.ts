@@ -41,6 +41,15 @@ function buildProduct(id: string): Product {
 }
 
 describe('search pagination', () => {
+  it('paginates 13 grouped products as 12 on page 1 and total 13', () => {
+    const products = Array.from({ length: 13 }, (_, index) => buildProduct(String(index + 1)));
+    const result = paginateProducts(products, 1, 12);
+
+    expect(result.paginatedProducts).toHaveLength(12);
+    expect(result.totalPages).toBe(2);
+    expect(products).toHaveLength(13);
+  });
+
   it('returns the requested page slice when in range', () => {
     const products = Array.from({ length: 25 }, (_, index) => buildProduct(String(index + 1)));
 

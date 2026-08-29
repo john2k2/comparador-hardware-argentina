@@ -131,6 +131,21 @@ export function parseLocalizedArsPrice(value: string): number {
   return Math.round(Math.max(...prices));
 }
 
+export function preferStorePrice<T extends StorePriceLike>(existing: T, candidate: T): T {
+  const existingUnavailable = existing.stock === 'out-of-stock';
+  const candidateUnavailable = candidate.stock === 'out-of-stock';
+
+  if (existingUnavailable !== candidateUnavailable) {
+    return candidateUnavailable ? existing : candidate;
+  }
+
+  if (candidate.price !== existing.price) {
+    return candidate.price < existing.price ? candidate : existing;
+  }
+
+  return toTimestamp(candidate.lastUpdated) > toTimestamp(existing.lastUpdated) ? candidate : existing;
+}
+
 export function pickBestStorePrices<T extends StorePriceLike>(prices: T[]): T[] {
   const bestByStore = new Map<string, T>();
 
@@ -145,22 +160,7 @@ export function pickBestStorePrices<T extends StorePriceLike>(prices: T[]): T[] 
       continue;
     }
 
-    const currentUnavailable = currentBest.stock === 'out-of-stock';
-    const candidateUnavailable = price.stock === 'out-of-stock';
-
-    if (currentUnavailable !== candidateUnavailable) {
-      if (!candidateUnavailable) bestByStore.set(storeKey, price);
-      continue;
-    }
-
-    if (price.price < currentBest.price) {
-      bestByStore.set(storeKey, price);
-      continue;
-    }
-
-    if (price.price === currentBest.price && toTimestamp(price.lastUpdated) > toTimestamp(currentBest.lastUpdated)) {
-      bestByStore.set(storeKey, price);
-    }
+    bestByStore.set(storeKey, preferStorePrice(currentBest, price));
   }
 
   return Array.from(bestByStore.values()).sort((a, b) => a.price - b.price);

@@ -1,5 +1,13 @@
-import { isBundleLikeTitle } from '@/lib/product-identity';
+import {
+  isBundleLikeTitle,
+  parseCpuModelSignature,
+  parseGpuChipSignature,
+  type ChipSignature,
+} from '@/lib/product-identity';
 import type { HardwareCategory, Product } from '@/lib/types';
+
+const PORTABLE_RAM_PATTERN = /\b(sodimm|so\s*dimm|notebook|laptop)\b/;
+const RAM_HINT_PATTERN = /\b(ddr[45]|ram|memoria|sodimm|dimm)\b/;
 
 const MEANINGFUL_SINGLE_QUERY_TOKENS = new Set(['x', 'g', 'f', 'k']);
 const STRICT_VARIANT_QUERY_TOKENS = new Set([
@@ -90,15 +98,86 @@ export function hasRequiredStrictVariants(name: string, strictVariants: string[]
   return strictVariants.every((variant) => new RegExp(`\\b${variant}\\b`).test(normalizedName));
 }
 
+function chipFamilyBasesAgree(queryFamily: string, productFamily: string): boolean {
+  if (queryFamily === 'unknown' || productFamily === 'unknown') return true;
+  if (queryFamily === productFamily) return true;
+  const normalizeFamily = (family: string) => family.replace(/[3579]$/, '');
+  return normalizeFamily(queryFamily) === normalizeFamily(productFamily);
+}
+
+function chipSignaturesAgree(query: ChipSignature, product: ChipSignature): boolean {
+  if (query.number !== product.number) return false;
+  if (!chipFamilyBasesAgree(query.family, product.family)) return false;
+  if (query.suffixes.length === 0) return true;
+  return query.suffixes.join(' ') === product.suffixes.join(' ');
+}
+
+export function queryAgreesWithProductModel(query: string, name: string, extraTexts: string[] = []): boolean {
+  const normalizedQuery = normalizeSearchText(query);
+  const portableHaystack = normalizeSearchText([name, ...extraTexts].join(' '));
+
+  if (
+    PORTABLE_RAM_PATTERN.test(portableHaystack)
+    && !PORTABLE_RAM_PATTERN.test(normalizedQuery)
+    && (RAM_HINT_PATTERN.test(normalizedQuery) || RAM_HINT_PATTERN.test(portableHaystack))
+  ) {
+    return false;
+  }
+
+  const queryGpu = parseGpuChipSignature(query);
+  if (queryGpu) {
+    const productGpu = parseGpuChipSignature(name);
+    if (!productGpu) return false;
+    return chipSignaturesAgree(queryGpu, productGpu);
+  }
+
+  const queryCpu = parseCpuModelSignature(query);
+  if (queryCpu) {
+    const productCpu = parseCpuModelSignature(name);
+    if (!productCpu) return false;
+    return chipSignaturesAgree(queryCpu, productCpu);
+  }
+
+  return true;
+}
+
 export function shouldKeepByQueryIntent(
   name: string,
   queryWords: string[],
   singleCharVariants: string[],
   strictVariants: string[],
+  rawQuery?: string,
 ): boolean {
   if (!shouldKeepByQueryWords(name, queryWords)) return false;
   if (!hasRequiredSingleCharVariants(name, queryWords, singleCharVariants)) return false;
-  return hasRequiredStrictVariants(name, strictVariants);
+  if (!hasRequiredStrictVariants(name, strictVariants)) return false;
+  if (rawQuery && !queryAgreesWithProductModel(rawQuery, name)) return false;
+  return true;
+}
+
+export function matchesSearchQueryIntent(
+  name: string,
+  rawQuery: string,
+  extraTexts: string[] = [],
+): boolean {
+  const queryWords = normalizeSearchText(rawQuery)
+    .split(/\s+/)
+    .filter((word) => word.length > 1);
+  if (!shouldKeepByQueryIntent(
+    name,
+    queryWords,
+    parseSingleCharQueryVariants(rawQuery),
+    parseStrictVariantQueryTokens(rawQuery),
+    rawQuery,
+  )) {
+    return false;
+  }
+  return queryAgreesWithProductModel(rawQuery, name, extraTexts);
+}
+
+function hasAvailableOffer(product: Product): boolean {
+  if (product.prices.length === 0) return product.lowestPrice > 0;
+  return product.prices.some((price) => price.stock !== 'out-of-stock');
 }
 
 export function scoreProductRelevance(
@@ -146,9 +225,11 @@ export function sortProductsBySearchRelevance(
     product,
     score: scoreProductRelevance(product, queryWords, query, requestedCategory),
     isBundle: !queryLooksBundle && isBundleLikeTitle(product.name),
+    hasStock: hasAvailableOffer(product),
   }));
 
   scored.sort((a, b) => {
+    if (a.hasStock !== b.hasStock) return a.hasStock ? -1 : 1;
     if (a.isBundle !== b.isBundle) return a.isBundle ? 1 : -1;
     const scoreDiff = b.score - a.score;
     if (scoreDiff !== 0) return scoreDiff;

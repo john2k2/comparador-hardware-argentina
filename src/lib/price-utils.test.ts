@@ -4,6 +4,7 @@ import {
   computeComparableStorePriceStats,
   parseLocalizedArsPrice,
   pickBestStorePrices,
+  preferStorePrice,
 } from './price-utils';
 
 function buildPrice(overrides: Partial<ProductPrice>): ProductPrice {
@@ -64,6 +65,23 @@ describe('price-utils', () => {
       ['venex', 300_000],
       ['mexx', 305_000],
     ]);
+  });
+
+  it('preferStorePrice nunca reemplaza in-stock por un OOS mas barato o mas nuevo', () => {
+    const inStock = buildPrice({ storeId: 'mexx', price: 100_000, stock: 'in-stock' });
+    const cheaperOos = buildPrice({
+      storeId: 'mexx',
+      price: 80_000,
+      stock: 'out-of-stock',
+      lastUpdated: new Date('2026-03-20T12:00:00.000Z'),
+    });
+
+    expect(preferStorePrice(inStock, cheaperOos)).toMatchObject({ price: 100_000, stock: 'in-stock' });
+    expect(preferStorePrice(cheaperOos, inStock)).toMatchObject({ price: 100_000, stock: 'in-stock' });
+    expect(preferStorePrice(
+      buildPrice({ storeId: 'mexx', price: 120_000, stock: 'in-stock' }),
+      buildPrice({ storeId: 'mexx', price: 100_000, stock: 'in-stock' }),
+    )).toMatchObject({ price: 100_000 });
   });
 
   it('pickBestStorePrices nunca deja que una oferta sin stock desplace una disponible', () => {

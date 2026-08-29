@@ -1,9 +1,12 @@
-import { computeComparableStorePriceStats } from '@/lib/price-utils';
+import { computeComparableStorePriceStats, preferStorePrice } from '@/lib/price-utils';
 import {
   buildProductFamilyKey,
   buildProductIdentityKey,
   buildProductVariantKey,
+  compactGpuChip,
   extractExactModelIdentity,
+  parseCpuModelSignature,
+  parseGpuChipSignature,
 } from '@/lib/product-identity';
 import { normalizeSearchText, scoreProductRelevance } from '@/lib/search/search-ranking';
 import type { HardwareCategory, Product } from '@/lib/types';
@@ -58,19 +61,13 @@ function mergePriceOptions(
   const merged = [...current];
 
   for (const candidate of incoming) {
-    const existingIndex = merged.findIndex((price) => price.storeId === candidate.storeId);
+    const existingIndex = merged.findIndex((price) => price.storeId.toLowerCase() === candidate.storeId.toLowerCase());
     if (existingIndex < 0) {
       merged.push(candidate);
       continue;
     }
 
-    const existing = merged[existingIndex];
-    const candidateIsBetter = candidate.price < existing.price
-      || (existing.stock === 'out-of-stock' && candidate.stock !== 'out-of-stock');
-
-    if (candidateIsBetter) {
-      merged[existingIndex] = candidate;
-    }
+    merged[existingIndex] = preferStorePrice(merged[existingIndex], candidate);
   }
 
   return merged;
@@ -87,7 +84,13 @@ function tokenizeForDedupe(value: string): string[] {
 function extractFingerprint(value: string): { brand: string | null; chip: string | null; memory: string | null } {
   const normalized = normalizeSearchText(value);
   const brand = (normalized.match(/\b(asus|gigabyte|msi|zotac|palit|inno3d|asrock|pny|xfx|sapphire|amd|intel)\b/) ?? [])[1] ?? null;
-  const chip = (normalized.match(/\b(rtx\s*\d{3,4}(?:\s*(?:ti|super))?|rx\s*\d{3,4}(?:\s*xt)?|ryzen\s*[3579]\s*\d{3,5}(?:x3d|gt|ge|xt|x|g|f)?|core\s*i[3579]\s*\d{4,5}[a-z]{0,2})\b/) ?? [])[1]?.replace(/\s+/g, '') ?? null;
+  const gpu = parseGpuChipSignature(normalized);
+  const cpu = parseCpuModelSignature(normalized);
+  const chip = gpu
+    ? compactGpuChip(gpu)
+    : cpu && cpu.family !== 'unknown'
+      ? `${cpu.family}${cpu.number}${cpu.suffixes.join('')}`
+      : null;
   const memory = (normalized.match(/\b(\d{1,2}\s*gb)\b/) ?? [])[1]?.replace(/\s+/g, '') ?? null;
   return { brand, chip, memory };
 }
@@ -117,8 +120,8 @@ function canMergeNearDuplicate(existing: Product, candidate: Product): boolean {
 
   const existingExactModel = extractExactModelIdentity(existing.category, existing.name);
   const candidateExactModel = extractExactModelIdentity(candidate.category, candidate.name);
-  if (existingExactModel && candidateExactModel && existingExactModel === candidateExactModel) {
-    return true;
+  if (existingExactModel && candidateExactModel) {
+    return existingExactModel === candidateExactModel;
   }
 
   const existingFingerprint = extractFingerprint(existing.name);
