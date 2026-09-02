@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { buildCanonicalUrl, buildNoIndexMetadata, buildPublicPageMetadata } from './metadata';
+import {
+  DEFAULT_SITE_DESCRIPTION,
+  HOME_PAGE_DESCRIPTION,
+  HOME_PAGE_TITLE,
+  buildCanonicalUrl,
+  buildNoIndexMetadata,
+  buildPublicPageMetadata,
+} from './metadata';
 
 describe('seo metadata helpers', () => {
   it('builds absolute canonical urls from relative paths', () => {
@@ -27,5 +34,20 @@ describe('seo metadata helpers', () => {
 
     expect(metadata.alternates?.canonical).toBe('https://www.comparador-hardware.com.ar/auth');
     expect(metadata.robots).toMatchObject({ index: false, follow: false });
+  });
+
+  it('keeps home and fallback metadata concise and consistently branded', () => {
+    const metadata = buildPublicPageMetadata({
+      path: '/',
+      title: HOME_PAGE_TITLE,
+      description: HOME_PAGE_DESCRIPTION,
+      absoluteTitle: true,
+    });
+
+    expect(metadata.title).toEqual({ absolute: HOME_PAGE_TITLE });
+    expect(HOME_PAGE_TITLE).toContain('Comparador Hardware Argentina');
+    expect(HOME_PAGE_TITLE.length).toBeLessThanOrEqual(60);
+    expect(HOME_PAGE_DESCRIPTION.length).toBeLessThanOrEqual(155);
+    expect(DEFAULT_SITE_DESCRIPTION.length).toBeLessThanOrEqual(155);
   });
 });

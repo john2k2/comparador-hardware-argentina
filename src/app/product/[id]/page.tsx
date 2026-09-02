@@ -1,6 +1,6 @@
 import { cache } from 'react';
 import type { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { ProductDetailClient } from '@/components/product/ProductDetailClient';
 import { readCanonicalProductIdByKey, readProductByIdFromDatabase } from '@/lib/persistence/product-read';
@@ -113,7 +113,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   if (product.canonicalProductKey) {
     const canonicalProductId = await readCanonicalProductIdByKey(product.canonicalProductKey);
     if (canonicalProductId && canonicalProductId !== id) {
-      redirect(`/product/${encodeURIComponent(canonicalProductId)}`);
+      permanentRedirect(`/product/${encodeURIComponent(canonicalProductId)}`);
     }
   }
   

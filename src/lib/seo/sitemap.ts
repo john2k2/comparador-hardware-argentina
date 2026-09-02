@@ -2,6 +2,7 @@ import { getServerSupabaseReadClient } from '@/lib/server/supabase-server';
 import { INDEXABLE_PRODUCT_ID_PREFIX } from '@/lib/seo/product-indexing';
 
 export const PRODUCT_SITEMAP_PAGE_SIZE = 2000;
+const PRODUCT_SITEMAP_READ_BATCH_SIZE = 1000;
 export { INDEXABLE_PRODUCT_ID_PREFIX, isIndexableProductId } from '@/lib/seo/product-indexing';
 
 type ProductSitemapRow = {
@@ -24,20 +25,30 @@ async function readAllIndexableProductRows(): Promise<ProductSitemapRow[]> {
   const supabase = getServerSupabaseReadClient();
   if (!supabase) return [];
 
-  const { data, error } = await supabase
-    .from('products')
-    .select('id, updated_at, canonical_product_key, product_prices(store_id, price, url)')
-    .like('id', `${INDEXABLE_PRODUCT_ID_PREFIX}%`)
-    .order('updated_at', { ascending: false })
-    .order('id', { ascending: true })
-    .range(0, 4999);
+  const rows: ProductSitemapRow[] = [];
 
-  if (error) {
-    console.warn('[sitemap] grouped products omitted:', error.message);
-    return [];
+  for (let from = 0; ; from += PRODUCT_SITEMAP_READ_BATCH_SIZE) {
+    const to = from + PRODUCT_SITEMAP_READ_BATCH_SIZE - 1;
+    const { data, error } = await supabase
+      .from('products')
+      .select('id, updated_at, canonical_product_key, product_prices(store_id, price, url)')
+      .like('id', `${INDEXABLE_PRODUCT_ID_PREFIX}%`)
+      .order('updated_at', { ascending: false })
+      .order('id', { ascending: true })
+      .range(from, to);
+
+    if (error) {
+      console.warn('[sitemap] grouped products omitted:', error.message);
+      return [];
+    }
+
+    const batch = (data ?? []) as ProductSitemapRow[];
+    rows.push(...batch);
+
+    if (batch.length < PRODUCT_SITEMAP_READ_BATCH_SIZE) break;
   }
 
-  const eligibleRows = ((data ?? []) as ProductSitemapRow[]).filter((row) => {
+  const eligibleRows = rows.filter((row) => {
     const comparableStores = new Set(
       (row.product_prices ?? [])
         .filter((price) => Number(price.price ?? 0) > 0 && Boolean(price.url))

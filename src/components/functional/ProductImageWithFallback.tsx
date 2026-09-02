@@ -31,6 +31,8 @@ export function ProductImageWithFallback({
     <img
       src={displayedSource}
       alt={isFallback ? 'Imagen no disponible' : alt}
+      width={512}
+      height={512}
       className={cn(className, isFallback && fallbackClassName)}
       loading={eager ? 'eager' : 'lazy'}
       fetchPriority={eager ? 'high' : 'auto'}

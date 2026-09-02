@@ -3,6 +3,10 @@ import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 
+export const HOME_PAGE_TITLE = 'Comparador Hardware Argentina: precios de PC';
+export const HOME_PAGE_DESCRIPTION = 'Compará precios de procesadores, placas de video, RAM, SSD y más hardware en tiendas argentinas, con stock y enlaces directos.';
+export const DEFAULT_SITE_DESCRIPTION = 'Compará precios de hardware y encontrá ofertas de componentes para PC en tiendas de Argentina.';
+
 export function buildCanonicalUrl(path: string): string {
   return `${SITE_URL}${path.startsWith('/') ? path : `/${path}`}`;
 }
@@ -11,11 +15,13 @@ export function buildPublicPageMetadata(input: {
   path: string;
   title: string;
   description: string;
+  absoluteTitle?: boolean;
 }): Metadata {
   const canonicalUrl = buildCanonicalUrl(input.path);
+  const socialTitle = input.absoluteTitle ? input.title : `${input.title} | ${SITE_NAME}`;
 
   return {
-    title: input.title,
+    title: input.absoluteTitle ? { absolute: input.title } : input.title,
     description: input.description,
     alternates: {
       canonical: canonicalUrl,
@@ -23,20 +29,20 @@ export function buildPublicPageMetadata(input: {
     openGraph: {
       type: 'website',
       url: canonicalUrl,
-      title: `${input.title} | ${SITE_NAME}`,
+      title: socialTitle,
       description: input.description,
       images: [
         {
           url: DEFAULT_OG_IMAGE,
           width: 1200,
           height: 630,
-          alt: `${input.title} | ${SITE_NAME}`,
+          alt: socialTitle,
         },
       ],
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${input.title} | ${SITE_NAME}`,
+      title: socialTitle,
       description: input.description,
       images: [DEFAULT_OG_IMAGE],
     },

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildApiSearchKey,
+  buildSearchPaginationHref,
   buildSearchRoute,
   hasSearchIntent,
   parseSearchState,
@@ -40,6 +41,17 @@ describe('search state', () => {
 
     expect(buildApiSearchKey(state)).toBe('q=g502+x&stores=mexx%2Cvenex&sortBy=price-desc');
     expect(buildSearchRoute(state)).toBe('/search?q=g502+x&stores=mexx%2Cvenex&sortBy=price-desc&page=3');
+  });
+
+  it('builds crawlable pagination links while preserving active filters', () => {
+    const currentRoute = '/search?q=ryzen+7600&category=procesadores&stores=mexx%2Cvenex&sortBy=price-desc&page=3';
+
+    expect(buildSearchPaginationHref(currentRoute, 2)).toBe(
+      '/search?q=ryzen+7600&category=procesadores&stores=mexx%2Cvenex&sortBy=price-desc&page=2',
+    );
+    expect(buildSearchPaginationHref(currentRoute, 1)).toBe(
+      '/search?q=ryzen+7600&category=procesadores&stores=mexx%2Cvenex&sortBy=price-desc',
+    );
   });
 
   it('derives filters and intent consistently', () => {

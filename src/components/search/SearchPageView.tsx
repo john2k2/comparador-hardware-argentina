@@ -5,7 +5,7 @@ import { SearchBar, ProductGrid, Filters } from '@/components/functional';
 import { getCategorySeoCopy } from '@/lib/search/search-seo';
 import { categories, stores as defaultStores } from '@/lib/scrapers/static-data';
 import { type HardwareCategory, type Product, type SearchFilters } from '@/lib/types';
-import { toSearchFilters } from '@/lib/search/search-state';
+import { buildSearchPaginationHref, toSearchFilters } from '@/lib/search/search-state';
 
 type SearchPageViewProps = {
   products: Product[];
@@ -153,7 +153,13 @@ export function SearchPageView({
                 surface="search_results"
               />
             )}
-            <PaginationControls currentPage={currentPage} totalPages={totalPages} isBusy={isBusy} onPageChange={onPageChange} />
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              isBusy={isBusy}
+              searchRoute={searchRoute}
+              onPageChange={onPageChange}
+            />
           </div>
         </div>
       </div>
@@ -254,27 +260,63 @@ function SearchErrorState({ error, onRetry }: { error: string; onRetry: () => vo
   );
 }
 
-function PaginationControls({ currentPage, totalPages, isBusy, onPageChange }: { currentPage: number; totalPages: number; isBusy: boolean; onPageChange: (p: number) => void }) {
-  if (isBusy || currentPage >= totalPages || totalPages <= 1) return null;
+type PaginationControlsProps = {
+  currentPage: number;
+  totalPages: number;
+  isBusy: boolean;
+  searchRoute: string;
+  onPageChange: (page: number) => void;
+};
+
+export function PaginationControls({
+  currentPage,
+  totalPages,
+  isBusy,
+  searchRoute,
+  onPageChange,
+}: PaginationControlsProps) {
+  if (isBusy || totalPages <= 1) return null;
+
+  const navigateToPage = (page: number) => {
+    onPageChange(page);
+    document.getElementById('product-grid-start')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <div className="flex justify-between items-center mt-6 pt-6 border-t-4 border-border border-dashed">
-      <button
-        onClick={() => { onPageChange(currentPage - 1); document.getElementById('product-grid-start')?.scrollIntoView({ behavior: 'smooth' }); }}
-        disabled={currentPage === 1}
-        className="pixel-button disabled:opacity-50 disabled:active:translate-y-0 disabled:active:translate-x-0 disabled:cursor-not-allowed text-[10px] min-h-11"
-      >
-        {`<< PREV`}
-      </button>
+      {currentPage > 1 ? (
+        <Link
+          href={buildSearchPaginationHref(searchRoute, currentPage - 1)}
+          onClick={() => navigateToPage(currentPage - 1)}
+          rel="prev"
+          aria-label={`Ir a la página ${currentPage - 1}`}
+          className="pixel-button text-[10px] min-h-11"
+        >
+          {`<< PREV`}
+        </Link>
+      ) : (
+        <span aria-disabled="true" className="pixel-button opacity-50 cursor-not-allowed text-[10px] min-h-11">
+          {`<< PREV`}
+        </span>
+      )}
       <div className="text-[10px] font-bold uppercase text-primary px-4 py-2 border-2 border-primary bg-card pixel-shadow-primary flex items-center gap-2">
         <span className="hidden sm:inline">NIVEL</span> {currentPage} / {totalPages}
       </div>
-      <button
-        onClick={() => { onPageChange(currentPage + 1); document.getElementById('product-grid-start')?.scrollIntoView({ behavior: 'smooth' }); }}
-        disabled={currentPage === totalPages}
-        className="pixel-button disabled:opacity-50 disabled:active:translate-y-0 disabled:active:translate-x-0 disabled:cursor-not-allowed text-[10px] min-h-11"
-      >
-        {`NEXT >>`}
-      </button>
+      {currentPage < totalPages ? (
+        <Link
+          href={buildSearchPaginationHref(searchRoute, currentPage + 1)}
+          onClick={() => navigateToPage(currentPage + 1)}
+          rel="next"
+          aria-label={`Ir a la página ${currentPage + 1}`}
+          className="pixel-button text-[10px] min-h-11"
+        >
+          {`NEXT >>`}
+        </Link>
+      ) : (
+        <span aria-disabled="true" className="pixel-button opacity-50 cursor-not-allowed text-[10px] min-h-11">
+          {`NEXT >>`}
+        </span>
+      )}
     </div>
   );
 }

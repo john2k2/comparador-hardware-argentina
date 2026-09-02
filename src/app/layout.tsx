@@ -11,6 +11,7 @@ import { Analytics } from "@/components/functional/Analytics";
 import { CommercialDisclosure } from "@/components/functional/CommercialDisclosure";
 import { buildSiteJsonLd } from "@/lib/seo/site-jsonld";
 import { serializeJsonLd } from "@/lib/seo/serialize-jsonld";
+import { DEFAULT_SITE_DESCRIPTION } from "@/lib/seo/metadata";
 
 
 const pixelFont = Press_Start_2P({
@@ -27,10 +28,10 @@ export const metadata: Metadata = {
     apple: '/favicon.svg',
   },
   title: {
-    default: "Comparador de Precios Hardware Argentina | Encuentra las Mejores Ofertas",
+    default: SITE_NAME,
     template: `%s | ${SITE_NAME}`,
   },
-  description: "Compara precios de hardware de las mejores tiendas de Argentina. Procesadores, tarjetas graficas, motherboards, memoria RAM, SSD y mas. Encuentra el mejor precio y ahorra hasta un 30%.",
+  description: DEFAULT_SITE_DESCRIPTION,
   keywords: [
     "comparador de precios hardware",
     "hardware Argentina",
@@ -55,8 +56,8 @@ export const metadata: Metadata = {
     locale: "es_AR",
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: "Comparador de Precios Hardware Argentina | Encuentra las Mejores Ofertas",
-    description: "Compara precios de hardware de las mejores tiendas de Argentina. Procesadores, tarjetas graficas, motherboards y mas. Encuentra el mejor precio.",
+    title: SITE_NAME,
+    description: DEFAULT_SITE_DESCRIPTION,
     images: [
       {
         url: "/og-image.png",
@@ -69,7 +70,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: SITE_NAME,
-    description: "Compara precios de hardware y encuentra las mejores ofertas en Argentina",
+    description: DEFAULT_SITE_DESCRIPTION,
     images: ["/og-image.png"],
   },
   robots: {

@@ -5,12 +5,17 @@ import { FeaturedProductsSection } from '@/components/home/FeaturedProductsSecti
 import { PriceDropSection } from '@/components/home/PriceDropSection';
 import { PopularProductsSection } from '@/components/home/PopularProductsSection';
 import { ProductGridSkeleton } from '@/components/ui/Skeleton';
-import { buildPublicPageMetadata } from '@/lib/seo/metadata';
+import {
+  HOME_PAGE_DESCRIPTION,
+  HOME_PAGE_TITLE,
+  buildPublicPageMetadata,
+} from '@/lib/seo/metadata';
 
 export const metadata: Metadata = buildPublicPageMetadata({
   path: '/',
-  title: 'Comparador de precios de hardware en Argentina',
-  description: 'Compara precios de hardware en tiendas de Argentina. Procesadores, placas de video, RAM, SSD y mas con enlaces directos a cada tienda.',
+  title: HOME_PAGE_TITLE,
+  description: HOME_PAGE_DESCRIPTION,
+  absoluteTitle: true,
 });
 
 export const revalidate = 300;

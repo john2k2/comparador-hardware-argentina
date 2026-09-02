@@ -131,6 +131,21 @@ export function buildSearchRoute(state: SearchPageState): string {
   return queryString ? `/search?${queryString}` : '/search';
 }
 
+export function buildSearchPaginationHref(searchRoute: string, page: number): string {
+  const [path, queryString = ''] = searchRoute.split('?', 2);
+  const params = new URLSearchParams(queryString);
+  const safePage = Math.max(1, Math.trunc(page));
+
+  if (safePage === 1) {
+    params.delete('page');
+  } else {
+    params.set('page', String(safePage));
+  }
+
+  const nextQueryString = params.toString();
+  return nextQueryString ? `${path}?${nextQueryString}` : path;
+}
+
 export function toSearchFilters(state: SearchPageState): SearchFilters {
   return {
     query: state.query,
