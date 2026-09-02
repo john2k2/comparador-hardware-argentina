@@ -13,7 +13,8 @@ import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 const PAGE_URL = `${SITE_URL}/indice-precios-hardware`;
 const CSV_URL = `${PAGE_URL}/datos.csv`;
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Índice de precios de hardware en Argentina',
@@ -105,7 +106,12 @@ export function PriceIndexPageContent({ snapshot, nonce }: { snapshot: PriceInde
 
   return (
     <main className="mx-auto w-full max-w-[1500px] px-4 py-10 md:px-8 md:py-14">
-      <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
+      <script
+        nonce={nonce}
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
 
       <header className="border-l-8 border-primary pl-5 md:pl-8">
         <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.22em] text-secondary">

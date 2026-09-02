@@ -74,9 +74,12 @@ function asNonNegativeInteger(value: unknown): number | null {
 }
 
 function asIsoDate(value: unknown): string | null {
-  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-  const timestamp = Date.parse(`${value}T00:00:00.000Z`);
-  return Number.isFinite(timestamp) ? value : null;
+  if (typeof value !== 'string') return null;
+  const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (!match) return null;
+  const date = match[1];
+  const timestamp = Date.parse(`${date}T00:00:00.000Z`);
+  return Number.isFinite(timestamp) ? date : null;
 }
 
 function round(value: number): number {

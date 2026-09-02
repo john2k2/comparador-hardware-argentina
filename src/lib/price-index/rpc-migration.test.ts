@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const migrationPath = join(process.cwd(), 'supabase/migrations/20260902120000_hardware_price_index_rpc.sql');
+const migrationPath = join(process.cwd(), 'supabase/migrations/20260902140000_hardware_price_index_rpc_fast.sql');
 
 describe('hardware price index RPC migration', () => {
   const sql = readFileSync(migrationPath, 'utf8').toLowerCase();
@@ -15,6 +15,10 @@ describe('hardware price index RPC migration', () => {
     expect(sql).toContain('offer_url');
     expect(sql).toContain('percentile_cont(0.5)');
     expect(sql).toContain("'in-stock', 'low-stock'");
+    expect(sql).toContain('lead(quote_day)');
+    expect(sql).toContain('greatest(w.quote_day');
+    expect(sql).toContain('#variable_conflict use_column');
+    expect(sql).not.toContain('cross join lateral (');
   });
 
   it('is invoker-only and callable exclusively by service_role', () => {

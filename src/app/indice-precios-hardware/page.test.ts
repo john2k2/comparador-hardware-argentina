@@ -1,4 +1,4 @@
-import { createElement } from 'react';
+import { Children, createElement, isValidElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -54,6 +54,15 @@ describe('hardware price index page', () => {
 
     expect(mocks.headers).toHaveBeenCalledOnce();
     expect(markup).toContain('nonce="nonce-123"');
+  });
+
+  it('suppresses CSP nonce hydration mismatch on the json-ld script', () => {
+    const tree = PriceIndexPageContent({ snapshot, nonce: 'nonce-123' });
+    const script = Children.toArray(tree.props.children).find(
+      (child) => isValidElement(child) && child.type === 'script',
+    );
+
+    expect(isValidElement(script) && script.props.suppressHydrationWarning).toBe(true);
   });
 
   it('links visibly to every category represented by the index', () => {

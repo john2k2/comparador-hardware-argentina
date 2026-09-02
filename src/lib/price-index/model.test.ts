@@ -28,6 +28,15 @@ describe('price index model', () => {
     expect(snapshot.series[0]?.variations.days90).toBeNull();
   });
 
+  it('accepts timestamp-shaped day values from PostgREST', () => {
+    const snapshot = buildPriceIndexSnapshot([
+      { day: '2026-06-01T00:00:00+00:00', category: 'procesadores', median_price_ars: 200000, product_count: 4, offer_count: 7 },
+    ]);
+
+    expect(snapshot.status).toBe('ready');
+    expect(snapshot.series[0]?.points[0]?.date).toBe('2026-06-01');
+  });
+
   it('drops malformed rows and returns an explicit empty state without invented figures', () => {
     const snapshot = buildPriceIndexSnapshot([
       { day: 'not-a-date', category: 'procesadores', median_price_ars: 'x', product_count: 0, offer_count: 0 },
