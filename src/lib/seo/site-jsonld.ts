@@ -1,4 +1,4 @@
-import { SITE_NAME, SITE_URL } from '@/lib/site-config';
+import { SITE_BRAND_SHORT, SITE_NAME, SITE_URL, SUPPORT_EMAIL } from '@/lib/site-config';
 
 export function buildSiteJsonLd() {
   return [
@@ -7,8 +7,18 @@ export function buildSiteJsonLd() {
       '@type': 'Organization',
       '@id': `${SITE_URL}#organization`,
       name: SITE_NAME,
+      alternateName: SITE_BRAND_SHORT,
       url: SITE_URL,
       logo: `${SITE_URL}/og-image.png`,
+      ...(SUPPORT_EMAIL
+        ? {
+            contactPoint: {
+              '@type': 'ContactPoint',
+              email: SUPPORT_EMAIL,
+              contactType: 'customer support',
+            },
+          }
+        : {}),
     },
     {
       '@context': 'https://schema.org',

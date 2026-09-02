@@ -26,7 +26,7 @@ describe('priority SEO landings', () => {
     const comparison = getComparisonBySlug('ryzen-5-7600x-vs-ryzen-7-5700x');
 
     expect(comparison?.title).toBe('Ryzen 7600X vs 5700X: precios y cuál conviene');
-    expect(comparison?.metadataTitle).toBe('Ryzen 7600X vs 5700X: cuál conviene | HardwareAR');
+    expect(comparison?.metadataTitle).toBe('Ryzen 7600X vs 5700X: cuál conviene | Comparador Hardware Argentina');
     expect(comparison?.description).toContain('AM5 o actualizar una PC AM4');
   });
 
@@ -67,7 +67,7 @@ describe('priority SEO landings', () => {
     const guide = getBudgetGuideBySlug(slug);
 
     expect(guide?.title).toBe(expectedTitle);
-    expect(guide?.metadataTitle).toBe(`${slug.includes('-2-') ? 'PC Gamer $2M' : 'PC Gamer $3M'}: componentes y precios | HardwareAR`);
+    expect(guide?.metadataTitle).toBe(`${slug.includes('-2-') ? 'PC Gamer $2M' : 'PC Gamer $3M'}: componentes y precios | Comparador Hardware Argentina`);
     expect(guide?.description).toContain('Compará componentes');
   });
 });

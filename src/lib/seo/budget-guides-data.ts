@@ -1,5 +1,6 @@
 import type { HardwareCategory } from '@/lib/types';
 import type { GuideSlotSpec } from '@/lib/seo/budget-guide-pricing';
+import { SITE_NAME } from '@/lib/site-config';
 
 export type BudgetGuideComponentSpec = GuideSlotSpec & {
   searchTerms: string[];
@@ -33,7 +34,7 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
   {
     slug: 'pc-gamer-1-millon',
     title: 'PC Gamer $1M 2026',
-    description: 'Armá la mejor PC gamer por 1 millón de pesos. Componentes recomendados con precios actualizados de 20+ tiendas de Argentina.',
+    description: 'Armá la mejor PC gamer por 1 millón de pesos. Componentes recomendados con precios actualizados de tiendas de Argentina.',
     keywords: ['pc gamer 1 millon', 'pc gamer barata argentina', 'armar pc 1 millon pesos', 'pc gaming economica'],
     budget: 1000000,
     performance: '1080p 60FPS+',
@@ -127,7 +128,7 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
   {
     slug: 'pc-gamer-2-millones',
     title: 'PC Gamer por $2 millones: componentes y precios',
-    metadataTitle: 'PC Gamer $2M: componentes y precios | HardwareAR',
+    metadataTitle: `PC Gamer $2M: componentes y precios | ${SITE_NAME}`,
     description: 'Compará componentes y precios para armar una PC gamer por $2 millones en Argentina: Ryzen 5, RTX 4060 o RX 7600 y 32 GB DDR5.',
     keywords: ['pc gamer 2 millones', 'pc gaming argentina 2m', 'mejor pc gamer precio calidad', 'pc gamer rtx 4060'],
     budget: 2000000,
@@ -222,7 +223,7 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
   {
     slug: 'pc-gamer-3-millones',
     title: 'PC Gamer por $3 millones: componentes y precios',
-    metadataTitle: 'PC Gamer $3M: componentes y precios | HardwareAR',
+    metadataTitle: `PC Gamer $3M: componentes y precios | ${SITE_NAME}`,
     description: 'Compará componentes y precios para armar una PC gamer por $3 millones en Argentina: Ryzen 7, RTX 5070 o RX 7800 XT y 32 GB DDR5.',
     keywords: ['pc gamer 3 millones', 'pc alta gama argentina', 'pc gamer rtx 5070', 'pc gaming 1440p'],
     budget: 3000000,

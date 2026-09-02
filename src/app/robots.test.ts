@@ -6,6 +6,9 @@ describe('robots route', () => {
     const output = robots();
     const firstRule = Array.isArray(output.rules) ? output.rules[0] : output.rules;
 
+    expect(firstRule?.allow).toEqual(
+      expect.arrayContaining(['/', '/search?category=', '/product/', '/llms.txt']),
+    );
     expect(firstRule?.disallow).toEqual(
       expect.arrayContaining(['/admin', '/admin/', '/api', '/api/', '/auth', '/auth/']),
     );

@@ -1,4 +1,5 @@
 import type { Product } from '@/lib/types';
+import { SITE_NAME } from '@/lib/site-config';
 
 export type ComparisonDefinition = {
   slug: string;
@@ -30,7 +31,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
   {
     slug: 'rtx-4060-vs-rx-7600',
     title: 'RTX 4060 vs RX 7600',
-    description: 'Compará precios de RTX 4060 vs RX 7600 en 20+ tiendas de Argentina. Encontrá la mejor placa de video para gaming 1080p al mejor precio.',
+    description: 'Compará precios de RTX 4060 vs RX 7600 en tiendas de Argentina. Encontrá la mejor placa de video para gaming 1080p al mejor precio.',
     keywords: ['rtx 4060 vs rx 7600', '4060 vs 7600 argentina', 'mejor placa video 1080p', 'rtx 4060 precio argentina'],
     product1: {
       name: 'RTX 4060',
@@ -67,7 +68,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
   {
     slug: 'ryzen-5-7600x-vs-ryzen-7-5700x',
     title: 'Ryzen 7600X vs 5700X: precios y cuál conviene',
-    metadataTitle: 'Ryzen 7600X vs 5700X: cuál conviene | HardwareAR',
+    metadataTitle: `Ryzen 7600X vs 5700X: cuál conviene | ${SITE_NAME}`,
     description: 'Compará Ryzen 5 7600X vs Ryzen 7 5700X, sus precios y plataformas para decidir si conviene armar en AM5 o actualizar una PC AM4.',
     keywords: ['7600x vs 5700x', 'ryzen 5 vs ryzen 7', 'mejor procesador gaming argentina', 'am5 vs am4'],
     product1: {
@@ -216,7 +217,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
   {
     slug: 'rtx-5090-vs-rx-9070-xt',
     title: 'RTX 5090 vs RX 9070 XT',
-    description: 'Compará precios de RTX 5090 vs RX 9070 XT en 20+ comercios argentinos. Rendimiento 4K, ray tracing, DLSS 4 vs FSR 4 y cuál elegir.',
+    description: 'Compará precios de RTX 5090 vs RX 9070 XT en tiendas de Argentina. Rendimiento 4K, ray tracing, DLSS 4 vs FSR 4 y cuál elegir.',
     keywords: ['rtx 5090 vs rx 9070 xt', '5090 vs 9070 xt argentina', 'mejor placa video 4k', 'rtx 5090 precio argentina'],
     product1: {
       name: 'RTX 5090',

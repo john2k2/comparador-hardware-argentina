@@ -7,6 +7,7 @@ import { readCanonicalProductIdByKey, readProductByIdFromDatabase } from '@/lib/
 import { formatPriceARS, getComparableStorePrices } from '@/lib/price-utils';
 import { decideProductPageIndexing } from '@/lib/seo/product-indexing';
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
+import { SITE_NAME } from '@/lib/site-config';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
 import { getProductContent } from '@/lib/product/product-seo-content';
@@ -222,7 +223,7 @@ function ProductSeoSupport({ product }: { product: Product }) {
       {/* Disclaimer final */}
       <div className="bg-muted border-2 border-border p-4">
         <p className="text-[10px] text-muted-foreground font-mono leading-relaxed">
-          HardwareAR es un comparador independiente. No vendemos productos ni recibimos comisiones por las compras.
+          {SITE_NAME} es un comparador independiente. No vendemos productos ni recibimos comisiones por las compras.
           Los valores mostrados son referenciales y pueden variar. Siempre confirmá el importe final, disponibilidad
           y condiciones en el comercio antes de comprar.
         </p>

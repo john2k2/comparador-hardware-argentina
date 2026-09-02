@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import type { SearchPageState } from './search-state';
-import { getCategorySeoCopy, isIndexableCategoryLanding } from './search-seo';
+import { getCategorySeoCopy, isCategoryCanonicalLanding, isIndexableCategoryLanding } from './search-seo';
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { stores as defaultStores } from '@/lib/scrapers/static-data';
 
@@ -49,23 +49,24 @@ function buildSearchMetadata(input: {
 export function resolveSearchMetadata(state: SearchPageState): Metadata {
   const categorySeoCopy = getCategorySeoCopy(state.category);
   const hasQuery = state.query.length > 0;
+  const categoryCanonicalLanding = isCategoryCanonicalLanding(state) && Boolean(categorySeoCopy);
   const indexableCategoryLanding = isIndexableCategoryLanding(state) && Boolean(categorySeoCopy);
   const selectedStoreNames = state.stores
     .map((storeId) => defaultStores.find((store) => store.id === storeId)?.name ?? storeId)
     .filter(Boolean);
   const hasStoreFilter = selectedStoreNames.length > 0;
   const hasSortOnly = !hasQuery && !state.category && !hasStoreFilter && state.sortBy !== 'relevance';
-  const canonical = indexableCategoryLanding
+  const canonical = categoryCanonicalLanding
     ? `${SITE_URL}/search?category=${state.category}`
     : `${SITE_URL}/search`;
 
-  if (indexableCategoryLanding && categorySeoCopy) {
+  if (categoryCanonicalLanding && categorySeoCopy) {
     return buildSearchMetadata({
       title: categorySeoCopy.title,
-      absoluteTitle: `${categorySeoCopy.title} | HardwareAR`,
+      absoluteTitle: `${categorySeoCopy.title} | ${SITE_NAME}`,
       description: categorySeoCopy.description,
       canonical,
-      index: true,
+      index: indexableCategoryLanding,
     });
   }
 

@@ -2,10 +2,11 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { readProductsFromDatabase } from '@/lib/persistence/product-read';
-import { SITE_URL } from '@/lib/site-config';
 import { formatPriceARS } from '@/lib/price-utils';
 import { GUIDE_CATALOG_CATEGORIES, resolveGuideSlots, type ResolvedGuideComponent } from '@/lib/seo/budget-guide-pricing';
 import { getBudgetGuideBySlug } from '@/lib/seo/budget-guides-data';
+import { resolveGuideFaqs } from '@/lib/seo/guide-faqs';
+import { resolveGuidePageMetadata } from '@/lib/seo/landing-metadata';
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import Link from 'next/link';
 
@@ -20,29 +21,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const guide = getBudgetGuideBySlug(slug);
-  
-  if (!guide) {
-    return {
-      title: 'Guía no encontrada',
-    };
-  }
-
-  return {
-    title: guide.metadataTitle ? { absolute: guide.metadataTitle } : guide.title,
-    description: guide.description,
-    keywords: guide.keywords,
-    alternates: {
-      canonical: `${SITE_URL}/guia/${slug}`,
-    },
-    openGraph: {
-      type: 'article',
-      url: `${SITE_URL}/guia/${slug}`,
-      title: guide.title,
-      description: guide.description,
-      images: [`${SITE_URL}/og-image.png`],
-    },
-  };
+  return resolveGuidePageMetadata(slug);
 }
 
 export const revalidate = 300;
@@ -65,6 +44,7 @@ export default async function BudgetGuidePage({ params }: Props) {
   ).flat();
   const nonce = (await headers()).get('x-content-security-policy-nonce') ?? undefined;
   const resolved = resolveGuideSlots(guide.components, catalogProducts);
+  const faqs = resolveGuideFaqs(guide.faqs, resolved.cpu, resolved.gpu);
   const slots = [
     { label: 'PROCESADOR', item: resolved.cpu },
     { label: 'PLACA DE VIDEO', item: resolved.gpu },
@@ -196,13 +176,13 @@ export default async function BudgetGuidePage({ params }: Props) {
         </div>
       </section>
 
-      {guide.faqs.length > 0 && (
+      {faqs.length > 0 && (
         <section className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow mb-8">
           <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">
             [ PREGUNTAS FRECUENTES ]
           </h2>
           <div className="space-y-4">
-            {guide.faqs.map((faq) => (
+            {faqs.map((faq) => (
               <div key={faq.question}>
                 <h3 className="text-[11px] md:text-[12px] font-bold normal-case tracking-normal text-foreground font-mono">
                   {faq.question}
@@ -225,7 +205,7 @@ export default async function BudgetGuidePage({ params }: Props) {
           __html: serializeJsonLd({
             '@context': 'https://schema.org',
             '@type': 'FAQPage',
-            mainEntity: guide.faqs.map(faq => ({
+            mainEntity: faqs.map(faq => ({
               '@type': 'Question',
               name: faq.question,
               acceptedAnswer: {

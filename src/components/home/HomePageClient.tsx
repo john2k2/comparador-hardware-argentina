@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { ProductGrid, SearchBar } from '@/components/functional';
 import { resolveSponsoredStores } from '@/lib/commercial';
+import { HOME_BUDGET_GUIDE_LINKS, HOME_CITATION_BLOCK } from '@/lib/seo/home-copy';
 import { HOME_INTENT_LINKS, HOME_PROCESSOR_PROMO } from '@/lib/seo/home-intent-links';
 import { categories, stores as defaultStores } from '@/lib/scrapers/static-data';
 import { readRecentlyViewedProducts } from '@/lib/client/recently-viewed';
@@ -162,6 +163,9 @@ export function HomePageClient({
           </p>
           <p className="text-[10px] md:text-[9px] uppercase text-foreground/80 mt-2 tracking-normal break-words">
             COMPARADOR INDEPENDIENTE: NO VENDEMOS, SOLO MOSTRAMOS PRECIOS, DISPONIBILIDAD Y ENLACES A TIENDAS
+          </p>
+          <p className="mt-3 max-w-3xl text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
+            {HOME_CITATION_BLOCK}
           </p>
           <nav aria-label="Comparar por categoría" className="mt-4 flex flex-wrap gap-3">
             {HOME_INTENT_LINKS.map((link) => (
@@ -391,14 +395,8 @@ export function HomePageClient({
         actionHref="/guia"
         actionLabel="VER TODAS"
       />
-      <section className="mb-8 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { slug: 'pc-gamer-1-millon', title: '$1.000.000', target: '1080p 60fps' },
-          { slug: 'pc-gamer-1-5-millones', title: '$1.500.000', target: '1080p 144Hz' },
-          { slug: 'pc-gamer-2-millones', title: '$2.000.000', target: '1440p 60fps' },
-          { slug: 'pc-gamer-3-millones', title: '$3.000.000', target: '1440p 144Hz' },
-          { slug: 'pc-gamer-4-millones', title: '$4.000.000+', target: '4K Gaming' },
-        ].map((guide) => (
+      <section className="mb-8 grid md:grid-cols-3 gap-4">
+        {HOME_BUDGET_GUIDE_LINKS.map((guide) => (
           <Link
             key={guide.slug}
             href={`/guia/${guide.slug}`}

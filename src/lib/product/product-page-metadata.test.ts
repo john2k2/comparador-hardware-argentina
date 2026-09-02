@@ -91,7 +91,8 @@ describe('buildShortProductTitle', () => {
     const title = buildShortProductTitle(product);
     expect(title.length).toBeLessThanOrEqual(46);
     expect(title).not.toContain('…');
-    expect(`${title}${PRODUCT_TITLE_SUFFIX}`.length).toBeLessThanOrEqual(60);
+    expect(`${title}${PRODUCT_TITLE_SUFFIX}`.length).toBeLessThanOrEqual(80);
+    expect(PRODUCT_TITLE_SUFFIX).toContain('Comparador Hardware Argentina');
   });
 
   it('orienta el snippet a comparar precios sin meter el importe en el title', () => {
@@ -99,7 +100,7 @@ describe('buildShortProductTitle', () => {
 
     expect(title.endsWith(': precios')).toBe(true);
     expect(title).not.toMatch(/\$|363/);
-    expect(`${title}${PRODUCT_TITLE_SUFFIX}`).toContain('| HardwareAR');
+    expect(`${title}${PRODUCT_TITLE_SUFFIX}`).toContain('| Comparador Hardware Argentina');
   });
 });
 
@@ -182,10 +183,22 @@ describe('buildProductJsonLd', () => {
     expect(types).toEqual(['BreadcrumbList', 'Organization', 'Product']);
 
     const productEntry = jsonLd.find((entry) => entry['@type'] === 'Product') as {
-      offers: Array<{ price: number; priceCurrency: string }>;
+      offers: {
+        '@type': string;
+        priceCurrency: string;
+        lowPrice: number;
+        highPrice: number;
+        offerCount: number;
+        offers: Array<{ price: number; priceCurrency: string }>;
+      };
     };
-    expect(productEntry.offers).toHaveLength(2);
-    expect(productEntry.offers[0].priceCurrency).toBe('ARS');
+    expect(productEntry.offers['@type']).toBe('AggregateOffer');
+    expect(productEntry.offers.priceCurrency).toBe('ARS');
+    expect(productEntry.offers.lowPrice).toBe(363736);
+    expect(productEntry.offers.highPrice).toBe(370000);
+    expect(productEntry.offers.offerCount).toBe(2);
+    expect(productEntry.offers.offers).toHaveLength(2);
+    expect(productEntry.offers.offers[0].priceCurrency).toBe('ARS');
   });
 
   it('excluye ofertas sin precio o sin url', () => {

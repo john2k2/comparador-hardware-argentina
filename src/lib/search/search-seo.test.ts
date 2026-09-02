@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SearchPageState } from './search-state';
-import { getCategorySeoCopy, isIndexableCategoryLanding } from './search-seo';
+import { getCategorySeoCopy, isCategoryCanonicalLanding, isIndexableCategoryLanding } from './search-seo';
 
 function buildState(overrides: Partial<SearchPageState> = {}): SearchPageState {
   return {
@@ -19,6 +19,7 @@ describe('search-seo', () => {
     expect(isIndexableCategoryLanding(buildState({ query: 'ryzen 7600' }))).toBe(false);
     expect(isIndexableCategoryLanding(buildState({ stores: ['mexx'] }))).toBe(false);
     expect(isIndexableCategoryLanding(buildState({ page: 2 }))).toBe(false);
+    expect(isCategoryCanonicalLanding(buildState({ page: 2 }))).toBe(true);
   });
 
   it('expone copy SEO para categorias soportadas', () => {

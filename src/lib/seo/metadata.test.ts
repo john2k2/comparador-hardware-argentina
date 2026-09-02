@@ -3,6 +3,12 @@ import {
   DEFAULT_SITE_DESCRIPTION,
   HOME_PAGE_DESCRIPTION,
   HOME_PAGE_TITLE,
+  MISSING_COMPARISON_DESCRIPTION,
+  MISSING_COMPARISON_TITLE,
+  MISSING_GUIDE_DESCRIPTION,
+  MISSING_GUIDE_TITLE,
+  NOT_FOUND_PAGE_DESCRIPTION,
+  NOT_FOUND_PAGE_TITLE,
   buildCanonicalUrl,
   buildNoIndexMetadata,
   buildPublicPageMetadata,
@@ -49,5 +55,27 @@ describe('seo metadata helpers', () => {
     expect(HOME_PAGE_TITLE.length).toBeLessThanOrEqual(60);
     expect(HOME_PAGE_DESCRIPTION.length).toBeLessThanOrEqual(155);
     expect(DEFAULT_SITE_DESCRIPTION.length).toBeLessThanOrEqual(155);
+  });
+
+  it('marca 404 y slugs inválidos como noindex con copy distinto a la home', () => {
+    const notFound = buildNoIndexMetadata({
+      title: NOT_FOUND_PAGE_TITLE,
+      description: NOT_FOUND_PAGE_DESCRIPTION,
+    });
+    const missingGuide = buildNoIndexMetadata({
+      title: MISSING_GUIDE_TITLE,
+      description: MISSING_GUIDE_DESCRIPTION,
+    });
+    const missingComparison = buildNoIndexMetadata({
+      title: MISSING_COMPARISON_TITLE,
+      description: MISSING_COMPARISON_DESCRIPTION,
+    });
+
+    expect(notFound.robots).toMatchObject({ index: false, follow: false });
+    expect(missingGuide.robots).toMatchObject({ index: false, follow: false });
+    expect(missingComparison.robots).toMatchObject({ index: false, follow: false });
+    expect(NOT_FOUND_PAGE_DESCRIPTION).not.toBe(HOME_PAGE_DESCRIPTION);
+    expect(NOT_FOUND_PAGE_DESCRIPTION.toLowerCase()).not.toContain('30%');
+    expect(MISSING_GUIDE_DESCRIPTION.toLowerCase()).not.toContain('30%');
   });
 });

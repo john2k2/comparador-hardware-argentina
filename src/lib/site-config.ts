@@ -22,6 +22,7 @@ function normalizeText(value: string | undefined): string | null {
 
 export const SITE_URL = normalizeSiteUrl(process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL) ?? DEFAULT_SITE_URL;
 export const SITE_NAME = DEFAULT_SITE_NAME;
+export const SITE_BRAND_SHORT = 'HardwareAR';
 export const GOOGLE_SITE_VERIFICATION = normalizeText(
   process.env.GOOGLE_SITE_VERIFICATION ?? process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
 );

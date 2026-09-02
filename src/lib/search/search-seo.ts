@@ -235,16 +235,19 @@ export function getCategorySeoCopy(category?: HardwareCategory): CategorySeoCopy
   return CATEGORY_SEO_COPY[category] ?? null;
 }
 
-export function isIndexableCategoryLanding(state: SearchPageState): boolean {
+export function isCategoryCanonicalLanding(state: SearchPageState): boolean {
   return Boolean(
     state.category
     && !state.query
     && state.stores.length === 0
     && state.minPrice === undefined
     && state.maxPrice === undefined
-    && state.sortBy === 'relevance'
-    && state.page === 1,
+    && state.sortBy === 'relevance',
   );
+}
+
+export function isIndexableCategoryLanding(state: SearchPageState): boolean {
+  return isCategoryCanonicalLanding(state) && state.page === 1;
 }
 
 export function getCategoryLabel(category?: HardwareCategory): string | null {

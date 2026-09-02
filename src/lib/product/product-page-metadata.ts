@@ -1,10 +1,10 @@
 import { computeComparableStorePriceStats, formatPriceARS, getComparableStorePrices } from '@/lib/price-utils';
-import { SITE_URL } from '@/lib/site-config';
+import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
 
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
-export const PRODUCT_TITLE_SUFFIX = ' | HardwareAR';
+export const PRODUCT_TITLE_SUFFIX = ` | ${SITE_NAME}`;
 
 export function buildCanonicalUrl(id: string): string {
   return `${SITE_URL}/product/${encodeURIComponent(id)}`;
@@ -115,6 +115,17 @@ export function buildProductJsonLd(product: Product, id: string) {
       },
       itemCondition: 'https://schema.org/NewCondition',
     }));
+  const offerPrices = offers.map((offer) => offer.price);
+  const aggregateOffers = offers.length === 0
+    ? []
+    : {
+        '@type': 'AggregateOffer',
+        priceCurrency: 'ARS',
+        lowPrice: Math.min(...offerPrices),
+        highPrice: Math.max(...offerPrices),
+        offerCount: offers.length,
+        offers,
+      };
 
   const breadcrumbItems = [
     {
@@ -153,7 +164,7 @@ export function buildProductJsonLd(product: Product, id: string) {
       '@context': 'https://schema.org',
       '@type': 'Organization',
       '@id': `${SITE_URL}#organization`,
-      name: 'Comparador Hardware Argentina',
+      name: SITE_NAME,
       url: SITE_URL,
       logo: `${SITE_URL}/og-image.png`,
     },
@@ -172,7 +183,7 @@ export function buildProductJsonLd(product: Product, id: string) {
         '@type': 'Brand',
         name: displayBrand,
       },
-      offers,
+      offers: aggregateOffers,
     },
   ];
 }

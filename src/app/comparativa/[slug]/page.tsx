@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { readProductsFromDatabase } from '@/lib/persistence/product-read';
-import { SITE_URL } from '@/lib/site-config';
 import { formatPriceARS } from '@/lib/price-utils';
+import { resolveComparisonPricing } from '@/lib/seo/comparison-pricing';
+import { resolveComparisonPageMetadata } from '@/lib/seo/landing-metadata';
 import { 
   getComparisonBySlug, 
   findProductInComparison,
@@ -25,29 +26,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const comparison = getComparisonBySlug(slug);
-  
-  if (!comparison) {
-    return {
-      title: 'Comparativa no encontrada',
-    };
-  }
-
-  return {
-    title: comparison.metadataTitle ? { absolute: comparison.metadataTitle } : comparison.title,
-    description: comparison.description,
-    keywords: comparison.keywords,
-    alternates: {
-      canonical: `${SITE_URL}/comparativa/${slug}`,
-    },
-    openGraph: {
-      type: 'article',
-      url: `${SITE_URL}/comparativa/${slug}`,
-      title: comparison.title,
-      description: comparison.description,
-      images: [`${SITE_URL}/og-image.png`],
-    },
-  };
+  return resolveComparisonPageMetadata(slug);
 }
 
 export const revalidate = 300;
@@ -75,15 +54,16 @@ export default async function ComparisonPage({ params }: Props) {
   const nonce = (await headers()).get('x-content-security-policy-nonce') ?? undefined;
 
   const { product1, product2 } = findProductInComparison(comparison, allProducts);
-
-  const p1Prices = product1?.prices.filter(p => p.price > 0).sort((a, b) => a.price - b.price) || [];
-  const p2Prices = product2?.prices.filter(p => p.price > 0).sort((a, b) => a.price - b.price) || [];
-
-  const p1BestPrice = p1Prices[0]?.price || 0;
-  const p2BestPrice = p2Prices[0]?.price || 0;
-  
-  const cheaperProduct = p1BestPrice < p2BestPrice ? comparison.product1.name : comparison.product2.name;
-  const priceDiff = Math.abs(p1BestPrice - p2BestPrice);
+  const pricing = resolveComparisonPricing({
+    product1Name: comparison.product1.name,
+    product2Name: comparison.product2.name,
+    product1Prices: product1?.prices,
+    product2Prices: product2?.prices,
+  });
+  const p1Prices = pricing.side1.prices;
+  const p2Prices = pricing.side2.prices;
+  const p1BestPrice = pricing.side1.bestPrice ?? 0;
+  const p2BestPrice = pricing.side2.bestPrice ?? 0;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -126,9 +106,8 @@ export default async function ComparisonPage({ params }: Props) {
             según tu presupuesto y necesidades específicas.
           </p>
           <p>
-            En esta comparativa analizamos precios reales de más de 20 tiendas de Argentina, rendimiento 
-            en juegos populares, eficiencia energética, temperaturas y valor a largo plazo. 
-            Los precios se actualizan diariamente para reflejar las fluctuaciones del mercado local.
+            {pricing.storeCoverageCopy} El rendimiento, el consumo y las temperaturas dependen de benches
+            de terceros: acá el dato propio es el precio en tiendas argentinas con stock.
           </p>
           <p>
             {comparison.product1.name} destaca por {comparison.product1.pros[0].toLowerCase()} y {comparison.product1.pros[1].toLowerCase()}, 
@@ -163,9 +142,9 @@ export default async function ComparisonPage({ params }: Props) {
           />
         </div>
 
-        {priceDiff > 0 && (
+        {pricing.canDeclareWinner && pricing.cheaperName && pricing.priceDiff != null && (
           <div className="mt-4 p-3 bg-primary/10 border-2 border-primary text-[11px] font-mono">
-            <strong>{cheaperProduct}</strong> es ${formatPriceARS(priceDiff).replace('$', '')} más barato
+            <strong>{pricing.cheaperName}</strong> es ${formatPriceARS(pricing.priceDiff).replace('$', '')} más barato
           </div>
         )}
       </section>
@@ -351,7 +330,11 @@ function ProductCard({
         {bestPrice > 0 ? formatPriceARS(bestPrice) : 'Consultar'}
       </div>
       <p className="text-[10px] text-muted-foreground font-mono">
-        {prices.length} tiendas comparadas
+        {prices.length === 0
+          ? 'Sin ofertas en stock'
+          : prices.length === 1
+            ? '1 tienda con stock'
+            : `${prices.length} tiendas con stock`}
       </p>
       {realProduct && (
         <Link 

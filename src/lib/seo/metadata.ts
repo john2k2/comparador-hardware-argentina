@@ -4,8 +4,14 @@ import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 export const HOME_PAGE_TITLE = 'Comparador Hardware Argentina: precios de PC';
-export const HOME_PAGE_DESCRIPTION = 'Compará precios de procesadores, placas de video, RAM, SSD y más hardware en tiendas argentinas, con stock y enlaces directos.';
+export const HOME_PAGE_DESCRIPTION = 'Compará componentes de PC entre tiendas argentinas: precios, stock y enlaces de procesadores, placas de video, RAM y SSD. No vendemos hardware.';
 export const DEFAULT_SITE_DESCRIPTION = 'Compará precios de hardware y encontrá ofertas de componentes para PC en tiendas de Argentina.';
+export const NOT_FOUND_PAGE_TITLE = 'Página no encontrada';
+export const NOT_FOUND_PAGE_DESCRIPTION = 'Esta URL no existe en Comparador Hardware Argentina. Volvé al inicio o buscá un componente.';
+export const MISSING_GUIDE_TITLE = 'Guía no encontrada';
+export const MISSING_GUIDE_DESCRIPTION = 'Esta guía no existe en Comparador Hardware Argentina.';
+export const MISSING_COMPARISON_TITLE = 'Comparativa no encontrada';
+export const MISSING_COMPARISON_DESCRIPTION = 'Esta comparativa no existe en Comparador Hardware Argentina.';
 
 export function buildCanonicalUrl(path: string): string {
   return `${SITE_URL}${path.startsWith('/') ? path : `/${path}`}`;

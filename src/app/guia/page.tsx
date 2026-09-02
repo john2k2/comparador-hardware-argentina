@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Guías PC Gamer Argentina',
-  description: 'Armá tu PC gamer según presupuesto. Configuraciones recomendadas desde $1.000.000 con precios actualizados de 20+ tiendas.',
+  description: 'Armá tu PC gamer según presupuesto. Configuraciones recomendadas desde $1.000.000 con precios actualizados de tiendas argentinas.',
   keywords: ['guia pc gamer', 'armar pc argentina', 'pc gamer presupuesto', 'configuracion pc gaming'],
   alternates: {
     canonical: `${SITE_URL}/guia`,
@@ -24,7 +24,7 @@ export default function GuiasIndexPage() {
         </h1>
         <p className="text-[11px] md:text-[12px] text-muted-foreground font-mono leading-relaxed">
           Armá la mejor PC gamer según tu presupuesto. Componentes seleccionados 
-          por precio/calidad con precios actualizados de 20+ tiendas.
+          por precio/calidad con precios actualizados de tiendas argentinas.
         </p>
       </header>
 

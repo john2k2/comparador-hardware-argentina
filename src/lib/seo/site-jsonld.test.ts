@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { SITE_BRAND_SHORT, SITE_URL, SUPPORT_EMAIL } from '@/lib/site-config';
 import { buildSiteJsonLd } from './site-jsonld';
-import { SITE_URL } from '@/lib/site-config';
 
 describe('buildSiteJsonLd', () => {
   it('genera Organization y WebSite con SearchAction', () => {
@@ -8,6 +8,16 @@ describe('buildSiteJsonLd', () => {
 
     expect(organization['@type']).toBe('Organization');
     expect(organization.url).toBe(SITE_URL);
+    expect(organization.alternateName).toBe(SITE_BRAND_SHORT);
+    if (SUPPORT_EMAIL) {
+      expect(organization.contactPoint).toEqual({
+        '@type': 'ContactPoint',
+        email: SUPPORT_EMAIL,
+        contactType: 'customer support',
+      });
+    } else {
+      expect(organization.contactPoint).toBeUndefined();
+    }
 
     expect(website['@type']).toBe('WebSite');
     expect(website.publisher).toEqual({ '@id': `${SITE_URL}#organization` });
