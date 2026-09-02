@@ -86,7 +86,7 @@ export default async function BudgetGuidePage({ params }: Props) {
             <div className="text-[10px] text-muted-foreground mb-1">TOTAL CON STOCK</div>
             <div className="text-[16px] md:text-[24px] font-pixel text-primary break-words">{formatPriceARS(resolved.catalogTotal)}</div>
             <p className="mt-2 text-[10px] uppercase text-muted-foreground">
-              {resolved.inStockSlots} de {slotCount} {slotCount === 1 ? 'parte comprable' : 'partes comprables'}
+              {resolved.inStockSlots} de {slotCount} partes comprables
             </p>
           </div>
           

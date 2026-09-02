@@ -273,9 +273,10 @@ function assemblePlatform(
   }
 
   if (pickedPsu && pickedGpu) {
+    const currentPsu = pickedPsu;
     const need = requiredPsuWatts(pickedCpu.product.name, pickedGpu.product.name);
     const psuUpgrade = [...index.psus]
-      .filter((psu) => (psu.watts ?? 0) >= need && psu.price - pickedPsu.price <= leftover)
+      .filter((psu) => (psu.watts ?? 0) >= need && psu.price - currentPsu.price <= leftover)
       .sort((left, right) => (right.watts ?? 0) - (left.watts ?? 0) || left.price - right.price)[0];
     if (psuUpgrade) pickedPsu = psuUpgrade;
   }
