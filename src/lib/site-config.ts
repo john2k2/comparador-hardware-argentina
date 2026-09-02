@@ -32,6 +32,5 @@ export function buildMailtoHref(subject?: string): string | null {
   if (!SUPPORT_EMAIL) return null;
   if (!subject) return `mailto:${SUPPORT_EMAIL}`;
 
-  const params = new URLSearchParams({ subject });
-  return `mailto:${SUPPORT_EMAIL}?${params.toString()}`;
+  return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`;
 }
