@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { readProductsFromDatabase } from '@/lib/persistence/product-read';
+import { loadGuideCatalogProducts } from '@/lib/seo/guide-catalog';
 import { formatPriceARS } from '@/lib/price-utils';
-import { GUIDE_CATALOG_CATEGORIES, resolveGuideSlots, type ResolvedGuideComponent } from '@/lib/seo/budget-guide-pricing';
+import { GUIDE_SLOT_KEYS, resolveLiveGuideSlots } from '@/lib/seo/budget-builder';
 import { getBudgetGuideBySlug } from '@/lib/seo/budget-guides-data';
 import { resolveGuideFaqs, canPublishGuideFps } from '@/lib/seo/guide-faqs';
 import { resolveGuidePageMetadata } from '@/lib/seo/landing-metadata';
@@ -12,6 +12,7 @@ import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
 import { SITE_URL } from '@/lib/site-config';
 import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
 import { GuideFpsPanel } from '@/components/seo/GuideFpsPanel';
+import { GuideComponentRows } from '@/components/seo/GuideComponentRows';
 import Link from 'next/link';
 
 type Props = {
@@ -39,25 +40,11 @@ export default async function BudgetGuidePage({ params }: Props) {
     notFound();
   }
 
-  const catalogProducts = (
-    await Promise.all(
-      GUIDE_CATALOG_CATEGORIES.map((category) =>
-        readProductsFromDatabase({ limit: 400, category }).catch(() => []),
-      ),
-    )
-  ).flat();
+  const catalogProducts = await loadGuideCatalogProducts();
   const nonce = (await headers()).get('x-content-security-policy-nonce') ?? undefined;
-  const resolved = resolveGuideSlots(guide.components, catalogProducts);
+  const resolved = resolveLiveGuideSlots(guide, catalogProducts);
   const faqs = resolveGuideFaqs(guide.faqs, resolved.cpu, resolved.gpu);
-  const slots = [
-    { label: 'PROCESADOR', item: resolved.cpu },
-    { label: 'PLACA DE VIDEO', item: resolved.gpu },
-    { label: 'MEMORIA RAM', item: resolved.ram },
-    { label: 'ALMACENAMIENTO', item: resolved.ssd },
-    { label: 'MOTHERBOARD', item: resolved.motherboard },
-    { label: 'FUENTE', item: resolved.psu },
-    { label: 'GABINETE', item: resolved.case },
-  ];
+  const slotCount = GUIDE_SLOT_KEYS.length;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -76,7 +63,7 @@ export default async function BudgetGuidePage({ params }: Props) {
           PC Gamer por {formatPriceARS(guide.budget)}
         </h1>
         <p className="text-[11px] md:text-[12px] text-muted-foreground font-mono leading-relaxed">
-          {guide.description} Solo usamos ofertas del catálogo con stock confirmado.
+          {guide.description} Las piezas salen de ofertas en stock: mismo socket y generación de RAM, y una fuente que cubra el consumo estimado del combo.
         </p>
         <div className="mt-3">
           <EditorialUpdatedStamp isoDate={EDITORIAL_UPDATED_AT} />
@@ -99,7 +86,7 @@ export default async function BudgetGuidePage({ params }: Props) {
             <div className="text-[10px] text-muted-foreground mb-1">TOTAL CON STOCK</div>
             <div className="text-[16px] md:text-[24px] font-pixel text-primary break-words">{formatPriceARS(resolved.catalogTotal)}</div>
             <p className="mt-2 text-[10px] uppercase text-muted-foreground">
-              {resolved.inStockSlots} de {slots.length} {slots.length === 1 ? 'parte comprable' : 'partes comprables'}
+              {resolved.inStockSlots} de {slotCount} {slotCount === 1 ? 'parte comprable' : 'partes comprables'}
             </p>
           </div>
           
@@ -110,9 +97,9 @@ export default async function BudgetGuidePage({ params }: Props) {
         </div>
         {resolved.hasEstimates && (
           <p className="mt-4 text-[10px] md:text-[11px] uppercase text-muted-foreground font-mono leading-relaxed">
-            {slots.length - resolved.inStockSlots === 1
+            {slotCount - resolved.inStockSlots === 1
               ? 'Falta 1 parte sin oferta en stock.'
-              : `Faltan ${slots.length - resolved.inStockSlots} partes sin oferta en stock.`}
+              : `Faltan ${slotCount - resolved.inStockSlots} partes sin oferta en stock.`}
             Esas filas no entran al total comprable y muestran un estimado de referencia.
           </p>
         )}
@@ -124,13 +111,9 @@ export default async function BudgetGuidePage({ params }: Props) {
           [ CONFIGURACION RECOMENDADA ]
         </h2>
         
-        <div className="space-y-4">
-          {slots.map((slot) => (
-            <ComponentRow key={slot.label} label={slot.label} item={slot.item} />
-          ))}
-        </div>
+        <GuideComponentRows slots={resolved} />
         <p className="mt-4 text-[10px] uppercase text-muted-foreground font-mono leading-relaxed">
-          Cada precio de catálogo sale de una tienda con stock. Los avisos sin stock no se recomiendan.
+          Cada precio de catálogo sale de una tienda con stock. CPU, mother y RAM tienen que coincidir en socket y generación.
         </p>
       </section>
 
@@ -144,7 +127,10 @@ export default async function BudgetGuidePage({ params }: Props) {
           <div className="border-2 border-border p-4">
             <h3 className="text-[11px] font-bold mb-3">Gaming</h3>
             <GuideFpsPanel
-              canPublish={canPublishGuideFps(resolved.cpu, resolved.gpu)}
+              canPublish={canPublishGuideFps(resolved.cpu, resolved.gpu, {
+                cpuTerms: guide.components.cpu.searchTerms,
+                gpuTerms: guide.components.gpu.searchTerms,
+              })}
               games={guide.gamesPerformance}
             />
           </div>
@@ -228,72 +214,6 @@ export default async function BudgetGuidePage({ params }: Props) {
           }),
         }}
       />
-    </div>
-  );
-}
-
-function ComponentRow({
-  label,
-  item,
-}: {
-  label: string;
-  item: ResolvedGuideComponent;
-}) {
-  const extraOffers = item.offers.slice(1, 3);
-  const isCatalog = item.priceSource === 'catalog';
-
-  return (
-    <div className={`border-2 p-4 flex flex-col md:flex-row md:items-center gap-4 ${isCatalog ? 'border-border' : 'border-dashed border-muted'}`}>
-      <div className="flex-1 min-w-0">
-        <div className="flex flex-wrap items-center gap-2 mb-1">
-          <span className="text-[10px] text-muted-foreground">{label}</span>
-          <span className={`text-[8px] uppercase font-bold px-2 py-1 border-2 ${isCatalog ? 'border-secondary text-secondary' : 'border-muted text-muted-foreground'}`}>
-            {isCatalog ? (item.offers[0]?.stock === 'low-stock' ? 'STOCK BAJO' : 'EN STOCK') : 'SIN STOCK'}
-          </span>
-        </div>
-        <h3 className="text-[12px] font-bold break-words">{item.name}</h3>
-        <p className="text-[10px] text-muted-foreground mt-1">{item.description}</p>
-        {isCatalog && item.bestStoreName && (
-          <p className="text-[10px] uppercase text-accent font-bold mt-2 break-words">
-            {`Mejor precio: @${item.bestStoreName}`}
-          </p>
-        )}
-        {extraOffers.length > 0 && (
-          <p className="text-[10px] uppercase text-muted-foreground mt-1 break-words">
-            {extraOffers.map((offer) => `@${offer.storeName} ${formatPriceARS(offer.price)}`).join(' · ')}
-          </p>
-        )}
-      </div>
-      <div className="text-left md:text-right shrink-0 min-w-0">
-        <div className="text-[14px] sm:text-[16px] font-pixel text-primary break-words">{formatPriceARS(item.price)}</div>
-        {isCatalog ? (
-          <div className="text-[10px] text-muted-foreground">
-            {item.storeCount === 1 ? '1 tienda con stock' : `${item.storeCount} tiendas con stock`}
-          </div>
-        ) : (
-          <div className="text-[10px] uppercase text-muted-foreground">Estimado. No recomendar compra.</div>
-        )}
-        <div className="flex flex-col md:items-end gap-1 mt-1">
-          {item.bestStoreUrl && (
-            <a
-              href={item.bestStoreUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center text-[10px] text-secondary hover:underline"
-            >
-              Ver en tienda →
-            </a>
-          )}
-          {item.productId && (
-            <Link
-              href={`/product/${item.productId}`}
-              className="inline-flex min-h-11 items-center text-[10px] text-primary hover:underline"
-            >
-              Comparar tiendas →
-            </Link>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

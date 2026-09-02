@@ -200,10 +200,10 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
     ],
     tips: [
       'Invertí en el monitor: Con esta PC, un monitor 1440p 144Hz o 1080p 240Hz es ideal.',
-      'Cooler aftermarket: El 7600X no incluye cooler stock. Un AIO 240mm o torre dual es recomendado.',
-      'RAM DDR5: Asegurate de activar el perfil XMP/EXPO en la BIOS para los 5600MHz.',
-      'Gabinete con buen airflow: El 7600X y RTX 4060 generan calor. Priorizá ventilación sobre RGB.',
-      'Upgrade path: AM5 tiene soporte hasta 2027+. Podés upgradear a un 9800X3D en el futuro.',
+      'Cooler aftermarket: Si el micro sale WOF / s/cooler, sumá un cooler compatible con el socket.',
+      'RAM DDR5: Activá el perfil XMP/EXPO en la BIOS para la frecuencia del kit.',
+      'Gabinete con buen airflow: Priorizá ventilación sobre RGB, sobre todo con GPU de gama media/alta.',
+      'Upgrade path: AM5 sigue teniendo recorrido; confirmá chipset y BIOS antes de un micro más nuevo.',
     ],
     faqs: [
       {
@@ -295,10 +295,10 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
     ],
     tips: [
       'Monitor 1440p 144Hz o 4K 60Hz: Aprovechá el poder de esta PC con un monitor acorde.',
-      'AIO 360mm o torre premium: El 7700X/7800X3D necesita buena refrigeración para mantener boost clocks.',
-      'Gabinete con excelente airflow: Invertí en fans de calidad (Noctua, Arctic, Corsair).',
-      'Cable management: Una fuente modular ayuda mucho. Organizá los cables para mejor airflow.',
-      'Almacenamiento: Con 2TB tenés espacio para varios juegos AAA. Considerá un HDD 4TB para almacenamiento masivo.',
+      'AIO o torre: Si el CPU es WOF, necesitás refrigeración acorde al TDP del listing, no un cooler genérico de 30 W.',
+      'Gabinete con excelente airflow: Invertí en ventilación real; el RGB no mueve aire.',
+      'Cable management: Una fuente modular ayuda. Organizá los cables para mejor airflow.',
+      'Almacenamiento: Si el SSD del armado queda justo, un segundo disco es más honesto que inflar el presupuesto con un HDD lento.',
     ],
     faqs: [
       {

@@ -32,9 +32,9 @@ export default function GuiasIndexPage() {
         </h2>
         <div className="space-y-3 text-[11px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono">
           <p>
-            Cada guía está diseñada para un presupuesto específico en pesos argentinos. Los precios se actualizan
-            semanalmente consultando las principales tiendas de hardware del país. Los componentes seleccionados
-            priorizan la compatibilidad, el rendimiento real y la disponibilidad de stock en Argentina.
+            Cada guía parte de un presupuesto en pesos argentinos. Las piezas se eligen del catálogo con stock
+            (el refresh es diario): mismo socket y generación de RAM, y una fuente que cubra el consumo estimado
+            del combo. No publicamos un SKU que no se pueda comprar hoy.
           </p>
           <p>
             Las builds incluyen siempre: procesador, motherboard, memoria RAM, tarjeta gráfica, almacenamiento,
@@ -43,8 +43,8 @@ export default function GuiasIndexPage() {
             entre sí. Si tenés dudas, consultá nuestra sección de comparativas o la página de contacto.
           </p>
           <p>
-            Los FPS de cada guía solo se publican cuando el procesador y la placa de video
-            tienen oferta en stock. No citamos números de un combo estimado ni de un banco de pruebas propio.
+            Los FPS de cada guía solo se publican cuando el procesador y la placa de video tienen oferta en stock
+            y coinciden con el combo editorial de esa página. Si el algoritmo arma otro combo comprable, no reciclamos esos números.
             Para gaming 1080p, cualquier build de $1.000.000+ es suficiente. Para 1440p high refresh, recomendamos $2.000.000+.
             Para 4K gaming, necesitás $3.000.000+ con GPU de gama alta.
           </p>
@@ -77,6 +77,21 @@ export default function GuiasIndexPage() {
             <span>16GB RAM es el mínimo; 32GB recomendado para gaming moderno y multitarea.</span>
           </li>
         </ul>
+      </section>
+
+      <section className="bg-card border-4 border-primary p-5 md:p-6 pixel-shadow mb-8">
+        <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-3">
+          [ ARMA CON TU PRESUPUESTO ]
+        </h2>
+        <p className="text-[11px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono mb-4">
+          Si no te cierran los umbrales de $1M, $2M o $3M, ingresá un monto y armamos un combo con stock real.
+        </p>
+        <Link
+          href="/guia/armar"
+          className="inline-flex min-h-11 items-center border-4 border-primary bg-primary px-4 text-[10px] uppercase font-bold text-primary-foreground"
+        >
+          Armá tu PC →
+        </Link>
       </section>
 
       <div className="grid md:grid-cols-3 gap-6">

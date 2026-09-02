@@ -1,3 +1,4 @@
+import { isBundleLikeTitle, isCompleteComputerTitle } from '@/lib/product-identity';
 import { computeComparableStorePriceStats } from '@/lib/price-utils';
 import type { HardwareCategory, Product, ProductPrice } from '@/lib/types';
 
@@ -115,6 +116,17 @@ function tokenMatchesGuideWord(token: string, word: string): boolean {
   return token.startsWith(word) && token.length <= word.length + 2;
 }
 
+export function textMatchesGuideTerms(text: string, searchTerms: string[]): boolean {
+  const searchableTokens = normalizeSearchText(text).split(' ').filter(Boolean);
+
+  return searchTerms.some((term) => {
+    const normalizedTerm = normalizeSearchText(term);
+    const termWords = normalizedTerm.split(/\s+/).filter((word) => word.length > 1);
+    if (termWords.length === 0) return false;
+    return termWords.every((word) => searchableTokens.some((token) => tokenMatchesGuideWord(token, word)));
+  });
+}
+
 export function productMatchesGuideTerms(product: Product, searchTerms: string[]): boolean {
   const searchable = [
     product.name,
@@ -126,16 +138,7 @@ export function productMatchesGuideTerms(product: Product, searchTerms: string[]
     .filter(Boolean)
     .join(' ');
 
-  const normalizedSearchable = normalizeSearchText(searchable);
-
-  const searchableTokens = normalizedSearchable.split(' ').filter(Boolean);
-
-  return searchTerms.some((term) => {
-    const normalizedTerm = normalizeSearchText(term);
-    const termWords = normalizedTerm.split(/\s+/).filter((word) => word.length > 1);
-    if (termWords.length === 0) return false;
-    return termWords.every((word) => searchableTokens.some((token) => tokenMatchesGuideWord(token, word)));
-  });
+  return textMatchesGuideTerms(searchable, searchTerms);
 }
 
 export function isBuyableGuideStock(stock: ProductPrice['stock']): stock is 'in-stock' | 'low-stock' {
@@ -258,7 +261,7 @@ function toGuideOffers(offers: ProductPrice[]): GuideStoreOffer[] {
   });
 }
 
-function toEstimate(spec: GuideSlotSpec): ResolvedGuideComponent {
+export function toEstimatedGuideComponent(spec: GuideSlotSpec): ResolvedGuideComponent {
   return {
     name: spec.name,
     description: spec.description,
@@ -272,14 +275,18 @@ function toEstimate(spec: GuideSlotSpec): ResolvedGuideComponent {
   };
 }
 
-function toCatalogOffer(spec: GuideSlotSpec, product: Product, offers: ProductPrice[]): ResolvedGuideComponent {
+export function toResolvedCatalogComponent(
+  product: Product,
+  offers: ProductPrice[],
+  description = '',
+): ResolvedGuideComponent {
   const best = offers[0];
   const storeNames = [...new Set(offers.map((offer) => offer.storeName).filter(Boolean))];
 
   return {
     name: product.name,
-    description: '',
-    price: best?.price ?? spec.estimatedPrice,
+    description,
+    price: best?.price ?? 0,
     priceSource: 'catalog',
     bestStoreName: best?.storeName ?? null,
     bestStoreUrl: best?.url ?? null,
@@ -290,13 +297,45 @@ function toCatalogOffer(spec: GuideSlotSpec, product: Product, offers: ProductPr
   };
 }
 
+function toCatalogOffer(spec: GuideSlotSpec, product: Product, offers: ProductPrice[]): ResolvedGuideComponent {
+  const resolved = toResolvedCatalogComponent(product, offers, '');
+  if (resolved.price > 0) return resolved;
+  return { ...resolved, price: spec.estimatedPrice };
+}
+
+export type BuyableGuideCandidate = {
+  product: Product;
+  offers: ProductPrice[];
+  price: number;
+};
+
+function isBlockedBuilderProduct(product: Product): boolean {
+  if (isExcludedProduct(product) || isCompleteComputerTitle(product.name)) return true;
+  if (product.category === 'memoria-ram' || product.category === 'almacenamiento') return false;
+  return isPcBuild(product.name) || isBundleLikeTitle(product.name);
+}
+
+export function listBuyableGuideCandidates(
+  products: Product[],
+  category: HardwareCategory,
+): BuyableGuideCandidate[] {
+  return products
+    .filter((product) => product.category === category && !isBlockedBuilderProduct(product))
+    .map((product) => {
+      const offers = buyableOffers(product);
+      return { product, offers, price: offers[0]?.price ?? Number.POSITIVE_INFINITY };
+    })
+    .filter((candidate) => candidate.offers.length > 0)
+    .sort((left, right) => left.price - right.price);
+}
+
 export function resolveGuideComponent(
   spec: GuideSlotSpec,
   products: Product[],
 ): ResolvedGuideComponent {
   const searchTerms = spec.searchTerms?.filter(Boolean) ?? [];
   if (searchTerms.length === 0) {
-    return toEstimate(spec);
+    return toEstimatedGuideComponent(spec);
   }
 
   const matches = products.filter((product) => {
@@ -306,7 +345,7 @@ export function resolveGuideComponent(
   });
 
   if (matches.length === 0) {
-    return toEstimate(spec);
+    return toEstimatedGuideComponent(spec);
   }
 
   const ranked = matches
@@ -324,26 +363,23 @@ export function resolveGuideComponent(
 
   const winner = ranked[0];
   if (!winner) {
-    return toEstimate(spec);
+    return toEstimatedGuideComponent(spec);
   }
 
   return toCatalogOffer(spec, winner.product, winner.offers);
 }
 
-export function resolveGuideSlots<T extends Record<string, GuideSlotSpec>>(
-  slots: T,
-  products: Product[],
-): { [K in keyof T]: ResolvedGuideComponent } & {
+export type ResolvedGuideSlotTotals<T extends Record<string, ResolvedGuideComponent>> = T & {
   total: number;
   catalogTotal: number;
   estimateTotal: number;
   inStockSlots: number;
   hasEstimates: boolean;
-} {
-  const resolved = Object.fromEntries(
-    Object.entries(slots).map(([key, spec]) => [key, resolveGuideComponent(spec, products)]),
-  ) as { [K in keyof T]: ResolvedGuideComponent };
+};
 
+export function summarizeGuideComponents<T extends Record<string, ResolvedGuideComponent>>(
+  resolved: T,
+): ResolvedGuideSlotTotals<T> {
   const values = Object.values(resolved) as ResolvedGuideComponent[];
   const catalogItems = values.filter((item) => item.priceSource === 'catalog');
   const estimateItems = values.filter((item) => item.priceSource === 'estimate');
@@ -355,4 +391,15 @@ export function resolveGuideSlots<T extends Record<string, GuideSlotSpec>>(
     inStockSlots: catalogItems.length,
     hasEstimates: estimateItems.length > 0,
   };
+}
+
+export function resolveGuideSlots<T extends Record<string, GuideSlotSpec>>(
+  slots: T,
+  products: Product[],
+): ResolvedGuideSlotTotals<{ [K in keyof T]: ResolvedGuideComponent }> {
+  const resolved = Object.fromEntries(
+    Object.entries(slots).map(([key, spec]) => [key, resolveGuideComponent(spec, products)]),
+  ) as { [K in keyof T]: ResolvedGuideComponent };
+
+  return summarizeGuideComponents(resolved);
 }

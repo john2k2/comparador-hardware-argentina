@@ -1,4 +1,5 @@
 import type { ResolvedGuideComponent } from './budget-guide-pricing';
+import { textMatchesGuideTerms } from './budget-guide-pricing';
 
 export type GuideFaq = {
   question: string;
@@ -9,8 +10,15 @@ function catalogName(slot: ResolvedGuideComponent): string | null {
   return slot.priceSource === 'catalog' ? slot.name : null;
 }
 
-export function canPublishGuideFps(cpu: ResolvedGuideComponent, gpu: ResolvedGuideComponent): boolean {
-  return Boolean(catalogName(cpu) && catalogName(gpu));
+export function canPublishGuideFps(
+  cpu: ResolvedGuideComponent,
+  gpu: ResolvedGuideComponent,
+  allowed?: { cpuTerms: string[]; gpuTerms: string[] },
+): boolean {
+  if (!catalogName(cpu) || !catalogName(gpu)) return false;
+  if (!allowed) return true;
+  return textMatchesGuideTerms(cpu.name, allowed.cpuTerms)
+    && textMatchesGuideTerms(gpu.name, allowed.gpuTerms);
 }
 
 function buildCanBuildAnswer(cpu: ResolvedGuideComponent, gpu: ResolvedGuideComponent): string {

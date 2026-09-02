@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getBudgetGuideBySlug } from '@/lib/seo/budget-guides-data';
 import { getComparisonBySlug } from '@/lib/seo/comparisons-data';
+import { parseBuilderBudgetPesos } from '@/lib/seo/budget-query';
 import {
   MISSING_COMPARISON_DESCRIPTION,
   MISSING_COMPARISON_TITLE,
@@ -8,7 +9,7 @@ import {
   MISSING_GUIDE_TITLE,
   buildNoIndexMetadata,
 } from '@/lib/seo/metadata';
-import { SITE_URL } from '@/lib/site-config';
+import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { EDITORIAL_UPDATED_AT } from './editorial-freshness';
 
 function buildArticleMetadata(input: {
@@ -65,6 +66,32 @@ export function resolveGuiasHubMetadata(): Metadata {
       'configuracion pc gaming',
     ],
   });
+}
+
+export function resolveArmarPcMetadata(
+  pesos?: string | string[],
+): Metadata {
+  const metadata = buildArticleMetadata({
+    path: '/guia/armar',
+    title: 'Armá tu PC gamer',
+    absoluteTitle: `Armá tu PC gamer con presupuesto | ${SITE_NAME}`,
+    description:
+      'Ingresá un presupuesto en pesos y armamos un combo con ofertas en stock de tiendas argentinas. Mismo socket, misma RAM y una fuente que cubra el combo.',
+    keywords: [
+      'armar pc argentina',
+      'presupuesto pc gamer',
+      'armar pc gamer pesos',
+    ],
+  });
+
+  if (parseBuilderBudgetPesos(pesos)) {
+    return {
+      ...metadata,
+      robots: { index: false, follow: true },
+    };
+  }
+
+  return metadata;
 }
 
 export function resolveGuidePageMetadata(slug: string): Metadata {

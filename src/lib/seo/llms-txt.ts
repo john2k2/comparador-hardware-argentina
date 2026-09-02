@@ -21,6 +21,7 @@ No declaramos un ganador si no hay ofertas en stock.
 - [Inicio](${SITE_URL}/)
 - [Acerca](${SITE_URL}/acerca)
 - [Guías PC gamer](${SITE_URL}/guia)
+- [Armá tu PC](${SITE_URL}/guia/armar)
 - [Comparativas](${SITE_URL}/comparativa)
 - [Índice de precios](${SITE_URL}/indice-precios-hardware)
 

@@ -42,6 +42,11 @@ export function buildPublicSitemapEntries(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: toAbsoluteUrl('/guia/armar'),
+      changeFrequency: 'daily',
+      priority: 0.85,
+    },
+    {
       url: toAbsoluteUrl('/indice-precios-hardware'),
       changeFrequency: 'daily',
       priority: 0.9,

@@ -11,6 +11,7 @@ describe('buildLlmsTxt', () => {
     expect(body).toContain('No vende productos');
     expect(body).toContain(`${SITE_URL}/acerca`);
     expect(body).toContain(`${SITE_URL}/guia`);
+    expect(body).toContain(`${SITE_URL}/guia/armar`);
     expect(body).toContain(`${SITE_URL}/comparativa`);
     expect(body).toContain(`${SITE_URL}/indice-precios-hardware`);
     expect(body).toContain(`${SITE_URL}/search?category=procesadores`);

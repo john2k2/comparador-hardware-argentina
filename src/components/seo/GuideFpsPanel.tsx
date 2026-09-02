@@ -14,7 +14,7 @@ export function GuideFpsPanel({
   if (!canPublish) {
     return (
       <p className="text-[11px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono">
-        No publicamos FPS mientras el procesador o la placa de video no tengan oferta en stock.
+        No publicamos FPS fijos para este armado. El rendimiento depende de las piezas en stock de arriba.
       </p>
     );
   }

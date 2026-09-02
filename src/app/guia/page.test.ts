@@ -12,6 +12,7 @@ describe('GuiasIndexPage', () => {
     expect(markup).not.toContain('pc gamer 1 millon');
     expect(markup).not.toMatch(/benchmarks reales/i);
     expect(markup).toContain('oferta en stock');
+    expect(markup).toContain('/guia/armar');
     expect(markup).toContain(`Actualizado: ${EDITORIAL_UPDATED_AT}`);
   });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EDITORIAL_UPDATED_AT } from './editorial-freshness';
 import {
+  resolveArmarPcMetadata,
   resolveComparativasHubMetadata,
   resolveComparisonPageMetadata,
   resolveGuiasHubMetadata,
@@ -30,6 +31,14 @@ describe('landing metadata dates', () => {
     expect(resolveGuiasHubMetadata().openGraph).toMatchObject({
       type: 'article',
       modifiedTime: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
+    });
+  });
+
+  it('indexa el formulario de armar PC y noindexea un presupuesto concreto', () => {
+    expect(resolveArmarPcMetadata().robots).toBeUndefined();
+    expect(resolveArmarPcMetadata('1500000').robots).toMatchObject({ index: false, follow: true });
+    expect(resolveArmarPcMetadata('1500000').alternates).toMatchObject({
+      canonical: 'https://www.comparador-hardware.com.ar/guia/armar',
     });
   });
 });
