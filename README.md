@@ -276,7 +276,7 @@ Notas:
 ## Notas
 
 - El monitoreo actual es en memoria de proceso (no persistente entre reinicios/deploy).
-- El estado de auditoria, backlog tecnico y evidencia operativa vive en `AUDITORIA_Y_PLAN.md`.
+- El estado de auditoria, backlog tecnico y evidencia operativa vive en `docs/archive/AUDITORIA_Y_PLAN.md`.
 
 ## Search Console y verificacion real
 

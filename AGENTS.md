@@ -202,5 +202,5 @@ Ver `.env.example` para listado completo.
 
 - Monitoreo actual es **en memoria de proceso** (no persistente entre reinicios/deploy).
 - Normalización de títulos usa heurística local determinística. No requiere servicios externos.
-- Estado de auditoría y backlog técnico: `AUDITORIA_Y_PLAN.md`.
+- Estado de auditoría y backlog técnico: `docs/archive/AUDITORIA_Y_PLAN.md`. Auditoría técnica (2026-08-15): `docs/archive/AUDITORIA_TECNICA_2026-08-15.md`.
 - Sprites SVG de fondo parallax se precargan en `layout.tsx` vía `<link rel="preload">`.

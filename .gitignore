@@ -47,6 +47,9 @@ test-search-playwright.py
 # local docs and audits
 AUDITORIA_EXHAUSTIVA*.md
 
+# ad-hoc screenshots dumped at repo root
+/*.png
+
 # deprecated/removed scripts
 scripts/start-engram.*
 
