@@ -7,6 +7,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getUserDisplayName } from '@/lib/client/auth';
 import { syncServerSession } from '@/lib/client/session-sync';
+import { PRIMARY_NAV_LINKS } from '@/lib/seo/primary-nav-links';
 
 function subscribeToThemeChanges(callback: () => void) {
   if (typeof window === 'undefined') {
@@ -164,18 +165,15 @@ export function Navigation() {
 
             {/* Navegación central */}
             <nav className="hidden md:flex items-center gap-1">
-              <Link
-                href="/comparativa"
-                className="px-3 py-2 text-[10px] uppercase font-bold text-secondary hover:text-primary hover:bg-muted border-2 border-transparent hover:border-border transition-colors"
-              >
-                Comparativas
-              </Link>
-              <Link
-                href="/guia"
-                className="px-3 py-2 text-[10px] uppercase font-bold text-secondary hover:text-primary hover:bg-muted border-2 border-transparent hover:border-border transition-colors"
-              >
-                Guías de Presupuesto
-              </Link>
+              {PRIMARY_NAV_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="px-3 py-2 text-[10px] uppercase font-bold text-secondary hover:text-primary hover:bg-muted border-2 border-transparent hover:border-border transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
             </nav>
 
             <div className="flex items-center gap-2">
@@ -250,20 +248,16 @@ export function Navigation() {
           {isMobileMenuOpen && (
             <div className="md:hidden border-t-2 border-border bg-background">
               <nav className="flex flex-col py-2">
-                <Link
-                  href="/comparativa"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="px-4 py-3 text-[10px] uppercase font-bold text-secondary hover:text-primary hover:bg-muted transition-colors border-b border-border"
-                >
-                  Comparativas
-                </Link>
-                <Link
-                  href="/guia"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="px-4 py-3 text-[10px] uppercase font-bold text-secondary hover:text-primary hover:bg-muted transition-colors border-b border-border"
-                >
-                  Guías de Presupuesto
-                </Link>
+                {PRIMARY_NAV_LINKS.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="px-4 py-3 text-[10px] uppercase font-bold text-secondary hover:text-primary hover:bg-muted transition-colors border-b border-border"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
                 <Link
                   href="/auth"
                   onClick={() => setIsMobileMenuOpen(false)}

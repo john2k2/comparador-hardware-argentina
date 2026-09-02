@@ -234,6 +234,7 @@ export default async function RootLayout({
                     <li><Link href="/privacidad" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Politica de Privacidad</Link></li>
                     <li><Link href="/terminos" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Terminos de Uso</Link></li>
                     <li><Link href="/contacto" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Contacto</Link></li>
+                    <li><Link href="/indice-precios-hardware" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Índice de precios</Link></li>
                   </ul>
                 </div>
               </div>

@@ -16,6 +16,7 @@ export function buildLlmsTxt(): string {
 - [Acerca](${SITE_URL}/acerca)
 - [Guías PC gamer](${SITE_URL}/guia)
 - [Comparativas](${SITE_URL}/comparativa)
+- [Índice de precios](${SITE_URL}/indice-precios-hardware)
 
 ## Categorías
 
