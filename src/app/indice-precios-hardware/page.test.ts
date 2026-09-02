@@ -40,6 +40,7 @@ describe('hardware price index page', () => {
     const markup = renderToStaticMarkup(createElement(PriceIndexPageContent, { snapshot }));
 
     expect(markup).toContain('Qué pasó con el precio del hardware esta semana');
+    expect(markup).toContain('Actualizado: 2026-06-08');
     expect(markup).toContain('Descargar datos agregados');
     expect(markup).toContain('sesgo de supervivencia');
     expect(markup).toContain('365 días');
@@ -80,6 +81,9 @@ describe('hardware price index page', () => {
     }));
 
     expect(markup).toContain('Todavía no hay suficientes datos');
+    expect(markup).toContain('Cómo medimos el precio del hardware en Argentina');
+    expect(markup).not.toContain('Qué pasó con el precio del hardware esta semana');
+    expect(markup).not.toContain('Actualizado:');
     expect(markup).not.toContain('$0');
   });
 });

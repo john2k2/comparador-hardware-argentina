@@ -11,6 +11,9 @@ import {
   type ComparisonDefinition 
 } from '@/lib/seo/comparisons-data';
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
+import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
+import { SITE_URL } from '@/lib/site-config';
+import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
 import Link from 'next/link';
 import type { HardwareCategory, Product } from '@/lib/types';
 import { getCategoryLabel } from '@/lib/search/search-seo';
@@ -91,6 +94,9 @@ export default async function ComparisonPage({ params }: Props) {
         <p className="text-[11px] md:text-[12px] text-muted-foreground font-mono leading-relaxed">
           {comparison.description}
         </p>
+        <div className="mt-3">
+          <EditorialUpdatedStamp isoDate={EDITORIAL_UPDATED_AT} />
+        </div>
       </header>
 
       {/* Introducción */}
@@ -295,15 +301,24 @@ export default async function ComparisonPage({ params }: Props) {
         dangerouslySetInnerHTML={{
           __html: serializeJsonLd({
             '@context': 'https://schema.org',
-            '@type': 'FAQPage',
-            mainEntity: comparison.faqs.map(faq => ({
-              '@type': 'Question',
-              name: faq.question,
-              acceptedAnswer: {
-                '@type': 'Answer',
-                text: faq.answer,
+            '@graph': [
+              {
+                '@type': 'WebPage',
+                url: `${SITE_URL}/comparativa/${comparison.slug}`,
+                dateModified: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
               },
-            })),
+              {
+                '@type': 'FAQPage',
+                mainEntity: comparison.faqs.map(faq => ({
+                  '@type': 'Question',
+                  name: faq.question,
+                  acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: faq.answer,
+                  },
+                })),
+              },
+            ],
           }),
         }}
       />

@@ -1,5 +1,6 @@
 import { categories } from '@/lib/scrapers/static-data';
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
+import { HOME_CITATION_BLOCK } from './home-copy';
 
 export function buildLlmsTxt(): string {
   const categoryLines = categories
@@ -9,6 +10,11 @@ export function buildLlmsTxt(): string {
   return `# ${SITE_NAME}
 
 > Comparador independiente de precios de hardware en Argentina. No vende productos.
+
+${HOME_CITATION_BLOCK}
+
+Metodología del índice: ${SITE_URL}/indice-precios-hardware
+No declaramos un ganador si no hay ofertas en stock.
 
 ## Páginas
 
@@ -23,3 +29,4 @@ export function buildLlmsTxt(): string {
 ${categoryLines}
 `;
 }
+

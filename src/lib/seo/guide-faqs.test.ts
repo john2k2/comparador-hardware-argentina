@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ResolvedGuideComponent } from './budget-guide-pricing';
-import { resolveGuideFaqs } from './guide-faqs';
+import { canPublishGuideFps, resolveGuideFaqs } from './guide-faqs';
 
 function slot(
   overrides: Pick<ResolvedGuideComponent, 'name' | 'priceSource'>,
@@ -59,5 +59,17 @@ describe('resolveGuideFaqs', () => {
     expect(answers).toContain('AMD Ryzen 5 5500');
     expect(answers).toContain('Gigabyte RX 6600 Eagle');
     expect(answers).not.toContain('Ryzen 5 5600');
+  });
+
+  it('solo publica FPS cuando CPU y GPU salen del catálogo', () => {
+    expect(canPublishGuideFps(
+      slot({ name: 'AMD Ryzen 5 5500', priceSource: 'catalog' }),
+      slot({ name: 'Gigabyte RX 6600 Eagle', priceSource: 'catalog' }),
+    )).toBe(true);
+
+    expect(canPublishGuideFps(
+      slot({ name: 'AMD Ryzen 5 5500', priceSource: 'catalog' }),
+      slot({ name: 'AMD RX 6600 8GB', priceSource: 'estimate' }),
+    )).toBe(false);
   });
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
+import { HOME_CITATION_BLOCK } from './home-copy';
 import { buildLlmsTxt } from './llms-txt';
 
 describe('buildLlmsTxt', () => {
@@ -14,5 +15,8 @@ describe('buildLlmsTxt', () => {
     expect(body).toContain(`${SITE_URL}/indice-precios-hardware`);
     expect(body).toContain(`${SITE_URL}/search?category=procesadores`);
     expect(body).toContain(`${SITE_URL}/search?category=tarjetas-graficas`);
+    expect(body).toContain(HOME_CITATION_BLOCK);
+    expect(body).toContain('No declaramos un ganador si no hay ofertas en stock');
+    expect(body).toContain(`${SITE_URL}/indice-precios-hardware`);
   });
 });

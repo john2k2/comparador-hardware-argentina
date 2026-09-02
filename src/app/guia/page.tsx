@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { SITE_URL } from '@/lib/site-config';
 import { BUDGET_GUIDES } from '@/lib/seo/budget-guides-data';
+import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
 import { formatPriceARS } from '@/lib/price-utils';
+import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
@@ -10,6 +12,11 @@ export const metadata: Metadata = {
   keywords: ['guia pc gamer', 'armar pc argentina', 'pc gamer presupuesto', 'configuracion pc gaming'],
   alternates: {
     canonical: `${SITE_URL}/guia`,
+  },
+  openGraph: {
+    type: 'website',
+    url: `${SITE_URL}/guia`,
+    modifiedTime: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
   },
 };
 
@@ -26,6 +33,9 @@ export default function GuiasIndexPage() {
           Armá la mejor PC gamer según tu presupuesto. Componentes seleccionados 
           por precio/calidad con precios actualizados de tiendas argentinas.
         </p>
+        <div className="mt-3">
+          <EditorialUpdatedStamp isoDate={EDITORIAL_UPDATED_AT} />
+        </div>
       </header>
 
       <section className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow mb-8">
@@ -42,12 +52,12 @@ export default function GuiasIndexPage() {
             Las builds incluyen siempre: procesador, motherboard, memoria RAM, tarjeta gráfica, almacenamiento,
             fuente de alimentación y gabinete. No incluyen periféricos ni monitor, pero damos recomendaciones
             opcionales para completar tu setup. Antes de comprar, verificá que todos los componentes sean compatibles
-            entre sí. Si tenés dudas, consultá nuestra sección de comparativas o contactanos para ayuda personalizada.
+            entre sí. Si tenés dudas, consultá nuestra sección de comparativas o la página de contacto.
           </p>
           <p>
-            El rendimiento indicado se basa en benchmarks reales con juegos populares en 2026. Los FPS pueden
-            variar según la configuración gráfica, resolución y optimización del juego. Para gaming 1080p,
-            cualquier build de $1.000.000+ es suficiente. Para 1440p high refresh, recomendamos $2.000.000+.
+            Los FPS de cada guía solo se publican cuando el procesador y la placa de video
+            tienen oferta en stock. No citamos números de un combo estimado ni de un banco de pruebas propio.
+            Para gaming 1080p, cualquier build de $1.000.000+ es suficiente. Para 1440p high refresh, recomendamos $2.000.000+.
             Para 4K gaming, necesitás $3.000.000+ con GPU de gama alta.
           </p>
         </div>
@@ -100,17 +110,6 @@ export default function GuiasIndexPage() {
             <div className="text-[10px] font-mono mb-3">
               <div className="text-muted-foreground">RENDIMIENTO:</div>
               <div className="text-foreground">{guide.performance}</div>
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
-              {guide.keywords.slice(0, 2).map((keyword) => (
-                <span 
-                  key={keyword}
-                  className="text-[9px] bg-muted px-2 py-1 text-muted-foreground"
-                >
-                  {keyword}
-                </span>
-              ))}
             </div>
             
             <div className="mt-3 text-[10px] text-primary font-mono">

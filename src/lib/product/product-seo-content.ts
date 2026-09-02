@@ -1,5 +1,6 @@
 import type { Product, HardwareCategory } from '@/lib/types';
 import { normalizeDisplayText } from '@/lib/text-utils';
+import { parseListingFlags } from './listing-flags';
 
 type ProductContent = {
   intro: string;
@@ -12,19 +13,41 @@ const CATEGORY_CONTENT: Record<HardwareCategory, (product: Product) => ProductCo
   'procesadores': (product) => {
     const brand = normalizeDisplayText(product.brand);
     const name = normalizeDisplayText(product.name);
-    return {
-      intro: `El procesador es el cerebro de tu PC. ${name} ofrece un equilibrio entre rendimiento y eficiencia energética. Al elegir un CPU, considerá el socket, la compatibilidad con tu motherboard actual o futura, y si el cooler incluido alcanza para tus necesidades. Los procesadores modernos de ${brand} destacan por su arquitectura optimizada para gaming y productividad.`,
-      tips: [
-        'Verificá que el socket del procesador coincida con tu motherboard.',
-        'Considerá el TDP: procesadores de alto consumo necesitan refrigeración superior.',
-        'Los CPUs con gráficos integrados son ideales para builds sin placa de video dedicada.',
-        'Revisá si el cooler viene incluido o necesitás comprar uno por separado.',
-      ],
-      faqs: [
-        {
+    const flags = parseListingFlags(product.name);
+    const coolerFaq = flags.coolerIncluded === true
+      ? {
           question: `¿${name} incluye cooler de fábrica?`,
-          answer: 'Depende del modelo específico. Algunos procesadores incluyen cooler stock, mientras que otros requieren una solución de refrigeración aftermarket. Consultá las especificaciones técnicas del fabricante.',
-        },
+          answer: 'Esta publicación incluye cooler de fábrica (C/COOLER). El stock suele ser básico; no hace falta comprar uno aparte para arrancar.',
+        }
+      : flags.coolerIncluded === false
+        ? {
+            question: `¿${name} incluye cooler de fábrica?`,
+            answer: 'Esta publicación no incluye cooler (WOF / S/COOLER). Necesitás una solución aftermarket compatible con el socket.',
+          }
+        : null;
+    const coolerIntro = flags.coolerIncluded === true
+      ? 'El listing incluye cooler de fábrica.'
+      : flags.coolerIncluded === false
+        ? 'El listing no incluye cooler: hay que sumar uno aftermarket.'
+        : '';
+    const tips = [
+      'Verificá que el socket del procesador coincida con tu motherboard.',
+      'Considerá el TDP: procesadores de alto consumo necesitan refrigeración superior.',
+    ];
+    if (flags.integratedGraphics === true) {
+      tips.push('Los CPUs con gráficos integrados son ideales para builds sin placa de video dedicada.');
+    } else if (flags.integratedGraphics === false) {
+      tips.push('Este listing es S/VIDEO: no trae video onboard; hace falta una placa de video.');
+    }
+    if (flags.coolerIncluded == null) {
+      tips.push('Revisá si el cooler viene incluido o necesitás comprar uno por separado.');
+    }
+
+    return {
+      intro: `El procesador es el cerebro de tu PC. ${name} ofrece un equilibrio entre rendimiento y eficiencia energética. Al elegir un CPU, considerá el socket y la compatibilidad con tu motherboard. ${coolerIntro} Los procesadores modernos de ${brand} destacan por su arquitectura optimizada para gaming y productividad.`.replace(/\s+/g, ' ').trim(),
+      tips,
+      faqs: [
+        ...(coolerFaq ? [coolerFaq] : []),
         {
           question: '¿Qué motherboard necesito para este procesador?',
           answer: `Necesitás una motherboard con el socket compatible. Revisá el chipset recomendado para ${brand} y asegurate de que tenga soporte para este modelo específico, especialmente si es una generación reciente.`,

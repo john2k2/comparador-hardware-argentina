@@ -9,6 +9,7 @@ import {
   buildNoIndexMetadata,
 } from '@/lib/seo/metadata';
 import { SITE_URL } from '@/lib/site-config';
+import { EDITORIAL_UPDATED_AT } from './editorial-freshness';
 
 function buildArticleMetadata(input: {
   path: string;
@@ -31,6 +32,7 @@ function buildArticleMetadata(input: {
       title: input.title,
       description: input.description,
       images: [`${SITE_URL}/og-image.png`],
+      modifiedTime: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
     },
   };
 }

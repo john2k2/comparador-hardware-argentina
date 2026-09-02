@@ -9,6 +9,7 @@ import {
 } from '@/lib/price-index/model';
 import { getHardwarePriceIndex } from '@/lib/price-index/server';
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
+import { editorialUpdatedLabel, toIsoDateOnly } from '@/lib/seo/editorial-freshness';
 
 const PAGE_URL = `${SITE_URL}/indice-precios-hardware`;
 const CSV_URL = `${PAGE_URL}/datos.csv`;
@@ -49,6 +50,7 @@ export function buildPriceIndexJsonLd(snapshot: PriceIndexSnapshot): { '@context
         inLanguage: 'es-AR',
         isPartOf: { '@id': `${SITE_URL}/#website` },
         mainEntity: { '@id': `${PAGE_URL}#dataset` },
+        dateModified: snapshot.updatedAt ?? undefined,
       },
       {
         '@type': 'Dataset',
@@ -103,6 +105,8 @@ function getLatestPoint(series: PriceIndexSeries) {
 
 export function PriceIndexPageContent({ snapshot, nonce }: { snapshot: PriceIndexSnapshot; nonce?: string }) {
   const jsonLd = buildPriceIndexJsonLd(snapshot);
+  const isEmpty = snapshot.status === 'empty';
+  const updatedIso = toIsoDateOnly(snapshot.updatedAt);
 
   return (
     <main className="mx-auto w-full max-w-[1500px] px-4 py-10 md:px-8 md:py-14">
@@ -118,8 +122,15 @@ export function PriceIndexPageContent({ snapshot, nonce }: { snapshot: PriceInde
           Mercado argentino · ventana móvil de 90 días
         </p>
         <h1 className="max-w-5xl font-pixel text-[20px] leading-[1.7] text-foreground md:text-[32px]">
-          Qué pasó con el precio del hardware esta semana
+          {isEmpty
+            ? 'Cómo medimos el precio del hardware en Argentina'
+            : 'Qué pasó con el precio del hardware esta semana'}
         </h1>
+        {updatedIso ? (
+          <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+            {editorialUpdatedLabel(updatedIso)}
+          </p>
+        ) : null}
         <p className="mt-5 max-w-3xl font-mono text-[12px] normal-case leading-7 text-muted-foreground md:text-[14px]">
           Seguimos la mediana del menor precio disponible por producto. La serie usa base 100 al comienzo de cada categoría para mostrar cambios sin mezclar escalas de precio.
         </p>

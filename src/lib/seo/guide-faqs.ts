@@ -9,6 +9,10 @@ function catalogName(slot: ResolvedGuideComponent): string | null {
   return slot.priceSource === 'catalog' ? slot.name : null;
 }
 
+export function canPublishGuideFps(cpu: ResolvedGuideComponent, gpu: ResolvedGuideComponent): boolean {
+  return Boolean(catalogName(cpu) && catalogName(gpu));
+}
+
 function buildCanBuildAnswer(cpu: ResolvedGuideComponent, gpu: ResolvedGuideComponent): string {
   const cpuName = catalogName(cpu);
   const gpuName = catalogName(gpu);

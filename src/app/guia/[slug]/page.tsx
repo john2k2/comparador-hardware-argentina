@@ -5,9 +5,13 @@ import { readProductsFromDatabase } from '@/lib/persistence/product-read';
 import { formatPriceARS } from '@/lib/price-utils';
 import { GUIDE_CATALOG_CATEGORIES, resolveGuideSlots, type ResolvedGuideComponent } from '@/lib/seo/budget-guide-pricing';
 import { getBudgetGuideBySlug } from '@/lib/seo/budget-guides-data';
-import { resolveGuideFaqs } from '@/lib/seo/guide-faqs';
+import { resolveGuideFaqs, canPublishGuideFps } from '@/lib/seo/guide-faqs';
 import { resolveGuidePageMetadata } from '@/lib/seo/landing-metadata';
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
+import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
+import { SITE_URL } from '@/lib/site-config';
+import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
+import { GuideFpsPanel } from '@/components/seo/GuideFpsPanel';
 import Link from 'next/link';
 
 type Props = {
@@ -74,6 +78,9 @@ export default async function BudgetGuidePage({ params }: Props) {
         <p className="text-[11px] md:text-[12px] text-muted-foreground font-mono leading-relaxed">
           {guide.description} Solo usamos ofertas del catálogo con stock confirmado.
         </p>
+        <div className="mt-3">
+          <EditorialUpdatedStamp isoDate={EDITORIAL_UPDATED_AT} />
+        </div>
       </header>
 
       {/* Price Summary */}
@@ -136,14 +143,10 @@ export default async function BudgetGuidePage({ params }: Props) {
         <div className="grid md:grid-cols-2 gap-4">
           <div className="border-2 border-border p-4">
             <h3 className="text-[11px] font-bold mb-3">Gaming</h3>
-            <div className="space-y-2">
-              {guide.gamesPerformance.map((game, i) => (
-                <div key={i} className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-[10px] font-mono">
-                  <span className="min-w-0 break-words">{game.game}</span>
-                  <span className="shrink-0">{game.fps} FPS ({game.settings})</span>
-                </div>
-              ))}
-            </div>
+            <GuideFpsPanel
+              canPublish={canPublishGuideFps(resolved.cpu, resolved.gpu)}
+              games={guide.gamesPerformance}
+            />
           </div>
           
           <div className="border-2 border-border p-4">
@@ -204,15 +207,24 @@ export default async function BudgetGuidePage({ params }: Props) {
         dangerouslySetInnerHTML={{
           __html: serializeJsonLd({
             '@context': 'https://schema.org',
-            '@type': 'FAQPage',
-            mainEntity: faqs.map(faq => ({
-              '@type': 'Question',
-              name: faq.question,
-              acceptedAnswer: {
-                '@type': 'Answer',
-                text: faq.answer,
+            '@graph': [
+              {
+                '@type': 'WebPage',
+                url: `${SITE_URL}/guia/${slug}`,
+                dateModified: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
               },
-            })),
+              {
+                '@type': 'FAQPage',
+                mainEntity: faqs.map(faq => ({
+                  '@type': 'Question',
+                  name: faq.question,
+                  acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: faq.answer,
+                  },
+                })),
+              },
+            ],
           }),
         }}
       />
