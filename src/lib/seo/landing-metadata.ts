@@ -37,6 +37,36 @@ function buildArticleMetadata(input: {
   };
 }
 
+export function resolveComparativasHubMetadata(): Metadata {
+  return buildArticleMetadata({
+    path: '/comparativa',
+    title: 'Comparaciones Hardware',
+    description:
+      'Comparaciones de hardware en Argentina: GPUs, CPUs y más. Encontrá el mejor componente al mejor costo entre 20+ locales.',
+    keywords: [
+      'comparativa hardware',
+      'comparar precios componentes pc',
+      'mejor placa video',
+      'mejor procesador gaming',
+    ],
+  });
+}
+
+export function resolveGuiasHubMetadata(): Metadata {
+  return buildArticleMetadata({
+    path: '/guia',
+    title: 'Guías PC Gamer Argentina',
+    description:
+      'Armá tu PC gamer según presupuesto. Configuraciones recomendadas desde $1.000.000 con precios actualizados de tiendas argentinas.',
+    keywords: [
+      'guia pc gamer',
+      'armar pc argentina',
+      'pc gamer presupuesto',
+      'configuracion pc gaming',
+    ],
+  });
+}
+
 export function resolveGuidePageMetadata(slug: string): Metadata {
   const guide = getBudgetGuideBySlug(slug);
   if (!guide) {

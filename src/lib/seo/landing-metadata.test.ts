@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { EDITORIAL_UPDATED_AT } from './editorial-freshness';
-import { resolveComparisonPageMetadata, resolveGuidePageMetadata } from './landing-metadata';
+import {
+  resolveComparativasHubMetadata,
+  resolveComparisonPageMetadata,
+  resolveGuiasHubMetadata,
+  resolveGuidePageMetadata,
+} from './landing-metadata';
 
 describe('landing metadata dates', () => {
   it('publica dateModified ISO en Open Graph de comparativa y guía', () => {
@@ -12,6 +17,17 @@ describe('landing metadata dates', () => {
       modifiedTime: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
     });
     expect(guide.openGraph).toMatchObject({
+      type: 'article',
+      modifiedTime: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
+    });
+  });
+
+  it('usa og:article en los hubs para poder publicar modifiedTime', () => {
+    expect(resolveComparativasHubMetadata().openGraph).toMatchObject({
+      type: 'article',
+      modifiedTime: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
+    });
+    expect(resolveGuiasHubMetadata().openGraph).toMatchObject({
       type: 'article',
       modifiedTime: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
     });

@@ -1,23 +1,11 @@
 import type { Metadata } from 'next';
-import { SITE_URL } from '@/lib/site-config';
 import { COMPARISONS } from '@/lib/seo/comparisons-data';
 import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
+import { resolveComparativasHubMetadata } from '@/lib/seo/landing-metadata';
 import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
 import Link from 'next/link';
 
-export const metadata: Metadata = {
-  title: 'Comparaciones Hardware',
-  description: 'Comparaciones de hardware en Argentina: GPUs, CPUs y más. Encontrá el mejor componente al mejor costo entre 20+ locales.',
-  keywords: ['comparativa hardware', 'comparar precios componentes pc', 'mejor placa video', 'mejor procesador gaming'],
-  alternates: {
-    canonical: `${SITE_URL}/comparativa`,
-  },
-  openGraph: {
-    type: 'website',
-    url: `${SITE_URL}/comparativa`,
-    modifiedTime: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
-  },
-};
+export const metadata: Metadata = resolveComparativasHubMetadata();
 
 export const revalidate = 300;
 

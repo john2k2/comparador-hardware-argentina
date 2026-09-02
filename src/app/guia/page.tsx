@@ -1,24 +1,12 @@
 import type { Metadata } from 'next';
-import { SITE_URL } from '@/lib/site-config';
 import { BUDGET_GUIDES } from '@/lib/seo/budget-guides-data';
 import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
 import { formatPriceARS } from '@/lib/price-utils';
+import { resolveGuiasHubMetadata } from '@/lib/seo/landing-metadata';
 import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
 import Link from 'next/link';
 
-export const metadata: Metadata = {
-  title: 'Guías PC Gamer Argentina',
-  description: 'Armá tu PC gamer según presupuesto. Configuraciones recomendadas desde $1.000.000 con precios actualizados de tiendas argentinas.',
-  keywords: ['guia pc gamer', 'armar pc argentina', 'pc gamer presupuesto', 'configuracion pc gaming'],
-  alternates: {
-    canonical: `${SITE_URL}/guia`,
-  },
-  openGraph: {
-    type: 'website',
-    url: `${SITE_URL}/guia`,
-    modifiedTime: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
-  },
-};
+export const metadata: Metadata = resolveGuiasHubMetadata();
 
 export const revalidate = 300;
 
