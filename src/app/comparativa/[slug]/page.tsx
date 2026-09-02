@@ -13,6 +13,7 @@ import {
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
 import { SITE_URL } from '@/lib/site-config';
+import { ComparisonBenchSources } from '@/components/seo/ComparisonBenchSources';
 import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
 import Link from 'next/link';
 import type { HardwareCategory, Product } from '@/lib/types';
@@ -112,8 +113,9 @@ export default async function ComparisonPage({ params }: Props) {
             según tu presupuesto y necesidades específicas.
           </p>
           <p>
-            {pricing.storeCoverageCopy} El rendimiento, el consumo y las temperaturas dependen de benches
-            de terceros: acá el dato propio es el precio en tiendas argentinas con stock.
+            {pricing.storeCoverageCopy} El rendimiento, el consumo y las temperaturas los tomamos de
+            reviews de TechPowerUp (resumen, no copia). Acá el dato propio es el precio en tiendas
+            argentinas con stock.
           </p>
           <p>
             {comparison.product1.name} destaca por {comparison.product1.pros[0].toLowerCase()} y {comparison.product1.pros[1].toLowerCase()}, 
@@ -253,6 +255,8 @@ export default async function ComparisonPage({ params }: Props) {
           </div>
         </section>
       )}
+
+      <ComparisonBenchSources sources={comparison.sources} />
 
       {/* Conclusion */}
       <section className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow mb-8">

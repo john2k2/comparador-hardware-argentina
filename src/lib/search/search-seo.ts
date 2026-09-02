@@ -21,14 +21,14 @@ type CategorySeoCopy = {
 
 const CATEGORY_SEO_COPY: Record<HardwareCategory, CategorySeoCopy> = {
   'procesadores': {
-    title: 'Procesadores AMD e Intel: precios',
-    description: 'Compará precios de procesadores AMD Ryzen e Intel Core en tiendas de Argentina. Revisá stock, modelos y ofertas actuales antes de comprar.',
-    heading: 'Compará precios de procesadores AMD e Intel',
+    title: 'Comparar procesadores: precios AMD e Intel',
+    description: 'Compará procesadores AMD Ryzen e Intel Core entre tiendas de Argentina. Precio, stock y costo de plataforma antes de comprar.',
+    heading: 'Comparar procesadores AMD e Intel',
     intro: 'Encontrá y compará precios de procesadores AMD Ryzen e Intel Core publicados por tiendas argentinas. Revisá modelos para gaming, trabajo y PCs con gráficos integrados, junto con su stock y mejor precio disponible. Antes de decidir, confirmá el socket, la compatibilidad con motherboard y memoria, el cooler incluido y el costo total de la plataforma: un micro más barato no siempre produce el upgrade más conveniente.',
     relatedLinks: [
       {
         href: '/comparativa/ryzen-5-7600x-vs-ryzen-7-5700x',
-        label: 'Ryzen 7600X vs 5700X: cuál conviene',
+        label: 'Ryzen 5 7600X vs Ryzen 7 5700X: precios',
       },
       {
         href: '/comparativa/i5-14600k-vs-ryzen-5-7600x',
@@ -59,9 +59,9 @@ const CATEGORY_SEO_COPY: Record<HardwareCategory, CategorySeoCopy> = {
     ],
   },
   'tarjetas-graficas': {
-    title: 'Placas de video RTX y Radeon: precios',
-    description: 'Compará precios de placas de video NVIDIA GeForce RTX y AMD Radeon en Argentina. Encontrá stock y ofertas actuales en múltiples tiendas.',
-    heading: 'Compará precios de placas de video RTX y Radeon',
+    title: 'Comparar placas de video: precios RTX y Radeon',
+    description: 'Compará placas de video NVIDIA RTX y AMD Radeon entre tiendas de Argentina. Precio, stock y VRAM del mismo chip.',
+    heading: 'Comparar placas de video RTX y Radeon',
     intro: 'Compará precios de placas de video NVIDIA GeForce RTX y AMD Radeon publicadas por tiendas argentinas. Encontrá modelos para gaming, streaming y trabajo, con stock y mejor precio disponible. Además del importe final, revisá VRAM, consumo, tamaño físico, garantía, fuente recomendada y rendimiento para la resolución de tu monitor. Así podés distinguir variantes parecidas y evitar pagar de más por una publicación con menos memoria o refrigeración inferior.',
     relatedLinks: [
       {

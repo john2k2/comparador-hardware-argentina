@@ -12,9 +12,9 @@ describe('search page metadata', () => {
     });
 
     expect(metadata.alternates?.canonical).toBe('https://www.comparador-hardware.com.ar/search?category=procesadores');
-    expect(metadata.title).toEqual({ absolute: 'Procesadores AMD e Intel: precios | Comparador Hardware Argentina' });
+    expect(metadata.title).toEqual({ absolute: 'Comparar procesadores: precios AMD e Intel | Comparador Hardware Argentina' });
     expect(metadata.description).toBe(
-      'Compará precios de procesadores AMD Ryzen e Intel Core en tiendas de Argentina. Revisá stock, modelos y ofertas actuales antes de comprar.',
+      'Compará procesadores AMD Ryzen e Intel Core entre tiendas de Argentina. Precio, stock y costo de plataforma antes de comprar.',
     );
     expect(metadata.robots).toMatchObject({ index: true, follow: true });
   });
@@ -28,9 +28,9 @@ describe('search page metadata', () => {
       page: 1,
     });
 
-    expect(metadata.title).toEqual({ absolute: 'Placas de video RTX y Radeon: precios | Comparador Hardware Argentina' });
+    expect(metadata.title).toEqual({ absolute: 'Comparar placas de video: precios RTX y Radeon | Comparador Hardware Argentina' });
     expect(metadata.description).toBe(
-      'Compará precios de placas de video NVIDIA GeForce RTX y AMD Radeon en Argentina. Encontrá stock y ofertas actuales en múltiples tiendas.',
+      'Compará placas de video NVIDIA RTX y AMD Radeon entre tiendas de Argentina. Precio, stock y VRAM del mismo chip.',
     );
   });
 
@@ -57,7 +57,7 @@ describe('search page metadata', () => {
     });
 
     expect(metadata.alternates?.canonical).toBe('https://www.comparador-hardware.com.ar/search?category=procesadores');
-    expect(metadata.title).toEqual({ absolute: 'Procesadores AMD e Intel: precios | Comparador Hardware Argentina' });
+    expect(metadata.title).toEqual({ absolute: 'Comparar procesadores: precios AMD e Intel | Comparador Hardware Argentina' });
     expect(metadata.robots).toMatchObject({ index: false, follow: true });
   });
 });

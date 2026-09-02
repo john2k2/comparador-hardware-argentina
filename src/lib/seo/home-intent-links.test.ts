@@ -5,8 +5,8 @@ describe('home intent links', () => {
   it('destaca las queries que ya tienen impresiones', () => {
     expect(HOME_INTENT_LINKS).toEqual([
       { href: '/search?category=procesadores', label: 'Comparar procesadores' },
-      { href: '/search?category=tarjetas-graficas', label: 'Placas de video' },
-      { href: '/comparativa/ryzen-5-7600x-vs-ryzen-7-5700x', label: 'Ryzen 7600X vs 5700X' },
+      { href: '/search?category=tarjetas-graficas', label: 'Comparar placas de video' },
+      { href: '/comparativa/ryzen-5-7600x-vs-ryzen-7-5700x', label: 'Ryzen 5 7600X vs Ryzen 7 5700X' },
       { href: '/search?category=motherboards', label: 'Comparar motherboards' },
       { href: '/search?category=memoria-ram', label: 'Comparar memoria RAM' },
     ]);

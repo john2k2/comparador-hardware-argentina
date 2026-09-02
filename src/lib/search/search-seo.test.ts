@@ -30,10 +30,11 @@ describe('search-seo', () => {
     expect(copy?.description).toContain('Argentina');
   });
 
-  it('agrega FAQ de comparar procesadores sin cambiar el title', () => {
+  it('usa el title de la consulta comparar procesadores', () => {
     const copy = getCategorySeoCopy('procesadores');
 
-    expect(copy?.title).toBe('Procesadores AMD e Intel: precios');
+    expect(copy?.title).toBe('Comparar procesadores: precios AMD e Intel');
+    expect(copy?.heading.toLowerCase()).toContain('comparar procesadores');
     expect(copy?.faqs?.some((faq) => faq.question.toLowerCase().includes('comparar procesadores'))).toBe(true);
     expect(copy?.relatedLinks).toEqual(expect.arrayContaining([
       expect.objectContaining({ href: '/comparativa/i5-14600k-vs-ryzen-5-7600x' }),
@@ -44,7 +45,8 @@ describe('search-seo', () => {
   it('agrega FAQ de placas de video y otra comparativa de GPU', () => {
     const copy = getCategorySeoCopy('tarjetas-graficas');
 
-    expect(copy?.title).toBe('Placas de video RTX y Radeon: precios');
+    expect(copy?.title).toBe('Comparar placas de video: precios RTX y Radeon');
+    expect(copy?.heading.toLowerCase()).toContain('comparar placas de video');
     expect(copy?.faqs?.length).toBeGreaterThanOrEqual(2);
     expect(copy?.relatedLinks).toEqual(expect.arrayContaining([
       expect.objectContaining({ href: '/comparativa/rtx-5070-vs-rtx-4070' }),
