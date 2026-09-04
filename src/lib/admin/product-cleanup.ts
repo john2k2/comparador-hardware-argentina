@@ -1,132 +1,138 @@
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
+import {
+  selectProductsToDeindex,
+  summarizeProductsHealth,
+  type GroupedProduct,
+  type ProductCleanupCandidate,
+  type ProductsHealth,
+} from './product-cleanup-selection';
+
+const GROUPED_PRODUCT_PREFIX = 'agrupado-';
+const PAGE_SIZE = 1000;
+
+type SupabaseServiceClient = NonNullable<ReturnType<typeof getServerSupabaseServiceClient>>;
+
+function requireClient(): SupabaseServiceClient {
+  const supabase = getServerSupabaseServiceClient();
+  if (!supabase) {
+    throw new Error('Supabase no disponible');
+  }
+  return supabase;
+}
 
 /**
- * Limpia productos que tienen precios en $0 o sin tiendas asociadas
- * Estos productos aparecen en la UI pero no tienen información útil
+ * Reads every row of a query, page by page.
+ *
+ * PostgREST caps a single response, so an unpaginated read silently truncates
+ * once the table outgrows that cap - which here would misreport healthy
+ * products as having no offers.
+ */
+async function readAllPages<T>(
+  buildPage: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+  label: string,
+): Promise<T[]> {
+  const rows: T[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await buildPage(from, from + PAGE_SIZE - 1);
+    if (error) {
+      throw new Error(`Error leyendo ${label}: ${error.message}`);
+    }
+
+    const batch = data ?? [];
+    rows.push(...batch);
+    if (batch.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+
+  return rows;
+}
+
+async function readGroupedProducts(supabase: SupabaseServiceClient): Promise<GroupedProduct[]> {
+  return readAllPages<GroupedProduct>(
+    (from, to) => supabase
+      .from('products')
+      .select('id, name')
+      .like('id', `${GROUPED_PRODUCT_PREFIX}%`)
+      .range(from, to),
+    'products',
+  );
+}
+
+async function readPricedProductIds(supabase: SupabaseServiceClient): Promise<string[]> {
+  const rows = await readAllPages<{ product_id: string }>(
+    (from, to) => supabase
+      .from('product_prices')
+      .select('product_id')
+      .gt('price', 0)
+      .range(from, to),
+    'product_prices',
+  );
+
+  return rows.map((row) => row.product_id);
+}
+
+async function readZeroAggregateProductIds(supabase: SupabaseServiceClient): Promise<string[]> {
+  const rows = await readAllPages<{ id: string }>(
+    (from, to) => supabase
+      .from('products')
+      .select('id')
+      .like('id', `${GROUPED_PRODUCT_PREFIX}%`)
+      .or('lowest_price.eq.0,highest_price.eq.0')
+      .range(from, to),
+    'products con precio agregado en $0',
+  );
+
+  return rows.map((row) => row.id);
+}
+
+async function readCleanupInputs(supabase: SupabaseServiceClient) {
+  const [groupedProducts, pricedProductIds, zeroPriceProductIds] = await Promise.all([
+    readGroupedProducts(supabase),
+    readPricedProductIds(supabase),
+    readZeroAggregateProductIds(supabase),
+  ]);
+
+  return { groupedProducts, pricedProductIds, zeroPriceProductIds };
+}
+
+/**
+ * Marks grouped products with no usable offer as non-indexable.
+ *
+ * These render as a product page with nothing to compare, so leaving them
+ * indexable feeds Google thin pages.
  */
 export async function cleanupZeroPriceProducts(): Promise<{
   cleaned: number;
   total: number;
-  details: Array<{ id: string; name: string; reason: string }>;
+  details: ProductCleanupCandidate[];
 }> {
-  const supabase = getServerSupabaseServiceClient();
-  if (!supabase) {
-    throw new Error('Supabase no disponible');
-  }
+  const supabase = requireClient();
+  const details = selectProductsToDeindex(await readCleanupInputs(supabase));
 
-  const details: Array<{ id: string; name: string; reason: string }> = [];
-
-  // 1. Buscar productos agrupados con precio 0 o sin precios
-  const { data: zeroPriceProducts, error } = await supabase
-    .from('products')
-    .select('id, name, canonical_product_key')
-    .like('id', 'agrupado-%')
-    .or('lowest_price.eq.0,highest_price.eq.0');
-
-  if (error) {
-    throw new Error(`Error buscando productos: ${error.message}`);
-  }
-
-  // 2. Buscar productos agrupados sin precios en product_prices
-  const { data: productsWithoutPrices } = await supabase
-    .from('products')
-    .select('id, name')
-    .like('id', 'agrupado-%')
-    .not('id', 'in', (
-      supabase
-        .from('product_prices')
-        .select('product_id')
-    ));
-
-  const productsToClean = [
-    ...(zeroPriceProducts || []),
-    ...(productsWithoutPrices || []),
-  ];
-
-  // Eliminar duplicados
-  const uniqueProducts = Array.from(
-    new Map(productsToClean.map(p => [p.id, p])).values()
-  );
-
-  // 3. Marcar como no indexables o eliminar
-  for (const product of uniqueProducts) {
-    // Opción 1: Marcar como no indexable
-    await supabase
+  for (const product of details) {
+    const { error } = await supabase
       .from('products')
-      .update({ 
+      .update({
         is_indexable: false,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('id', product.id);
 
-    details.push({
-      id: product.id,
-      name: product.name || 'Sin nombre',
-      reason: 'Precio $0 o sin tiendas asociadas',
-    });
+    if (error) {
+      throw new Error(`Error marcando ${product.id} como no indexable: ${error.message}`);
+    }
   }
 
   return {
-    cleaned: uniqueProducts.length,
-    total: uniqueProducts.length,
+    cleaned: details.length,
+    total: details.length,
     details,
   };
 }
 
-/**
- * Verifica la salud de los productos en la base de datos
- */
-export async function checkProductsHealth(): Promise<{
-  totalProducts: number;
-  withZeroPrice: number;
-  withoutStores: number;
-  withPrices: number;
-  healthy: number;
-}> {
-  const supabase = getServerSupabaseServiceClient();
-  if (!supabase) {
-    throw new Error('Supabase no disponible');
-  }
-
-  // Total de productos agrupados
-  const { count: totalProducts } = await supabase
-    .from('products')
-    .select('*', { count: 'exact', head: true })
-    .like('id', 'agrupado-%');
-
-  // Productos con precio 0
-  const { count: withZeroPrice } = await supabase
-    .from('products')
-    .select('*', { count: 'exact', head: true })
-    .like('id', 'agrupado-%')
-    .or('lowest_price.eq.0,highest_price.eq.0');
-
-  // Productos sin tiendas (sin precios en product_prices)
-  const { data: productsWithPrices } = await supabase
-    .from('product_prices')
-    .select('product_id')
-    .gt('price', 0);
-
-  const productsWithPricesSet = new Set(productsWithPrices?.map(p => p.product_id) || []);
-
-  // Productos agrupados que tienen precios
-  const { data: allGroupedProducts } = await supabase
-    .from('products')
-    .select('id')
-    .like('id', 'agrupado-%');
-
-  const withoutStores = (allGroupedProducts || []).filter(
-    p => !productsWithPricesSet.has(p.id)
-  ).length;
-
-  const withPrices = productsWithPricesSet.size;
-  const healthy = (totalProducts || 0) - (withZeroPrice || 0) - withoutStores;
-
-  return {
-    totalProducts: totalProducts || 0,
-    withZeroPrice: withZeroPrice || 0,
-    withoutStores,
-    withPrices,
-    healthy: Math.max(0, healthy),
-  };
+export async function checkProductsHealth(): Promise<ProductsHealth> {
+  const supabase = requireClient();
+  return summarizeProductsHealth(await readCleanupInputs(supabase));
 }
