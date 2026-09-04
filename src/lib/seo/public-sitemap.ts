@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { categories } from '@/lib/scrapers/static-data';
 import { toAbsoluteUrl } from '@/lib/seo/url-utils';
+import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
 import { COMPARISONS } from '@/lib/seo/comparisons-data';
 import { BUDGET_GUIDES } from '@/lib/seo/budget-guides-data';
 
@@ -54,7 +55,7 @@ export function buildPublicSitemapEntries(): MetadataRoute.Sitemap {
   ];
 
   const categoryEntries: MetadataRoute.Sitemap = categories.map((category) => ({
-    url: toAbsoluteUrl(`/search?category=${encodeURIComponent(category.id)}`),
+    url: toAbsoluteUrl(buildCategoryLandingPath(category.id)),
     changeFrequency: 'hourly',
     priority: 0.8,
   }));

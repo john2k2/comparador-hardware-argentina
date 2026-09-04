@@ -10,6 +10,7 @@ import {
 import { getHardwarePriceIndex } from '@/lib/price-index/server';
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { editorialUpdatedLabel, toIsoDateOnly } from '@/lib/seo/editorial-freshness';
+import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
 
 const PAGE_URL = `${SITE_URL}/indice-precios-hardware`;
 const CSV_URL = `${PAGE_URL}/datos.csv`;
@@ -156,7 +157,7 @@ export function PriceIndexPageContent({ snapshot, nonce }: { snapshot: PriceInde
           {PRICE_INDEX_CATEGORIES.map((category) => (
             <Link
               key={category.id}
-              href={`/search?category=${category.id}`}
+              href={buildCategoryLandingPath(category.id)}
               className="font-mono text-[10px] font-bold text-secondary underline decoration-2 underline-offset-4 hover:text-primary focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-ring"
             >
               {category.label}

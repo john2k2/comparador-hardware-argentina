@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('navigates search pagination without losing category context', async ({ page }) => {
-  await page.goto('/search?category=procesadores');
+  await page.goto('/comparar/procesadores');
   await page.waitForTimeout(3000);
 
   const productLinks = page.locator('#product-grid-start a[href^="/product/"]');

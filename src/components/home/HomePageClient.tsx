@@ -11,6 +11,8 @@ import { HOME_INTENT_LINKS, HOME_PROCESSOR_PROMO } from '@/lib/seo/home-intent-l
 import { categories, stores as defaultStores } from '@/lib/scrapers/static-data';
 import { readRecentlyViewedProducts } from '@/lib/client/recently-viewed';
 import type { Product } from '@/lib/types';
+import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
+import type { HardwareCategory } from '@/lib/types';
 
 // Lazy load below-fold sections to reduce initial bundle
 const SponsoredStoresSection = dynamic(
@@ -246,7 +248,7 @@ export function HomePageClient({
         actionLabel="VER TODO"
       />
       <section className="mb-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        {[
+        {([
           { id: 'tarjetas-graficas', name: 'Placas de Video', icon: 'GPU' },
           { id: 'procesadores', name: 'Procesadores', icon: 'CPU' },
           { id: 'memoria-ram', name: 'Memoria RAM', icon: 'RAM' },
@@ -255,10 +257,10 @@ export function HomePageClient({
           { id: 'fuentes-alimentacion', name: 'Fuentes', icon: 'PSU' },
           { id: 'gabinetes', name: 'Gabinetes', icon: 'CASE' },
           { id: 'refrigeracion', name: 'Coolers', icon: 'FAN' },
-        ].map((cat) => (
+        ] satisfies Array<{ id: HardwareCategory; name: string; icon: string }>).map((cat) => (
           <Link
             key={cat.id}
-            href={`/search?category=${cat.id}`}
+            href={buildCategoryLandingPath(cat.id)}
             className="block group"
           >
             <article className="bg-card border-4 border-border p-3 pixel-shadow transition-transform group-hover:-translate-y-1 group-hover:translate-x-1 text-center">
@@ -296,7 +298,7 @@ export function HomePageClient({
           ) : (
             <HomeEmptyCatalogState
               message="Todavia no hay destacados cargados en esta instancia."
-              href="/search?category=tarjetas-graficas"
+              href={buildCategoryLandingPath('tarjetas-graficas')}
               cta="EXPLORAR GPUS"
             />
           )}
@@ -432,7 +434,7 @@ export function HomePageClient({
           {categories.map((category) => (
             <Link
               key={category.id}
-              href={`/search?category=${category.id}`}
+              href={buildCategoryLandingPath(category.id)}
               className="min-h-11 border-2 border-border p-3 text-[9px] uppercase font-bold text-center bg-muted/40 hover:border-secondary hover:text-secondary transition-colors flex items-center justify-center"
             >
               {category.name}

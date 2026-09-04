@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { SearchPageState } from './search-state';
 import { getCategorySeoCopy, isCategoryCanonicalLanding, isIndexableCategoryLanding } from './search-seo';
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
+import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
 import { stores as defaultStores } from '@/lib/scrapers/static-data';
 
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
@@ -56,8 +57,10 @@ export function resolveSearchMetadata(state: SearchPageState): Metadata {
     .filter(Boolean);
   const hasStoreFilter = selectedStoreNames.length > 0;
   const hasSortOnly = !hasQuery && !state.category && !hasStoreFilter && state.sortBy !== 'relevance';
-  const canonical = categoryCanonicalLanding
-    ? `${SITE_URL}/search?category=${state.category}`
+  // Category landings live at their own clean URL; `/search` only serves
+  // filtered result sets, so it must never claim the landing canonical.
+  const canonical = categoryCanonicalLanding && state.category
+    ? `${SITE_URL}${buildCategoryLandingPath(state.category)}`
     : `${SITE_URL}/search`;
 
   if (categoryCanonicalLanding && categorySeoCopy) {

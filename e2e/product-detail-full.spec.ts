@@ -7,7 +7,7 @@ import { expect, test } from '@playwright/test';
 test.describe('Product Detail Page', () => {
   test('muestra información completa del producto', async ({ page }) => {
     // Ir a búsqueda y entrar a un producto
-    await page.goto('/search?category=procesadores');
+    await page.goto('/comparar/procesadores');
     await page.waitForTimeout(2000); // Esperar carga de resultados
 
     const productLinks = page.locator('#product-grid-start a[href^="/product/"]');
@@ -29,7 +29,7 @@ test.describe('Product Detail Page', () => {
   });
 
   test('muestra resumen comparador con tiendas y ahorro', async ({ page }) => {
-    await page.goto('/search?category=procesadores');
+    await page.goto('/comparar/procesadores');
     await page.waitForTimeout(2000);
 
     const productLinks = page.locator('#product-grid-start a[href^="/product/"]');
@@ -52,7 +52,7 @@ test.describe('Product Detail Page', () => {
   });
 
   test('muestra lista de tiendas con precios', async ({ page }) => {
-    await page.goto('/search?category=procesadores');
+    await page.goto('/comparar/procesadores');
     await page.waitForTimeout(2000);
 
     const productLinks = page.locator('#product-grid-start a[href^="/product/"]');
@@ -74,7 +74,7 @@ test.describe('Product Detail Page', () => {
   });
 
   test('links a tiendas externas funcionan', async ({ page }) => {
-    await page.goto('/search?category=procesadores');
+    await page.goto('/comparar/procesadores');
     await page.waitForTimeout(2000);
 
     const productLinks = page.locator('#product-grid-start a[href^="/product/"]');
@@ -97,7 +97,7 @@ test.describe('Product Detail Page', () => {
   });
 
   test('especificaciones técnicas visibles', async ({ page }) => {
-    await page.goto('/search?category=procesadores');
+    await page.goto('/comparar/procesadores');
     await page.waitForTimeout(2000);
 
     const productLinks = page.locator('#product-grid-start a[href^="/product/"]');
@@ -115,7 +115,7 @@ test.describe('Product Detail Page', () => {
   });
 
   test('botón volver al inventario funciona', async ({ page }) => {
-    await page.goto('/search?category=procesadores');
+    await page.goto('/comparar/procesadores');
     await page.waitForTimeout(2000);
 
     const productLinks = page.locator('#product-grid-start a[href^="/product/"]');
@@ -134,7 +134,7 @@ test.describe('Product Detail Page', () => {
   });
 
   test('muestra fecha de actualización', async ({ page }) => {
-    await page.goto('/search?category=procesadores');
+    await page.goto('/comparar/procesadores');
     await page.waitForTimeout(2000);
 
     const productLinks = page.locator('#product-grid-start a[href^="/product/"]');
@@ -149,7 +149,7 @@ test.describe('Product Detail Page', () => {
   });
 
   test('precio mejor detectado visible', async ({ page }) => {
-    await page.goto('/search?category=procesadores');
+    await page.goto('/comparar/procesadores');
     await page.waitForTimeout(2000);
 
     const productLinks = page.locator('#product-grid-start a[href^="/product/"]');

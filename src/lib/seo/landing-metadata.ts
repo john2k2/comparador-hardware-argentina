@@ -3,6 +3,8 @@ import { getBudgetGuideBySlug } from '@/lib/seo/budget-guides-data';
 import { getComparisonBySlug } from '@/lib/seo/comparisons-data';
 import { parseBuilderBudgetPesos } from '@/lib/seo/budget-query';
 import {
+  MISSING_CATEGORY_DESCRIPTION,
+  MISSING_CATEGORY_TITLE,
   MISSING_COMPARISON_DESCRIPTION,
   MISSING_COMPARISON_TITLE,
   MISSING_GUIDE_DESCRIPTION,
@@ -10,6 +12,9 @@ import {
   buildNoIndexMetadata,
 } from '@/lib/seo/metadata';
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
+import { resolveCategoryFromLandingSlug } from '@/lib/seo/category-landing-routes';
+import { buildCategoryLandingState } from '@/lib/search/category-landing-state';
+import { resolveSearchMetadata } from '@/lib/search/search-page-metadata';
 import { EDITORIAL_UPDATED_AT } from './editorial-freshness';
 
 function buildArticleMetadata(input: {
@@ -128,4 +133,17 @@ export function resolveComparisonPageMetadata(slug: string): Metadata {
     description: comparison.description,
     keywords: comparison.keywords,
   });
+}
+
+export function resolveCategoryLandingPageMetadata(slug: string): Metadata {
+  const category = resolveCategoryFromLandingSlug(slug);
+
+  if (!category) {
+    return buildNoIndexMetadata({
+      title: MISSING_CATEGORY_TITLE,
+      description: MISSING_CATEGORY_DESCRIPTION,
+    });
+  }
+
+  return resolveSearchMetadata(buildCategoryLandingState(category));
 }

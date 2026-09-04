@@ -1,10 +1,11 @@
 import { categories } from '@/lib/scrapers/static-data';
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { HOME_CITATION_BLOCK } from './home-copy';
+import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
 
 export function buildLlmsTxt(): string {
   const categoryLines = categories
-    .map((category) => `- [${category.name}](${SITE_URL}/search?category=${category.id})`)
+    .map((category) => `- [${category.name}](${SITE_URL}${buildCategoryLandingPath(category.id)})`)
     .join('\n');
 
   return `# ${SITE_NAME}

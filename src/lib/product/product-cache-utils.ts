@@ -158,5 +158,10 @@ export function resolveBackHref(fromParam: string | null): string {
       break;
     }
   }
-  return decoded.startsWith('/search') ? decoded : '/search';
+  // Allowlist of internal origins a product page may return to. Anything else
+  // falls back to the search page so a crafted `from` cannot become an open
+  // redirect. `/comparar/` keeps its trailing slash so lookalike paths such as
+  // `/comparardor-falso` are not accepted.
+  const allowed = decoded.startsWith('/search') || decoded.startsWith('/comparar/');
+  return allowed ? decoded : '/search';
 }

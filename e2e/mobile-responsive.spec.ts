@@ -40,7 +40,7 @@ test.describe('Mobile Responsiveness', () => {
 
   test.describe('Search en Mobile', () => {
     test('búsqueda usable en mobile', async ({ page }) => {
-      await page.goto('/search?category=procesadores');
+      await page.goto('/comparar/procesadores');
 
       // Search input visible
       const searchInput = page.getByPlaceholder(/BUSCAR|NUEVA/i);
@@ -52,7 +52,7 @@ test.describe('Mobile Responsiveness', () => {
     });
 
     test('filtros accesibles en mobile', async ({ page }) => {
-      await page.goto('/search?category=procesadores');
+      await page.goto('/comparar/procesadores');
 
       // Filtros deberían ser visibles (pueden estar colapsados)
       const filtersHeading = page.getByRole('heading', { name: 'FILTROS' });
@@ -62,7 +62,7 @@ test.describe('Mobile Responsiveness', () => {
 
   test.describe('Product Detail en Mobile', () => {
     test('detalle de producto legible en mobile', async ({ page }) => {
-      await page.goto('/search?category=procesadores');
+      await page.goto('/comparar/procesadores');
       await page.waitForTimeout(2000);
 
       const productLinks = page.locator('#product-grid-start a[href^="/product/"]');

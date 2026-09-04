@@ -2,6 +2,7 @@ import { computeComparableStorePriceStats, formatPriceARS, getComparableStorePri
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
+import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
 
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 export const PRODUCT_TITLE_SUFFIX = ` | ${SITE_NAME}`;
@@ -144,7 +145,7 @@ export function buildProductJsonLd(product: Product, id: string) {
       '@type': 'ListItem',
       position: 3,
       name: product.category,
-      item: `${SITE_URL}/search?category=${encodeURIComponent(product.category)}`,
+      item: `${SITE_URL}${buildCategoryLandingPath(product.category)}`,
     },
     {
       '@type': 'ListItem',

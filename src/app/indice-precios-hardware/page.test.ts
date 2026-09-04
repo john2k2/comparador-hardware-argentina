@@ -69,10 +69,10 @@ describe('hardware price index page', () => {
   it('links visibly to every category represented by the index', () => {
     const markup = renderToStaticMarkup(createElement(PriceIndexPageContent, { snapshot }));
 
-    expect(markup).toContain('href="/search?category=procesadores"');
-    expect(markup).toContain('href="/search?category=tarjetas-graficas"');
-    expect(markup).toContain('href="/search?category=memoria-ram"');
-    expect(markup).toContain('href="/search?category=almacenamiento"');
+    expect(markup).toContain('href="/comparar/procesadores"');
+    expect(markup).toContain('href="/comparar/placas-de-video"');
+    expect(markup).toContain('href="/comparar/memoria-ram"');
+    expect(markup).toContain('href="/comparar/almacenamiento"');
   });
 
   it('renders a transparent empty state without placeholder figures', () => {
