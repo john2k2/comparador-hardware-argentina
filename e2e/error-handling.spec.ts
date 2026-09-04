@@ -6,16 +6,43 @@ import { expect, test } from '@playwright/test';
 
 test.describe('Error Handling', () => {
   test('pagina 404 para ruta inexistente', async ({ page }) => {
-    await page.goto('/ruta-que-no-existe-xyz-123');
+    const response = await page.goto('/ruta-que-no-existe-xyz-123');
 
-    // Next.js debería mostrar página 404
-    // Puede ser la página 404 por defecto o custom
+    // El status HTTP importa tanto como la UI: un 200 con pantalla de 404 es un
+    // soft 404 y Google lo indexa como pagina fina.
+    expect(response?.status()).toBe(404);
+
     const bodyText = await page.textContent('body');
     expect(bodyText && (bodyText.includes('404') || bodyText.includes('no encontrado') || bodyText.includes('not found'))).toBe(true);
   });
 
+  // Rutas dinamicas que resuelven el slug en el servidor y llaman notFound().
+  const slugRoutesSinResultado = [
+    '/guia/guia-que-no-existe-xyz-123',
+    '/comparativa/comparativa-que-no-existe-xyz-123',
+    '/comparar/categoria-que-no-existe-xyz-123',
+    '/product/producto-que-no-existe-xyz-123',
+  ];
+
+  for (const ruta of slugRoutesSinResultado) {
+    test(`${ruta} responde 404 real y noindex`, async ({ page }) => {
+      const response = await page.goto(ruta);
+
+      expect(response?.status()).toBe(404);
+
+      // La ruta y not-found.tsx aportan cada una su meta robots; ninguna puede
+      // quedar indexable.
+      const robots = await page
+        .locator('meta[name="robots"]')
+        .evaluateAll((tags) => tags.map((tag) => tag.getAttribute('content')));
+      expect(robots.length).toBeGreaterThan(0);
+      expect(robots.every((content) => content?.includes('noindex'))).toBe(true);
+    });
+  }
+
   test('producto inexistente muestra error amigable', async ({ page }) => {
-    await page.goto('/product/producto-que-no-existe-123');
+    const response = await page.goto('/product/producto-que-no-existe-123');
+    expect(response?.status()).toBe(404);
 
     // Esperar a que cargue la página
     await page.waitForLoadState('domcontentloaded');
