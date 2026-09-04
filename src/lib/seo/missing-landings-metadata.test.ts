@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { metadata as notFoundMetadata } from '@/app/not-found';
-import { resolveComparisonPageMetadata, resolveGuidePageMetadata } from './landing-metadata';
+import {
+  resolveCategoryLandingPageMetadata,
+  resolveComparisonPageMetadata,
+  resolveGuidePageMetadata,
+} from './landing-metadata';
 
 describe('missing public landings metadata', () => {
   it('noindexa el 404 con copy distinta a la home', () => {
@@ -21,5 +25,19 @@ describe('missing public landings metadata', () => {
 
     expect(metadata.robots).toMatchObject({ index: false });
     expect(metadata.title).toBe('Comparativa no encontrada');
+  });
+
+  it('noindexa slugs de categoría inválidos antes de notFound', () => {
+    const metadata = resolveCategoryLandingPageMetadata('tarjetas-graficas');
+
+    expect(metadata.robots).toMatchObject({ index: false });
+    expect(metadata.title).toBe('Categoría no encontrada');
+  });
+
+  it('indexa la landing de categoría válida con su canonical limpio', () => {
+    const metadata = resolveCategoryLandingPageMetadata('placas-de-video');
+
+    expect(metadata.robots).toMatchObject({ index: true });
+    expect(String(metadata.alternates?.canonical)).toContain('/comparar/placas-de-video');
   });
 });

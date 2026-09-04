@@ -5,6 +5,7 @@ import {
   INTERNAL_REFRESH_HEADER,
   isTrustedInternalRefreshRequest,
 } from '@/lib/server/internal-refresh-auth';
+import { resolveLegacyCategoryLandingRedirect } from '@/lib/seo/category-landing-routes';
 
 function generateNonce(): string {
   return crypto.randomUUID().replace(/-/g, '');
@@ -36,6 +37,17 @@ function buildConnectSrc(): string {
 }
 
 export function proxy(request: NextRequest) {
+  // Legacy `/search?category=<id>` landings moved to their own clean URLs.
+  // Handled here rather than in `next.config` redirects, which would forward
+  // the original query string onto the destination.
+  const landingRedirect = resolveLegacyCategoryLandingRedirect(
+    request.nextUrl.pathname,
+    request.nextUrl.searchParams,
+  );
+  if (landingRedirect) {
+    return NextResponse.redirect(new URL(landingRedirect, request.url), 308);
+  }
+
   const nonce = generateNonce();
   const cspScriptSrc = buildScriptSources(nonce);
 

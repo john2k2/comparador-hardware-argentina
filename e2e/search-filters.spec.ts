@@ -9,7 +9,7 @@ test('shows the idle search state without intent', async ({ page }) => {
 });
 
 test('applies an impossible price filter and lets the user clear it', async ({ page }) => {
-  await page.goto('/search?category=procesadores');
+  await page.goto('/comparar/procesadores');
   await page.waitForTimeout(3000);
 
   const productLinks = page.locator('#product-grid-start a[href^="/product/"]');

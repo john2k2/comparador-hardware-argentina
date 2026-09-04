@@ -10,6 +10,8 @@ export const NOT_FOUND_PAGE_TITLE = 'Página no encontrada';
 export const NOT_FOUND_PAGE_DESCRIPTION = 'Esta URL no existe en Comparador Hardware Argentina. Volvé al inicio o buscá un componente.';
 export const MISSING_GUIDE_TITLE = 'Guía no encontrada';
 export const MISSING_GUIDE_DESCRIPTION = 'Esta guía no existe en Comparador Hardware Argentina.';
+export const MISSING_CATEGORY_TITLE = 'Categoría no encontrada';
+export const MISSING_CATEGORY_DESCRIPTION = 'Esta categoría no existe en Comparador Hardware Argentina.';
 export const MISSING_COMPARISON_TITLE = 'Comparativa no encontrada';
 export const MISSING_COMPARISON_DESCRIPTION = 'Esta comparativa no existe en Comparador Hardware Argentina.';
 

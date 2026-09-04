@@ -18,6 +18,7 @@ import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
 import Link from 'next/link';
 import type { HardwareCategory, Product } from '@/lib/types';
 import { getCategoryLabel } from '@/lib/search/search-seo';
+import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -78,7 +79,7 @@ export default async function ComparisonPage({ params }: Props) {
         <Link href="/comparativa" className="hover:text-primary transition-colors">Comparativas</Link>
         <span className="mx-2">/</span>
         <Link
-          href={`/search?category=${comparison.product1.category}`}
+          href={buildCategoryLandingPath(comparison.product1.category)}
           className="hover:text-primary transition-colors"
         >
           {comparison.product1.category === 'procesadores' ? 'Comparar procesadores' : (getCategoryLabel(comparison.product1.category as HardwareCategory) ?? comparison.product1.category)}
@@ -288,7 +289,7 @@ export default async function ComparisonPage({ params }: Props) {
           </div>
           <p className="mt-5">
             <Link
-              href={`/search?category=${comparison.product1.category}`}
+              href={buildCategoryLandingPath(comparison.product1.category)}
               className="text-[10px] md:text-[11px] font-bold uppercase text-primary hover:underline"
             >
               {comparison.product1.category === 'procesadores' ? 'Comparar procesadores →' : 'Ver precios de la categoría →'}

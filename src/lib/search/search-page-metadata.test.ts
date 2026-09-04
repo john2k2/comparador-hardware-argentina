@@ -11,7 +11,7 @@ describe('search page metadata', () => {
       page: 1,
     });
 
-    expect(metadata.alternates?.canonical).toBe('https://www.comparador-hardware.com.ar/search?category=procesadores');
+    expect(metadata.alternates?.canonical).toBe('https://www.comparador-hardware.com.ar/comparar/procesadores');
     expect(metadata.title).toEqual({ absolute: 'Comparar procesadores: precios AMD e Intel | Comparador Hardware Argentina' });
     expect(metadata.description).toBe(
       'Compará procesadores AMD Ryzen e Intel Core entre tiendas de Argentina. Precio, stock y costo de plataforma antes de comprar.',
@@ -56,7 +56,7 @@ describe('search page metadata', () => {
       page: 2,
     });
 
-    expect(metadata.alternates?.canonical).toBe('https://www.comparador-hardware.com.ar/search?category=procesadores');
+    expect(metadata.alternates?.canonical).toBe('https://www.comparador-hardware.com.ar/comparar/procesadores');
     expect(metadata.title).toEqual({ absolute: 'Comparar procesadores: precios AMD e Intel | Comparador Hardware Argentina' });
     expect(metadata.robots).toMatchObject({ index: false, follow: true });
   });

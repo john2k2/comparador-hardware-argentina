@@ -17,11 +17,11 @@ export function SiteFooter() {
           <div>
             <p className={columnTitleClass}>Categorias</p>
             <ul className="space-y-1 text-[11px] md:text-sm text-muted-foreground">
-              <li><Link href="/search?category=procesadores" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Procesadores</Link></li>
-              <li><Link href="/search?category=tarjetas-graficas" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Tarjetas Graficas</Link></li>
-              <li><Link href="/search?category=motherboards" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Motherboards</Link></li>
-              <li><Link href="/search?category=memoria-ram" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Memoria RAM</Link></li>
-              <li><Link href="/search?category=perifericos" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Perifericos</Link></li>
+              <li><Link href="/comparar/procesadores" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Procesadores</Link></li>
+              <li><Link href="/comparar/placas-de-video" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Tarjetas Graficas</Link></li>
+              <li><Link href="/comparar/motherboards" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Motherboards</Link></li>
+              <li><Link href="/comparar/memoria-ram" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Memoria RAM</Link></li>
+              <li><Link href="/comparar/perifericos" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Perifericos</Link></li>
             </ul>
           </div>
           <div>

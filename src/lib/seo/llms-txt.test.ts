@@ -14,8 +14,8 @@ describe('buildLlmsTxt', () => {
     expect(body).toContain(`${SITE_URL}/guia/armar`);
     expect(body).toContain(`${SITE_URL}/comparativa`);
     expect(body).toContain(`${SITE_URL}/indice-precios-hardware`);
-    expect(body).toContain(`${SITE_URL}/search?category=procesadores`);
-    expect(body).toContain(`${SITE_URL}/search?category=tarjetas-graficas`);
+    expect(body).toContain(`/comparar/procesadores`);
+    expect(body).toContain(`/comparar/placas-de-video`);
     expect(body).toContain(HOME_CITATION_BLOCK);
     expect(body).toContain('No declaramos un ganador si no hay ofertas en stock');
     expect(body).toContain(`${SITE_URL}/indice-precios-hardware`);

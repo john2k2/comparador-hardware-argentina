@@ -36,7 +36,7 @@ export class SearchPage extends BasePage {
   }
 
   async gotoCategory(category: string): Promise<void> {
-    await this.page.goto(`/search?category=${category}`);
+    await this.page.goto(`/search?category=${category}&sortBy=relevance`);
     await this.waitForNetworkIdle();
   }
 

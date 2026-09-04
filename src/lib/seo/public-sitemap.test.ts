@@ -12,7 +12,7 @@ describe('public sitemap surface', () => {
     expect(urls).toContain('https://www.comparador-hardware.com.ar/guia');
     expect(urls).toContain('https://www.comparador-hardware.com.ar/guia/armar');
     expect(urls).not.toContain('https://www.comparador-hardware.com.ar/about');
-    expect(urls).toContain('https://www.comparador-hardware.com.ar/search?category=procesadores');
+    expect(urls).toContain('https://www.comparador-hardware.com.ar/comparar/procesadores');
     expect(urls.some((url) => url.includes('/admin'))).toBe(false);
     expect(urls.some((url) => url.includes('/auth'))).toBe(false);
     expect(urls.some((url) => url.includes('/api/'))).toBe(false);

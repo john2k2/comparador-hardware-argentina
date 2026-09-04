@@ -59,7 +59,7 @@ test.describe('Search Full Flow', () => {
   });
 
   test('limpiar filtros desde estado sin resultados', async ({ page }) => {
-    await page.goto('/search?category=procesadores');
+    await page.goto('/comparar/procesadores');
     await page.waitForLoadState('domcontentloaded');
 
     // Verify products exist first
@@ -106,7 +106,7 @@ test.describe('Search Full Flow', () => {
   });
 
   test('navegación de paginación mantiene categoría', async ({ page }) => {
-    await page.goto('/search?category=procesadores');
+    await page.goto('/comparar/procesadores');
     await page.waitForLoadState('domcontentloaded');
 
     const nextButton = page.getByRole('button', { name: 'NEXT >>' });
@@ -121,7 +121,7 @@ test.describe('Search Full Flow', () => {
   });
 
   test('productos tienen cards con información completa', async ({ page }) => {
-    await page.goto('/search?category=procesadores');
+    await page.goto('/comparar/procesadores');
     await page.waitForLoadState('domcontentloaded');
 
     const productCards = page.locator('#product-grid-start [class*="border"]').filter({ hasText: /@/ });
@@ -148,7 +148,7 @@ test.describe('Search Full Flow', () => {
   });
 
   test('búsqueda preserva filtros en URL', async ({ page }) => {
-    await page.goto('/search?category=procesadores');
+    await page.goto('/comparar/procesadores');
     await page.waitForLoadState('domcontentloaded');
 
     const searchInput = page.getByPlaceholder(/BUSCAR|NUEVA/i);

@@ -116,7 +116,7 @@ test.describe('Content Integrity', () => {
   });
 
   test('todas las imágenes tienen alt text', async ({ page }) => {
-    await page.goto('/search?category=procesadores');
+    await page.goto('/comparar/procesadores');
     await page.waitForTimeout(3000);
 
     const images = page.locator('img');
@@ -133,7 +133,7 @@ test.describe('Content Integrity', () => {
   });
 
   test('links externos tienen target="_blank"', async ({ page }) => {
-    await page.goto('/search?category=procesadores');
+    await page.goto('/comparar/procesadores');
     await page.waitForTimeout(3000);
 
     const productLinks = page.locator('#product-grid-start a[href^="/product/"]');
@@ -167,7 +167,7 @@ test.describe('Performance Basics', () => {
 
   test('búsqueda responde en tiempo razonable', async ({ page }) => {
     const startTime = Date.now();
-    await page.goto('/search?category=procesadores');
+    await page.goto('/comparar/procesadores');
     await page.waitForLoadState('networkidle');
     const loadTime = Date.now() - startTime;
 

@@ -132,7 +132,7 @@ test.describe('SEO & Metadata', () => {
   });
 
   test('categoría tiene title y description SEO', async ({ page }) => {
-    await page.goto('/search?category=procesadores');
+    await page.goto('/comparar/procesadores');
 
     const title = await page.title();
     expect(title.length).toBeGreaterThan(10);

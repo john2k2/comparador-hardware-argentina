@@ -6,16 +6,16 @@ import { expect, test } from '@playwright/test';
 
 test.describe('Category Landing Pages', () => {
   const categories = [
-    { slug: 'procesadores', name: 'Procesadores', heading: 'Comparador de precios de procesadores en Argentina' },
-    { slug: 'tarjetas-graficas', name: 'Tarjetas Graficas', heading: 'Comparador de precios de tarjetas graficas en Argentina' },
-    { slug: 'motherboards', name: 'Motherboards', heading: 'Comparador de precios de motherboards en Argentina' },
-    { slug: 'memoria-ram', name: 'Memoria RAM', heading: 'Comparador de precios de memoria RAM en Argentina' },
+    { slug: 'procesadores', landing: '/comparar/procesadores', name: 'Procesadores', heading: 'Comparador de precios de procesadores en Argentina' },
+    { slug: 'tarjetas-graficas', landing: '/comparar/placas-de-video', name: 'Tarjetas Graficas', heading: 'Comparador de precios de tarjetas graficas en Argentina' },
+    { slug: 'motherboards', landing: '/comparar/motherboards', name: 'Motherboards', heading: 'Comparador de precios de motherboards en Argentina' },
+    { slug: 'memoria-ram', landing: '/comparar/memoria-ram', name: 'Memoria RAM', heading: 'Comparador de precios de memoria RAM en Argentina' },
   ];
 
   for (const cat of categories) {
     test.describe(`Categoria: ${cat.name}`, () => {
       test('landing tiene H1 SEO e intro visible', async ({ page }) => {
-        await page.goto(`/search?category=${cat.slug}`);
+        await page.goto(cat.landing);
 
         // H1 SEO visible
         const heading = page.getByRole('heading', { level: 1 });
@@ -27,7 +27,7 @@ test.describe('Category Landing Pages', () => {
       });
 
       test('muestra panel de filtros', async ({ page }) => {
-        await page.goto(`/search?category=${cat.slug}`);
+        await page.goto(cat.landing);
 
         // Panel de filtros visible (buscar el heading FILTROS)
         await expect(page.locator('h2:has-text("FILTROS")').first()).toBeVisible();
@@ -37,7 +37,7 @@ test.describe('Category Landing Pages', () => {
       });
 
       test('puede navegar a otras categorías desde sidebar', async ({ page }) => {
-        await page.goto(`/search?category=${cat.slug}`);
+        await page.goto(cat.landing);
 
         // Click en otra categoría usando el texto del botón
         const otherCategory = categories.find(c => c.slug !== cat.slug);
@@ -50,7 +50,7 @@ test.describe('Category Landing Pages', () => {
       });
 
       test('muestra contador de resultados o estado de búsqueda', async ({ page }) => {
-        await page.goto(`/search?category=${cat.slug}`);
+        await page.goto(cat.landing);
 
         // Debería mostrar resultados o estar buscando (usar .first() para strict mode)
         const resultCounter = page.getByText(/RESULTADOS|BUSCANDO|ESCANEANDO/i).first();
@@ -58,7 +58,7 @@ test.describe('Category Landing Pages', () => {
       });
 
       test('landing pura sin query es indexable (sin noindex)', async ({ page }) => {
-        await page.goto(`/search?category=${cat.slug}`);
+        await page.goto(cat.landing);
 
         // Verificar que no hay meta robots noindex
         const noindexMeta = page.locator('meta[name="robots"][content*="noindex"]');
@@ -68,14 +68,14 @@ test.describe('Category Landing Pages', () => {
   }
 
   test('perifericos landing con múltiples subtipos', async ({ page }) => {
-    await page.goto('/search?category=perifericos');
+    await page.goto('/comparar/perifericos');
 
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.getByText('Comparador de precios de perifericos')).toBeVisible();
   });
 
   test('categoría con filtros de precio funciona', async ({ page }) => {
-    await page.goto('/search?category=procesadores');
+    await page.goto('/comparar/procesadores');
 
     // Aplicar filtro de precio mínimo
     const minPriceInput = page.getByLabel('Precio mínimo');
@@ -88,7 +88,7 @@ test.describe('Category Landing Pages', () => {
   });
 
   test('categoría con filtro de tiendas', async ({ page }) => {
-    await page.goto('/search?category=procesadores');
+    await page.goto('/comparar/procesadores');
 
     // La UI usa botones de tiendas, no checkboxes nativos.
     const storesSection = page.locator('button:has-text("TIENDAS")').first();

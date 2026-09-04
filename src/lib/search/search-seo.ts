@@ -107,7 +107,7 @@ const CATEGORY_SEO_COPY: Record<HardwareCategory, CategorySeoCopy> = {
         label: 'DDR5 vs DDR4: cuál conviene',
       },
       {
-        href: '/search?category=procesadores',
+        href: '/comparar/procesadores',
         label: 'Comparar procesadores',
       },
       {
@@ -141,7 +141,7 @@ const CATEGORY_SEO_COPY: Record<HardwareCategory, CategorySeoCopy> = {
         label: 'DDR5 vs DDR4: cuál conviene',
       },
       {
-        href: '/search?category=procesadores',
+        href: '/comparar/procesadores',
         label: 'Comparar procesadores',
       },
       {
@@ -179,7 +179,7 @@ const CATEGORY_SEO_COPY: Record<HardwareCategory, CategorySeoCopy> = {
         label: 'PC gamer por $3 millones',
       },
       {
-        href: '/search?category=procesadores',
+        href: '/comparar/procesadores',
         label: 'Comparar procesadores',
       },
     ],

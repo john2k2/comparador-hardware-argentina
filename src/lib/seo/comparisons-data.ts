@@ -1,3 +1,4 @@
+import type { HardwareCategory } from '@/lib/types';
 import type { Product } from '@/lib/types';
 import { SITE_NAME } from '@/lib/site-config';
 
@@ -15,7 +16,7 @@ export type ComparisonDefinition = {
   product1: {
     name: string;
     searchTerms: string[];
-    category: string;
+    category: HardwareCategory;
     specs: string;
     pros: string[];
     cons: string[];
@@ -23,7 +24,7 @@ export type ComparisonDefinition = {
   product2: {
     name: string;
     searchTerms: string[];
-    category: string;
+    category: HardwareCategory;
     specs: string;
     pros: string[];
     cons: string[];
