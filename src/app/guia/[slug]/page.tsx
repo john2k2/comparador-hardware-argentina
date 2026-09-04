@@ -29,7 +29,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return resolveGuidePageMetadata(slug);
 }
 
-export const revalidate = 300;
 export const dynamic = 'force-dynamic';
 
 export default async function BudgetGuidePage({ params }: Props) {

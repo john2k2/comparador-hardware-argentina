@@ -16,7 +16,6 @@ const PAGE_URL = `${SITE_URL}/indice-precios-hardware`;
 const CSV_URL = `${PAGE_URL}/datos.csv`;
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Índice de precios de hardware en Argentina',

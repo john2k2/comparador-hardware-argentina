@@ -9,7 +9,6 @@ type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export const revalidate = 300;
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
