@@ -50,3 +50,5 @@ const nextConfig: NextConfig = {
 };
 
 export default withAnalyzer(nextConfig);
+
+import('@opennextjs/cloudflare').then(m => m.initOpenNextCloudflareForDev());

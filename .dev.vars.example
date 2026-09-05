@@ -1,0 +1,10 @@
+NEXTJS_ENV=production
+# Copy real values from .env.local for local `wrangler` / OpenNext preview.
+# Do not put CLOUDFLARE_API_TOKEN placeholders here — they break `wrangler` auth.
+SUPABASE_URL=
+SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SECRET_KEY=
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
+CATALOG_REFRESH_CRON_SECRET=
+SITE_URL=https://comparador-hardware-argentina.ortiz-jonathan.workers.dev
