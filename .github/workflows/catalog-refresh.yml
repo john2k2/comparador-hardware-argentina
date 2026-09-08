@@ -152,7 +152,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          BASE_URL="${BASE_URL_SECRET:-${BASE_URL_VAR:-https://www.comparador-hardware.com.ar}}"
+          # Default: Cloudflare Workers host while Vercel production is disabled.
+          # Override with secrets/vars CATALOG_REFRESH_BASE_URL after custom domain cutover.
+          BASE_URL="${BASE_URL_SECRET:-${BASE_URL_VAR:-https://comparador-hardware-argentina.ortiz-jonathan.workers.dev}}"
 
           if [[ -z "$CRON_SECRET" ]]; then
             echo 'Falta definir CATALOG_REFRESH_CRON_SECRET como repo secret.' >&2

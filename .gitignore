@@ -75,3 +75,11 @@ graphify-out/
 
 # supabase CLI local cache
 supabase/.temp/
+
+# OpenNext
+.open-next
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example

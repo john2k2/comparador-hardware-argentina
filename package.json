@@ -3,16 +3,21 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
     "build": "next build",
+    "dev": "next dev",
     "start": "next start",
     "lint": "eslint src e2e next.config.ts eslint.config.mjs playwright.config.ts vitest.config.ts --no-error-on-unmatched-pattern",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "cache:warm": "node -e \"require('./src/lib/server/cache-warming').warmHomePageCache().then(r => console.log(JSON.stringify(r, null, 2)))\""
+    "cache:warm": "node -e \"require('./src/lib/server/cache-warming').warmHomePageCache().then(r => console.log(JSON.stringify(r, null, 2)))\"",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
+    "@opennextjs/cloudflare": "^1.20.6",
     "@supabase/supabase-js": "^2.98.0",
     "@upstash/redis": "^1.37.0",
     "cheerio": "^1.2.0",
@@ -37,6 +42,7 @@
     "playwright": "^1.59.1",
     "tailwindcss": "^4",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "wrangler": "^4.129.0"
   }
 }

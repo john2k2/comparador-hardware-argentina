@@ -1,0 +1,33 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"main": ".open-next/worker.js",
+	"name": "comparador-hardware-argentina",
+	"workers_dev": true,
+	"preview_urls": true,
+	"compatibility_date": "2026-09-05",
+	"compatibility_flags": [
+		"nodejs_compat",
+		"global_fetch_strictly_public"
+	],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"services": [
+		{
+			// Self-reference service binding, the service name must match the worker name
+			// see https://opennext.js.org/cloudflare/caching
+			"binding": "WORKER_SELF_REFERENCE",
+			"service": "comparador-hardware-argentina"
+		}
+	],
+	"images": {
+		// Enable image optimization
+		// see https://opennext.js.org/cloudflare/howtos/image
+		"binding": "IMAGES"
+	},
+	"routes": [
+		{ "pattern": "comparador-hardware.com.ar", "custom_domain": true },
+		{ "pattern": "www.comparador-hardware.com.ar", "custom_domain": true }
+	],
+}
