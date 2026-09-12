@@ -54,6 +54,40 @@ jobs:
     timeout-minutes: 30
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start local refresh runtime
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          CATALOG_REFRESH_CRON_SECRET: ${{ secrets.CATALOG_REFRESH_CRON_SECRET }}
+          DISABLE_INTERNAL_BACKGROUND_REFRESH: '1'
+        run: |
+          set -euo pipefail
+          npm run dev -- --hostname 127.0.0.1 --port 3101 > "$RUNNER_TEMP/catalog-refresh-runtime.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/catalog-refresh-runtime.pid"
+
+          for attempt in {1..30}; do
+            if curl --silent --fail --max-time 5 'http://127.0.0.1:3101/api/categories' > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          cat "$RUNNER_TEMP/catalog-refresh-runtime.log"
+          exit 1
+
       - name: Resolve refresh target
         id: resolve
         shell: bash
@@ -145,17 +179,15 @@ jobs:
       - name: Invoke catalog refresh endpoint
         shell: bash
         env:
-          BASE_URL_SECRET: ${{ secrets.CATALOG_REFRESH_BASE_URL }}
-          BASE_URL_VAR: ${{ vars.CATALOG_REFRESH_BASE_URL }}
           CRON_SECRET: ${{ secrets.CATALOG_REFRESH_CRON_SECRET }}
           REQUEST_PATH: ${{ steps.resolve.outputs.request_path }}
           MODE: ${{ steps.resolve.outputs.mode }}
         run: |
           set -euo pipefail
 
-          # Default: Cloudflare Workers host while Vercel production is disabled.
-          # Override with secrets/vars CATALOG_REFRESH_BASE_URL after custom domain cutover.
-          BASE_URL="${BASE_URL_SECRET:-${BASE_URL_VAR:-https://comparador-hardware-argentina.ortiz-jonathan.workers.dev}}"
+          # El scraping corre en GitHub Actions. Así la petición pública del
+          # Worker no asume el costo de 17 fuentes externas ni su límite de CPU.
+          BASE_URL='http://127.0.0.1:3101'
 
           if [[ -z "$CRON_SECRET" ]]; then
             echo 'Falta definir CATALOG_REFRESH_CRON_SECRET como repo secret.' >&2
@@ -219,3 +251,14 @@ jobs:
           if isinstance(failed, int) and failed > 0:
               sys.exit(1)
           PY
+
+      - name: Stop local refresh runtime
+        if: always()
+        run: |
+          if [[ -f "$RUNNER_TEMP/catalog-refresh-runtime.pid" ]]; then
+            kill "$(cat "$RUNNER_TEMP/catalog-refresh-runtime.pid")" || true
+          fi
+
+      - name: Show local runtime log on failure
+        if: failure()
+        run: cat "$RUNNER_TEMP/catalog-refresh-runtime.log" || true
