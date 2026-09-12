@@ -182,9 +182,11 @@ function CategoriesPanel({ filters, onChange }: { filters: ReturnType<typeof toS
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-col gap-2">
         {categories.map((category) => (
           <button
+            type="button"
             key={category.id}
             onClick={() => onChange({ category: category.id as HardwareCategory })}
             aria-label={`Filtrar por categoría: ${category.name}`}
+            aria-pressed={filters.category === category.id}
             className={`min-h-11 text-left text-[9px] uppercase font-bold px-3 py-2 transition-colors ${filters.category === category.id ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground hover:bg-muted'}`}
           >
             {category.name}
@@ -250,10 +252,10 @@ function IdleState() {
 
 function SearchErrorState({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
-    <div className="border-4 border-destructive bg-card p-8 text-center pixel-shadow">
+    <div className="border-4 border-destructive bg-card p-8 text-center pixel-shadow" role="alert">
       <p className="text-[10px] uppercase font-bold text-destructive">[ ERROR EN LA BUSQUEDA ]</p>
       <p className="text-[9px] uppercase text-foreground/80 mt-2 mb-4">{error}</p>
-      <button onClick={onRetry} className="pixel-button text-[10px] min-h-11">
+      <button type="button" onClick={onRetry} className="pixel-button text-[10px] min-h-11">
         REINTENTAR
       </button>
     </div>
@@ -279,7 +281,8 @@ export function PaginationControls({
 
   const navigateToPage = (page: number) => {
     onPageChange(page);
-    document.getElementById('product-grid-start')?.scrollIntoView({ behavior: 'smooth' });
+    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+    document.getElementById('product-grid-start')?.scrollIntoView({ behavior });
   };
 
   return (

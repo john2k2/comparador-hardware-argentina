@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { ProductGrid, SearchBar } from '@/components/functional';
 import { resolveSponsoredStores } from '@/lib/commercial';
@@ -13,12 +12,7 @@ import { readRecentlyViewedProducts } from '@/lib/client/recently-viewed';
 import type { Product } from '@/lib/types';
 import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
 import type { HardwareCategory } from '@/lib/types';
-
-// Lazy load below-fold sections to reduce initial bundle
-const SponsoredStoresSection = dynamic(
-  () => import('@/components/home/SponsoredStoresSection').then((mod) => mod.SponsoredStoresSection),
-  { ssr: false, loading: () => <div className="h-32 bg-card/50 border-2 border-border animate-pulse" /> }
-);
+import { SponsoredStoresSection } from '@/components/home/SponsoredStoresSection';
 
 const RECENT_PRODUCTS_LIMIT = 4;
 
@@ -419,7 +413,7 @@ export function HomePageClient({
         ))}
       </section>
 
-      <SponsoredStoresSection stores={sponsoredStores} />
+      {sponsoredStores.length > 0 && <SponsoredStoresSection stores={sponsoredStores} />}
 
       <PromoBanner
         label="-- AVISO IMPORTANTE --"

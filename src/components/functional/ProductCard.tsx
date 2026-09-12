@@ -40,8 +40,6 @@ export const ProductCard = React.memo(function ProductCard({
   surface,
   position,
 }: ProductCardProps) {
-  const shouldPrioritizeImage = position !== undefined && position <= 4;
-
   const {
     bestPrice,
     comparableStoreCount,
@@ -115,7 +113,7 @@ export const ProductCard = React.memo(function ProductCard({
           <ProductImageWithFallback
             src={product.image}
             alt={displayName}
-            eager={shouldPrioritizeImage}
+            eager={false}
             className="object-contain p-2 w-full h-full transition-transform duration-300 group-hover:scale-[1.03]"
             fallbackClassName="p-4 opacity-50 image-pixelated"
           />

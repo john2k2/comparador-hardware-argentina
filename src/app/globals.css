@@ -282,9 +282,9 @@
   --border: #ffffff;
 
   /* Neones para fondo NEGRO (brillantes y clásicos) */
-  --primary: #ff0055;
-  --primary-foreground: #ffffff;
-  --primary-hover: #ff3377;
+  --primary: #ff3377;
+  --primary-foreground: #1a1a1a;
+  --primary-hover: #ff6699;
   --secondary: #00ffaa;
   --secondary-foreground: #1a1a1a;
   --accent: #ffcc00;
@@ -322,8 +322,7 @@
     position: relative;
     isolation: isolate;
     background: linear-gradient(180deg, #5b7cf5 0%, #8ca5ff 50%, #b3c6ff 100%);
-    background-size: 100% 200%;
-    animation: sky-shift 15s ease infinite alternate;
+    background-size: auto;
   }
 
   .dark body {
@@ -359,10 +358,10 @@
     left: 0;
     bottom: 0;
     right: 0;
-    opacity: 0.1;
+    opacity: 0.06;
     z-index: 9999;
     pointer-events: none;
-    animation: scanline 10s linear infinite;
+    animation: none;
     background: linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
   }
 
@@ -512,10 +511,8 @@
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+    animation: none !important;
   }
 
   /* Disable parallax and floating effects */
@@ -601,11 +598,11 @@
 
   0%,
   100% {
-    margin-top: 0;
+    transform: translateY(0);
   }
 
   50% {
-    margin-top: -15px;
+    transform: translateY(-15px);
   }
 }
 
@@ -669,11 +666,11 @@
 
   0%,
   100% {
-    margin-top: 0;
+    transform: translateY(0);
   }
 
   50% {
-    margin-top: -10px;
+    transform: translateY(-10px);
   }
 }
 

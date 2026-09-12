@@ -77,16 +77,21 @@ export function Navigation() {
   const toggleTheme = () => {
     if (isWiping) return;
 
+    const newTheme = !isDark;
+    const applyTheme = () => {
+      localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+      document.documentElement.classList.toggle('dark', newTheme);
+    };
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      applyTheme();
+      return;
+    }
+
     setIsWiping(true);
 
     setTimeout(() => {
-      const newTheme = !isDark;
-      localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-      if (newTheme) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+      applyTheme();
     }, 600);
 
     setTimeout(() => {
@@ -184,6 +189,7 @@ export function Navigation() {
                 className="md:hidden min-h-11 min-w-11 px-3 py-2 border-2 border-border bg-card text-[8px] uppercase font-bold text-secondary inline-flex items-center justify-center gap-2 hover:bg-muted transition-colors"
                 aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
                 aria-expanded={isMobileMenuOpen}
+                aria-controls="mobile-primary-navigation"
               >
                 {isMobileMenuOpen ? (
                   <X className="w-4 h-4" aria-hidden="true" />
@@ -202,7 +208,7 @@ export function Navigation() {
                     href="/auth"
                     className="min-h-11 max-w-[7rem] px-3 py-2 border-2 border-border bg-card text-[8px] uppercase font-bold text-secondary hidden sm:inline-flex items-center gap-2"
                   >
-                    <UserRound className="w-3 h-3 shrink-0" />
+                    <UserRound className="w-3 h-3 shrink-0" aria-hidden="true" />
                     <span className="truncate">{getUserDisplayName(authUser)}</span>
                   </Link>
                   <button
@@ -211,7 +217,7 @@ export function Navigation() {
                     className="min-h-11 px-3 py-2 border-2 border-border bg-card text-[8px] uppercase font-bold text-primary inline-flex items-center gap-2 hover:bg-muted transition-colors"
                     aria-label="SALIR - Cerrar sesion"
                   >
-                    <LogOut className="w-3 h-3" />
+                    <LogOut className="w-3 h-3" aria-hidden="true" />
                     <span className="hidden sm:inline">SALIR</span>
                   </button>
                 </>
@@ -221,7 +227,7 @@ export function Navigation() {
                   className="hidden md:inline-flex min-h-11 min-w-11 px-3 py-2 border-2 border-border bg-card text-[8px] uppercase font-bold text-secondary items-center gap-2 hover:bg-muted transition-colors"
                   aria-label="LOGIN - Iniciar sesion"
                 >
-                  <LogIn className="w-3 h-3" />
+                  <LogIn className="w-3 h-3" aria-hidden="true" />
                   <span className="hidden sm:inline">LOGIN</span>
                 </Link>
               )}
@@ -245,9 +251,8 @@ export function Navigation() {
           </div>
 
           {/* Menú móvil desplegable */}
-          {isMobileMenuOpen && (
-            <div className="md:hidden border-t-2 border-border bg-background">
-              <nav className="flex flex-col py-2">
+          <div className={`md:hidden border-t-2 border-border bg-background ${isMobileMenuOpen ? '' : 'hidden'}`}>
+              <nav id="mobile-primary-navigation" className="flex flex-col py-2">
                 {PRIMARY_NAV_LINKS.map((link) => (
                   <Link
                     key={link.href}
@@ -266,8 +271,7 @@ export function Navigation() {
                   {authUser ? 'Mi cuenta' : 'Iniciar sesion'}
                 </Link>
               </nav>
-            </div>
-          )}
+          </div>
         </div>
       </header>
     </>

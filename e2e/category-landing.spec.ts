@@ -6,10 +6,10 @@ import { expect, test } from '@playwright/test';
 
 test.describe('Category Landing Pages', () => {
   const categories = [
-    { slug: 'procesadores', landing: '/comparar/procesadores', name: 'Procesadores', heading: 'Comparador de precios de procesadores en Argentina' },
-    { slug: 'tarjetas-graficas', landing: '/comparar/placas-de-video', name: 'Tarjetas Graficas', heading: 'Comparador de precios de tarjetas graficas en Argentina' },
-    { slug: 'motherboards', landing: '/comparar/motherboards', name: 'Motherboards', heading: 'Comparador de precios de motherboards en Argentina' },
-    { slug: 'memoria-ram', landing: '/comparar/memoria-ram', name: 'Memoria RAM', heading: 'Comparador de precios de memoria RAM en Argentina' },
+    { slug: 'procesadores', landing: '/comparar/procesadores', name: 'Procesadores', heading: 'Comparar procesadores AMD e Intel' },
+    { slug: 'tarjetas-graficas', landing: '/comparar/placas-de-video', name: 'Tarjetas Graficas', heading: 'Comparar placas de video RTX y Radeon' },
+    { slug: 'motherboards', landing: '/comparar/motherboards', name: 'Motherboards', heading: 'Compará precios de motherboards AMD e Intel' },
+    { slug: 'memoria-ram', landing: '/comparar/memoria-ram', name: 'Memoria RAM', heading: 'Compará precios de memoria RAM DDR4 y DDR5' },
   ];
 
   for (const cat of categories) {
@@ -44,8 +44,8 @@ test.describe('Category Landing Pages', () => {
         if (otherCategory) {
           // Usar texto exacto del botón en el sidebar
           await page.locator(`button:has-text("${otherCategory.name}")`).first().click();
-          await page.waitForURL(new RegExp(`/search\\?category=${otherCategory.slug}`));
-          await expect(page).toHaveURL(new RegExp(`/search\\?category=${otherCategory.slug}`));
+          await page.waitForURL(new RegExp(`${otherCategory.landing}$`));
+          await expect(page).toHaveURL(new RegExp(`${otherCategory.landing}$`));
         }
       });
 

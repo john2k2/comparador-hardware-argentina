@@ -85,7 +85,7 @@ export function SearchBar({
           autoComplete="off"
           aria-busy={isLoading}
           aria-label="Buscar productos"
-          className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-foreground/70 placeholder:opacity-90 text-foreground tracking-normal"
+          className="min-w-0 min-h-11 flex-1 bg-transparent text-base sm:min-h-0 sm:text-[14px] outline-none placeholder:text-foreground/70 placeholder:opacity-90 text-foreground tracking-normal"
         />
         {query && (
           <button

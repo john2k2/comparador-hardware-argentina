@@ -30,6 +30,7 @@ Los cinco contratos se actualizaron en el árbol local: rutas limpias de categor
 - El refresh lanzado desde una visita pública queda opt-in mediante `ENABLE_INTERNAL_BACKGROUND_REFRESH=1`. El cron autenticado y las ejecuciones manuales siguen disponibles.
 - Pageviews GA4 se emiten tras cargar GA4 y en cada cambio de ruta; el contacto comercial registra solo intención, tipo y canal, nunca el correo del visitante.
 - Se creó la cuenta, propiedad y flujo web de GA4 para `www.comparador-hardware.com.ar`. La medición mejorada quedó activa; su identificador público se incorporó al build y a la configuración del Worker sin registrar valores sensibles en este documento.
+- La tanda de accesibilidad y rendimiento de la auditoría Impeccable quedó publicada: contraste AA de CTA oscuro, buscador táctil de 44 px, filtros y menú con estados programáticos, movimiento reducido inmediato y menor costo visual de portada. La evidencia y los límites están en `IMPECCABLE_AUDIT.md`.
 - Ofertas agotadas ya no contribuyen a schema de producto, cantidad de tiendas de la ficha ni elegibilidad del sitemap.
 - La landing editorial de categoría deja de persistir tras una búsqueda, filtro, orden o paginación en el cliente.
 - Contacto explica el piloto patrocinado, independencia del orden orgánico y usa el correo comercial configurado para propuestas y reportes. Falta comprobar su recepción real antes de contar leads.

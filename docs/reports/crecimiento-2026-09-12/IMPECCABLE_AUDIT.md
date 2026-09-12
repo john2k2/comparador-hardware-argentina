@@ -13,6 +13,20 @@ Fecha: 12/09/2026. Alcance: portada, búsqueda `ryzen`, ficha de producto y cont
 | Integridad de implementación | 4/4 | El sistema pixelado es coherente, específico del producto y los hallazgos del detector son falsos positivos estéticos. |
 | **Total** | **14/20** | **Bueno: corregir accesibilidad y costos de la portada antes de sumar más superficies comerciales.** |
 
+## Corrección aplicada el 12/09
+
+La tanda completa de este informe quedó implementada y publicada. Se conservó el mundo visual pixel-art y no se alteró contenido comercial ni el flujo de búsqueda.
+
+| Hallazgo | Corrección verificada |
+|---|---|
+| Contraste de CTA oscuro | El rosa pasó a `#ff3377` con texto `#1a1a1a`: 4,97:1 contra tinta y 4,79:1 contra tarjeta oscura. |
+| Objetivo de búsqueda móvil | El input mide 44 px a 390 px de viewport y usa 16 px en móvil para evitar zoom automático. |
+| Estados de filtros | Acordeones y menú móvil relacionan control/panel; categorías y tiendas exponen `aria-pressed`; el error es una alerta. |
+| Movimiento reducido | Se eliminó la anulación de transiciones de 0,01 ms. Las animaciones decorativas se detienen y el cambio de tema se aplica de inmediato. |
+| Costo y CLS | Fondo y scanline dejan de repintar continuamente; las nubes se desplazan con `transform`; las imágenes ya no reciben prioridad masiva; el bloque patrocinado no se inserta cuando no hay sponsors. |
+
+La ronda final en producción confirmó tema oscuro, contraste de tokens, menú y paneles asociados, campo de 44 px y ausencia de desborde a 390 px. Lint y TypeScript aprobaron; 10 tests focalizados y los 23 escenarios E2E de landings de categoría aprobaron. El detector volvió a señalar Inter, que permanece como falso positivo documentado.
+
 ## Evidencia y límites
 
 - Portada: FMP aproximado de 1,05 s y DOMContentLoaded de 2,02 s en escritorio; en móvil, FMP de 0,15 s y DOMContentLoaded de 1,22 s. Búsqueda `ryzen`: FMP de 0,72 s y DOMContentLoaded de 3,87 s. Son muestras de DevTools, no LCP/INP/CLS de campo ni percentiles.
