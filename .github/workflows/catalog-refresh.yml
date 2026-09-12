@@ -60,7 +60,7 @@ jobs:
       - name: Configure Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -123,8 +123,31 @@ jobs:
           if [[ "$EVENT_NAME" == "schedule" ]]; then
             case "$EVENT_SCHEDULE" in
               '5 5 * * *')
-                MODE='hot'
-                REQUEST_PATH='/api/admin/catalog-refresh?mode=hot&maxQueries=1&staleMinutes=180'
+                # Una consulta por día conserva el costo del plan gratuito y
+                # evita reintentar títulos discontinuados del catálogo viejo.
+                # Se rota una canasta de intención de compra que cubre las
+                # categorías que más sostienen comparaciones y guías.
+                REFRESH_SEEDS=(
+                  'Ryzen 5 5600|procesadores'
+                  'Ryzen 7 5700X|procesadores'
+                  'Ryzen 5 7600|procesadores'
+                  'RTX 4060|tarjetas-graficas'
+                  'RTX 5060 Ti|tarjetas-graficas'
+                  'RX 9060 XT|tarjetas-graficas'
+                  'RTX 5070|tarjetas-graficas'
+                  'DDR4 16GB 3200|memoria-ram'
+                  'DDR5 32GB 6000|memoria-ram'
+                  'SSD NVMe 1TB|almacenamiento'
+                  'Fuente 750W 80 Plus Gold|fuentes-alimentacion'
+                  'Motherboard B650|motherboards'
+                )
+                seed_index=$(( (10#$(date -u +%j) - 1) % ${#REFRESH_SEEDS[@]} ))
+                IFS='|' read -r seed_query seed_category <<< "${REFRESH_SEEDS[$seed_index]}"
+                MODE='custom'
+                REQUEST_PATH='/api/admin/catalog-refresh?mode=custom'
+                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'query' "$seed_query")"
+                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'categories' "$seed_category")"
+                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'maxQueries' '1')"
                 ;;
               *)
                 echo "Cron no soportado: $EVENT_SCHEDULE" >&2
