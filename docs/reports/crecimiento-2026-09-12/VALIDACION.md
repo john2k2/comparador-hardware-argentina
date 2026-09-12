@@ -8,7 +8,7 @@ Se conservó el árbol local existente. La unidad de implementación se publicó
 | Lint | Aprobado | Análisis estático |
 | TypeScript y diff | Aprobados | Sin errores estáticos ni espacios inválidos en el diff |
 | Build Next | Aprobado tras los cambios | Configuración local Redis inválida e historial Supabase con Invalid API key; funciona con degradación |
-| Revisión visual local | Contacto, disclosure y navegación de información visibles | El correo no está configurado localmente, por lo que el CTA comercial queda correctamente en estado pendiente |
+| Revisión visual y pública | Contacto, disclosure y navegación de información visibles; dos enlaces de correo publicados | Falta comprobar recepción real del correo comercial |
 | E2E focalizado anterior | 18 ejecutados; 13 aprobados; 5 fallidos; 2,1 min | Home, navegación de búsqueda y móvil; sin scraping real |
 | Dependencias | Cuatro entradas: tres altas y una moderada | Relaciones transitivas; exposición por evaluar |
 | Producción | Portada, categorías, búsqueda, ficha y sitemaps con 200 en muestras posteriores | Muestra puntual, no porcentaje de disponibilidad |
@@ -32,13 +32,13 @@ Los cinco contratos se actualizaron en el árbol local: rutas limpias de categor
 - Se creó la cuenta, propiedad y flujo web de GA4 para `www.comparador-hardware.com.ar`. La medición mejorada quedó activa; su identificador público se incorporó al build y a la configuración del Worker sin registrar valores sensibles en este documento.
 - Ofertas agotadas ya no contribuyen a schema de producto, cantidad de tiendas de la ficha ni elegibilidad del sitemap.
 - La landing editorial de categoría deja de persistir tras una búsqueda, filtro, orden o paginación en el cliente.
-- Contacto explica el piloto patrocinado, independencia del orden orgánico y usa el correo configurado para propuestas comerciales. Sin correo operativo configurado, no inventa un canal.
+- Contacto explica el piloto patrocinado, independencia del orden orgánico y usa el correo comercial configurado para propuestas y reportes. Falta comprobar su recepción real antes de contar leads.
 
 ## Pendiente antes de cierre de esta unidad
 
 1. Confirmar en registros Cloudflare que el cron reducido termina y registrar siete ciclos útiles antes de volver a ampliar alcance.
 2. Esperar la recepción inicial de GA4 (Google informa hasta 48 horas) y validar un `page_view`, una navegación y un `generate_lead` de prueba sin datos personales.
-3. Configurar y probar la recepción del correo comercial antes de contar leads o contactar posibles sponsors.
+3. Probar la recepción del correo comercial antes de contar leads o contactar posibles sponsors.
 
 ## Publicación y verificación inicial
 

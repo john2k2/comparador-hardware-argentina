@@ -74,11 +74,11 @@ Core Web Vitals: **sin datos** en móvil y ordenador. No equivale a aprobado. La
 
 **Cierre:** siete ciclos diarios consecutivos útiles, sin 1102 en muestra pública; registros de resultados y frescura por tienda; prueba real del despliegue servido. No despachar campañas hasta estabilizarlo.
 
-### P1 — Falta el canal de entrada comercial
+### P1 — Canal comercial publicado; falta prueba de recepción
 
-`/contacto` publicó “Canal de correo pendiente de configuracion publica”. El componente ya admite correo (`src/app/contacto/page.tsx:28`); falta configuración efectiva y comprobación de recepción. El texto habla de reportes operativos, sin propuesta para anunciantes.
+El correo operativo se configuró y publicó el 12/09 en `/contacto`, con enlaces diferenciados para soporte y propuestas comerciales que registran solo intención, tipo y canal. El texto explica el piloto, la independencia del orden orgánico y los límites de la propuesta.
 
-**Trabajo:** definir correo comercial operativo, probar recepción, publicar una entrada “Promocioná tu tienda” con oferta clara, formulario o mailto medido, categoría y alcance del negocio. No inventar dirección ni prometer respuestas que no podamos cumplir.
+**Trabajo:** enviar y confirmar una consulta de prueba, publicar una entrada “Promocioná tu tienda” con oferta clara, formulario o mailto medido, categoría y alcance del negocio. No prometer respuestas que no podamos cumplir.
 
 **Cierre:** una consulta de prueba llega al buzón correcto y queda registrada una sola vez; CTA accesible en móvil y desktop.
 
