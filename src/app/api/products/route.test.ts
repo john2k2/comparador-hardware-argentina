@@ -20,6 +20,7 @@ const mockFetchProductDescriptionFromUrl = vi.fn();
 const mockPersistProductsSnapshot = vi.fn();
 const mockWithPromiseTimeout = vi.fn(async (promise: Promise<unknown>) => promise);
 const mockWithAbortTimeout = vi.fn(async (runner: (signal: AbortSignal) => Promise<unknown>) => runner(new AbortController().signal));
+const mockRecordCatalogRefreshDemand = vi.fn();
 
 vi.mock('next/headers', () => ({
   cookies: vi.fn(async () => ({
@@ -70,6 +71,10 @@ vi.mock('@/lib/scrapers/product-description', () => ({
 
 vi.mock('@/lib/persistence/product-catalog', () => ({
   persistProductsSnapshot: mockPersistProductsSnapshot,
+}));
+
+vi.mock('@/lib/catalog/refresh-demand', () => ({
+  recordCatalogRefreshDemand: mockRecordCatalogRefreshDemand,
 }));
 
 vi.mock('@/lib/async/with-abort-timeout', () => ({
@@ -167,6 +172,7 @@ describe('/api/products route', () => {
     mockFetchAllWooCommerceSearch.mockReset();
     mockFetchProductDescriptionFromUrl.mockReset();
     mockPersistProductsSnapshot.mockReset();
+    mockRecordCatalogRefreshDemand.mockReset();
     mockWithPromiseTimeout.mockImplementation(async (promise: Promise<unknown>) => promise);
     mockWithAbortTimeout.mockImplementation(async (runner: (signal: AbortSignal) => Promise<unknown>) => runner(new AbortController().signal));
 

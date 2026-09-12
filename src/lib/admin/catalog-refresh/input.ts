@@ -49,7 +49,7 @@ export function parseInteger(value: unknown, fallback: number, min: number, max:
 }
 
 export function parseMode(value: unknown): RefreshMode | null {
-  if (value === 'cleanup-history' || value === 'custom' || value === 'full' || value === 'hot' || value === 'tracked') {
+  if (value === 'cleanup-history' || value === 'custom' || value === 'demand' || value === 'full' || value === 'hot' || value === 'tracked') {
     return value;
   }
   return null;

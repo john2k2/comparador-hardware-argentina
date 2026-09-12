@@ -20,17 +20,31 @@ const STRICT_VARIANT_QUERY_TOKENS = new Set([
 // Cache simple para normalizacion de texto (evita recomputar en loops calientes)
 const NORMALIZE_CACHE = new Map<string, string>();
 
+const SEARCH_SYNONYMS: Array<{ pattern: RegExp; canonical: string }> = [
+  { pattern: /\b(?:placas?\s+de\s+video|tarjetas?\s+graficas?|gpu)\b/g, canonical: 'gpu' },
+  { pattern: /\b(?:procesadores?|microprocesadores?|micro|cpu)\b/g, canonical: 'cpu' },
+  { pattern: /\b(?:memoria\s+ram|ram)\b/g, canonical: 'ram' },
+  { pattern: /\b(?:disco\s+solido|solid\s+state|ssd)\b/g, canonical: 'ssd' },
+  { pattern: /\b(?:fuentes?\s+de\s+alimentacion|psu)\b/g, canonical: 'psu' },
+  { pattern: /\b(?:placas?\s+madre|motherboards?|mother)\b/g, canonical: 'motherboard' },
+];
+
 export function normalizeSearchText(value: string): string {
   const cached = NORMALIZE_CACHE.get(value);
   if (cached !== undefined) return cached;
 
-  const result = value
+  let result = value
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9+\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+
+  for (const synonym of SEARCH_SYNONYMS) {
+    result = result.replace(synonym.pattern, synonym.canonical);
+  }
+  result = result.replace(/\s+/g, ' ').trim();
 
   NORMALIZE_CACHE.set(value, result);
   return result;
@@ -180,11 +194,31 @@ function hasAvailableOffer(product: Product): boolean {
   return product.prices.some((price) => price.stock !== 'out-of-stock');
 }
 
+function freshnessScore(product: Product, nowMs: number): number {
+  const timestamp = (product.lastScrapedAt ?? product.updatedAt).getTime();
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return -12;
+
+  const ageMs = Math.max(0, nowMs - timestamp);
+  const ageHours = ageMs / 3_600_000;
+  if (ageHours <= 4) return 18;
+  if (ageHours <= 24) return 12;
+  if (ageHours <= 72) return 5;
+  if (ageHours <= 24 * 7) return -4;
+  return -12;
+}
+
+function availableOfferScore(product: Product): number {
+  const availableCount = product.prices.filter((price) => price.stock !== 'out-of-stock').length;
+  if (availableCount <= 1) return 0;
+  return Math.min(15, (availableCount - 1) * 5);
+}
+
 export function scoreProductRelevance(
   product: Product,
   queryWords: string[],
   rawQuery: string,
   requestedCategory?: HardwareCategory,
+  nowMs = Date.now(),
 ): number {
   const normalizedName = normalizeSearchText(product.name);
   const normalizedQuery = normalizeSearchText(rawQuery);
@@ -206,6 +240,8 @@ export function scoreProductRelevance(
 
   const minPrice = product.lowestPrice > 0 ? product.lowestPrice : Number.MAX_SAFE_INTEGER;
   score += Math.max(0, 20 - Math.floor(minPrice / 200000));
+  score += availableOfferScore(product);
+  score += freshnessScore(product, nowMs);
   return score;
 }
 

@@ -1,4 +1,5 @@
 import { getServerSupabaseReadClient, getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
+import { loadCatalogRefreshDemands } from '@/lib/catalog/refresh-demand';
 import { logger } from '@/lib/logger';
 import { isHardwareCategory } from '@/lib/admin/catalog-refresh/input';
 import {
@@ -17,6 +18,7 @@ export type RefreshTargetLoadResult = {
 };
 
 export type RefreshTargetLoader = {
+  loadDemandTargets: (maxQueries: number) => Promise<RefreshTargetLoadResult>;
   loadTrackedTargets: (maxQueries: number) => Promise<RefreshTargetLoadResult>;
   loadHotTargets: (maxQueries: number, staleMinutes: number) => Promise<RefreshTargetLoadResult>;
 };
@@ -164,6 +166,32 @@ export async function loadTrackedTargets(maxQueries: number): Promise<RefreshTar
   return readyResult(targets);
 }
 
+export async function loadDemandTargets(maxQueries: number): Promise<RefreshTargetLoadResult> {
+  const demands = await loadCatalogRefreshDemands(maxQueries);
+  if (demands === null) return unavailableResult('demand_source_unavailable');
+  if (demands.length === 0) return emptyResult('no_recent_catalog_demand');
+
+  const targets = dedupeTargets(
+    demands.map((demand) => {
+      if (demand.query) {
+        return {
+          kind: 'query' as const,
+          value: demand.query,
+          category: demand.category,
+        };
+      }
+
+      return {
+        kind: 'category' as const,
+        value: demand.category!,
+        category: demand.category,
+      };
+    }),
+  );
+
+  return targets.length > 0 ? readyResult(targets) : emptyResult('no_valid_catalog_demand');
+}
+
 export async function loadHotTargets(maxQueries: number, staleMinutes: number): Promise<RefreshTargetLoadResult> {
   // Las prioridades del catálogo son datos públicos de lectura. Usar el
   // cliente de lectura evita que el scheduler se detenga si una credencial
@@ -211,7 +239,7 @@ export async function loadHotTargets(maxQueries: number, staleMinutes: number): 
 
 export async function buildRefreshPlan(
   input: RefreshInput,
-  loaders: RefreshTargetLoader = { loadTrackedTargets, loadHotTargets },
+  loaders: RefreshTargetLoader = { loadDemandTargets, loadTrackedTargets, loadHotTargets },
 ): Promise<RefreshPlan> {
   if (input.mode === 'cleanup-history') {
     return {
@@ -246,6 +274,37 @@ export async function buildRefreshPlan(
       targets: toCategoryTargets(input.categories),
       fallbackApplied: false,
       fallbackReason: null,
+    };
+  }
+
+  if (input.mode === 'demand') {
+    const demandTargets = await loaders.loadDemandTargets(input.maxQueries);
+    if (demandTargets.status === 'ready' && demandTargets.targets.length > 0) {
+      return {
+        source: 'public-demand',
+        targets: demandTargets.targets,
+        fallbackApplied: false,
+        fallbackReason: null,
+      };
+    }
+
+    const hotTargets = await loaders.loadHotTargets(input.maxQueries, input.staleMinutes);
+    if (hotTargets.status === 'ready' && hotTargets.targets.length > 0) {
+      return {
+        source: 'demand-fallback-hot',
+        targets: hotTargets.targets,
+        fallbackApplied: true,
+        fallbackReason: demandTargets.reason ?? 'no_recent_catalog_demand',
+      };
+    }
+
+    return {
+      source: demandTargets.status === 'unavailable' ? 'demand-unavailable' : 'demand-idle',
+      targets: [],
+      fallbackApplied: false,
+      fallbackReason: demandTargets.status === 'unavailable'
+        ? demandTargets.reason ?? 'demand_source_unavailable'
+        : null,
     };
   }
 

@@ -20,7 +20,7 @@ export const MAX_STALE_MINUTES = 60 * 24 * 7;
 export const INTERNAL_REFRESH_TIMEOUT_MS = 90_000;
 export const INTERNAL_REFRESH_MAX_ATTEMPTS = 2;
 
-export type RefreshMode = 'cleanup-history' | 'custom' | 'full' | 'hot' | 'tracked';
+export type RefreshMode = 'cleanup-history' | 'custom' | 'demand' | 'full' | 'hot' | 'tracked';
 export type AccessMode = 'admin' | 'cron';
 
 export type RefreshInput = {

@@ -8,7 +8,7 @@ import {
   parseCpuModelSignature,
   parseGpuChipSignature,
 } from '@/lib/product-identity';
-import { matchesSearchQueryIntent, sortProductsBySearchRelevance } from '@/lib/search/search-ranking';
+import { matchesSearchQueryIntent, normalizeSearchText, sortProductsBySearchRelevance } from '@/lib/search/search-ranking';
 import type { Product } from '@/lib/types';
 import type { ProductSort } from '@/lib/persistence/product-read-types';
 
@@ -53,7 +53,7 @@ function hasDisplayableComparablePrice(product: Product): boolean {
 }
 
 export function applyTextFilter(products: Product[], query: string): Product[] {
-  const normalizedQuery = normalizeIdentityText(query);
+  const normalizedQuery = normalizeSearchText(query);
   const words = normalizedQuery
     .split(/\s+/)
     .filter((word) => word.length > 1);
@@ -70,7 +70,7 @@ export function applyTextFilter(products: Product[], query: string): Product[] {
       product.variantKey ?? '',
       product.canonicalProductKey ?? '',
     ]
-      .map((value) => normalizeIdentityText(value))
+      .map((value) => normalizeSearchText(value))
       .join(' ');
     return words.every((word) => matchesQueryToken(searchable, word));
   });

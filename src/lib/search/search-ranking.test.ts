@@ -58,6 +58,15 @@ describe('search ranking', () => {
     expect(parseStrictVariantQueryTokens('msi shadow 2x oc rtx 5060')).toEqual(['shadow']);
   });
 
+  it('normalizes common hardware search synonyms to one comparable term', async () => {
+    const { normalizeSearchText } = await import('./search-ranking');
+
+    expect(normalizeSearchText('Placa de video RTX 5070')).toBe('gpu rtx 5070');
+    expect(normalizeSearchText('GPU RTX 5070')).toBe('gpu rtx 5070');
+    expect(normalizeSearchText('Micro Ryzen 7600')).toBe('cpu ryzen 7600');
+    expect(normalizeSearchText('CPU Ryzen 7600')).toBe('cpu ryzen 7600');
+  });
+
   it('enforces variant intent from the query', () => {
     const queryWords = ['g502', 'x'];
 
@@ -187,5 +196,31 @@ describe('search ranking', () => {
 
     expect(sortProductsBySearchRelevance([oos, inStock], '5600X', 'procesadores')[0]?.name)
       .toBe('AMD Ryzen 5 5600X Tray');
+  });
+
+  it('prefers an equally relevant product with several current offers', () => {
+    const stale = buildProduct('AMD Ryzen 5 7600 Box', {
+      category: 'procesadores',
+      lastScrapedAt: new Date('2026-03-01T00:00:00.000Z'),
+    });
+    const fresh = buildProduct('AMD Ryzen 5 7600 Box', {
+      category: 'procesadores',
+      lastScrapedAt: new Date('2026-03-20T10:00:00.000Z'),
+      prices: [
+        {
+          storeId: 'mexx', storeName: 'Mexx', url: 'https://example.com/mexx', price: 300000,
+          stock: 'in-stock', installment: null, lastUpdated: new Date('2026-03-20T10:00:00.000Z'),
+        },
+        {
+          storeId: 'venex', storeName: 'Venex', url: 'https://example.com/venex', price: 305000,
+          stock: 'in-stock', installment: null, lastUpdated: new Date('2026-03-20T10:00:00.000Z'),
+        },
+      ],
+    });
+    const queryWords = ['ryzen', '7600'];
+    const now = new Date('2026-03-20T12:00:00.000Z').getTime();
+
+    expect(scoreProductRelevance(fresh, queryWords, 'ryzen 7600', 'procesadores', now))
+      .toBeGreaterThan(scoreProductRelevance(stale, queryWords, 'ryzen 7600', 'procesadores', now));
   });
 });

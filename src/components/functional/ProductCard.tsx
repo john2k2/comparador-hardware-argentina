@@ -9,6 +9,7 @@ import React, { useMemo } from 'react';
 import { trackProductSelection } from '@/lib/analytics';
 import { computeComparableStorePriceStats, formatPriceARS } from '@/lib/price-utils';
 import { normalizeDisplayText } from '@/lib/text-utils';
+import { freshnessLabel } from '@/lib/ui/freshness-label';
 import type { Product } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { PriceDisplay } from './PriceDisplay';
@@ -89,6 +90,7 @@ export const ProductCard = React.memo(function ProductCard({
   const productHref = returnTo
     ? `/product/${encodeURIComponent(product.id)}?from=${encodeURIComponent(returnTo)}`
     : `/product/${encodeURIComponent(product.id)}`;
+  const freshness = freshnessLabel((product.lastScrapedAt ?? product.updatedAt).getTime());
 
   return (
     <Link
@@ -170,6 +172,9 @@ export const ProductCard = React.memo(function ProductCard({
               COMPARAR TIENDAS &gt;
             </span>
           </div>
+          <p className="pt-2 text-[7px] uppercase text-foreground/60 tracking-wide" title={freshness}>
+            {freshness}
+          </p>
         </div>
       </article>
     </Link>

@@ -14,6 +14,11 @@ import {
 import { getState, pushWithCap } from './state';
 import { buildEventKey, classifyError, statusFromSuccessfulScrape } from './utils';
 import { persistTelemetryEntry } from './storage';
+import {
+  clearStoreCircuit,
+  getStoreCircuitState,
+  recordStoreCircuitFailure,
+} from './store-circuit-breaker';
 
 export { SLOW_SCRAPE_THRESHOLD_MS };
 
@@ -78,6 +83,21 @@ export async function runObservedStoreScrape<T>(params: {
   const startedAtMs = Date.now();
   const slowThresholdMs = params.slowThresholdMs ?? SLOW_SCRAPE_THRESHOLD_MS;
 
+  const circuitState = await getStoreCircuitState(params.storeId).catch(() => null);
+  if (circuitState?.blockedUntilMs && circuitState.blockedUntilMs > startedAtMs) {
+    recordStoreScrapeEvent({
+      endpoint: params.endpoint,
+      storeId: params.storeId,
+      storeName: params.storeName,
+      startedAtMs,
+      latencyMs: 0,
+      resultCount: 0,
+      status: 'blocked',
+      message: `Circuito de protección activo hasta ${new Date(circuitState.blockedUntilMs).toISOString()}`,
+    });
+    return [];
+  }
+
   try {
     const data = await params.run();
     const latencyMs = Math.max(0, Date.now() - startedAtMs);
@@ -91,6 +111,9 @@ export async function runObservedStoreScrape<T>(params: {
       resultCount: data.length,
       status,
     });
+    if (circuitState) {
+      void clearStoreCircuit(params.storeId).catch(() => undefined);
+    }
     return data;
   } catch (error) {
     const latencyMs = Math.max(0, Date.now() - startedAtMs);
@@ -106,6 +129,9 @@ export async function runObservedStoreScrape<T>(params: {
       httpStatus: classified.httpStatus,
       message: classified.message,
     });
+    if (classified.status === 'blocked' || classified.status === 'error') {
+      void recordStoreCircuitFailure(params.storeId, classified.status).catch(() => undefined);
+    }
     return [];
   }
 }

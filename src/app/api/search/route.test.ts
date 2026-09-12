@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockGetSharedCache = vi.fn();
 const mockSetSharedCache = vi.fn();
@@ -14,6 +14,11 @@ const mockCreateObservedProductsSourceRunner = vi.fn(() => async (_storeId, _sto
 const mockResolveLiveProductsList = vi.fn(async () => []);
 const mockLoggerError = vi.fn();
 const mockLoggerWarn = vi.fn();
+const mockRecordCatalogRefreshDemand = vi.fn();
+
+vi.mock('@/lib/catalog/refresh-demand', () => ({
+  recordCatalogRefreshDemand: mockRecordCatalogRefreshDemand,
+}));
 
 vi.mock('@/lib/server/shared-cache', () => ({
   getSharedCache: mockGetSharedCache,
@@ -103,6 +108,10 @@ vi.mock('@/lib/scrapers/compragamer', () => ({ searchCompraGamerProducts: vi.fn(
 vi.mock('@/lib/scrapers/woocommerce', () => ({ fetchAllWooCommerceSearch: vi.fn(async () => []) }));
 
 describe('/api/search route', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   beforeEach(() => {
     vi.resetModules();
     mockGetSharedCache.mockReset();
@@ -115,6 +124,7 @@ describe('/api/search route', () => {
     mockResolveLiveProductsList.mockReset();
     mockLoggerError.mockReset();
     mockLoggerWarn.mockReset();
+    mockRecordCatalogRefreshDemand.mockReset();
 
     mockCheckRateLimit.mockResolvedValue({
       allowed: true,
@@ -261,6 +271,25 @@ describe('/api/search route', () => {
     expect(payload.products[0]?.id).toBe('live-cpu');
     expect(response.headers.get('X-Search-Cache')).toBe('CATEGORY-MISS-DB');
     expect(mockResolveLiveProductsList).toHaveBeenCalledWith('procesadores', undefined, expect.any(Function));
+  });
+
+  it('queues public production demand instead of scraping stores on a catalog miss', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('DISABLE_LIVE_SCRAPING', '');
+    vi.stubEnv('ENABLE_PUBLIC_LIVE_SCRAPING', '');
+
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest('http://localhost/api/search?q=ryzen%207600'));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('X-Search-Cache')).toBe('CATALOG-PENDING');
+    expect(payload.products).toEqual([]);
+    expect(mockResolveLiveProductsList).not.toHaveBeenCalled();
+    expect(mockRecordCatalogRefreshDemand).toHaveBeenCalledWith({
+      query: 'ryzen 7600',
+      category: 'procesadores',
+    });
   });
 
   it('rejects bypassDb when x-internal-refresh is the spoofable value 1', async () => {

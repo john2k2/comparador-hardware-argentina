@@ -51,6 +51,7 @@ describe('catalog-refresh planning', () => {
 
   it('does not turn an unavailable tracked lookup into a full catalog scrape', async () => {
     await expect(buildRefreshPlan(baseInput, {
+      loadDemandTargets: vi.fn(async () => ({ status: 'empty', targets: [] })),
       loadTrackedTargets: vi.fn(async () => ({
         status: 'unavailable',
         targets: [],
@@ -71,6 +72,7 @@ describe('catalog-refresh planning', () => {
 
   it('returns idle tracked plan when there are no tracked targets', async () => {
     await expect(buildRefreshPlan(baseInput, {
+      loadDemandTargets: vi.fn(async () => ({ status: 'empty', targets: [] })),
       loadTrackedTargets: vi.fn(async () => ({
         status: 'empty',
         targets: [],
@@ -91,6 +93,7 @@ describe('catalog-refresh planning', () => {
 
   it('uses loader-backed targets for hot mode when available', async () => {
     await expect(buildRefreshPlan({ ...baseInput, mode: 'hot' }, {
+      loadDemandTargets: vi.fn(async () => ({ status: 'empty', targets: [] })),
       loadTrackedTargets: vi.fn(async () => ({
         status: 'empty',
         targets: [],
@@ -110,6 +113,7 @@ describe('catalog-refresh planning', () => {
 
   it('returns idle hot plan when there are no stale hot targets', async () => {
     await expect(buildRefreshPlan({ ...baseInput, mode: 'hot' }, {
+      loadDemandTargets: vi.fn(async () => ({ status: 'empty', targets: [] })),
       loadTrackedTargets: vi.fn(async () => ({
         status: 'empty',
         targets: [],
@@ -130,6 +134,7 @@ describe('catalog-refresh planning', () => {
 
   it('does not turn an unavailable hot lookup into a category sweep', async () => {
     await expect(buildRefreshPlan({ ...baseInput, mode: 'hot' }, {
+      loadDemandTargets: vi.fn(async () => ({ status: 'empty', targets: [] })),
       loadTrackedTargets: vi.fn(async () => ({ status: 'empty', targets: [] })),
       loadHotTargets: vi.fn(async () => ({
         status: 'unavailable',
@@ -141,6 +146,38 @@ describe('catalog-refresh planning', () => {
       targets: [],
       fallbackApplied: false,
       fallbackReason: 'hot_target_query_failed',
+    });
+  });
+
+  it('prioritizes recent public demand before the stale hot fallback', async () => {
+    await expect(buildRefreshPlan({ ...baseInput, mode: 'demand' }, {
+      loadDemandTargets: vi.fn(async () => ({
+        status: 'ready',
+        targets: [{ kind: 'query', value: 'RTX 5070', category: 'tarjetas-graficas' }],
+      })),
+      loadTrackedTargets: vi.fn(async () => ({ status: 'empty', targets: [] })),
+      loadHotTargets: vi.fn(async () => ({ status: 'ready', targets: [] })),
+    })).resolves.toEqual({
+      source: 'public-demand',
+      targets: [{ kind: 'query', value: 'RTX 5070', category: 'tarjetas-graficas' }],
+      fallbackApplied: false,
+      fallbackReason: null,
+    });
+  });
+
+  it('uses hot products when there is no eligible public demand', async () => {
+    await expect(buildRefreshPlan({ ...baseInput, mode: 'demand' }, {
+      loadDemandTargets: vi.fn(async () => ({ status: 'empty', targets: [], reason: 'no_recent_catalog_demand' })),
+      loadTrackedTargets: vi.fn(async () => ({ status: 'empty', targets: [] })),
+      loadHotTargets: vi.fn(async () => ({
+        status: 'ready',
+        targets: [{ kind: 'query', value: 'Ryzen 7600', category: 'procesadores' }],
+      })),
+    })).resolves.toEqual({
+      source: 'demand-fallback-hot',
+      targets: [{ kind: 'query', value: 'Ryzen 7600', category: 'procesadores' }],
+      fallbackApplied: true,
+      fallbackReason: 'no_recent_catalog_demand',
     });
   });
 });

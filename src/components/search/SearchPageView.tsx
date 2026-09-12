@@ -124,7 +124,7 @@ export function SearchPageView({
             placeholder="NUEVA BUSQUEDA..."
             initialValue={searchQuery}
             isLoading={isBusy}
-            loadingText={searchQuery ? `Consultando tiendas para ${searchQuery}...` : 'Consultando tiendas y precios...'}
+            loadingText={searchQuery ? `Consultando catálogo para ${searchQuery}...` : 'Consultando catálogo y precios...'}
           />
         </div>
       </div>

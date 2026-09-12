@@ -25,7 +25,8 @@ import { isTrustedInternalRefreshRequest } from '@/lib/server/internal-refresh-a
 import { buildRateLimitHeaders, checkRateLimit, getRequestIp } from '@/lib/server/rate-limit';
 import { recordEndpointRequestEvent, runObservedStoreScrape } from '@/lib/telemetry/operational-metrics';
 import { logger } from '@/lib/logger';
-import { shouldSkipLiveScraping } from '@/lib/server/runtime-flags';
+import { recordCatalogRefreshDemand } from '@/lib/catalog/refresh-demand';
+import { isStableRuntimeMode, shouldSkipLiveScraping } from '@/lib/server/runtime-flags';
 import { getStableFixtureProducts } from '@/lib/server/stable-search-fixtures';
 
 export async function GET(request: NextRequest) {
@@ -37,7 +38,8 @@ export async function GET(request: NextRequest) {
   const bypassDb = searchParams.get('bypassDb') === '1';
   const internalRefreshRequest = isTrustedInternalRefreshRequest(request);
   const isRefreshRequest = searchParams.get('refresh') === '1';
-  const stableRuntimeMode = shouldSkipLiveScraping();
+  const stableRuntimeMode = isStableRuntimeMode();
+  let privilegedBypass = false;
   let defaultRateLimitHeaders: Record<string, string> | null = null;
 
   const respond = <T>(body: T, init?: ResponseInit, meta?: { success?: boolean; resultCount?: number; note?: string }) => {
@@ -66,6 +68,7 @@ export async function GET(request: NextRequest) {
     if (!adminUser) {
       return respond({ error: 'bypassDb requiere privilegios de admin' }, { status: 403 }, { success: false, resultCount: 0, note: 'FORBIDDEN_BYPASS_DB' });
     }
+    privilegedBypass = true;
   }
 
   const rateResult = await checkRateLimit(`/api/products:${getRequestIp(request)}`, PRODUCTS_RATE_LIMIT);
@@ -79,6 +82,10 @@ export async function GET(request: NextRequest) {
   }
 
   const observeSource = createObservedProductsSourceRunner(runObservedStoreScrape);
+  const catalogOnlyMode = shouldSkipLiveScraping({
+    internalRefresh: internalRefreshRequest,
+    privilegedBypass,
+  });
 
   try {
     if (!id && !category && !query) {
@@ -137,20 +144,22 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      if (stableRuntimeMode) {
-        const fixtureProduct = getStableFixtureProducts({}).find((product) => product.id === id) ?? null;
-        if (fixtureProduct) {
-          return respond(
-            fixtureProduct,
-            { headers: { 'X-Product-Cache': 'STABLE-FIXTURE' } },
-            { success: true, resultCount: 1, note: 'DETAIL_STABLE_FIXTURE' },
-          );
+      if (catalogOnlyMode) {
+        if (stableRuntimeMode) {
+          const fixtureProduct = getStableFixtureProducts({}).find((product) => product.id === id) ?? null;
+          if (fixtureProduct) {
+            return respond(
+              fixtureProduct,
+              { headers: { 'X-Product-Cache': 'STABLE-FIXTURE' } },
+              { success: true, resultCount: 1, note: 'DETAIL_STABLE_FIXTURE' },
+            );
+          }
         }
 
         return respond(
           { error: 'Producto no disponible en modo estable sin datos persistidos' },
-          { status: 404, headers: { 'X-Product-Cache': 'STABLE-NO-LIVE' } },
-          { success: false, resultCount: 0, note: 'DETAIL_STABLE_SKIP_LIVE' },
+          { status: 404, headers: { 'X-Product-Cache': stableRuntimeMode ? 'STABLE-NO-LIVE' : 'CATALOG-PENDING' } },
+          { success: false, resultCount: 0, note: stableRuntimeMode ? 'DETAIL_STABLE_SKIP_LIVE' : 'DETAIL_CATALOG_PENDING' },
         );
       }
 
@@ -213,13 +222,25 @@ export async function GET(request: NextRequest) {
 
       if (databaseProducts.length > 0) {
         const staleDatabaseProducts = hasStaleProducts(databaseProducts, DB_STALE_AFTER_MS);
-        if (staleDatabaseProducts && !isRefreshRequest) scheduleBackgroundProductsRefresh(request, listRefreshKey);
+        if (staleDatabaseProducts && !isRefreshRequest) {
+          void recordCatalogRefreshDemand({ query: query || undefined, category: categorySlug });
+          scheduleBackgroundProductsRefresh(request, listRefreshKey);
+        }
         snapshotProducts(databaseProducts);
         return respond({ products: databaseProducts, pagination: { limit: databaseProducts.length, offset: 0, total: databaseProducts.length } }, { headers: { 'X-Product-Cache': staleDatabaseProducts ? 'DB-STALE' : 'DB' } }, { success: true, resultCount: databaseProducts.length, note: staleDatabaseProducts ? 'CATEGORY_DB_STALE' : 'CATEGORY_DB' });
       }
     }
 
-    if (stableRuntimeMode) {
+    if (catalogOnlyMode) {
+      if (!stableRuntimeMode) {
+        void recordCatalogRefreshDemand({ query: query || undefined, category: categorySlug });
+        return respond(
+          { products: [], pagination: { limit: 0, offset: 0, total: 0 } },
+          { headers: { 'X-Product-Cache': 'CATALOG-PENDING' } },
+          { success: true, resultCount: 0, note: 'CATALOG_PENDING_CATEGORY_REFRESH' },
+        );
+      }
+
       const fixtureProducts = getStableFixtureProducts({
         query: query || undefined,
         category: categorySlug,

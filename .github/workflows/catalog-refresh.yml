@@ -14,6 +14,7 @@ on:
           - full
           - cleanup-history
           - custom
+          - demand
       query:
         description: Query opcional para mode=custom
         required: false
@@ -123,30 +124,10 @@ jobs:
           if [[ "$EVENT_NAME" == "schedule" ]]; then
             case "$EVENT_SCHEDULE" in
               '5 5 * * *')
-                # Una consulta por día conserva el costo del plan gratuito y
-                # evita reintentar títulos discontinuados del catálogo viejo.
-                # Se rota una canasta de intención de compra que cubre las
-                # categorías que más sostienen comparaciones y guías.
-                REFRESH_SEEDS=(
-                  'Ryzen 5 5600|procesadores'
-                  'Ryzen 7 5700X|procesadores'
-                  'Ryzen 5 7600|procesadores'
-                  'RTX 4060|tarjetas-graficas'
-                  'RTX 5060 Ti|tarjetas-graficas'
-                  'RX 9060 XT|tarjetas-graficas'
-                  'RTX 5070|tarjetas-graficas'
-                  'DDR4 16GB 3200|memoria-ram'
-                  'DDR5 32GB 6000|memoria-ram'
-                  'SSD NVMe 1TB|almacenamiento'
-                  'Fuente 750W 80 Plus Gold|fuentes-alimentacion'
-                  'Motherboard B650|motherboards'
-                )
-                seed_index=$(( (10#$(date -u +%j) - 1) % ${#REFRESH_SEEDS[@]} ))
-                IFS='|' read -r seed_query seed_category <<< "${REFRESH_SEEDS[$seed_index]}"
-                MODE='custom'
-                REQUEST_PATH='/api/admin/catalog-refresh?mode=custom'
-                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'query' "$seed_query")"
-                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'categories' "$seed_category")"
+                # La demanda pública elegible tiene prioridad. Si no hay
+                # demanda reciente, el endpoint cae a productos hot/stale.
+                MODE='demand'
+                REQUEST_PATH='/api/admin/catalog-refresh?mode=demand'
                 REQUEST_PATH="$(append_param "$REQUEST_PATH" 'maxQueries' '1')"
                 ;;
               *)
@@ -165,6 +146,11 @@ jobs:
               hot)
                 REQUEST_PATH='/api/admin/catalog-refresh?mode=hot'
                 REQUEST_PATH="$(append_param "$REQUEST_PATH" 'maxQueries' "${INPUT_MAX_QUERIES:-1}")"
+                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'staleMinutes' "${INPUT_STALE_MINUTES:-180}")"
+                ;;
+              demand)
+                REQUEST_PATH='/api/admin/catalog-refresh?mode=demand'
+                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'maxQueries' "${INPUT_MAX_QUERIES:-30}")"
                 REQUEST_PATH="$(append_param "$REQUEST_PATH" 'staleMinutes' "${INPUT_STALE_MINUTES:-180}")"
                 ;;
               full)

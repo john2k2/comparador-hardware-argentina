@@ -35,7 +35,8 @@ import { dedupeNearDuplicates, filterProductStores } from '@/lib/search/search-d
 import { paginateProducts, SEARCH_PAGE_SIZE } from '@/lib/search/search-pagination';
 import type { HardwareCategory, Product } from '@/lib/types';
 import { logger } from '@/lib/logger';
-import { shouldSkipLiveScraping } from '@/lib/server/runtime-flags';
+import { recordCatalogRefreshDemand } from '@/lib/catalog/refresh-demand';
+import { isStableRuntimeMode, shouldSkipLiveScraping } from '@/lib/server/runtime-flags';
 import { normalizeSearchText } from '@/lib/search/search-ranking';
 import { getStableFixtureProducts } from '@/lib/server/stable-search-fixtures';
 
@@ -152,6 +153,7 @@ export async function GET(request: NextRequest) {
   const maxPrice = rawMinPrice !== undefined && rawMaxPrice !== undefined ? Math.max(rawMinPrice, rawMaxPrice) : rawMaxPrice;
   const cacheKey = buildSearchCacheKey({ query, category: effectiveCategory, sortBy, page, minPrice, maxPrice, stores: selectedStoreIds });
   let defaultRateLimitHeaders: Record<string, string> | null = null;
+  let privilegedBypass = false;
 
   const respond = <T>(body: T, init?: ResponseInit, meta?: { success?: boolean; resultCount?: number; note?: string }) => {
     const statusCode = init?.status ?? 200;
@@ -179,6 +181,7 @@ export async function GET(request: NextRequest) {
     if (!adminUser) {
       return respond({ error: 'bypassDb requiere privilegios de admin' }, { status: 403 }, { success: false, resultCount: 0, note: 'FORBIDDEN_BYPASS_DB' });
     }
+    privilegedBypass = true;
   }
 
   const rateResult = await checkRateLimit(`/api/search:${getRequestIp(request)}`, SEARCH_RATE_LIMIT);
@@ -193,7 +196,11 @@ export async function GET(request: NextRequest) {
 
   const hasFilterIntent = hasSearchFiltersIntent({ category: effectiveCategory, minPrice, maxPrice, stores: selectedStoreIds });
   const hasSearchIntent = Boolean(query || hasFilterIntent);
-  const stableRuntimeMode = shouldSkipLiveScraping();
+  const stableRuntimeMode = isStableRuntimeMode();
+  const catalogOnlyMode = shouldSkipLiveScraping({
+    internalRefresh: internalRefreshRequest,
+    privilegedBypass,
+  });
 
   if (!hasSearchIntent) {
     const payload = emptySearchResponse(page);
@@ -204,7 +211,10 @@ export async function GET(request: NextRequest) {
     const cached = await getCachedSearchResponse(cacheKey);
     if (cached) {
       const staleCache = hasStaleProducts(cached.products, DB_STALE_AFTER_MS);
-      if (query && staleCache && !isRefreshRequest) scheduleBackgroundSearchRefresh(request, cacheKey);
+      if (staleCache && !isRefreshRequest) {
+        void recordCatalogRefreshDemand({ query: query || undefined, category: effectiveCategory });
+        if (query) scheduleBackgroundSearchRefresh(request, cacheKey);
+      }
       snapshotProducts(cached.products);
       return respond(cached, { headers: { 'X-Search-Cache': staleCache ? 'HIT-STALE' : 'HIT' } }, { success: true, resultCount: cached.products.length, note: staleCache ? 'HIT_STALE' : 'HIT' });
     }
@@ -232,7 +242,10 @@ export async function GET(request: NextRequest) {
 
       if (databaseProducts.length > 0) {
         const staleDatabase = hasStaleProducts(databaseProducts, DB_STALE_AFTER_MS);
-        if (query && staleDatabase && !isRefreshRequest) scheduleBackgroundSearchRefresh(request, cacheKey);
+        if (staleDatabase && !isRefreshRequest) {
+          void recordCatalogRefreshDemand({ query: query || undefined, category: effectiveCategory });
+          if (query) scheduleBackgroundSearchRefresh(request, cacheKey);
+        }
 
         const payload = buildPayloadFromProducts(databaseProducts, page);
 
@@ -243,12 +256,13 @@ export async function GET(request: NextRequest) {
     }
 
     if (!query && effectiveCategory) {
-      if (stableRuntimeMode) {
+      if (catalogOnlyMode) {
+        void recordCatalogRefreshDemand({ category: effectiveCategory });
         const emptyPayload = emptySearchResponse(page);
         return respond(
           emptyPayload,
-          { headers: { 'X-Search-Cache': 'STABLE-EMPTY' } },
-          { success: true, resultCount: 0, note: 'STABLE_MODE_SKIP_CATEGORY_LIVE' },
+          { headers: { 'X-Search-Cache': stableRuntimeMode ? 'STABLE-EMPTY' : 'CATALOG-PENDING' } },
+          { success: true, resultCount: 0, note: stableRuntimeMode ? 'STABLE_MODE_SKIP_CATEGORY_LIVE' : 'CATALOG_PENDING_CATEGORY_REFRESH' },
         );
       }
 
@@ -297,7 +311,7 @@ export async function GET(request: NextRequest) {
       return respond(emptyPayload, { headers: { 'X-Search-Cache': 'DB-EMPTY' } }, { success: true, resultCount: 0, note: 'DB_EMPTY_FILTER_ONLY' });
     }
 
-    if (stableRuntimeMode) {
+    if (catalogOnlyMode) {
       const stablePayload = await buildStableSearchFallback({
         query,
         category: effectiveCategory,
@@ -307,13 +321,24 @@ export async function GET(request: NextRequest) {
         sortBy,
         page,
       });
+      if (stablePayload.products.length === 0) {
+        void recordCatalogRefreshDemand({ query, category: effectiveCategory });
+      }
       return respond(
         stablePayload,
-        { headers: { 'X-Search-Cache': stablePayload.products.length > 0 ? 'STABLE-DB-FALLBACK' : 'STABLE-EMPTY' } },
+        {
+          headers: {
+            'X-Search-Cache': stableRuntimeMode
+              ? (stablePayload.products.length > 0 ? 'STABLE-DB-FALLBACK' : 'STABLE-EMPTY')
+              : (stablePayload.products.length > 0 ? 'CATALOG-DB-FALLBACK' : 'CATALOG-PENDING'),
+          },
+        },
         {
           success: true,
           resultCount: stablePayload.products.length,
-          note: stablePayload.products.length > 0 ? 'STABLE_MODE_DB_FALLBACK' : 'STABLE_MODE_SKIP_LIVE_SEARCH',
+          note: stablePayload.products.length > 0
+            ? (stableRuntimeMode ? 'STABLE_MODE_DB_FALLBACK' : 'CATALOG_MODE_DB_FALLBACK')
+            : (stableRuntimeMode ? 'STABLE_MODE_SKIP_LIVE_SEARCH' : 'CATALOG_PENDING_QUERY_REFRESH'),
         },
       );
     }
