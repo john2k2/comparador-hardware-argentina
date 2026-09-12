@@ -1,5 +1,5 @@
 id,prioridad,resultado,tarea,responsable,estado,fecha_objetivo,criterio_cierre
-G01,P0,Sitio confiable,Diagnosticar y resolver Worker 1102,Codex,en_validacion_local,2026-09-18,Sin 1102 en rutas críticas y recursos medidos en despliegue real
+G01,P0,Sitio confiable,Diagnosticar y resolver Worker 1102,Codex,en_observacion_produccion,2026-09-18,Sin 1102 en rutas críticas y recursos medidos en despliegue real
 G02,P0,Sitio confiable,Separar y validar actualización del catálogo,Codex,en_validacion_local,2026-09-25,Siete ciclos útiles y frescura por tienda registrada
 G03,P1,Tráfico hacia tiendas,Configurar y verificar pageviews GA4,Codex,en_validacion_local,2026-09-18,Un evento inicial y por navegación sin duplicados
 G04,P1,Piloto comercial,Definir y probar canal de contacto,Jonathan,pendiente,2026-09-18,Consulta de prueba recibida y CTA público operativo

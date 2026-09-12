@@ -1,7 +1,8 @@
 import { hasSearchIntent, type SearchPageState } from './search-state';
-import { readProductsPageFromDatabase } from '@/lib/persistence/product-read';
+import { readCategoryLandingPageFromDatabase, readProductsPageFromDatabase } from '@/lib/persistence/product-read';
 import { SEARCH_PAGE_SIZE } from './search-pagination';
 import type { SearchApiResponse } from './search-api';
+import { isIndexableCategoryLanding } from './search-seo';
 
 export type InitialSearchPage = {
   products: SearchApiResponse['products'];
@@ -28,16 +29,18 @@ export async function readInitialSearchPage(state: SearchPageState): Promise<Ini
   }
 
   try {
-    const result = await readProductsPageFromDatabase({
-      query: state.query || undefined,
-      category: state.category,
-      minPrice: state.minPrice,
-      maxPrice: state.maxPrice,
-      storeIds: new Set(state.stores),
-      sortBy: state.sortBy,
-      page: state.page,
-      pageSize: SEARCH_PAGE_SIZE,
-    });
+    const result = isIndexableCategoryLanding(state)
+      ? await readCategoryLandingPageFromDatabase(state.category!, state.page, SEARCH_PAGE_SIZE)
+      : await readProductsPageFromDatabase({
+        query: state.query || undefined,
+        category: state.category,
+        minPrice: state.minPrice,
+        maxPrice: state.maxPrice,
+        storeIds: new Set(state.stores),
+        sortBy: state.sortBy,
+        page: state.page,
+        pageSize: SEARCH_PAGE_SIZE,
+      });
 
     return {
       products: result.products,

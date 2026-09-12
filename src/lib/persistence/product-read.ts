@@ -124,6 +124,64 @@ export async function readProductsPageFromDatabase(params: ReadProductsPageParam
   };
 }
 
+/**
+ * Lectura acotada para la primera carga de una landing de categoría. Estas
+ * filas ya están agrupadas en persistencia, por lo que evitamos normalizar y
+ * comparar cientos de productos dentro del Worker sólo para mostrar una página.
+ */
+export async function readCategoryLandingPageFromDatabase(
+  category: NonNullable<ReadProductsParams['category']>,
+  page: number,
+  pageSize: number,
+): Promise<ProductPageResult> {
+  const supabase = getServerSupabaseReadClient();
+  const safePageSize = Math.max(1, Math.trunc(pageSize) || 1);
+  const requestedPage = Math.max(1, Math.trunc(page) || 1);
+
+  if (!supabase) {
+    return {
+      products: [],
+      total: 0,
+      totalPages: 0,
+      page: requestedPage,
+      pageSize: safePageSize,
+    };
+  }
+
+  const from = (requestedPage - 1) * safePageSize;
+  const to = from + safePageSize - 1;
+  const { data, error, count } = await supabase
+    .from('products')
+    .select(PRODUCT_SELECT_FIELDS, { count: 'exact' })
+    .eq('category', category)
+    .like('id', 'agrupado-%')
+    .gt('lowest_price', 0)
+    .order('updated_at', { ascending: false })
+    .range(from, to);
+
+  if (error) {
+    if (EMPTY_RESULT_ERROR_CODES.has(error.code ?? '')) {
+      return {
+        products: [],
+        total: 0,
+        totalPages: 0,
+        page: requestedPage,
+        pageSize: safePageSize,
+      };
+    }
+    throw new Error(`readCategoryLandingPageFromDatabase: ${error.message}`);
+  }
+
+  const total = Math.max(0, count ?? (data?.length ?? 0));
+  return {
+    products: ((data as DbProductRow[] | null) ?? []).map(mapDbProduct),
+    total,
+    totalPages: Math.ceil(total / safePageSize),
+    page: requestedPage,
+    pageSize: safePageSize,
+  };
+}
+
 export async function readPopularProductsFromDatabase(limit: number = 8): Promise<Product[]> {
   const supabase = getServerSupabaseReadClient();
   if (!supabase) return [];
@@ -145,4 +203,3 @@ export async function readPopularProductsFromDatabase(limit: number = 8): Promis
     .map(mapDbProduct)
     .filter((p) => p.prices.length >= 2);
 }
-

@@ -40,6 +40,13 @@ Los cinco contratos se actualizaron en el árbol local: rutas limpias de categor
 3. Ver un `page_view`, una navegación y un `generate_lead` de prueba dentro de la propiedad GA4 sin datos personales.
 4. Configurar y probar la recepción del correo comercial antes de contar leads o contactar posibles sponsors.
 
+## Publicación y verificación inicial
+
+- Se publicó la versión `c9b8508d-beff-4428-9430-f895c7d21054` y el despliegue inicial confirmó que el error no estaba resuelto: `/comparar/procesadores` devolvió 503/1102. El log de Cloudflare registró `exceededCpu` y el límite de 10 ms.
+- La causa encontrada fue el render inicial: leía y transformaba hasta 1.000 productos para mostrar 12. Se sustituyó la landing de categoría por una lectura paginada de 12 productos agrupados y un conteo de base de datos.
+- Se publicó la corrección como versión `2df0aa89-65c5-4885-ae63-6d4bbbc1d81e`. Una solicitud sin cache a CPU respondió 200 en 2.564 ms, GPU en 413 ms, búsqueda Ryzen 5 5600 en 952 ms y portada en 755 ms, sin 1102.
+- La revisión visual pública confirmó la landing CPU, filtros, resultados y paginación. Es una muestra inicial; G01 queda en observación hasta comprobar estabilidad sostenida.
+
 ## Próxima prueba de aceptación
 
 Después del arreglo de infraestructura: abrir portada, CPU, GPU y ficha desde desktop/móvil; buscar una consulta conocida y otra sin resultados; cambiar filtro y orden; verificar oferta/stock/fecha y destino; validar contacto y eventos sin enviar mensajes a negocios. Ejecutar matriz de tiendas y pruebas de roles en entorno apropiado antes de afirmar revisión integral cerrada.
