@@ -1,4 +1,4 @@
-import { computeComparableStorePriceStats, formatPriceARS, getComparableStorePrices } from '@/lib/price-utils';
+import { computeComparableStorePriceStats, formatPriceARS, getAvailableComparableStorePrices } from '@/lib/price-utils';
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
@@ -73,7 +73,7 @@ export function resolveProductImage(product: Product | null): string {
 export function buildProductDescription(product: Product): string {
   const name = normalizeDisplayText(product.name);
   const comparableStats = computeComparableStorePriceStats(product.prices);
-  const storesCompared = comparableStats.comparablePrices.length;
+  const storesCompared = getAvailableComparableStorePrices(product.prices).length;
   const lowest = comparableStats.lowest > 0 ? comparableStats.lowest : product.lowestPrice;
   const storeLabel = storesCompared === 1 ? '1 tienda' : `${storesCompared} tiendas`;
   const core = truncateText(
@@ -102,7 +102,7 @@ export function buildProductJsonLd(product: Product, id: string) {
   const displayName = normalizeDisplayText(product.name);
   const displayBrand = normalizeDisplayText(product.brand || 'Generica');
   const displayDescription = normalizeDisplayText(product.description || product.name);
-  const offers = getComparableStorePrices(product.prices)
+  const offers = getAvailableComparableStorePrices(product.prices)
     .filter((price) => price.price > 0 && price.url)
     .map((price) => ({
       '@type': 'Offer',

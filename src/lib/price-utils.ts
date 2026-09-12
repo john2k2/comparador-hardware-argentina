@@ -279,6 +279,13 @@ export function getComparableStorePrices(prices: ProductPrice[]): ProductPrice[]
   return computeComparableStorePriceStats(prices).comparablePrices;
 }
 
+/** Precios comparables que el comprador todavía puede adquirir. */
+export function getAvailableComparableStorePrices(prices: ProductPrice[]): ProductPrice[] {
+  return computeComparableStorePriceStats(prices)
+    .comparablePrices
+    .filter((price) => !isUnavailableStock(price.stock));
+}
+
 // Instancias reutilizables para formateo de precios (evitar creacion en cada llamada)
 const ARS_FORMATTER = new Intl.NumberFormat('es-AR', {
   style: 'currency',

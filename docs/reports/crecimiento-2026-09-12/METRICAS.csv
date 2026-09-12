@@ -1,0 +1,19 @@
+observado_el,periodo_inicio,periodo_fin,fuente,metrica,segmento,valor,unidad,estado,nota
+2026-09-12,2026-08-13,2026-09-09,GSC,clicks,web_total,256,clicks,verificado,No equivale a sesiones
+2026-09-12,2026-08-13,2026-09-09,GSC,impressions,web_total,13900,impresiones,verificado_redondeado,Interfaz muestra 13.9 mil
+2026-09-12,2026-08-13,2026-09-09,GSC,ctr,web_total,1.8,porcentaje,verificado_redondeado,
+2026-09-12,2026-08-13,2026-09-09,GSC,position,web_total,8.7,posicion_media,verificado_redondeado,
+2026-09-12,2026-08-13,2026-09-09,GSC,clicks,home,166,clicks,verificado,
+2026-09-12,2026-08-13,2026-09-09,GSC,clicks,argentina,246,clicks,verificado,
+2026-09-12,2026-08-13,2026-09-09,GSC,clicks,desktop,145,clicks,verificado,
+2026-09-12,2026-08-13,2026-09-09,GSC,clicks,mobile,110,clicks,verificado,
+2026-09-12,2026-08-13,2026-09-09,GSC,clicks,tablet,1,clicks,verificado,
+2026-09-12,,,GSC,indexed_pages,total,3166,paginas,verificado,Fecha del snapshot de Google no capturada
+2026-09-12,,,GSC,nonindexed_pages,total,831,paginas,verificado,No todas requieren indexarse
+2026-09-12,2026-09-10,2026-09-12,GitHub Actions,failed_runs,ultimos_tres_dias,3,ejecuciones,verificado,Ultima 503 error1102
+2026-09-12,2026-09-12,2026-09-12,HTTP,sitemap_index_duration,muestra_unica,13653,ms,verificado,No es percentil ni uptime
+2026-09-12,,,GA4,sessions,total,,sesiones,no_verificado,No se obtuvo informe actual
+2026-09-12,,,GA4,outbound_clicks,total,,clicks,no_verificado,Validar instrumentacion y propiedad
+2026-09-12,,,Comercial,qualified_leads,total,,leads,no_verificado,Falta canal publico operativo
+2026-09-12,,,Comercial,active_sponsors,total,,sponsors,no_verificado,No inferir cero
+2026-09-12,,,Comercial,revenue,total,,ARS,no_verificado,No se reviso facturacion

@@ -13,6 +13,7 @@ type ProductSitemapRow = {
     store_id: string | null;
     price: number | string | null;
     url: string | null;
+    stock: string | null;
   }> | null;
 };
 
@@ -31,7 +32,7 @@ async function readAllIndexableProductRows(): Promise<ProductSitemapRow[]> {
     const to = from + PRODUCT_SITEMAP_READ_BATCH_SIZE - 1;
     const { data, error } = await supabase
       .from('products')
-      .select('id, updated_at, canonical_product_key, product_prices(store_id, price, url)')
+      .select('id, updated_at, canonical_product_key, product_prices(store_id, price, url, stock)')
       .like('id', `${INDEXABLE_PRODUCT_ID_PREFIX}%`)
       .order('updated_at', { ascending: false })
       .order('id', { ascending: true })
@@ -51,7 +52,7 @@ async function readAllIndexableProductRows(): Promise<ProductSitemapRow[]> {
   const eligibleRows = rows.filter((row) => {
     const comparableStores = new Set(
       (row.product_prices ?? [])
-        .filter((price) => Number(price.price ?? 0) > 0 && Boolean(price.url))
+        .filter((price) => Number(price.price ?? 0) > 0 && Boolean(price.url) && price.stock !== 'out-of-stock')
         .map((price) => price.store_id)
         .filter(Boolean),
     );

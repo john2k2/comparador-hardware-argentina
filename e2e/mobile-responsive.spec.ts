@@ -32,7 +32,7 @@ test.describe('Mobile Responsiveness', () => {
       await expect(categoriesSection).toBeVisible();
 
       // Links de categorías deberían ser cliqueables
-      const categoryLinks = page.locator('a[href*="category="]');
+      const categoryLinks = page.locator('a[href^="/comparar/"]');
       const count = await categoryLinks.count();
       expect(count).toBeGreaterThan(0);
     });

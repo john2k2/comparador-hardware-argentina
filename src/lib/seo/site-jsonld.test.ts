@@ -9,6 +9,12 @@ describe('buildSiteJsonLd', () => {
     expect(organization['@type']).toBe('Organization');
     expect(organization.url).toBe(SITE_URL);
     expect(organization.alternateName).toBe(SITE_BRAND_SHORT);
+    expect(organization.description).toMatch(/comparador independiente/i);
+    expect(organization.knowsAbout).toEqual([
+      'Comparación de precios de hardware',
+      'Compatibilidad de componentes para PC',
+      'Catálogo de hardware en Argentina',
+    ]);
     if (SUPPORT_EMAIL) {
       expect(organization.contactPoint).toEqual({
         '@type': 'ContactPoint',

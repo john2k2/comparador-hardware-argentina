@@ -17,8 +17,8 @@ function buildRow(index: number) {
     updated_at: new Date(2026, 0, 1, 0, 0, index).toISOString(),
     canonical_product_key: `product-${index}`,
     product_prices: [
-      { store_id: 'store-a', price: 100, url: 'https://store-a.example/product' },
-      { store_id: 'store-b', price: 110, url: 'https://store-b.example/product' },
+      { store_id: 'store-a', price: 100, url: 'https://store-a.example/product', stock: 'in-stock' },
+      { store_id: 'store-b', price: 110, url: 'https://store-b.example/product', stock: 'in-stock' },
     ],
   };
 }

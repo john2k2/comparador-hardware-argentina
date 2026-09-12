@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Mail, MessageSquare, Shield } from 'lucide-react';
 import { RetroPageShell } from '@/components/layout/RetroPageShell';
+import { ContactEmailLink } from '@/components/commercial/ContactEmailLink';
 import { buildPublicPageMetadata } from '@/lib/seo/metadata';
 import { buildMailtoHref, SITE_NAME, SUPPORT_EMAIL } from '@/lib/site-config';
 
@@ -12,6 +13,7 @@ export const metadata: Metadata = buildPublicPageMetadata({
 
 export default function ContactoPage() {
   const supportMailto = buildMailtoHref(`${SITE_NAME} - Consulta`);
+  const commercialMailto = buildMailtoHref(`${SITE_NAME} - Propuesta comercial`);
 
   return (
     <RetroPageShell
@@ -30,12 +32,27 @@ export default function ContactoPage() {
           <Mail className="w-5 h-5 text-primary mb-3" />
           <h2 className="text-secondary font-bold mb-2">[ EMAIL ]</h2>
           {SUPPORT_EMAIL && supportMailto ? (
-            <a href={supportMailto} className="leading-relaxed normal-case text-[11px] tracking-normal font-mono text-primary underline break-all">
-              {SUPPORT_EMAIL}
-            </a>
+            <ContactEmailLink href={supportMailto} email={SUPPORT_EMAIL} purpose="support" />
           ) : (
             <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
               Canal de correo pendiente de configuracion publica. Antes de monetizar conviene definir un email operativo real.
+            </p>
+          )}
+        </div>
+
+        <div className="border-2 border-border p-4 bg-muted/30 space-y-3">
+          <h2 className="text-secondary font-bold">[ TIENDAS Y PUBLICIDAD ]</h2>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            Las tiendas pueden consultar por espacios identificados como patrocinados. El orden orgánico sigue criterios independientes y no vendemos posiciones en resultados, backlinks ni ventas garantizadas.
+          </p>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            La propuesta inicial es un piloto de alcance acotado, con ubicación, periodo y métricas de derivación definidas antes de empezar. Se informa de forma clara cuándo un enlace forma parte de un acuerdo comercial.
+          </p>
+          {SUPPORT_EMAIL && commercialMailto ? (
+            <ContactEmailLink href={commercialMailto} email={SUPPORT_EMAIL} purpose="commercial" />
+          ) : (
+            <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+              El canal comercial se habilitará cuando el correo operativo esté configurado y probado.
             </p>
           )}
         </div>

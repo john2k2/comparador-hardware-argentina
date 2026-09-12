@@ -10,6 +10,12 @@ export function buildSiteJsonLd() {
       alternateName: SITE_BRAND_SHORT,
       url: SITE_URL,
       logo: `${SITE_URL}/og-image.png`,
+      description: 'Comparador independiente de precios y stock de hardware entre tiendas argentinas.',
+      knowsAbout: [
+        'Comparación de precios de hardware',
+        'Compatibilidad de componentes para PC',
+        'Catálogo de hardware en Argentina',
+      ],
       ...(SUPPORT_EMAIL
         ? {
             contactPoint: {

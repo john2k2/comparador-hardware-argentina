@@ -129,6 +129,24 @@ export function trackSponsoredStoreSelection(params: {
 }
 
 /**
+ * Registra la intención de contacto sin enviar datos personales a Analytics.
+ */
+export function trackContactIntent(params: {
+  purpose: 'support' | 'commercial';
+  channel: 'email';
+  surface: 'contact_page';
+}): void {
+  if (!isGA4Available()) return;
+
+  window.gtag('event', 'generate_lead', {
+    lead_type: params.purpose,
+    contact_channel: params.channel,
+    contact_surface: params.surface,
+    send_to: GA4_MEASUREMENT_ID,
+  });
+}
+
+/**
  * Track a click to external store
  */
 export function trackStoreClick(params: {

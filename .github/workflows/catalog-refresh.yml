@@ -37,7 +37,8 @@ on:
   schedule:
     # Frecuencia reducida a 1 vez al dia para cuenta gratuita
     # (limite: 2000 minutos/mes de GitHub Actions)
-    # Todos los modos se ejecutan en secuencia una vez al dia
+    # La ejecución programada actualiza sólo productos prioritarios y stale.
+    # Un barrido total se mantiene como acción manual mientras se mide su costo.
     - cron: '5 5 * * *'
 
 permissions:
@@ -88,8 +89,8 @@ jobs:
           if [[ "$EVENT_NAME" == "schedule" ]]; then
             case "$EVENT_SCHEDULE" in
               '5 5 * * *')
-                MODE='full'
-                REQUEST_PATH='/api/admin/catalog-refresh?mode=full'
+                MODE='hot'
+                REQUEST_PATH='/api/admin/catalog-refresh?mode=hot&maxQueries=8&staleMinutes=180'
                 ;;
               *)
                 echo "Cron no soportado: $EVENT_SCHEDULE" >&2

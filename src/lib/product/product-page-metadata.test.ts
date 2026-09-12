@@ -230,4 +230,17 @@ describe('buildProductJsonLd', () => {
     };
     expect(productEntry.offers).toHaveLength(0);
   });
+
+  it('no publica como oferta comparable una tienda agotada', () => {
+    const jsonLd = buildProductJsonLd(makeProduct({
+      prices: [
+        { storeId: 'agotada', storeName: 'Agotada', url: 'https://agotada.example/a', price: 100_000, stock: 'out-of-stock', installment: null, lastUpdated: new Date('2026-05-01') },
+        { storeId: 'disponible', storeName: 'Disponible', url: 'https://disponible.example/a', price: 150_000, stock: 'in-stock', installment: null, lastUpdated: new Date('2026-05-01') },
+      ],
+    }), 'agrupado-motherboards-gigabyte-eagle-lga1851-z890-12a7yda');
+    const productEntry = jsonLd.find((entry) => entry['@type'] === 'Product') as { offers: { lowPrice: number; offerCount: number } };
+
+    expect(productEntry.offers.lowPrice).toBe(150_000);
+    expect(productEntry.offers.offerCount).toBe(1);
+  });
 });

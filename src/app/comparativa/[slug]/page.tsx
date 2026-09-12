@@ -12,7 +12,7 @@ import {
 } from '@/lib/seo/comparisons-data';
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
-import { SITE_URL } from '@/lib/site-config';
+import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { ComparisonBenchSources } from '@/components/seo/ComparisonBenchSources';
 import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
 import Link from 'next/link';
@@ -107,10 +107,9 @@ export default async function ComparisonPage({ params }: Props) {
         </h2>
         <div className="space-y-3 text-[11px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono">
           <p>
-            Elegir entre <strong>{comparison.product1.name}</strong> y <strong>{comparison.product2.name}</strong> 
-            es una de las decisiones más comunes para gamers argentinos en 2026. Ambos componentes compiten 
-            en el mismo segmento de mercado pero con enfoques distintos que pueden marcar la diferencia 
-            según tu presupuesto y necesidades específicas.
+            <strong>{comparison.product1.name}</strong> prioriza {comparison.product1.pros[0].toLowerCase()}, mientras que{' '}
+            <strong>{comparison.product2.name}</strong> se destaca por {comparison.product2.pros[0].toLowerCase()}.
+            La mejor elección depende del uso, la compatibilidad y las ofertas comparables disponibles hoy.
           </p>
           <p>
             {pricing.storeCoverageCopy} El rendimiento, el consumo y las temperaturas los tomamos de
@@ -118,10 +117,8 @@ export default async function ComparisonPage({ params }: Props) {
             argentinas con stock.
           </p>
           <p>
-            {comparison.product1.name} destaca por {comparison.product1.pros[0].toLowerCase()} y {comparison.product1.pros[1].toLowerCase()}, 
-            mientras que {comparison.product2.name} se posiciona con {comparison.product2.pros[0].toLowerCase()} y {comparison.product2.pros[1].toLowerCase()}. 
-            La diferencia de precio entre ambos puede llegar a ser significativa en el mercado argentino, 
-            por eso es crucial comparar antes de comprar.
+            Compará la variante exacta, VRAM o socket, consumo, garantía y condiciones de envío. Si no hay una oferta
+            comparable en stock, no mostramos un ganador de precio.
           </p>
         </div>
       </section>
@@ -307,9 +304,15 @@ export default async function ComparisonPage({ params }: Props) {
             '@context': 'https://schema.org',
             '@graph': [
               {
-                '@type': 'WebPage',
+                '@type': 'Article',
+                headline: comparison.title,
+                description: comparison.description,
                 url: `${SITE_URL}/comparativa/${comparison.slug}`,
+                inLanguage: 'es-AR',
                 dateModified: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
+                author: { '@type': 'Organization', '@id': `${SITE_URL}#organization`, name: SITE_NAME },
+                publisher: { '@id': `${SITE_URL}#organization` },
+                image: `${SITE_URL}/og-image.png`,
               },
               {
                 '@type': 'FAQPage',

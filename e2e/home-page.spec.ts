@@ -61,8 +61,8 @@ test.describe('Home Page', () => {
     await page.goto('/');
 
     // Click en el link de categorías rápidas (no el del footer)
-    await page.locator('#main-content').getByRole('link', { name: 'Procesadores' }).click();
-    await page.waitForURL(/\/search\?category=procesadores/);
+    await page.locator('#main-content').getByRole('link', { name: 'Procesadores', exact: true }).click();
+    await page.waitForURL(/\/comparar\/procesadores/);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
@@ -89,7 +89,7 @@ test.describe('Home Page', () => {
   test('navega a "Cómo funciona" desde home', async ({ page }) => {
     await page.goto('/');
 
-    await page.getByRole('link', { name: 'COMO FUNCIONA' }).click();
+    await page.getByRole('link', { name: /como funciona/i }).click();
     await page.waitForURL(/\/acerca/);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
@@ -98,7 +98,7 @@ test.describe('Home Page', () => {
     await page.goto('/');
 
     await expect(page.getByText('TRANSPARENCIA COMERCIAL')).toBeVisible();
-    await expect(page.getByText(/comparador independiente|no vendemos/i)).toBeVisible();
+    await expect(page.getByText(/comparador independiente|no vendemos/i).first()).toBeVisible();
   });
 
   test('footer con links funcionales', async ({ page }) => {

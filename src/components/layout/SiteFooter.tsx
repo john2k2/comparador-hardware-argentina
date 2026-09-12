@@ -38,6 +38,7 @@ export function SiteFooter() {
             <p className={columnTitleClass}>Informacion</p>
             <ul className="space-y-1 text-[11px] md:text-sm text-muted-foreground">
               <li><Link href="/acerca" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Acerca de</Link></li>
+              <li><Link href="/acerca" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Como funciona</Link></li>
               <li><Link href="/privacidad" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Politica de Privacidad</Link></li>
               <li><Link href="/terminos" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Terminos de Uso</Link></li>
               <li><Link href="/contacto" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Contacto</Link></li>

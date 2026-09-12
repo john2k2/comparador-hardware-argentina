@@ -14,7 +14,6 @@ export type BudgetGuideDefinition = {
   description: string;
   keywords: string[];
   budget: number;
-  performance: string;
   components: {
     cpu: BudgetGuideComponentSpec;
     gpu: BudgetGuideComponentSpec;
@@ -24,7 +23,6 @@ export type BudgetGuideDefinition = {
     psu: BudgetGuideComponentSpec;
     case: BudgetGuideComponentSpec;
   };
-  gamesPerformance: Array<{ game: string; fps: string; settings: string }>;
   productivity: Array<{ task: string; performance: string }>;
   tips: string[];
   faqs: Array<{ question: string; answer: string }>;
@@ -37,7 +35,6 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
     description: 'Armá la mejor PC gamer por 1 millón de pesos. Componentes recomendados con precios actualizados de tiendas de Argentina.',
     keywords: ['pc gamer 1 millon', 'pc gamer barata argentina', 'armar pc 1 millon pesos', 'pc gaming economica'],
     budget: 1000000,
-    performance: '1080p 60FPS+',
     components: {
       cpu: {
         name: 'AMD Ryzen 5 5600 / 5500',
@@ -89,13 +86,6 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
         estimatedPrice: 40000,
       },
     },
-    gamesPerformance: [
-      { game: 'Fortnite', fps: '120+', settings: 'High' },
-      { game: 'Valorant', fps: '200+', settings: 'High' },
-      { game: 'GTA V', fps: '60+', settings: 'Very High' },
-      { game: 'Elden Ring', fps: '60', settings: 'High' },
-      { game: 'Cyberpunk 2077', fps: '45-60', settings: 'Medium' },
-    ],
     productivity: [
       { task: 'Office / Navegación', performance: 'Fluido' },
       { task: 'Photoshop', performance: 'Buen rendimiento' },
@@ -132,7 +122,6 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
     description: 'Compará componentes y precios para armar una PC gamer por $2 millones en Argentina: Ryzen 5, RTX 4060 o RX 7600 y 32 GB DDR5.',
     keywords: ['pc gamer 2 millones', 'pc gaming argentina 2m', 'mejor pc gamer precio calidad', 'pc gamer rtx 4060'],
     budget: 2000000,
-    performance: '1080p Ultra 100FPS+ | 1440p 60FPS+',
     components: {
       cpu: {
         name: 'AMD Ryzen 5 7600X / 7500F',
@@ -184,13 +173,6 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
         estimatedPrice: 80000,
       },
     },
-    gamesPerformance: [
-      { game: 'Fortnite', fps: '240+', settings: 'Epic' },
-      { game: 'Valorant', fps: '300+', settings: 'High' },
-      { game: 'Cyberpunk 2077', fps: '60+', settings: 'Ultra + RT' },
-      { game: 'Elden Ring', fps: '60', settings: 'Max' },
-      { game: 'Call of Duty', fps: '120+', settings: 'Ultra' },
-    ],
     productivity: [
       { task: 'Photoshop / Illustrator', performance: 'Excelente' },
       { task: 'Edición video 1080p', performance: 'Fluido' },
@@ -227,7 +209,6 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
     description: 'Compará componentes y precios para armar una PC gamer por $3 millones en Argentina: Ryzen 7, RTX 5070 o RX 7800 XT y 32 GB DDR5.',
     keywords: ['pc gamer 3 millones', 'pc alta gama argentina', 'pc gamer rtx 5070', 'pc gaming 1440p'],
     budget: 3000000,
-    performance: '1440p Ultra 120FPS+ | 4K 60FPS+',
     components: {
       cpu: {
         name: 'AMD Ryzen 7 7700X / 7800X3D',
@@ -279,13 +260,6 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
         estimatedPrice: 120000,
       },
     },
-    gamesPerformance: [
-      { game: 'Cyberpunk 2077', fps: '100+', settings: 'Ultra + RT + DLSS' },
-      { game: 'Alan Wake 2', fps: '60+', settings: '4K High + RT' },
-      { game: 'Call of Duty', fps: '200+', settings: 'Ultra' },
-      { game: 'Forza Horizon 5', fps: '120+', settings: '4K Ultra' },
-      { game: 'Starfield', fps: '80+', settings: 'Ultra' },
-    ],
     productivity: [
       { task: 'Edición video 4K', performance: 'Fluido' },
       { task: '3D Rendering', performance: 'Excelente' },

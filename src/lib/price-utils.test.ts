@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ProductPrice } from './types';
 import {
   computeComparableStorePriceStats,
+  getAvailableComparableStorePrices,
   parseLocalizedArsPrice,
   pickBestStorePrices,
   preferStorePrice,
@@ -115,6 +116,15 @@ describe('price-utils', () => {
 
     expect(stats.lowest).toBe(190_000);
     expect(stats.comparablePrices[0]).toMatchObject({ storeId: 'venex', price: 190_000 });
+  });
+
+  it('separa las ofertas disponibles para contratos que no deben contar agotadas', () => {
+    const available = getAvailableComparableStorePrices([
+      { storeId: 'agotada', price: 100_000, stock: 'out-of-stock' },
+      { storeId: 'disponible', price: 150_000, stock: 'in-stock' },
+    ]);
+
+    expect(available).toEqual([expect.objectContaining({ storeId: 'disponible', price: 150_000 })]);
   });
 
   it('computeComparableStorePriceStats filtra outliers altos absurdos sin romper precios reales', () => {

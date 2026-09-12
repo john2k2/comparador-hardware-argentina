@@ -110,11 +110,6 @@ export default function GuiasIndexPage() {
               {guide.description}
             </p>
             
-            <div className="text-[10px] font-mono mb-3">
-              <div className="text-muted-foreground">RENDIMIENTO:</div>
-              <div className="text-foreground">{guide.performance}</div>
-            </div>
-            
             <div className="mt-3 text-[10px] text-primary font-mono">
               VER GUÍA →
             </div>

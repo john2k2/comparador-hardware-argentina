@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { SearchApiResponse } from '@/lib/search/search-api';
 import { hydrateProducts } from '@/lib/product-serialization';
 import { buildApiSearchKey, buildSearchRoute, toSearchFilters, type SearchPageState } from '@/lib/search/search-state';
-import { getCategorySeoCopy } from '@/lib/search/search-seo';
+import { getCategorySeoCopy, isIndexableCategoryLanding } from '@/lib/search/search-seo';
 import { stores as defaultStores } from '@/lib/scrapers/static-data';
 import type { Product, SearchFilters } from '@/lib/types';
 import { trackFilterChange, trackSearch } from '@/lib/analytics';
@@ -74,7 +74,10 @@ function SearchPageClientInner({
   const isBusy = isLoading || isSearchSyncing;
   const searchRoute = useMemo(() => buildSearchRoute(currentState), [currentState]);
   const categorySeoCopy = useMemo(() => getCategorySeoCopy(currentState.category), [currentState.category]);
-  const isSeoCategoryLanding = initialIsCategoryLanding;
+  // La URL puede cambiar en el cliente sin remontar este componente. La copia
+  // editorial solo debe persistir mientras el estado actual siga siendo la
+  // landing canónica de la categoría.
+  const isSeoCategoryLanding = initialIsCategoryLanding && isIndexableCategoryLanding(currentState);
 
   const totalResults = pagination.total;
   const totalPages = pagination.totalPages;
@@ -134,14 +137,21 @@ function SearchPageClientInner({
 
   const handleFiltersChange = useCallback((newFilters: Partial<SearchFilters>) => {
     const nextFilters: SearchFilters = { ...filters, ...newFilters, query: searchQuery };
-    if (newFilters.category && newFilters.category !== filters.category) {
-      trackFilterChange({ filterType: 'category', filterValue: newFilters.category });
+    if (newFilters.category !== undefined && newFilters.category !== filters.category) {
+      trackFilterChange({ filterType: 'category', filterValue: newFilters.category || 'all' });
     }
     if (newFilters.minPrice !== undefined || newFilters.maxPrice !== undefined) {
       trackFilterChange({ filterType: 'price_range', filterValue: `$${newFilters.minPrice || 0}-$${newFilters.maxPrice || '∞'}` });
     }
-    if (newFilters.stores && filters.stores && newFilters.stores.length !== filters.stores.length) {
-      trackFilterChange({ filterType: 'store', filterValue: newFilters.stores.join(',') });
+    if (newFilters.stores !== undefined) {
+      const previousStores = [...(filters.stores ?? [])].sort().join(',');
+      const nextStores = [...newFilters.stores].sort().join(',');
+      if (previousStores !== nextStores) {
+        trackFilterChange({ filterType: 'store', filterValue: nextStores || 'all' });
+      }
+    }
+    if (newFilters.sortBy !== undefined && newFilters.sortBy !== filters.sortBy) {
+      trackFilterChange({ filterType: 'sort', filterValue: newFilters.sortBy });
     }
 
     // P2: Debounce de 250ms para evitar navegaciones excesivas al cambiar filtros

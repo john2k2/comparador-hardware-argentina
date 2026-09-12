@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildPublicSitemapEntries } from './public-sitemap';
+import { EDITORIAL_UPDATED_AT } from './editorial-freshness';
 
 describe('public sitemap surface', () => {
   it('only includes public static pages and category landings', () => {
@@ -16,5 +17,14 @@ describe('public sitemap surface', () => {
     expect(urls.some((url) => url.includes('/admin'))).toBe(false);
     expect(urls.some((url) => url.includes('/auth'))).toBe(false);
     expect(urls.some((url) => url.includes('/api/'))).toBe(false);
+  });
+
+  it('incluye una fecha de modificación verificable en las landings editoriales', () => {
+    const entries = buildPublicSitemapEntries();
+    const comparison = entries.find((entry) => entry.url.endsWith('/comparativa/rtx-4060-vs-rx-7600'));
+    const guide = entries.find((entry) => entry.url.endsWith('/guia/pc-gamer-1-millon'));
+
+    expect(comparison?.lastModified).toEqual(new Date(`${EDITORIAL_UPDATED_AT}T00:00:00.000Z`));
+    expect(guide?.lastModified).toEqual(new Date(`${EDITORIAL_UPDATED_AT}T00:00:00.000Z`));
   });
 });

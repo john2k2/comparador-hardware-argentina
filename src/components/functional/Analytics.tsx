@@ -1,14 +1,23 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
+import { pageview } from '@/lib/analytics';
 
 const GA4_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID;
 
-interface AnalyticsProps {
-  nonce?: string;
-}
+export function Analytics() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isReady, setIsReady] = useState(false);
+  const search = searchParams.toString();
 
-export function Analytics({ nonce }: AnalyticsProps) {
+  useEffect(() => {
+    if (!isReady || !pathname) return;
+    pageview(search ? `${pathname}?${search}` : pathname);
+  }, [isReady, pathname, search]);
+
   if (!GA4_MEASUREMENT_ID) {
     return null;
   }
@@ -18,20 +27,12 @@ export function Analytics({ nonce }: AnalyticsProps) {
       <Script
         strategy="afterInteractive"
         src={`https://www.googletagmanager.com/gtag/js?id=${GA4_MEASUREMENT_ID}`}
-      />
-      <Script
-        id="ga4-config"
-        nonce={nonce}
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){window.dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${GA4_MEASUREMENT_ID}', {
-              send_page_view: false,
-            });
-          `,
+        onLoad={() => {
+          window.dataLayer = window.dataLayer || [];
+          window.gtag = (...args: unknown[]) => window.dataLayer.push(args);
+          window.gtag('js', new Date());
+          window.gtag('config', GA4_MEASUREMENT_ID, { send_page_view: false });
+          setIsReady(true);
         }}
       />
     </>

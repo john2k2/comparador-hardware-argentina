@@ -98,9 +98,9 @@ export function Filters({
       <div className="flex items-center justify-between border-b-4 border-muted pb-4">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-foreground" />
-          <span className="font-bold text-[10px] uppercase text-foreground">
+          <h2 className="font-bold text-[10px] uppercase text-foreground">
             FILTROS
-          </span>
+          </h2>
           {activeFiltersCount > 0 && (
             <span className="bg-primary text-primary-foreground px-2 py-0.5 text-[8px] font-bold">
               {activeFiltersCount}

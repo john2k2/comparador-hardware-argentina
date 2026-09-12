@@ -82,6 +82,14 @@ public/                # Assets estáticos
 - Scrapers devuelven `ScraperResult<T>` con `ok()` / `fail()`.
 - Logger: `src/lib/logger.ts` (no `console.log`). Niveles: debug, info, warn, error, silent.
 
+## Delegación de agentes para desarrollo
+
+- La tarea principal usa el modelo elegido por quien inicia la tarea. Para trabajo complejo, el coordinador debe conservar las decisiones de arquitectura, seguridad y verificación final.
+- Los subagentes por defecto usan `gpt-5.6-luna` con razonamiento `high`, definidos en `.codex/`. Se usan solo cuando el trabajo es repetitivo o intensivo en lectura: mapear 3+ archivos, detectar patrones, redactar tests desde una referencia o preparar stubs acotados.
+- `bulk-reader` es estrictamente de lectura y devuelve un resumen estructurado. `pattern-writer` solo puede escribir tests, documentación o stubs explícitamente solicitados que sigan un archivo de referencia.
+- No delegar cambios de producción, migraciones/RLS, autenticación/autorización, secretos, despliegue, configuración Cloudflare, scraping ni debugging de concurrencia a Luna. El coordinador debe inspeccionar el diff y ejecutar la verificación proporcional antes de dar una tarea por terminada.
+- No delegar tareas pequeñas o lecturas puntuales: crear subagentes añade costo y latencia. Cuando haya duda, usar una lectura focalizada en el agente principal.
+
 ## API interna
 
 | Ruta | Método | Descripción |

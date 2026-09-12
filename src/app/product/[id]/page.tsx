@@ -4,7 +4,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { ProductDetailClient } from '@/components/product/ProductDetailClient';
 import { readCanonicalProductIdByKey, readProductByIdFromDatabase } from '@/lib/persistence/product-read';
-import { formatPriceARS, getComparableStorePrices } from '@/lib/price-utils';
+import { formatPriceARS, getAvailableComparableStorePrices } from '@/lib/price-utils';
 import { decideProductPageIndexing } from '@/lib/seo/product-indexing';
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import { SITE_NAME } from '@/lib/site-config';
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     ? await readCanonicalProductIdByKey(product.canonicalProductKey)
     : null;
   const resolvedCanonicalId = canonicalProductId ?? id;
-  const comparableStoreCount = getComparableStorePrices(product.prices).length;
+  const comparableStoreCount = getAvailableComparableStorePrices(product.prices).length;
   const indexing = decideProductPageIndexing({
     product,
     resolvedCanonicalId,
@@ -118,7 +118,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     }
   }
   
-  const comparableStoreCount = getComparableStorePrices(product.prices).length;
+  const comparableStoreCount = getAvailableComparableStorePrices(product.prices).length;
   const indexing = decideProductPageIndexing({
     product,
     resolvedCanonicalId: id,
@@ -148,7 +148,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 function ProductSeoSupport({ product }: { product: Product }) {
   const displayName = normalizeDisplayText(product.name);
   const displayBrand = normalizeDisplayText(product.brand);
-  const storeCount = getComparableStorePrices(product.prices).length;
+  const storeCount = getAvailableComparableStorePrices(product.prices).length;
   const bestPrice = formatPriceARS(product.lowestPrice);
   const content = getProductContent(product);
 

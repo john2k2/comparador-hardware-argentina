@@ -5,11 +5,11 @@ import { loadGuideCatalogProducts } from '@/lib/seo/guide-catalog';
 import { formatPriceARS } from '@/lib/price-utils';
 import { GUIDE_SLOT_KEYS, resolveLiveGuideSlots } from '@/lib/seo/budget-builder';
 import { getBudgetGuideBySlug } from '@/lib/seo/budget-guides-data';
-import { resolveGuideFaqs, canPublishGuideFps } from '@/lib/seo/guide-faqs';
+import { resolveGuideFaqs } from '@/lib/seo/guide-faqs';
 import { resolveGuidePageMetadata } from '@/lib/seo/landing-metadata';
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
-import { SITE_URL } from '@/lib/site-config';
+import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
 import { GuideFpsPanel } from '@/components/seo/GuideFpsPanel';
 import { GuideComponentRows } from '@/components/seo/GuideComponentRows';
@@ -75,7 +75,7 @@ export default async function BudgetGuidePage({ params }: Props) {
           [ PRESUPUESTO Y STOCK ]
         </h2>
         
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 gap-4">
           <div className="border-2 border-border p-4 text-center">
             <div className="text-[10px] text-muted-foreground mb-1">PRESUPUESTO</div>
             <div className="text-[16px] md:text-[24px] font-pixel text-primary break-words">{formatPriceARS(guide.budget)}</div>
@@ -89,10 +89,6 @@ export default async function BudgetGuidePage({ params }: Props) {
             </p>
           </div>
           
-          <div className="border-2 border-border p-4 text-center">
-            <div className="text-[10px] text-muted-foreground mb-1">RENDIMIENTO</div>
-            <div className="text-[12px] md:text-[16px] font-mono normal-case tracking-normal text-primary break-words">{guide.performance}</div>
-          </div>
         </div>
         {resolved.hasEstimates && (
           <p className="mt-4 text-[10px] md:text-[11px] uppercase text-muted-foreground font-mono leading-relaxed">
@@ -125,13 +121,7 @@ export default async function BudgetGuidePage({ params }: Props) {
         <div className="grid md:grid-cols-2 gap-4">
           <div className="border-2 border-border p-4">
             <h3 className="text-[11px] font-bold mb-3">Gaming</h3>
-            <GuideFpsPanel
-              canPublish={canPublishGuideFps(resolved.cpu, resolved.gpu, {
-                cpuTerms: guide.components.cpu.searchTerms,
-                gpuTerms: guide.components.gpu.searchTerms,
-              })}
-              games={guide.gamesPerformance}
-            />
+            <GuideFpsPanel />
           </div>
           
           <div className="border-2 border-border p-4">
@@ -194,9 +184,15 @@ export default async function BudgetGuidePage({ params }: Props) {
             '@context': 'https://schema.org',
             '@graph': [
               {
-                '@type': 'WebPage',
+                '@type': 'Article',
+                headline: guide.title,
+                description: guide.description,
                 url: `${SITE_URL}/guia/${slug}`,
+                inLanguage: 'es-AR',
                 dateModified: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
+                author: { '@type': 'Organization', '@id': `${SITE_URL}#organization`, name: SITE_NAME },
+                publisher: { '@id': `${SITE_URL}#organization` },
+                image: `${SITE_URL}/og-image.png`,
               },
               {
                 '@type': 'FAQPage',

@@ -267,9 +267,9 @@ export async function buildRefreshPlan(
     }
 
     return {
-      source: 'tracked-fallback-categories',
-      targets: toCategoryTargets(input.categories),
-      fallbackApplied: true,
+      source: 'tracked-unavailable',
+      targets: [],
+      fallbackApplied: false,
       fallbackReason: trackedTargets.reason ?? 'tracked_targets_unavailable',
     };
   }
@@ -294,9 +294,9 @@ export async function buildRefreshPlan(
   }
 
   return {
-    source: 'hot-fallback-categories',
-    targets: toCategoryTargets(input.categories),
-    fallbackApplied: true,
+    source: 'hot-unavailable',
+    targets: [],
+    fallbackApplied: false,
     fallbackReason: hotTargets.reason ?? 'hot_targets_unavailable',
   };
 }

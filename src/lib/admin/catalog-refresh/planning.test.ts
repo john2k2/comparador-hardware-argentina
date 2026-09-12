@@ -49,7 +49,7 @@ describe('catalog-refresh planning', () => {
     });
   });
 
-  it('falls back to categories when tracked targets are unavailable', async () => {
+  it('does not turn an unavailable tracked lookup into a full catalog scrape', async () => {
     await expect(buildRefreshPlan(baseInput, {
       loadTrackedTargets: vi.fn(async () => ({
         status: 'unavailable',
@@ -62,9 +62,9 @@ describe('catalog-refresh planning', () => {
         reason: 'no_stale_hot_targets',
       })),
     })).resolves.toEqual({
-      source: 'tracked-fallback-categories',
-      targets: [{ kind: 'category', value: 'procesadores', category: 'procesadores' }],
-      fallbackApplied: true,
+      source: 'tracked-unavailable',
+      targets: [],
+      fallbackApplied: false,
       fallbackReason: 'service_client_unavailable',
     });
   });
@@ -125,6 +125,22 @@ describe('catalog-refresh planning', () => {
       targets: [],
       fallbackApplied: false,
       fallbackReason: null,
+    });
+  });
+
+  it('does not turn an unavailable hot lookup into a category sweep', async () => {
+    await expect(buildRefreshPlan({ ...baseInput, mode: 'hot' }, {
+      loadTrackedTargets: vi.fn(async () => ({ status: 'empty', targets: [] })),
+      loadHotTargets: vi.fn(async () => ({
+        status: 'unavailable',
+        targets: [],
+        reason: 'hot_target_query_failed',
+      })),
+    })).resolves.toEqual({
+      source: 'hot-unavailable',
+      targets: [],
+      fallbackApplied: false,
+      fallbackReason: 'hot_target_query_failed',
     });
   });
 });

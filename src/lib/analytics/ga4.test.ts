@@ -40,6 +40,17 @@ describe('ga4 analytics helpers', () => {
     }));
   });
 
+  it('tracks one explicit pageview after the analytics loader is ready', async () => {
+    const { pageview } = await import('./ga4');
+
+    pageview('/comparar/procesadores?stores=mexx');
+
+    expect(gtag).toHaveBeenCalledWith('event', 'page_view', expect.objectContaining({
+      page_location: '/comparar/procesadores?stores=mexx',
+      send_to: 'G-TEST123',
+    }));
+  });
+
   it('tracks outbound store clicks with link type and surface', async () => {
     const { trackStoreClick } = await import('./ga4');
 
@@ -80,6 +91,23 @@ describe('ga4 analytics helpers', () => {
       promotion_id: 'mexx',
       promotion_surface: 'home_sponsored',
       creative_slot: '2',
+    }));
+  });
+
+  it('tracks commercial contact intent without personal data', async () => {
+    const { trackContactIntent } = await import('./ga4');
+
+    trackContactIntent({
+      purpose: 'commercial',
+      channel: 'email',
+      surface: 'contact_page',
+    });
+
+    expect(gtag).toHaveBeenCalledWith('event', 'generate_lead', expect.objectContaining({
+      lead_type: 'commercial',
+      contact_channel: 'email',
+      contact_surface: 'contact_page',
+      send_to: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID,
     }));
   });
 });

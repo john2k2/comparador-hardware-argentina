@@ -120,7 +120,7 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(siteJsonLd) }}
         />
         <ThemeScript nonce={nonce} />
-        <Analytics nonce={nonce} />
+        <Analytics />
 
         {/* Preconnect to critical image domains for faster loading */}
         <link rel="preconnect" href="https://mexx-img-2019.s3.amazonaws.com" />
