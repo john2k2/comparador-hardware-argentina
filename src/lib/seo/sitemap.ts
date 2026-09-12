@@ -1,82 +1,44 @@
 import { getServerSupabaseReadClient } from '@/lib/server/supabase-server';
-import { INDEXABLE_PRODUCT_ID_PREFIX } from '@/lib/seo/product-indexing';
 
-export const PRODUCT_SITEMAP_PAGE_SIZE = 2000;
-const PRODUCT_SITEMAP_READ_BATCH_SIZE = 1000;
+// Supabase limita las respuestas REST a 1.000 filas. El índice debe usar el
+// mismo tamaño para que cada página listada contenga todas sus URLs.
+export const PRODUCT_SITEMAP_PAGE_SIZE = 1000;
 export { INDEXABLE_PRODUCT_ID_PREFIX, isIndexableProductId } from '@/lib/seo/product-indexing';
 
-type ProductSitemapRow = {
+export type ProductSitemapRow = {
   id: string;
   updated_at: string | null;
   canonical_product_key: string | null;
-  product_prices?: Array<{
-    store_id: string | null;
-    price: number | string | null;
-    url: string | null;
-    stock: string | null;
-  }> | null;
 };
 
 export async function countIndexedProducts(): Promise<number> {
-  const rows = await readAllIndexableProductRows();
-  return rows.length;
-}
-
-async function readAllIndexableProductRows(): Promise<ProductSitemapRow[]> {
   const supabase = getServerSupabaseReadClient();
-  if (!supabase) return [];
+  if (!supabase) return 0;
 
-  const rows: ProductSitemapRow[] = [];
-
-  for (let from = 0; ; from += PRODUCT_SITEMAP_READ_BATCH_SIZE) {
-    const to = from + PRODUCT_SITEMAP_READ_BATCH_SIZE - 1;
-    const { data, error } = await supabase
-      .from('products')
-      .select('id, updated_at, canonical_product_key, product_prices(store_id, price, url, stock)')
-      .like('id', `${INDEXABLE_PRODUCT_ID_PREFIX}%`)
-      .order('updated_at', { ascending: false })
-      .order('id', { ascending: true })
-      .range(from, to);
-
-    if (error) {
-      console.warn('[sitemap] grouped products omitted:', error.message);
-      return [];
-    }
-
-    const batch = (data ?? []) as ProductSitemapRow[];
-    rows.push(...batch);
-
-    if (batch.length < PRODUCT_SITEMAP_READ_BATCH_SIZE) break;
+  const { data, error } = await supabase.rpc('count_indexable_sitemap_products');
+  if (error) {
+    console.warn('[sitemap] grouped product count unavailable:', error.message);
+    return 0;
   }
 
-  const eligibleRows = rows.filter((row) => {
-    const comparableStores = new Set(
-      (row.product_prices ?? [])
-        .filter((price) => Number(price.price ?? 0) > 0 && Boolean(price.url) && price.stock !== 'out-of-stock')
-        .map((price) => price.store_id)
-        .filter(Boolean),
-    );
-
-    return comparableStores.size >= 2;
-  });
-
-  const winners = new Map<string, ProductSitemapRow>();
-
-  for (const row of eligibleRows) {
-    const dedupeKey = row.canonical_product_key?.trim() || row.id;
-    if (!winners.has(dedupeKey)) {
-      winners.set(dedupeKey, row);
-    }
-  }
-
-  return [...winners.values()];
+  return Math.max(0, Number(data ?? 0));
 }
 
 export async function readProductSitemapPage(page: number, pageSize = PRODUCT_SITEMAP_PAGE_SIZE): Promise<ProductSitemapRow[]> {
-  const safePageSize = Math.max(1, pageSize);
+  const safePageSize = Math.min(PRODUCT_SITEMAP_PAGE_SIZE, Math.max(1, pageSize));
   const safePage = Math.max(0, Math.trunc(page));
-  const from = safePage * safePageSize;
-  const to = from + safePageSize - 1;
-  const rows = await readAllIndexableProductRows();
-  return rows.slice(from, to + 1);
+  const supabase = getServerSupabaseReadClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase.rpc('read_indexable_sitemap_products', {
+    p_page: safePage,
+    p_page_size: safePageSize,
+  });
+
+  if (error) {
+    console.warn('[sitemap] grouped product page unavailable:', error.message);
+    return [];
+  }
+
+  return (data ?? []) as ProductSitemapRow[];
 }

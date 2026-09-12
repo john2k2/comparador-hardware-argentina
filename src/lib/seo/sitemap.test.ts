@@ -1,56 +1,48 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { getServerSupabaseReadClientMock, requestedRanges } = vi.hoisted(() => ({
+const { getServerSupabaseReadClientMock, rpcMock } = vi.hoisted(() => ({
   getServerSupabaseReadClientMock: vi.fn(),
-  requestedRanges: [] as Array<[number, number]>,
+  rpcMock: vi.fn(),
 }));
 
 vi.mock('@/lib/server/supabase-server', () => ({
   getServerSupabaseReadClient: getServerSupabaseReadClientMock,
 }));
 
-import { countIndexedProducts } from './sitemap';
-
-function buildRow(index: number) {
-  return {
-    id: `group:${index}`,
-    updated_at: new Date(2026, 0, 1, 0, 0, index).toISOString(),
-    canonical_product_key: `product-${index}`,
-    product_prices: [
-      { store_id: 'store-a', price: 100, url: 'https://store-a.example/product', stock: 'in-stock' },
-      { store_id: 'store-b', price: 110, url: 'https://store-b.example/product', stock: 'in-stock' },
-    ],
-  };
-}
+import { countIndexedProducts, readProductSitemapPage } from './sitemap';
 
 describe('product sitemap reads', () => {
   beforeEach(() => {
-    requestedRanges.length = 0;
-    const rows = Array.from({ length: 5_001 }, (_, index) => buildRow(index));
-    const query = {
-      select: vi.fn().mockReturnThis(),
-      like: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      range: vi.fn((from: number, to: number) => {
-        requestedRanges.push([from, to]);
-        return Promise.resolve({ data: rows.slice(from, to + 1), error: null });
-      }),
-    };
+    vi.clearAllMocks();
+    getServerSupabaseReadClientMock.mockReturnValue({ rpc: rpcMock });
+  });
 
-    getServerSupabaseReadClientMock.mockReturnValue({
-      from: vi.fn(() => query),
+  it('asks PostgreSQL for the count without loading catalog rows', async () => {
+    rpcMock.mockResolvedValue({ data: 5_001, error: null });
+
+    await expect(countIndexedProducts()).resolves.toBe(5_001);
+    expect(rpcMock).toHaveBeenCalledWith('count_indexable_sitemap_products');
+  });
+
+  it('asks PostgreSQL for the requested page', async () => {
+    const rows = [{
+      id: 'agrupado-cpu-1',
+      updated_at: '2026-09-12T00:00:00.000Z',
+      canonical_product_key: 'cpu-1',
+    }];
+    rpcMock.mockResolvedValue({ data: rows, error: null });
+
+    await expect(readProductSitemapPage(2, 500)).resolves.toEqual(rows);
+    expect(rpcMock).toHaveBeenCalledWith('read_indexable_sitemap_products', {
+      p_page: 2,
+      p_page_size: 500,
     });
   });
 
-  it('paginates Supabase until every indexable product is read', async () => {
-    await expect(countIndexedProducts()).resolves.toBe(5_001);
-    expect(requestedRanges).toEqual([
-      [0, 999],
-      [1_000, 1_999],
-      [2_000, 2_999],
-      [3_000, 3_999],
-      [4_000, 4_999],
-      [5_000, 5_999],
-    ]);
+  it('returns an empty result when the database is unavailable', async () => {
+    getServerSupabaseReadClientMock.mockReturnValue(null);
+
+    await expect(countIndexedProducts()).resolves.toBe(0);
+    await expect(readProductSitemapPage(0)).resolves.toEqual([]);
   });
 });

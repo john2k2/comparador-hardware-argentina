@@ -370,6 +370,21 @@ export type Database = {
         }
         Returns: Json
       }
+      count_indexable_sitemap_products: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      read_indexable_sitemap_products: {
+        Args: {
+          p_page: number
+          p_page_size: number
+        }
+        Returns: {
+          canonical_product_key: string | null
+          id: string
+          updated_at: string
+        }[]
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
     }
