@@ -1,6 +1,6 @@
 # Validación del corte 12/09/2026
 
-Se conservó el árbol local existente. Además de los documentos, inició una primera unidad de implementación local; no está publicada todavía. Las herramientas de tests pueden regenerar carpetas ignoradas de build y resultados.
+Se conservó el árbol local existente. La unidad de implementación se publicó y se validó por rutas públicas; las herramientas de tests pueden regenerar carpetas ignoradas de build y resultados.
 
 | Comprobación | Resultado | Límite |
 |---|---|---|
@@ -11,8 +11,8 @@ Se conservó el árbol local existente. Además de los documentos, inició una p
 | Revisión visual local | Contacto, disclosure y navegación de información visibles | El correo no está configurado localmente, por lo que el CTA comercial queda correctamente en estado pendiente |
 | E2E focalizado anterior | 18 ejecutados; 13 aprobados; 5 fallidos; 2,1 min | Home, navegación de búsqueda y móvil; sin scraping real |
 | Dependencias | Cuatro entradas: tres altas y una moderada | Relaciones transitivas; exposición por evaluar |
-| Producción | 200 iniciales y posteriores 503/1102 | Muestra puntual, no porcentaje de disponibilidad |
-| OpenNext desplegable | No ejecutado | Necesario al corregir infraestructura |
+| Producción | Portada, categorías, búsqueda, ficha y sitemaps con 200 en muestras posteriores | Muestra puntual, no porcentaje de disponibilidad |
+| OpenNext desplegable | Aprobado y publicado | La configuración local de Redis sigue degradada durante el build |
 
 ## Cinco E2E fallidos
 
@@ -29,16 +29,16 @@ Los cinco contratos se actualizaron en el árbol local: rutas limpias de categor
 - El scheduler diario deja de ejecutar el barrido `full`: ejecuta `hot` con hasta ocho objetivos stale/prioritarios. Si no puede consultar objetivos tracked/hot, ahora termina sin iniciar categorías completas.
 - El refresh lanzado desde una visita pública queda opt-in mediante `ENABLE_INTERNAL_BACKGROUND_REFRESH=1`. El cron autenticado y las ejecuciones manuales siguen disponibles.
 - Pageviews GA4 se emiten tras cargar GA4 y en cada cambio de ruta; el contacto comercial registra solo intención, tipo y canal, nunca el correo del visitante.
+- Se creó la cuenta, propiedad y flujo web de GA4 para `www.comparador-hardware.com.ar`. La medición mejorada quedó activa; su identificador público se incorporó al build y a la configuración del Worker sin registrar valores sensibles en este documento.
 - Ofertas agotadas ya no contribuyen a schema de producto, cantidad de tiendas de la ficha ni elegibilidad del sitemap.
 - La landing editorial de categoría deja de persistir tras una búsqueda, filtro, orden o paginación en el cliente.
 - Contacto explica el piloto patrocinado, independencia del orden orgánico y usa el correo configurado para propuestas comerciales. Sin correo operativo configurado, no inventa un canal.
 
 ## Pendiente antes de cierre de esta unidad
 
-1. Publicar esta versión y comprobar que portada, categorías, búsqueda y una ficha dejan de devolver 1102.
-2. Confirmar en registros Cloudflare que el cron reducido termina y registrar siete ciclos útiles antes de volver a ampliar alcance.
-3. Ver un `page_view`, una navegación y un `generate_lead` de prueba dentro de la propiedad GA4 sin datos personales.
-4. Configurar y probar la recepción del correo comercial antes de contar leads o contactar posibles sponsors.
+1. Confirmar en registros Cloudflare que el cron reducido termina y registrar siete ciclos útiles antes de volver a ampliar alcance.
+2. Esperar la recepción inicial de GA4 (Google informa hasta 48 horas) y validar un `page_view`, una navegación y un `generate_lead` de prueba sin datos personales.
+3. Configurar y probar la recepción del correo comercial antes de contar leads o contactar posibles sponsors.
 
 ## Publicación y verificación inicial
 
@@ -51,6 +51,7 @@ Los cinco contratos se actualizaron en el árbol local: rutas limpias de categor
 - El acceso administrativo de Supabase confirmó que el proyecto `argen-prices-db` está activo. Se reemplazó en local y en el Worker la clave secreta de servidor que devolvía `Invalid API key`; la clave pública y la secreta verifican ahora lectura de `products` con 200. Una ejecución manual posterior (`34702137652`) terminó en 15 segundos con `source=hot-db`, un objetivo, 200 y cero fallos. Aún debe verificarse que los siguientes ciclos persistan precios útiles.
 - La medición directa mostró 46.614 productos, 60.959 precios, 1.814 productos `hot` vencidos y ningún precio actualizado en siete días. Un refresh dentro del Worker para `Ryzen 5 5600` agotó sus dos ventanas de 90 segundos y falló con 504. Se trasladó el scraping diario a un runtime local de GitHub Actions con secretos del repositorio; la misma búsqueda terminó allí en 28 segundos, devolvió dos productos y dejó 18 precios actualizados en Supabase (`34705289877`). El ciclo diario rota 12 consultas de intención de compra en vez de insistir sobre títulos discontinuados.
 - El sitemap dejó de cargar el catálogo completo antes de paginar. Dos funciones de Supabase ahora resuelven elegibilidad, deduplicación canónica, conteo y páginas; se mantienen los criterios de dos comercios disponibles y orden estable. La versión pública `88882e9a-3a06-430b-85db-00fdfc44a057` respondió el índice en 2.466 ms con seis sitemaps, la primera página con 1.000 URLs y la última con 794, sin 1102. El tamaño de página se fijó en 1.000 por el límite de respuestas de Supabase.
+- Se creó y configuró la propiedad GA4 autorizada para el sitio. La versión pública `7d20dfa4-fe32-40e2-a824-36fe93093ee3` devuelve 200 e incluye el cargador de Google y el identificador de medición esperado; la política CSP permite los dominios de Google Analytics. La confirmación de eventos en informes queda pendiente de la ventana de recepción indicada por Google.
 - El muestreo previo sin cache registró portada 200 en 3.350 ms, CPU 200 en 2.306 ms, búsqueda Ryzen 5 5600 200 en 2.127 ms y contacto 200 en 176 ms, todos sin 1102. El índice anterior tardó 13.712 ms; la medición posterior a la optimización se registra arriba.
 
 ## Próxima prueba de aceptación

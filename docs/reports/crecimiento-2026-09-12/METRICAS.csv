@@ -12,6 +12,7 @@ observado_el,periodo_inicio,periodo_fin,fuente,metrica,segmento,valor,unidad,est
 2026-09-12,,,GSC,nonindexed_pages,total,831,paginas,verificado,No todas requieren indexarse
 2026-09-12,2026-09-10,2026-09-12,GitHub Actions,failed_runs,ultimos_tres_dias,3,ejecuciones,verificado,Ultima 503 error1102
 2026-09-12,2026-09-12,2026-09-12,HTTP,sitemap_index_duration,muestra_unica,13653,ms,verificado,No es percentil ni uptime
+2026-09-12,,,GA4,web_stream,comparador_hardware,1,flujo,configurado,Propiedad y flujo web creados; etiqueta publicada; no implica datos recibidos
 2026-09-12,,,GA4,sessions,total,,sesiones,no_verificado,No se obtuvo informe actual
 2026-09-12,,,GA4,outbound_clicks,total,,clicks,no_verificado,Validar instrumentacion y propiedad
 2026-09-12,,,Comercial,qualified_leads,total,,leads,no_verificado,Falta canal publico operativo

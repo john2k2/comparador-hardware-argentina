@@ -57,7 +57,7 @@ Resumen: **3.166 indexadas y 831 sin indexar**. No son 831 errores a reparar aut
 | Bloqueada por robots | 1 | Comprobar intención |
 | Google eligió otra canónica | 2 | Contrastar duplicados y señales canónicas |
 
-Core Web Vitals: **sin datos** en móvil y ordenador. No equivale a aprobado. Sesiones GA4, clics salientes, leads, ingresos y sponsors activos: **no verificados**, nunca registrar como cero. No se obtuvo un informe actual de GA4; Chrome cambió de tarea durante la consulta. Semrush no se actualizó en esta revisión.
+Core Web Vitals: **sin datos** en móvil y ordenador. No equivale a aprobado. La cuenta, propiedad y flujo web de GA4 ya están configurados para el sitio y su etiqueta se publicó el 12/09, pero Google puede tardar hasta 48 horas en comenzar a mostrar datos. Sesiones GA4, clics salientes, leads, ingresos y sponsors activos siguen **no verificados**; nunca registrar como cero. Semrush no se actualizó en esta revisión.
 
 ## Evidencia técnica y hallazgos
 
@@ -82,13 +82,13 @@ Core Web Vitals: **sin datos** en móvil y ordenador. No equivale a aprobado. Se
 
 **Cierre:** una consulta de prueba llega al buzón correcto y queda registrada una sola vez; CTA accesible en móvil y desktop.
 
-### P1 — Medición de páginas vistas incompleta
+### P1 — Medición GA4 recién activada; falta evidencia de eventos
 
-`src/components/functional/Analytics.tsx:31` establece `send_page_view: false`; `src/lib/analytics/ga4.ts:13` define `pageview`, pero no tiene caller en `src`. La ausencia se confirmó con búsqueda global. Esto deja sin emisión manual inicial a la implementación; la configuración de medición mejorada de GA4 no se verificó.
+`src/components/functional/Analytics.tsx` emite manualmente el `page_view` inicial y por navegación después de cargar la etiqueta, con `send_page_view: false` para no duplicarlo. El 12/09 se creó la propiedad y flujo web autorizados, con medición mejorada activa. El build y despliegue de la versión `7d20dfa4-fe32-40e2-a824-36fe93093ee3` incorporan el cargador gtag; la portada pública devuelve 200 y su CSP permite `googletagmanager.com` y `google-analytics.com`.
 
-En el HTML público obtenido no apareció el cargador gtag. Es una señal adicional, no prueba definitiva de todo el runtime: la caída impidió completar una sesión normal. La lista de bindings del Worker no mostró `NEXT_PUBLIC_GA4_MEASUREMENT_ID`, pero una variable compilada tampoco tiene por qué aparecer como binding.
+Todavía no hay evidencia de sesiones o conversiones en los informes. Google advierte que la recepción inicial puede tardar hasta 48 horas. No se debe interpretar esta configuración como datos de tráfico ni rendimiento de campañas.
 
-**Trabajo:** verificar propiedad e ID de GA4 usados durante build; emitir exactamente un page_view inicial y por navegación, sin duplicarlo con la medición mejorada. Validar búsqueda, ficha, clic a tienda y lead en DebugView/tiempo real. No enviar datos personales ni asumir que configurar una variable de runtime reconstruye el bundle.
+**Trabajo:** cuando aparezca el primer evento, validar en DebugView/tiempo real exactamente un `page_view` inicial y por navegación, además de búsqueda, ficha, clic a tienda y lead. No enviar datos personales y no duplicar conteos entre medición mejorada y eventos propios.
 
 ### P1 — Oferta agotada no debe parecer disponible
 
