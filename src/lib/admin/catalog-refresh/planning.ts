@@ -1,4 +1,4 @@
-import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
+import { getServerSupabaseReadClient, getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 import { logger } from '@/lib/logger';
 import { isHardwareCategory } from '@/lib/admin/catalog-refresh/input';
 import {
@@ -165,13 +165,16 @@ export async function loadTrackedTargets(maxQueries: number): Promise<RefreshTar
 }
 
 export async function loadHotTargets(maxQueries: number, staleMinutes: number): Promise<RefreshTargetLoadResult> {
-  const supabase = getServerSupabaseServiceClient();
+  // Las prioridades del catálogo son datos públicos de lectura. Usar el
+  // cliente de lectura evita que el scheduler se detenga si una credencial
+  // privilegiada destinada a writes deja de ser válida.
+  const supabase = getServerSupabaseReadClient();
   if (!supabase) {
     logger.warn('Catalog refresh: hot target load unavailable', {
       endpoint: '/api/admin/catalog-refresh',
-      reason: 'service_client_unavailable',
+      reason: 'read_client_unavailable',
     });
-    return unavailableResult('service_client_unavailable');
+    return unavailableResult('read_client_unavailable');
   }
 
   const staleCutoff = new Date(Date.now() - staleMinutes * 60_000).toISOString();
