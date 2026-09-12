@@ -90,7 +90,7 @@ jobs:
             case "$EVENT_SCHEDULE" in
               '5 5 * * *')
                 MODE='hot'
-                REQUEST_PATH='/api/admin/catalog-refresh?mode=hot&maxQueries=8&staleMinutes=180'
+                REQUEST_PATH='/api/admin/catalog-refresh?mode=hot&maxQueries=1&staleMinutes=180'
                 ;;
               *)
                 echo "Cron no soportado: $EVENT_SCHEDULE" >&2
@@ -107,7 +107,7 @@ jobs:
                 ;;
               hot)
                 REQUEST_PATH='/api/admin/catalog-refresh?mode=hot'
-                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'maxQueries' "${INPUT_MAX_QUERIES:-80}")"
+                REQUEST_PATH="$(append_param "$REQUEST_PATH" 'maxQueries' "${INPUT_MAX_QUERIES:-1}")"
                 REQUEST_PATH="$(append_param "$REQUEST_PATH" 'staleMinutes' "${INPUT_STALE_MINUTES:-180}")"
                 ;;
               full)

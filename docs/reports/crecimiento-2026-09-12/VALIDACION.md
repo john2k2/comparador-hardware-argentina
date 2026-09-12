@@ -46,6 +46,7 @@ Los cinco contratos se actualizaron en el árbol local: rutas limpias de categor
 - La causa encontrada fue el render inicial: leía y transformaba hasta 1.000 productos para mostrar 12. Se sustituyó la landing de categoría por una lectura paginada de 12 productos agrupados y un conteo de base de datos.
 - Se publicó la corrección como versión `2df0aa89-65c5-4885-ae63-6d4bbbc1d81e`. Una solicitud sin cache a CPU respondió 200 en 2.564 ms, GPU en 413 ms, búsqueda Ryzen 5 5600 en 952 ms y portada en 755 ms, sin 1102.
 - La revisión visual pública confirmó la landing CPU, filtros, resultados y paginación. Es una muestra inicial; G01 queda en observación hasta comprobar estabilidad sostenida.
+- El refresh manual con ocho objetivos alcanzó 503/1102 después de 1 minuto y 50 segundos. Se reduce el scheduler a un solo objetivo por ejecución mientras se mide el costo y se rediseña la coordinación de scraping fuera del request del Worker.
 
 ## Próxima prueba de aceptación
 
