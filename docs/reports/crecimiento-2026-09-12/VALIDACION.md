@@ -48,6 +48,7 @@ Los cinco contratos se actualizaron en el árbol local: rutas limpias de categor
 - La revisión visual pública confirmó la landing CPU, filtros, resultados y paginación. Es una muestra inicial; G01 queda en observación hasta comprobar estabilidad sostenida.
 - El refresh manual con ocho objetivos alcanzó 503/1102 después de 1 minuto y 50 segundos. Se reduce el scheduler a un solo objetivo por ejecución mientras se mide el costo y se rediseña la coordinación de scraping fuera del request del Worker.
 - Se corrigió la clave pública de Supabase del Worker y el primer ciclo limitado terminó con `source=hot-db`, un objetivo, 200, cero fallos y 12 segundos. La respuesta registró el objetivo `memoria-ram` con cero productos: es una ejecución sana, pero todavía no prueba que la frescura y cobertura sean suficientes.
+- El acceso administrativo de Supabase confirmó que el proyecto `argen-prices-db` está activo. Se reemplazó en local y en el Worker la clave secreta de servidor que devolvía `Invalid API key`; la clave pública y la secreta verifican ahora lectura de `products` con 200. Una ejecución manual posterior (`34702137652`) terminó en 15 segundos con `source=hot-db`, un objetivo, 200 y cero fallos. Aún debe verificarse que los siguientes ciclos persistan precios útiles.
 - Muestreo posterior sin cache: portada 200 en 3.350 ms, CPU 200 en 2.306 ms, búsqueda Ryzen 5 5600 200 en 2.127 ms, contacto 200 en 176 ms y sitemap index 200 en 13.712 ms, todos sin 1102. El costo del sitemap continúa como tarea P1.
 
 ## Próxima prueba de aceptación
