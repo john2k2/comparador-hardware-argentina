@@ -212,7 +212,9 @@ export async function GET(request: NextRequest) {
     if (cached) {
       const staleCache = hasStaleProducts(cached.products, DB_STALE_AFTER_MS);
       if (staleCache && !isRefreshRequest) {
-        void recordCatalogRefreshDemand({ query: query || undefined, category: effectiveCategory });
+        // En runtimes serverless un trabajo lanzado sin esperar puede cortarse
+        // al enviar la respuesta. Esta escritura sólo ocurre en datos vencidos.
+        await recordCatalogRefreshDemand({ query: query || undefined, category: effectiveCategory });
         if (query) scheduleBackgroundSearchRefresh(request, cacheKey);
       }
       snapshotProducts(cached.products);
@@ -241,9 +243,9 @@ export async function GET(request: NextRequest) {
       });
 
       if (databaseProducts.length > 0) {
-        const staleDatabase = hasStaleProducts(databaseProducts, DB_STALE_AFTER_MS);
-        if (staleDatabase && !isRefreshRequest) {
-          void recordCatalogRefreshDemand({ query: query || undefined, category: effectiveCategory });
+      const staleDatabase = hasStaleProducts(databaseProducts, DB_STALE_AFTER_MS);
+      if (staleDatabase && !isRefreshRequest) {
+        await recordCatalogRefreshDemand({ query: query || undefined, category: effectiveCategory });
           if (query) scheduleBackgroundSearchRefresh(request, cacheKey);
         }
 
@@ -257,7 +259,7 @@ export async function GET(request: NextRequest) {
 
     if (!query && effectiveCategory) {
       if (catalogOnlyMode) {
-        void recordCatalogRefreshDemand({ category: effectiveCategory });
+        await recordCatalogRefreshDemand({ category: effectiveCategory });
         const emptyPayload = emptySearchResponse(page);
         return respond(
           emptyPayload,
@@ -322,7 +324,7 @@ export async function GET(request: NextRequest) {
         page,
       });
       if (stablePayload.products.length === 0) {
-        void recordCatalogRefreshDemand({ query, category: effectiveCategory });
+        await recordCatalogRefreshDemand({ query, category: effectiveCategory });
       }
       return respond(
         stablePayload,

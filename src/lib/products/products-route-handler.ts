@@ -223,7 +223,9 @@ export async function GET(request: NextRequest) {
       if (databaseProducts.length > 0) {
         const staleDatabaseProducts = hasStaleProducts(databaseProducts, DB_STALE_AFTER_MS);
         if (staleDatabaseProducts && !isRefreshRequest) {
-          void recordCatalogRefreshDemand({ query: query || undefined, category: categorySlug });
+          // Esperar la escritura evita que el runtime serverless la cancele al
+          // devolver la respuesta. Sólo se ejecuta para catálogo vencido.
+          await recordCatalogRefreshDemand({ query: query || undefined, category: categorySlug });
           scheduleBackgroundProductsRefresh(request, listRefreshKey);
         }
         snapshotProducts(databaseProducts);
@@ -233,7 +235,7 @@ export async function GET(request: NextRequest) {
 
     if (catalogOnlyMode) {
       if (!stableRuntimeMode) {
-        void recordCatalogRefreshDemand({ query: query || undefined, category: categorySlug });
+        await recordCatalogRefreshDemand({ query: query || undefined, category: categorySlug });
         return respond(
           { products: [], pagination: { limit: 0, offset: 0, total: 0 } },
           { headers: { 'X-Product-Cache': 'CATALOG-PENDING' } },
