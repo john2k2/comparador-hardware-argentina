@@ -97,11 +97,32 @@ export function stockToSchemaAvailability(stock: Product['prices'][number]['stoc
   return 'https://schema.org/LimitedAvailability';
 }
 
+const SKU_KEYS = ['sku', 'codigo', 'código', 'codigo de producto', 'código de producto'];
+const MPN_KEYS = ['mpn', 'part number', 'numero de parte', 'número de parte'];
+const MAX_SCHEMA_IDENTIFIER_LENGTH = 50;
+
+function readSchemaIdentifier(specs: Product['specs'], keys: string[]): string | undefined {
+  const normalizedKeys = new Set(keys.map((key) => key.toLocaleLowerCase('es-AR')));
+
+  for (const [rawKey, rawValue] of Object.entries(specs ?? {})) {
+    if (!normalizedKeys.has(rawKey.trim().toLocaleLowerCase('es-AR'))) continue;
+
+    const value = normalizeDisplayText(rawValue);
+    if (!value || value.length > MAX_SCHEMA_IDENTIFIER_LENGTH) return undefined;
+    return value;
+  }
+
+  return undefined;
+}
+
 export function buildProductJsonLd(product: Product, id: string) {
   const productUrl = buildCanonicalUrl(id);
   const displayName = normalizeDisplayText(product.name);
   const displayBrand = normalizeDisplayText(product.brand || 'Generica');
   const displayDescription = normalizeDisplayText(product.description || product.name);
+  const displayModel = normalizeDisplayText(product.model);
+  const sku = readSchemaIdentifier(product.specs, SKU_KEYS);
+  const mpn = readSchemaIdentifier(product.specs, MPN_KEYS);
   const offers = getAvailableComparableStorePrices(product.prices)
     .filter((price) => price.price > 0 && price.url)
     .map((price) => ({
@@ -138,18 +159,12 @@ export function buildProductJsonLd(product: Product, id: string) {
     {
       '@type': 'ListItem',
       position: 2,
-      name: 'Buscar',
-      item: `${SITE_URL}/search`,
-    },
-    {
-      '@type': 'ListItem',
-      position: 3,
       name: product.category,
       item: `${SITE_URL}${buildCategoryLandingPath(product.category)}`,
     },
     {
       '@type': 'ListItem',
-      position: 4,
+      position: 3,
       name: displayName,
       item: productUrl,
     },
@@ -177,8 +192,9 @@ export function buildProductJsonLd(product: Product, id: string) {
       description: displayDescription,
       url: productUrl,
       image: [resolveProductImage(product)],
-      sku: normalizeDisplayText(product.model || product.id),
-      mpn: normalizeDisplayText(product.model || product.id),
+      ...(displayModel ? { model: displayModel } : {}),
+      ...(sku ? { sku } : {}),
+      ...(mpn ? { mpn } : {}),
       category: product.category,
       brand: {
         '@type': 'Brand',

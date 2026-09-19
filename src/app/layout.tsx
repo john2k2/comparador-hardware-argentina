@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Navigation } from "@/components/layout/Navigation";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { ThemeScript } from "@/components/functional/ThemeScript";
+import { AnalyticsBootstrap } from "@/components/functional/AnalyticsBootstrap";
 import { GOOGLE_SITE_VERIFICATION, SITE_NAME, SITE_URL } from "@/lib/site-config";
 import { Analytics } from "@/components/functional/Analytics";
 import { buildSiteJsonLd } from "@/lib/seo/site-jsonld";
@@ -107,6 +108,9 @@ export default async function RootLayout({
 
   return (
     <html lang="es" suppressHydrationWarning>
+      <head>
+        <AnalyticsBootstrap nonce={nonce} />
+      </head>
       <body
         className={cn(
           pixelFont.variable,

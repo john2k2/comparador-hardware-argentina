@@ -201,6 +201,36 @@ describe('buildProductJsonLd', () => {
     expect(productEntry.offers.offers[0].priceCurrency).toBe('ARS');
   });
 
+  it('publica identificadores comerciales solo cuando vienen de especificaciones confiables', () => {
+    const jsonLd = buildProductJsonLd(makeProduct({
+      model: 'MOTHER GIGABYTE (LGA1851) Z890 EAGLE DDR5 NOMBRE MUY LARGO',
+      specs: {
+        SKU: 'Z890-EAGLE-WIFI7',
+        MPN: 'Z890-EAGLE-WIFI7-AR',
+      },
+    }), 'agrupado-motherboards-gigabyte-eagle-lga1851-z890-12a7yda');
+    const productEntry = jsonLd.find((entry) => entry['@type'] === 'Product') as {
+      model: string;
+      sku?: string;
+      mpn?: string;
+    };
+
+    expect(productEntry.model).toContain('GIGABYTE');
+    expect(productEntry.sku).toBe('Z890-EAGLE-WIFI7');
+    expect(productEntry.mpn).toBe('Z890-EAGLE-WIFI7-AR');
+  });
+
+  it('omite sku y mpn inventados cuando no existen en las especificaciones', () => {
+    const jsonLd = buildProductJsonLd(makeProduct({ specs: {} }), 'agrupado-motherboards-gigabyte-eagle-lga1851-z890-12a7yda');
+    const productEntry = jsonLd.find((entry) => entry['@type'] === 'Product') as {
+      sku?: string;
+      mpn?: string;
+    };
+
+    expect(productEntry.sku).toBeUndefined();
+    expect(productEntry.mpn).toBeUndefined();
+  });
+
   it('excluye ofertas sin precio o sin url', () => {
     const product = makeProduct({
       prices: [

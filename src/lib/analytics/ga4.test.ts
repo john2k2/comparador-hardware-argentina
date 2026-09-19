@@ -51,7 +51,7 @@ describe('ga4 analytics helpers', () => {
     }));
   });
 
-  it('tracks outbound store clicks with link type and surface', async () => {
+  it('tracks outbound store clicks with a dedicated commercial event', async () => {
     const { trackStoreClick } = await import('./ga4');
 
     trackStoreClick({
@@ -65,15 +65,13 @@ describe('ga4 analytics helpers', () => {
       linkType: 'sponsored',
     });
 
-    expect(gtag).toHaveBeenCalledWith('event', 'select_item', expect.objectContaining({
+    expect(gtag).toHaveBeenCalledWith('event', 'outbound_store_click', expect.objectContaining({
       outbound_surface: 'product_detail',
       outbound_link_type: 'sponsored',
-      items: [
-        expect.objectContaining({
-          promotion_id: 'mexx',
-          creative_slot: '1',
-        }),
-      ],
+      product_id: 'agrupado-123',
+      store_id: 'mexx',
+      store_name: 'Mexx',
+      store_position: 1,
     }));
   });
 

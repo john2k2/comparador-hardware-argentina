@@ -13,33 +13,9 @@ import type { Product } from '@/lib/types';
 import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
 import type { HardwareCategory } from '@/lib/types';
 import { SponsoredStoresSection } from '@/components/home/SponsoredStoresSection';
+import { hydrateProducts } from '@/lib/product-serialization';
 
 const RECENT_PRODUCTS_LIMIT = 4;
-
-function toDateValue(value: unknown): Date {
-  if (value instanceof Date) return value;
-  if (typeof value === 'string' || typeof value === 'number') {
-    const parsed = new Date(value);
-    if (!Number.isNaN(parsed.getTime())) return parsed;
-  }
-  return new Date(0);
-}
-
-function normalizeFetchedProduct(product: Product): Product {
-  return {
-    ...product,
-    createdAt: toDateValue(product.createdAt),
-    updatedAt: toDateValue(product.updatedAt),
-    prices: (product.prices ?? []).map((price) => ({
-      ...price,
-      lastUpdated: toDateValue(price.lastUpdated),
-    })),
-  };
-}
-
-function normalizeFetchedProducts(products: Product[]): Product[] {
-  return products.map(normalizeFetchedProduct);
-}
 
 function SectionTitle({
   title,
@@ -121,16 +97,16 @@ export function HomePageClient({
   const sponsoredStores = useMemo(() => resolveSponsoredStores(defaultStores), []);
 
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
-  const [featuredProducts] = useState<Product[]>(normalizeFetchedProducts(initialFeaturedProducts));
-  const [priceDropProducts] = useState<Product[]>(normalizeFetchedProducts(initialPriceDropProducts));
-  const [popularProducts] = useState<Product[]>(normalizeFetchedProducts(initialPopularProducts));
+  const [featuredProducts] = useState<Product[]>(hydrateProducts(initialFeaturedProducts));
+  const [priceDropProducts] = useState<Product[]>(hydrateProducts(initialPriceDropProducts));
+  const [popularProducts] = useState<Product[]>(hydrateProducts(initialPopularProducts));
   const [featuredFallbackUsed] = useState(initialFeaturedFallbackUsed);
   const [priceDropFallbackUsed] = useState(initialPriceDropFallbackUsed);
   const [isSectionsLoading] = useState(false);
 
   useEffect(() => {
     const loadRecent = () => {
-      setRecentProducts(normalizeFetchedProducts(readRecentlyViewedProducts(RECENT_PRODUCTS_LIMIT)));
+      setRecentProducts(hydrateProducts(readRecentlyViewedProducts(RECENT_PRODUCTS_LIMIT)));
     };
 
     loadRecent();

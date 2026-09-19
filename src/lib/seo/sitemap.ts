@@ -11,17 +11,36 @@ export type ProductSitemapRow = {
   canonical_product_key: string | null;
 };
 
-export async function countIndexedProducts(): Promise<number> {
+export type ProductSitemapCountResult = {
+  count: number | null;
+  source: 'database' | 'memory' | 'unavailable';
+};
+
+let lastKnownIndexedProductCount: number | null = null;
+
+export async function readIndexedProductCount(): Promise<ProductSitemapCountResult> {
   const supabase = getServerSupabaseReadClient();
-  if (!supabase) return 0;
+  if (!supabase) {
+    return lastKnownIndexedProductCount === null
+      ? { count: null, source: 'unavailable' }
+      : { count: lastKnownIndexedProductCount, source: 'memory' };
+  }
 
   const { data, error } = await supabase.rpc('count_indexable_sitemap_products');
   if (error) {
     console.warn('[sitemap] grouped product count unavailable:', error.message);
-    return 0;
+    return lastKnownIndexedProductCount === null
+      ? { count: null, source: 'unavailable' }
+      : { count: lastKnownIndexedProductCount, source: 'memory' };
   }
 
-  return Math.max(0, Number(data ?? 0));
+  const count = Math.max(0, Number(data ?? 0));
+  lastKnownIndexedProductCount = count;
+  return { count, source: 'database' };
+}
+
+export async function countIndexedProducts(): Promise<number> {
+  return (await readIndexedProductCount()).count ?? 0;
 }
 
 export async function readProductSitemapPage(page: number, pageSize = PRODUCT_SITEMAP_PAGE_SIZE): Promise<ProductSitemapRow[]> {

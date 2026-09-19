@@ -1,10 +1,27 @@
 const GA4_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID;
 
+declare global {
+  interface Window {
+    dataLayer: unknown[];
+    gtag: (...args: unknown[]) => void;
+  }
+}
+
 /**
  * Check if GA4 is configured and available
  */
 function isGA4Available(): boolean {
   return Boolean(GA4_MEASUREMENT_ID && typeof window !== 'undefined' && typeof window.gtag === 'function');
+}
+
+function toAbsolutePageLocation(url: string): string {
+  if (typeof window === 'undefined' || !window.location?.origin) return url;
+
+  try {
+    return new URL(url, window.location.origin).href;
+  } catch {
+    return window.location.href;
+  }
 }
 
 /**
@@ -14,7 +31,8 @@ export function pageview(url: string): void {
   if (!isGA4Available()) return;
 
   window.gtag('event', 'page_view', {
-    page_location: url,
+    page_location: toAbsolutePageLocation(url),
+    page_title: typeof document === 'undefined' ? undefined : document.title,
     send_to: GA4_MEASUREMENT_ID,
   });
 }
@@ -161,24 +179,14 @@ export function trackStoreClick(params: {
 }): void {
   if (!isGA4Available()) return;
 
-  window.gtag('event', 'select_item', {
+  window.gtag('event', 'outbound_store_click', {
     currency: 'ARS',
     value: params.price,
-    items: [
-      {
-        item_id: params.productId,
-        item_name: params.productName,
-        item_category: 'hardware',
-        item_brand: '',
-        quantity: 1,
-        item_list_name: 'store_prices',
-        item_list_id: params.storeId,
-        promotion_name: params.storeName,
-        promotion_id: params.storeId,
-        creative_name: `position_${params.position}`,
-        creative_slot: String(params.position),
-      },
-    ],
+    product_id: params.productId,
+    product_name: params.productName,
+    store_id: params.storeId,
+    store_name: params.storeName,
+    store_position: params.position,
     outbound_surface: params.surface,
     outbound_link_type: params.linkType,
     send_to: GA4_MEASUREMENT_ID,

@@ -9,7 +9,7 @@ vi.mock('@/lib/server/supabase-server', () => ({
   getServerSupabaseReadClient: getServerSupabaseReadClientMock,
 }));
 
-import { countIndexedProducts, readProductSitemapPage } from './sitemap';
+import { countIndexedProducts, readIndexedProductCount, readProductSitemapPage } from './sitemap';
 
 describe('product sitemap reads', () => {
   beforeEach(() => {
@@ -39,10 +39,13 @@ describe('product sitemap reads', () => {
     });
   });
 
-  it('returns an empty result when the database is unavailable', async () => {
+  it('reuses the last reliable count when the database is temporarily unavailable', async () => {
+    rpcMock.mockResolvedValueOnce({ data: 5_001, error: null });
+    await expect(readIndexedProductCount()).resolves.toEqual({ count: 5_001, source: 'database' });
     getServerSupabaseReadClientMock.mockReturnValue(null);
 
-    await expect(countIndexedProducts()).resolves.toBe(0);
+    await expect(readIndexedProductCount()).resolves.toEqual({ count: 5_001, source: 'memory' });
+    await expect(countIndexedProducts()).resolves.toBe(5_001);
     await expect(readProductSitemapPage(0)).resolves.toEqual([]);
   });
 });
