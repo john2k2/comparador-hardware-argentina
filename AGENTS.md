@@ -23,7 +23,7 @@ Plataforma web para comparar precios de hardware entre ~20+ tiendas argentinas. 
 | Scraping | fetch + cheerio |
 | Testing | Vitest 4 (unit), Playwright 1.59 (e2e) |
 | Lint | ESLint 9 + eslint-config-next |
-| Deploy | Vercel |
+| Deploy | Cloudflare Workers (OpenNext) |
 | Scheduler | GitHub Actions |
 
 Requisitos: Node.js 20+, npm 10+.
@@ -166,8 +166,10 @@ Tablas de usuario (`user_profiles`, `user_favorites`, `price_alerts`) tienen Row
 
 ## Despliegue y CI/CD
 
-### Vercel
-- Deploy estándar de Next.js.
+### Cloudflare Workers
+- Deploy de Next.js con OpenNext y `wrangler.jsonc`.
+- El dominio público usa `comparador-hardware-argentina`; GitHub despliega `main` con Workers Builds.
+- Comandos locales: `npm run preview`, `npm run upload` y `npm run deploy`.
 - Bundle analyzer: `ANALYZE=true npm run build`.
 
 ### GitHub Actions

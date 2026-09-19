@@ -17,39 +17,56 @@
  */
 
 import { Redis } from '@upstash/redis';
+import { logger } from '@/lib/logger';
 
 const redisUrl = process.env.UPSTASH_REDIS_REST_URL?.trim();
 const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
 
 let redisClient: Redis | null = null;
-let warnedMissing = false;
-let warnedInvalid = false;
 let triedInit = false;
+
+function looksLikePlaceholder(value: string): boolean {
+  return /^\[?sensitive\]?$/i.test(value)
+    || /^(your[-_]|change[-_]?me|placeholder|example|x{3,})/i.test(value);
+}
+
+function hasValidRedisConfiguration(): boolean {
+  // Redis es opcional. Si no se configuró ninguna variable, el fallback local
+  // y Supabase funcionan sin generar ruido en cada arranque del Worker.
+  if (!redisUrl && !redisToken) return false;
+
+  if (!redisUrl || !redisToken || looksLikePlaceholder(redisUrl) || looksLikePlaceholder(redisToken)) {
+    logger.warn('Configuracion incompleta de Redis; cache distribuido desactivado');
+    return false;
+  }
+
+  try {
+    if (new URL(redisUrl).protocol === 'https:') return true;
+  } catch {
+    // La advertencia generica evita imprimir la URL o el token configurados.
+  }
+
+  logger.warn('URL de Redis invalida; cache distribuido desactivado');
+  return false;
+}
 
 function getRedisClient(): Redis | null {
   if (redisClient) return redisClient;
   if (triedInit) return null;
 
-  if (!redisUrl || !redisToken) {
-    if (!warnedMissing) {
-      warnedMissing = true;
-      console.warn('[Redis] UPSTASH_REDIS_REST_URL o UPSTASH_REDIS_REST_TOKEN no configurados. Cache distribuido desactivado.');
-    }
+  triedInit = true;
+
+  if (!hasValidRedisConfiguration()) {
     return null;
   }
 
-  triedInit = true;
-
   try {
     redisClient = new Redis({
-      url: redisUrl,
-      token: redisToken,
+      url: redisUrl!,
+      token: redisToken!,
     });
-  } catch (error) {
-    if (!warnedInvalid) {
-      warnedInvalid = true;
-      console.warn('[Redis] No se pudo inicializar el cliente (config invalida). Cache distribuido desactivado:', error);
-    }
+  } catch {
+    logger.warn('No se pudo inicializar Redis; cache distribuido desactivado');
     return null;
   }
 

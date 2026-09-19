@@ -18,6 +18,13 @@ describe('redis-cache', () => {
     expect(isRedisEnabled()).toBe(false);
   });
 
+  it('isRedisEnabled() es false con una configuracion parcial', async () => {
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://example.upstash.io');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', '');
+    const { isRedisEnabled } = await import('./redis-cache');
+    expect(isRedisEnabled()).toBe(false);
+  });
+
   it('isRedisEnabled() no revienta y devuelve false con una URL invalida (ej: placeholder [SENSITIVE] de vercel env pull)', async () => {
     vi.stubEnv('UPSTASH_REDIS_REST_URL', '[SENSITIVE]');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', '[SENSITIVE]');
