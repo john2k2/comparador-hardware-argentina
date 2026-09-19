@@ -16,7 +16,14 @@ export type ProductSitemapCountResult = {
   source: 'database' | 'memory' | 'unavailable';
 };
 
+const PRODUCT_COUNT_MAX_ATTEMPTS = 2;
+const PRODUCT_COUNT_RETRY_DELAY_MS = 75;
+
 let lastKnownIndexedProductCount: number | null = null;
+
+function waitBeforeCountRetry(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, PRODUCT_COUNT_RETRY_DELAY_MS));
+}
 
 export async function readIndexedProductCount(): Promise<ProductSitemapCountResult> {
   const supabase = getServerSupabaseReadClient();
@@ -26,17 +33,28 @@ export async function readIndexedProductCount(): Promise<ProductSitemapCountResu
       : { count: lastKnownIndexedProductCount, source: 'memory' };
   }
 
-  const { data, error } = await supabase.rpc('count_indexable_sitemap_products');
-  if (error) {
-    console.warn('[sitemap] grouped product count unavailable:', error.message);
-    return lastKnownIndexedProductCount === null
-      ? { count: null, source: 'unavailable' }
-      : { count: lastKnownIndexedProductCount, source: 'memory' };
+  let lastErrorMessage = 'respuesta invalida';
+
+  for (let attempt = 1; attempt <= PRODUCT_COUNT_MAX_ATTEMPTS; attempt += 1) {
+    const { data, error } = await supabase.rpc('count_indexable_sitemap_products');
+    const parsedCount = Number(data);
+
+    if (!error && Number.isFinite(parsedCount)) {
+      const count = Math.max(0, parsedCount);
+      lastKnownIndexedProductCount = count;
+      return { count, source: 'database' };
+    }
+
+    lastErrorMessage = error?.message ?? 'respuesta invalida';
+    if (attempt < PRODUCT_COUNT_MAX_ATTEMPTS) {
+      await waitBeforeCountRetry();
+    }
   }
 
-  const count = Math.max(0, Number(data ?? 0));
-  lastKnownIndexedProductCount = count;
-  return { count, source: 'database' };
+  console.warn('[sitemap] grouped product count unavailable:', lastErrorMessage);
+  return lastKnownIndexedProductCount === null
+    ? { count: null, source: 'unavailable' }
+    : { count: lastKnownIndexedProductCount, source: 'memory' };
 }
 
 export async function countIndexedProducts(): Promise<number> {

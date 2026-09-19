@@ -24,6 +24,15 @@ describe('product sitemap reads', () => {
     expect(rpcMock).toHaveBeenCalledWith('count_indexable_sitemap_products');
   });
 
+  it('retries one transient count failure before degrading the sitemap index', async () => {
+    rpcMock
+      .mockResolvedValueOnce({ data: null, error: { message: 'temporary failure' } })
+      .mockResolvedValueOnce({ data: 5_001, error: null });
+
+    await expect(readIndexedProductCount()).resolves.toEqual({ count: 5_001, source: 'database' });
+    expect(rpcMock).toHaveBeenCalledTimes(2);
+  });
+
   it('asks PostgreSQL for the requested page', async () => {
     const rows = [{
       id: 'agrupado-cpu-1',
