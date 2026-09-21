@@ -274,3 +274,9 @@ En rastreo se observan aproximadamente 16 mil solicitudes en 90 días, 97 % con 
 Search Console no tiene ningún servicio asociado. Asociar la propiedad verificada de GA4 permitiría análisis conjunto, pero requiere seleccionar la propiedad correcta en la interfaz y se mantiene como acción externa pendiente de revisión. El control de IA generativa está heredado en `Incluir`, por lo que el sitio conserva elegibilidad para enlaces y tráfico desde funciones de IA de Google.
 
 Prioridad comercial resultante: primero estabilizar rastreo e indexación y medir clics hacia tiendas; luego convertir las páginas con intención de compra en asesorías y presupuestos de armado; después presentar a sponsors argentinos un piloto medible. Merchant Center solo se evaluará cuando exista venta propia o un modelo de feed compatible con el rol real del sitio.
+
+### Decisión Jev acotada — 21/09/2026
+
+Pregunta: qué priorizar durante 14 días entre instrumentación y CTA, enlazado SEO, asociación GA4–Search Console, Merchant Center y contacto con sponsors. Jev eligió instrumentar el embudo y los CTA con 64 % y confianza 0,56. Como segunda prioridad eligió enlazado interno y rich results con 39 %, seguido de la asociación GA4–Search Console con 32 %; la confianza de este segundo orden fue 0,23, por lo que no se usa para excluir ninguna de las dos acciones.
+
+Jev asignó solo 6 % a activar Merchant Center ahora y 26 % a comenzar contacto con sponsors antes de medir clics por tienda y leads. La confianza global quedó entre baja y media, 1,52 sobre 4. La decisión final se apoya además en GA4, Search Console y el código: G07 pasa a P0 y ejecución; G17 pasa a P1; asociar GA4 queda como acción corta dentro de medición. Merchant Center y outreach permanecen en espera hasta contar con modelo comercial, políticas y atribución verificables.

@@ -106,3 +106,9 @@ Resultados enriquecidos: dos fragmentos de producto, una ficha de comerciante y 
 Rastreo: aproximadamente 16 mil solicitudes en 90 días, 97 % con 200 y 373 ms de respuesta media. El host conserva la señal histórica de conectividad elevada de la semana anterior. `robots.txt` fue obtenido y su única advertencia era la directiva `Host` ignorada en la línea 13. El commit `d75a981` la eliminó; prueba, lint y build pasaron, y la versión Cloudflare `c00c30a7-e659-46f1-93f0-80b528a8da89` devolvió el archivo público en 200 sin esa directiva.
 
 Enlaces: dos externos y 7.751 internos, concentrados en URLs legacy de categorías y páginas institucionales. Asociación: Search Console no está vinculado con GA4. IA generativa: control heredado en `Incluir`. Estos hallazgos abren G17 y no cierran G01, G02 ni G07.
+
+### Registro de decisión Jev — 21/09/2026
+
+Opciones evaluadas: instrumentación del embudo y CTA; enlaces internos/rich results; asociación GA4–Search Console; Merchant Center; preparación o contacto con sponsors. Resultado principal: embudo/CTA 64 %, confianza 0,56. Segunda prioridad: enlaces/rich results 39 % frente a asociación GA4 32 %, confianza 0,23. Activar Merchant ahora: 6 % a favor. Contactar sponsors ahora: 26 % a favor. Confianza global: 1,52/4, entre baja y media.
+
+Contraste: la recomendación principal coincide con la ausencia de dimensiones por tienda y `generate_lead`. La segunda prioridad queda compartida entre G17 y la asociación GA4 porque la diferencia y la confianza son bajas. Jev es asesoría y no autoriza activaciones externas, mensajes comerciales ni cierres de tareas.
