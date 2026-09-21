@@ -16,6 +16,7 @@ import { PriceSummary } from './PriceSummary';
 import { StoresList } from './StoresList';
 import { SpecsTable } from './SpecsTable';
 import { ProductActions } from './ProductActions';
+import { AdvisoryCta } from '@/components/commercial/AdvisoryCta';
 
 type ProductDetailClientProps = {
   id: string;
@@ -152,6 +153,8 @@ function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientPro
           <SpecsTable product={product} />
 
           <StoresList product={product} merchantPrices={merchantPrices} />
+
+          <AdvisoryCta surface="product_detail" compact />
 
           <ProductActions latestSyncAtMs={latestSyncAtMs} />
         </div>

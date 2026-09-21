@@ -11,6 +11,7 @@ export type GuideSlotSpec = {
 };
 
 export type GuideStoreOffer = {
+  storeId: string;
   storeName: string;
   price: number;
   stock: 'in-stock' | 'low-stock';
@@ -253,6 +254,7 @@ function toGuideOffers(offers: ProductPrice[]): GuideStoreOffer[] {
   return offers.flatMap((offer) => {
     if (!isBuyableGuideStock(offer.stock)) return [];
     return [{
+      storeId: offer.storeId,
       storeName: offer.storeName,
       price: offer.price,
       stock: offer.stock,

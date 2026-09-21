@@ -12,6 +12,7 @@ describe('ArmarPcView', () => {
     expect(markup).toContain('Armá tu PC gamer con un presupuesto');
     expect(markup).toContain('name="pesos"');
     expect(markup).toContain('Armar PC');
+    expect(markup).toContain('Pedir revisión y presupuesto');
     expect(markup).not.toContain('TOTAL CON STOCK');
   });
 

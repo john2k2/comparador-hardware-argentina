@@ -1,1 +1,1 @@
-export { pageview, trackSearch, trackProductView, trackProductSelection, trackSponsoredStoreSelection, trackContactIntent, trackStoreClick, trackFilterChange, trackEvent } from './ga4';
+export { pageview, trackSearch, trackProductView, trackProductSelection, trackSponsoredStoreSelection, trackContactIntent, trackAdvisoryCta, trackBudgetBuilder, trackStoreClick, trackFilterChange, trackEvent } from './ga4';

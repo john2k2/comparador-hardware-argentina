@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { AdvisoryCta } from '@/components/commercial/AdvisoryCta';
 import { GuideComponentRows } from '@/components/seo/GuideComponentRows';
 import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
 import { GUIDE_SLOT_KEYS, type GuideSlotKey } from '@/lib/seo/budget-builder';
@@ -6,6 +9,7 @@ import { BUILDER_BUDGET_MAX, BUILDER_BUDGET_MIN } from '@/lib/seo/budget-query';
 import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
 import { formatPriceARS } from '@/lib/price-utils';
 import type { ResolvedGuideComponent, ResolvedGuideSlotTotals } from '@/lib/seo/budget-guide-pricing';
+import { trackBudgetBuilder } from '@/lib/analytics';
 
 const PRESET_BUDGETS = [1_000_000, 1_500_000, 2_000_000, 3_000_000] as const;
 
@@ -45,7 +49,15 @@ export function ArmarPcView({ budget, submitted, resolved }: Props) {
         <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">
           [ TU PRESUPUESTO ]
         </h2>
-        <form action="/guia/armar" method="get" className="space-y-4">
+        <form
+          action="/guia/armar"
+          method="get"
+          className="space-y-4"
+          onSubmit={(event) => {
+            const value = Number(new FormData(event.currentTarget).get('pesos'));
+            if (Number.isFinite(value)) trackBudgetBuilder({ source: 'manual', budget: value });
+          }}
+        >
           <label htmlFor="pesos" className="block text-[10px] uppercase text-muted-foreground">
             Presupuesto en pesos argentinos
           </label>
@@ -67,6 +79,7 @@ export function ArmarPcView({ budget, submitted, resolved }: Props) {
               <Link
                 key={preset}
                 href={`/guia/armar?pesos=${preset}`}
+                onClick={() => trackBudgetBuilder({ source: 'preset', budget: preset })}
                 className="inline-flex min-h-11 items-center border-2 border-border px-3 text-[10px] uppercase font-mono hover:border-primary"
               >
                 {formatPriceARS(preset)}
@@ -109,12 +122,14 @@ export function ArmarPcView({ budget, submitted, resolved }: Props) {
               </p>
             </div>
           </div>
-          <GuideComponentRows slots={resolved} />
+          <GuideComponentRows slots={resolved} surface="budget_builder" />
           <p className="mt-4 text-[10px] uppercase text-muted-foreground font-mono leading-relaxed">
             No publicamos FPS en este armado libre: el combo cambia con el stock y el monto.
           </p>
         </section>
       )}
+
+      <AdvisoryCta surface="budget_builder" />
     </div>
   );
 }

@@ -24,6 +24,14 @@ function toAbsolutePageLocation(url: string): string {
   }
 }
 
+function toDestinationHost(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return 'unknown';
+  }
+}
+
 /**
  * Track a pageview
  */
@@ -150,9 +158,10 @@ export function trackSponsoredStoreSelection(params: {
  * Registra la intención de contacto sin enviar datos personales a Analytics.
  */
 export function trackContactIntent(params: {
-  purpose: 'support' | 'commercial';
+  purpose: 'support' | 'commercial' | 'pc_advisory';
   channel: 'email';
   surface: 'contact_page';
+  ctaId?: string;
 }): void {
   if (!isGA4Available()) return;
 
@@ -160,6 +169,37 @@ export function trackContactIntent(params: {
     lead_type: params.purpose,
     contact_channel: params.channel,
     contact_surface: params.surface,
+    cta_id: params.ctaId,
+    send_to: GA4_MEASUREMENT_ID,
+  });
+}
+
+/** Registra el paso hacia una consulta, antes de llegar al canal de contacto. */
+export function trackAdvisoryCta(params: {
+  surface: 'budget_builder' | 'budget_guide' | 'product_detail';
+  ctaId: string;
+}): void {
+  if (!isGA4Available()) return;
+
+  window.gtag('event', 'select_advisory_cta', {
+    service_type: 'pc_advisory',
+    cta_surface: params.surface,
+    cta_id: params.ctaId,
+    send_to: GA4_MEASUREMENT_ID,
+  });
+}
+
+/** Registra el uso del armador sin enviar texto libre ni datos personales. */
+export function trackBudgetBuilder(params: {
+  source: 'manual' | 'preset';
+  budget: number;
+}): void {
+  if (!isGA4Available()) return;
+
+  window.gtag('event', 'generate_pc_budget', {
+    currency: 'ARS',
+    value: params.budget,
+    budget_source: params.source,
     send_to: GA4_MEASUREMENT_ID,
   });
 }
@@ -174,7 +214,10 @@ export function trackStoreClick(params: {
   storeId: string;
   price: number;
   position: number;
-  surface: 'product_detail' | 'search_results' | 'home_section';
+  category: string;
+  ctaId: string;
+  destinationUrl: string;
+  surface: 'product_detail' | 'search_results' | 'home_section' | 'budget_guide' | 'budget_builder';
   linkType: 'organic' | 'sponsored';
 }): void {
   if (!isGA4Available()) return;
@@ -187,6 +230,9 @@ export function trackStoreClick(params: {
     store_id: params.storeId,
     store_name: params.storeName,
     store_position: params.position,
+    product_category: params.category,
+    cta_id: params.ctaId,
+    destination_host: toDestinationHost(params.destinationUrl),
     outbound_surface: params.surface,
     outbound_link_type: params.linkType,
     send_to: GA4_MEASUREMENT_ID,

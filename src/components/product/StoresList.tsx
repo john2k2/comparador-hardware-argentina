@@ -68,6 +68,9 @@ export function StoresList({ product, merchantPrices }: StoresListProps) {
                     storeId: price.storeId,
                     price: price.price,
                     position: index + 1,
+                    category: product.category,
+                    ctaId: 'product_store_offer',
+                    destinationUrl: price.url,
                     surface: 'product_detail',
                     linkType,
                   });

@@ -61,6 +61,9 @@ describe('ga4 analytics helpers', () => {
       storeId: 'mexx',
       price: 123456,
       position: 1,
+      category: 'tarjetas-graficas',
+      ctaId: 'product_store_offer',
+      destinationUrl: 'https://mexx.com.ar/producto/rtx-5070',
       surface: 'product_detail',
       linkType: 'sponsored',
     });
@@ -72,6 +75,9 @@ describe('ga4 analytics helpers', () => {
       store_id: 'mexx',
       store_name: 'Mexx',
       store_position: 1,
+      product_category: 'tarjetas-graficas',
+      cta_id: 'product_store_offer',
+      destination_host: 'mexx.com.ar',
     }));
   });
 
@@ -106,6 +112,32 @@ describe('ga4 analytics helpers', () => {
       contact_channel: 'email',
       contact_surface: 'contact_page',
       send_to: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID,
+    }));
+  });
+
+  it('tracks the advisory funnel without personal data', async () => {
+    const { trackAdvisoryCta, trackBudgetBuilder, trackContactIntent } = await import('./ga4');
+
+    trackBudgetBuilder({ source: 'preset', budget: 1_500_000 });
+    trackAdvisoryCta({ surface: 'budget_builder', ctaId: 'request_pc_advisory' });
+    trackContactIntent({
+      purpose: 'pc_advisory',
+      channel: 'email',
+      surface: 'contact_page',
+      ctaId: 'contact_pc_advisory_email',
+    });
+
+    expect(gtag).toHaveBeenNthCalledWith(1, 'event', 'generate_pc_budget', expect.objectContaining({
+      value: 1_500_000,
+      budget_source: 'preset',
+    }));
+    expect(gtag).toHaveBeenNthCalledWith(2, 'event', 'select_advisory_cta', expect.objectContaining({
+      service_type: 'pc_advisory',
+      cta_surface: 'budget_builder',
+    }));
+    expect(gtag).toHaveBeenNthCalledWith(3, 'event', 'generate_lead', expect.objectContaining({
+      lead_type: 'pc_advisory',
+      cta_id: 'contact_pc_advisory_email',
     }));
   });
 });

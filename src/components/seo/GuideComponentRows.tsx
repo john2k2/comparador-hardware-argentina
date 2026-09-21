@@ -1,17 +1,22 @@
+'use client';
+
 import Link from 'next/link';
+import { trackStoreClick } from '@/lib/analytics';
 import { formatPriceARS } from '@/lib/price-utils';
 import type { ResolvedGuideComponent } from '@/lib/seo/budget-guide-pricing';
 import { GUIDE_SLOT_KEYS, GUIDE_SLOT_LABELS, type GuideSlotKey } from '@/lib/seo/budget-builder';
 
 export function GuideComponentRows({
   slots,
+  surface = 'budget_guide',
 }: {
   slots: Record<GuideSlotKey, ResolvedGuideComponent>;
+  surface?: 'budget_guide' | 'budget_builder';
 }) {
   return (
     <div className="space-y-4">
       {GUIDE_SLOT_KEYS.map((key) => (
-        <ComponentRow key={key} label={GUIDE_SLOT_LABELS[key]} item={slots[key]} />
+        <ComponentRow key={key} slotKey={key} label={GUIDE_SLOT_LABELS[key]} item={slots[key]} surface={surface} />
       ))}
     </div>
   );
@@ -19,10 +24,14 @@ export function GuideComponentRows({
 
 function ComponentRow({
   label,
+  slotKey,
   item,
+  surface,
 }: {
   label: string;
+  slotKey: GuideSlotKey;
   item: ResolvedGuideComponent;
+  surface: 'budget_guide' | 'budget_builder';
 }) {
   const extraOffers = item.offers.slice(1, 3);
   const isCatalog = item.priceSource === 'catalog';
@@ -67,6 +76,23 @@ function ComponentRow({
               href={item.bestStoreUrl}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => {
+                const offer = item.offers[0];
+                if (!offer || !item.productId) return;
+                trackStoreClick({
+                  productId: item.productId,
+                  productName: item.name,
+                  storeName: offer.storeName,
+                  storeId: offer.storeId,
+                  price: offer.price,
+                  position: 1,
+                  category: slotKey,
+                  ctaId: 'guide_store_offer',
+                  destinationUrl: offer.url,
+                  surface,
+                  linkType: 'organic',
+                });
+              }}
               className="inline-flex min-h-11 items-center text-[10px] text-secondary hover:underline"
             >
               Ver en tienda →

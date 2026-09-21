@@ -280,3 +280,9 @@ Prioridad comercial resultante: primero estabilizar rastreo e indexación y medi
 Pregunta: qué priorizar durante 14 días entre instrumentación y CTA, enlazado SEO, asociación GA4–Search Console, Merchant Center y contacto con sponsors. Jev eligió instrumentar el embudo y los CTA con 64 % y confianza 0,56. Como segunda prioridad eligió enlazado interno y rich results con 39 %, seguido de la asociación GA4–Search Console con 32 %; la confianza de este segundo orden fue 0,23, por lo que no se usa para excluir ninguna de las dos acciones.
 
 Jev asignó solo 6 % a activar Merchant Center ahora y 26 % a comenzar contacto con sponsors antes de medir clics por tienda y leads. La confianza global quedó entre baja y media, 1,52 sobre 4. La decisión final se apoya además en GA4, Search Console y el código: G07 pasa a P0 y ejecución; G17 pasa a P1; asociar GA4 queda como acción corta dentro de medición. Merchant Center y outreach permanecen en espera hasta contar con modelo comercial, políticas y atribución verificables.
+
+### Implementación G07 — 21/09/2026
+
+Se instrumentó el recorrido de intención comercial con cuatro eventos diferenciados: `generate_pc_budget` al usar el armador, `select_advisory_cta` al pasar desde una guía, armado o ficha hacia contacto, `generate_lead` al abrir el correo de asesoría y `outbound_store_click` al salir hacia una tienda. Los clics externos ahora incluyen producto, categoría, tienda, posición, superficie, identificador de CTA, host de destino y tipo orgánico o patrocinado, sin correo, teléfono ni texto libre.
+
+La propuesta visible es una revisión de compatibilidad, prioridades y presupuesto. No promete armado físico ni cobertura geográfica todavía. Se añadió en `/guia/armar`, guías por presupuesto, fichas de producto y `/contacto`. Compilación, lint y pruebas focalizadas pasaron; la recepción real de los nuevos eventos en GA4 y una consulta recibida siguen pendientes, por lo que G07 continúa en implementación.

@@ -112,3 +112,9 @@ Enlaces: dos externos y 7.751 internos, concentrados en URLs legacy de categorí
 Opciones evaluadas: instrumentación del embudo y CTA; enlaces internos/rich results; asociación GA4–Search Console; Merchant Center; preparación o contacto con sponsors. Resultado principal: embudo/CTA 64 %, confianza 0,56. Segunda prioridad: enlaces/rich results 39 % frente a asociación GA4 32 %, confianza 0,23. Activar Merchant ahora: 6 % a favor. Contactar sponsors ahora: 26 % a favor. Confianza global: 1,52/4, entre baja y media.
 
 Contraste: la recomendación principal coincide con la ausencia de dimensiones por tienda y `generate_lead`. La segunda prioridad queda compartida entre G17 y la asociación GA4 porque la diferencia y la confianza son bajas. Jev es asesoría y no autoriza activaciones externas, mensajes comerciales ni cierres de tareas.
+
+### Corte de implementación G07 — 21/09/2026
+
+El código ya emite `generate_pc_budget`, `select_advisory_cta`, `generate_lead` y `outbound_store_click` en el recorrido de armador, guías, fichas, contacto y salidas de las guías. Los eventos se probaron mediante tests unitarios y el recorrido se verificó localmente en `/guia/armar?pesos=1500000` y `/contacto#asesoria-pc`. `npm run lint` y `npm run build` finalizaron sin errores.
+
+Estado de evidencia: implementación local verificada; recepción en producción y aparición en GA4 todavía no verificadas. Un clic de correo representa intención de contacto, no confirma que el mensaje haya sido enviado ni recibido. No se registran datos personales en los parámetros nuevos.

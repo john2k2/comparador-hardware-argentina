@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Mail, MessageSquare, Shield } from 'lucide-react';
+import { Mail, MessageSquare, Shield, Wrench } from 'lucide-react';
 import { RetroPageShell } from '@/components/layout/RetroPageShell';
 import { ContactEmailLink } from '@/components/commercial/ContactEmailLink';
 import { buildPublicPageMetadata } from '@/lib/seo/metadata';
@@ -14,6 +14,7 @@ export const metadata: Metadata = buildPublicPageMetadata({
 export default function ContactoPage() {
   const supportMailto = buildMailtoHref(`${SITE_NAME} - Consulta`);
   const commercialMailto = buildMailtoHref(`${SITE_NAME} - Propuesta comercial`);
+  const advisoryMailto = buildMailtoHref(`${SITE_NAME} - Asesoría y presupuesto de PC`);
 
   return (
     <RetroPageShell
@@ -28,6 +29,21 @@ export default function ContactoPage() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-4">
+        <div id="asesoria-pc" className="border-4 border-secondary p-4 bg-secondary/10 scroll-mt-24">
+          <Wrench className="w-5 h-5 text-secondary mb-3" />
+          <h2 className="text-secondary font-bold mb-2">[ ASESORÍA DE PC ]</h2>
+          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono mb-3">
+            Contanos para qué vas a usar la PC, tu presupuesto y si ya tenés componentes. Revisamos compatibilidad y prioridades antes de que compres. El primer contacto sirve para definir alcance, plazo y costo de la asesoría.
+          </p>
+          {SUPPORT_EMAIL && advisoryMailto ? (
+            <ContactEmailLink href={advisoryMailto} email={SUPPORT_EMAIL} purpose="pc_advisory" ctaId="contact_pc_advisory_email" />
+          ) : (
+            <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+              El canal de asesoría se habilitará cuando el correo operativo esté configurado.
+            </p>
+          )}
+        </div>
+
         <div className="border-2 border-border p-4 bg-muted/30">
           <Mail className="w-5 h-5 text-primary mb-3" />
           <h2 className="text-secondary font-bold mb-2">[ EMAIL ]</h2>
@@ -97,7 +113,7 @@ export default function ContactoPage() {
             Este canal está pensado para consultas relacionadas con el comparador. No gestionamos ventas, cobros, garantías, devoluciones ni soporte post compra de las tiendas enlazadas. Para cualquier operación comercial concreta, la referencia válida siempre es el comercio de destino.
           </p>
           <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
-            Si en el futuro el proyecto suma analytics, newsletters o integraciones comerciales más complejas, esta página se ampliará con canales y tiempos de respuesta más formales para mantener expectativas claras.
+            Si el proyecto suma formularios, newsletters o integraciones comerciales más complejas, esta página se ampliará con canales y tiempos de respuesta más formales para mantener expectativas claras.
           </p>
         </div>
       </div>

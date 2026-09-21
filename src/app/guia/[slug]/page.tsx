@@ -13,6 +13,7 @@ import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
 import { GuideFpsPanel } from '@/components/seo/GuideFpsPanel';
 import { GuideComponentRows } from '@/components/seo/GuideComponentRows';
+import { AdvisoryCta } from '@/components/commercial/AdvisoryCta';
 import Link from 'next/link';
 
 type Props = {
@@ -111,6 +112,10 @@ export default async function BudgetGuidePage({ params }: Props) {
           Cada precio de catálogo sale de una tienda con stock. CPU, mother y RAM tienen que coincidir en socket y generación.
         </p>
       </section>
+
+      <div className="mb-8">
+        <AdvisoryCta surface="budget_guide" />
+      </div>
 
       {/* Performance */}
       <section className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow mb-8">
