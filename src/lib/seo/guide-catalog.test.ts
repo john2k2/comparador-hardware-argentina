@@ -2,12 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Product } from '@/lib/types';
 import { GUIDE_CATALOG_CATEGORIES } from '@/lib/seo/budget-guide-pricing';
 
-const { readProductsFromDatabaseMock } = vi.hoisted(() => ({
-  readProductsFromDatabaseMock: vi.fn(),
+const { readGuideCatalogCandidatesFromDatabaseMock } = vi.hoisted(() => ({
+  readGuideCatalogCandidatesFromDatabaseMock: vi.fn(),
 }));
 
 vi.mock('@/lib/persistence/product-read', () => ({
-  readProductsFromDatabase: readProductsFromDatabaseMock,
+  readGuideCatalogCandidatesFromDatabase: readGuideCatalogCandidatesFromDatabaseMock,
 }));
 
 vi.mock('@/lib/logger', () => ({
@@ -39,21 +39,23 @@ function listed(id: string): Product {
 describe('loadGuideCatalogProducts', () => {
   beforeEach(() => {
     vi.resetModules();
-    readProductsFromDatabaseMock.mockReset();
+    readGuideCatalogCandidatesFromDatabaseMock.mockReset();
   });
 
   it('no cachea un catalogo vacio para reintentar en el proximo hit', async () => {
-    readProductsFromDatabaseMock.mockResolvedValue([]);
+    readGuideCatalogCandidatesFromDatabaseMock.mockResolvedValue([]);
     const { loadGuideCatalogProducts } = await import('./guide-catalog');
 
     await expect(loadGuideCatalogProducts()).resolves.toEqual([]);
     await expect(loadGuideCatalogProducts()).resolves.toEqual([]);
 
-    expect(readProductsFromDatabaseMock).toHaveBeenCalledTimes(GUIDE_CATALOG_CATEGORIES.length * 2);
+    expect(readGuideCatalogCandidatesFromDatabaseMock).toHaveBeenCalledTimes(
+      GUIDE_CATALOG_CATEGORIES.length * 2,
+    );
   });
 
   it('reusa un catalogo con productos dentro del TTL', async () => {
-    readProductsFromDatabaseMock.mockResolvedValue([listed('cpu-1')]);
+    readGuideCatalogCandidatesFromDatabaseMock.mockResolvedValue([listed('cpu-1')]);
     const { loadGuideCatalogProducts } = await import('./guide-catalog');
 
     const first = await loadGuideCatalogProducts();
@@ -61,6 +63,12 @@ describe('loadGuideCatalogProducts', () => {
 
     expect(first).toHaveLength(GUIDE_CATALOG_CATEGORIES.length);
     expect(second).toBe(first);
-    expect(readProductsFromDatabaseMock).toHaveBeenCalledTimes(GUIDE_CATALOG_CATEGORIES.length);
+    expect(readGuideCatalogCandidatesFromDatabaseMock).toHaveBeenCalledTimes(
+      GUIDE_CATALOG_CATEGORIES.length,
+    );
+    expect(readGuideCatalogCandidatesFromDatabaseMock).toHaveBeenCalledWith(
+      GUIDE_CATALOG_CATEGORIES[0],
+      24,
+    );
   });
 });

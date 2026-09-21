@@ -182,6 +182,36 @@ export async function readCategoryLandingPageFromDatabase(
   };
 }
 
+/**
+ * Lectura liviana para las guías de presupuesto. Las guías sólo necesitan un
+ * conjunto representativo de productos agrupados y comprables por categoría;
+ * cargar cientos de filas por pieza agota el presupuesto de CPU del Worker.
+ */
+export async function readGuideCatalogCandidatesFromDatabase(
+  category: NonNullable<ReadProductsParams['category']>,
+  limit: number = 24,
+): Promise<Product[]> {
+  const supabase = getServerSupabaseReadClient();
+  if (!supabase) return [];
+
+  const requestedLimit = Math.min(48, Math.max(1, Math.trunc(limit) || 1));
+  const { data, error } = await supabase
+    .from('products')
+    .select(PRODUCT_SELECT_FIELDS)
+    .eq('category', category)
+    .like('id', 'agrupado-%')
+    .gt('lowest_price', 0)
+    .order('updated_at', { ascending: false })
+    .limit(requestedLimit);
+
+  if (error) {
+    if (EMPTY_RESULT_ERROR_CODES.has(error.code ?? '')) return [];
+    throw new Error(`readGuideCatalogCandidatesFromDatabase: ${error.message}`);
+  }
+
+  return ((data as DbProductRow[] | null) ?? []).map(mapDbProduct);
+}
+
 export async function readPopularProductsFromDatabase(limit: number = 8): Promise<Product[]> {
   const supabase = getServerSupabaseReadClient();
   if (!supabase) return [];

@@ -1,10 +1,10 @@
 import { GUIDE_CATALOG_CATEGORIES } from '@/lib/seo/budget-guide-pricing';
-import { readProductsFromDatabase } from '@/lib/persistence/product-read';
+import { readGuideCatalogCandidatesFromDatabase } from '@/lib/persistence/product-read';
 import { logger } from '@/lib/logger';
 import type { HardwareCategory, Product } from '@/lib/types';
 
 const CATALOG_TTL_MS = 5 * 60 * 1000;
-const CATEGORY_LIMIT = 1200;
+const CATEGORY_LIMIT = 24;
 const FETCH_CONCURRENCY = 2;
 
 let catalogMemo: { at: number; products: Product[] } | null = null;
@@ -33,7 +33,7 @@ async function mapWithConcurrency<T, R>(
 
 async function readCategoryCatalog(category: HardwareCategory): Promise<Product[]> {
   try {
-    return await readProductsFromDatabase({ limit: CATEGORY_LIMIT, category });
+    return await readGuideCatalogCandidatesFromDatabase(category, CATEGORY_LIMIT);
   } catch (error) {
     logger.warn('No se pudo leer una categoria del catalogo de guia', { category, error });
     return [];
