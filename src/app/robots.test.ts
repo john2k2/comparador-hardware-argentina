@@ -16,5 +16,6 @@ describe('robots route', () => {
       'https://www.comparador-hardware.com.ar/sitemap.xml',
       'https://www.comparador-hardware.com.ar/sitemap-index.xml',
     ]);
+    expect(output.host).toBeUndefined();
   });
 });
