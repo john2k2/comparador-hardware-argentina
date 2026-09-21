@@ -5,7 +5,7 @@ G03,P1,Tráfico hacia tiendas,Configurar y verificar pageviews GA4,Codex,complet
 G04,P1,Piloto comercial,Definir y probar canal de contacto,Jonathan,pendiente,2026-09-18,Consulta de prueba recibida y CTA público operativo
 G05,P1,Sitio confiable,Separar ofertas disponibles de agotadas,Codex,en_validacion_local,2026-09-25,Conteos y agregado coherentes con stock y prueba de regresión
 G06,P1,Sitio confiable,Reducir costo de sitemap con snapshot y paginación,Codex,en_validacion_produccion,2026-09-25,Sitemap correcto y paginado; falta confirmar lecturas posteriores y conservación ante fallo transitorio
-G07,P0,Tráfico hacia tiendas,Instrumentar clic externo CTA de asesoría y embudo completo,Codex,en_implementacion,2026-09-25,Eventos comprobados con tienda categoría producto y CTA; generate_lead y recepción real verificados
+G07,P0,Tráfico hacia tiendas,Instrumentar clic externo CTA de asesoría y embudo completo,Codex,en_implementacion,2026-09-25,Producción emite presupuesto CTA lead_intent y salida con dimensiones; falta verificar recepción GA4 y una intención real
 G08,P2,Sitio confiable,Actualizar E2E desalineados y controles móviles,Codex,en_validacion_local,2026-09-25,Los cinco fallos están explicados y sus flujos pasan
 G09,P2,Sitio confiable,Revisar dependencias y persistencia de telemetría,Codex,pendiente,2026-09-25,Exposición evaluada y actualización validada con OpenNext
 G10,P2,Tráfico hacia tiendas,Mejorar CPU GPU y guía de dos millones,Codex,pendiente,2026-10-09,Tres páginas verificadas y experimento GSC de 28 días definido
