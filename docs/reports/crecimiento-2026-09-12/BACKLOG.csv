@@ -1,10 +1,10 @@
 id,prioridad,resultado,tarea,responsable,estado,fecha_objetivo,criterio_cierre
 G01,P0,Sitio confiable,Diagnosticar y resolver Worker 1102,Codex,en_observacion_produccion,2026-09-18,Sin 1102 en rutas críticas y recursos medidos en despliegue real
 G02,P0,Sitio confiable,Separar y validar actualización del catálogo,Codex,en_observacion_produccion,2026-09-25,Siete ciclos útiles y frescura por tienda registrada
-G03,P1,Tráfico hacia tiendas,Configurar y verificar pageviews GA4,Codex,en_validacion_local,2026-09-18,Un evento inicial y por navegación sin duplicados
+G03,P1,Tráfico hacia tiendas,Configurar y verificar pageviews GA4,Codex,completado_produccion,2026-09-21,GA4 recibió 178 page_view y 512 eventos en el primer periodo verificado; clics salientes y generate_lead continúan en G07
 G04,P1,Piloto comercial,Definir y probar canal de contacto,Jonathan,pendiente,2026-09-18,Consulta de prueba recibida y CTA público operativo
 G05,P1,Sitio confiable,Separar ofertas disponibles de agotadas,Codex,en_validacion_local,2026-09-25,Conteos y agregado coherentes con stock y prueba de regresión
-G06,P1,Sitio confiable,Reducir costo de sitemap con snapshot y paginación,Codex,pendiente,2026-09-25,Generación acotada y conserva última versión válida
+G06,P1,Sitio confiable,Reducir costo de sitemap con snapshot y paginación,Codex,en_validacion_produccion,2026-09-25,Sitemap correcto y paginado; falta confirmar lecturas posteriores y conservación ante fallo transitorio
 G07,P1,Tráfico hacia tiendas,Validar clic externo y embudo completo,Codex,pendiente,2026-09-25,Catorce días con eventos comprobados y dimensiones por tienda
 G08,P2,Sitio confiable,Actualizar E2E desalineados y controles móviles,Codex,en_validacion_local,2026-09-25,Los cinco fallos están explicados y sus flujos pasan
 G09,P2,Sitio confiable,Revisar dependencias y persistencia de telemetría,Codex,pendiente,2026-09-25,Exposición evaluada y actualización validada con OpenNext
@@ -15,3 +15,4 @@ G13,P2,Piloto comercial,Investigar diez prospectos y aprobar cinco contactos,Jon
 G14,P2,Piloto comercial,Ejecutar piloto de 30 días,Jonathan,pendiente,2026-11-08,Reporte medido y decisión documentada de continuidad
 G15,P3,Futuro servicio PCs,Definir zona y validar demanda de armado reparación,Jonathan,pendiente,2026-12-10,Consultas locales y hasta tres trabajos pagados comprobados
 G16,P2,Seguimiento,Completar matriz de todos los scrapers y permisos efectivos,Codex,pendiente,2026-10-09,Cobertura por tienda y roles con evidencia sin secretos
+G17,P2,Tráfico hacia tiendas,Auditar enlaces internos legacy y cobertura de resultados enriquecidos,Codex,pendiente,2026-10-09,Destinos canónicos revisados y oportunidades de Product y Merchant schema clasificadas sin inventar reseñas políticas ni audiencia

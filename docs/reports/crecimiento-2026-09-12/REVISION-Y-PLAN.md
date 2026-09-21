@@ -203,3 +203,74 @@ Cada actualización debe registrar fecha de observación, periodo de datos, fuen
 - Sitio y contacto: https://www.comparador-hardware.com.ar/ y https://www.comparador-hardware.com.ar/contacto
 
 Los informes locales GEO del 09/09 sirvieron como antecedentes, no como métricas actuales. No se modificó código de producción ni se revirtieron cambios ajenos.
+
+## Corte de seguimiento — 13/09/2026
+
+Fuente: solicitudes públicas espaciadas y ejecución `34751070154` de GitHub Actions. La portada, `/comparar/procesadores`, `/comparar/placas-de-video` y la ficha agrupada de Ryzen 5 5600 devolvieron **200**. Es una recuperación frente al incidente 503/1102 registrado el 12/09, aunque sigue siendo una muestra puntual y G01 permanece en observación.
+
+El scheduler diario terminó correctamente con `source=public-demand`: actualizó un objetivo de memoria RAM, devolvió 11 productos y no reportó fallos. Es el primer corte posterior a la cola de demanda; G02 continúa en observación hasta reunir siete ciclos útiles y datos de frescura por tienda. No se consultaron métricas de GA4 ni Search Console en este corte diario.
+
+## Corte de seguimiento — 14/09/2026
+
+Fuente: solicitudes públicas espaciadas y ejecución `34833586162` de GitHub Actions. Se repitió la muestra de portada, categorías CPU/GPU y ficha agrupada conocida: **4 de 4** rutas devolvieron 200. El scheduler volvió a completar una demanda pública de memoria RAM, con cinco productos y cero fallos. No hubo un cambio material respecto del corte anterior; la observación de G01 y G02 continúa sin declarar cierre.
+
+## Corte de seguimiento — 19/09/2026
+
+Fuente: solicitudes públicas espaciadas y ejecuciones diarias `34955387440`, `35081657429`, `35207782530`, `35330375379` y `35434568720`. La portada, CPU, GPU y una ficha agrupada de Ryzen 5 5600 devolvieron **200**. No reapareció el 503/1102 en esta muestra.
+
+El scheduler acumula siete ejecuciones diarias consecutivas exitosas desde el 13/09. Seis devolvieron productos; la del 19/09 procesó `rx 6600 xt` con 200 y cero fallos, pero obtuvo cero productos. Esto confirma estabilidad del mecanismo y selección por demanda, aunque todavía no cumple el criterio de siete ciclos útiles ni demuestra frescura por tienda. G01 y G02 continúan en observación; el próximo control debe distinguir éxito técnico, cobertura obtenida y actualización efectiva de precios.
+
+## Corte de seguimiento — 20/09/2026
+
+Fuente: solicitudes públicas espaciadas y ejecución diaria `35503079842`. Portada, CPU, GPU y la ficha agrupada conocida devolvieron **200**; la ficha redirigió a su URL canónica y terminó en 200. No reapareció el 503/1102 en esta muestra.
+
+El scheduler volvió a seleccionar `rx 6600 xt` desde `public-demand` y terminó con 200, cero fallos y cero productos. Es el segundo ciclo consecutivo técnicamente sano sobre el mismo objetivo sin aportar catálogo. Esto ya requiere revisar por qué la demanda no se consume o rota cuando una consulta completa queda vacía; de lo contrario, los ciclos verdes pueden repetir indefinidamente un objetivo inútil. G01 sigue en observación estable y G02 permanece P0, ahora con evidencia de repetición que debe resolverse antes de contar ciclos útiles.
+
+## Corte de seguimiento — 21/09/2026
+
+Fuente: solicitudes públicas espaciadas y ejecución diaria `35589635629`. Las cuatro rutas críticas volvieron a responder **200**, sin señal de 503/1102.
+
+El scheduler rotó el objetivo de `rx 6600 xt` a `rx 6950 xt`, por lo que no quedó fijado indefinidamente en la consulta anterior. Sin embargo, el nuevo objetivo también terminó con cero productos y cero fallos. La rotación es una recuperación parcial del riesgo señalado el 20/09, pero ya son tres ciclos consecutivos sin actualización útil. G02 permanece P0: el siguiente diagnóstico debe separar falta real de resultados, normalización de consultas y cobertura efectiva de tiendas antes de ampliar el cron.
+
+### Revisión semanal de Search Console — 21/09/2026
+
+Fuente: informe autenticado de Search Console actualizado cuatro horas antes de la consulta. Ventana completa 23/08–19/09 contra 26/07–22/08:
+
+- Clics: **296 vs 192** (**+104; +54,2 %**).
+- Impresiones: **14 mil vs 9,55 mil** (**aprox. +4,45 mil; +46,6 %**, con el periodo actual redondeado por la interfaz).
+- CTR: **2,1 % vs 2,0 %** (**+0,1 puntos porcentuales**).
+- Posición media: **8,4 vs 8,5** (**mejora de 0,1**).
+
+Las consultas de comparación amplían alcance, pero el CTR todavía deja margen: `comparar procesadores` pasó de 487 a 776 impresiones y de 2 a 3 clics; `comparar placas de video` pasó de 113 a 315 impresiones y de 1 a 2 clics. La decisión es conservar CPU y GPU como páginas prioritarias para mejorar snippets sin cambiar títulos de nuevo antes de medir una ventana completa comparable.
+
+El snapshot de indexación muestra **3.187 páginas indexadas y 326 no indexadas**. Aparecen **2 fragmentos de producto**, **1 ficha de comerciante** y **2 breadcrumbs** válidos, todos sin errores visibles. Es una mejora frente al baseline de cero resultados enriquecidos, aunque los conteos pequeños todavía no demuestran cobertura general. La portada también señala que `/guia` ganó 196 % de impresiones semana contra semana, mientras `/guia/pc-gamer-2-millones` perdió 100 %; se debe revisar demanda y elegibilidad antes de atribuirlo al contenido.
+
+GA4 quedó verificado después de guardar todas las comunicaciones opcionales desmarcadas: 143 usuarios activos, 512 eventos y 178 `page_view` para 24/08–20/09. Search Console no está asociado a GA4; esta es una limitación de integración y no invalida la medición ya observada.
+
+Segunda opinión Jev, consulta semanal acotada: recomendó priorizar CPU sobre GPU y la guía de dos millones con 91 % de probabilidad y confianza 0,87. Asignó solo 14 % a volver a cambiar ahora los snippets, coherente con esperar una ventana completa posterior a la modificación reciente. Su evaluación de preparación comercial tuvo confianza 0,09 y se descarta como base de decisión. La decisión operativa se apoya en Search Console: analizar primero CPU, mantener títulos por ahora y continuar solo con preparación interna de sponsors hasta verificar GA4 y clics salientes.
+
+### GA4 y mensajes de Search Console — 21/09/2026
+
+Se guardaron las preferencias iniciales de GA4 con todas las comunicaciones opcionales desmarcadas. El informe de 24/08–20/09 confirma **143 usuarios activos, 512 eventos y 178 `page_view`**. También registra 18 eventos `click` de 9 usuarios, pero el nombre genérico todavía no demuestra que todos sean salidas hacia tiendas. No aparece `generate_lead` entre los siete eventos observados. En los últimos siete días se ven 124 sesiones Direct, 9 de AI Assistant y 8 de Organic Search. G03 pasa a completado en producción; G07 conserva la validación pendiente de clic externo, dimensiones de tienda y `generate_lead`.
+
+Search Console tenía 17 mensajes, 16 sin leer antes de la revisión. El aviso más reciente, del 20/09, añade `Página con redirección`; el informe muestra solo dos URLs en esa condición, por lo que primero deben revisarse los ejemplos antes de tratarlo como error. El aviso de sitemap del 16/09 sí señalaba un 5xx: `/guia/pc-gamer-2-millones`, detectada el 15/09 y rastreada por última vez el 18/09.
+
+La comprobación pública confirmó que las tres guías de presupuesto devolvían 503/1102. La causa era una lectura de hasta 1.200 productos por cada una de siete categorías durante el render, hasta 8.400 filas. El commit `158a580` sustituyó esa ruta por una lectura máxima de 24 productos agrupados y comprables por categoría. Pasaron 16 pruebas, lint, build y smoke local; la versión Cloudflare `921e0f4b-1d01-4493-82b4-fa2c5359bc7b` dejó las guías de 1, 2 y 3 millones en 200. Search Console confirmó `Resultado de la validación: iniciada` el 21/09 para `/guia/pc-gamer-2-millones`. El siguiente control debe verificar el nuevo rastreo y el resultado final; la validación iniciada todavía no equivale a incidencia cerrada.
+
+### Auditoría completa del menú de Search Console — 21/09/2026
+
+Se revisaron Estadísticas, Rendimiento, Inspección de URLs, Páginas, Sitemaps, las tres clases de Retirada, Core Web Vitals, HTTPS, Fragmentos de productos, Fichas de comerciantes, Oportunidades para comercios, Breadcrumbs, Acciones manuales, Problemas de seguridad, Enlaces, Logros y Ajustes con sus informes de asociaciones, robots y rastreo.
+
+La guía de dos millones conservaba en el índice el rastreo del 20/09 con 5xx. La prueba en tiempo real del 21/09 mostró `La URL está disponible para Google` y `La página se puede indexar`. La reparación ya es visible para Google, pero queda pendiente que el índice sustituya el rastreo fallido y cierre la validación.
+
+El sitemap aparece correcto, con 29 páginas descubiertas y última lectura el 15/09. HTTPS muestra 31 URLs válidas y cero no HTTPS. No hay solicitudes de retirada en seis meses, acciones manuales ni problemas de seguridad. Core Web Vitals carece de datos CrUX suficientes tanto en móvil como en escritorio; no se interpreta como aprobación de rendimiento.
+
+Google muestra dos fragmentos de producto válidos y una ficha de comerciante válida. `aggregateRating` y `review` son mejoras opcionales y no deben inventarse. En Merchant aparecen pendientes `shippingDetails`, `hasMerchantReturnPolicy` y un `sku` inválido; solo se añadirán políticas y datos que correspondan al rol real del comparador. Las 662 oportunidades de producto detectadas por Google son cobertura potencial, no tráfico, ventas ni inventario propio confirmado.
+
+El informe de enlaces muestra solo dos enlaces externos y 7.751 enlaces internos. Los principales destinos internos siguen siendo URLs legacy como `/search?category=...`, junto con duplicidad visible entre `/about` y `/acerca`. G17 auditará los destinos canónicos y el reparto de autoridad interna antes de ampliar páginas o vender alcance a sponsors.
+
+En rastreo se observan aproximadamente 16 mil solicitudes en 90 días, 97 % con respuesta 200 y 373 ms de respuesta media. El estado del host aún señala errores elevados de conectividad durante la semana anterior, coherentes con el incidente ya reparado. `robots.txt` fue obtenido, pero Googlebot ignoraba la directiva `Host` de la línea 13. El commit `d75a981` la eliminó; el build, la prueba focalizada y lint pasaron, y la versión Cloudflare `c00c30a7-e659-46f1-93f0-80b528a8da89` dejó el archivo público en 200 sin esa directiva.
+
+Search Console no tiene ningún servicio asociado. Asociar la propiedad verificada de GA4 permitiría análisis conjunto, pero requiere seleccionar la propiedad correcta en la interfaz y se mantiene como acción externa pendiente de revisión. El control de IA generativa está heredado en `Incluir`, por lo que el sitio conserva elegibilidad para enlaces y tráfico desde funciones de IA de Google.
+
+Prioridad comercial resultante: primero estabilizar rastreo e indexación y medir clics hacia tiendas; luego convertir las páginas con intención de compra en asesorías y presupuestos de armado; después presentar a sponsors argentinos un piloto medible. Merchant Center solo se evaluará cuando exista venta propia o un modelo de feed compatible con el rol real del sitio.

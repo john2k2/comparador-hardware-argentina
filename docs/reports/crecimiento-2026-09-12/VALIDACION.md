@@ -58,3 +58,51 @@ Los cinco contratos se actualizaron en el árbol local: rutas limpias de categor
 ## Próxima prueba de aceptación
 
 Después del arreglo de infraestructura: abrir portada, CPU, GPU y ficha desde desktop/móvil; buscar una consulta conocida y otra sin resultados; cambiar filtro y orden; verificar oferta/stock/fecha y destino; validar contacto y eventos sin enviar mensajes a negocios. Ejecutar matriz de tiendas y pruebas de roles en entorno apropiado antes de afirmar revisión integral cerrada.
+
+## Seguimiento 13/09/2026
+
+Muestra pública espaciada: portada, CPU, GPU y una ficha agrupada conocida devolvieron 200. El workflow `34751070154` terminó con 200, un objetivo de demanda pública, 11 productos y cero fallos. Confirma recuperación y la ruta de demanda, pero no acredita todavía disponibilidad sostenida, siete ciclos útiles ni frescura agregada por tienda.
+
+## Seguimiento 14/09/2026
+
+La misma muestra pública devolvió 200 en las cuatro rutas. El workflow `34833586162` procesó una demanda pública, devolvió cinco productos y no reportó fallos. Es continuidad sana, sin evidencia suficiente para cerrar la observación de disponibilidad ni de frescura.
+
+## Seguimiento 19/09/2026
+
+Portada, CPU, GPU y ficha conocida devolvieron 200. El scheduler completó siete días consecutivos sin fallos: seis ciclos encontraron entre 2 y 12 productos y el séptimo encontró cero para `rx 6600 xt`. La ausencia de fallos es una mejora sostenida frente al incidente inicial, pero un ciclo verde con cero productos no cuenta como actualización útil; faltan frescura por tienda y evidencia de precios persistidos para cerrar G02.
+
+## Seguimiento 20/09/2026
+
+La muestra pública se mantuvo en 4/4 respuestas 200. La ejecución programada `35503079842` también terminó sin fallos, pero repitió `rx 6600 xt` por segundo día y volvió a devolver cero productos. La salud HTTP continúa estable; la nueva evidencia operativa es que la cola de demanda puede quedar fijada en una consulta vacía. G02 no puede cerrarse hasta comprobar consumo o rotación de ese objetivo y resultados útiles en ciclos posteriores.
+
+## Seguimiento 21/09/2026
+
+La muestra pública continuó en 4/4 respuestas 200. La ejecución `35589635629` rotó a `rx 6950 xt`, descartando por ahora que la cola permanezca fijada en `rx 6600 xt`; aun así, obtuvo cero productos. Son tres ciclos consecutivos sin resultado útil. La estabilidad de ejecución no cambia, pero G02 sigue abierto hasta explicar los ceros y volver a observar precios persistidos.
+
+### Search Console y GA4 — 21/09/2026
+
+Search Console confirmó una ventana completa de 28 días contra los 28 anteriores: 296 vs 192 clics, 14 mil vs 9,55 mil impresiones, CTR 2,1 % vs 2,0 % y posición media 8,4 vs 8,5. La interfaz también mostró 3.187 páginas indexadas, 326 no indexadas y primeros resultados enriquecidos válidos: dos fragmentos de producto, una ficha de comerciante y dos breadcrumbs.
+
+GA4 quedó verificado después de guardar todas las comunicaciones opcionales desmarcadas: 143 usuarios activos, 512 eventos y 178 `page_view` para 24/08–20/09. Search Console no está asociado a GA4; esto limita la integración entre informes, pero no invalida los datos comprobados en GA4.
+
+Jev se usó como segunda opinión con contexto mínimo. Priorizó CPU con 91 % y confianza 0,87, y dio 14 % a cambiar snippets de inmediato. La preparación comercial obtuvo confianza 0,09, por lo que ese juicio no se utiliza. No autorizó ni produjo cambios externos.
+
+### GA4, avisos GSC y recuperación de guías — 21/09/2026
+
+GA4 quedó accesible tras guardar todas las comunicaciones opcionales desmarcadas. Para 24/08–20/09 muestra 143 usuarios activos, 512 eventos, 178 `page_view`, 18 `click`, 7 `form_start`, 19 `user_engagement` y 4 `scroll`. No aparece `generate_lead`. G03 queda comprobado; G07 sigue abierto porque falta distinguir clics de tienda y conservar sus dimensiones.
+
+El mensaje de Search Console del 16/09 identificó un `Error de servidor (5xx)` para `/guia/pc-gamer-2-millones`, con primer registro el 15/09 y rastreo del 18/09. La prueba del 21/09 reprodujo 503/1102 en las tres guías de presupuesto. El código cargaba hasta 8.400 filas de catálogo durante cada render.
+
+El commit `158a580` acotó la lectura a 24 productos agrupados y comprables por cada una de siete categorías. Verificación previa: 16 pruebas unitarias, lint focalizado, build completo y tres guías locales en 200. La versión pública `921e0f4b-1d01-4493-82b4-fa2c5359bc7b` dejó las tres guías en 200; CPU continuó en 200. Search Console confirmó `Resultado de la validación: iniciada` el 21/09 para `/guia/pc-gamer-2-millones`. La incidencia sigue abierta hasta que Google vuelva a rastrear y comunique el resultado final.
+
+### Auditoría completa de Search Console — 21/09/2026
+
+La prueba en tiempo real de `/guia/pc-gamer-2-millones` mostró que la URL está disponible para Google y se puede indexar. El índice aún conserva el rastreo del 20/09 con 5xx, por lo que G01 sigue en observación y la validación permanece iniciada.
+
+Sitemap: correcto, 29 páginas descubiertas, última lectura 15/09. HTTPS: 31 válidas y cero no HTTPS. Retiradas: ninguna solicitud en las tres categorías durante seis meses. Seguridad: sin acciones manuales ni problemas detectados. Core Web Vitals: sin datos CrUX suficientes en móvil y escritorio.
+
+Resultados enriquecidos: dos fragmentos de producto, una ficha de comerciante y dos breadcrumbs válidos. Quedan mejoras opcionales de reseñas y campos Merchant de envío, devoluciones y SKU; no se completarán con datos inventados. Google detecta 662 oportunidades de producto, que no equivalen a ventas ni audiencia.
+
+Rastreo: aproximadamente 16 mil solicitudes en 90 días, 97 % con 200 y 373 ms de respuesta media. El host conserva la señal histórica de conectividad elevada de la semana anterior. `robots.txt` fue obtenido y su única advertencia era la directiva `Host` ignorada en la línea 13. El commit `d75a981` la eliminó; prueba, lint y build pasaron, y la versión Cloudflare `c00c30a7-e659-46f1-93f0-80b528a8da89` devolvió el archivo público en 200 sin esa directiva.
+
+Enlaces: dos externos y 7.751 internos, concentrados en URLs legacy de categorías y páginas institucionales. Asociación: Search Console no está vinculado con GA4. IA generativa: control heredado en `Incluir`. Estos hallazgos abren G17 y no cierran G01, G02 ni G07.

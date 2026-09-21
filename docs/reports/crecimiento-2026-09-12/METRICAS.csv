@@ -18,3 +18,55 @@ observado_el,periodo_inicio,periodo_fin,fuente,metrica,segmento,valor,unidad,est
 2026-09-12,,,Comercial,qualified_leads,total,,leads,no_verificado,Falta canal publico operativo
 2026-09-12,,,Comercial,active_sponsors,total,,sponsors,no_verificado,No inferir cero
 2026-09-12,,,Comercial,revenue,total,,ARS,no_verificado,No se reviso facturacion
+2026-09-13,2026-09-13,2026-09-13,HTTP,salud_publica,portada_cpu_gpu_ficha,4/4,rutas,verificado,Muestreo espaciado: portada y categorías CPU/GPU 200; ficha agrupado-procesadores-amd-ryzen-5-5600-am4-1ru8te5 200
+2026-09-13,2026-09-13,2026-09-13,GitHub Actions,refresh_util,workflow_34751070154,1/1,objetivos,verificado,source=public-demand; memoria-ram; 11 productos; 0 fallos
+2026-09-14,2026-09-14,2026-09-14,HTTP,salud_publica,portada_cpu_gpu_ficha,4/4,rutas,verificado,Muestreo espaciado: portada y categorías CPU/GPU 200; ficha agrupado-procesadores-amd-ryzen-5-5600-am4-1ru8te5 200
+2026-09-14,2026-09-14,2026-09-14,GitHub Actions,refresh_util,workflow_34833586162,1/1,objetivos,verificado,source=public-demand; memoria-ram; 5 productos; 0 fallos
+2026-09-15,2026-09-15,2026-09-15,GitHub Actions,refresh_util,workflow_34955387440,1/1,objetivos,verificado,source=public-demand; memoria-ram; 5 productos; 0 fallos
+2026-09-16,2026-09-16,2026-09-16,GitHub Actions,refresh_util,workflow_35081657429,1/1,objetivos,verificado,source=public-demand; procesadores; 2 productos; 0 fallos
+2026-09-17,2026-09-17,2026-09-17,GitHub Actions,refresh_util,workflow_35207782530,1/1,objetivos,verificado,source=public-demand; procesadores; 2 productos; 0 fallos
+2026-09-18,2026-09-18,2026-09-18,GitHub Actions,refresh_util,workflow_35330375379,1/1,objetivos,verificado,source=public-demand; motherboards; 12 productos; 0 fallos
+2026-09-19,2026-09-19,2026-09-19,HTTP,salud_publica,portada_cpu_gpu_ficha,4/4,rutas,verificado,Muestreo espaciado: portada y categorías CPU/GPU 200; ficha agrupada Ryzen 5 5600 200
+2026-09-19,2026-09-19,2026-09-19,GitHub Actions,refresh_sin_resultados,workflow_35434568720,1/1,objetivos,verificado,source=public-demand; rx 6600 xt; 0 productos; 0 fallos; ejecución sana pero no útil para cobertura
+2026-09-20,2026-09-20,2026-09-20,HTTP,salud_publica,portada_cpu_gpu_ficha,4/4,rutas,verificado,Muestreo espaciado: portada y categorías CPU/GPU 200; ficha agrupada Ryzen 5 5600 redirigió a URL canónica y respondió 200
+2026-09-20,2026-09-20,2026-09-20,GitHub Actions,refresh_sin_resultados_repetido,workflow_35503079842,1/1,objetivos,verificado,source=public-demand; rx 6600 xt; 0 productos; 0 fallos; segundo ciclo consecutivo sobre el mismo objetivo sin utilidad de catálogo
+2026-09-21,2026-09-21,2026-09-21,HTTP,salud_publica,portada_cpu_gpu_ficha,4/4,rutas,verificado,Muestreo espaciado: portada y categorías CPU/GPU 200; ficha agrupada Ryzen 5 5600 redirigió a URL canónica y respondió 200
+2026-09-21,2026-09-21,2026-09-21,GitHub Actions,refresh_sin_resultados_rotado,workflow_35589635629,1/1,objetivos,verificado,source=public-demand; rx 6950 xt; 0 productos; 0 fallos; el objetivo rotó respecto de los dos ciclos anteriores pero el ciclo siguió sin utilidad de catálogo
+2026-09-21,2026-08-23,2026-09-19,GSC,clicks,web_total,296,clicks,verificado,Comparado con 192 clics entre 2026-07-26 y 2026-08-22; aumento absoluto 104
+2026-09-21,2026-07-26,2026-08-22,GSC,clicks,web_total_previous_28d,192,clicks,verificado,Periodo anterior completo usado para comparación
+2026-09-21,2026-08-23,2026-09-19,GSC,impressions,web_total,14000,impresiones,verificado_redondeado,Comparado con 9.55 mil; interfaz redondea el periodo actual a 14 mil
+2026-09-21,2026-07-26,2026-08-22,GSC,impressions,web_total_previous_28d,9550,impresiones,verificado_redondeado,Periodo anterior mostrado como 9.55 mil
+2026-09-21,2026-08-23,2026-09-19,GSC,ctr,web_total,2.1,porcentaje,verificado_redondeado,Periodo anterior 2.0%; mejora de 0.1 puntos porcentuales
+2026-09-21,2026-07-26,2026-08-22,GSC,ctr,web_total_previous_28d,2.0,porcentaje,verificado_redondeado,
+2026-09-21,2026-08-23,2026-09-19,GSC,position,web_total,8.4,posicion_media,verificado_redondeado,Periodo anterior 8.5; una posición menor es mejor
+2026-09-21,2026-07-26,2026-08-22,GSC,position,web_total_previous_28d,8.5,posicion_media,verificado_redondeado,
+2026-09-21,,,GSC,indexed_pages,total,3187,paginas,verificado,Snapshot visible en Descripción general; 21 más que el snapshot guardado el 12/09
+2026-09-21,,,GSC,nonindexed_pages,total,326,paginas,verificado,Snapshot visible en Descripción general; la variación puede incluir reclasificación y no se atribuye a una sola corrección
+2026-09-21,,,GSC,valid_product_snippets,total,2,resultados,verificado,Fragmentos de productos válidos; cero no válidos; aggregateRating y review figuran como mejoras opcionales
+2026-09-21,,,GSC,valid_merchant_listings,total,1,resultados,verificado,Ficha de comerciante válida; cero no válidas; faltan shippingDetails y hasMerchantReturnPolicy y un sku figura inválido en el elemento observado
+2026-09-21,,,GSC,valid_breadcrumbs,total,2,resultados,verificado,Rutas de exploración válidas; cero no válidas
+2026-09-21,,,GA4,report_access,total,,eventos,no_verificado,La propiedad abre pero un diálogo inicial de preferencias de comunicaciones bloquea los informes; no se guardaron cambios
+2026-09-21,2026-08-24,2026-09-20,GA4,active_users,total,143,usuarios,verificado,Informe de los últimos 28 días
+2026-09-21,2026-08-24,2026-09-20,GA4,event_count,total,512,eventos,verificado,Informe completo con siete nombres de evento
+2026-09-21,2026-08-24,2026-09-20,GA4,page_view,total,178,eventos,verificado,143 usuarios; confirma recepción de pageviews
+2026-09-21,2026-08-24,2026-09-20,GA4,click,total,18,eventos,verificado,9 usuarios; el nombre genérico no permite atribuir todos a tiendas sin dimensiones
+2026-09-21,2026-08-24,2026-09-20,GA4,generate_lead,total,0,eventos,verificado,No aparece entre los siete eventos registrados; no equivale a cero consultas recibidas por otros canales
+2026-09-21,2026-09-14,2026-09-20,GA4,sessions,Direct,124,sesiones,verificado,Canal principal en los últimos siete días
+2026-09-21,2026-09-14,2026-09-20,GA4,sessions,AI_Assistant,9,sesiones,verificado,Incluye ocho sesiones chatgpt.com y señales de Gemini visibles por fuente medio
+2026-09-21,2026-09-14,2026-09-20,GA4,sessions,Organic_Search,8,sesiones,verificado,
+2026-09-21,2026-09-17,2026-09-20,GSC,indexing_server_5xx,pc_gamer_2_millones,1,pagina,verificado,Primera detección 15/09; inspección mostró último rastreo 20/09 con 5xx; URL afectada /guia/pc-gamer-2-millones
+2026-09-21,2026-09-21,2026-09-21,HTTP,guide_health,budget_guides,3/3,rutas,verificado,Después del despliegue 921e0f4b: guías de 1M 2M y 3M respondieron 200
+2026-09-21,2026-09-21,,GSC,indexing_validation,server_5xx_pc_gamer_2_millones,1,validacion,iniciada,Search Console confirmó Resultado de la validación iniciada; queda pendiente el nuevo rastreo y cierre de Google
+2026-09-21,,,GSC,sitemap_discovered_pages,sitemap_index,29,paginas,verificado,Sitemap correcto; última lectura 15/09; la cifra no prueba por sí sola toda la cobertura de los sitemaps hijos
+2026-09-21,,,GSC,removed_urls,last_6_months,0,solicitudes,verificado,Cero retiradas temporales contenido obsoleto y filtros SafeSearch mostrados
+2026-09-21,,,GSC,core_web_vitals,total,,resultados,no_verificado,Sin datos de campo CrUX suficientes para móvil ni escritorio en los últimos 90 días
+2026-09-21,,,GSC,https_urls,valid,31,urls,verificado,Cero URLs no HTTPS y sin problemas detectados en los últimos 90 días
+2026-09-21,,,GSC,merchant_opportunities,total,662,productos,verificado,Productos detectados por Google; no equivale a ventas audiencia ni elegibilidad comercial aprobada
+2026-09-21,,,GSC,external_links,total,2,enlaces,verificado,Enlaces visibles desde johnlabs.dev y nuevosnegocios.com.ar
+2026-09-21,,,GSC,internal_links,total,7751,enlaces,verificado,Alta concentración visible en URLs legacy con query de categoría y páginas institucionales
+2026-09-21,2026-09-16,2026-09-16,GSC,robots_warning,host_directive,1,advertencia,verificado,Googlebot ignora la directiva Host de la línea 13; robots.txt sí fue obtenido
+2026-09-21,2026-09-21,2026-09-21,HTTP,robots_host_directive,production,0,advertencias_corregidas,verificado,Versión c00c30a7 eliminó Host; robots.txt público respondió 200 y ya no contiene la directiva
+2026-09-21,,,GSC,crawl_requests,last_90_days,16000,solicitudes,verificado_redondeado,97 por ciento terminó en 200; tiempo medio de respuesta 373 ms
+2026-09-21,,,GSC,host_connectivity,last_week,1,incidencia,verificado,Search Console mostró porcentaje de error elevado de conectividad del servidor la semana anterior
+2026-09-21,,,GSC,ga4_association,property,,asociacion,no_asociada,GA4 tiene datos verificados pero no está asociado desde Ajustes de Search Console
+2026-09-21,2026-09-21,2026-09-21,GSC,url_live_test,pc_gamer_2_millones,1,prueba,verificado,Prueba en tiempo real: URL disponible para Google y página indexable; no equivale a indexación completada
