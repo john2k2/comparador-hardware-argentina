@@ -7,6 +7,8 @@ import { normalizeDisplayText } from '@/lib/text-utils';
 import { trackStoreClick } from '@/lib/analytics';
 import { getOutboundStoreLinkType, getOutboundStoreRel } from '@/lib/commercial';
 import type { ProductPrice, Product } from '@/lib/types';
+import { needsIdentityReview } from '@/lib/quality/offer-identity';
+import { getComparableStorePrices } from '@/lib/price-utils';
 
 type StoresListProps = {
   product: Product;
@@ -14,6 +16,9 @@ type StoresListProps = {
 };
 
 export function StoresList({ product, merchantPrices }: StoresListProps) {
+  const bestOffer = getComparableStorePrices(
+    merchantPrices.filter((price) => !needsIdentityReview(price, product) && (price.stock === 'in-stock' || price.stock === 'low-stock')),
+  )[0];
   return (
     <div className="bg-card border-4 border-border p-4 md:p-6 pixel-shadow min-w-0">
       <h2 className="text-[12px] font-bold uppercase mb-4 text-accent border-b-4 border-accent inline-block pb-1">
@@ -23,19 +28,22 @@ export function StoresList({ product, merchantPrices }: StoresListProps) {
         {merchantPrices.map((price, index) => {
           const linkType = getOutboundStoreLinkType(price.storeId);
           const isSponsored = linkType === 'sponsored';
+          const pendingIdentity = needsIdentityReview(price, product);
+          const isBest = price === bestOffer;
+          const observedAt = new Date(price.lastUpdated);
 
           return (
             <div
               key={price.storeId}
               className={cn(
                 'flex flex-col sm:flex-row sm:items-center justify-between p-3 border-2 gap-3',
-                index === 0
+                isBest
                   ? 'border-secondary bg-secondary/10'
                   : 'border-muted hover:border-border transition-colors',
               )}
             >
             <div className="flex flex-col gap-1">
-              {index === 0 && (
+              {isBest && (
                 <span className="text-[8px] font-bold uppercase text-secondary">
                   [ MEJOR PRECIO ]
                 </span>
@@ -48,6 +56,16 @@ export function StoresList({ product, merchantPrices }: StoresListProps) {
               <span className="text-[10px] uppercase font-bold text-foreground">
                 {`@${normalizeDisplayText(price.storeName)}`}
               </span>
+              {pendingIdentity && (
+                <p className="text-[9px] text-accent max-w-sm">
+                  Identidad por corroborar. Confirmá la variante antes de comprar; esta oferta no se usa en presupuestos automáticos.
+                </p>
+              )}
+              {Number.isFinite(observedAt.getTime()) && observedAt.getTime() > 0 && (
+                <p className="text-[8px] text-foreground/70">
+                  Precio relevado: {observedAt.toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', dateStyle: 'short', timeStyle: 'short' })}
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-between sm:justify-end w-full sm:w-auto min-w-0">
@@ -77,7 +95,7 @@ export function StoresList({ product, merchantPrices }: StoresListProps) {
                 }}
                 className={cn(
                   'min-h-11 min-w-0 max-w-full px-3 py-2 text-[8px] uppercase font-bold transition-transform active:translate-x-1 active:translate-y-1 inline-flex items-center justify-center gap-2',
-                  index === 0
+                  isBest
                     ? 'bg-secondary text-secondary-foreground'
                     : isSponsored
                       ? 'bg-primary text-primary-foreground'

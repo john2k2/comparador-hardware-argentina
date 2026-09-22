@@ -1,0 +1,28 @@
+{
+  "source": "https://www.mexx.com.ar/productos-rubro/procesadores/47212-procesador-amd-ryzen-5-5500-3.6-ghz-am4-sin-gpu.html",
+  "catalogName": "Micro AMD Ryzen 5 5500 4.2 Ghz AM4",
+  "startedAt": "2026-09-22T00:55:19.754Z",
+  "remoteDatabaseWrites": 0,
+  "result": {
+    "processed": true,
+    "jobId": "123e4567-e89b-12d3-a456-426614174000",
+    "status": "completed"
+  },
+  "observations": [
+    {
+      "price": 158569,
+      "stock": "in-stock",
+      "observedAt": "2026-09-22T00:55:20.976Z",
+      "review": null
+    }
+  ],
+  "results": [
+    {
+      "productId": "agrupado-procesadores-amd-ryzen-5-5500-am4-2lovws",
+      "storeId": "mexx",
+      "url": "https://www.mexx.com.ar/productos-rubro/procesadores/47212-procesador-amd-ryzen-5-5500-3.6-ghz-am4-sin-gpu.html",
+      "state": "updated",
+      "observedAt": "2026-09-22T00:55:20.976Z"
+    }
+  ]
+}

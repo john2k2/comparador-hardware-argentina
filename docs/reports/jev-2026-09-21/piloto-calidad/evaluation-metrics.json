@@ -1,0 +1,185 @@
+{
+  "snapshotCapturedAt": "2026-09-21T23:12:00.577Z",
+  "evaluatedAt": "2026-09-21T23:23:00.461Z",
+  "provenance": "Muestra seleccionada; revisión textual ciega del asistente anterior a Jev. No es benchmark de precisión ni ground truth humano.",
+  "modelVersions": [
+    "jev-1.13.0"
+  ],
+  "totalInputTokens": 6723,
+  "totalOutputTokens": 758,
+  "textReviewCases": 16,
+  "agreesWithTextReview": 13,
+  "textReviewConflicts": 7,
+  "foundTextReviewConflicts": 7,
+  "conflictCasesWithEqualLegacyIdentityKey": [
+    "offer_03",
+    "offer_09",
+    "offer_15",
+    "offer_18",
+    "offer_30",
+    "offer_42"
+  ],
+  "lowConfidenceCases": [
+    "offer_02",
+    "offer_04",
+    "offer_24",
+    "offer_29"
+  ],
+  "thresholdCaveat": "El umbral 0.8 se agregó tras observar estas respuestas y no está calibrado. Necesita una muestra nueva; no usarlo como probabilidad de acierto.",
+  "codeSha256": "6d9c8f3aac48ee6e2fa207823f9eb38e9ddce0df76de6769eed840eeeafb21fa",
+  "results": [
+    {
+      "id": "offer_02",
+      "reviewLabel": "identity_consistent",
+      "jevChoice": "identity_consistent",
+      "confidence": 0.13,
+      "agreesWithTextReview": true,
+      "currentIdentityKeyRelation": "equal",
+      "requiresConfidenceReview": true
+    },
+    {
+      "id": "offer_10",
+      "reviewLabel": "identity_consistent",
+      "jevChoice": "identity_consistent",
+      "confidence": 0.88,
+      "agreesWithTextReview": true,
+      "currentIdentityKeyRelation": "equal",
+      "requiresConfidenceReview": false
+    },
+    {
+      "id": "offer_12",
+      "reviewLabel": "identity_consistent",
+      "jevChoice": "identity_consistent",
+      "confidence": 0.87,
+      "agreesWithTextReview": true,
+      "currentIdentityKeyRelation": "equal",
+      "requiresConfidenceReview": false
+    },
+    {
+      "id": "offer_27",
+      "reviewLabel": "identity_consistent",
+      "jevChoice": "identity_consistent",
+      "confidence": 0.87,
+      "agreesWithTextReview": true,
+      "currentIdentityKeyRelation": "equal",
+      "requiresConfidenceReview": false
+    },
+    {
+      "id": "offer_36",
+      "reviewLabel": "identity_consistent",
+      "jevChoice": "identity_consistent",
+      "confidence": 0.94,
+      "agreesWithTextReview": true,
+      "currentIdentityKeyRelation": "equal",
+      "requiresConfidenceReview": false
+    },
+    {
+      "id": "offer_49",
+      "reviewLabel": "identity_consistent",
+      "jevChoice": "identity_consistent",
+      "confidence": 0.9,
+      "agreesWithTextReview": true,
+      "currentIdentityKeyRelation": "equal",
+      "requiresConfidenceReview": false
+    },
+    {
+      "id": "offer_01",
+      "reviewLabel": "identity_conflict",
+      "jevChoice": "identity_conflict",
+      "confidence": 0.9,
+      "agreesWithTextReview": true,
+      "currentIdentityKeyRelation": "different",
+      "requiresConfidenceReview": false
+    },
+    {
+      "id": "offer_03",
+      "reviewLabel": "identity_conflict",
+      "jevChoice": "identity_conflict",
+      "confidence": 0.91,
+      "agreesWithTextReview": true,
+      "currentIdentityKeyRelation": "equal",
+      "requiresConfidenceReview": false
+    },
+    {
+      "id": "offer_09",
+      "reviewLabel": "identity_conflict",
+      "jevChoice": "identity_conflict",
+      "confidence": 0.96,
+      "agreesWithTextReview": true,
+      "currentIdentityKeyRelation": "equal",
+      "requiresConfidenceReview": false
+    },
+    {
+      "id": "offer_15",
+      "reviewLabel": "identity_conflict",
+      "jevChoice": "identity_conflict",
+      "confidence": 0.98,
+      "agreesWithTextReview": true,
+      "currentIdentityKeyRelation": "equal",
+      "requiresConfidenceReview": false
+    },
+    {
+      "id": "offer_18",
+      "reviewLabel": "identity_conflict",
+      "jevChoice": "identity_conflict",
+      "confidence": 0.96,
+      "agreesWithTextReview": true,
+      "currentIdentityKeyRelation": "equal",
+      "requiresConfidenceReview": false
+    },
+    {
+      "id": "offer_30",
+      "reviewLabel": "identity_conflict",
+      "jevChoice": "identity_conflict",
+      "confidence": 0.98,
+      "agreesWithTextReview": true,
+      "currentIdentityKeyRelation": "equal",
+      "requiresConfidenceReview": false
+    },
+    {
+      "id": "offer_42",
+      "reviewLabel": "identity_conflict",
+      "jevChoice": "identity_conflict",
+      "confidence": 0.94,
+      "agreesWithTextReview": true,
+      "currentIdentityKeyRelation": "equal",
+      "requiresConfidenceReview": false
+    },
+    {
+      "id": "offer_04",
+      "reviewLabel": "identity_uncertain",
+      "jevChoice": "identity_consistent",
+      "confidence": 0.15,
+      "agreesWithTextReview": false,
+      "currentIdentityKeyRelation": "equal",
+      "requiresConfidenceReview": true
+    },
+    {
+      "id": "offer_24",
+      "reviewLabel": "identity_uncertain",
+      "jevChoice": "identity_consistent",
+      "confidence": 0.5,
+      "agreesWithTextReview": false,
+      "currentIdentityKeyRelation": "equal",
+      "requiresConfidenceReview": true
+    },
+    {
+      "id": "offer_29",
+      "reviewLabel": "identity_uncertain",
+      "jevChoice": "identity_conflict",
+      "confidence": 0.41,
+      "agreesWithTextReview": false,
+      "currentIdentityKeyRelation": "equal",
+      "requiresConfidenceReview": true
+    }
+  ],
+  "verification": {
+    "nodeVersion": "v26.5.0",
+    "pilotTestsPassed": 9,
+    "pilotTestsFailed": 0,
+    "eslintExitCode": 0,
+    "productionIntegration": false,
+    "sourcePagesChecked": 4,
+    "checkoutVerified": false
+  }
+}

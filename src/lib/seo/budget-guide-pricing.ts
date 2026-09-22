@@ -1,6 +1,7 @@
 import { isBundleLikeTitle, isCompleteComputerTitle } from '@/lib/product-identity';
 import { computeComparableStorePriceStats } from '@/lib/price-utils';
 import type { HardwareCategory, Product, ProductPrice } from '@/lib/types';
+import { needsIdentityReview } from '@/lib/quality/offer-identity';
 
 export type GuideSlotSpec = {
   name: string;
@@ -233,6 +234,7 @@ function offerAgreesWithProductName(product: Product, offer: ProductPrice): bool
 function buyableOffers(product: Product): ProductPrice[] {
   const inStock = product.prices.filter((offer) => (
     offer.price > 0
+    && !needsIdentityReview(offer, product)
     && isBuyableGuideStock(offer.stock)
     && !offerConflictsWithGuide(offer)
     && offerAgreesWithProductName(product, offer)

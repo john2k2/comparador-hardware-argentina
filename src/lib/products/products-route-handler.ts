@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import type { HardwareCategory } from '@/lib/types';
+import { reviewProductOffers } from '@/lib/ai/review-product-offers';
 import { getSnapshotProductById, snapshotProducts } from '@/lib/cache/search-snapshot';
 import { isHardwareCategory } from '@/lib/catalog/hardware-categories';
 import { readProductByIdFromDatabase, readProductsFromDatabase } from '@/lib/persistence/product-read';
@@ -181,7 +182,8 @@ export async function GET(request: NextRequest) {
 
       const liveProduct = await trackedDetailPromise;
       if (liveProduct) {
-        const hydrated = await normalizeAndEnrichProduct(liveProduct);
+        const normalized = await normalizeAndEnrichProduct(liveProduct);
+        const [hydrated] = await reviewProductOffers([normalized], { authorizedRefresh: internalRefreshRequest || privilegedBypass });
         await persistProductDetailSnapshot(hydrated);
         await setCachedDetail(detailKey, hydrated);
         snapshotProducts([hydrated]);
@@ -262,7 +264,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const liveProducts = await resolveLiveProductsList(categorySlug, query || undefined, observeSource);
+    const liveProducts = await resolveLiveProductsList(categorySlug, query || undefined, observeSource, internalRefreshRequest || privilegedBypass);
     return respond({ products: liveProducts, pagination: { limit: liveProducts.length, offset: 0, total: liveProducts.length } }, { headers: { 'X-Product-Cache': isRefreshRequest ? 'REFRESH' : 'MISS' } }, { success: true, resultCount: liveProducts.length, note: isRefreshRequest ? 'CATEGORY_REFRESH' : 'CATEGORY_LIST' });
   } catch (error) {
     logger.error('Products API error', {

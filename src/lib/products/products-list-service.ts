@@ -1,4 +1,5 @@
 import type { HardwareCategory, Product } from '@/lib/types';
+import { reviewProductOffers } from '@/lib/ai/review-product-offers';
 import { withAbortTimeout, withPromiseTimeout } from '@/lib/async/with-abort-timeout';
 import { hardwareCategoryToSearchTerm } from '@/lib/catalog/hardware-categories';
 import { snapshotProducts } from '@/lib/cache/search-snapshot';
@@ -49,6 +50,7 @@ export async function resolveLiveProductsList(
   categorySlug: HardwareCategory,
   query: string | undefined,
   observeSource: ObserveSource,
+  authorizedRefresh = false,
 ): Promise<Product[]> {
   const categorySearchTerm = hardwareCategoryToSearchTerm(categorySlug);
   const nonWooQuery = query || categorySearchTerm;
@@ -181,6 +183,7 @@ export async function resolveLiveProductsList(
     });
   }
 
+  liveProducts = await reviewProductOffers(liveProducts, { authorizedRefresh });
   await withPromiseTimeout(persistProductsSnapshot(liveProducts), PERSISTENCE_TIMEOUT_MS, 'supabase-persist')
     .catch((persistError) => {
       logger.warn('Product list snapshot persistence skipped', {

@@ -1,0 +1,946 @@
+{
+  "policyVersion": "offer-quality-pilot-v1",
+  "capturedAt": "2026-09-21T23:12:00.577Z",
+  "maxAgeHours": 24,
+  "minJevConfidence": 0.8,
+  "mode": "local_shadow_only",
+  "summary": {
+    "offerCount": 50,
+    "legacyComparisonStockEligible": 33,
+    "staleOffers": 50,
+    "explicitChipConflicts": 1,
+    "jevEvaluated": 0,
+    "jevLowConfidence": 0,
+    "dispositions": {
+      "exclude_from_comparison": 1,
+      "recheck": 49
+    }
+  },
+  "offers": [
+    {
+      "id": "offer_01",
+      "productName": "Placa De Video Gigabyte Rtx 4060 Eagle Oc Ice 8gb (white)",
+      "storeId": "xtpc",
+      "url": "https://www.xt-pc.com.ar/prod/30551/placa-de-video-geforce-rtx-5060-8gb-gigabyte-eagle-oc",
+      "ageHours": 2156.13,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "different",
+      "nameKey": "gpu:rtx4060:8gb:gigabyte:eagle",
+      "urlKey": "gpu:rtx5060:8gb:gigabyte:eagle",
+      "hardIdentityConflict": true,
+      "jev": null,
+      "disposition": "exclude_from_comparison",
+      "reasons": [
+        "explicit_chip_conflict",
+        "stale_offer",
+        "identity_needs_source_check"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_02",
+      "productName": "Microprocesador AMD Ryzen 5 5600 32MB 3.5GHz Socket AM4",
+      "storeId": "xtpc",
+      "url": "https://www.xt-pc.com.ar/prod/33055/micro-amd-ryzen-5-5600-s-video-s-cooler-cpu-am4",
+      "ageHours": 109.26,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "cpu:ryzen55600",
+      "urlKey": "cpu:ryzen55600",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_03",
+      "productName": "Memoria Patriot DDR5 32GB (2x16GB) 6000MHz Viper Venom RGB CL30 Intel XMP 3.0 AMD EXPO",
+      "storeId": "compragamer",
+      "url": "https://compragamer.com/producto/Memoria_Patriot_DDR5_32GB_2x16GB_6000MHz_Viper_Venom_RGB_CL36_XMP_3_0_AMD_EXPO_BULK_OUTLET_20483",
+      "ageHours": 2137.76,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "ram:patriot:viper:32gb:ddr5:na:unk",
+      "urlKey": "ram:patriot:viper:32gb:ddr5:na:unk",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_04",
+      "productName": "Placa De Video Gigabyte Rtx 4060 Eagle Oc Ice 8gb (white)",
+      "storeId": "maxtecno",
+      "url": "https://maxtecno.com.ar/producto/placa-de-video-gigabyte-rtx-4060-eagle-oc-8gb/",
+      "ageHours": 3623.85,
+      "legacyComparisonStockEligible": false,
+      "existingKeyRelation": "equal",
+      "nameKey": "gpu:rtx4060:8gb:gigabyte:eagle",
+      "urlKey": "gpu:rtx4060:8gb:gigabyte:eagle",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "reported_out_of_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_05",
+      "productName": "Microprocesador AMD Ryzen 5 5600 32MB 3.5GHz Socket AM4",
+      "storeId": "gamingcity",
+      "url": "https://www.gamingcity.com.ar/micro-amd-procesador-amd-ryzen-5-5600-6c-12t-sin-video--det--8427",
+      "ageHours": 109.26,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "cpu:ryzen55600",
+      "urlKey": "cpu:ryzen55600",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_06",
+      "productName": "Memoria Patriot DDR5 32GB (2x16GB) 6000MHz Viper Venom RGB CL30 Intel XMP 3.0 AMD EXPO",
+      "storeId": "scphardstore",
+      "url": "https://www.scphardstore.com/producto/memoria-ram-ddr5-patriot-32gb-2x16gbgb-6000mhz-viper-venom-cl30/",
+      "ageHours": 1680.27,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "ram:patriot:viper:32gb:ddr5:na:unk",
+      "urlKey": "ram:patriot:viper:32gb:ddr5:na:unk",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_07",
+      "productName": "Placa De Video Gigabyte Rtx 4060 Eagle Oc Ice 8gb (white)",
+      "storeId": "shopgamer",
+      "url": "https://www.shopgamer.com.ar/productos/shp-placa-de-video-gigabyte-rtx-4060-eagle-oc-8gb-gv-n4060eagle-oc-8gd/",
+      "ageHours": 3438.1,
+      "legacyComparisonStockEligible": false,
+      "existingKeyRelation": "equal",
+      "nameKey": "gpu:rtx4060:8gb:gigabyte:eagle",
+      "urlKey": "gpu:rtx4060:8gb:gigabyte:eagle",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "reported_out_of_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_08",
+      "productName": "Microprocesador AMD Ryzen 5 5600 32MB 3.5GHz Socket AM4",
+      "storeId": "fullh4rd",
+      "url": "https://www.fullh4rd.com.ar/prod/33055/micro-amd-ryzen-5-5600-s-video-s-cooler-cpu-am4",
+      "ageHours": 222.73,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "cpu:ryzen55600",
+      "urlKey": "cpu:ryzen55600",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_09",
+      "productName": "Memoria Patriot DDR5 32GB (2x16GB) 6000MHz Viper Venom RGB CL30 Intel XMP 3.0 AMD EXPO",
+      "storeId": "hypergaming",
+      "url": "https://hypergaming.com.ar/memorias-ram/memoria-pc/memoria-32gb-5600mhz-ddr5-viper-elite-5-white-rgb-patriot-124809.html",
+      "ageHours": 421.68,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "ram:patriot:viper:32gb:ddr5:na:unk",
+      "urlKey": "ram:patriot:viper:32gb:ddr5:na:unk",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "unknown_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_10",
+      "productName": "Placa GeForce RTX 4060 OC Low Profile 8G",
+      "storeId": "maxtecno",
+      "url": "https://maxtecno.com.ar/producto/placa-geforce-rtx-4060-oc-low-profile-8g/",
+      "ageHours": 3623.85,
+      "legacyComparisonStockEligible": false,
+      "existingKeyRelation": "equal",
+      "nameKey": "gpu:rtx4060:na:na:base",
+      "urlKey": "gpu:rtx4060:na:na:base",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "reported_out_of_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_11",
+      "productName": "Microprocesador AMD Ryzen 5 5600 32MB 3.5GHz Socket AM4",
+      "storeId": "venex",
+      "url": "https://www.venex.com.ar/componentes-de-pc/microprocesadores/microprocesador-cpu-amd-ryzen-5-5600-6-12-zen3.html",
+      "ageHours": 421.69,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "cpu:ryzen55600",
+      "urlKey": "cpu:ryzen55600",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_12",
+      "productName": "Memoria Patriot DDR5 32GB (2x16GB) 6000MHz Viper Venom RGB CL30 Intel XMP 3.0 AMD EXPO",
+      "storeId": "wiztech",
+      "url": "https://wiztech.com.ar/catalogo/producto/ram/1257/patriot-viper-venom-32gb-rgb-6000mhz-ddr5-cl30-(2x16gb)",
+      "ageHours": 205.05,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "ram:patriot:viper:32gb:ddr5:na:unk",
+      "urlKey": "ram:patriot:viper:32gb:ddr5:na:unk",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_13",
+      "productName": "VGA MSI GeForce RTX 4060 VENTUS 2X BLACK 8G OC (5421)",
+      "storeId": "maxtecno",
+      "url": "https://maxtecno.com.ar/producto/placa-msi-rtx-4060-ventus-2x-8gb-oc-ddr6-black/",
+      "ageHours": 3623.85,
+      "legacyComparisonStockEligible": false,
+      "existingKeyRelation": "different",
+      "nameKey": "gpu:rtx4060:na:msi:ventus",
+      "urlKey": "gpu:rtx4060:8gb:msi:ventus",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "reported_out_of_stock",
+        "identity_needs_source_check"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_14",
+      "productName": "Microprocesador AMD Ryzen 5 5600 32MB 3.5GHz Socket AM4",
+      "storeId": "goldentechstore",
+      "url": "https://goldentechstore.com.ar/producto/micro-amd-ryzen-5-5600-am4-s-video/",
+      "ageHours": 421.69,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "cpu:ryzen55600",
+      "urlKey": "cpu:ryzen55600",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_15",
+      "productName": "Memoria Patriot DDR5 32GB (2x16GB) 6000MHz Viper Venom RGB CL30 Intel XMP 3.0 AMD EXPO",
+      "storeId": "xtpc",
+      "url": "https://www.xt-pc.com.ar/prod/30482/memoria-32gb-2x16gb-ddr5-7000-patriot-viper-xtreme-5",
+      "ageHours": 205.05,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "ram:patriot:viper:32gb:ddr5:na:unk",
+      "urlKey": "ram:patriot:viper:32gb:ddr5:na:unk",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_16",
+      "productName": "PLACA DE VIDEO ZOTAC RTX 4060 8GB TWIN EDGE OC",
+      "storeId": "maxtecno",
+      "url": "https://maxtecno.com.ar/producto/placa-de-video-zotac-rtx-4060-8gb-twin-edge-oc/",
+      "ageHours": 3623.85,
+      "legacyComparisonStockEligible": false,
+      "existingKeyRelation": "equal",
+      "nameKey": "gpu:rtx4060:8gb:zotac:base",
+      "urlKey": "gpu:rtx4060:8gb:zotac:base",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "reported_out_of_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_17",
+      "productName": "Microprocesador AMD Ryzen 5 5600 32MB 3.5GHz Socket AM4",
+      "storeId": "hypergaming",
+      "url": "https://hypergaming.com.ar/procesadores/amd/procesador-amd-ryzen-5-5600-am4-120795.html",
+      "ageHours": 421.69,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "cpu:ryzen55600",
+      "urlKey": "cpu:ryzen55600",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "unknown_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_18",
+      "productName": "Memoria Ram Adata Premier Ddr5 32Gb 5600Mhz Cl46 Ad5U560032G-S",
+      "storeId": "spacevideojuegos",
+      "url": "https://spacegamer.com.ar/540515-componentes-de-pc-memoria-ram-adata-ddr5-32gb-4800mhz",
+      "ageHours": 421.68,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "ram:adata:other:32gb:ddr5:na:unk",
+      "urlKey": "ram:adata:other:32gb:ddr5:na:unk",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_19",
+      "productName": "PLACA DE VIDEO ZOTAC RTX 4060 8GB TWIN EDGE OC",
+      "storeId": "shopgamer",
+      "url": "https://www.shopgamer.com.ar/productos/shp-placa-de-video-zotac-rtx-4060-8gb-twin-edge-oc-zt-d40600h-10m/",
+      "ageHours": 3623.85,
+      "legacyComparisonStockEligible": false,
+      "existingKeyRelation": "equal",
+      "nameKey": "gpu:rtx4060:8gb:zotac:base",
+      "urlKey": "gpu:rtx4060:8gb:zotac:base",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "reported_out_of_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_20",
+      "productName": "Microprocesador AMD Ryzen 5 5600 32MB 3.5GHz Socket AM4",
+      "storeId": "maxtecno",
+      "url": "https://maxtecno.com.ar/producto/microprocesador-amd-ryzen-5-5600-32mb-3-5ghz-socket-am4/",
+      "ageHours": 673.85,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "cpu:ryzen55600",
+      "urlKey": "cpu:ryzen55600",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_21",
+      "productName": "Memoria Ram Adata Premier Ddr5 32Gb 5600Mhz Cl46 Ad5U560032G-S",
+      "storeId": "hardcore",
+      "url": "https://hardcorecomputacion.com.ar/producto/memoria-adata-value-32gb-ddr5-5600mhz/",
+      "ageHours": 463.14,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "ram:adata:other:32gb:ddr5:na:unk",
+      "urlKey": "ram:adata:other:32gb:ddr5:na:unk",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_22",
+      "productName": "Placa De Video Asus Dual Rtx 4060 O8gb Evo",
+      "storeId": "maxtecno",
+      "url": "https://maxtecno.com.ar/producto/placa-de-video-asus-dual-rtx-4060-o8gb-evo/",
+      "ageHours": 3623.85,
+      "legacyComparisonStockEligible": false,
+      "existingKeyRelation": "equal",
+      "nameKey": "gpu:rtx4060:na:asus:dual",
+      "urlKey": "gpu:rtx4060:na:asus:dual",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "reported_out_of_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_23",
+      "productName": "Microprocesador AMD Ryzen 5 5600 32MB 3.5GHz Socket AM4",
+      "storeId": "katech",
+      "url": "https://katech.com.ar/producto/procesador-amd-ryzen-5-5600-am4/",
+      "ageHours": 109.26,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "cpu:ryzen55600",
+      "urlKey": "cpu:ryzen55600",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_24",
+      "productName": "Memoria Ram Adata Premier Ddr5 32Gb 5600Mhz Cl46 Ad5U560032G-S",
+      "storeId": "scphardstore",
+      "url": "https://www.scphardstore.com/producto/memoria-ram-ddr5-adata-32gb-5600mhz/",
+      "ageHours": 463.15,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "ram:adata:other:32gb:ddr5:na:unk",
+      "urlKey": "ram:adata:other:32gb:ddr5:na:unk",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_25",
+      "productName": "Placa De Video Asus Dual Rtx 4060 O8gb Evo",
+      "storeId": "shopgamer",
+      "url": "https://www.shopgamer.com.ar/productos/shp-placa-de-video-asus-dual-rtx-4060-o8gb-evo-dual-rtx4060-o8g-evo/",
+      "ageHours": 3623.85,
+      "legacyComparisonStockEligible": false,
+      "existingKeyRelation": "equal",
+      "nameKey": "gpu:rtx4060:na:asus:dual",
+      "urlKey": "gpu:rtx4060:na:asus:dual",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "reported_out_of_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_26",
+      "productName": "Microprocesador AMD Ryzen 5 5600 32MB 3.5GHz Socket AM4",
+      "storeId": "scphardstore",
+      "url": "https://www.scphardstore.com/producto/micro-procesador-amd-ryzen-5-5600-4-4-ghz-turbo-c-cooler-am4/",
+      "ageHours": 109.26,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "cpu:ryzen55600",
+      "urlKey": "cpu:ryzen55600",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_27",
+      "productName": "Memoria Ram Adata Premier Ddr5 32Gb 5600Mhz Cl46 Ad5U560032G-S",
+      "storeId": "gamingcity",
+      "url": "https://www.gamingcity.com.ar/ddr5-memoria-ram-adata-premier-ddr5-32gb-5600mhz-cl46-gamingcity--det--18471",
+      "ageHours": 421.68,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "ram:adata:other:32gb:ddr5:na:unk",
+      "urlKey": "ram:adata:other:32gb:ddr5:na:unk",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_28",
+      "productName": "VGA Gigabyte GeForce RTX 4060 GAMING OC 8G (3692)",
+      "storeId": "maxtecno",
+      "url": "https://maxtecno.com.ar/producto/vga-gigabyte-geforce-rtx-4060-gaming-oc-8g-3692/",
+      "ageHours": 3623.85,
+      "legacyComparisonStockEligible": false,
+      "existingKeyRelation": "equal",
+      "nameKey": "gpu:rtx4060:na:gigabyte:gaming",
+      "urlKey": "gpu:rtx4060:na:gigabyte:gaming",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "reported_out_of_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_29",
+      "productName": "Microprocesador AMD Ryzen 5 5600 32MB 3.5GHz Socket AM4",
+      "storeId": "maximus",
+      "url": "https://www.maximus.com.ar/Producto/Micro-AMD-Ryzen-5-5600-44-Ghz-AM4/ITEM=10680/maximus.aspx?PN=100-100000927BOX",
+      "ageHours": 414.89,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "cpu:ryzen55600",
+      "urlKey": "cpu:ryzen55600",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_30",
+      "productName": "Memoria Ddr5 32gb 6000mhz Predator Vesta Ii Rgb 2x16gb Cl36",
+      "storeId": "spacevideojuegos",
+      "url": "https://spacegamer.com.ar/540870-componentes-de-pc-memoria-ram-lexar-32gb-5600mhz-ddr5-cl46-black",
+      "ageHours": 421.68,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "ram:na:other:32gb:ddr5:na:unk",
+      "urlKey": "ram:na:other:32gb:ddr5:na:unk",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_31",
+      "productName": "Placa De Video Zotac Gaming Rtx 4060 8gb Solo",
+      "storeId": "maxtecno",
+      "url": "https://maxtecno.com.ar/producto/placa-de-video-zotac-gaming-rtx-4060-8gb-solo/",
+      "ageHours": 3623.85,
+      "legacyComparisonStockEligible": false,
+      "existingKeyRelation": "equal",
+      "nameKey": "gpu:rtx4060:8gb:zotac:gaming",
+      "urlKey": "gpu:rtx4060:8gb:zotac:gaming",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "reported_out_of_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_32",
+      "productName": "Microprocesador AMD Ryzen 5 5600 32MB 3.5GHz Socket AM4",
+      "storeId": "beings",
+      "url": "https://beings.com.ar/product/procesador-amd-ryzen-5-5600/",
+      "ageHours": 109.26,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "cpu:ryzen55600",
+      "urlKey": "cpu:ryzen55600",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_33",
+      "productName": "Memoria Ddr5 32gb 6000mhz Predator Vesta Ii Rgb 2x16gb Cl36",
+      "storeId": "scphardstore",
+      "url": "https://www.scphardstore.com/producto/memoria-ram-ddr5-memox-32gb-5600mhz/",
+      "ageHours": 463.15,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "ram:na:other:32gb:ddr5:na:unk",
+      "urlKey": "ram:na:other:32gb:ddr5:na:unk",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_34",
+      "productName": "Placa De Video Zotac Gaming Rtx 4060 8gb Solo",
+      "storeId": "shopgamer",
+      "url": "https://www.shopgamer.com.ar/productos/shp-placa-de-video-zotac-gaming-rtx-4060-8gb-solo-zt-d40600g-10l/",
+      "ageHours": 3438.1,
+      "legacyComparisonStockEligible": false,
+      "existingKeyRelation": "equal",
+      "nameKey": "gpu:rtx4060:8gb:zotac:gaming",
+      "urlKey": "gpu:rtx4060:8gb:zotac:gaming",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "reported_out_of_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_35",
+      "productName": "Microprocesador AMD Ryzen 5 5600 32MB 3.5GHz Socket AM4",
+      "storeId": "dinobyte",
+      "url": "https://dinobyte.ar/producto/microprocesador-amd-ryzen-5-5600/",
+      "ageHours": 673.85,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "cpu:ryzen55600",
+      "urlKey": "cpu:ryzen55600",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_36",
+      "productName": "Memoria Ddr5 32gb 6000mhz Predator Vesta Ii Rgb 2x16gb Cl36",
+      "storeId": "megasoft",
+      "url": "https://megasoftargentina.com.ar/Memorias-Ram-/memorias-ddr5/memoria-ddr5-32gb-6000mhz-predator-vesta-ii-rgb-2x16gb-cl36-182560.html",
+      "ageHours": 421.68,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "ram:na:other:32gb:ddr5:na:unk",
+      "urlKey": "ram:na:other:32gb:ddr5:na:unk",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "unknown_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_37",
+      "productName": "Placa De Video Gigabyte Rtx 4060 Wf2 8gb",
+      "storeId": "maxtecno",
+      "url": "https://maxtecno.com.ar/producto/placa-de-video-gigabyte-rtx-4060-wf2-8gd/",
+      "ageHours": 3623.85,
+      "legacyComparisonStockEligible": false,
+      "existingKeyRelation": "different",
+      "nameKey": "gpu:rtx4060:8gb:gigabyte:base",
+      "urlKey": "gpu:rtx4060:na:gigabyte:base",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "reported_out_of_stock",
+        "identity_needs_source_check"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_38",
+      "productName": "Microprocesador AMD Ryzen 5 5600 32MB 3.5GHz Socket AM4",
+      "storeId": "shopgamer",
+      "url": "https://www.shopgamer.com.ar/productos/shp-procesador-amd-am4-ryzen-5-5600-100-100000927box/",
+      "ageHours": 222.73,
+      "legacyComparisonStockEligible": false,
+      "existingKeyRelation": "equal",
+      "nameKey": "cpu:ryzen55600",
+      "urlKey": "cpu:ryzen55600",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "reported_out_of_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_39",
+      "productName": "Memoria Ddr5 32gb 6000mhz Predator Vesta Ii Rgb 2x16gb Cl36",
+      "storeId": "maxtecno",
+      "url": "https://maxtecno.com.ar/producto/ddr5-32gb-memox-5600mhz/",
+      "ageHours": 463.15,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "ram:na:other:32gb:ddr5:na:unk",
+      "urlKey": "ram:na:other:32gb:ddr5:na:unk",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_40",
+      "productName": "Placa De Video Gigabyte Rtx 4060 Wf2 8gb",
+      "storeId": "shopgamer",
+      "url": "https://www.shopgamer.com.ar/productos/shp-placa-de-video-gigabyte-rtx-4060-wf2-8gb-gv-n4060wf2-8gd/",
+      "ageHours": 3438.1,
+      "legacyComparisonStockEligible": false,
+      "existingKeyRelation": "equal",
+      "nameKey": "gpu:rtx4060:8gb:gigabyte:base",
+      "urlKey": "gpu:rtx4060:8gb:gigabyte:base",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "reported_out_of_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_41",
+      "productName": "MICRO AMD RYZEN 5 5600XT S/VIDEO C/COOLER BOX AM4 SUPERIOR AL 5600",
+      "storeId": "fullh4rd",
+      "url": "https://www.fullh4rd.com.ar/prod/29019/micro-amd-ryzen-5-5600xt-s-video-c-cooler-box-am4-superior-al-5600",
+      "ageHours": 222.73,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "cpu:ryzen55600xt",
+      "urlKey": "cpu:ryzen55600xt",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_42",
+      "productName": "Memoria Corsair DDR5 32GB (2x16GB) 6000MHz Vengeance CL36 Black Intel XMP 3.0 / AMD EXPO",
+      "storeId": "compragamer",
+      "url": "https://compragamer.com/producto/Memoria_Corsair_DDR5_32GB_2x16GB_6000MHz_Vengeance_CL38_AMD_EXPO_Intel_XMP_3_0_19028",
+      "ageHours": 1894.71,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "ram:corsair:vengeance:32gb:ddr5:na:unk",
+      "urlKey": "ram:corsair:vengeance:32gb:ddr5:na:unk",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_43",
+      "productName": "PLACA DE VIDEO ZOTAC RTX 4060 8GB TWIN EDGE OC WHITE EDT",
+      "storeId": "maxtecno",
+      "url": "https://maxtecno.com.ar/producto/placa-de-video-zotac-rtx-4060-8gb-twin-edge-oc-white-edt/",
+      "ageHours": 3623.85,
+      "legacyComparisonStockEligible": false,
+      "existingKeyRelation": "equal",
+      "nameKey": "gpu:rtx4060:8gb:zotac:white",
+      "urlKey": "gpu:rtx4060:8gb:zotac:white",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "reported_out_of_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_44",
+      "productName": "MICRO AMD RYZEN 5 5600XT S/VIDEO C/COOLER BOX AM4 SUPERIOR AL 5600",
+      "storeId": "xtpc",
+      "url": "https://www.xt-pc.com.ar/prod/29019/micro-amd-ryzen-5-5600xt-s-video-c-cooler-box-am4-superior-al-5600",
+      "ageHours": 109.26,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "cpu:ryzen55600xt",
+      "urlKey": "cpu:ryzen55600xt",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_45",
+      "productName": "Memoria Corsair DDR5 32GB (2x16GB) 6000MHz Vengeance CL36 Black Intel XMP 3.0 / AMD EXPO",
+      "storeId": "scphardstore",
+      "url": "https://www.scphardstore.com/producto/memoria-ram-ddr5-corsair-32gb-2x16gb-6000mhz-vengeance-intel-xmp-cl38/",
+      "ageHours": 1523.04,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "ram:corsair:vengeance:32gb:ddr5:na:unk",
+      "urlKey": "ram:corsair:vengeance:32gb:ddr5:na:unk",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_46",
+      "productName": "PLACA DE VIDEO ZOTAC RTX 4060 8GB TWIN EDGE OC WHITE EDT",
+      "storeId": "shopgamer",
+      "url": "https://www.shopgamer.com.ar/productos/sh-Placa-De-Video-Zotac-Rtx-4060-8Gb-Twin-Edge-Oc-White-Edt/",
+      "ageHours": 3623.85,
+      "legacyComparisonStockEligible": false,
+      "existingKeyRelation": "equal",
+      "nameKey": "gpu:rtx4060:8gb:zotac:white",
+      "urlKey": "gpu:rtx4060:8gb:zotac:white",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "reported_out_of_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_47",
+      "productName": "MICRO AMD RYZEN 5 5600XT S/VIDEO C/COOLER BOX AM4 SUPERIOR AL 5600",
+      "storeId": "katech",
+      "url": "https://katech.com.ar/producto/procesador-ryzen-5-5600xt-am4/",
+      "ageHours": 109.26,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "cpu:ryzen55600xt",
+      "urlKey": "cpu:ryzen55600xt",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_48",
+      "productName": "Memoria Corsair DDR5 32GB (2x16GB) 6000MHz Vengeance CL36 Black Intel XMP 3.0 / AMD EXPO",
+      "storeId": "armytech",
+      "url": "https://www.armytech.com.ar/memorias/5113-memoria-ram-ddr5-32gb-2x16gb-6000mhz-corsair-vengeance-rgb-black-cl30-amd-intel.html",
+      "ageHours": 421.68,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "ram:corsair:vengeance:32gb:ddr5:na:unk",
+      "urlKey": "ram:corsair:vengeance:32gb:ddr5:na:unk",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "unknown_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_49",
+      "productName": "VGA Gigabyte GeForce RTX 4060 AERO OC 8G White (3661)",
+      "storeId": "maxtecno",
+      "url": "https://maxtecno.com.ar/producto/vga-gigabyte-geforce-rtx-4060-aero-oc-8g-white-3661/",
+      "ageHours": 3623.85,
+      "legacyComparisonStockEligible": false,
+      "existingKeyRelation": "equal",
+      "nameKey": "gpu:rtx4060:na:gigabyte:white",
+      "urlKey": "gpu:rtx4060:na:gigabyte:white",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer",
+        "reported_out_of_stock"
+      ],
+      "verifiedAtSource": false
+    },
+    {
+      "id": "offer_50",
+      "productName": "MICRO AMD RYZEN 5 5600XT S/VIDEO C/COOLER BOX AM4 SUPERIOR AL 5600",
+      "storeId": "goldentechstore",
+      "url": "https://goldentechstore.com.ar/producto/procesador-amd-am4-ryzen-5-5600xt/",
+      "ageHours": 109.25,
+      "legacyComparisonStockEligible": true,
+      "existingKeyRelation": "equal",
+      "nameKey": "cpu:ryzen55600xt",
+      "urlKey": "cpu:ryzen55600xt",
+      "hardIdentityConflict": false,
+      "jev": null,
+      "disposition": "recheck",
+      "reasons": [
+        "stale_offer"
+      ],
+      "verifiedAtSource": false
+    }
+  ]
+}

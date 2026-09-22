@@ -34,6 +34,7 @@ export interface DbProductPriceRow {
   installment_count: number | null;
   installment_amount: number | string | null;
   last_updated: string | null;
+  identity_review?: unknown;
 }
 
 export interface DbProductRow {

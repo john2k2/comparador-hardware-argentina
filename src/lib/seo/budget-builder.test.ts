@@ -62,6 +62,18 @@ const starterCatalog = [
 ];
 
 describe('buildBudgetFromCatalog', () => {
+  it('puede priorizar una PC completa sobre una CPU de generación más reciente', () => {
+    const products = [
+      listed('older-cpu', 'AMD Ryzen 5 3600', 'procesadores', 100000),
+      listed('current-cpu', 'AMD Ryzen 7 5700X3D', 'procesadores', 400000),
+      ...starterCatalog.filter((item) => item.category !== 'procesadores'),
+    ];
+    const built = buildBudgetFromCatalog({ budget: 650000, products, preferComplete: true });
+    expect(built.slots.cpu?.productId).toBe('older-cpu');
+    expect(Object.keys(built.slots)).toHaveLength(7);
+    expect(built.total).toBeLessThanOrEqual(650000);
+  });
+
   it('no mezcla un Ryzen AM4 con una mother AM5', () => {
     const built = buildBudgetFromCatalog({
       budget: 1_000_000,

@@ -102,7 +102,7 @@ export function trackProductSelection(params: {
   brand?: string;
   price?: number;
   position: number;
-  surface: 'search_results' | 'home_featured' | 'home_recent' | 'home_price_drop' | 'home_popular' | 'related_products';
+  surface: 'search_results' | 'home_featured' | 'home_recent' | 'home_price_drop' | 'home_popular' | 'related_products' | 'store_landing';
 }): void {
   if (!isGA4Available()) return;
 
@@ -200,6 +200,31 @@ export function trackBudgetBuilder(params: {
     currency: 'ARS',
     value: params.budget,
     budget_source: params.source,
+    send_to: GA4_MEASUREMENT_ID,
+  });
+}
+
+export type PcBuilderAction = 'component_selected' | 'offer_selected' | 'saved' | 'restored'
+  | 'share_link' | 'share_whatsapp' | 'download' | 'reset' | 'shared_opened'
+  | 'refresh_requested' | 'refresh_result';
+
+/** Mide acciones explícitas, sin enviar el enlace ni el contenido del presupuesto. */
+export function trackPcBuilderAction(params: {
+  action: PcBuilderAction;
+  componentCount: number;
+  complete: boolean;
+  slot?: string;
+  status?: string;
+  updatedCount?: number;
+}): void {
+  if (!isGA4Available()) return;
+  window.gtag('event', 'pc_builder_action', {
+    builder_action: params.action,
+    selected_components: params.componentCount,
+    build_complete: params.complete,
+    ...(params.slot ? { component_slot: params.slot } : {}),
+    ...(params.status ? { refresh_status: params.status } : {}),
+    ...(params.updatedCount !== undefined ? { updated_offers: params.updatedCount } : {}),
     send_to: GA4_MEASUREMENT_ID,
   });
 }

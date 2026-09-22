@@ -1,6 +1,7 @@
 import { stores as staticStores } from '@/lib/scrapers/static-data';
 import { computeComparableStorePriceStats } from '@/lib/price-utils';
 import { sanitizeProduct } from '@/lib/product-sanitizer';
+import { readIdentityReview } from '@/lib/quality/offer-identity';
 import type { Product } from '@/lib/types';
 import { toDate, toNumber, toStockStatus } from '@/lib/persistence/product-read-helpers';
 import type { DbProductRow } from '@/lib/persistence/product-read-types';
@@ -27,7 +28,9 @@ export function mapDbProduct(row: DbProductRow): Product {
             interest: false,
           }
         : null,
-      lastUpdated: toDate(price.last_updated),
+      // La falta de fecha no representa una observación de hoy.
+      lastUpdated: price.last_updated && Number.isFinite(Date.parse(price.last_updated)) ? new Date(price.last_updated) : new Date(0),
+      identityReview: readIdentityReview(price.identity_review),
     };
   });
 

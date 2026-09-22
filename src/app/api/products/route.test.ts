@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Product } from '@/lib/types';
 
+vi.mock('server-only', () => ({}));
+
 const mockGetSharedCache = vi.fn();
 const mockSetSharedCache = vi.fn();
 const mockGetSnapshotProductById = vi.fn();

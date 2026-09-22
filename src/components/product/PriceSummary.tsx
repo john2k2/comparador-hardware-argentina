@@ -1,7 +1,8 @@
 'use client';
 
 import { PriceDisplay, InstallmentPicker } from '@/components/functional';
-import { formatPriceARS } from '@/lib/price-utils';
+import { computeComparableStorePriceStats, formatPriceARS } from '@/lib/price-utils';
+import { needsIdentityReview } from '@/lib/quality/offer-identity';
 import type { Product, ProductPrice } from '@/lib/types';
 
 type PriceSummaryProps = {
@@ -26,14 +27,30 @@ type PriceSummaryProps = {
 export function PriceSummary({
   product,
   merchantPrices,
-  lowestComparablePrice,
-  highestComparablePrice,
   selectedInstallment,
   onSelectInstallment,
 }: PriceSummaryProps) {
-  const bestPrice = merchantPrices[0] ?? product.prices.find((price) => price.price === lowestComparablePrice);
+  const { comparablePrices: eligiblePrices, lowest: lowestComparablePrice, highest: highestComparablePrice } = computeComparableStorePriceStats(
+    merchantPrices.filter((price) => !needsIdentityReview(price, product) && (price.stock === 'in-stock' || price.stock === 'low-stock')),
+  );
+  if (eligiblePrices.length === 0) {
+    return (
+      <div className="bg-card border-4 border-border p-4 md:p-6 pixel-shadow">
+        <h2 className="text-[12px] font-bold uppercase mb-3 text-accent">OFERTAS POR CORROBORAR</h2>
+        <p className="text-[10px] leading-relaxed">Todavía no hay una oferta disponible con identidad apta para comparar. Podés consultar las condiciones en cada tienda.</p>
+      </div>
+    );
+  }
+  const bestPrice = eligiblePrices[0];
   const installments = bestPrice?.installment ? [bestPrice.installment] : [];
-  const storesCompared = merchantPrices.length;
+  // Una actualización puede cambiar la mejor tienda: no reutilizar cuotas de la oferta anterior.
+  const currentInstallment = selectedInstallment && installments.some((installment) => (
+    installment.count === selectedInstallment.count
+    && installment.amount === selectedInstallment.amount
+    && installment.totalAmount === selectedInstallment.totalAmount
+    && installment.interest === selectedInstallment.interest
+  )) ? selectedInstallment : null;
+  const storesCompared = eligiblePrices.length;
   const priceSpread = Math.max(0, highestComparablePrice - lowestComparablePrice);
   const spreadPercent = highestComparablePrice > 0
     ? Math.round((priceSpread / highestComparablePrice) * 100)
@@ -68,10 +85,12 @@ export function PriceSummary({
 
       <div className="bg-muted border-4 border-border p-4 md:p-6 pixel-shadow flex flex-col gap-4 min-w-0">
         <div>
-          <p className="text-[10px] uppercase font-bold text-foreground/80 mb-2">MEJOR PRECIO DETECTADO</p>
+          <p className="text-[10px] uppercase font-bold text-foreground/80 mb-2">
+            {currentInstallment ? `TOTAL EN ${currentInstallment.count} CUOTAS` : 'MEJOR PRECIO DETECTADO'}
+          </p>
           <PriceDisplay
-            price={selectedInstallment ? selectedInstallment.totalAmount : (bestPrice?.price ?? lowestComparablePrice)}
-            originalPrice={bestPrice?.originalPrice}
+            price={currentInstallment ? currentInstallment.totalAmount : bestPrice.price}
+            originalPrice={currentInstallment ? undefined : bestPrice.originalPrice}
             size="lg"
           />
         </div>
@@ -79,6 +98,7 @@ export function PriceSummary({
         {installments.length > 0 && (
           <div className="pt-4 border-t-4 border-border border-dashed">
             <InstallmentPicker
+              key={`${bestPrice.storeId}:${bestPrice.url}:${bestPrice.price}:${JSON.stringify(bestPrice.installment)}`}
               installments={installments}
               currentPrice={bestPrice?.price ?? lowestComparablePrice}
               onSelect={onSelectInstallment}

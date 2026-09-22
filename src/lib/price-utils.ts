@@ -3,12 +3,15 @@
 // ============================================
 
 import type { InstallmentInfo, PriceHistoryPoint, ProductPrice } from './types';
+import type { OfferIdentityReview } from './quality/offer-identity';
 
 type PriceLike = { price: number };
 type StorePriceLike = PriceLike & {
   storeId: string;
   lastUpdated?: Date | string | number;
   stock?: string | null;
+  url?: string;
+  identityReview?: OfferIdentityReview;
 };
 
 // Umbrales para deteccion de outliers en precios
@@ -137,6 +140,12 @@ export function preferStorePrice<T extends StorePriceLike>(existing: T, candidat
 
   if (existingUnavailable !== candidateUnavailable) {
     return candidateUnavailable ? existing : candidate;
+  }
+
+  const existingPending = Boolean(existing.identityReview && (existing.identityReview.status !== 'consistent' || existing.identityReview.subject?.url !== existing.url));
+  const candidatePending = Boolean(candidate.identityReview && (candidate.identityReview.status !== 'consistent' || candidate.identityReview.subject?.url !== candidate.url));
+  if (existingPending !== candidatePending) {
+    return candidatePending ? existing : candidate;
   }
 
   if (candidate.price !== existing.price) {

@@ -74,6 +74,8 @@ jobs:
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           CATALOG_REFRESH_CRON_SECRET: ${{ secrets.CATALOG_REFRESH_CRON_SECRET }}
           DISABLE_INTERNAL_BACKGROUND_REFRESH: '1'
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          ENABLE_JEV_OFFER_REVIEW: ${{ vars.ENABLE_JEV_OFFER_REVIEW || '0' }}
         run: |
           set -euo pipefail
           npm run dev -- --hostname 127.0.0.1 --port 3101 > "$RUNNER_TEMP/catalog-refresh-runtime.log" 2>&1 &

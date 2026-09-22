@@ -1,0 +1,61 @@
+{
+  "evaluatedAtDate": "2026-09-21",
+  "request": {
+    "state": "Proyecto público: comparador de hardware argentino con scrapers, catálogo persistido, búsqueda por modelo/variantes y un armador de PC. Objetivo: aumentar precisión verificable y permitir presupuestos confiables con bajo costo. Esta evaluación es asesoría, no una instrucción de ejecutar cambios.\nEvidencia inspeccionada 21/09/2026:\n- Las búsquedas públicas usan catálogo/cache y registran demanda pendiente; un job diario procesa maxQueries=1. No hay Jev integrado en src.\n- Búsqueda RTX 4060: 25 resultados; respuesta DB-STALE. Una ficha titulada \"Placa De Video Gigabyte Rtx 4060 Eagle Oc Ice 8gb (white)\" tiene oferta XT-PC ARS684710 fechada 24/06/2026 cuyo URL apunta a RTX5060.\n- Se abrió ese destino: h1 \"PLACA DE VIDEO GeForce RTX 5060 8GB GIGABYTE EAGLE OC\", precio especial ARS866390.04 para débito/transferencia/efectivo; SKU VGA2910. La contradicción 4060/5060 puede ser rechazada con reglas; el origen histórico del error no se investigó.\n- Fragmento de disponibilidad de esa página extraído del HTML sin ejecutar JS ni distinguir elementos ocultos: \"Stock alto en la web\", \"Envío a domicilio\", \"Retiro programado\", \"Sin stock en el local\", \"Momentaneamente este producto no está disponible\", botón \"Comprar ahora\". No se validó checkout ni API stock. Ningún dato confirma qué fragmento está activo en pantalla.\n- Algunos scrapers infieren in-stock por existencia del resultado. Ya hay reglas de precio positivo, stock y descarte de outliers. Timestamp de producto y de cada oferta son distintos.\n- Ya existe selección por presupuesto ARS y compatibilidad parcial basada en títulos. El costo/latencia de Jev en este dominio y su tasa real de error no se midieron.\nConsideramos experimentos medibles de 50 casos revisados, sin cambiar aún resultados públicos. Los hard constraints de SKU, precio, stock, frescura y compatibilidad serán reglas; ninguna confianza del modelo equivaldrá a una observación en tienda.",
+    "questions": {
+      "pilot": {
+        "type": "choice",
+        "instructions": "Elegí el primer experimento acotado de Jev con mayor valor incremental para reducir errores de información en este estado del proyecto. Considerá dónde las reglas existentes dejan juicio semántico pendiente; no asumas capacidades de navegar ni extraer precios que Jev no tiene.",
+        "criteria": {
+          "semantic_qa": "Evaluación offline de casos ambiguos restantes de identidad/variante y contradicciones en fragmentos extraídos, después de reglas; comparar con etiquetas revisadas y abstenerse.",
+          "query_intent": "Clasificar intención de la búsqueda o perfil de uso del presupuesto entre opciones cerradas antes de consultar catálogo.",
+          "build_ranking": "Elegir entre configuraciones que ya pasaron verificaciones duras, según preferencia de uso del visitante.",
+          "postpone": "Postergar todo experimento de Jev hasta que se repare y mida la frescura del catálogo; concentrar este ciclo exclusivamente en datos."
+        }
+      },
+      "stock_evidence": {
+        "type": "choice",
+        "instructions": "Clasificá la conclusión de disponibilidad online que permite el fragmento concreto de la página XT-PC descrito en el estado. Usá sólo esa evidencia, sin suponer visibilidad, checkout, APIs ni actualización.",
+        "criteria": {
+          "available": "La evidencia permite afirmar disponibilidad online actual sin contradicciones pendientes.",
+          "unavailable": "La evidencia permite afirmar falta de disponibilidad online actual sin contradicciones pendientes.",
+          "ambiguous": "Hay señales contradictorias o sin contexto de visibilidad; se necesita resolver la fuente antes de afirmar disponibilidad."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "jev-1.13.0",
+    "answers": {
+      "pilot": {
+        "type": "choice",
+        "probabilities": {
+          "query_intent": 0,
+          "build_ranking": 0,
+          "semantic_qa": 0.99,
+          "postpone": 0.01
+        },
+        "confidence": 0.99,
+        "choice": "semantic_qa"
+      },
+      "stock_evidence": {
+        "type": "choice",
+        "probabilities": {
+          "ambiguous": 1,
+          "available": 0,
+          "unavailable": 0
+        },
+        "confidence": 1,
+        "choice": "ambiguous"
+      }
+    },
+    "usage": {
+      "input_tokens": 1216,
+      "output_tokens": 101
+    },
+    "provider": "TypeSafe AI",
+    "advisory_only": true,
+    "notice": "Model judgments depend on the supplied context and options. Confidence is not proof of correctness. Verify facts and make the final decision independently."
+  },
+  "limitations": "Una consulta asesoría, sin benchmark de exactitud y sin integración de producción."
+}

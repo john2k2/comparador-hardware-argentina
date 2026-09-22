@@ -1,0 +1,23 @@
+{
+  "reviewKind": "blind_assistant_text_review",
+  "scope": "Comparación de productName y URL antes de consultar Jev. No es revisión humana ni verificación de la ficha viva, SKU, precio o stock.",
+  "selection": "16 casos seleccionados intencionalmente entre 50 ofertas para cubrir coincidencias, conflictos e incertidumbre; no representa una muestra aleatoria de precisión.",
+  "labels": [
+    { "id": "offer_02", "expected": "identity_consistent", "reason": "Ryzen 5 5600 y AM4 coinciden; video/cooler adicionales no contradicen el nombre." },
+    { "id": "offer_10", "expected": "identity_consistent", "reason": "Coinciden RTX 4060, OC Low Profile y 8G." },
+    { "id": "offer_12", "expected": "identity_consistent", "reason": "Coinciden Patriot Viper Venom, 32GB 2x16GB, RGB, 6000MHz y CL30." },
+    { "id": "offer_27", "expected": "identity_consistent", "reason": "Coinciden Adata Premier, DDR5, 32GB, 5600MHz y CL46." },
+    { "id": "offer_36", "expected": "identity_consistent", "reason": "Coinciden Predator Vesta II, 32GB 2x16GB, 6000MHz, RGB y CL36." },
+    { "id": "offer_49", "expected": "identity_consistent", "reason": "Coinciden Gigabyte RTX 4060 AERO OC 8G White y código 3661." },
+    { "id": "offer_01", "expected": "identity_conflict", "reason": "RTX 4060 en nombre frente a RTX 5060 en URL." },
+    { "id": "offer_03", "expected": "identity_conflict", "reason": "CL30 en nombre frente a CL36 en URL; la URL además indica BULK OUTLET." },
+    { "id": "offer_09", "expected": "identity_conflict", "reason": "Viper Venom 6000MHz frente a Viper Elite 5 5600MHz." },
+    { "id": "offer_15", "expected": "identity_conflict", "reason": "Viper Venom 6000MHz frente a Viper Xtreme 5 7000MHz." },
+    { "id": "offer_18", "expected": "identity_conflict", "reason": "5600MHz en nombre frente a 4800MHz en URL." },
+    { "id": "offer_30", "expected": "identity_conflict", "reason": "Predator Vesta II 6000MHz frente a Lexar 5600MHz." },
+    { "id": "offer_42", "expected": "identity_conflict", "reason": "Corsair Vengeance CL36 frente a CL38." },
+    { "id": "offer_04", "expected": "identity_uncertain", "reason": "URL no confirma Ice/White; omisión no demuestra variante distinta." },
+    { "id": "offer_24", "expected": "identity_uncertain", "reason": "URL no confirma familia Premier, CL46 ni código exacto." },
+    { "id": "offer_29", "expected": "identity_uncertain", "reason": "3.5GHz frente a 4.4GHz sin contexto de base/turbo; modelo y socket coinciden." }
+  ]
+}

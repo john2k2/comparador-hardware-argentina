@@ -1,5 +1,6 @@
 import { getComparableStorePrices } from '@/lib/price-utils';
 import type { ProductPrice } from '@/lib/types';
+import { needsIdentityReview } from '@/lib/quality/offer-identity';
 
 export type ComparisonSidePricing = {
   prices: ProductPrice[];
@@ -18,8 +19,9 @@ export type ComparisonPricing = {
 };
 
 function inStockComparable(prices: ProductPrice[] | undefined): ProductPrice[] {
-  return getComparableStorePrices(prices ?? [])
-    .filter((price) => price.price > 0 && price.stock !== 'out-of-stock')
+  // Filtrar antes de deduplicar: una oferta pendiente más barata no debe ocultar otra válida.
+  return getComparableStorePrices((prices ?? []).filter((price) => !needsIdentityReview(price)))
+    .filter((price) => price.price > 0 && (price.stock === 'in-stock' || price.stock === 'low-stock'))
     .sort((a, b) => a.price - b.price);
 }
 

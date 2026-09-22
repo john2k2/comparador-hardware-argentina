@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('server-only', () => ({}));
+
 const mockGetSharedCache = vi.fn();
 const mockSetSharedCache = vi.fn();
 const mockCheckRateLimit = vi.fn();
@@ -270,7 +272,17 @@ describe('/api/search route', () => {
     expect(payload.pagination.total).toBe(1);
     expect(payload.products[0]?.id).toBe('live-cpu');
     expect(response.headers.get('X-Search-Cache')).toBe('CATEGORY-MISS-DB');
-    expect(mockResolveLiveProductsList).toHaveBeenCalledWith('procesadores', undefined, expect.any(Function));
+    expect(mockResolveLiveProductsList).toHaveBeenCalledWith('procesadores', undefined, expect.any(Function), false);
+  });
+
+  it('habilita revisión de ofertas sólo al propagar un refresh autenticado', async () => {
+    vi.stubEnv('INTERNAL_REFRESH_SECRET', 'internal-refresh-test-secret');
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest('http://localhost/api/search?category=procesadores&bypassDb=1&refresh=1', {
+      headers: { 'x-internal-refresh': 'internal-refresh-test-secret' },
+    }));
+    expect(response.status).toBe(200);
+    expect(mockResolveLiveProductsList).toHaveBeenCalledWith('procesadores', undefined, expect.any(Function), true);
   });
 
   it('queues public production demand instead of scraping stores on a catalog miss', async () => {

@@ -151,6 +151,7 @@ export type Database = {
       }
       product_prices: {
         Row: {
+          identity_review: Json | null
           created_at: string
           id: string
           installment_amount: number | null
@@ -166,6 +167,7 @@ export type Database = {
           url: string
         }
         Insert: {
+          identity_review?: Json | null
           created_at?: string
           id?: string
           installment_amount?: number | null
@@ -181,6 +183,7 @@ export type Database = {
           url: string
         }
         Update: {
+          identity_review?: Json | null
           created_at?: string
           id?: string
           installment_amount?: number | null

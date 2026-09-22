@@ -1,0 +1,76 @@
+name: Requested offer refresh
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '2-57/5 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: catalog-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh-requested:
+    if: vars.ENABLE_ON_DEMAND_REFRESH == '1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # No instalar dependencias ni ejecutar scrapers cuando la cola está vacía.
+      - name: Check pending requests
+        id: queue
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+          from datetime import datetime, timezone
+          from urllib.parse import urlencode
+          base = os.environ['SUPABASE_URL'].rstrip('/')
+          key = os.environ['SUPABASE_SECRET_KEY']
+          query = urlencode({'select': 'id', 'status': 'eq.queued', 'expires_at': 'gt.' + datetime.now(timezone.utc).isoformat(), 'limit': '1'})
+          request = urllib.request.Request(base + '/rest/v1/requested_offer_refreshes?' + query, headers={'apikey': key, 'Authorization': 'Bearer ' + key})
+          with urllib.request.urlopen(request, timeout=15) as response:
+              pending = bool(json.load(response))
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('pending=' + str(pending).lower() + '\n')
+          PY
+      - uses: actions/checkout@v4
+        if: steps.queue.outputs.pending == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.queue.outputs.pending == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        if: steps.queue.outputs.pending == 'true'
+        run: npm ci
+      - name: Refresh queued offers
+        if: steps.queue.outputs.pending == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          CATALOG_REFRESH_CRON_SECRET: ${{ secrets.CATALOG_REFRESH_CRON_SECRET }}
+          CATALOG_REQUESTED_RUNNER: '1'
+          DISABLE_INTERNAL_BACKGROUND_REFRESH: '1'
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          ENABLE_JEV_OFFER_REVIEW: ${{ vars.ENABLE_JEV_OFFER_REVIEW || '0' }}
+        run: |
+          set -euo pipefail
+          npm run dev -- --hostname 127.0.0.1 --port 3101 > "$RUNNER_TEMP/requested-refresh.log" 2>&1 &
+          RUNTIME_PID=$!
+          trap 'kill "$RUNTIME_PID" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --silent --fail --max-time 5 'http://127.0.0.1:3101/api/categories' > /dev/null; then break; fi
+            sleep 1
+          done
+          # Un máximo de dos presupuestos por ejecución; cada uno tiene hasta ocho ofertas.
+          for batch in 1 2; do
+            curl --silent --show-error --fail --max-time 480 \
+              -X POST -H "Authorization: Bearer $CATALOG_REFRESH_CRON_SECRET" \
+              'http://127.0.0.1:3101/api/admin/catalog-refresh/requested'
+          done

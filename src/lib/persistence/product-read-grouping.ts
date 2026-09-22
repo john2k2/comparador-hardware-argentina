@@ -10,6 +10,7 @@ import {
 } from '@/lib/product-identity';
 import { matchesSearchQueryIntent, normalizeSearchText, sortProductsBySearchRelevance } from '@/lib/search/search-ranking';
 import type { Product } from '@/lib/types';
+import { needsIdentityReview } from '@/lib/quality/offer-identity';
 import type { ProductSort } from '@/lib/persistence/product-read-types';
 
 const DEDUPE_STOPWORDS = new Set([
@@ -247,7 +248,10 @@ export function recalculateProductPrices(product: Product, allowedStoreIds?: Set
 
   if (filteredPrices.length === 0) return null;
 
-  const stats = computeComparableStorePriceStats(filteredPrices);
+  const scopedPrices = filteredPrices.map((price) => price.identityReview?.status === 'consistent' && needsIdentityReview(price, product)
+    ? { ...price, identityReview: { ...price.identityReview, status: 'needs-review' as const, reason: 'insufficient-evidence' as const } }
+    : price);
+  const stats = computeComparableStorePriceStats(scopedPrices);
 
   return {
     ...product,

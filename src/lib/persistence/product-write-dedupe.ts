@@ -33,11 +33,13 @@ type PriceSignatureInput = {
   stock: 'in-stock' | 'low-stock' | 'out-of-stock' | 'unknown';
   installment_count: number | null;
   installment_amount: number | null;
+  identity_review?: unknown;
 };
 
 type PriceExistingState = {
   state_signature: string | null;
   last_updated: string | null;
+  identity_review?: unknown;
 };
 
 function hashPayload(parts: unknown[]): string {
@@ -136,6 +138,9 @@ export function planPriceRowPersistence(
     return { stateSignature, shouldUpsert: true, changed: true };
   }
 
-  const shouldUpsert = shouldTouchFreshness(existingRow.last_updated, now, PRICE_TOUCH_INTERVAL_MS);
+  // Persistir la revisión aunque el precio no cambie, sin inventar un evento de historial.
+  const reviewChanged = nextRow.identity_review !== undefined
+    && JSON.stringify(nextRow.identity_review) !== JSON.stringify(existingRow.identity_review ?? null);
+  const shouldUpsert = reviewChanged || shouldTouchFreshness(existingRow.last_updated, now, PRICE_TOUCH_INTERVAL_MS);
   return { stateSignature, shouldUpsert, changed: false };
 }

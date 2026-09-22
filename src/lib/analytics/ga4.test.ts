@@ -140,4 +140,47 @@ describe('ga4 analytics helpers', () => {
       cta_id: 'contact_pc_advisory_email',
     }));
   });
+
+  it('tracks a PC builder action with bounded fields and no free-form payload', async () => {
+    const { trackPcBuilderAction } = await import('./ga4');
+
+    trackPcBuilderAction({
+      action: 'refresh_result',
+      componentCount: 8,
+      complete: false,
+      slot: 'gpu',
+      status: 'partial',
+      updatedCount: 3,
+    });
+
+    expect(gtag).toHaveBeenCalledWith('event', 'pc_builder_action', {
+      builder_action: 'refresh_result',
+      selected_components: 8,
+      build_complete: false,
+      component_slot: 'gpu',
+      refresh_status: 'partial',
+      updated_offers: 3,
+      send_to: 'G-TEST123',
+    });
+    const payload = gtag.mock.calls[0]?.[2] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty('url');
+    expect(payload).not.toHaveProperty('payload');
+    expect(payload).not.toHaveProperty('text');
+    expect(payload).not.toHaveProperty('message');
+  });
+
+  it('does not throw or emit a PC builder action when GA4 is unavailable', async () => {
+    const { trackPcBuilderAction } = await import('./ga4');
+
+    vi.stubGlobal('window', {});
+    expect(() => trackPcBuilderAction({ action: 'saved', componentCount: 2, complete: false })).not.toThrow();
+    expect(gtag).not.toHaveBeenCalled();
+
+    vi.resetModules();
+    vi.stubEnv('NEXT_PUBLIC_GA4_MEASUREMENT_ID', '');
+    vi.stubGlobal('window', { gtag });
+    const withoutMeasurementId = await import('./ga4');
+    expect(() => withoutMeasurementId.trackPcBuilderAction({ action: 'restored', componentCount: 2, complete: false })).not.toThrow();
+    expect(gtag).not.toHaveBeenCalled();
+  });
 });

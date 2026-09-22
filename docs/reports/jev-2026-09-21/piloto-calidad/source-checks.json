@@ -1,0 +1,79 @@
+{
+  "checks": [
+    {
+      "id": "offer_03",
+      "checkedAt": "2026-09-21T23:21:46.052Z",
+      "status": 200,
+      "url": "https://compragamer.com/producto/Memoria_Patriot_DDR5_32GB_2x16GB_6000MHz_Viper_Venom_RGB_CL36_XMP_3_0_AMD_EXPO_BULK_OUTLET_20483",
+      "finalUrl": "https://compragamer.com/producto/Memoria_Patriot_DDR5_32GB_2x16GB_6000MHz_Viper_Venom_RGB_CL36_XMP_3_0_AMD_EXPO_BULK_OUTLET_20483",
+      "durationMs": 923,
+      "title": "COMPRA GAMER",
+      "h1": [],
+      "description": "La mayor variedad de productos, al mejor precio y la mejor financiación. Envíos a todo el país",
+      "jsonLd": [],
+      "snippets": [],
+      "htmlBytes": 84391
+    },
+    {
+      "id": "offer_24",
+      "checkedAt": "2026-09-21T23:21:48.085Z",
+      "status": 200,
+      "url": "https://www.scphardstore.com/producto/memoria-ram-ddr5-adata-32gb-5600mhz/",
+      "finalUrl": "https://www.scphardstore.com/producto/memoria-ram-ddr5-adata-32gb-5600mhz/",
+      "durationMs": 2032,
+      "title": "Memoria RAM DDR5 ADATA 32GB 5600MHz – SCP HARDSTORE",
+      "h1": [
+        "Memoria RAM DDR5 ADATA 32GB 5600MHz"
+      ],
+      "description": null,
+      "jsonLd": [],
+      "snippets": [
+        "son vinculantes. Descripción del Producto Memoria RAM DDR5 ADATA 32GB 5600MHz Exclusivo WebSKU: MEM709 Precio SCPecial $ 876.968,10 Precio sin impuestos nacionales: $ 793.636,29 Válido únicamente para transferencia, efectivo y dep",
+        "vo Web $ 145.028,56 Añadir al carrito Memoria RAM DDR5 ADATA XPG 16GB 5600MHz Armax Black RGB CL46 Entrega Inmediata $ 508.776,68 Añadir al carrito Memoria RAM DDR5 KINGSTON 32GB 6400MHz Fury Beast AMD Expo CL32 Exclusivo Web $ 1."
+      ],
+      "htmlBytes": 279795
+    },
+    {
+      "id": "offer_29",
+      "checkedAt": "2026-09-21T23:21:49.295Z",
+      "status": 200,
+      "url": "https://www.maximus.com.ar/Producto/Micro-AMD-Ryzen-5-5600-44-Ghz-AM4/ITEM=10680/maximus.aspx?PN=100-100000927BOX",
+      "finalUrl": "https://www.maximus.com.ar/Producto/Micro-AMD-Ryzen-5-5600-44-Ghz-AM4/ITEM=10680/maximus.aspx?PN=100-100000927BOX",
+      "durationMs": 1209,
+      "title": "Micro AMD Ryzen 5 5600 4.4 Ghz AM4 | Maximus",
+      "h1": [
+        "Artículo sin stock",
+        ""
+      ],
+      "description": "Micro AMD Ryzen 5 5600 4.4 Ghz AM4 sin stock por el momento en Maximus Gaming Hardware. Dejanos tu email y te avisamos cuando vuelva a ingresar.",
+      "jsonLd": [],
+      "snippets": [],
+      "htmlBytes": 501411
+    },
+    {
+      "id": "offer_42",
+      "checkedAt": "2026-09-21T23:21:49.464Z",
+      "status": 200,
+      "url": "https://compragamer.com/producto/Memoria_Corsair_DDR5_32GB_2x16GB_6000MHz_Vengeance_CL38_AMD_EXPO_Intel_XMP_3_0_19028",
+      "finalUrl": "https://compragamer.com/producto/Memoria_Corsair_DDR5_32GB_2x16GB_6000MHz_Vengeance_CL38_AMD_EXPO_Intel_XMP_3_0_19028",
+      "durationMs": 168,
+      "title": "COMPRA GAMER",
+      "h1": [],
+      "description": "La mayor variedad de productos, al mejor precio y la mejor financiación. Envíos a todo el país",
+      "jsonLd": [],
+      "snippets": [],
+      "htmlBytes": 84391
+    }
+  ],
+  "note": "Lecturas HTTP puntuales; sin checkout, cookies de sesión ni actualización del catálogo.",
+  "manufacturerEvidence": [
+    {
+      "retrievedOn": "2026-09-21",
+      "sourceUrl": "https://www.amd.com/es/support/downloads/drivers.html/processors/ryzen/ryzen-5000-series/amd-ryzen-5-5600.html",
+      "product": "AMD Ryzen 5 5600",
+      "baseClockGHz": 3.5,
+      "maxBoostClockGHz": 4.4,
+      "interpretation": "La diferencia de frecuencias es compatible con base/turbo; por sí sola no establece un conflicto de modelo. No confirma stock, precio o equivalencia comercial de la oferta."
+    }
+  ]
+}

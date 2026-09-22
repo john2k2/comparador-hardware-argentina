@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-09-21T23:59:44.288Z",
+  "fixture": "synthetic-local-only",
+  "desktop": "1360x1100",
+  "mobile": "390x844",
+  "pendingVisible": true,
+  "pendingNotWinner": true,
+  "installmentInteraction": true,
+  "emptyComparableState": true,
+  "mobileHorizontalOverflow": false,
+  "pageErrors": [],
+  "installmentTotalLabel": true,
+  "cashPriceRestored": true
+}

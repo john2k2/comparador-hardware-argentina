@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import { ArmarPcView } from '@/components/seo/ArmarPcView';
-import { resolveCustomBudgetSlots } from '@/lib/seo/budget-builder';
 import { parseBuilderBudgetPesos } from '@/lib/seo/budget-query';
-import { loadGuideCatalogProducts } from '@/lib/seo/guide-catalog';
 import { resolveArmarPcMetadata } from '@/lib/seo/landing-metadata';
 
 type Props = {
@@ -23,9 +21,5 @@ export default async function ArmarPcPage({ searchParams }: Props) {
   const submitted = Array.isArray(rawPesos)
     ? rawPesos.some((value) => value.trim().length > 0)
     : Boolean(rawPesos?.trim());
-  const resolved = budget
-    ? resolveCustomBudgetSlots(budget, await loadGuideCatalogProducts())
-    : null;
-
-  return <ArmarPcView budget={budget} submitted={submitted} resolved={resolved} />;
+  return <ArmarPcView budget={budget} submitted={submitted} />;
 }

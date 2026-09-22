@@ -10,6 +10,7 @@ import {
 } from '@/lib/persistence/product-write-dedupe';
 import { selectStaleProductPricesToPrune } from '@/lib/persistence/stale-product-prices';
 import { deleteProductPriceIdentities } from '@/lib/persistence/stale-product-prices-maintenance';
+import { logger } from '@/lib/logger';
 
 const UPSERT_CHUNK_SIZE = 250;
 const HISTORY_CHUNK_SIZE = 500;
@@ -50,6 +51,7 @@ type ProductPriceRow = {
   last_updated: string;
   updated_at: string;
   state_signature: string;
+  identity_review?: NonNullable<Product['prices'][number]['identityReview']> | null;
 };
 
 type PriceHistoryRow = {
@@ -75,6 +77,7 @@ type PersistedProductPriceStateRow = {
   url: string;
   state_signature: string | null;
   last_updated: string | null;
+  identity_review?: unknown;
 };
 
 type StoreRow = {
@@ -177,7 +180,7 @@ async function readPersistedCatalogState(
         .in('id', batch),
       supabase
         .from('product_prices')
-        .select('product_id,store_id,url,state_signature,last_updated')
+        .select('*')
         .in('product_id', batch),
     ]);
 
@@ -303,6 +306,7 @@ export async function persistProductsSnapshot(products: Product[]): Promise<void
         stock,
         installment_count: installmentCount,
         installment_amount: installmentAmount,
+        ...(price.identityReview ? { identity_review: price.identityReview } : {}),
       } as const;
       const pricePlan = planPriceRowPersistence(priceRowBase, undefined, now);
       const key = buildProductPriceRowKey({
@@ -362,6 +366,7 @@ export async function persistProductsSnapshot(products: Product[]): Promise<void
       stock: row.stock,
       installment_count: row.installment_count,
       installment_amount: row.installment_amount,
+      identity_review: row.identity_review,
     }, pricesByKey.get(key), now);
     row.state_signature = plan.stateSignature;
 
@@ -396,10 +401,26 @@ export async function persistProductsSnapshot(products: Product[]): Promise<void
     priceRows.map((row) => row.store_id),
   );
 
-  for (const batch of chunk(priceRows, UPSERT_CHUNK_SIZE)) {
-    const { error } = await supabase.from('product_prices').upsert(batch, {
+  // PostgREST reúne las columnas del lote: separar las filas sin revisión evita
+  // que una actualización de precio borre una revisión previa por un null implícito.
+  const priceBatches = [
+    priceRows.filter((row) => row.identity_review !== undefined),
+    priceRows.filter((row) => row.identity_review === undefined),
+  ].flatMap((rows) => chunk(rows, UPSERT_CHUNK_SIZE));
+  for (const batch of priceBatches) {
+    let { error } = await supabase.from('product_prices').upsert(batch, {
       onConflict: 'product_id,store_id,url',
     });
+    if (error && ['42703', 'PGRST204'].includes(error.code) && error.message.includes('identity_review')) {
+      // Despliegue escalonado: conservar el catálogo si todavía falta la columna aditiva.
+      logger.warn('Offer identity review persistence requires database migration');
+      const legacyBatch = batch.map((row) => {
+        const legacyRow = { ...row };
+        delete legacyRow.identity_review;
+        return legacyRow;
+      });
+      ({ error } = await supabase.from('product_prices').upsert(legacyBatch, { onConflict: 'product_id,store_id,url' }));
+    }
     if (error) {
       throw new Error(`Error upsert product_prices: ${error.message}`);
     }

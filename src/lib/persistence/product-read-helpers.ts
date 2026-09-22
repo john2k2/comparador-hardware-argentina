@@ -3,6 +3,8 @@ import type { HardwareCategory, StockStatus } from '@/lib/types';
 export const DEFAULT_LIMIT = 240;
 export const MAX_LIMIT = 1200;
 export const EMPTY_RESULT_ERROR_CODES = new Set(['PGRST116']);
+// El mapper expone campos explícitos; el comodín anidado permite desplegar antes
+// de agregar identity_review sin romper las lecturas del catálogo existente.
 export const PRODUCT_SELECT_FIELDS = `
   id,
   name,
@@ -24,16 +26,7 @@ export const PRODUCT_SELECT_FIELDS = `
   average_price,
   created_at,
   updated_at,
-  product_prices (
-    store_id,
-    url,
-    price,
-    original_price,
-    stock,
-    installment_count,
-    installment_amount,
-    last_updated
-  )
+  product_prices (*)
 `;
 
 export type SharedProductQueryFilters = {

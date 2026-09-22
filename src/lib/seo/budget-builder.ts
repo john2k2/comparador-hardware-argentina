@@ -185,11 +185,11 @@ function assemblePlatform(
   platform: PlatformId,
   budget: number,
   index: ReturnType<typeof indexCatalog>,
+  preferComplete = false,
 ): CatalogBuild | null {
   const [socket, ramGen] = platform.split('-') as [PcSocket, RamGen];
-  const cpuPool = cpuPoolForGaming(
-    index.cpus.filter((cpu) => cpu.socket === socket),
-  );
+  const matchingCpus = index.cpus.filter((cpu) => cpu.socket === socket);
+  const cpuPool = preferComplete ? matchingCpus : cpuPoolForGaming(matchingCpus);
   const mbPool = index.motherboards.filter((motherboard) => (
     motherboard.socket === socket && motherboard.ramGen === ramGen
   ));
@@ -317,12 +317,13 @@ function betterBuild(left: CatalogBuild, right: CatalogBuild): CatalogBuild {
 export function buildBudgetFromCatalog(input: {
   budget: number;
   products: Product[];
+  preferComplete?: boolean;
 }): CatalogBuild {
   const index = indexCatalog(input.products);
   const platforms = discoverPlatforms(index);
   let best: CatalogBuild | null = null;
   for (const platform of platforms) {
-    const assembled = assemblePlatform(platform, input.budget, index);
+    const assembled = assemblePlatform(platform, input.budget, index, input.preferComplete);
     if (!assembled) continue;
     best = best ? betterBuild(best, assembled) : assembled;
   }

@@ -4,6 +4,13 @@
 	"name": "comparador-hardware-argentina",
 	"workers_dev": true,
 	"preview_urls": true,
+	"keep_vars": true,
+	"vars": {
+		"DISABLE_INTERNAL_BACKGROUND_REFRESH": "1",
+		"DISABLE_LIVE_SCRAPING": "1",
+		"ENABLE_ON_DEMAND_REFRESH": "1",
+		"CATALOG_REQUESTED_RUNNER": "0"
+	},
 	"compatibility_date": "2026-09-05",
 	"compatibility_flags": [
 		"nodejs_compat",

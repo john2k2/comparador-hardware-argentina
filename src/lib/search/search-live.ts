@@ -2,6 +2,7 @@ import type { HardwareCategory, Product } from '@/lib/types';
 import { withAbortTimeout, withPromiseTimeout } from '@/lib/async/with-abort-timeout';
 import { withConcurrencyLimit } from '@/lib/async/concurrency';
 import { normalizeProductTitlesWithStats } from '@/lib/ai/normalize-products';
+import { reviewProductOffers } from '@/lib/ai/review-product-offers';
 import { snapshotProducts } from '@/lib/cache/search-snapshot';
 import {
   inferHardwareCategoryFromName,
@@ -40,6 +41,7 @@ type RunLiveSearchInput = {
   sortBy: SortBy;
   cacheKey: string;
   bypassDb: boolean;
+  authorizedRefresh?: boolean;
 };
 
 export async function runLiveSearch({
@@ -52,6 +54,7 @@ export async function runLiveSearch({
   sortBy,
   cacheKey,
   bypassDb,
+  authorizedRefresh = false,
 }: RunLiveSearchInput): Promise<{ payload: SearchApiResponse; normalizationSummaryNote: string | null }> {
   logger.info('Running live global search', {
     endpoint: '/api/search',
@@ -214,6 +217,8 @@ export async function runLiveSearch({
       product.prices.map((price) => price.url),
     ));
   }
+
+  liveProducts = await reviewProductOffers(liveProducts, { authorizedRefresh });
 
   if (sortBy === 'price-asc') {
     liveProducts.sort((a, b) => a.lowestPrice - b.lowestPrice);

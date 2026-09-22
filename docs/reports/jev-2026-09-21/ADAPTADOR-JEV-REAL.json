@@ -1,0 +1,28 @@
+{
+  "checkedAt": "2026-09-21T23:45:40.942Z",
+  "model": "jev-1.13.0",
+  "answers": [
+    {
+      "choice": "identity_consistent",
+      "confidence": 0.83,
+      "probabilities": {
+        "identity_conflict": 0.01,
+        "identity_consistent": 0.89,
+        "identity_uncertain": 0.1
+      }
+    },
+    {
+      "choice": "identity_consistent",
+      "confidence": 0.46,
+      "probabilities": {
+        "identity_conflict": 0.12,
+        "identity_consistent": 0.64,
+        "identity_uncertain": 0.24
+      }
+    }
+  ],
+  "usage": {
+    "input_tokens": 872,
+    "output_tokens": 95
+  }
+}
