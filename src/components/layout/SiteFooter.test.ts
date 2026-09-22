@@ -10,7 +10,9 @@ describe('SiteFooter', () => {
     expect(markup).not.toMatch(/<h2[\s>]/);
     expect(markup).toContain('Comparador Hardware');
     expect(markup).toContain('Categorias');
-    expect(markup).toContain('Tiendas');
+    expect(markup).toContain('Comparar');
+    expect(markup).toContain('/comparativa/comparar');
+    expect(markup).not.toContain('/tiendas');
     expect(markup).toContain('Informacion');
   });
 });

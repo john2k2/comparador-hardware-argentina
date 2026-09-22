@@ -162,6 +162,6 @@ export function resolveBackHref(fromParam: string | null): string {
   // falls back to the search page so a crafted `from` cannot become an open
   // redirect. `/comparar/` keeps its trailing slash so lookalike paths such as
   // `/comparardor-falso` are not accepted.
-  const allowed = decoded.startsWith('/search') || decoded.startsWith('/comparar/') || /^\/tiendas\/(maximus|venex|mexx)$/.test(decoded);
+  const allowed = decoded.startsWith('/search') || decoded.startsWith('/comparar/') || decoded === '/comparativa/comparar';
   return allowed ? decoded : '/search';
 }

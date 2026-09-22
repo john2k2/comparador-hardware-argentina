@@ -25,6 +25,17 @@ export default function ComparativasIndexPage() {
         </div>
       </header>
 
+      <section className="mb-8 border-4 border-primary bg-primary/10 p-5 pixel-shadow md:p-6">
+        <p className="text-[10px] font-bold text-muted-foreground">NUEVO COMPARADOR ABIERTO</p>
+        <h2 className="mt-2 text-[13px] font-bold text-primary">Elegí cualquier producto del catálogo</h2>
+        <p className="mt-3 text-[11px] font-mono leading-relaxed">
+          Compará dos componentes del mismo tipo por precio actual, ofertas, especificaciones y compatibilidad informada.
+        </p>
+        <Link href="/comparativa/comparar" className="mt-4 inline-flex min-h-11 items-center border-2 border-primary bg-primary px-4 text-[10px] font-bold text-primary-foreground hover:bg-primary/90">
+          ARMAR COMPARACIÓN →
+        </Link>
+      </section>
+
       <div className="grid md:grid-cols-2 gap-6">
         {COMPARISONS.map((comparison) => (
           <Link

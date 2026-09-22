@@ -4,7 +4,6 @@ import Link from 'next/link';
 import type { Store } from '@/lib/types';
 import { trackSponsoredStoreSelection } from '@/lib/analytics';
 import { CommercialDisclosure } from '@/components/functional/CommercialDisclosure';
-import { buildStoreLandingPath } from '@/lib/seo/store-landings';
 
 type SponsoredStoresSectionProps = {
   stores: Store[];
@@ -33,7 +32,7 @@ export function SponsoredStoresSection({ stores }: SponsoredStoresSectionProps) 
         {stores.map((store, index) => (
           <Link
             key={store.id}
-            href={buildStoreLandingPath(store.id)}
+            href={`/search?stores=${encodeURIComponent(store.id)}`}
             onClick={() => {
               trackSponsoredStoreSelection({
                 storeId: store.id,

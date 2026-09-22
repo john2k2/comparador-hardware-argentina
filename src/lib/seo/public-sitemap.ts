@@ -5,13 +5,11 @@ import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
 import { COMPARISONS } from '@/lib/seo/comparisons-data';
 import { BUDGET_GUIDES } from '@/lib/seo/budget-guides-data';
 import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
-import { getStoreLanding } from '@/lib/seo/store-landings';
 
 const EDITORIAL_LAST_MODIFIED = new Date(`${EDITORIAL_UPDATED_AT}T00:00:00.000Z`);
 
-export function buildPublicSitemapEntries(indexableStores: string[] = []): MetadataRoute.Sitemap {
+export function buildPublicSitemapEntries(): MetadataRoute.Sitemap {
   const staticEntries: MetadataRoute.Sitemap = [
-    { url: toAbsoluteUrl('/tiendas'), changeFrequency: 'weekly', priority: 0.7 },
     {
       url: toAbsoluteUrl('/'),
       changeFrequency: 'hourly',
@@ -40,6 +38,11 @@ export function buildPublicSitemapEntries(indexableStores: string[] = []): Metad
     {
       url: toAbsoluteUrl('/comparativa'),
       lastModified: EDITORIAL_LAST_MODIFIED,
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: toAbsoluteUrl('/comparativa/comparar'),
       changeFrequency: 'daily',
       priority: 0.9,
     },
@@ -84,8 +87,5 @@ export function buildPublicSitemapEntries(indexableStores: string[] = []): Metad
     priority: 0.85,
   }));
 
-  const storeEntries: MetadataRoute.Sitemap = [...new Set(indexableStores)].filter((id) => getStoreLanding(id)).map((id) => ({
-    url: toAbsoluteUrl(`/tiendas/${id}`), changeFrequency: 'daily', priority: 0.7,
-  }));
-  return [...staticEntries, ...categoryEntries, ...comparisonEntries, ...budgetGuideEntries, ...storeEntries];
+  return [...staticEntries, ...categoryEntries, ...comparisonEntries, ...budgetGuideEntries];
 }
