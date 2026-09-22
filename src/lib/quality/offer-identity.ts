@@ -89,9 +89,12 @@ export function hasExplicitIdentityConflict(evidence: IdentityEvidence): boolean
   if (parse) {
     const left = parse(evidence.name);
     const right = parse(evidence.offerText);
+    // “Ryzen 5600” omite el segmento 5; no contradice “Ryzen 5 5600”.
+    const omittedRyzenTier = left && right && (left.family === 'ryzen' || right.family === 'ryzen')
+      && /^ryzen[3579]?$/.test(left.family) && /^ryzen[3579]?$/.test(right.family);
     return Boolean(left && right && (left.number !== right.number
       || left.suffixes.join(' ') !== right.suffixes.join(' ')
-      || (left.family !== 'unknown' && right.family !== 'unknown' && left.family !== right.family)));
+      || (left.family !== 'unknown' && right.family !== 'unknown' && left.family !== right.family && !omittedRyzenTier)));
   }
   if (evidence.category !== 'memoria-ram') return false;
   // Sólo atributos explícitos en ambos textos. Una omisión no prueba contradicción.

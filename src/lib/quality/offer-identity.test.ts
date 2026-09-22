@@ -32,6 +32,8 @@ describe('offer identity evidence', () => {
   });
 
   it('detects explicit GPU chip and RAM timing conflicts while allowing omitted details', () => {
+    expect(hasExplicitIdentityConflict({ name: 'AMD Ryzen 5 5600', category: 'procesadores', offerText: 'AMD Ryzen 5600' })).toBe(false);
+    expect(hasExplicitIdentityConflict({ name: 'AMD Ryzen 5 5600', category: 'procesadores', offerText: 'AMD Ryzen 7 5600' })).toBe(true);
     expect(hasExplicitIdentityConflict({
       name: 'NVIDIA GeForce RTX 4060 8GB', category: 'tarjetas-graficas', offerText: 'nvidia geforce rtx 5060 8gb',
     })).toBe(true);
