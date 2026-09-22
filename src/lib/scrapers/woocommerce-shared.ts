@@ -77,7 +77,7 @@ async function scrapeWooPage(
   store: WooStore,
   category: HardwareCategory,
   options?: WooRequestOptions,
-): Promise<{ products: Product[]; nextPageUrl: string | null }> {
+): Promise<{ products: Product[]; nextPageUrl: string | null; isDetail?: boolean }> {
   let res = await fetch(url, {
     headers: {
       ...SCRAPE_HEADERS,
@@ -100,6 +100,13 @@ async function scrapeWooPage(
 
   const html = await res.text();
   const $ = cheerio.load(html);
+  // WooCommerce puede redirigir una búsqueda de un único resultado a su ficha.
+  // No recorrer sus recomendados como si fueran resultados de esa búsqueda.
+  if ($('body').hasClass('single-product') || $('h1.product_title').length > 0) {
+    const pageUrl = res.url || url;
+    const detail = parseWooProductDetail(html, pageUrl, store, category, slugFromScrapedUrl(pageUrl));
+    return { products: detail ? [detail] : [], nextPageUrl: null, isDetail: true };
+  }
   const products: Product[] = [];
 
   $('li.type-product, article.type-product, div.type-product').each((_, el) => {
@@ -134,7 +141,8 @@ async function scrapeWooPage(
     const anyPrice = $(el).find('.woocommerce-Price-amount bdi').first().text().trim();
     const rawAmount = $(el).find('span.amount bdi, span.amount').first().text().trim();
     const classPrice = $(el).find('.price, [class*="price"]').first().text().trim();
-    const priceText = insPrice || anyPrice || rawAmount || classPrice;
+    const storePrice = store.id === 'scphardstore' ? $(el).find('.scp-cat-card__price-current').first().text().trim() : '';
+    const priceText = storePrice || insPrice || anyPrice || rawAmount || classPrice;
     const price = parseScrapedArsPrice(priceText);
     if (price <= 0) return;
 
@@ -194,7 +202,7 @@ export async function scrapeWooPages(
       newProducts += 1;
     }
 
-    if (newProducts === 0) break;
+    if (newProducts === 0 || pageResult.isDetail) break;
 
     nextPageUrl = pageResult.nextPageUrl;
     if (!nextPageUrl && pageIndex < maxPages) {
@@ -226,13 +234,16 @@ export function parseWooProductDetail(
   const name =
     $('h1.product_title').first().text().trim() ||
     $('h1.entry-title').first().text().trim() ||
+    (store.id === 'scphardstore' ? $('h1.scp-single-product__title').first().text().trim() : '') ||
     $('h1[itemprop="name"]').first().text().trim();
   if (!name) return null;
 
   const insPrice = $('p.price ins .woocommerce-Price-amount bdi, .summary ins bdi').first().text().trim();
   const anyPrice = $('p.price .woocommerce-Price-amount bdi, .summary .woocommerce-Price-amount bdi, .price bdi').first().text().trim();
   const metaPrice = $('meta[property="product:price:amount"]').attr('content') || '';
-  const price = parseWooPrice(insPrice || anyPrice || metaPrice);
+  // El importe sin impuestos de SCP también usa las clases estándar de Woo.
+  const storePrice = store.id === 'scphardstore' ? $('.scp-price-main__current').first().text().trim() : '';
+  const price = parseWooPrice(storePrice || insPrice || anyPrice || metaPrice);
   if (price <= 0) return null;
 
   const imageRaw =
