@@ -27,8 +27,10 @@ export function SiteFooter() {
           <div>
             <p className={columnTitleClass}>Tiendas</p>
             <ul className="space-y-1 text-[11px] md:text-sm text-muted-foreground">
-              <li><Link href="/search?stores=mexx" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Mexx</Link></li>
-              <li><Link href="/search?stores=venex" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Venex</Link></li>
+              <li><Link href="/tiendas/mexx" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Mexx</Link></li>
+              <li><Link href="/tiendas/venex" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Venex</Link></li>
+              <li><Link href="/tiendas/maximus" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Maximus</Link></li>
+              <li><Link href="/tiendas" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Comparar por tienda</Link></li>
               <li><Link href="/search?stores=fullh4rd" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">FullH4rd</Link></li>
               <li><Link href="/search?stores=compragamer" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">CompraGamer</Link></li>
               <li><Link href="/search?stores=katech" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Katech</Link></li>

@@ -18,8 +18,7 @@ export default function GuiasIndexPage() {
           Guías de PC Gamer
         </h1>
         <p className="text-[11px] md:text-[12px] text-muted-foreground font-mono leading-relaxed">
-          Armá la mejor PC gamer según tu presupuesto. Componentes seleccionados 
-          por precio/calidad con precios actualizados de tiendas argentinas.
+          Elegí componentes según tu presupuesto y compará los precios registrados de tiendas argentinas.
         </p>
         <div className="mt-3">
           <EditorialUpdatedStamp isoDate={EDITORIAL_UPDATED_AT} />
@@ -32,9 +31,9 @@ export default function GuiasIndexPage() {
         </h2>
         <div className="space-y-3 text-[11px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono">
           <p>
-            Cada guía parte de un presupuesto en pesos argentinos. Las piezas se eligen del catálogo con stock
-            (el refresh es diario): mismo socket y generación de RAM, y una fuente que cubra el consumo estimado
-            del combo. No publicamos un SKU que no se pueda comprar hoy.
+            Cada guía parte de un presupuesto en pesos argentinos. Las piezas se eligen del catálogo con
+            disponibilidad informada. Revisá la fecha de cada oferta: el stock y el precio final se confirman
+            en el comercio. El armador permite revisar compatibilidad, piezas faltantes y costo de envío.
           </p>
           <p>
             Las builds incluyen siempre: procesador, motherboard, memoria RAM, tarjeta gráfica, almacenamiento,
@@ -43,10 +42,9 @@ export default function GuiasIndexPage() {
             entre sí. Si tenés dudas, consultá nuestra sección de comparativas o la página de contacto.
           </p>
           <p>
-            Los FPS de cada guía solo se publican cuando el procesador y la placa de video tienen oferta en stock
-            y coinciden con el combo editorial de esa página. Si el algoritmo arma otro combo comprable, no reciclamos esos números.
-            Para gaming 1080p, cualquier build de $1.000.000+ es suficiente. Para 1440p high refresh, recomendamos $2.000.000+.
-            Para 4K gaming, necesitás $3.000.000+ con GPU de gama alta.
+            El rendimiento depende del juego, la resolución, los ajustes y las piezas exactas.
+            Un monto en pesos no garantiza una cantidad de FPS. Contrastá las pruebas de la CPU y la GPU
+            elegidas y revisá sus fuentes antes de decidir.
           </p>
         </div>
       </section>
@@ -84,7 +82,7 @@ export default function GuiasIndexPage() {
           [ ARMA CON TU PRESUPUESTO ]
         </h2>
         <p className="text-[11px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono mb-4">
-          Si no te cierran los umbrales de $1M, $2M o $3M, ingresá un monto y armamos un combo con stock real.
+          Ingresá tu monto, ajustá cada pieza y compará ofertas. Podés compartir el armado o descargar el presupuesto sin crear una cuenta.
         </p>
         <Link
           href="/guia/armar"

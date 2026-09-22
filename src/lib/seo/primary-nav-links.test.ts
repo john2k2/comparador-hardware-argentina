@@ -4,6 +4,8 @@ import { PRIMARY_NAV_LINKS } from './primary-nav-links';
 describe('PRIMARY_NAV_LINKS', () => {
   it('publica el índice de precios junto a comparativas y guías', () => {
     expect(PRIMARY_NAV_LINKS.map((link) => link.href)).toEqual([
+      '/guia/armar',
+      '/tiendas',
       '/comparativa',
       '/guia',
       '/indice-precios-hardware',

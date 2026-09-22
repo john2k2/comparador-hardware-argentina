@@ -10,6 +10,7 @@ import { trackProductSelection } from '@/lib/analytics';
 import { computeComparableStorePriceStats, formatPriceARS } from '@/lib/price-utils';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import { freshnessLabel } from '@/lib/ui/freshness-label';
+import { needsIdentityReview } from '@/lib/quality/offer-identity';
 import type { Product } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { PriceDisplay } from './PriceDisplay';
@@ -23,7 +24,7 @@ export interface ProductCardProps {
   showStore?: boolean;
   className?: string;
   returnTo?: string | null;
-  surface?: 'search_results' | 'home_featured' | 'home_recent' | 'home_price_drop' | 'home_popular' | 'related_products';
+  surface?: 'search_results' | 'home_featured' | 'home_recent' | 'home_price_drop' | 'home_popular' | 'related_products' | 'store_landing';
   position?: number;
 }
 
@@ -53,11 +54,13 @@ export const ProductCard = React.memo(function ProductCard({
     priceDropAmount,
     priceDropPercent,
   } = useMemo(() => {
-    const comparableStats = computeComparableStorePriceStats(product.prices);
+    const comparableStats = computeComparableStorePriceStats(product.prices.filter((price) => (
+      !needsIdentityReview(price, product) && (price.stock === 'in-stock' || price.stock === 'low-stock')
+    )));
     const comparablePrices = comparableStats.comparablePrices;
     const comparableStoreCount = comparablePrices.length;
-    const lowestComparablePrice = comparableStats.lowest > 0 ? comparableStats.lowest : product.lowestPrice;
-    const bestPrice = comparablePrices[0] ?? product.prices.find((price) => price.price === lowestComparablePrice);
+    const lowestComparablePrice = comparableStats.lowest;
+    const bestPrice = comparablePrices[0];
     const hasDiscount = Boolean(bestPrice?.originalPrice && bestPrice.originalPrice > bestPrice.price);
     const discountPercent = hasDiscount
       ? Math.round((((bestPrice?.originalPrice ?? 0) - (bestPrice?.price ?? 0)) / (bestPrice?.originalPrice ?? 1)) * 100)
@@ -90,7 +93,7 @@ export const ProductCard = React.memo(function ProductCard({
   const productHref = returnTo
     ? `/product/${encodeURIComponent(product.id)}?from=${encodeURIComponent(returnTo)}`
     : `/product/${encodeURIComponent(product.id)}`;
-  const freshness = freshnessLabel((product.lastScrapedAt ?? product.updatedAt).getTime());
+  const freshness = freshnessLabel(bestPrice ? new Date(bestPrice.lastUpdated).getTime() : 0);
 
   return (
     <Link
@@ -149,17 +152,23 @@ export const ProductCard = React.memo(function ProductCard({
 
           {hasPriceDrop && (
             <p className="text-[8px] uppercase text-primary font-bold mb-2">
-              {`BAJO ${formatPriceARS(priceDropAmount)} (${priceDropPercent}%)`}
+              {`Descuento informado: ${formatPriceARS(priceDropAmount)} (${priceDropPercent}%)`}
             </p>
           )}
 
           <div className="mt-auto pt-3 border-t-2 border-muted">
-            <p className="text-[8px] uppercase text-foreground/80 mb-1">MEJOR PRECIO</p>
-            <PriceDisplay
-              price={lowestComparablePrice}
-              originalPrice={hasDiscount ? bestPrice?.originalPrice : undefined}
-              size="md"
-            />
+            {bestPrice ? (
+              <>
+                <p className="text-[8px] uppercase text-foreground/80 mb-1">MEJOR PRECIO</p>
+                <PriceDisplay
+                  price={lowestComparablePrice}
+                  originalPrice={hasDiscount ? bestPrice.originalPrice : undefined}
+                  size="md"
+                />
+              </>
+            ) : (
+              <p className="text-[9px] uppercase text-accent">Sin oferta disponible para comparar</p>
+            )}
           </div>
 
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-[8px] uppercase text-foreground/80 pt-2">

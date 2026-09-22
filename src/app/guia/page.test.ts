@@ -11,7 +11,8 @@ describe('GuiasIndexPage', () => {
     expect(markup).not.toContain('pc gamer barata argentina');
     expect(markup).not.toContain('pc gamer 1 millon');
     expect(markup).not.toMatch(/benchmarks reales/i);
-    expect(markup).toContain('oferta en stock');
+    expect(markup).toContain('disponibilidad informada');
+    expect(markup).toContain('no garantiza una cantidad de FPS');
     expect(markup).toContain('/guia/armar');
     expect(markup).toContain(`Actualizado: ${EDITORIAL_UPDATED_AT}`);
   });

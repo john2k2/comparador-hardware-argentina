@@ -3,6 +3,12 @@ import { buildPublicSitemapEntries } from './public-sitemap';
 import { EDITORIAL_UPDATED_AT } from './editorial-freshness';
 
 describe('public sitemap surface', () => {
+  it('incluye solo tiendas conocidas que pasaron el control del catálogo', () => {
+    const urls = buildPublicSitemapEntries(['maximus', 'maximus', 'inventada']).map((entry) => entry.url);
+    expect(urls.filter((url) => url.endsWith('/tiendas/maximus'))).toHaveLength(1);
+    expect(urls.some((url) => url.endsWith('/tiendas/venex') || url.endsWith('/tiendas/inventada'))).toBe(false);
+    expect(urls).toContain('https://www.comparador-hardware.com.ar/tiendas');
+  });
   it('only includes public static pages and category landings', () => {
     const entries = buildPublicSitemapEntries();
     const urls = entries.map((entry) => entry.url);

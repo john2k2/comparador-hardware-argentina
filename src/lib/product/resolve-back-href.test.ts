@@ -25,4 +25,11 @@ describe('resolveBackHref', () => {
     expect(resolveBackHref('/comparardor-falso')).toBe('/search');
     expect(resolveBackHref('javascript:alert(1)')).toBe('/search');
   });
+
+  it('vuelve a una tienda publicada sin aceptar rutas arbitrarias', () => {
+    expect(resolveBackHref('/tiendas/mexx')).toBe('/tiendas/mexx');
+    expect(resolveBackHref(encodeURIComponent('/tiendas/maximus'))).toBe('/tiendas/maximus');
+    expect(resolveBackHref('/tiendas/inventada')).toBe('/search');
+    expect(resolveBackHref('/tiendas/mexx/../../admin')).toBe('/search');
+  });
 });

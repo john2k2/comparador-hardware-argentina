@@ -169,7 +169,7 @@ export function Navigation() {
             </Link>
 
             {/* Navegación central */}
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden xl:flex items-center gap-1">
               {PRIMARY_NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
@@ -186,7 +186,7 @@ export function Navigation() {
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden min-h-11 min-w-11 px-3 py-2 border-2 border-border bg-card text-[8px] uppercase font-bold text-secondary inline-flex items-center justify-center gap-2 hover:bg-muted transition-colors"
+                className="xl:hidden min-h-11 min-w-11 px-3 py-2 border-2 border-border bg-card text-[8px] uppercase font-bold text-secondary inline-flex items-center justify-center gap-2 hover:bg-muted transition-colors"
                 aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
                 aria-expanded={isMobileMenuOpen}
                 aria-controls="mobile-primary-navigation"
@@ -251,7 +251,7 @@ export function Navigation() {
           </div>
 
           {/* Menú móvil desplegable */}
-          <div className={`md:hidden border-t-2 border-border bg-background ${isMobileMenuOpen ? '' : 'hidden'}`}>
+          <div className={`xl:hidden border-t-2 border-border bg-background ${isMobileMenuOpen ? '' : 'hidden'}`}>
               <nav id="mobile-primary-navigation" className="flex flex-col py-2">
                 {PRIMARY_NAV_LINKS.map((link) => (
                   <Link

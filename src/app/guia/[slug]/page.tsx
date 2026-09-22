@@ -14,6 +14,7 @@ import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
 import { GuideFpsPanel } from '@/components/seo/GuideFpsPanel';
 import { GuideComponentRows } from '@/components/seo/GuideComponentRows';
 import { AdvisoryCta } from '@/components/commercial/AdvisoryCta';
+import { BuilderCta } from '@/components/seo/BuilderCta';
 import Link from 'next/link';
 
 type Props = {
@@ -63,7 +64,7 @@ export default async function BudgetGuidePage({ params }: Props) {
           PC Gamer por {formatPriceARS(guide.budget)}
         </h1>
         <p className="text-[11px] md:text-[12px] text-muted-foreground font-mono leading-relaxed">
-          {guide.description} Las piezas salen de ofertas en stock: mismo socket y generación de RAM, y una fuente que cubra el consumo estimado del combo.
+          {guide.description} Las piezas salen del catálogo con disponibilidad informada por las tiendas. Revisá las fechas, los envíos y las comprobaciones pendientes antes de comprar.
         </p>
         <div className="mt-3">
           <EditorialUpdatedStamp isoDate={EDITORIAL_UPDATED_AT} />
@@ -83,10 +84,10 @@ export default async function BudgetGuidePage({ params }: Props) {
           </div>
           
           <div className="border-2 border-border p-4 text-center">
-            <div className="text-[10px] text-muted-foreground mb-1">TOTAL CON STOCK</div>
+            <div className="text-[10px] text-muted-foreground mb-1">TOTAL DE PIEZAS COTIZADAS</div>
             <div className="text-[16px] md:text-[24px] font-pixel text-primary break-words">{formatPriceARS(resolved.catalogTotal)}</div>
             <p className="mt-2 text-[10px] uppercase text-muted-foreground">
-              {resolved.inStockSlots} de {slotCount} partes comprables
+              {resolved.inStockSlots} de {slotCount} partes con oferta registrada
             </p>
           </div>
           
@@ -109,9 +110,11 @@ export default async function BudgetGuidePage({ params }: Props) {
         
         <GuideComponentRows slots={resolved} />
         <p className="mt-4 text-[10px] uppercase text-muted-foreground font-mono leading-relaxed">
-          Cada precio de catálogo sale de una tienda con stock. CPU, mother y RAM tienen que coincidir en socket y generación.
+          Cada precio corresponde a una oferta registrada. Confirmá stock y precio final en la tienda; CPU, mother y RAM deben coincidir en socket y generación.
         </p>
       </section>
+
+      <BuilderCta budget={guide.budget} />
 
       <div className="mb-8">
         <AdvisoryCta surface="budget_guide" />

@@ -14,6 +14,7 @@ import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { ComparisonBenchSources } from '@/components/seo/ComparisonBenchSources';
+import { BuilderCta } from '@/components/seo/BuilderCta';
 import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
 import Link from 'next/link';
 import type { HardwareCategory, Product } from '@/lib/types';
@@ -254,6 +255,7 @@ export default async function ComparisonPage({ params }: Props) {
       )}
 
       <ComparisonBenchSources sources={comparison.sources} />
+      <BuilderCta />
 
       {/* Conclusion */}
       <section className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow mb-8">

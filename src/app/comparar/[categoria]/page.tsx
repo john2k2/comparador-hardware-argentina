@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { SearchExperience } from '@/components/search/SearchExperience';
+import { BuilderCta } from '@/components/seo/BuilderCta';
 import { buildCategoryLandingState } from '@/lib/search/category-landing-state';
 import {
   listCategoryLandingSlugs,
@@ -29,5 +30,5 @@ export default async function CategoryLandingPage({ params }: CategoryLandingPro
     notFound();
   }
 
-  return <SearchExperience state={buildCategoryLandingState(category)} />;
+  return <><SearchExperience state={buildCategoryLandingState(category)} /><div className="container mx-auto px-4"><BuilderCta /></div></>;
 }
