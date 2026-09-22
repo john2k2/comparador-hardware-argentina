@@ -33,4 +33,15 @@ describe('compareProducts', () => {
     expect(result.leftPrice).toBeNull();
     expect(result.cheaperProductId).toBeNull();
   });
+
+  it('recomienda por rendimiento por peso cuando hay evidencia para ambos modelos', () => {
+    const result = compareProducts(
+      { ...product('RTX 4060', 400_000, {}, 'tarjetas-graficas'), model: 'RTX 4060' },
+      { ...product('RX 7600', 300_000, {}, 'tarjetas-graficas'), model: 'RX 7600' },
+    );
+    expect(result.leftBenchmark?.primaryScore).toBe(100);
+    expect(result.rightBenchmark?.primaryScore).toBe(94);
+    expect(result.valueWinnerProductId).toBe('RX 7600');
+    expect(result.recommendation).toContain('puntaje de referencia por peso');
+  });
 });

@@ -1,6 +1,7 @@
 import type { HardwareCategory, Product } from '@/lib/types';
 import { getComparableStorePrices } from '@/lib/price-utils';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
+import { findPerformanceBenchmark, type PerformanceBenchmark } from './performance-benchmarks';
 
 export const COMPARABLE_CATEGORIES: Array<{ id: HardwareCategory; label: string }> = [
   { id: 'procesadores', label: 'Procesadores' },
@@ -25,6 +26,10 @@ export type DynamicComparison = {
   evidence: string[];
   leftOffers: Array<{ store: string; price: number }>;
   rightOffers: Array<{ store: string; price: number }>;
+  leftBenchmark: PerformanceBenchmark | null;
+  rightBenchmark: PerformanceBenchmark | null;
+  valueWinnerProductId: string | null;
+  valueDifferencePercent: number | null;
   specificationRows: Array<{ label: string; left: string; right: string }>;
 };
 
@@ -93,6 +98,17 @@ export function compareProducts(left: Product, right: Product): DynamicCompariso
   const cheaperProductId = bothPriced && leftPrice !== rightPrice
     ? (leftPrice < rightPrice ? left.id : right.id)
     : null;
+  const leftBenchmark = findPerformanceBenchmark(left);
+  const rightBenchmark = findPerformanceBenchmark(right);
+  const bothBenchmarked = leftBenchmark && rightBenchmark && leftPrice && rightPrice;
+  const leftValue = bothBenchmarked ? leftBenchmark.primaryScore / leftPrice : null;
+  const rightValue = bothBenchmarked ? rightBenchmark.primaryScore / rightPrice : null;
+  const valueWinnerProductId = leftValue && rightValue && leftValue !== rightValue
+    ? (leftValue > rightValue ? left.id : right.id)
+    : null;
+  const valueDifferencePercent = leftValue && rightValue
+    ? Math.round((Math.abs(leftValue - rightValue) / Math.min(leftValue, rightValue)) * 100)
+    : null;
 
   let recommendation = 'No hay dos precios comparables en stock para declarar cuál conviene hoy.';
   if (bothPriced && leftPrice === rightPrice) {
@@ -100,6 +116,10 @@ export function compareProducts(left: Product, right: Product): DynamicCompariso
   } else if (cheaperProductId) {
     const cheaper = cheaperProductId === left.id ? left : right;
     recommendation = `${cheaper.name} es la opción de menor precio hoy. La diferencia por sí sola no prueba mejor rendimiento por peso.`;
+  }
+  if (valueWinnerProductId && valueDifferencePercent != null) {
+    const winner = valueWinnerProductId === left.id ? left : right;
+    recommendation = `${winner.name} entrega aproximadamente ${valueDifferencePercent}% más puntaje de referencia por peso al precio relevado hoy.`;
   }
 
   return {
@@ -111,10 +131,16 @@ export function compareProducts(left: Product, right: Product): DynamicCompariso
     recommendation,
     evidence: [
       ...compatibilityEvidence(left.category, left, right),
-      'La recomendación usa ofertas en stock cuya identidad fue validada; no inventa benchmarks faltantes.',
+      leftBenchmark && rightBenchmark
+        ? `El valor usa ${leftBenchmark.primaryLabel.toLowerCase()} y ofertas en stock cuya identidad fue validada.`
+        : 'No hay benchmarks compatibles para ambos modelos; la recomendación no inventa rendimiento faltante.',
     ],
     leftOffers: leftComparableOffers.slice(0, 5).map((offer) => ({ store: offer.storeName || offer.storeId, price: offer.price })),
     rightOffers: rightComparableOffers.slice(0, 5).map((offer) => ({ store: offer.storeName || offer.storeId, price: offer.price })),
+    leftBenchmark,
+    rightBenchmark,
+    valueWinnerProductId,
+    valueDifferencePercent,
     specificationRows: buildSpecificationRows(left, right),
   };
 }

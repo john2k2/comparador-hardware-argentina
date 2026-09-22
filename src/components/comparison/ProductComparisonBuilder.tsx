@@ -120,6 +120,37 @@ export function ProductComparisonBuilder() {
             </table>
           </section>
 
+          {(category === 'procesadores' || category === 'tarjetas-graficas') && (
+            <section className="border-4 border-border bg-card p-5 pixel-shadow">
+              <h2 className="mb-4 text-[12px] font-bold text-primary">[ RENDIMIENTO Y VALOR ]</h2>
+              {comparison.leftBenchmark && comparison.rightBenchmark ? (
+                <>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {([['A', comparison.leftBenchmark, comparison.leftPrice], ['B', comparison.rightBenchmark, comparison.rightPrice]] as const).map(([label, benchmark, price]) => (
+                      <div key={label} className="border-2 border-border p-4">
+                        <p className="text-[9px] font-bold text-muted-foreground">PRODUCTO {label} · {benchmark.model}</p>
+                        <p className="mt-2 text-[18px] font-pixel text-primary">{benchmark.primaryScore.toLocaleString('es-AR')}</p>
+                        <p className="mt-1 text-[9px] font-mono">{benchmark.primaryLabel}</p>
+                        {benchmark.secondaryScore != null && <p className="mt-2 text-[10px] font-mono">{benchmark.secondaryScore.toLocaleString('es-AR')} · {benchmark.secondaryLabel}</p>}
+                        {price && <p className="mt-3 text-[10px] font-bold">{(benchmark.primaryScore / price * 100_000).toFixed(1)} puntos por cada $100.000</p>}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-4 text-[10px] font-mono leading-relaxed text-muted-foreground">{comparison.leftBenchmark.methodology}</p>
+                  <div className="mt-3 space-y-1 text-[10px] font-mono">
+                    {Array.from(new Map([comparison.leftBenchmark, comparison.rightBenchmark].map((benchmark) => [benchmark.sourceUrl, benchmark])).values()).map((benchmark) => (
+                      <p key={benchmark.sourceUrl}>Fuente: <a href={benchmark.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{benchmark.sourceName}</a> · consulta {benchmark.measuredAt}</p>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="border-2 border-dashed border-border p-4">
+                  <p className="text-[10px] font-mono leading-relaxed">Todavía no tenemos un benchmark verificable para ambos modelos exactos. Mostramos precios y especificaciones, pero no declaramos rendimiento por peso.</p>
+                </div>
+              )}
+            </section>
+          )}
+
           <section className="border-4 border-border bg-card p-5 pixel-shadow">
             <h2 className="mb-4 text-[12px] font-bold text-primary">[ OFERTAS VÁLIDAS RELEVADAS ]</h2>
             <div className="grid gap-5 md:grid-cols-2">
