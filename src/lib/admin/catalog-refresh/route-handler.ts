@@ -69,6 +69,17 @@ async function handleRefresh(request: NextRequest) {
 
     const targets = plan.targets.slice(0, input.maxQueries);
     const results = await runTargets(request, targets, input.stores);
+    // Una demanda sin resultados no debe consumir indefinidamente el único turno diario.
+    // Se permite una sola consulta adicional, con modelos distintos según el día.
+    if (input.mode === 'demand' && results.length > 0 && results.every((item) => item.error === 'NO_PRODUCTS_REFRESHED')) {
+      const recoveryQueries = ['ryzen 5600', 'rtx 5060', 'ddr4 16gb'];
+      const query = recoveryQueries[Math.floor(Date.now() / 86_400_000) % recoveryQueries.length];
+      if (!targets.some((target) => target.value.toLowerCase() === query)) {
+        results.push(...await runTargets(request, [{ kind: 'query', value: query }], input.stores));
+        plan.fallbackApplied = true;
+        plan.fallbackReason = 'demand-returned-no-products';
+      }
+    }
     const failedTargets = results.filter((item) => !item.ok);
 
     if (failedTargets.length > 0) {

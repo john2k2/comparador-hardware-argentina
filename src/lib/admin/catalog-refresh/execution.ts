@@ -86,9 +86,9 @@ export async function runInternalRefresh(
           kind: target.kind,
           status: response.status,
           productCount: responseProducts.length,
-          ok: response.ok,
+          ok: response.ok && responseProducts.length > 0,
           error: response.ok
-            ? undefined
+            ? (responseProducts.length > 0 ? undefined : 'NO_PRODUCTS_REFRESHED')
             : (typeof payload?.error === 'string' ? payload.error : `HTTP_${response.status}`),
         };
       }

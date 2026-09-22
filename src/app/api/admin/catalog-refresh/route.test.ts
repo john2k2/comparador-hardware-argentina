@@ -196,4 +196,18 @@ describe('/api/admin/catalog-refresh route', () => {
     expect(payload.results).toEqual([]);
     expect(mockRunTargets).not.toHaveBeenCalled();
   });
+
+  it('hace una sola recuperación cuando la demanda no actualiza productos y conserva el fallo inicial', async () => {
+    mockEnsureAccess.mockResolvedValue('cron');
+    mockParseRefreshInput.mockResolvedValue({ mode: 'demand', categories: [], stores: ['mexx'], maxQueries: 1, staleMinutes: 180 });
+    mockBuildRefreshPlan.mockResolvedValue({ source: 'public-demand', targets: [{ kind: 'query', value: 'rx 6950 xt' }], fallbackApplied: false, fallbackReason: null });
+    mockRunTargets.mockResolvedValueOnce([{ target: 'rx 6950 xt', kind: 'query', status: 200, productCount: 0, ok: false, error: 'NO_PRODUCTS_REFRESHED' }])
+      .mockResolvedValueOnce([{ target: 'recovery', kind: 'query', status: 200, productCount: 3, ok: true }]);
+    const { POST } = await import('./route');
+    const payload = await (await POST(new NextRequest('http://localhost/api/admin/catalog-refresh?mode=demand', { method: 'POST' }))).json();
+    expect(mockRunTargets).toHaveBeenCalledTimes(2);
+    expect(mockRunTargets.mock.calls[1][1]).toHaveLength(1);
+    expect(mockRunTargets.mock.calls[1][2]).toEqual(['mexx']);
+    expect(payload).toMatchObject({ fallbackApplied: true, fallbackReason: 'demand-returned-no-products', totalTargets: 2, okTargets: 1, failedTargets: 1 });
+  });
 });

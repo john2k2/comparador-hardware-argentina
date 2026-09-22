@@ -260,7 +260,15 @@ jobs:
           print(f"Refresh summary: source={source} totalTargets={total} okTargets={ok} failedTargets={failed}")
 
           if isinstance(failed, int) and failed > 0:
-              sys.exit(1)
+              recovered_empty_demand = (
+                  payload.get('fallbackReason') == 'demand-returned-no-products'
+                  and isinstance(ok, int) and ok > 0
+                  and all(item.get('ok') or item.get('error') == 'NO_PRODUCTS_REFRESHED' for item in payload.get('results', []))
+              )
+              if recovered_empty_demand:
+                  print('::warning::La demanda no obtuvo productos; la consulta de recuperación sí obtuvo resultados. Revisar el resumen por tienda.')
+              else:
+                  sys.exit(1)
           PY
 
       - name: Stop local refresh runtime

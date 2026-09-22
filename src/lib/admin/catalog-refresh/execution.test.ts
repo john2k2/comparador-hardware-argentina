@@ -14,6 +14,14 @@ vi.mock('@/lib/logger', () => ({
 }));
 
 describe('catalog-refresh execution', () => {
+  it('no presenta una respuesta vacía como productos actualizados ni la reintenta', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ products: [] }) });
+    vi.stubGlobal('fetch', fetchMock);
+    const { runInternalRefresh } = await import('./execution');
+    const result = await runInternalRefresh(new NextRequest('http://localhost/api/admin/catalog-refresh'), { kind: 'query', value: 'modelo-sin-ofertas' }, []);
+    expect(result).toMatchObject({ ok: false, productCount: 0, error: 'NO_PRODUCTS_REFRESHED' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
   beforeEach(() => {
     vi.useFakeTimers();
     mockLoggerWarn.mockReset();
