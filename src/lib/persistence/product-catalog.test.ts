@@ -1,9 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Product } from '@/lib/types';
 
-const mocks = vi.hoisted(() => ({ priceUpsert: vi.fn(), productUpsert: vi.fn(), historyInsert: vi.fn(), loggerWarn: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  getServerClient: vi.fn(),
+  priceUpsert: vi.fn(),
+  productUpsert: vi.fn(),
+  historyInsert: vi.fn(),
+  loggerWarn: vi.fn(),
+}));
 vi.mock('@/lib/server/supabase-server', () => ({
-  getServerSupabaseServiceClient: () => ({
+  getServerSupabaseServiceClient: mocks.getServerClient,
+}));
+vi.mock('@/lib/catalog/catalog-metadata', () => ({ buildCatalogMetadata: async (products: Product[]) => products }));
+vi.mock('@/lib/persistence/stale-product-prices-maintenance', () => ({ deleteProductPriceIdentities: vi.fn() }));
+vi.mock('@/lib/logger', () => ({ logger: { warn: mocks.loggerWarn } }));
+
+import { persistProductsSnapshot } from './product-catalog';
+
+function createServiceClient() {
+  return {
     from: (table: string) => ({
       select: () => ({ in: () => table === 'price_alerts'
         ? { eq: async () => ({ data: [], error: null }) }
@@ -11,13 +26,8 @@ vi.mock('@/lib/server/supabase-server', () => ({
       upsert: table === 'product_prices' ? mocks.priceUpsert : mocks.productUpsert,
       insert: mocks.historyInsert,
     }),
-  }),
-}));
-vi.mock('@/lib/catalog/catalog-metadata', () => ({ buildCatalogMetadata: async (products: Product[]) => products }));
-vi.mock('@/lib/persistence/stale-product-prices-maintenance', () => ({ deleteProductPriceIdentities: vi.fn() }));
-vi.mock('@/lib/logger', () => ({ logger: { warn: mocks.loggerWarn } }));
-
-import { persistProductsSnapshot } from './product-catalog';
+  };
+}
 
 function product(withReview = true): Product {
   const name = 'AMD Ryzen 5 5600';
@@ -35,6 +45,7 @@ function product(withReview = true): Product {
 describe('persistencia de revisión de ofertas', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.getServerClient.mockImplementation(createServiceClient);
     mocks.priceUpsert.mockResolvedValue({ error: null });
     mocks.productUpsert.mockResolvedValue({ error: null });
     mocks.historyInsert.mockResolvedValue({ error: null });
@@ -75,5 +86,14 @@ describe('persistencia de revisión de ofertas', () => {
     mocks.priceUpsert.mockResolvedValueOnce({ error: { code: '42501', message: 'permission denied' } });
     await expect(persistProductsSnapshot([product()])).rejects.toThrow('permission denied');
     expect(mocks.priceUpsert).toHaveBeenCalledTimes(2);
+  });
+
+  it('falla en refresh requerido si faltan credenciales de servicio y mantiene no-op legado', async () => {
+    mocks.getServerClient.mockReturnValue(null);
+
+    await expect(persistProductsSnapshot([product()], { requirePersistence: true }))
+      .rejects.toThrow('Catalog refresh requires Supabase service credentials');
+    await expect(persistProductsSnapshot([product()], { requirePersistence: false })).resolves.toBeUndefined();
+    expect(mocks.priceUpsert).not.toHaveBeenCalled();
   });
 });

@@ -14,6 +14,8 @@ import { logger } from '@/lib/logger';
 
 const UPSERT_CHUNK_SIZE = 250;
 const HISTORY_CHUNK_SIZE = 500;
+// El consumidor espera la escritura completa antes de confirmar una actualización.
+export const REFRESH_PERSISTENCE_TIMEOUT_MS = 45_000;
 
 type ProductRow = {
   id: string;
@@ -241,9 +243,14 @@ async function ensurePersistedStores(
   }
 }
 
-export async function persistProductsSnapshot(products: Product[]): Promise<void> {
+export async function persistProductsSnapshot(
+  products: Product[],
+  options: { requirePersistence?: boolean } = {},
+): Promise<void> {
+  if (products.length === 0) return;
   const supabase = getServerSupabaseServiceClient();
-  if (!supabase || products.length === 0) {
+  if (!supabase) {
+    if (options.requirePersistence) throw new Error('Catalog refresh requires Supabase service credentials');
     return;
   }
 

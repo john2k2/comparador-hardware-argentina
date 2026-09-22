@@ -272,22 +272,22 @@ describe('/api/search route', () => {
     expect(payload.pagination.total).toBe(1);
     expect(payload.products[0]?.id).toBe('live-cpu');
     expect(response.headers.get('X-Search-Cache')).toBe('CATEGORY-MISS-DB');
-    expect(mockResolveLiveProductsList).toHaveBeenCalledWith('procesadores', undefined, expect.any(Function), false);
+    expect(mockResolveLiveProductsList).toHaveBeenCalledWith('procesadores', undefined, expect.any(Function), false, new Set());
   });
 
   it('habilita revisión de ofertas sólo al propagar un refresh autenticado', async () => {
     vi.stubEnv('INTERNAL_REFRESH_SECRET', 'internal-refresh-test-secret');
     const { GET } = await import('./route');
-    const response = await GET(new NextRequest('http://localhost/api/search?category=procesadores&bypassDb=1&refresh=1', {
+    const response = await GET(new NextRequest('http://localhost/api/search?category=procesadores&stores=mexx,venex,maximus&bypassDb=1&refresh=1', {
       headers: { 'x-internal-refresh': 'internal-refresh-test-secret' },
     }));
     expect(response.status).toBe(200);
-    expect(mockResolveLiveProductsList).toHaveBeenCalledWith('procesadores', undefined, expect.any(Function), true);
+    expect(mockResolveLiveProductsList).toHaveBeenCalledWith('procesadores', undefined, expect.any(Function), true, new Set(['mexx', 'venex', 'maximus']));
   });
 
   it('queues public production demand instead of scraping stores on a catalog miss', async () => {
     vi.stubEnv('NODE_ENV', 'production');
-    vi.stubEnv('DISABLE_LIVE_SCRAPING', '');
+    vi.stubEnv('DISABLE_LIVE_SCRAPING', '1');
     vi.stubEnv('ENABLE_PUBLIC_LIVE_SCRAPING', '');
 
     const { GET } = await import('./route');

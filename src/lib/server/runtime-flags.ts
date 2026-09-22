@@ -1,7 +1,6 @@
 export function isStableRuntimeMode(): boolean {
   return (
-    process.env.DISABLE_LIVE_SCRAPING === '1'
-    || process.env.E2E_STABLE_MODE === '1'
+    process.env.E2E_STABLE_MODE === '1'
     || process.env.CI_E2E === '1'
   );
 }
@@ -21,7 +20,7 @@ type LiveScrapingContext = {
  * `ENABLE_PUBLIC_LIVE_SCRAPING=1`.
  */
 export function shouldSkipLiveScraping(context: LiveScrapingContext = {}): boolean {
-  if (isStableRuntimeMode()) return true;
+  if (process.env.DISABLE_LIVE_SCRAPING === '1' || isStableRuntimeMode()) return true;
   if (context.internalRefresh || context.privilegedBypass) return false;
 
   if (process.env.NODE_ENV !== 'production') return false;

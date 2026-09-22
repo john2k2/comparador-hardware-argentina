@@ -3,7 +3,7 @@ import { reviewProductOffers } from '@/lib/ai/review-product-offers';
 import { withAbortTimeout, withPromiseTimeout } from '@/lib/async/with-abort-timeout';
 import { hardwareCategoryToSearchTerm } from '@/lib/catalog/hardware-categories';
 import { snapshotProducts } from '@/lib/cache/search-snapshot';
-import { persistProductsSnapshot } from '@/lib/persistence/product-catalog';
+import { persistProductsSnapshot, REFRESH_PERSISTENCE_TIMEOUT_MS } from '@/lib/persistence/product-catalog';
 import { normalizeProductContent } from '@/lib/products/normalize-product-content';
 import { buildCoreStoreCategoryUrls } from '@/lib/products/products-list-targets';
 import {
@@ -49,9 +49,15 @@ export async function fetchCompraGamerByQuery(
 export async function resolveLiveProductsList(
   categorySlug: HardwareCategory,
   query: string | undefined,
-  observeSource: ObserveSource,
+  observeSourceRunner: ObserveSource,
   authorizedRefresh = false,
+  selectedStoreIds?: Set<string>,
 ): Promise<Product[]> {
+  const storeIds = selectedStoreIds?.size ? selectedStoreIds : undefined;
+  const observeSource: ObserveSource = (storeId, storeName, run) => {
+    if (storeIds && !storeIds.has(storeId)) return Promise.resolve([]);
+    return observeSourceRunner(storeId, storeName, run);
+  };
   const categorySearchTerm = hardwareCategoryToSearchTerm(categorySlug);
   const nonWooQuery = query || categorySearchTerm;
   const coreStoreUrls = buildCoreStoreCategoryUrls(categorySlug, query);
@@ -90,56 +96,56 @@ export async function resolveLiveProductsList(
       : observeSource('xtpc', 'Xt-PC', (signal) => fetchXtpcCategory(categorySlug, signal)),
     query
       ? withAbortTimeout(
-        (signal) => fetchAllFoxtiendaSearch(query, categorySlug, '/api/products', undefined, { signal }),
+        (signal) => fetchAllFoxtiendaSearch(query, categorySlug, '/api/products', storeIds, { signal }),
         SCRAPER_TIMEOUT_MS,
         'foxtienda',
       ).catch(() => [] as Product[])
       : withAbortTimeout(
-        (signal) => fetchAllFoxtiendaCategory(categorySlug, '/api/products', undefined, { signal }),
+        (signal) => fetchAllFoxtiendaCategory(categorySlug, '/api/products', storeIds, { signal }),
         SCRAPER_TIMEOUT_MS,
         'foxtienda',
       ).catch(() => [] as Product[]),
     query
       ? withAbortTimeout(
-        (signal) => fetchAllQloudSearch(query, categorySlug, '/api/products', undefined, { signal }),
+        (signal) => fetchAllQloudSearch(query, categorySlug, '/api/products', storeIds, { signal }),
         SCRAPER_TIMEOUT_MS,
         'qloud',
       ).catch(() => [] as Product[])
       : withAbortTimeout(
-        (signal) => fetchAllQloudCategory(categorySlug, '/api/products', undefined, { signal }),
+        (signal) => fetchAllQloudCategory(categorySlug, '/api/products', storeIds, { signal }),
         SCRAPER_TIMEOUT_MS,
         'qloud',
       ).catch(() => [] as Product[]),
     query
       ? withAbortTimeout(
-        (signal) => fetchAllPrestashopSearch(query, categorySlug, '/api/products', undefined, { signal }),
+        (signal) => fetchAllPrestashopSearch(query, categorySlug, '/api/products', storeIds, { signal }),
         SCRAPER_TIMEOUT_MS,
         'prestashop',
       ).catch(() => [] as Product[])
       : withAbortTimeout(
-        (signal) => fetchAllPrestashopCategory(categorySlug, '/api/products', undefined, { signal }),
+        (signal) => fetchAllPrestashopCategory(categorySlug, '/api/products', storeIds, { signal }),
         SCRAPER_TIMEOUT_MS,
         'prestashop',
       ).catch(() => [] as Product[]),
     query
       ? withAbortTimeout(
-        (signal) => fetchAllTiendaNubeSearch(query, categorySlug, '/api/products', undefined, { signal }),
+        (signal) => fetchAllTiendaNubeSearch(query, categorySlug, '/api/products', storeIds, { signal }),
         SCRAPER_TIMEOUT_MS,
         'tiendanube',
       ).catch(() => [] as Product[])
       : withAbortTimeout(
-        (signal) => fetchAllTiendaNubeCategory(categorySlug, '/api/products', undefined, { signal }),
+        (signal) => fetchAllTiendaNubeCategory(categorySlug, '/api/products', storeIds, { signal }),
         SCRAPER_TIMEOUT_MS,
         'tiendanube',
       ).catch(() => [] as Product[]),
     query
       ? withAbortTimeout(
-        (signal) => fetchAllWooCommerceSearch(query, categorySlug, '/api/products', undefined, { signal }),
+        (signal) => fetchAllWooCommerceSearch(query, categorySlug, '/api/products', storeIds, { signal }),
         SCRAPER_TIMEOUT_MS,
         'woocommerce',
       ).catch(() => [] as Product[])
       : withAbortTimeout(
-        (signal) => fetchAllWooCommerceCategory(categorySlug, '/api/products', undefined, { signal }),
+        (signal) => fetchAllWooCommerceCategory(categorySlug, '/api/products', storeIds, { signal }),
         SCRAPER_TIMEOUT_MS,
         'woocommerce',
       ).catch(() => [] as Product[]),
@@ -184,8 +190,13 @@ export async function resolveLiveProductsList(
   }
 
   liveProducts = await reviewProductOffers(liveProducts, { authorizedRefresh });
-  await withPromiseTimeout(persistProductsSnapshot(liveProducts), PERSISTENCE_TIMEOUT_MS, 'supabase-persist')
+  await withPromiseTimeout(
+    persistProductsSnapshot(liveProducts, { requirePersistence: authorizedRefresh }),
+    authorizedRefresh ? REFRESH_PERSISTENCE_TIMEOUT_MS : PERSISTENCE_TIMEOUT_MS,
+    'supabase-persist',
+  )
     .catch((persistError) => {
+      if (authorizedRefresh) throw persistError;
       logger.warn('Product list snapshot persistence skipped', {
         endpoint: '/api/products',
         category: categorySlug,

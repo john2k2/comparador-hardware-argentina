@@ -269,7 +269,7 @@ export async function GET(request: NextRequest) {
       }
 
       const observeSource = createObservedProductsSourceRunner(runObservedStoreScrape);
-      const liveCategoryProducts = await resolveLiveProductsList(effectiveCategory, undefined, observeSource, internalRefreshRequest || privilegedBypass);
+      const liveCategoryProducts = await resolveLiveProductsList(effectiveCategory, undefined, observeSource, internalRefreshRequest || privilegedBypass, selectedStoreIds);
       const refreshedDatabaseProducts = await readProductsFromDatabase({
         query: undefined,
         category: effectiveCategory,

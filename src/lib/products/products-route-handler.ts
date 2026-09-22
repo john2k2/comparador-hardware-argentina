@@ -29,6 +29,7 @@ import { logger } from '@/lib/logger';
 import { recordCatalogRefreshDemand } from '@/lib/catalog/refresh-demand';
 import { isStableRuntimeMode, shouldSkipLiveScraping } from '@/lib/server/runtime-flags';
 import { getStableFixtureProducts } from '@/lib/server/stable-search-fixtures';
+import { parseStoreIds } from '@/lib/search/search-handler-shared';
 
 export async function GET(request: NextRequest) {
   const endpointStartedAtMs = Date.now();
@@ -264,7 +265,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const liveProducts = await resolveLiveProductsList(categorySlug, query || undefined, observeSource, internalRefreshRequest || privilegedBypass);
+    const liveProducts = await resolveLiveProductsList(categorySlug, query || undefined, observeSource, internalRefreshRequest || privilegedBypass, parseStoreIds(searchParams.get('stores')));
     return respond({ products: liveProducts, pagination: { limit: liveProducts.length, offset: 0, total: liveProducts.length } }, { headers: { 'X-Product-Cache': isRefreshRequest ? 'REFRESH' : 'MISS' } }, { success: true, resultCount: liveProducts.length, note: isRefreshRequest ? 'CATEGORY_REFRESH' : 'CATEGORY_LIST' });
   } catch (error) {
     logger.error('Products API error', {

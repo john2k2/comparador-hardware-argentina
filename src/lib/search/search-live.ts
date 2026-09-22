@@ -8,7 +8,7 @@ import {
   inferHardwareCategoryFromName,
   resolveHardwareCategoryForProduct,
 } from '@/lib/catalog/hardware-categories';
-import { persistProductsSnapshot } from '@/lib/persistence/product-catalog';
+import { persistProductsSnapshot, REFRESH_PERSISTENCE_TIMEOUT_MS } from '@/lib/persistence/product-catalog';
 import { normalizeProductContent } from '@/lib/products/normalize-product-content';
 import { sanitizeProducts } from '@/lib/product-sanitizer';
 import type { SearchApiResponse } from '@/lib/search/search-api';
@@ -259,8 +259,13 @@ export async function runLiveSearch({
     },
   };
 
-  await withPromiseTimeout(persistProductsSnapshot(liveProducts), PERSISTENCE_TIMEOUT_MS, 'supabase-persist')
+  await withPromiseTimeout(
+    persistProductsSnapshot(liveProducts, { requirePersistence: authorizedRefresh }),
+    authorizedRefresh ? REFRESH_PERSISTENCE_TIMEOUT_MS : PERSISTENCE_TIMEOUT_MS,
+    'supabase-persist',
+  )
     .catch((persistError) => {
+      if (authorizedRefresh) throw persistError;
       logger.warn('Live search snapshot persistence skipped', {
         endpoint: '/api/search',
         query,
