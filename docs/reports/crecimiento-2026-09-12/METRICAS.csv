@@ -70,3 +70,5 @@ observado_el,periodo_inicio,periodo_fin,fuente,metrica,segmento,valor,unidad,est
 2026-09-21,,,GSC,host_connectivity,last_week,1,incidencia,verificado,Search Console mostró porcentaje de error elevado de conectividad del servidor la semana anterior
 2026-09-21,,,GSC,ga4_association,property,,asociacion,no_asociada,GA4 tiene datos verificados pero no está asociado desde Ajustes de Search Console
 2026-09-21,2026-09-21,2026-09-21,GSC,url_live_test,pc_gamer_2_millones,1,prueba,verificado,Prueba en tiempo real: URL disponible para Google y página indexable; no equivale a indexación completada
+2026-09-22,2026-09-22,2026-09-22,HTTP,critical_routes,daily_sample,4/4,rutas,verificado,Portada CPU GPU y ficha Ryzen 5 5500 respondieron 200 con peticiones espaciadas
+2026-09-22,2026-09-22,2026-09-22,GitHub Actions,catalog_refresh_fallback,scheduled_run,2,productos,verificado,Run 35712677571: demanda rx 6950 xt vacía; fallback ryzen 5600 obtuvo dos productos

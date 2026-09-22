@@ -118,3 +118,7 @@ Contraste: la recomendación principal coincide con la ausencia de dimensiones p
 El código ya emite `generate_pc_budget`, `select_advisory_cta`, `generate_lead` y `outbound_store_click` en el recorrido de armador, guías, fichas, contacto y salidas de las guías. Los eventos se probaron mediante tests unitarios y el recorrido se verificó localmente en `/guia/armar?pesos=1500000` y `/contacto#asesoria-pc`. `npm run lint` y `npm run build` finalizaron sin errores.
 
 Estado de evidencia: implementación publicada en Cloudflare como versión `b9375fe3-3403-4c18-8edb-21edff29fbb5`. `/contacto` y `/guia/armar?pesos=1500000` respondieron 200 y mostraron el CTA en el HTML público. La aparición de eventos en GA4 todavía no está verificada. Un clic de correo representa intención de contacto, no confirma que el mensaje haya sido enviado ni recibido. No se registran datos personales en los parámetros nuevos.
+
+### Corte operativo — 22/09/2026
+
+Las cuatro rutas diarias respondieron 200. El scheduler `35712677571` devolvió `fallbackApplied=true`: `rx 6950 xt` produjo cero artículos y la consulta de recuperación `ryzen 5600` obtuvo dos. La ejecución manual fallida `35678031730` fue una prueba acotada a Mexx, Venex y Maximus; las dos ejecuciones manuales posteriores por categoría fueron exitosas. La recuperación está comprobada, pero no cierra G02 ni prueba frescura completa del catálogo.
