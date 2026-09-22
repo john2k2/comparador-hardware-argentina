@@ -16,6 +16,15 @@ export const COMPARABLE_CATEGORIES: Array<{ id: HardwareCategory; label: string 
   { id: 'perifericos', label: 'Periféricos' },
 ];
 
+export const COMPARISON_USE_CASES = [
+  { id: 'gaming', label: 'Gaming', description: 'FPS, resolución, VRAM y costo total del equipo.' },
+  { id: 'productividad', label: 'Producción y trabajo', description: 'Render, edición, compilación y cargas sostenidas.' },
+  { id: 'uso-diario', label: 'Uso diario', description: 'Respuesta rápida, consumo y costo sin pagar capacidad innecesaria.' },
+  { id: 'equilibrado', label: 'Uso mixto', description: 'Balance entre respuesta, trabajo pesado y precio.' },
+] as const;
+
+export type ComparisonUseCase = typeof COMPARISON_USE_CASES[number]['id'];
+
 export type DynamicComparison = {
   leftPrice: number | null;
   rightPrice: number | null;
@@ -30,6 +39,10 @@ export type DynamicComparison = {
   rightBenchmark: PerformanceBenchmark | null;
   valueWinnerProductId: string | null;
   valueDifferencePercent: number | null;
+  useCase: ComparisonUseCase;
+  metricLabel: string | null;
+  leftMetricScore: number | null;
+  rightMetricScore: number | null;
   specificationRows: Array<{ label: string; left: string; right: string }>;
 };
 
@@ -86,7 +99,38 @@ function compatibilityEvidence(category: HardwareCategory, left: Product, right:
   return [];
 }
 
-export function compareProducts(left: Product, right: Product): DynamicComparison {
+function scoreForUseCase(benchmark: PerformanceBenchmark, category: HardwareCategory, useCase: ComparisonUseCase): { score: number; label: string } | null {
+  if (category === 'tarjetas-graficas') {
+    if (useCase === 'productividad') return null;
+    return { score: benchmark.primaryScore, label: 'rendimiento gráfico relativo' };
+  }
+  if (category === 'procesadores') {
+    if (useCase === 'gaming') return null;
+    if (useCase === 'uso-diario' && benchmark.secondaryScore != null) {
+      return { score: benchmark.secondaryScore, label: 'rendimiento de un núcleo' };
+    }
+    if (useCase === 'equilibrado' && benchmark.secondaryScore != null) {
+      return {
+        score: ((benchmark.secondaryScore / 2500) + (benchmark.primaryScore / 15000)) * 50,
+        label: 'índice mixto de uno y varios núcleos',
+      };
+    }
+    return { score: benchmark.primaryScore, label: 'rendimiento multinúcleo' };
+  }
+  return null;
+}
+
+function buildUseCaseCaveat(category: HardwareCategory, useCase: ComparisonUseCase): string | null {
+  if (category === 'procesadores' && useCase === 'gaming') {
+    return 'Para gaming en CPU no usamos Geekbench como si fueran FPS. El juego, la resolución, la GPU y tecnologías como 3D V-Cache pueden cambiar el resultado.';
+  }
+  if (category === 'tarjetas-graficas' && useCase === 'productividad') {
+    return 'Para producción con GPU hace falta medir la aplicación concreta: CUDA, render, IA, edición, VRAM y drivers pueden cambiar el ganador.';
+  }
+  return null;
+}
+
+export function compareProducts(left: Product, right: Product, useCase: ComparisonUseCase = 'equilibrado'): DynamicComparison {
   const leftComparableOffers = comparableOffers(left);
   const rightComparableOffers = comparableOffers(right);
   const leftPrice = leftComparableOffers[0]?.price ?? null;
@@ -100,9 +144,11 @@ export function compareProducts(left: Product, right: Product): DynamicCompariso
     : null;
   const leftBenchmark = findPerformanceBenchmark(left);
   const rightBenchmark = findPerformanceBenchmark(right);
-  const bothBenchmarked = leftBenchmark && rightBenchmark && leftPrice && rightPrice;
-  const leftValue = bothBenchmarked ? leftBenchmark.primaryScore / leftPrice : null;
-  const rightValue = bothBenchmarked ? rightBenchmark.primaryScore / rightPrice : null;
+  const leftMetric = leftBenchmark ? scoreForUseCase(leftBenchmark, left.category, useCase) : null;
+  const rightMetric = rightBenchmark ? scoreForUseCase(rightBenchmark, right.category, useCase) : null;
+  const bothBenchmarked = leftMetric && rightMetric && leftPrice && rightPrice;
+  const leftValue = bothBenchmarked ? leftMetric.score / leftPrice : null;
+  const rightValue = bothBenchmarked ? rightMetric.score / rightPrice : null;
   const valueWinnerProductId = leftValue && rightValue && leftValue !== rightValue
     ? (leftValue > rightValue ? left.id : right.id)
     : null;
@@ -119,7 +165,7 @@ export function compareProducts(left: Product, right: Product): DynamicCompariso
   }
   if (valueWinnerProductId && valueDifferencePercent != null) {
     const winner = valueWinnerProductId === left.id ? left : right;
-    recommendation = `${winner.name} entrega aproximadamente ${valueDifferencePercent}% más puntaje de referencia por peso al precio relevado hoy.`;
+    recommendation = `${winner.name} conviene más para ${COMPARISON_USE_CASES.find((entry) => entry.id === useCase)?.label.toLowerCase()}: entrega aproximadamente ${valueDifferencePercent}% más ${leftMetric?.label ?? 'puntaje de referencia'} por peso al precio relevado hoy.`;
   }
 
   return {
@@ -131,8 +177,9 @@ export function compareProducts(left: Product, right: Product): DynamicCompariso
     recommendation,
     evidence: [
       ...compatibilityEvidence(left.category, left, right),
-      leftBenchmark && rightBenchmark
-        ? `El valor usa ${leftBenchmark.primaryLabel.toLowerCase()} y ofertas en stock cuya identidad fue validada.`
+      ...(buildUseCaseCaveat(left.category, useCase) ? [buildUseCaseCaveat(left.category, useCase)!] : []),
+      bothBenchmarked
+        ? `El valor usa ${leftMetric.label} y ofertas en stock cuya identidad fue validada.`
         : 'No hay benchmarks compatibles para ambos modelos; la recomendación no inventa rendimiento faltante.',
     ],
     leftOffers: leftComparableOffers.slice(0, 5).map((offer) => ({ store: offer.storeName || offer.storeId, price: offer.price })),
@@ -141,6 +188,10 @@ export function compareProducts(left: Product, right: Product): DynamicCompariso
     rightBenchmark,
     valueWinnerProductId,
     valueDifferencePercent,
+    useCase,
+    metricLabel: leftMetric?.label ?? null,
+    leftMetricScore: leftMetric?.score ?? null,
+    rightMetricScore: rightMetric?.score ?? null,
     specificationRows: buildSpecificationRows(left, right),
   };
 }

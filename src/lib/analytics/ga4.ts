@@ -176,7 +176,7 @@ export function trackContactIntent(params: {
 
 /** Registra el paso hacia una consulta, antes de llegar al canal de contacto. */
 export function trackAdvisoryCta(params: {
-  surface: 'budget_builder' | 'budget_guide' | 'product_detail';
+  surface: 'budget_builder' | 'budget_guide' | 'product_detail' | 'product_comparison';
   ctaId: string;
 }): void {
   if (!isGA4Available()) return;

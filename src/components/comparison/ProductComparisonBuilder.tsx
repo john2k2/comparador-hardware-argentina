@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { HardwareCategory, Product } from '@/lib/types';
-import { COMPARABLE_CATEGORIES, compareProducts } from '@/lib/comparison/dynamic-comparison';
+import { COMPARABLE_CATEGORIES, COMPARISON_USE_CASES, compareProducts, type ComparisonUseCase } from '@/lib/comparison/dynamic-comparison';
 import { formatPriceARS } from '@/lib/price-utils';
+import { AdvisoryCta } from '@/components/commercial/AdvisoryCta';
 
 type Side = 'left' | 'right';
 
@@ -77,17 +78,27 @@ function ProductFinder({ category, side, selected, onSelect }: {
 
 export function ProductComparisonBuilder() {
   const [category, setCategory] = useState<HardwareCategory>('procesadores');
+  const [useCase, setUseCase] = useState<ComparisonUseCase>('gaming');
   const [left, setLeft] = useState<Product | null>(null);
   const [right, setRight] = useState<Product | null>(null);
-  const comparison = useMemo(() => left && right ? compareProducts(left, right) : null, [left, right]);
+  const comparison = useMemo(() => left && right ? compareProducts(left, right, useCase) : null, [left, right, useCase]);
 
   return (
     <div>
-      <div className="mb-5">
-        <label htmlFor="comparison-category" className="mb-2 block text-[10px] font-bold text-muted-foreground">TIPO DE COMPONENTE</label>
-        <select id="comparison-category" value={category} onChange={(event) => setCategory(event.target.value as HardwareCategory)} className="w-full border-2 border-border bg-background px-3 py-3 text-[11px] font-bold focus:border-primary focus:outline-none">
-          {COMPARABLE_CATEGORIES.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
-        </select>
+      <div className="mb-5 grid gap-4 md:grid-cols-2">
+        <div>
+          <label htmlFor="comparison-category" className="mb-2 block text-[10px] font-bold text-muted-foreground">TIPO DE COMPONENTE</label>
+          <select id="comparison-category" value={category} onChange={(event) => setCategory(event.target.value as HardwareCategory)} className="w-full border-2 border-border bg-background px-3 py-3 text-[11px] font-bold focus:border-primary focus:outline-none">
+            {COMPARABLE_CATEGORIES.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="comparison-use-case" className="mb-2 block text-[10px] font-bold text-muted-foreground">¿PARA QUÉ LO VAS A USAR?</label>
+          <select id="comparison-use-case" value={useCase} onChange={(event) => setUseCase(event.target.value as ComparisonUseCase)} className="w-full border-2 border-border bg-background px-3 py-3 text-[11px] font-bold focus:border-primary focus:outline-none">
+            {COMPARISON_USE_CASES.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
+          </select>
+          <p className="mt-2 text-[9px] font-mono text-muted-foreground">{COMPARISON_USE_CASES.find((entry) => entry.id === useCase)?.description}</p>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -126,13 +137,13 @@ export function ProductComparisonBuilder() {
               {comparison.leftBenchmark && comparison.rightBenchmark ? (
                 <>
                   <div className="grid gap-4 md:grid-cols-2">
-                    {([['A', comparison.leftBenchmark, comparison.leftPrice], ['B', comparison.rightBenchmark, comparison.rightPrice]] as const).map(([label, benchmark, price]) => (
+                    {([['A', comparison.leftBenchmark, comparison.leftPrice, comparison.leftMetricScore], ['B', comparison.rightBenchmark, comparison.rightPrice, comparison.rightMetricScore]] as const).map(([label, benchmark, price, metricScore]) => (
                       <div key={label} className="border-2 border-border p-4">
                         <p className="text-[9px] font-bold text-muted-foreground">PRODUCTO {label} · {benchmark.model}</p>
                         <p className="mt-2 text-[18px] font-pixel text-primary">{benchmark.primaryScore.toLocaleString('es-AR')}</p>
                         <p className="mt-1 text-[9px] font-mono">{benchmark.primaryLabel}</p>
                         {benchmark.secondaryScore != null && <p className="mt-2 text-[10px] font-mono">{benchmark.secondaryScore.toLocaleString('es-AR')} · {benchmark.secondaryLabel}</p>}
-                        {price && <p className="mt-3 text-[10px] font-bold">{(benchmark.primaryScore / price * 100_000).toFixed(1)} puntos por cada $100.000</p>}
+                        {price && metricScore != null && <p className="mt-3 text-[10px] font-bold">{(metricScore / price * 100_000).toFixed(1)} puntos de {comparison.metricLabel} por cada $100.000</p>}
                       </div>
                     ))}
                   </div>
@@ -172,8 +183,12 @@ export function ProductComparisonBuilder() {
             <Link href={`/product/${encodeURIComponent(left.id)}?from=/comparativa/comparar`} className="border-2 border-border p-3 text-center text-[10px] font-bold hover:border-primary">VER PRECIOS DE A</Link>
             <Link href={`/product/${encodeURIComponent(right.id)}?from=/comparativa/comparar`} className="border-2 border-border p-3 text-center text-[10px] font-bold hover:border-primary">VER PRECIOS DE B</Link>
           </div>
+
+          <AdvisoryCta surface="product_comparison" />
         </div>
       )}
+
+      {!comparison && <div className="mt-6"><AdvisoryCta surface="product_comparison" compact /></div>}
     </div>
   );
 }

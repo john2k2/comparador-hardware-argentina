@@ -14,7 +14,7 @@ describe('ArmarPcView', () => {
     expect(markup).toContain('Cargando catálogo');
     expect(markup).toContain('Componentes de tu PC');
     expect(markup).toContain('Actualizar estas ofertas');
-    expect(markup).toContain('Pedir revisión y presupuesto');
+    expect(markup).toContain('Enviarnos un mensaje');
     expect(markup).not.toContain('TOTAL CON STOCK');
   });
 

@@ -42,6 +42,29 @@ describe('compareProducts', () => {
     expect(result.leftBenchmark?.primaryScore).toBe(100);
     expect(result.rightBenchmark?.primaryScore).toBe(94);
     expect(result.valueWinnerProductId).toBe('RX 7600');
-    expect(result.recommendation).toContain('puntaje de referencia por peso');
+    expect(result.recommendation).toContain('rendimiento gráfico relativo por peso');
+  });
+
+  it('cambia la métrica según el uso y evita tratar Geekbench como FPS', () => {
+    const left = { ...product('Ryzen 5 5600', 180_000), model: 'Ryzen 5 5600' };
+    const right = { ...product('Ryzen 7 5700X', 240_000), model: 'Ryzen 7 5700X' };
+    const daily = compareProducts(left, right, 'uso-diario');
+    const gaming = compareProducts(left, right, 'gaming');
+
+    expect(daily.metricLabel).toBe('rendimiento de un núcleo');
+    expect(daily.valueWinnerProductId).not.toBeNull();
+    expect(gaming.metricLabel).toBeNull();
+    expect(gaming.valueWinnerProductId).toBeNull();
+    expect(gaming.evidence.join(' ')).toContain('no usamos Geekbench como si fueran FPS');
+  });
+
+  it('no usa raster como benchmark de producción con GPU', () => {
+    const result = compareProducts(
+      { ...product('RTX 4060', 400_000, {}, 'tarjetas-graficas'), model: 'RTX 4060' },
+      { ...product('RX 7600', 300_000, {}, 'tarjetas-graficas'), model: 'RX 7600' },
+      'productividad',
+    );
+    expect(result.valueWinnerProductId).toBeNull();
+    expect(result.evidence.join(' ')).toContain('aplicación concreta');
   });
 });
