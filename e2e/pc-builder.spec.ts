@@ -69,7 +69,7 @@ function fixtureProducts(): Product[] {
   }));
 }
 
-async function installCatalogRoute(page: Page) {
+async function installCatalogRoute(page: Page, options: { reviewCpuAfterRefresh?: boolean } = {}) {
   const products = fixtureProducts();
   const state = { refreshed: false };
   let releaseCpu: () => void;
@@ -82,7 +82,26 @@ async function installCatalogRoute(page: Page) {
       return {
         ...product,
         prices: product.prices.map((price) => price.storeId === 'store-a'
-          ? { ...price, price: 120_000, lastUpdated: new Date('2026-09-21T12:05:00.000Z') }
+          ? {
+            ...price,
+            price: 120_000,
+            lastUpdated: new Date('2026-09-21T12:05:00.000Z'),
+            ...(options.reviewCpuAfterRefresh ? {
+              identityReview: {
+                version: 1 as const,
+                status: 'needs-review' as const,
+                reason: 'low-confidence' as const,
+                reviewedAt: '2026-09-21T12:05:00.000Z',
+                model: 'jev-v1',
+                confidence: 0.62,
+                subject: {
+                  name: 'amd ryzen 5 5600',
+                  category: 'procesadores',
+                  url: price.url,
+                },
+              },
+            } : {}),
+          }
           : price),
         lowestPrice: 110_000,
         averagePrice: 115_000,
@@ -236,6 +255,42 @@ test.describe('armador de PC', () => {
     await page.getByRole('button', { name: 'Actualizar estas ofertas' }).click();
     await expect(page.getByRole('status')).toContainText('Servicio temporalmente no disponible');
     await expect(page.getByRole('status')).not.toContainText('ofertas actualizadas');
+  });
+
+  test('deja una oferta con identidad pendiente fuera del total y permite elegir otra tienda', async ({ page }) => {
+    const { state, products } = await installCatalogRoute(page, { reviewCpuAfterRefresh: true });
+    await page.route('**/api/catalog/refresh**', async (route) => {
+      if (route.request().method() !== 'POST') return;
+      state.refreshed = true;
+      await route.fulfill({ status: 202, contentType: 'application/json', body: JSON.stringify({ job: {
+        id: '123e4567-e89b-12d3-a456-426614174099',
+        status: 'completed',
+        targets: [refreshTarget],
+        results: [{ ...refreshTarget, state: 'updated', observedAt: '2026-09-21T12:05:00.000Z' }],
+        created_at: '2026-09-21T12:00:00.000Z',
+        started_at: '2026-09-21T12:01:00.000Z',
+        finished_at: '2026-09-21T12:05:00.000Z',
+        expires_at: '2026-09-21T13:00:00.000Z',
+      } }) });
+    });
+
+    await loadBuilder(page);
+    await choose(page, 'Procesador');
+    const total = page.getByTestId('build-total');
+    await expect(total).toContainText('100.000');
+
+    await page.getByRole('button', { name: 'Actualizar estas ofertas' }).click();
+    await expect(page.getByRole('status')).toContainText('1 ofertas actualizadas');
+    await expect(page.getByText('La coincidencia del modelo requiere revisión. Conservamos el precio y la fecha informados, pero esta oferta no entra al total. Podés elegir otra tienda.')).toBeVisible();
+    await expect(total).toContainText(/\$\s*0/);
+
+    const storeSelect = page.getByLabel('Tienda para Procesador');
+    await expect(storeSelect).toContainText('Modelo pendiente de revisión');
+    await expect(storeSelect).toContainText('Tienda B');
+    const storeB = products.find((product) => product.id === 'cpu-5600')?.prices.find((price) => price.storeId === 'store-b');
+    if (!storeB) throw new Error('fixture de tienda B incompleto');
+    await storeSelect.selectOption(JSON.stringify(['store-b', storeB.url]));
+    await expect(total).toContainText('110.000');
   });
 
   test('no desborda horizontalmente en viewport móvil de 390px', async ({ page }, testInfo) => {

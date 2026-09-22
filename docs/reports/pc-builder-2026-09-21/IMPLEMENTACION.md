@@ -65,7 +65,7 @@ Las pruebas de navegador usan datos sintéticos. Cubren ocho piezas con respuest
 
 ## Activación pública
 
-Aplicar y desplegar estos cambios antes de habilitar el botón operativo:
+Procedimiento de activación ejecutado el 21/09/2026, hora de Santiago:
 
 1. Aplicar en orden `20260922000000_offer_identity_review.sql` y `20260922010000_requested_offer_refresh.sql`. Son aditivas: no borran ni renumeran productos.
 2. Publicar la aplicación y el workflow `.github/workflows/requested-offer-refresh.yml` en la rama principal. Verificar las dos variantes del dominio y `/guia/armar`.
@@ -74,7 +74,7 @@ Aplicar y desplegar estos cambios antes de habilitar el botón operativo:
 5. Para usar la revisión Jev, configurar `TYPESAFE_API_KEY` como secreto de Actions y `ENABLE_JEV_OFFER_REVIEW=1` como variable del repositorio. La cola funciona sin Jev; las revisiones anteriores se conservan.
 6. Pedir una actualización real de una oferta desde la web, observar el paso por la cola, la ejecución en Actions y la nueva fecha en la UI. Verificar que la oferta y su precio coinciden con la página de la tienda.
 
-No se aplicaron migraciones remotas, no se activaron variables públicas y no se publicó esta versión durante esta implementación. Esas tres acciones y la prueba pública final siguen pendientes. La prueba de fuente real no reemplaza ese cierre.
+Activación realizada: las dos migraciones están aplicadas y registradas en Supabase, las variables del Worker y del consumidor están habilitadas, y la versión está publicada. La prueba solicitada desde el sitio público completó el trabajo `31f42186-5a1c-4ef2-bc25-9f21198c4be0` mediante [Actions 35678345201](https://github.com/john2k2/comparador-hardware-argentina/actions/runs/35678345201): la oferta de Mexx pasó de $157.439 a $158.569 y la página de la tienda mostró ese mismo precio y stock. Jev devolvió confianza 0,62: la oferta queda pendiente de identidad y fuera del total, aunque el precio se haya actualizado. Ver el [cierre de mejoras](../competencia-hardgamers-2026-09-21/IMPLEMENTACION.md).
 
 Para detener nuevas solicitudes, apagar `ENABLE_ON_DEMAND_REFRESH` en el Worker; para detener el consumidor, apagar la variable homónima del repositorio. El armador sigue pudiendo comparar los precios persistidos. No hace falta borrar tablas para revertir la activación.
 

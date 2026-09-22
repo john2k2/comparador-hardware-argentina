@@ -22,14 +22,20 @@ function fitsSlot(product: Product, slot: BuildSlot): boolean {
   const processorAccessory = /\b(?:thermal[ -]?pads?|pads? termicos?|pasta termica|heatsinks?|heat[ -]sinks?|contact[ -]?frame|back[ -]?plate|watercool(?:er|ing)?|waterblock|refrigeracion liquida)\b/.test(name)
     || /^(?:\w+\s+)?(?:disipador|cooler|refrigeracion)\b/.test(name);
   const graphicsAccessory = /\b(?:riser|waterblock|back[ -]?plate|soporte (?:para )?(?:gpu|placa)|gpu holder)\b/.test(name);
+  const caseAccessory = /^(?:cooler(?!\s+master\b)|fans?|ventiladores?|soporte|cable|kit|pack)\b/.test(name)
+    || /\b(?:cooler|fans?|ventiladores?)\s+(?:(?:para|de)\s+)?gabinete\b/.test(name);
+  const coolingFanPack = /\bpack\s*x?\s*\d+\b/.test(name)
+    && !/\b(?:cpu|water\s*cool(?:er|ing)?|aio|refrigeracion liquida)\b/.test(name);
   return product.category === SLOT_CATEGORIES[slot]
     && !isCompleteComputerTitle(product.name)
     && (slot === 'ram' || !isBundleLikeTitle(product.name))
     && !/\b(usado|refurbished|reacondicionado|outlet|notebook|laptop)\b/i.test(product.name)
     && (slot !== 'cooler' || !/\b(gabinete|fan|ventilador|pasta)\b/i.test(product.name))
+    && (slot !== 'cooler' || !coolingFanPack)
     && (slot !== 'cooler' || !/^(?:micro|procesador|amd\s+ryzen|intel\s+(?:core|i[3579]))\b/i.test(product.name.trim()))
     && (slot !== 'cpu' || !processorAccessory)
     && (slot !== 'gpu' || !graphicsAccessory)
+    && (slot !== 'case' || !caseAccessory)
     && (slot !== 'ssd' || !/\b(externo|externa|external|portable|portatil|usb[ -]?c)\b/i.test(product.name));
 }
 export function candidatesForSlot(products: Product[], slot: BuildSlot): Product[] {

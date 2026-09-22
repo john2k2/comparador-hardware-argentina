@@ -10,6 +10,7 @@ import { candidatesForSlot, eligibleOffers, quoteBuild, selectProduct, suggestBu
 import { BUILD_STORAGE_KEY, createBuildShareUrl, createWhatsAppShareUrl, decodeBuild, exportBuildText, parseBuildDraft, trimBuildShipping } from '@/lib/pc-builder/persistence';
 import { fetchBuilderProducts, mergeCatalog } from '@/lib/pc-builder/client';
 import { trackBudgetBuilder, trackPcBuilderAction, trackStoreClick, type PcBuilderAction } from '@/lib/analytics/ga4';
+import { needsIdentityReview } from '@/lib/quality/offer-identity';
 import { AdvisoryCta } from '@/components/commercial/AdvisoryCta';
 import { RefreshOffersButton } from './RefreshOffersButton';
 
@@ -145,6 +146,8 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
           const candidates = candidatesForSlot(products, slot).filter((product) => !queries[slot] || product.name.toLowerCase().includes(queries[slot]!.toLowerCase()));
           const offers = selected ? eligibleOffers(selected) : [];
           const selectedOffer = offers.find((offer) => offer.storeId === selection?.storeId && offer.url === selection.url);
+          const recordedOffer = selected?.prices.find((offer) => offer.storeId === selection?.storeId && offer.url === selection.url);
+          const reviewPending = Boolean(recordedOffer && selected && needsIdentityReview(recordedOffer, selected));
           return <article key={slot} className="border-4 border-border bg-card p-4 min-w-0" data-slot={slot}>
             <div className="flex justify-between gap-3 items-start"><h2 className="font-pixel text-xs text-secondary leading-relaxed">{SLOT_LABELS[slot]}</h2>
               {selection && <button className="font-body text-xs underline min-h-8" onClick={() => choose(slot, '')} aria-label={`Quitar ${SLOT_LABELS[slot]}`}>Quitar</button>}</div>
@@ -164,9 +167,10 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
                 setDraft(nextDraft);
                 trackAction('offer_selected', { slot }, nextDraft);
               }}>
-                {!selectedOffer && <option value={JSON.stringify([selection.storeId, selection.url])}>Oferta anterior — pendiente de confirmar</option>}
+                {!selectedOffer && <option value={JSON.stringify([selection.storeId, selection.url])}>{reviewPending ? 'Modelo pendiente de revisión' : 'Oferta anterior — pendiente de confirmar'}</option>}
                 {offers.map((offer) => <option key={offer.url} value={JSON.stringify([offer.storeId, offer.url])}>{offer.storeName} — {formatPriceARS(offer.price)} contado{offer.installment ? ` / ${offer.installment.count} cuotas, total ${formatPriceARS(offer.installment.totalAmount)}` : ''}</option>)}
               </select></label>
+              {reviewPending && <p className="font-body text-sm border-l-4 border-accent pl-3 mt-3">La coincidencia del modelo requiere revisión. Conservamos el precio y la fecha informados, pero esta oferta no entra al total. Podés elegir otra tienda.</p>}
               <div className="flex flex-wrap items-center gap-4 mt-3 font-body text-xs">
                 {(slot === 'ram' || slot === 'ssd') && <label>Cantidad {slot === 'ram' ? 'de kits / unidades' : 'de unidades'}<select aria-label={`Cantidad de ${SLOT_LABELS[slot]}`} className="border-2 border-border bg-background min-h-11 ml-2 px-2" value={selection.quantity} onChange={(event) => setDraft((current) => ({ ...current, selections: { ...current.selections, [slot]: { ...selection, quantity: Number(event.target.value) } } }))}>{[1, 2, 3, 4].map((quantity) => <option key={quantity}>{quantity}</option>)}</select></label>}
                 {selectedOffer && selected && <a className="underline min-h-11 inline-flex items-center" href={selectedOffer.url} target="_blank" rel="noopener noreferrer" onClick={() => trackStoreClick({

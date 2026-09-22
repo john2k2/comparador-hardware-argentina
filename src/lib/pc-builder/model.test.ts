@@ -36,6 +36,22 @@ function draftWithSelections(selections: BuildDraft['selections'], payment: Buil
 }
 
 describe('checkBuildCompatibility', () => {
+  it('no cotiza ventiladores como gabinete ni packs de ventiladores como disipador', () => {
+    const offers = [price({ storeId: 'store', storeName: 'Store', price: 50_000 })];
+    const products = [
+      product({ id: 'fan-case', name: 'Cooler Gabinete Sentey Fan 120Mm Bulk', category: 'gabinetes', prices: offers }),
+      product({ id: 'case', name: 'Gabinete Sentey Coyote Black - Fan x3 Argb', category: 'gabinetes', prices: offers }),
+      product({ id: 'coolermaster-case', name: 'Cooler Master Masterbox Gabinete ATX', category: 'gabinetes', prices: offers }),
+      product({ id: 'fan-pack', name: 'Cooler Corsair Rx120 Max Rgb 120Mm Pack X3 Icue Link Black', category: 'refrigeracion', prices: offers }),
+      product({ id: 'aio', name: 'Water Cooler Corsair Icue Link Titan 240 Rx RGB AIO', category: 'refrigeracion', prices: offers }),
+    ];
+    expect(candidatesForSlot(products, 'case').map((item) => item.id)).toEqual(['case', 'coolermaster-case']);
+    expect(candidatesForSlot(products, 'cooler').map((item) => item.id)).toEqual(['aio']);
+    const quote = quoteBuild(draftWithSelections({ case: { productId: 'fan-case', storeId: 'store', url: offers[0].url, quantity: 1 } }), products);
+    expect(quote.lines[0].subtotal).toBeNull();
+    expect(quote.issues.some((issue) => issue.code === 'missing-case')).toBe(true);
+  });
+
   it('excludes miscategorized CPUs from coolers and external disks from internal storage', () => {
     const offers = [price({ storeId: 'store', storeName: 'Store', price: 100000 })];
     const products = [

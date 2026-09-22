@@ -1,6 +1,6 @@
 # Integración de Jev para revisar ofertas
 
-Estado al 21/09/2026, hora de Santiago: implementación local terminada y probada. Se realizó una llamada real a TypeSafe. Esta tarea no aplicó la migración de Supabase, no configuró secretos o variables remotos y no publicó ni activó la integración en producción. El interruptor de la aplicación viene desactivado.
+Estado actualizado al cierre del 21/09/2026, hora de Santiago: integración publicada y habilitada en el consumidor de GitHub Actions, con migración aplicada y secreto privado configurado. La prueba pública del armador confirmó extracción, revisión y persistencia. El Worker público no necesita la clave de Jev ni ejecuta scraping. El valor por defecto del interruptor sigue desactivado para instalaciones nuevas.
 
 Este documento describe la implementación posterior al diagnóstico y al piloto guardados en esta carpeta. Sus resultados históricos no deben interpretarse como estado de la aplicación actual.
 
@@ -31,7 +31,7 @@ La revisión se guarda aparte de precio y stock. No cambia la fecha de observaci
 
 El umbral 0,8 es provisional, elegido después del piloto. No equivale a una precisión del 80 % y falta evaluarlo con una muestra independiente antes de ampliar el uso. La rapidez del modelo no se usa como criterio para aprobar una oferta.
 
-## Evidencia y verificación
+## Evidencia de la implementación inicial
 
 - `npm test`: **610 pruebas pasadas**, 126 archivos; una prueba real opcional omitida en la ejecución normal para no consumir cuota automáticamente.
 - `npm run lint`: correcto; revisión adicional de los dos archivos modificados al terminar, también correcta.
@@ -44,7 +44,7 @@ La llamada real del adaptador recibió dos casos públicos: una RAM con texto co
 
 Evidencias: [respuesta real](ADAPTADOR-JEV-REAL.json), [validación de navegador](UI-validacion.json), [captura de escritorio](UI-escritorio.png), [captura móvil](UI-movil.png). Referencias del contrato: [API oficial](https://docs.typesafe.ai/api), [confianza](https://docs.typesafe.ai/confidence) y [elección de alternativas](https://docs.typesafe.ai/primitives/choice).
 
-## Activación preparada
+## Activación ejecutada
 
 1. Aplicar `supabase/migrations/20260922000000_offer_identity_review.sql`: agrega una columna JSONB opcional; no modifica RLS.
 2. Publicar la versión que entiende las revisiones, manteniendo el interruptor apagado durante la comprobación inicial. Las claves de Jev no van en el navegador ni en variables `NEXT_PUBLIC_*`.
@@ -55,4 +55,4 @@ Reversión: poner `ENABLE_JEV_OFFER_REVIEW=0` detiene nuevas consultas al modelo
 
 ## Alcance pendiente
 
-La implementación refuerza la coherencia de las ofertas utilizadas por funciones existentes. No agrega todavía un armador completo de PC, validación integral de compatibilidad, cotización de envío, actualización de todas las tiendas en tiempo real ni corroboración automática de cada ficha. El diagnóstico anterior de antigüedad del catálogo sigue requiriendo trabajo de actualización de fuentes; Jev no lo resuelve por sí mismo.
+El [armador completo y la actualización bajo demanda](../pc-builder-2026-09-21/IMPLEMENTACION.md) se añadieron después de esta integración. Siguen fuera del alcance la certificación integral de compatibilidad, la cotización automática del envío, la actualización instantánea de todas las tiendas y la corroboración automática de cada ficha. El caso real Ryzen 5500 de Mexx devolvió confianza 0,62 ante información de frecuencia base/turbo: confirma que el criterio puede abstenerse incluso cuando la lectura manual encuentra el mismo modelo. Se mantuvo el umbral; falta medir precisión y abstenciones con una muestra independiente antes de ampliarlo.
