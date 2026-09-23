@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Product, ProductPrice } from '@/lib/types';
 import { checkBuildCompatibility } from './compatibility';
 import { emptyBuild, type BuildDraft } from './types';
-import { candidatesForSlot, quoteBuild } from './model';
+import { candidatesForSlot, eligibleOffers, quoteBuild, selectProduct } from './model';
 
 function product(overrides: Partial<Product> & Pick<Product, 'id' | 'name' | 'category'>): Product {
   const prices = overrides.prices ?? [];
@@ -26,7 +26,7 @@ function price(overrides: Partial<ProductPrice> & Pick<ProductPrice, 'storeId' |
     url: `https://store.example/${overrides.storeId}`,
     stock: 'in-stock',
     installment: null,
-    lastUpdated: new Date('2026-09-21T10:00:00.000Z'),
+    lastUpdated: new Date(),
     ...overrides,
   };
 }
@@ -283,5 +283,22 @@ describe('quoteBuild', () => {
 
     expect(quote.lines[0].offer?.lastUpdated).toBe(oldDate);
     expect(quote.issues).toContainEqual(expect.objectContaining({ code: 'stale-cpu', severity: 'warning' }));
+    expect(quote.lines[0].subtotal).toBeNull();
+    expect(quote.subtotal).toBe(0);
+    expect(quote.referenceSubtotal).toBe(100_000);
+    expect(quote.unquoted).toBe(1);
+  });
+
+  it('prefers a recent offer over a cheaper old one and only sums recent prices', () => {
+    const old = price({ storeId: 'old', storeName: 'Anterior', price: 80_000, lastUpdated: new Date('2026-09-01T10:00:00.000Z') });
+    const recent = price({ storeId: 'recent', storeName: 'Reciente', price: 100_000, lastUpdated: new Date() });
+    const cpu = product({ id: 'cpu', name: 'AMD Ryzen 5 5600', category: 'procesadores', prices: [old, recent] });
+
+    expect(eligibleOffers(cpu)[0]).toBe(recent);
+    expect(selectProduct(cpu)?.storeId).toBe('recent');
+    const draft = draftWithSelections({ cpu: { productId: 'cpu', storeId: 'old', url: old.url, quantity: 1 } });
+    expect(quoteBuild(draft, [cpu]).total).toBe(0);
+    draft.selections.cpu = { productId: 'cpu', storeId: 'recent', url: recent.url, quantity: 1 };
+    expect(quoteBuild(draft, [cpu]).subtotal).toBe(100_000);
   });
 });

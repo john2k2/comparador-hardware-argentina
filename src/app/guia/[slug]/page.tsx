@@ -84,7 +84,7 @@ export default async function BudgetGuidePage({ params }: Props) {
           </div>
           
           <div className="border-2 border-border p-4 text-center">
-            <div className="text-[10px] text-muted-foreground mb-1">TOTAL DE PIEZAS COTIZADAS</div>
+            <div className="text-[10px] text-muted-foreground mb-1">TOTAL ORIENTATIVO DE PIEZAS</div>
             <div className="text-[16px] md:text-[24px] font-pixel text-primary break-words">{formatPriceARS(resolved.catalogTotal)}</div>
             <p className="mt-2 text-[10px] uppercase text-muted-foreground">
               {resolved.inStockSlots} de {slotCount} partes con oferta registrada
@@ -97,7 +97,7 @@ export default async function BudgetGuidePage({ params }: Props) {
             {slotCount - resolved.inStockSlots === 1
               ? 'Falta 1 parte sin oferta en stock.'
               : `Faltan ${slotCount - resolved.inStockSlots} partes sin oferta en stock.`}
-            Esas filas no entran al total comprable y muestran un estimado de referencia.
+            Esas filas no entran al total de precios registrados y muestran un estimado de referencia.
           </p>
         )}
       </section>
@@ -110,7 +110,7 @@ export default async function BudgetGuidePage({ params }: Props) {
         
         <GuideComponentRows slots={resolved} />
         <p className="mt-4 text-[10px] uppercase text-muted-foreground font-mono leading-relaxed">
-          Cada precio corresponde a una oferta registrada. Confirmá stock y precio final en la tienda; CPU, mother y RAM deben coincidir en socket y generación.
+          Los precios registrados pueden ser anteriores y el total es orientativo. Confirmá stock y precio final en la tienda; CPU, mother y RAM deben coincidir en socket y generación.
         </p>
       </section>
 

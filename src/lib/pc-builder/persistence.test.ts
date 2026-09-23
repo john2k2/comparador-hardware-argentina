@@ -116,7 +116,8 @@ describe('build persistence', () => {
     const draft = draftWithCpu({ shipping: {} });
     const output = exportBuildText(draft, [product({ id: 'cpu-ñ', name: 'Ryzen 5 5600', category: 'procesadores', prices: [oldOffer] })], new Date('2026-09-21T12:00:00.000Z'));
 
-    expect(output).toContain('Total calculado parcial:');
+    expect(output).toContain('Total calculado parcial, no confirmado:');
+    expect(output).toContain('Pendiente de precio reciente');
     expect(output).toContain(`Fecha de oferta: ${oldOffer.lastUpdated.toLocaleString('es-AR')}`);
     expect(output).toMatch(/Envíos ingresados por el usuario: \$\s*0/);
     expect(output).not.toContain('Total calculado: $100.000');

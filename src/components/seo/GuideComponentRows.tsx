@@ -43,14 +43,14 @@ function ComponentRow({
         <div className="flex flex-wrap items-center gap-2 mb-1">
           <span className="text-[10px] text-muted-foreground">{label}</span>
           <span className={`text-[8px] uppercase font-bold px-2 py-1 border-2 ${isCatalog ? 'border-secondary text-secondary' : 'border-muted text-muted-foreground'}`}>
-            {isCatalog ? (item.offers[0]?.stock === 'low-stock' ? 'STOCK BAJO' : 'EN STOCK') : 'SIN STOCK'}
+            {isCatalog ? (item.offers[0]?.stock === 'low-stock' ? 'STOCK BAJO REGISTRADO' : 'STOCK REGISTRADO') : 'SIN OFERTA REGISTRADA'}
           </span>
         </div>
         <h3 className="text-[12px] font-bold break-words">{item.name}</h3>
         <p className="text-[10px] text-muted-foreground mt-1">{item.description}</p>
         {isCatalog && item.bestStoreName && (
           <p className="text-[10px] uppercase text-accent font-bold mt-2 break-words">
-            {`Mejor precio: @${item.bestStoreName}`}
+            {`Menor precio registrado (orientativo): @${item.bestStoreName}`}
           </p>
         )}
         {extraOffers.length > 0 && (
@@ -65,7 +65,7 @@ function ComponentRow({
         </div>
         {isCatalog ? (
           <div className="text-[10px] text-muted-foreground">
-            {item.storeCount === 1 ? '1 tienda con stock' : `${item.storeCount} tiendas con stock`}
+            {item.storeCount === 1 ? '1 tienda con stock registrado' : `${item.storeCount} tiendas con stock registrado`}
           </div>
         ) : (
           <div className="text-[10px] uppercase text-muted-foreground">Estimado. No recomendar compra.</div>

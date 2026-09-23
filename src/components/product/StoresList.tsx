@@ -9,6 +9,7 @@ import { getOutboundStoreLinkType, getOutboundStoreRel } from '@/lib/commercial'
 import type { ProductPrice, Product } from '@/lib/types';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
 import { getComparableStorePrices } from '@/lib/price-utils';
+import { isOfferFresh } from '@/lib/price-freshness';
 
 type StoresListProps = {
   product: Product;
@@ -17,7 +18,7 @@ type StoresListProps = {
 
 export function StoresList({ product, merchantPrices }: StoresListProps) {
   const bestOffer = getComparableStorePrices(
-    merchantPrices.filter((price) => !needsIdentityReview(price, product) && (price.stock === 'in-stock' || price.stock === 'low-stock')),
+    merchantPrices.filter((price) => !needsIdentityReview(price, product) && (price.stock === 'in-stock' || price.stock === 'low-stock') && isOfferFresh(price.lastUpdated)),
   )[0];
   return (
     <div className="bg-card border-4 border-border p-4 md:p-6 pixel-shadow min-w-0">
@@ -31,6 +32,7 @@ export function StoresList({ product, merchantPrices }: StoresListProps) {
           const pendingIdentity = needsIdentityReview(price, product);
           const isBest = price === bestOffer;
           const observedAt = new Date(price.lastUpdated);
+          const fresh = isOfferFresh(price.lastUpdated);
 
           return (
             <div
@@ -61,6 +63,7 @@ export function StoresList({ product, merchantPrices }: StoresListProps) {
                   Identidad por corroborar. Confirmá la variante antes de comprar; esta oferta no se usa en presupuestos automáticos.
                 </p>
               )}
+              {!fresh && <p className="text-[9px] text-accent">PRECIO ANTERIOR · PENDIENTE DE ACTUALIZAR</p>}
               {Number.isFinite(observedAt.getTime()) && observedAt.getTime() > 0 && (
                 <p className="text-[8px] text-foreground/70">
                   Precio relevado: {observedAt.toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', dateStyle: 'short', timeStyle: 'short' })}

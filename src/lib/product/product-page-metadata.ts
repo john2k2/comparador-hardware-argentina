@@ -1,4 +1,6 @@
-import { computeComparableStorePriceStats, formatPriceARS, getAvailableComparableStorePrices } from '@/lib/price-utils';
+import { formatPriceARS, getAvailableComparableStorePrices } from '@/lib/price-utils';
+import { isOfferFresh } from '@/lib/price-freshness';
+import { needsIdentityReview } from '@/lib/quality/offer-identity';
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
@@ -72,9 +74,9 @@ export function resolveProductImage(product: Product | null): string {
 
 export function buildProductDescription(product: Product): string {
   const name = normalizeDisplayText(product.name);
-  const comparableStats = computeComparableStorePriceStats(product.prices);
-  const storesCompared = getAvailableComparableStorePrices(product.prices).length;
-  const lowest = comparableStats.lowest > 0 ? comparableStats.lowest : product.lowestPrice;
+  const recentOffers = getRecentProductOffers(product);
+  const storesCompared = recentOffers.length;
+  const lowest = recentOffers[0]?.price ?? 0;
   const storeLabel = storesCompared === 1 ? '1 tienda' : `${storesCompared} tiendas`;
   const core = truncateText(
     storesCompared > 0
@@ -82,9 +84,17 @@ export function buildProductDescription(product: Product): string {
       : `Compará precios de ${name} en tiendas de Argentina.`,
     120,
   );
-  const withPrice = lowest > 0 ? `${core} Mejor precio: ${formatPriceARS(lowest)}.` : core;
+  const withPrice = lowest > 0 ? `${core} Mejor precio relevado en 3 horas: ${formatPriceARS(lowest)}.` : core;
 
-  return withPrice.length <= 160 ? withPrice : core;
+  return withPrice.length <= 160 ? withPrice : core.endsWith('…') ? `${core.slice(0, -1).trimEnd()}.` : core;
+}
+
+export function getRecentProductOffers(product: Product) {
+  return getAvailableComparableStorePrices(product.prices.filter((price) => (
+    isOfferFresh(price.lastUpdated)
+    && !needsIdentityReview(price, product)
+    && (price.stock === 'in-stock' || price.stock === 'low-stock')
+  )));
 }
 
 export function stockToSchemaAvailability(stock: Product['prices'][number]['stock']): string {
@@ -123,7 +133,7 @@ export function buildProductJsonLd(product: Product, id: string) {
   const displayModel = normalizeDisplayText(product.model);
   const sku = readSchemaIdentifier(product.specs, SKU_KEYS);
   const mpn = readSchemaIdentifier(product.specs, MPN_KEYS);
-  const offers = getAvailableComparableStorePrices(product.prices)
+  const offers = getRecentProductOffers(product)
     .filter((price) => price.price > 0 && price.url)
     .map((price) => ({
       '@type': 'Offer',

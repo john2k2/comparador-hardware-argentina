@@ -1,6 +1,7 @@
 import type { HardwareCategory, Product } from '@/lib/types';
 import { getComparableStorePrices } from '@/lib/price-utils';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
+import { isOfferFresh } from '@/lib/price-freshness';
 import { findPerformanceBenchmark, type PerformanceBenchmark } from './performance-benchmarks';
 
 export const COMPARABLE_CATEGORIES: Array<{ id: HardwareCategory; label: string }> = [
@@ -48,7 +49,7 @@ export type DynamicComparison = {
 
 function comparableOffers(product: Product) {
   return getComparableStorePrices(
-    product.prices.filter((offer) => !needsIdentityReview(offer)),
+    product.prices.filter((offer) => !needsIdentityReview(offer) && isOfferFresh(offer.lastUpdated)),
   )
     .filter((offer) => offer.price > 0 && (offer.stock === 'in-stock' || offer.stock === 'low-stock'))
     .sort((a, b) => a.price - b.price);
@@ -156,16 +157,16 @@ export function compareProducts(left: Product, right: Product, useCase: Comparis
     ? Math.round((Math.abs(leftValue - rightValue) / Math.min(leftValue, rightValue)) * 100)
     : null;
 
-  let recommendation = 'No hay dos precios comparables en stock para declarar cuál conviene hoy.';
+  let recommendation = 'No hay dos precios recientes comparables en stock para declarar cuál conviene por precio. Los valores anteriores necesitan una nueva comprobación.';
   if (bothPriced && leftPrice === rightPrice) {
-    recommendation = 'Cuestan lo mismo hoy. Elegí por prestaciones, compatibilidad y garantía.';
+    recommendation = 'Los precios relevados en las últimas 3 horas coinciden. Elegí por prestaciones, compatibilidad y garantía.';
   } else if (cheaperProductId) {
     const cheaper = cheaperProductId === left.id ? left : right;
-    recommendation = `${cheaper.name} es la opción de menor precio hoy. La diferencia por sí sola no prueba mejor rendimiento por peso.`;
+    recommendation = `${cheaper.name} es la opción de menor precio entre ofertas relevadas en las últimas 3 horas. La diferencia por sí sola no prueba mejor rendimiento por peso.`;
   }
   if (valueWinnerProductId && valueDifferencePercent != null) {
     const winner = valueWinnerProductId === left.id ? left : right;
-    recommendation = `${winner.name} conviene más para ${COMPARISON_USE_CASES.find((entry) => entry.id === useCase)?.label.toLowerCase()}: entrega aproximadamente ${valueDifferencePercent}% más ${leftMetric?.label ?? 'puntaje de referencia'} por peso al precio relevado hoy.`;
+    recommendation = `${winner.name} conviene más para ${COMPARISON_USE_CASES.find((entry) => entry.id === useCase)?.label.toLowerCase()}: entrega aproximadamente ${valueDifferencePercent}% más ${leftMetric?.label ?? 'puntaje de referencia'} por peso con precios relevados en las últimas 3 horas.`;
   }
 
   return {
@@ -179,7 +180,7 @@ export function compareProducts(left: Product, right: Product, useCase: Comparis
       ...compatibilityEvidence(left.category, left, right),
       ...(buildUseCaseCaveat(left.category, useCase) ? [buildUseCaseCaveat(left.category, useCase)!] : []),
       bothBenchmarked
-        ? `El valor usa ${leftMetric.label} y ofertas en stock cuya identidad fue validada.`
+        ? `El valor usa ${leftMetric.label} y ofertas recientes en stock cuya identidad fue validada.`
         : 'No hay benchmarks compatibles para ambos modelos; la recomendación no inventa rendimiento faltante.',
     ],
     leftOffers: leftComparableOffers.slice(0, 5).map((offer) => ({ store: offer.storeName || offer.storeId, price: offer.price })),

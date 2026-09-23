@@ -2,19 +2,24 @@ import type { Product, ProductPrice } from '@/lib/types';
 import { buildIdentityEvidence, hasExplicitIdentityConflict, needsIdentityReview } from '@/lib/quality/offer-identity';
 import { isBundleLikeTitle, isCompleteComputerTitle } from '@/lib/product-identity';
 import { getComparableStorePrices } from '@/lib/price-utils';
+import { isOfferFresh } from '@/lib/price-freshness';
 import { buildBudgetFromCatalog } from '@/lib/seo/budget-builder';
 import { checkBuildCompatibility, hasIntegratedGraphics, includesCpuCooler, spec } from './compatibility';
 import { BUILD_SLOTS, SLOT_CATEGORIES, SLOT_LABELS, emptyBuild, type BuildDraft, type BuildLine, type BuildQuote, type BuildSelection, type BuildSlot } from './types';
 
-export const OFFER_FRESH_MS = 3 * 60 * 60 * 1000;
 export function eligibleOffers(product: Product): ProductPrice[] {
-  return getComparableStorePrices(product.prices.filter((offer) => {
+  const eligible = product.prices.filter((offer) => {
     if (!Number.isFinite(offer.price) || offer.price <= 0 || needsIdentityReview(offer, product)) return false;
     const evidence = buildIdentityEvidence(product.name, product.category, offer.url);
     if (evidence && hasExplicitIdentityConflict(evidence)) return false;
     if (offer.stock !== 'in-stock' && offer.stock !== 'low-stock') return false;
     try { const url = new URL(offer.url); return url.protocol === 'https:' && !url.username && !url.password; } catch { return false; }
-  }));
+  });
+  // Una oferta reciente tiene prioridad al sugerir tienda y presupuesto.
+  return [
+    ...getComparableStorePrices(eligible.filter((offer) => isOfferFresh(offer.lastUpdated))),
+    ...getComparableStorePrices(eligible.filter((offer) => !isOfferFresh(offer.lastUpdated))),
+  ];
 }
 function fitsSlot(product: Product, slot: BuildSlot): boolean {
   const name = product.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -79,11 +84,14 @@ export function quoteBuild(draft: BuildDraft, products: Product[], now = Date.no
     if (product) parts[slot] = slot === 'cpu' && offer ? { ...product, prices: [offer] } : product;
     const eligible = product && offer && eligibleOffers(product).includes(offer);
     const unit = draft.payment === 'installments' ? offer?.installment?.totalAmount : offer?.price;
-    const unitPrice = eligible && typeof unit === 'number' && Number.isFinite(unit) && unit > 0 ? unit : null;
-    lines.push({ slot, product, offer, selection, unitPrice, subtotal: unitPrice === null ? null : Math.round(unitPrice * selection.quantity * 100) / 100 });
-    if (unitPrice === null) issues.push({ code: `offer-${slot}`, severity: 'error', message: `${SLOT_LABELS[slot]}: la oferta elegida no tiene precio y stock utilizables para esta forma de pago. Elegí otra o actualizala.` });
-    const observedAt = offer ? new Date(offer.lastUpdated).getTime() : NaN;
-    if (!Number.isFinite(observedAt) || observedAt > now + 60_000 || now - observedAt > OFFER_FRESH_MS) issues.push({ code: `stale-${slot}`, severity: 'warning', message: `${SLOT_LABELS[slot]}: precio pendiente de actualización; conservamos la fecha de la tienda.` });
+    const fresh = offer && isOfferFresh(offer.lastUpdated, now);
+    const referencePrice = eligible && typeof unit === 'number' && Number.isFinite(unit) && unit > 0 ? unit : null;
+    const unitPrice = fresh ? referencePrice : null;
+    lines.push({ slot, product, offer, selection, unitPrice,
+      subtotal: unitPrice === null ? null : Math.round(unitPrice * selection.quantity * 100) / 100,
+      referenceSubtotal: referencePrice === null ? null : Math.round(referencePrice * selection.quantity * 100) / 100 });
+    if (!eligible || (fresh && unitPrice === null)) issues.push({ code: `offer-${slot}`, severity: 'error', message: `${SLOT_LABELS[slot]}: la oferta elegida no tiene precio y stock utilizables para esta forma de pago. Elegí otra o actualizala.` });
+    if (offer && !fresh) issues.push({ code: `stale-${slot}`, severity: 'warning', message: `${SLOT_LABELS[slot]}: precio anterior pendiente de actualización; no se suma al total. Conservamos la fecha de la tienda.` });
   }
   const required: BuildSlot[] = ['cpu', 'motherboard', 'ram', 'ssd', 'psu', 'case'];
   if (!hasIntegratedGraphics(parts.cpu)) required.push('gpu');
@@ -93,9 +101,10 @@ export function quoteBuild(draft: BuildDraft, products: Product[], now = Date.no
   const missingShipping = storeIds.filter((storeId) => draft.shipping[storeId] === undefined);
   const shipping = Math.round(storeIds.reduce((sum, id) => sum + (draft.shipping[id] ?? 0), 0) * 100) / 100;
   const subtotal = Math.round(lines.reduce((sum, line) => sum + (line.subtotal ?? 0), 0) * 100) / 100;
+  const referenceSubtotal = Math.round(lines.reduce((sum, line) => sum + (line.referenceSubtotal ?? 0), 0) * 100) / 100;
   const total = Math.round((subtotal + shipping) * 100) / 100;
   const unquoted = lines.filter((line) => line.subtotal === null).length;
-  return { lines, issues, subtotal, shipping, total, unquoted, missingShipping, storeIds,
+  return { lines, issues, subtotal, referenceSubtotal, shipping, total, unquoted, missingShipping, storeIds,
     complete: required.every((slot) => parts[slot]) && (Boolean(parts.cooler) || includesCpuCooler(parts.cpu) === true)
       && !issues.some((issue) => issue.severity === 'error'),
     overBudget: Math.max(0, Math.round((total - draft.budget) * 100) / 100) };

@@ -17,6 +17,7 @@ import {
   buildProductDescription,
   buildProductJsonLd,
   buildShortProductTitle,
+  getRecentProductOffers,
   resolveProductImage,
 } from '@/lib/product/product-page-metadata';
 
@@ -149,7 +150,7 @@ function ProductSeoSupport({ product }: { product: Product }) {
   const displayName = normalizeDisplayText(product.name);
   const displayBrand = normalizeDisplayText(product.brand);
   const storeCount = getAvailableComparableStorePrices(product.prices).length;
-  const bestPrice = formatPriceARS(product.lowestPrice);
+  const recentOffer = getRecentProductOffers(product)[0];
   const content = getProductContent(product);
 
   return (
@@ -161,9 +162,11 @@ function ProductSeoSupport({ product }: { product: Product }) {
         </h2>
         <div className="grid md:grid-cols-2 gap-4 text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
           <p>
-            Esta ficha compara {displayName} {displayBrand ? `de ${displayBrand}` : ''} entre {storeCount} comercios disponibles.
-            El mejor valor detectado al momento de la última actualización es {bestPrice}, pero el importe final puede cambiar
-            por stock, promociones, cuotas, envío o condiciones propias de cada local.
+            Esta ficha reúne registros de {displayName} {displayBrand ? `de ${displayBrand}` : ''} de {storeCount} comercios.
+            {recentOffer
+              ? ` El menor precio relevado en las últimas 3 horas es ${formatPriceARS(recentOffer.price)}.`
+              : ' Los precios registrados son anteriores y sirven sólo como referencia hasta una nueva comprobación.'}
+            {' '}El importe final puede cambiar por stock, promociones, cuotas, envío o condiciones propias de cada local.
           </p>
           <p>
             Antes de comprar, verificá que la variante coincida exactamente con lo que necesitás: modelo, capacidad,

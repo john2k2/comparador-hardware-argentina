@@ -3,7 +3,7 @@ import type { HardwareCategory, Product } from '@/lib/types';
 import { compareProducts } from './dynamic-comparison';
 
 function product(id: string, price: number, specs: Record<string, string> = {}, category: HardwareCategory = 'procesadores'): Product {
-  const now = new Date('2026-09-22T00:00:00.000Z');
+  const now = new Date();
   return {
     id, name: id, category, brand: 'Marca', model: id, specs,
     prices: [{ storeId: 'store', storeName: 'Store', url: 'https://store.example/product', price, stock: 'in-stock', installment: null, lastUpdated: now }],
@@ -66,5 +66,16 @@ describe('compareProducts', () => {
     );
     expect(result.valueWinnerProductId).toBeNull();
     expect(result.evidence.join(' ')).toContain('aplicación concreta');
+  });
+
+  it('no declara un ganador por precio con una oferta antigua', () => {
+    const left = product('GPU A', 100_000, {}, 'tarjetas-graficas');
+    left.prices[0].lastUpdated = new Date('2026-09-01T00:00:00.000Z');
+    const result = compareProducts(left, product('GPU B', 120_000, {}, 'tarjetas-graficas'));
+
+    expect(result.leftPrice).toBeNull();
+    expect(result.difference).toBeNull();
+    expect(result.cheaperProductId).toBeNull();
+    expect(result.recommendation).toContain('precios recientes');
   });
 });

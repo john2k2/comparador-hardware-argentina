@@ -31,7 +31,7 @@ function offer(overrides: Partial<ProductPrice> = {}): ProductPrice {
     price: 80_000,
     stock: 'in-stock',
     installment: null,
-    lastUpdated: new Date('2026-09-21T12:00:00.000Z'),
+    lastUpdated: new Date(),
     ...overrides,
   };
 }
@@ -186,5 +186,40 @@ describe('offer identity display', () => {
     expect(markup).toContain('Sin oferta disponible para comparar');
     expect(markup).not.toContain('MEJOR PRECIO');
     expect(markup).not.toMatch(/\$\s*0/);
+  });
+
+  it('shows an old price only as reference and never labels it best', () => {
+    const old = offer({ price: 50_000, lastUpdated: new Date('2026-09-01T00:00:00.000Z') });
+    const currentProduct = { ...product(), prices: [old] };
+    const card = renderToStaticMarkup(createElement(ProductCard, { product: currentProduct }));
+    const stores = renderToStaticMarkup(createElement(StoresList, { product: currentProduct, merchantPrices: [old] }));
+    const summary = renderToStaticMarkup(createElement(PriceSummary, {
+      product: currentProduct, merchantPrices: [old], lowestComparablePrice: 50_000,
+      highestComparablePrice: 50_000, selectedInstallment: null, onSelectInstallment: vi.fn(),
+    }));
+
+    expect(card).toContain('ÚLTIMO PRECIO RELEVADO');
+    expect(card).not.toContain('MEJOR PRECIO');
+    expect(stores).toContain('PENDIENTE DE ACTUALIZAR');
+    expect(stores).not.toContain('[ MEJOR PRECIO ]');
+    expect(summary).toContain('precios anteriores');
+    expect(summary).not.toContain('MEJOR PRECIO DETECTADO');
+  });
+
+  it('compares a recent offer without letting an old cheaper price win', () => {
+    const old = offer({ storeId: 'store-old', storeName: 'Anterior', price: 50_000,
+      lastUpdated: new Date('2026-09-01T00:00:00.000Z') });
+    const recent = offer({ storeId: 'store-recent', storeName: 'Reciente', price: 90_000,
+      url: 'https://store.example/amd-ryzen-7-7800x3d-recent' });
+    const currentProduct = { ...product(), prices: [old, recent] };
+    const card = renderToStaticMarkup(createElement(ProductCard, { product: currentProduct }));
+    const stores = renderToStaticMarkup(createElement(StoresList, { product: currentProduct, merchantPrices: [old, recent] }));
+
+    expect(card).toContain('MEJOR PRECIO RELEVADO EN 3 H');
+    expect(card).toContain('90.000');
+    expect(card).not.toContain('50.000');
+    expect(stores.match(/\[ MEJOR PRECIO \]/g)).toHaveLength(1);
+    expect(stores.indexOf('[ MEJOR PRECIO ]')).toBeGreaterThan(stores.indexOf('@Anterior'));
+    expect(stores.indexOf('[ MEJOR PRECIO ]')).toBeLessThan(stores.indexOf('@Reciente'));
   });
 });

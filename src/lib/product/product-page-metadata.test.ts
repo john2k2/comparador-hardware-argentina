@@ -26,7 +26,7 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
         price: 363736,
         stock: 'in-stock',
         installment: null,
-        lastUpdated: new Date('2026-05-01'),
+        lastUpdated: new Date(),
       },
       {
         storeId: 'venex',
@@ -35,7 +35,7 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
         price: 370000,
         stock: 'in-stock',
         installment: null,
-        lastUpdated: new Date('2026-05-01'),
+        lastUpdated: new Date(),
       },
     ],
     lowestPrice: 363736,
@@ -118,7 +118,7 @@ describe('buildProductDescription', () => {
     const product = makeProduct({ name: 'RTX 4060' });
     const description = buildProductDescription(product);
     expect(description).toContain('Compará precios de RTX 4060 en 2 tiendas');
-    expect(description).toContain('Mejor precio:');
+    expect(description).toContain('Mejor precio relevado en 3 horas:');
     expect(description).toContain('$');
   });
 
@@ -134,7 +134,7 @@ describe('buildProductDescription', () => {
           price: 190_000,
           stock: 'out-of-stock',
           installment: null,
-          lastUpdated: new Date('2026-05-01'),
+          lastUpdated: new Date(),
         },
         {
           storeId: 'mexx',
@@ -143,7 +143,7 @@ describe('buildProductDescription', () => {
           price: 250_000,
           stock: 'in-stock',
           installment: null,
-          lastUpdated: new Date('2026-05-01'),
+          lastUpdated: new Date(),
         },
       ],
     });
@@ -241,7 +241,7 @@ describe('buildProductJsonLd', () => {
           price: 100,
           stock: 'in-stock',
           installment: null,
-          lastUpdated: new Date('2026-05-01'),
+          lastUpdated: new Date(),
         },
         {
           storeId: 'b',
@@ -250,7 +250,7 @@ describe('buildProductJsonLd', () => {
           price: 0,
           stock: 'in-stock',
           installment: null,
-          lastUpdated: new Date('2026-05-01'),
+          lastUpdated: new Date(),
         },
       ],
     });
@@ -264,13 +264,25 @@ describe('buildProductJsonLd', () => {
   it('no publica como oferta comparable una tienda agotada', () => {
     const jsonLd = buildProductJsonLd(makeProduct({
       prices: [
-        { storeId: 'agotada', storeName: 'Agotada', url: 'https://agotada.example/a', price: 100_000, stock: 'out-of-stock', installment: null, lastUpdated: new Date('2026-05-01') },
-        { storeId: 'disponible', storeName: 'Disponible', url: 'https://disponible.example/a', price: 150_000, stock: 'in-stock', installment: null, lastUpdated: new Date('2026-05-01') },
+        { storeId: 'agotada', storeName: 'Agotada', url: 'https://agotada.example/a', price: 100_000, stock: 'out-of-stock', installment: null, lastUpdated: new Date() },
+        { storeId: 'disponible', storeName: 'Disponible', url: 'https://disponible.example/a', price: 150_000, stock: 'in-stock', installment: null, lastUpdated: new Date() },
       ],
     }), 'agrupado-motherboards-gigabyte-eagle-lga1851-z890-12a7yda');
     const productEntry = jsonLd.find((entry) => entry['@type'] === 'Product') as { offers: { lowPrice: number; offerCount: number } };
 
     expect(productEntry.offers.lowPrice).toBe(150_000);
     expect(productEntry.offers.offerCount).toBe(1);
+  });
+
+  it('no publica ofertas antiguas como precios vigentes en el snippet ni en los datos estructurados', () => {
+    const product = makeProduct({ name: 'RTX 4060', prices: makeProduct().prices.map((offer) => ({
+      ...offer, lastUpdated: new Date('2026-05-01T00:00:00.000Z'),
+    })) });
+    const jsonLd = buildProductJsonLd(product, product.id);
+    const productEntry = jsonLd.find((entry) => entry['@type'] === 'Product') as { offers: unknown[] };
+
+    expect(buildProductDescription(product)).not.toContain('Mejor precio relevado');
+    expect(buildProductDescription(product)).not.toContain('$');
+    expect(productEntry.offers).toEqual([]);
   });
 });

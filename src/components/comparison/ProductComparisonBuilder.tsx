@@ -43,7 +43,7 @@ function ProductFinder({ category, side, selected, onSelect }: {
       {selected ? (
         <div>
           <p className="text-[11px] font-bold leading-relaxed">{selected.name}</p>
-          <p className="text-[10px] text-muted-foreground mt-2">Desde {selected.lowestPrice > 0 ? formatPriceARS(selected.lowestPrice) : 'sin precio'}</p>
+          <p className="text-[10px] text-muted-foreground mt-2">Último precio registrado: {selected.lowestPrice > 0 ? formatPriceARS(selected.lowestPrice) : 'sin precio'}</p>
           <button type="button" onClick={() => onSelect(null)} className="mt-3 min-h-10 border-2 border-border px-3 text-[10px] font-bold hover:border-primary">CAMBIAR</button>
         </div>
       ) : (
@@ -65,7 +65,7 @@ function ProductFinder({ category, side, selected, onSelect }: {
             {products.map((product) => (
               <button key={product.id} type="button" onClick={() => onSelect(product)} className="w-full border-2 border-border p-3 text-left hover:border-primary">
                 <span className="block text-[10px] font-bold leading-relaxed">{product.name}</span>
-                <span className="mt-1 block text-[9px] text-muted-foreground">{product.prices.length} ofertas · desde {formatPriceARS(product.lowestPrice)}</span>
+                <span className="mt-1 block text-[9px] text-muted-foreground">{product.prices.length} ofertas · último precio registrado {product.lowestPrice > 0 ? formatPriceARS(product.lowestPrice) : 'sin precio'}</span>
               </button>
             ))}
             {!loading && query.length >= 2 && products.length === 0 && <p className="text-[10px] text-muted-foreground">Buscá para ver productos del catálogo.</p>}
@@ -124,7 +124,7 @@ export function ProductComparisonBuilder() {
             <table className="w-full min-w-[620px] text-[10px] font-mono">
               <thead><tr className="border-b-2 border-border"><th className="p-2 text-left">Dato</th><th className="p-2 text-left">{left.name}</th><th className="p-2 text-left">{right.name}</th></tr></thead>
               <tbody>
-                <tr className="border-b border-border"><th className="p-2 text-left">Mejor precio válido</th><td className="p-2">{comparison.leftPrice ? formatPriceARS(comparison.leftPrice) : 'Sin oferta'}</td><td className="p-2">{comparison.rightPrice ? formatPriceARS(comparison.rightPrice) : 'Sin oferta'}</td></tr>
+                <tr className="border-b border-border"><th className="p-2 text-left">Mejor precio reciente (3 h)</th><td className="p-2">{comparison.leftPrice ? formatPriceARS(comparison.leftPrice) : 'Sin precio reciente'}</td><td className="p-2">{comparison.rightPrice ? formatPriceARS(comparison.rightPrice) : 'Sin precio reciente'}</td></tr>
                 <tr className="border-b border-border"><th className="p-2 text-left">Ofertas relevadas</th><td className="p-2">{left.prices.length}</td><td className="p-2">{right.prices.length}</td></tr>
                 {comparison.specificationRows.map((row) => <tr key={row.label} className="border-b border-border/60"><th className="p-2 text-left">{row.label}</th><td className="p-2">{row.left}</td><td className="p-2">{row.right}</td></tr>)}
               </tbody>
@@ -163,12 +163,12 @@ export function ProductComparisonBuilder() {
           )}
 
           <section className="border-4 border-border bg-card p-5 pixel-shadow">
-            <h2 className="mb-4 text-[12px] font-bold text-primary">[ OFERTAS VÁLIDAS RELEVADAS ]</h2>
+            <h2 className="mb-4 text-[12px] font-bold text-primary">[ OFERTAS RELEVADAS EN LAS ÚLTIMAS 3 H ]</h2>
             <div className="grid gap-5 md:grid-cols-2">
               {([['A', left, comparison.leftOffers], ['B', right, comparison.rightOffers]] as const).map(([label, product, offers]) => (
                 <div key={label}>
                   <h3 className="mb-2 text-[10px] font-bold">{label} · {product.name}</h3>
-                  {offers.length === 0 ? <p className="text-[10px] text-muted-foreground">Sin ofertas comparables en stock.</p> : (
+                  {offers.length === 0 ? <p className="text-[10px] text-muted-foreground">Sin ofertas recientes comparables en stock.</p> : (
                     <ul className="space-y-2 text-[10px] font-mono">
                       {offers.map((offer) => <li key={`${offer.store}-${offer.price}`} className="flex justify-between gap-3 border-b border-border pb-2"><span>{offer.store}</span><strong>{formatPriceARS(offer.price)}</strong></li>)}
                     </ul>

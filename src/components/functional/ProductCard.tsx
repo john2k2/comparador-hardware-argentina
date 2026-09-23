@@ -11,6 +11,7 @@ import { computeComparableStorePriceStats, formatPriceARS } from '@/lib/price-ut
 import { normalizeDisplayText } from '@/lib/text-utils';
 import { freshnessLabel } from '@/lib/ui/freshness-label';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
+import { isOfferFresh } from '@/lib/price-freshness';
 import type { Product } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { PriceDisplay } from './PriceDisplay';
@@ -48,20 +49,25 @@ export const ProductCard = React.memo(function ProductCard({
     displayBrand,
     displayName,
     discountPercent,
+    freshStoreCount,
     hasDiscount,
     hasPriceDrop,
+    hasFreshPrice,
     lowestComparablePrice,
     priceDropAmount,
     priceDropPercent,
   } = useMemo(() => {
-    const comparableStats = computeComparableStorePriceStats(product.prices.filter((price) => (
+    const eligible = product.prices.filter((price) => (
       !needsIdentityReview(price, product) && (price.stock === 'in-stock' || price.stock === 'low-stock')
-    )));
-    const comparablePrices = comparableStats.comparablePrices;
-    const comparableStoreCount = comparablePrices.length;
-    const lowestComparablePrice = comparableStats.lowest;
-    const bestPrice = comparablePrices[0];
-    const hasDiscount = Boolean(bestPrice?.originalPrice && bestPrice.originalPrice > bestPrice.price);
+    ));
+    const comparableStats = computeComparableStorePriceStats(eligible.filter((price) => !isOfferFresh(price.lastUpdated)));
+    const freshStats = computeComparableStorePriceStats(eligible.filter((price) => isOfferFresh(price.lastUpdated)));
+    const comparableStoreCount = new Set(eligible.map((price) => price.storeId)).size;
+    const freshStoreCount = freshStats.comparablePrices.length;
+    const hasFreshPrice = freshStoreCount > 0;
+    const lowestComparablePrice = hasFreshPrice ? freshStats.lowest : comparableStats.lowest;
+    const bestPrice = (hasFreshPrice ? freshStats : comparableStats).comparablePrices[0];
+    const hasDiscount = Boolean(hasFreshPrice && bestPrice?.originalPrice && bestPrice.originalPrice > bestPrice.price);
     const discountPercent = hasDiscount
       ? Math.round((((bestPrice?.originalPrice ?? 0) - (bestPrice?.price ?? 0)) / (bestPrice?.originalPrice ?? 1)) * 100)
       : 0;
@@ -71,7 +77,7 @@ export const ProductCard = React.memo(function ProductCard({
     const priceDropAmount = priceDropBaseline ? Math.max(0, priceDropBaseline - lowestComparablePrice) : 0;
     const priceDropPercent = priceDropBaseline ? Math.round((priceDropAmount / priceDropBaseline) * 100) : 0;
     const hasPriceDrop = Boolean(
-      priceDropBaseline &&
+      hasFreshPrice && priceDropBaseline &&
       priceDropAmount > 0 &&
       (priceDropAmount >= PRICE_DROP_MIN_AMOUNT_ARS || priceDropPercent >= PRICE_DROP_MIN_PERCENT),
     );
@@ -82,8 +88,10 @@ export const ProductCard = React.memo(function ProductCard({
       displayBrand: normalizeDisplayText(product.brand),
       displayName: normalizeDisplayText(product.name),
       discountPercent,
+      freshStoreCount,
       hasDiscount,
       hasPriceDrop,
+      hasFreshPrice,
       lowestComparablePrice,
       priceDropAmount,
       priceDropPercent,
@@ -129,7 +137,7 @@ export const ProductCard = React.memo(function ProductCard({
             </div>
           )}
 
-          {comparableStoreCount > 1 && (
+          {freshStoreCount > 1 && (
             <div className="absolute top-0 left-0 bg-secondary text-secondary-foreground px-2 py-1 text-[7px] uppercase font-bold border-b-2 border-r-2 border-border">
               COMPARADO
             </div>
@@ -159,7 +167,7 @@ export const ProductCard = React.memo(function ProductCard({
           <div className="mt-auto pt-3 border-t-2 border-muted">
             {bestPrice ? (
               <>
-                <p className="text-[8px] uppercase text-foreground/80 mb-1">MEJOR PRECIO</p>
+                <p className="text-[8px] uppercase text-foreground/80 mb-1">{hasFreshPrice ? 'MEJOR PRECIO RELEVADO EN 3 H' : 'ÚLTIMO PRECIO RELEVADO · PENDIENTE DE ACTUALIZAR'}</p>
                 <PriceDisplay
                   price={lowestComparablePrice}
                   originalPrice={hasDiscount ? bestPrice.originalPrice : undefined}

@@ -21,10 +21,10 @@ export type BuildDraft = {
 export type BuildIssue = { code: string; severity: 'error' | 'warning'; message: string };
 export type BuildLine = {
   slot: BuildSlot; product: Product | null; offer: ProductPrice | null;
-  selection: BuildSelection; unitPrice: number | null; subtotal: number | null;
+  selection: BuildSelection; unitPrice: number | null; subtotal: number | null; referenceSubtotal: number | null;
 };
 export type BuildQuote = {
-  lines: BuildLine[]; issues: BuildIssue[]; subtotal: number; shipping: number;
+  lines: BuildLine[]; issues: BuildIssue[]; subtotal: number; referenceSubtotal: number; shipping: number;
   total: number; unquoted: number; missingShipping: string[]; storeIds: string[];
   complete: boolean; overBudget: number;
 };
