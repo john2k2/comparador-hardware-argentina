@@ -72,3 +72,5 @@ observado_el,periodo_inicio,periodo_fin,fuente,metrica,segmento,valor,unidad,est
 2026-09-21,2026-09-21,2026-09-21,GSC,url_live_test,pc_gamer_2_millones,1,prueba,verificado,Prueba en tiempo real: URL disponible para Google y página indexable; no equivale a indexación completada
 2026-09-22,2026-09-22,2026-09-22,HTTP,critical_routes,daily_sample,4/4,rutas,verificado,Portada CPU GPU y ficha Ryzen 5 5500 respondieron 200 con peticiones espaciadas
 2026-09-22,2026-09-22,2026-09-22,GitHub Actions,catalog_refresh_fallback,scheduled_run,2,productos,verificado,Run 35712677571: demanda rx 6950 xt vacía; fallback ryzen 5600 obtuvo dos productos
+2026-09-23,2026-09-23,2026-09-23,HTTP,critical_routes,daily_sample,4/4,rutas,verificado,Portada CPU GPU y ficha Ryzen 5 5500 respondieron 200 con peticiones espaciadas
+2026-09-23,2026-09-23,2026-09-23,GitHub Actions,catalog_refresh_fallback,scheduled_run,12,productos_informados,verificado,Run 35845459548: demanda rx 6600 xt vacía; fallback rtx 5060 informó 12 productos; frescura por tienda no verificada

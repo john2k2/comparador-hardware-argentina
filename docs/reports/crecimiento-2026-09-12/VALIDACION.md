@@ -122,3 +122,7 @@ Estado de evidencia: implementación publicada en Cloudflare como versión `b937
 ### Corte operativo — 22/09/2026
 
 Las cuatro rutas diarias respondieron 200. El scheduler `35712677571` devolvió `fallbackApplied=true`: `rx 6950 xt` produjo cero artículos y la consulta de recuperación `ryzen 5600` obtuvo dos. La ejecución manual fallida `35678031730` fue una prueba acotada a Mexx, Venex y Maximus; las dos ejecuciones manuales posteriores por categoría fueron exitosas. La recuperación está comprobada, pero no cierra G02 ni prueba frescura completa del catálogo.
+
+### Corte operativo — 23/09/2026
+
+Las cuatro rutas críticas respondieron 200. El scheduler `35845459548` finalizó con `fallbackApplied=true`: `rx 6600 xt` devolvió cero artículos y `rtx 5060` informó 12, con un objetivo correcto y uno vacío. No se modificó el estado de G02: faltan mediciones de persistencia, cobertura y frescura por tienda.
