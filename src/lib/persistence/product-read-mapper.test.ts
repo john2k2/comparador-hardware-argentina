@@ -81,4 +81,34 @@ describe('product-read-mapper', () => {
 
     expect(mapDbProduct(row).category).toBe('tarjetas-graficas');
   });
+
+  it('corrige en lectura la identidad heredada de una GPU sin cambiar su URL', () => {
+    const row = {
+      id: 'agrupado-perifericos-gigabyte-rx-7600',
+      name: 'Placa de Video Gigabyte RX 7600 Gaming 8GB',
+      category: 'tarjetas-graficas',
+      brand: 'Gigabyte',
+      model: 'RX 7600 Gaming',
+      description: null,
+      image: null,
+      normalized_title: 'GIGABYTE RX 7600 GAMING 8GB',
+      canonical_product_key: 'perifericos::generic:gigabyte:other:8gb',
+      family_key: null,
+      variant_key: null,
+      refresh_priority: null,
+      last_scraped_at: null,
+      last_normalized_at: null,
+      specs: null,
+      lowest_price: 550000,
+      highest_price: 550000,
+      average_price: 550000,
+      created_at: '2026-03-20T10:00:00.000Z',
+      updated_at: '2026-03-26T11:10:00.000Z',
+      product_prices: [],
+    } satisfies DbProductRow;
+
+    const mapped = mapDbProduct(row);
+    expect(mapped.id).toBe(row.id);
+    expect(mapped.canonicalProductKey).toMatch(/^tarjetas-graficas::gpu:rx7600/);
+  });
 });

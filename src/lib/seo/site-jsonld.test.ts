@@ -3,7 +3,7 @@ import { SITE_BRAND_SHORT, SITE_URL, SUPPORT_EMAIL } from '@/lib/site-config';
 import { buildSiteJsonLd } from './site-jsonld';
 
 describe('buildSiteJsonLd', () => {
-  it('genera Organization y WebSite con SearchAction', () => {
+  it('genera Organization y WebSite', () => {
     const [organization, website] = buildSiteJsonLd();
 
     expect(organization['@type']).toBe('Organization');
@@ -29,13 +29,9 @@ describe('buildSiteJsonLd', () => {
     expect(website.publisher).toEqual({ '@id': `${SITE_URL}#organization` });
   });
 
-  it('el SearchAction apunta a /search?q= con el placeholder correcto', () => {
+  it('evita publicar una plantilla de búsqueda como URL rastreable', () => {
     const [, website] = buildSiteJsonLd();
-    const action = website.potentialAction;
-
-    expect(action['@type']).toBe('SearchAction');
-    expect(action.target.urlTemplate).toBe(`${SITE_URL}/search?q={search_term_string}`);
-    expect(action['query-input']).toBe('required name=search_term_string');
+    expect(website).not.toHaveProperty('potentialAction');
   });
 
   it('Organization y WebSite comparten el mismo @id de referencia', () => {

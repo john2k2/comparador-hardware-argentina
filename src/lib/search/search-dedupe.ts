@@ -9,6 +9,7 @@ import {
   parseGpuChipSignature,
 } from '@/lib/product-identity';
 import { normalizeSearchText, scoreProductRelevance } from '@/lib/search/search-ranking';
+import { resolveHardwareCategoryForProduct } from '@/lib/catalog/hardware-categories';
 import type { HardwareCategory, Product } from '@/lib/types';
 
 const DEDUPE_STOPWORDS = new Set([
@@ -207,17 +208,22 @@ export function groupSearchProducts(
 
   for (const product of liveProducts) {
     const normalizedName = normalizedTitlesMap.get(product.name) || product.name;
-    const groupKey = buildCanonicalGroupKey(product, normalizedName);
-    const identityFallback = buildIdentityFallback(product);
-    const familyKey = buildProductFamilyKey(product.category, normalizedName, identityFallback) ?? undefined;
-    const variantKey = buildProductVariantKey(product.category, normalizedName, identityFallback);
+    const namedCategory = resolveHardwareCategoryForProduct(product.name, product.category);
+    const categorizedProduct = {
+      ...product,
+      category: resolveHardwareCategoryForProduct(normalizedName, namedCategory),
+    };
+    const groupKey = buildCanonicalGroupKey(categorizedProduct, normalizedName);
+    const identityFallback = buildIdentityFallback(categorizedProduct);
+    const familyKey = buildProductFamilyKey(categorizedProduct.category, normalizedName, identityFallback) ?? undefined;
+    const variantKey = buildProductVariantKey(categorizedProduct.category, normalizedName, identityFallback);
 
     if (!uniqueMap.has(groupKey)) {
-      const stats = computeComparableStorePriceStats(product.prices);
+      const stats = computeComparableStorePriceStats(categorizedProduct.prices);
 
       uniqueMap.set(groupKey, {
-        ...product,
-        id: buildGroupedProductId(product, normalizedName, groupKey),
+        ...categorizedProduct,
+        id: buildGroupedProductId(categorizedProduct, normalizedName, groupKey),
         prices: stats.comparablePrices,
         lowestPrice: stats.lowest,
         highestPrice: stats.highest,

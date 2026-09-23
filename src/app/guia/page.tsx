@@ -116,6 +116,27 @@ export default function GuiasIndexPage() {
       </div>
 
       <section className="mt-8 bg-card border-4 border-border p-5 md:p-6 pixel-shadow">
+        <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-3">
+          [ COMPARA ANTES DE ELEGIR ]
+        </h2>
+        <p className="text-[11px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono mb-4">
+          Si ya tenés dos modelos en mente, compará sus ofertas y diferencias para gaming o productividad.
+          También podés explorar procesadores y placas de video con precios de varias tiendas.
+        </p>
+        <div className="flex flex-wrap gap-3 text-[10px] font-mono font-bold uppercase">
+          <Link href="/comparativa/comparar" className="inline-flex min-h-11 items-center border-2 border-primary px-3 text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
+            Comparar productos →
+          </Link>
+          <Link href="/comparar/procesadores" className="inline-flex min-h-11 items-center border-2 border-border px-3 text-foreground hover:border-primary transition-colors">
+            Ver procesadores →
+          </Link>
+          <Link href="/comparar/placas-de-video" className="inline-flex min-h-11 items-center border-2 border-border px-3 text-foreground hover:border-primary transition-colors">
+            Ver placas de video →
+          </Link>
+        </div>
+      </section>
+
+      <section className="mt-8 bg-card border-4 border-border p-5 md:p-6 pixel-shadow">
         <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">
           [ PREGUNTAS FRECUENTES ]
         </h2>

@@ -1,5 +1,5 @@
 import type { HardwareCategory } from '@/lib/types';
-import { isCompleteComputerTitle } from '@/lib/product-identity';
+import { isCompleteComputerTitle, parseGpuChipSignature } from '@/lib/product-identity';
 
 export const HARDWARE_CATEGORIES: HardwareCategory[] = [
   'procesadores',
@@ -24,7 +24,13 @@ export function inferHardwareCategoryFromName(name: string): HardwareCategory | 
   if (lowerName.includes('ryzen') || lowerName.includes('core i') || lowerName.includes('procesador')) {
     return 'procesadores';
   }
-  if (lowerName.includes('rtx') || lowerName.includes('radeon') || lowerName.includes('geforce') || lowerName.includes('placa de video')) {
+  if (
+    parseGpuChipSignature(name)
+    || lowerName.includes('radeon')
+    || lowerName.includes('geforce')
+    || lowerName.includes('placa de video')
+    || lowerName.includes('tarjeta grafica')
+  ) {
     return 'tarjetas-graficas';
   }
   if (lowerName.includes('mother') || lowerName.includes('placa madre')) {

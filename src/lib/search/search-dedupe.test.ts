@@ -316,6 +316,19 @@ describe('search-dedupe', () => {
   });
 
   describe('groupSearchProducts', () => {
+    it('usa la categoría del modelo al crear la URL y la identidad de una GPU', () => {
+      const product = buildProduct('Placa de Video Gigabyte RX 7600 Gaming 8GB', {
+        category: 'perifericos',
+        brand: 'Gigabyte',
+      });
+
+      const [grouped] = groupSearchProducts([product], new Map(), ['rx', '7600'], 'rx 7600');
+
+      expect(grouped.category).toBe('tarjetas-graficas');
+      expect(grouped.id).toMatch(/^agrupado-tarjetas-graficas-/);
+      expect(grouped.canonicalProductKey).toMatch(/^tarjetas-graficas::gpu:rx7600/);
+    });
+
     it('agrupa productos con mismo nombre normalizado', () => {
       const normalizedTitles = new Map<string, string>();
       normalizedTitles.set('ASUS RTX 4060 8GB', 'asus rtx 4060 8gb');

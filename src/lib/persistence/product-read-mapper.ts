@@ -2,6 +2,7 @@ import { stores as staticStores } from '@/lib/scrapers/static-data';
 import { computeComparableStorePriceStats } from '@/lib/price-utils';
 import { sanitizeProduct } from '@/lib/product-sanitizer';
 import { readIdentityReview } from '@/lib/quality/offer-identity';
+import { buildProductIdentityKey, extractExactModelIdentity } from '@/lib/product-identity';
 import type { Product } from '@/lib/types';
 import { toDate, toNumber, toStockStatus } from '@/lib/persistence/product-read-helpers';
 import type { DbProductRow } from '@/lib/persistence/product-read-types';
@@ -9,6 +10,18 @@ import type { DbProductRow } from '@/lib/persistence/product-read-types';
 const storeNameById = new Map<string, string>(staticStores.map((store) => [store.id, store.name]));
 
 export function mapDbProduct(row: DbProductRow): Product {
+  const category = row.category as Product['category'];
+  const normalizedTitle = row.normalized_title ?? row.name;
+  const staleKey = row.canonical_product_key?.includes('::')
+    && !row.canonical_product_key.startsWith(`${category}::`);
+  const exactModel = staleKey && (category === 'procesadores' || category === 'tarjetas-graficas')
+    ? extractExactModelIdentity(category, normalizedTitle)
+    : null;
+  // Las claves antiguas usaban la categoría de la búsqueda. Solo corregimos
+  // en lectura si el modelo de CPU/GPU es inequívoco; el ID público se conserva.
+  const canonicalProductKey = staleKey && exactModel
+    ? buildProductIdentityKey(category, normalizedTitle, [row.brand, row.model, row.name].filter(Boolean).join(' '))
+    : row.canonical_product_key ?? undefined;
   const prices = (row.product_prices ?? []).map((price) => {
     const installmentCount = price.installment_count;
     const installmentAmount = toNumber(price.installment_amount, 0);
@@ -42,13 +55,13 @@ export function mapDbProduct(row: DbProductRow): Product {
     name: row.name,
     // La categoria persistida es la fuente de verdad para que filtro, conteo y
     // paginacion operen sobre el mismo conjunto de filas.
-    category: row.category as Product['category'],
+    category,
     brand: row.brand || 'Generica',
     model: row.model || row.name,
     description: row.description ?? row.name,
     image: row.image ?? '/pixel-box.svg',
-    normalizedTitle: row.normalized_title ?? row.name,
-    canonicalProductKey: row.canonical_product_key ?? undefined,
+    normalizedTitle,
+    canonicalProductKey,
     familyKey: row.family_key ?? undefined,
     variantKey: row.variant_key ?? undefined,
     refreshPriority: (row.refresh_priority as Product['refreshPriority']) ?? undefined,

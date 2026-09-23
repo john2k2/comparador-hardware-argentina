@@ -18,6 +18,8 @@ describe('hardware-categories', () => {
   it('infers categories from search names', () => {
     expect(inferHardwareCategoryFromName('AMD Ryzen 7 7800X3D')).toBe('procesadores');
     expect(inferHardwareCategoryFromName('NVIDIA GeForce RTX 5070')).toBe('tarjetas-graficas');
+    expect(inferHardwareCategoryFromName('Gigabyte RX 7600 Gaming 8GB')).toBe('tarjetas-graficas');
+    expect(inferHardwareCategoryFromName('MSI GTX 1660 Super 6GB')).toBe('tarjetas-graficas');
     expect(inferHardwareCategoryFromName('Kit 32GB DDR5 RAM')).toBe('memoria-ram');
     expect(inferHardwareCategoryFromName('Kit Mother ASUS B850 + Procesador Ryzen 5 9600X')).toBe('computadoras');
     expect(inferHardwareCategoryFromName('5600x')).toBeUndefined();
