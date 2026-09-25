@@ -59,7 +59,7 @@ if (since) {
 
 const sum = (field) => byStore.reduce((total, row) => total + row[field], 0);
 const report = {
-  measuredAt: now.toISOString(), definition: 'Ofertas almacenadas con precio positivo y stock disponible; frescura según last_updated.',
+  measuredAt: now.toISOString(), definition: 'Ofertas almacenadas con precio positivo y stock disponible; frescura según last_updated. candidateComparable3h excluye status needs-review pero no verifica identidad contra el producto ni render público.',
   denominator: sum('available'), fresh24h: sum('fresh24h'), fresh3h: sum('fresh3h'),
   identityPending3h: sum('identityPending3h'),
   candidateComparable3h: sum('fresh3h') - sum('identityPending3h'),

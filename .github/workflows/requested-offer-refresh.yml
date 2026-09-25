@@ -70,7 +70,30 @@ jobs:
           done
           # Un máximo de dos presupuestos por ejecución; cada uno tiene hasta ocho ofertas.
           for batch in 1 2; do
-            curl --silent --show-error --fail --max-time 480 \
+            RESPONSE="$(curl --silent --show-error --fail --max-time 480 \
               -X POST -H "Authorization: Bearer $CATALOG_REFRESH_CRON_SECRET" \
-              'http://127.0.0.1:3101/api/admin/catalog-refresh/requested'
+              'http://127.0.0.1:3101/api/admin/catalog-refresh/requested')"
+            echo "$RESPONSE"
+            RESULT_STATE="$(RESULT_JSON="$RESPONSE" python3 - <<'PY'
+          import json, os, sys
+          try:
+              payload = json.loads(os.environ['RESULT_JSON'])
+          except (ValueError, KeyError):
+              sys.exit('Respuesta inválida del refresh solicitado')
+          if payload.get('processed') is False:
+              print('empty')
+          elif payload.get('processed') is True and payload.get('status') in ('completed', 'partial', 'failed'):
+              print(payload['status'])
+          else:
+              sys.exit('Resultado incompleto del refresh solicitado')
+          PY
+            )"
+            if [[ "$RESULT_STATE" == 'empty' ]]; then break; fi
+            if [[ "$RESULT_STATE" == 'failed' ]]; then
+              echo 'El job terminó sin ofertas verificadas.' >&2
+              exit 1
+            fi
+            if [[ "$RESULT_STATE" == 'partial' ]]; then
+              echo '::warning::El job verificó solo parte de las ofertas pedidas.'
+            fi
           done
