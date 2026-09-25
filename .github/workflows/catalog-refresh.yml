@@ -280,6 +280,7 @@ jobs:
         run: |
           node scripts/catalog-freshness-report.mjs \
             --since "$REFRESH_WINDOW_START" \
+            --sample docs/reports/crecimiento-2026-09-12/G02-MUESTRA-PRIORITARIA.json \
             --require-observed \
             --output "$RUNNER_TEMP/catalog-freshness.json"
 

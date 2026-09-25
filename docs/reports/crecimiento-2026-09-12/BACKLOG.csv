@@ -1,6 +1,6 @@
 id,prioridad,resultado,tarea,responsable,estado,fecha_objetivo,criterio_cierre
 G01,P0,Sitio confiable,Diagnosticar y resolver Worker 1102,Codex,en_observacion_produccion,2026-09-18,Sin 1102 en rutas críticas y recursos medidos en despliegue real
-G02,P0,Sitio confiable,Separar y validar actualización del catálogo,Codex,en_observacion_produccion,2026-09-25,Siete ciclos útiles y frescura por tienda registrada
+G02,P0,Sitio confiable,Separar y validar actualización del catálogo,Codex,en_observacion_produccion,2026-10-03,Siete ciclos diarios útiles medidos; frescura por tienda y muestra fija; revisar meta de 95 por ciento en 24 horas
 G03,P1,Tráfico hacia tiendas,Configurar y verificar pageviews GA4,Codex,completado_produccion,2026-09-21,GA4 recibió 178 page_view y 512 eventos en el primer periodo verificado; clics salientes y generate_lead continúan en G07
 G04,P1,Piloto comercial,Definir y probar canal de contacto,Jonathan,pendiente,2026-09-18,Consulta de prueba recibida y CTA público operativo
 G05,P1,Sitio confiable,Separar ofertas disponibles de agotadas,Codex,en_validacion_local,2026-09-25,Conteos y agregado coherentes con stock y prueba de regresión

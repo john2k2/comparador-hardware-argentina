@@ -1,0 +1,15 @@
+{
+  "selectedAtUtc": "2026-09-25",
+  "definition": "Nueve fichas fijas de CPU, GPU y RAM con ofertas disponibles al seleccionar la muestra. Son un piloto operativo, no una muestra estadistica de todo el catalogo ni un ranking de visitas.",
+  "products": [
+    { "id": "agrupado-procesadores-amd-ryzen-5-5600-1ru8te5", "category": "procesadores" },
+    { "id": "agrupado-procesadores-intel-core-i5-12400-gfjrbb", "category": "procesadores" },
+    { "id": "agrupado-procesadores-amd-ryzen-5-7600x-am5-12rxuv9", "category": "procesadores" },
+    { "id": "agrupado-tarjetas-graficas-gigabyte-rtx-5060-eagle-8gb-1i1rdb", "category": "tarjetas-graficas" },
+    { "id": "agrupado-tarjetas-graficas-msi-rtx-5060-shadow-8gb-csxx7o", "category": "tarjetas-graficas" },
+    { "id": "agrupado-tarjetas-graficas-asus-rtx-5060-dual-8gb-1lrxth", "category": "tarjetas-graficas" },
+    { "id": "maximus-15359-memoria-ram-corsair-vengeance-lpx-black-16gb-3200-mhz-ddr4", "category": "memoria-ram" },
+    { "id": "agrupado-memoria-ram-corsair-16gb-x4icqy", "category": "memoria-ram" },
+    { "id": "agrupado-memoria-ram-kingston-16gb-11mqs9y", "category": "memoria-ram" }
+  ]
+}

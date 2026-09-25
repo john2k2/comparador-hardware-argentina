@@ -90,3 +90,6 @@ observado_el,periodo_inicio,periodo_fin,fuente,metrica,segmento,valor,unidad,est
 2026-09-25,2026-09-25,2026-09-25,Supabase,on_demand_offer_updated,job_e566d5d7-276c-4cf6-bd4b-1ff158529cdd,1,oferta,verificado,CompraGamer i5 12400 observada 17:12:46 UTC; job completed
 2026-09-25,2026-09-25,2026-09-25,GitHub Actions,on_demand_auto_dispatch,run_36166218562,1,ejecucion,verificado,Respuesta pública dispatch sent; workflow_dispatch sin intervención manual; versión 45cdc34
 2026-09-25,2026-09-25,2026-09-25,Supabase,on_demand_offer_updated,job_746050f0-e5f2-4b77-a949-5a1ec6922129,1,oferta,verificado,CompraGamer i5 12400 observada 17:18:18 UTC; job completed y preferDb coincide
+2026-09-25,2026-09-24,2026-09-25,Supabase,g02_sample_available,nine_fixed_products,59,ofertas,verificado,Corte 18:06 UTC; nueve fichas fijas en G02-MUESTRA-PRIORITARIA.json; precio positivo y stock disponible
+2026-09-25,2026-09-24,2026-09-25,Supabase,g02_sample_fresh24,nine_fixed_products,11,ofertas,verificado,Corte 18:06 UTC; 11/59 igual 18.6 por ciento; no verifica render ni identidad completa
+2026-09-25,2026-09-25,2026-09-25,Supabase,g02_sample_fresh3,nine_fixed_products,3,ofertas,verificado,Corte 18:06 UTC; tres observaciones en las últimas tres horas
