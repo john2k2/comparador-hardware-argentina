@@ -50,6 +50,7 @@ describe('on-demand refresh route handler', () => {
     vi.stubEnv('ENABLE_ON_DEMAND_REFRESH', '');
     vi.stubEnv('CATALOG_REFRESH_CRON_SECRET', '');
     vi.stubEnv('CRON_SECRET', '');
+    vi.stubEnv('GITHUB_ACTIONS_DISPATCH_TOKEN', '');
     mocks.getServerSupabaseServiceClient.mockReturnValue({ rpc: mocks.rpc, from: mocks.from });
     mocks.rpc.mockResolvedValue({ data: publicJob(), error: null });
   });
@@ -121,6 +122,7 @@ describe('on-demand refresh route handler', () => {
       p_requester_hash: expectedHash,
     });
     expect(Object.keys(mocks.rpc.mock.calls[0][1])).toEqual(['p_targets', 'p_requester_hash']);
+    expect(payload.dispatch).toBe('unavailable');
     expect(JSON.stringify(payload)).not.toMatch(/requester_hash|fingerprint|lease_token/);
   });
 

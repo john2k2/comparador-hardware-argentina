@@ -36,6 +36,10 @@ export function RefreshOffersButton({ targets, onUpdated, onActivity, actionLabe
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'No se pudo pedir la actualización.');
         current = result.job as RefreshJob; setJob(current);
+        if (result.dispatch === 'unavailable') {
+          setMessage('La verificación inmediata no está disponible. La solicitud quedó en cola para el próximo ciclo; podés consultar su estado más tarde.');
+          return;
+        }
       }
       for (let poll = 0; current && active(current) && poll < 60; poll++) {
         await waitForPoll(abort.signal);

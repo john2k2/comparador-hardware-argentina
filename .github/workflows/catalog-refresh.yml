@@ -206,6 +206,7 @@ jobs:
           fi
 
           RESPONSE_FILE="$(mktemp)"
+          echo "REFRESH_WINDOW_START=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
           STATUS_CODE="$(
             curl \
               --silent \
@@ -270,6 +271,26 @@ jobs:
               else:
                   sys.exit(1)
           PY
+
+      - name: Measure persisted observations and store freshness
+        if: steps.resolve.outputs.mode != 'cleanup-history'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          node scripts/catalog-freshness-report.mjs \
+            --since "$REFRESH_WINDOW_START" \
+            --require-observed \
+            --output "$RUNNER_TEMP/catalog-freshness.json"
+
+      - name: Preserve freshness evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-freshness-${{ github.run_id }}
+          path: ${{ runner.temp }}/catalog-freshness.json
+          if-no-files-found: ignore
+          retention-days: 30
 
       - name: Stop local refresh runtime
         if: always()

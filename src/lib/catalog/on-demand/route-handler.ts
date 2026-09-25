@@ -2,6 +2,7 @@ import 'server-only';
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 import { JOB_ID_PATTERN, parseRefreshTargets, readSmallJson, type RefreshJob } from './contracts';
+import { dispatchRequestedRefresh } from './dispatch';
 
 const respond = (body: unknown, status = 200, extra: Record<string, string> = {}) => NextResponse.json(body, { status, headers: { 'Cache-Control': 'no-store', ...extra } });
 function publicJob(job: RefreshJob): RefreshJob {
@@ -33,7 +34,9 @@ export async function POST(request: NextRequest) {
       return respond({ error: 'No se pudo registrar la actualización. Tus precios siguen con su fecha anterior.' }, 503);
     }
     if (!data) return respond({ error: 'No se pudo registrar la actualización.' }, 503);
-    return respond({ job: publicJob(data as RefreshJob) }, 202);
+    const job = publicJob(data as RefreshJob);
+    const dispatch = job.status === 'queued' ? await dispatchRequestedRefresh(supabase) : 'deferred';
+    return respond({ job, dispatch }, 202);
   } catch { return respond({ error: 'El servicio de actualización no respondió. Intentá nuevamente.' }, 503); }
 }
 export async function GET(request: NextRequest) {
