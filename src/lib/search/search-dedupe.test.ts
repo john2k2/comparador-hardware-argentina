@@ -149,6 +149,16 @@ describe('search-dedupe', () => {
       expect(dedupeNearDuplicates([dimm, sodimm])).toHaveLength(2);
     });
 
+    it('no mezcla módulos de RAM de marcas o series distintas', () => {
+      const corsairLpx = buildProduct('Memoria Ram Corsair Vengeance LPX Black 16GB 3200 Mhz DDR4', { category: 'memoria-ram' });
+      const corsairRs = buildProduct('Memoria Ram Corsair Vengeance RS RGB 16GB 3200 Mhz DDR4', { category: 'memoria-ram' });
+      const lexar = buildProduct('Memoria RAM DDR4 UDIMM Lexar 16GB 3200MHz', { category: 'memoria-ram' });
+      const mushkin = buildProduct('Memoria UDIMM Mushkin Redline DDR4 16GB 3200MHz', { category: 'memoria-ram' });
+
+      expect(dedupeNearDuplicates([corsairLpx, corsairRs])).toHaveLength(2);
+      expect(dedupeNearDuplicates([lexar, mushkin])).toHaveLength(2);
+    });
+
     it('no mergea productos de categorias distintas', () => {
       const productA = buildProduct('Mouse Logitech G502', { category: 'perifericos' });
       const productB = buildProduct('Mouse Logitech G502', { category: 'gabinetes' });

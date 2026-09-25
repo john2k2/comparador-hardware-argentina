@@ -307,10 +307,15 @@ export function extractRamModelKey(value: string): string | null {
   const brand = firstMatch(BRAND_PATTERN, normalized) ?? 'na';
   const form = detectRamFormFactor(normalized);
   const family = detectRamFamily(normalized);
+  // Capacidad y generación solas no identifican un módulo. Ante series o
+  // fabricantes desconocidos conservamos fichas separadas.
+  if (brand === 'na' || family === 'other') return null;
   const capacity = firstMatch(/\b(\d{1,2}\s*gb)\b/, normalized) ?? 'na';
   const gen = firstMatch(/\b(ddr[45])\b/, normalized) ?? 'na';
-  const speed = firstMatch(/\b(4800|5200|5600|6000|6400|6800|7200|7600|8000|8200|8400)\b/, normalized) ?? 'na';
-  return `ram:${brand}:${family}:${capacity}:${gen}:${speed}:${form}`;
+  const speed = firstMatch(/\b([2-8]\d{3})\s*(?:mhz|mt\/s|mts)?\b/, normalized) ?? 'na';
+  if (capacity === 'na' || gen === 'na' || speed === 'na') return null;
+  const variant = firstMatch(/\b(lpx|rs|pro|elite|sl|rgb)\b/, normalized) ?? 'base';
+  return `ram:${brand}:${family}:${capacity}:${gen}:${speed}:${form}:${variant}`;
 }
 
 export function extractCpuModelKey(value: string): string | null {
@@ -401,6 +406,7 @@ export function buildProductIdentityKey(
   if (category === 'memoria-ram') {
     const ramKey = extractRamModelKey(source);
     if (ramKey) return `${category}::${ramKey}`;
+    return `${category}::name:${slugifyIdentityPart(source)}`;
   }
 
   const genericKey = extractGenericModelKey(source, { allowSoftTokens: true });
@@ -517,6 +523,7 @@ export function buildProductVariantKey(
 
   const exact = extractExactModelIdentity(category, source);
   if (exact) return `${category}::${exact}`;
+  if (category === 'memoria-ram') return `${category}::name:${slugifyIdentityPart(source)}`;
 
   const genericKey = extractGenericModelKey(source, { allowSoftTokens: true });
   if (genericKey) return `${category}::${genericKey}`;

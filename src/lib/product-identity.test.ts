@@ -86,6 +86,14 @@ describe('product identity', () => {
       .toContain('sodimm');
   });
 
+  it('keeps RAM series and unknown manufacturers separate', () => {
+    expect(buildProductIdentityKey('memoria-ram', 'Corsair Vengeance LPX Black 16GB 3200 Mhz DDR4'))
+      .not.toBe(buildProductIdentityKey('memoria-ram', 'Corsair Vengeance RS RGB 16GB 3200 Mhz DDR4'));
+    expect(buildProductIdentityKey('memoria-ram', 'Lexar UDIMM DDR4 16GB 3200MHz'))
+      .not.toBe(buildProductIdentityKey('memoria-ram', 'Mushkin Redline DDR4 16GB 3200MHz'));
+    expect(extractExactModelIdentity('memoria-ram', 'Lexar UDIMM DDR4 16GB 3200MHz')).toBeNull();
+  });
+
   it('detects complete PCs that start with PC plus two component families', () => {
     expect(isCompleteComputerTitle(
       'PC AMD Ryzen 5 3400G 16GB RAM 512GB SSD wifi Gabinete RGB 650W Monitor 20"',
