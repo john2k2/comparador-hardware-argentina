@@ -82,3 +82,11 @@ observado_el,periodo_inicio,periodo_fin,fuente,metrica,segmento,valor,unidad,est
 2026-09-25,2026-09-23,2026-09-23,GSC,merchant_listings,valid,3,elementos,verificado,Cero inválidos; advertencias opcionales de SKU envío y devoluciones
 2026-09-25,2026-09-23,2026-09-23,GSC,datasets,valid,1,elementos,verificado,Índice de precios con advertencia no crítica por falta de license
 2026-09-25,,,GSC,merchant_opportunities,total,671,productos_detectados,verificado,Propuesta de Merchant Center en pestaña Shopping; no son anuncios ventas ni inventario propio
+2026-09-25,2026-09-24,2026-09-25,Supabase,catalog_available,all_stores,47727,ofertas,verificado,Corte 16:56 UTC; precio positivo y stock disponible; detalle por tienda en FRESCURA-TIENDAS-2026-09-25.csv
+2026-09-25,2026-09-24,2026-09-25,Supabase,catalog_fresh24,all_stores,64,ofertas,verificado,Corte 16:56 UTC; 64/47727 igual 0.134 por ciento; observadas hace 24 horas o menos
+2026-09-25,2026-09-25,2026-09-25,Supabase,catalog_fresh3,all_stores,1,ofertas,verificado,Corte 16:56 UTC; antes de la prueba manual; no equivale a ofertas visibles sin revisar identidad
+2026-09-25,2026-09-25,2026-09-25,GitHub Actions,catalog_refresh_observed_rows,run_36164068314,80,ofertas,verificado,Ejecución manual acotada a procesadores; 22 productos distintos; 11 tiendas con observaciones persistidas; corte 16:58 UTC
+2026-09-25,2026-09-25,2026-09-25,GitHub Actions,on_demand_auto_dispatch,run_36165637147,1,ejecucion,verificado,Solicitud pública 17:12:18 UTC; workflow_dispatch 17:12:20 UTC sin despacho manual
+2026-09-25,2026-09-25,2026-09-25,Supabase,on_demand_offer_updated,job_e566d5d7-276c-4cf6-bd4b-1ff158529cdd,1,oferta,verificado,CompraGamer i5 12400 observada 17:12:46 UTC; job completed
+2026-09-25,2026-09-25,2026-09-25,GitHub Actions,on_demand_auto_dispatch,run_36166218562,1,ejecucion,verificado,Respuesta pública dispatch sent; workflow_dispatch sin intervención manual; versión 45cdc34
+2026-09-25,2026-09-25,2026-09-25,Supabase,on_demand_offer_updated,job_746050f0-e5f2-4b77-a949-5a1ec6922129,1,oferta,verificado,CompraGamer i5 12400 observada 17:18:18 UTC; job completed y preferDb coincide
