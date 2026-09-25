@@ -12,10 +12,11 @@ function waitForPoll(signal: AbortSignal): Promise<void> {
     if (signal.aborted) abort();
   });
 }
-export function RefreshOffersButton({ targets, onUpdated, onActivity }: {
+export function RefreshOffersButton({ targets, onUpdated, onActivity, actionLabel = 'Actualizar estas ofertas' }: {
   targets: RefreshTarget[];
   onUpdated: () => Promise<void>;
   onActivity?: (action: 'refresh_requested' | 'refresh_result', status?: string, updatedCount?: number) => void;
+  actionLabel?: string;
 }) {
   const [job, setJob] = useState<RefreshJob | null>(null);
   const [busy, setBusy] = useState(false);
@@ -63,7 +64,7 @@ export function RefreshOffersButton({ targets, onUpdated, onActivity }: {
   return <div className="space-y-2">
     <button type="button" onClick={() => void run()} disabled={busy || targets.length === 0}
       className="pixel-button w-full disabled:opacity-50 disabled:cursor-not-allowed text-xs">
-      {busy ? 'Consultando actualización…' : pending ? 'Consultar estado' : 'Actualizar estas ofertas'}
+      {busy ? 'Consultando actualización…' : pending ? 'Consultar estado' : actionLabel}
     </button>
     <div role="status" aria-live="polite" className="font-body text-xs leading-relaxed">
       {busy && pending && <p>{job.status === 'queued' ? 'Solicitud en cola. Puede demorar varios minutos.' : 'Consultando las tiendas seleccionadas…'}</p>}

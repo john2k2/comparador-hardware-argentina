@@ -161,8 +161,8 @@ function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientPro
           {refreshTargets.length > 0 && (
             <section className="bg-card border-4 border-border p-4 md:p-6 pixel-shadow" aria-label="Actualización de ofertas">
               <h2 className="text-[12px] font-bold uppercase mb-3 text-accent">ACTUALIZAR PRECIOS Y STOCK</h2>
-              <p className="font-body text-xs leading-relaxed mb-4">Podés pedir una nueva comprobación a las tiendas. Puede tardar unos minutos; hasta entonces conservamos la fecha anterior de cada precio.</p>
-              <RefreshOffersButton targets={refreshTargets} onUpdated={reloadProduct} />
+              <p className="font-body text-xs leading-relaxed mb-4">Podés pedir una nueva comprobación a las tiendas. La cola puede demorarse y el pedido vence a los 30 minutos; si no termina, conservamos la fecha anterior de cada precio.</p>
+              <RefreshOffersButton targets={refreshTargets} onUpdated={reloadProduct} actionLabel="Solicitar verificación de ofertas" />
             </section>
           )}
 
