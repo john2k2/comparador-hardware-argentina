@@ -32,7 +32,7 @@ export async function dispatchRequestedRefresh(supabase: SupabaseClient): Promis
       body: JSON.stringify({ ref: 'main' }),
       signal: AbortSignal.timeout(8_000),
     });
-    if (response.status === 204) return 'sent';
+    if (response.status === 200 || response.status === 204) return 'sent';
     logger.warn('Requested offer refresh dispatch was rejected', { status: response.status });
     return 'unavailable';
   } catch {

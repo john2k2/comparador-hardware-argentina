@@ -26,7 +26,7 @@ describe('dispatchRequestedRefresh', () => {
 
   it('uses distributed short and daily gates before dispatching the fixed workflow', async () => {
     vi.stubEnv('GITHUB_ACTIONS_DISPATCH_TOKEN', 'test-token');
-    const fetchMock = vi.fn().mockResolvedValue({ status: 204 });
+    const fetchMock = vi.fn().mockResolvedValue({ status: 200 });
     vi.stubGlobal('fetch', fetchMock);
     await expect(dispatchRequestedRefresh(client)).resolves.toBe('sent');
     expect(rpc).toHaveBeenNthCalledWith(1, 'check_api_rate_limit', {
@@ -38,6 +38,12 @@ describe('dispatchRequestedRefresh', () => {
     const [url, options] = fetchMock.mock.calls[0];
     expect(url).toContain('/actions/workflows/requested-offer-refresh.yml/dispatches');
     expect(options.body).toBe(JSON.stringify({ ref: 'main' }));
+  });
+
+  it('also accepts the older successful empty response', async () => {
+    vi.stubEnv('GITHUB_ACTIONS_DISPATCH_TOKEN', 'test-token');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ status: 204 }));
+    await expect(dispatchRequestedRefresh(client)).resolves.toBe('sent');
   });
 
   it('defers when another request has consumed the gate', async () => {
