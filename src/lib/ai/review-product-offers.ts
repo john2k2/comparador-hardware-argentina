@@ -16,6 +16,18 @@ const CATEGORIES = new Set(['procesadores', 'tarjetas-graficas', 'memoria-ram'])
 
 type Candidate = { product: Product; price: ProductPrice; evidence: IdentityEvidence };
 
+export function collectOfferSourceTitles(products: Product[]): Record<string, string> {
+  const titles: Record<string, string> = Object.create(null);
+  for (const product of products) {
+    const title = product.name.trim();
+    if (!title || title.length > 400) continue;
+    for (const price of product.prices) {
+      if (price.url && !titles[price.url]) titles[price.url] = title;
+    }
+  }
+  return titles;
+}
+
 function reviewFor(candidate: Pick<Candidate, 'product' | 'price'>, reason: OfferIdentityReview['reason'], now: string): OfferIdentityReview {
   return {
     version: 1, status: reason === 'consistent-text' ? 'consistent' : 'needs-review', reason,

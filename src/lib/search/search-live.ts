@@ -2,7 +2,7 @@ import type { HardwareCategory, Product } from '@/lib/types';
 import { withAbortTimeout, withPromiseTimeout } from '@/lib/async/with-abort-timeout';
 import { withConcurrencyLimit } from '@/lib/async/concurrency';
 import { normalizeProductTitlesWithStats } from '@/lib/ai/normalize-products';
-import { reviewProductOffers } from '@/lib/ai/review-product-offers';
+import { collectOfferSourceTitles, reviewProductOffers } from '@/lib/ai/review-product-offers';
 import { snapshotProducts } from '@/lib/cache/search-snapshot';
 import {
   inferHardwareCategoryFromName,
@@ -119,6 +119,8 @@ export async function runLiveSearch({
       .filter((product): product is Product => Boolean(product));
   }
 
+  const sourceTitles = authorizedRefresh ? collectOfferSourceTitles(liveProducts) : undefined;
+
   // P0: Eliminado el primer filtro shouldKeepByQueryIntent que era redundante
   // (se aplicaba sobre nombres sin normalizar, antes del grouping)
 
@@ -218,7 +220,7 @@ export async function runLiveSearch({
     ));
   }
 
-  liveProducts = await reviewProductOffers(liveProducts, { authorizedRefresh });
+  liveProducts = await reviewProductOffers(liveProducts, { authorizedRefresh, sourceTitles });
 
   if (sortBy === 'price-asc') {
     liveProducts.sort((a, b) => a.lowestPrice - b.lowestPrice);

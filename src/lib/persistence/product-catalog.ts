@@ -374,7 +374,7 @@ export async function persistProductsSnapshot(
       installment_count: row.installment_count,
       installment_amount: row.installment_amount,
       identity_review: row.identity_review,
-    }, pricesByKey.get(key), now);
+    }, pricesByKey.get(key), now, new Date(row.last_updated));
     row.state_signature = plan.stateSignature;
 
     if (plan.shouldUpsert) {

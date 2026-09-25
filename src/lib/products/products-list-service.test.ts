@@ -40,7 +40,10 @@ vi.mock('@/lib/scrapers/woocommerce', () => ({
   fetchAllWooCommerceCategory: mocks.fetchWooCommerceCategory,
   fetchAllWooCommerceSearch: mocks.fetchWooCommerceSearch,
 }));
-vi.mock('@/lib/ai/review-product-offers', () => ({ reviewProductOffers: mocks.reviewProductOffers }));
+vi.mock('@/lib/ai/review-product-offers', () => ({
+  collectOfferSourceTitles: () => ({}),
+  reviewProductOffers: mocks.reviewProductOffers,
+}));
 vi.mock('@/lib/persistence/product-catalog', () => ({
   persistProductsSnapshot: mocks.persistProductsSnapshot,
   REFRESH_PERSISTENCE_TIMEOUT_MS: 45_000,

@@ -1,5 +1,5 @@
 import type { HardwareCategory, Product } from '@/lib/types';
-import { reviewProductOffers } from '@/lib/ai/review-product-offers';
+import { collectOfferSourceTitles, reviewProductOffers } from '@/lib/ai/review-product-offers';
 import { withAbortTimeout, withPromiseTimeout } from '@/lib/async/with-abort-timeout';
 import { hardwareCategoryToSearchTerm } from '@/lib/catalog/hardware-categories';
 import { snapshotProducts } from '@/lib/cache/search-snapshot';
@@ -152,6 +152,7 @@ export async function resolveLiveProductsList(
   ]);
 
   let liveProducts: Product[] = results.flat();
+  const sourceTitles = authorizedRefresh ? collectOfferSourceTitles(liveProducts) : undefined;
   logger.info('Live product list scraping completed', {
     endpoint: '/api/products',
     category: categorySlug,
@@ -189,7 +190,7 @@ export async function resolveLiveProductsList(
     });
   }
 
-  liveProducts = await reviewProductOffers(liveProducts, { authorizedRefresh });
+  liveProducts = await reviewProductOffers(liveProducts, { authorizedRefresh, sourceTitles });
   await withPromiseTimeout(
     persistProductsSnapshot(liveProducts, { requirePersistence: authorizedRefresh }),
     authorizedRefresh ? REFRESH_PERSISTENCE_TIMEOUT_MS : PERSISTENCE_TIMEOUT_MS,

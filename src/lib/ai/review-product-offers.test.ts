@@ -20,7 +20,7 @@ vi.mock('@/lib/server/shared-cache', () => ({
 }));
 vi.mock('@/lib/logger', () => ({ logger: { info: mocks.loggerInfo, warn: mocks.loggerWarn } }));
 
-import { reviewProductOffers } from './review-product-offers';
+import { collectOfferSourceTitles, reviewProductOffers } from './review-product-offers';
 
 function jevEvaluation(count: number, choices: Array<'identity_consistent' | 'identity_conflict' | 'identity_uncertain'> = []) {
   return {
@@ -122,6 +122,21 @@ describe('reviewProductOffers', () => {
     expect(result[0]).not.toBe(valid);
     expect(result[0].prices[0]).not.toBe(originalPrice);
     expect(result[0].prices[0]).toMatchObject(sourcePriceSnapshot);
+  });
+
+  it('passes the original store title to Jev after catalog normalization', async () => {
+    const raw = product(1);
+    raw.name = 'Procesador AMD Ryzen 7 7800X3D BOX con cooler';
+    const normalized = product(1);
+    const sourceTitles = collectOfferSourceTitles([raw]);
+
+    await reviewProductOffers([normalized], { authorizedRefresh: true, sourceTitles });
+
+    expect(mocks.evaluateOfferIdentity.mock.calls[0][0]).toEqual([{
+      name: 'AMD Ryzen 7 7800X3D', category: 'procesadores',
+      offerText: 'amd ryzen 7 7800x3d 1',
+      sourceTitle: 'Procesador AMD Ryzen 7 7800X3D BOX con cooler',
+    }]);
   });
 
   it('reviews at most 16 offers in batches of eight and leaves overflow untouched', async () => {

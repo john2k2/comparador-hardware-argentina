@@ -1,7 +1,9 @@
 import { createHash } from 'node:crypto';
 
 const PRODUCT_TOUCH_INTERVAL_MS = 12 * 60 * 60 * 1000;
-const PRICE_TOUCH_INTERVAL_MS = 12 * 60 * 60 * 1000;
+// La ficha acepta ofertas observadas en las últimas 3 horas. Si una tienda
+// confirma el mismo precio, persistir esa nueva observación antes de vencer.
+const PRICE_TOUCH_INTERVAL_MS = 2 * 60 * 60 * 1000;
 
 type ProductSignatureInput = {
   name: string;
@@ -127,10 +129,19 @@ export function planPriceRowPersistence(
   nextRow: PriceSignatureInput,
   existingRow: PriceExistingState | undefined,
   now: Date,
+  observedAt = now,
 ): { stateSignature: string; shouldUpsert: boolean; changed: boolean } {
   const stateSignature = buildPriceStateSignature(nextRow);
   if (!existingRow) {
     return { stateSignature, shouldUpsert: true, changed: true };
+  }
+
+  const previousObservation = toTimestamp(existingRow.last_updated);
+  const newObservation = observedAt.getTime();
+  // Una respuesta de scraper anterior a lo ya confirmado no debe retroceder
+  // ni el precio ni su fecha, incluso si la revisión de identidad cambió.
+  if (previousObservation !== null && newObservation < previousObservation) {
+    return { stateSignature, shouldUpsert: false, changed: false };
   }
 
   const changed = existingRow.state_signature !== stateSignature;
@@ -141,6 +152,10 @@ export function planPriceRowPersistence(
   // Persistir la revisión aunque el precio no cambie, sin inventar un evento de historial.
   const reviewChanged = nextRow.identity_review !== undefined
     && JSON.stringify(nextRow.identity_review) !== JSON.stringify(existingRow.identity_review ?? null);
-  const shouldUpsert = reviewChanged || shouldTouchFreshness(existingRow.last_updated, now, PRICE_TOUCH_INTERVAL_MS);
+  const observedLater = Number.isFinite(newObservation)
+    && newObservation <= now.getTime() + 60_000
+    && (previousObservation === null || newObservation > previousObservation);
+  const shouldUpsert = reviewChanged
+    || (observedLater && shouldTouchFreshness(existingRow.last_updated, now, PRICE_TOUCH_INTERVAL_MS));
   return { stateSignature, shouldUpsert, changed: false };
 }

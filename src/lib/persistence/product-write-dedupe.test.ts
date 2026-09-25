@@ -141,7 +141,7 @@ describe('product write dedupe', () => {
       installment_amount: 16666,
     }, {
       state_signature: signature,
-      last_updated: '2026-03-07T08:30:00.000Z',
+      last_updated: '2026-03-07T10:30:00.000Z',
     }, now);
 
     const changed = planPriceRowPersistence({
@@ -184,5 +184,24 @@ describe('product write dedupe', () => {
 
     expect(stale.shouldUpsert).toBe(true);
     expect(stale.changed).toBe(false);
+  });
+
+  it('renews a confirmed unchanged price before its 3-hour freshness window expires', () => {
+    const now = new Date('2026-03-07T12:00:00.000Z');
+    const state = {
+      price: 99999, original_price: null, stock: 'in-stock' as const,
+      installment_count: null, installment_amount: null,
+    };
+    const existing = {
+      state_signature: buildPriceStateSignature(state),
+      last_updated: '2026-03-07T09:45:00.000Z',
+    };
+
+    expect(planPriceRowPersistence(state, existing, now, new Date('2026-03-07T11:59:00.000Z')))
+      .toMatchObject({ shouldUpsert: true, changed: false });
+    expect(planPriceRowPersistence(state, existing, now, new Date('2026-03-07T09:45:00.000Z')))
+      .toMatchObject({ shouldUpsert: false, changed: false });
+    expect(planPriceRowPersistence({ ...state, price: 105000 }, existing, now, new Date('2026-03-07T09:30:00.000Z')))
+      .toMatchObject({ shouldUpsert: false, changed: false });
   });
 });
