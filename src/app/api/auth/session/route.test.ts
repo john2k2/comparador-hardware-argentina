@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import { POST } from './route';
+
+afterEach(() => vi.unstubAllEnvs());
 
 // Funciones extraidas para test unitario
 const SESSION_COOKIE_NAME = 'sb-access-token';
@@ -20,6 +23,21 @@ function computeMaxAgeSeconds(expiresAtUnix: number | null | undefined): number 
 }
 
 describe('auth session route', () => {
+  it('marca Secure la cookie en produccion aunque el proxy informe HTTP', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const request = new NextRequest('https://www.comparador-hardware.com.ar/api/auth/session', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-proto': 'http' },
+      body: JSON.stringify({ accessToken: 'test-access-token' }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('set-cookie')).toMatch(/;\s*Secure/i);
+    expect(response.headers.get('set-cookie')).toMatch(/;\s*HttpOnly/i);
+  });
+
   describe('isSecureRequest', () => {
     it('detecta HTTPS via x-forwarded-proto', () => {
       const mockRequest = {

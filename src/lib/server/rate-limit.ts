@@ -81,6 +81,11 @@ function checkRateLimitInMemory(key: string, rule: RateLimitRule): RateLimitResu
 }
 
 export function getRequestIp(request: NextRequest): string {
+  // Cloudflare fija esta cabecera en la petición entrante. X-Forwarded-For puede
+  // conservar un valor enviado por el cliente y no debe tener prioridad.
+  const cloudflareIp = request.headers.get('cf-connecting-ip')?.trim();
+  if (cloudflareIp) return cloudflareIp;
+
   const forwardedFor = request.headers.get('x-forwarded-for');
   if (forwardedFor) {
     const first = forwardedFor.split(',')[0]?.trim();

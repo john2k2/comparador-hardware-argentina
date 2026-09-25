@@ -9,6 +9,9 @@ type SessionCookiePayload = {
 };
 
 function isSecureRequest(request: NextRequest): boolean {
+  // En produccion la cookie de sesion siempre debe ser Secure, aun si un
+  // proxy reenvia un x-forwarded-proto inesperado.
+  if (process.env.NODE_ENV === 'production') return true;
   const proto = request.headers.get('x-forwarded-proto');
   if (proto) return proto === 'https';
   return request.nextUrl.protocol === 'https:';

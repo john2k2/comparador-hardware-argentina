@@ -54,6 +54,19 @@ describe('rate-limit', () => {
   });
 
   describe('getRequestIp', () => {
+    it('prioriza la IP fijada por Cloudflare ante un X-Forwarded-For manipulable', () => {
+      const mockRequest = {
+        headers: {
+          get: (name: string) => ({
+            'cf-connecting-ip': '203.0.113.10',
+            'x-forwarded-for': '198.51.100.99, 203.0.113.10',
+          })[name] ?? null,
+        },
+      } as NextRequest;
+
+      expect(getRequestIp(mockRequest)).toBe('203.0.113.10');
+    });
+
     it('extrae IP de x-forwarded-for', () => {
       const mockRequest = {
         headers: {
