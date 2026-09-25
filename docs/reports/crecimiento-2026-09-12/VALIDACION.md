@@ -130,3 +130,7 @@ Las cuatro rutas críticas respondieron 200. El scheduler `35845459548` finaliz�
 ### Corte operativo — 25/09/2026
 
 Las cuatro rutas críticas respondieron 200. Los jobs `35983951557` y `36122266839` informaron 12 productos cada uno para `procesadores`, `fallbackApplied=false` y `failedTargets=0`. Se verificó continuidad técnica; persistencia de precios y frescura por tienda siguen sin comprobación suficiente para cerrar G02.
+
+### Search Console autenticado — 25/09/2026
+
+Se leyó el aviso de validación del 23/09: una URL con 5xx corregida; el informe del motivo muestra 0 afectadas y validación correcta. Se leyó el aviso del 24/09: el dataset del índice de precios es válido y solo carece del campo opcional `license`. Fragmentos de productos muestra 6 válidos y 3 no válidos por ausencia de `offers`, `review` o `aggregateRating`; los tres ejemplos son fichas sin oferta válida en el marcado actual. Fichas de comerciantes muestra 3 válidas y 0 inválidas, con advertencias de SKU y políticas de tiendas. Oportunidades para comercios muestra 671 productos; no se trata de un informe de anuncios ni confirma ventas. No se inició ninguna validación nueva ni configuración comercial.

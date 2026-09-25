@@ -300,3 +300,15 @@ Fuente: cuatro solicitudes públicas espaciadas y ejecución programada `3584545
 ## Corte de seguimiento — 25/09/2026
 
 Fuente: cuatro solicitudes públicas espaciadas y ejecuciones programadas `35983951557` (24/09) y `36122266839` (25/09). Portada, CPU, GPU y ficha conocida de Ryzen 5 5500 devolvieron **200**. Ambos jobs finalizaron correctamente sin fallback: seleccionaron la consulta `procesadores` y cada uno informó 12 productos, cero objetivos fallidos. El resultado mantiene estable el servicio y evita las demandas vacías observadas antes. La repetición del conteo no demuestra por sí sola que hayan cambiado precios ni que todas las tiendas estén frescas; G02 continúa abierto.
+
+## Verificación en Search Console — 25/09/2026
+
+Fuente: propiedad autenticada `https://www.comparador-hardware.com.ar/`, informes y mensajes visibles. Google validó el 23/09 la corrección de **una URL con error de servidor (5xx)**. El detalle del motivo, actualizado el 20/09, muestra validación correcta iniciada el 21/09, sin errores detectados el 22/09 y **0 páginas afectadas**. Esto cierra la validación concreta de ese 5xx; no demuestra que todo posible fallo de servidor futuro haya desaparecido.
+
+Apareció un aviso nuevo el 24/09 sobre el conjunto de datos del índice de precios: falta `license` en `/indice-precios-hardware`. Es **1 elemento válido, 0 inválidos** y una mejora no crítica. El JSON-LD contiene `Dataset` y distribución CSV, pero no se encontró una licencia pública definida para el dataset; elegirla requiere establecer los términos reales de reutilización antes de añadir una URL al marcado.
+
+En Fragmentos de productos, informe actualizado el 23/09: **6 elementos válidos y 3 no válidos**. Los tres fallan porque el `Product` no tiene `offers`, `review` ni `aggregateRating`; ejemplos: una fuente Arkham 650 W, un SSD Sandisk 1 TB y una RAM Aimerican DDR5 16 GB. El constructor de JSON-LD omite ofertas cuando no hay precios recientes y comprables, pero sigue publicando `Product`. La corrección técnica candidata es no emitir ese marcado de `Product` cuando no exista una oferta verificable; no inventar reseñas ni disponibilidad. Las seis advertencias de `aggregateRating` y `review` sobre elementos válidos son opcionales.
+
+Fichas de comerciantes: **3 válidas, 0 no válidas**. Persisten advertencias en las tres por `sku`, `shippingDetails` y `hasMerchantReturnPolicy`; una también tiene longitud de SKU inválida. Corregir el identificador verificable sí procede. Envío y devoluciones pertenecen a las tiendas de destino y no deben presentarse como políticas propias del comparador.
+
+Oportunidades para comercios muestra **671 productos detectados** y propone configurar Merchant Center para la pestaña Shopping. Son productos descubiertos, no anuncios pagados, ventas ni inventario propio. Como la compra se completa en otras tiendas, se mantiene pendiente la decisión de elegibilidad y modelo comercial; no se inició Merchant Center ni campañas publicitarias.
