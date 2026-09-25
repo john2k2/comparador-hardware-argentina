@@ -231,6 +231,14 @@ describe('buildProductJsonLd', () => {
     expect(productEntry.mpn).toBeUndefined();
   });
 
+  it('omite un sku con espacios sin alterar el identificador original', () => {
+    const jsonLd = buildProductJsonLd(makeProduct({ specs: { SKU: 'Z890 EAGLE', MPN: 'Z890 EAGLE' } }), 'producto');
+    const productEntry = jsonLd.find((entry) => entry['@type'] === 'Product') as { sku?: string; mpn?: string };
+
+    expect(productEntry.sku).toBeUndefined();
+    expect(productEntry.mpn).toBe('Z890 EAGLE');
+  });
+
   it('excluye ofertas sin precio o sin url', () => {
     const product = makeProduct({
       prices: [
@@ -255,10 +263,7 @@ describe('buildProductJsonLd', () => {
       ],
     });
     const jsonLd = buildProductJsonLd(product, product.id);
-    const productEntry = jsonLd.find((entry) => entry['@type'] === 'Product') as {
-      offers: unknown[];
-    };
-    expect(productEntry.offers).toHaveLength(0);
+    expect(jsonLd.map((entry) => entry['@type'])).toEqual(['BreadcrumbList', 'Organization']);
   });
 
   it('no publica como oferta comparable una tienda agotada', () => {
@@ -279,10 +284,15 @@ describe('buildProductJsonLd', () => {
       ...offer, lastUpdated: new Date('2026-05-01T00:00:00.000Z'),
     })) });
     const jsonLd = buildProductJsonLd(product, product.id);
-    const productEntry = jsonLd.find((entry) => entry['@type'] === 'Product') as { offers: unknown[] };
-
     expect(buildProductDescription(product)).not.toContain('Mejor precio relevado');
     expect(buildProductDescription(product)).not.toContain('$');
-    expect(productEntry.offers).toEqual([]);
+    expect(jsonLd.map((entry) => entry['@type'])).toEqual(['BreadcrumbList', 'Organization']);
+  });
+
+  it('omite Product cuando todas las tiendas están agotadas', () => {
+    const product = makeProduct({ prices: makeProduct().prices.map((offer) => ({ ...offer, stock: 'out-of-stock' as const })) });
+    const jsonLd = buildProductJsonLd(product, product.id);
+
+    expect(jsonLd.map((entry) => entry['@type'])).toEqual(['BreadcrumbList', 'Organization']);
   });
 });

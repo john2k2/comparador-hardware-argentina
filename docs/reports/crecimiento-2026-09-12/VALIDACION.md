@@ -134,3 +134,7 @@ Las cuatro rutas críticas respondieron 200. Los jobs `35983951557` y `361222668
 ### Search Console autenticado — 25/09/2026
 
 Se leyó el aviso de validación del 23/09: una URL con 5xx corregida; el informe del motivo muestra 0 afectadas y validación correcta. Se leyó el aviso del 24/09: el dataset del índice de precios es válido y solo carece del campo opcional `license`. Fragmentos de productos muestra 6 válidos y 3 no válidos por ausencia de `offers`, `review` o `aggregateRating`; los tres ejemplos son fichas sin oferta válida en el marcado actual. Fichas de comerciantes muestra 3 válidas y 0 inválidas, con advertencias de SKU y políticas de tiendas. Oportunidades para comercios muestra 671 productos; no se trata de un informe de anuncios ni confirma ventas. No se inició ninguna validación nueva ni configuración comercial.
+
+### Corrección local de JSON-LD — 25/09/2026
+
+`Product` ahora se emite solo con `AggregateOffer` basado en ofertas recientes, disponibles y válidas. Sin ofertas, permanecen los datos estructurados de breadcrumbs y organización. El SKU se omite cuando el valor verificado de especificaciones contiene espacios; el MPN se conserva. Se probaron los casos de oferta vigente, precio/URL inválidos, antigüedad, agotamiento y SKU con espacios. `npx vitest run src/lib/product/product-page-metadata.test.ts`: 22/22; ESLint focalizado, `npx tsc --noEmit` y `npm run build`: correctos. La verificación pública y el nuevo rastreo de Google se registrarán por separado.

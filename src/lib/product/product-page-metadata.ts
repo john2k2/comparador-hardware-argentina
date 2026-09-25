@@ -111,14 +111,14 @@ const SKU_KEYS = ['sku', 'codigo', 'código', 'codigo de producto', 'código de 
 const MPN_KEYS = ['mpn', 'part number', 'numero de parte', 'número de parte'];
 const MAX_SCHEMA_IDENTIFIER_LENGTH = 50;
 
-function readSchemaIdentifier(specs: Product['specs'], keys: string[]): string | undefined {
+function readSchemaIdentifier(specs: Product['specs'], keys: string[], excludeWhitespace = false): string | undefined {
   const normalizedKeys = new Set(keys.map((key) => key.toLocaleLowerCase('es-AR')));
 
   for (const [rawKey, rawValue] of Object.entries(specs ?? {})) {
     if (!normalizedKeys.has(rawKey.trim().toLocaleLowerCase('es-AR'))) continue;
 
     const value = normalizeDisplayText(rawValue);
-    if (!value || value.length > MAX_SCHEMA_IDENTIFIER_LENGTH) return undefined;
+    if (!value || value.length > MAX_SCHEMA_IDENTIFIER_LENGTH || (excludeWhitespace && /\p{White_Space}/u.test(value))) return undefined;
     return value;
   }
 
@@ -131,7 +131,7 @@ export function buildProductJsonLd(product: Product, id: string) {
   const displayBrand = normalizeDisplayText(product.brand || 'Generica');
   const displayDescription = normalizeDisplayText(product.description || product.name);
   const displayModel = normalizeDisplayText(product.model);
-  const sku = readSchemaIdentifier(product.specs, SKU_KEYS);
+  const sku = readSchemaIdentifier(product.specs, SKU_KEYS, true);
   const mpn = readSchemaIdentifier(product.specs, MPN_KEYS);
   const offers = getRecentProductOffers(product)
     .filter((price) => price.price > 0 && price.url)
@@ -148,16 +148,16 @@ export function buildProductJsonLd(product: Product, id: string) {
       itemCondition: 'https://schema.org/NewCondition',
     }));
   const offerPrices = offers.map((offer) => offer.price);
-  const aggregateOffers = offers.length === 0
-    ? []
-    : {
+  const aggregateOffers = offers.length > 0
+    ? {
         '@type': 'AggregateOffer',
         priceCurrency: 'ARS',
         lowPrice: Math.min(...offerPrices),
         highPrice: Math.max(...offerPrices),
         offerCount: offers.length,
         offers,
-      };
+      }
+    : null;
 
   const breadcrumbItems = [
     {
@@ -194,7 +194,7 @@ export function buildProductJsonLd(product: Product, id: string) {
       url: SITE_URL,
       logo: `${SITE_URL}/og-image.png`,
     },
-    {
+    ...(aggregateOffers ? [{
       '@context': 'https://schema.org',
       '@type': 'Product',
       '@id': `${productUrl}#product`,
@@ -211,6 +211,6 @@ export function buildProductJsonLd(product: Product, id: string) {
         name: displayBrand,
       },
       offers: aggregateOffers,
-    },
+    }] : []),
   ];
 }
