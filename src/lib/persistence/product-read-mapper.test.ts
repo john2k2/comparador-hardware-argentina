@@ -111,4 +111,20 @@ describe('product-read-mapper', () => {
     expect(mapped.id).toBe(row.id);
     expect(mapped.canonicalProductKey).toMatch(/^tarjetas-graficas::gpu:rx7600/);
   });
+
+  it('no reutiliza claves de RAM heredadas que mezclan Corsair LPX con RS', () => {
+    const base = {
+      id: 'corsair-lpx', name: 'Memoria Ram Corsair Vengeance LPX Black 16GB 3200 Mhz DDR4',
+      category: 'memoria-ram', brand: 'Corsair', model: null, description: null, image: null,
+      normalized_title: null, canonical_product_key: 'memoria-ram::ram:corsair:vengeance:16gb:ddr4:na:unk',
+      family_key: null, variant_key: null, refresh_priority: null, last_scraped_at: null,
+      last_normalized_at: null, specs: null, lowest_price: 100, highest_price: 100,
+      average_price: 100, created_at: '2026-03-20T10:00:00.000Z', updated_at: '2026-03-26T11:10:00.000Z',
+      product_prices: [],
+    } satisfies DbProductRow;
+    const rs = { ...base, id: 'corsair-rs', name: 'Memoria Ram Corsair Vengeance RS RGB 16GB 3200 Mhz DDR4' } satisfies DbProductRow;
+
+    expect(mapDbProduct(base).canonicalProductKey).not.toBe(mapDbProduct(rs).canonicalProductKey);
+    expect(mapDbProduct(base).id).toBe('corsair-lpx');
+  });
 });

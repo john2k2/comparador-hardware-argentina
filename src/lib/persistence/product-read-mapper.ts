@@ -19,9 +19,13 @@ export function mapDbProduct(row: DbProductRow): Product {
     : null;
   // Las claves antiguas usaban la categoría de la búsqueda. Solo corregimos
   // en lectura si el modelo de CPU/GPU es inequívoco; el ID público se conserva.
-  const canonicalProductKey = staleKey && exactModel
-    ? buildProductIdentityKey(category, normalizedTitle, [row.brand, row.model, row.name].filter(Boolean).join(' '))
-    : row.canonical_product_key ?? undefined;
+  // Las claves de RAM anteriores omitían velocidades DDR4 y series LPX/RS.
+  // No se usan para agrupar fichas en lectura porque podrían unir SKUs distintos.
+  const canonicalProductKey = category === 'memoria-ram'
+    ? buildProductIdentityKey(category, row.name)
+    : staleKey && exactModel
+      ? buildProductIdentityKey(category, normalizedTitle, [row.brand, row.model, row.name].filter(Boolean).join(' '))
+      : row.canonical_product_key ?? undefined;
   const prices = (row.product_prices ?? []).map((price) => {
     const installmentCount = price.installment_count;
     const installmentAmount = toNumber(price.installment_amount, 0);
