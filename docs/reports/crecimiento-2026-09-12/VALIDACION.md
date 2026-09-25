@@ -126,3 +126,7 @@ Las cuatro rutas diarias respondieron 200. El scheduler `35712677571` devolvió 
 ### Corte operativo — 23/09/2026
 
 Las cuatro rutas críticas respondieron 200. El scheduler `35845459548` finalizó con `fallbackApplied=true`: `rx 6600 xt` devolvió cero artículos y `rtx 5060` informó 12, con un objetivo correcto y uno vacío. No se modificó el estado de G02: faltan mediciones de persistencia, cobertura y frescura por tienda.
+
+### Corte operativo — 25/09/2026
+
+Las cuatro rutas críticas respondieron 200. Los jobs `35983951557` y `36122266839` informaron 12 productos cada uno para `procesadores`, `fallbackApplied=false` y `failedTargets=0`. Se verificó continuidad técnica; persistencia de precios y frescura por tienda siguen sin comprobación suficiente para cerrar G02.

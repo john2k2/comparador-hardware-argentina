@@ -296,3 +296,7 @@ Hubo un fallo nuevo pero acotado en una ejecución manual: la consulta `ryzen 56
 ## Corte de seguimiento — 23/09/2026
 
 Fuente: cuatro solicitudes públicas espaciadas y ejecución programada `35845459548`. Portada, CPU, GPU y la ficha conocida de Ryzen 5 5500 devolvieron **200**. El scheduler terminó correctamente: la demanda `rx 6600 xt` no produjo artículos y el fallback `rtx 5060` informó 12 productos. Se mantiene el patrón recuperado ayer, sin un fallo nuevo ni evidencia suficiente para cerrar G02. `productCount` es la cantidad informada por el refresh; todavía no acredita frescura o cobertura por tienda.
+
+## Corte de seguimiento — 25/09/2026
+
+Fuente: cuatro solicitudes públicas espaciadas y ejecuciones programadas `35983951557` (24/09) y `36122266839` (25/09). Portada, CPU, GPU y ficha conocida de Ryzen 5 5500 devolvieron **200**. Ambos jobs finalizaron correctamente sin fallback: seleccionaron la consulta `procesadores` y cada uno informó 12 productos, cero objetivos fallidos. El resultado mantiene estable el servicio y evita las demandas vacías observadas antes. La repetición del conteo no demuestra por sí sola que hayan cambiado precios ni que todas las tiendas estén frescas; G02 continúa abierto.
