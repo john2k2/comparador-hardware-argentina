@@ -43,6 +43,18 @@ describe('offer identity evidence', () => {
     expect(hasExplicitIdentityConflict({
       name: 'Kingston Fury 32GB DDR5 6000 CL30', category: 'memoria-ram', offerText: 'kingston fury 32gb ddr5 6000',
     })).toBe(false);
+    expect(hasExplicitIdentityConflict({
+      name: 'Corsair Vengeance RS 16GB DDR4 3200', category: 'memoria-ram', offerText: 'corsair vengeance lpx 16gb ddr4 3200',
+    })).toBe(true);
+    expect(hasExplicitIdentityConflict({
+      name: 'Corsair Vengeance RS 16GB DDR4 3200', category: 'memoria-ram', offerText: 'kingston vengeance rs 16gb ddr4 3200',
+    })).toBe(true);
+    expect(hasExplicitIdentityConflict({
+      name: 'Corsair Vengeance RS 16GB DDR4 3200', category: 'memoria-ram', offerText: 'corsair vengeance rs 32gb ddr4 3200',
+    })).toBe(true);
+    expect(hasExplicitIdentityConflict({
+      name: 'ADATA XPG Lancer 16GB DDR5 6000', category: 'memoria-ram', offerText: 'xpg lancer 16gb ddr5 6000',
+    })).toBe(false);
   });
 
   it('keeps only public URL path text and rejects credentials or secret-like evidence', () => {

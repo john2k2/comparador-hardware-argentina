@@ -1,8 +1,8 @@
 import { stores as staticStores } from '@/lib/scrapers/static-data';
 import { computeComparableStorePriceStats } from '@/lib/price-utils';
 import { sanitizeProduct } from '@/lib/product-sanitizer';
-import { readIdentityReview } from '@/lib/quality/offer-identity';
-import { buildProductIdentityKey, extractExactModelIdentity } from '@/lib/product-identity';
+import { buildIdentityEvidence, hasExplicitIdentityConflict, readIdentityReview } from '@/lib/quality/offer-identity';
+import { buildProductIdentityKey, extractExactModelIdentity, normalizeIdentityText } from '@/lib/product-identity';
 import type { Product } from '@/lib/types';
 import { toDate, toNumber, toStockStatus } from '@/lib/persistence/product-read-helpers';
 import type { DbProductRow } from '@/lib/persistence/product-read-types';
@@ -29,6 +29,8 @@ export function mapDbProduct(row: DbProductRow): Product {
   const prices = (row.product_prices ?? []).map((price) => {
     const installmentCount = price.installment_count;
     const installmentAmount = toNumber(price.installment_amount, 0);
+    const evidence = category === 'memoria-ram' ? buildIdentityEvidence(row.name, category, price.url) : null;
+    const explicitConflict = evidence && hasExplicitIdentityConflict(evidence);
 
     return {
       storeId: price.store_id,
@@ -47,7 +49,11 @@ export function mapDbProduct(row: DbProductRow): Product {
         : null,
       // La falta de fecha no representa una observación de hoy.
       lastUpdated: price.last_updated && Number.isFinite(Date.parse(price.last_updated)) ? new Date(price.last_updated) : new Date(0),
-      identityReview: readIdentityReview(price.identity_review),
+      identityReview: explicitConflict ? {
+        version: 1 as const, status: 'needs-review' as const, reason: 'explicit-conflict' as const,
+        reviewedAt: null, model: null, confidence: null,
+        subject: { name: normalizeIdentityText(row.name), category, url: price.url },
+      } : readIdentityReview(price.identity_review),
     };
   });
 

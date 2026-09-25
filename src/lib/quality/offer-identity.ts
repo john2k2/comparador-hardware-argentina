@@ -97,8 +97,14 @@ export function hasExplicitIdentityConflict(evidence: IdentityEvidence): boolean
       || (left.family !== 'unknown' && right.family !== 'unknown' && left.family !== right.family && !omittedRyzenTier)));
   }
   if (evidence.category !== 'memoria-ram') return false;
+  const ramBrand = (value: string) => value.match(/\b(corsair|kingston|adata|crucial|gskill|patriot|lexar|mushkin|teamgroup|team)\b/i)?.[1]?.toLowerCase();
+  const ramSeries = (value: string) => value.match(/\b(lpx|rs|beast|impact|redline|lancer|viper|venom|vulcan)\b/i)?.[1]?.toLowerCase();
+  const leftBrand = ramBrand(evidence.name), rightBrand = ramBrand(evidence.offerText);
+  if (leftBrand && rightBrand && leftBrand !== rightBrand) return true;
+  const leftSeries = ramSeries(evidence.name), rightSeries = ramSeries(evidence.offerText);
+  if (leftSeries && rightSeries && leftSeries !== rightSeries) return true;
   // Sólo atributos explícitos en ambos textos. Una omisión no prueba contradicción.
-  return [/\bcl\s*(\d{2,3})\b/i, /\b(\d{4,5})\s*(?:mhz|mt\s*\/\s*s)\b/i, /\bddr\s*([345])\b/i]
+  return [/\bcl\s*(\d{2,3})\b/i, /\b(\d{1,3})\s*gb\b/i, /\b(\d{4,5})\s*(?:mhz|mt\s*\/\s*s)\b/i, /\bddr\s*([345])\b/i]
     .some((pattern) => {
       const left = evidence.name.match(pattern)?.[1];
       const right = evidence.offerText.match(pattern)?.[1];

@@ -127,4 +127,23 @@ describe('product-read-mapper', () => {
     expect(mapDbProduct(base).canonicalProductKey).not.toBe(mapDbProduct(rs).canonicalProductKey);
     expect(mapDbProduct(base).id).toBe('corsair-lpx');
   });
+
+  it('retiene para revisión una URL LPX asociada por error a una ficha RS', () => {
+    const row = {
+      id: 'corsair-rs', name: 'Memoria Ram Corsair Vengeance RS RGB 16GB 3200 Mhz DDR4',
+      category: 'memoria-ram', brand: 'Corsair', model: null, description: null, image: null,
+      normalized_title: null, canonical_product_key: null, family_key: null, variant_key: null,
+      refresh_priority: null, last_scraped_at: null, last_normalized_at: null, specs: null,
+      lowest_price: 100, highest_price: 100, average_price: 100,
+      created_at: '2026-03-20T10:00:00.000Z', updated_at: '2026-03-26T11:10:00.000Z',
+      product_prices: [{
+        store_id: 'mexx', url: 'https://store.example/corsair-vengeance-lpx-16gb-ddr4-3200',
+        price: 100, original_price: null, stock: 'in-stock', installment_count: null,
+        installment_amount: null, last_updated: '2026-03-26T11:10:00.000Z',
+      }],
+    } satisfies DbProductRow;
+
+    const mapped = mapDbProduct(row);
+    expect(mapped.prices[0]?.identityReview).toMatchObject({ status: 'needs-review', reason: 'explicit-conflict' });
+  });
 });
