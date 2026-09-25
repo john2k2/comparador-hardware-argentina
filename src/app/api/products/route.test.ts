@@ -206,6 +206,21 @@ describe('/api/products route', () => {
     await expect(response.json()).resolves.toMatchObject({ id: sampleProduct.id });
   });
 
+  it('reads the database after an on-demand refresh even when a cached detail exists', async () => {
+    mockGetSharedCache.mockResolvedValue(sampleProduct);
+    mockGetSnapshotProductById.mockReturnValue(sampleProduct);
+    const refreshed = { ...sampleProduct, prices: [{ ...sampleProduct.prices[0], price: 1_100_000 }] };
+    mockReadProductByIdFromDatabase.mockResolvedValue(refreshed);
+
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest('http://localhost/api/products?id=gpu-123-rtx-5070&preferDb=1'));
+
+    expect(response.status).toBe(200);
+    expect(mockReadProductByIdFromDatabase).toHaveBeenCalledWith(sampleProduct.id);
+    expect(mockGetSharedCache).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toMatchObject({ prices: [{ price: 1_100_000 }] });
+  });
+
   it('records not found detail requests as unsuccessful telemetry events', async () => {
     const { GET } = await import('./route');
     const response = await GET(new NextRequest('http://localhost/api/products?id=missing-item'));

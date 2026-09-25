@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
   const category = searchParams.get('category');
   const query = searchParams.get('q')?.trim();
   const bypassDb = searchParams.get('bypassDb') === '1';
+  const preferDb = searchParams.get('preferDb') === '1';
   const internalRefreshRequest = isTrustedInternalRefreshRequest(request);
   const isRefreshRequest = searchParams.get('refresh') === '1';
   const stableRuntimeMode = isStableRuntimeMode();
@@ -99,27 +100,29 @@ export async function GET(request: NextRequest) {
       let hasNegativeDetailCache = false;
 
       if (!bypassDb) {
-        const cachedProduct = await getCachedDetail(detailKey);
-        if (cachedProduct !== undefined) {
-          if (cachedProduct) {
-            const hydrated = await normalizeAndEnrichProduct(cachedProduct);
-            const staleCachedDetail = hasStaleProducts([hydrated], DB_STALE_AFTER_MS);
-            if (staleCachedDetail && !isRefreshRequest) scheduleBackgroundProductsRefresh(request, `detail:${detailKey}`);
+        if (!preferDb) {
+          const cachedProduct = await getCachedDetail(detailKey);
+          if (cachedProduct !== undefined) {
+            if (cachedProduct) {
+              const hydrated = await normalizeAndEnrichProduct(cachedProduct);
+              const staleCachedDetail = hasStaleProducts([hydrated], DB_STALE_AFTER_MS);
+              if (staleCachedDetail && !isRefreshRequest) scheduleBackgroundProductsRefresh(request, `detail:${detailKey}`);
+              await setCachedDetail(detailKey, hydrated);
+              snapshotProducts([hydrated]);
+              return respond(hydrated, { headers: { 'X-Product-Cache': staleCachedDetail ? 'HIT-STALE' : 'HIT' } }, { success: true, resultCount: 1, note: staleCachedDetail ? 'DETAIL_HIT_STALE' : 'DETAIL_HIT' });
+            }
+            hasNegativeDetailCache = true;
+          }
+
+          const snapshotProduct = getSnapshotProductById(id);
+          if (snapshotProduct) {
+            const hydrated = await normalizeAndEnrichProduct(snapshotProduct);
+            const staleSnapshotDetail = hasStaleProducts([hydrated], DB_STALE_AFTER_MS);
+            if (staleSnapshotDetail && !isRefreshRequest) scheduleBackgroundProductsRefresh(request, `detail:${detailKey}`);
             await setCachedDetail(detailKey, hydrated);
             snapshotProducts([hydrated]);
-            return respond(hydrated, { headers: { 'X-Product-Cache': staleCachedDetail ? 'HIT-STALE' : 'HIT' } }, { success: true, resultCount: 1, note: staleCachedDetail ? 'DETAIL_HIT_STALE' : 'DETAIL_HIT' });
+            return respond(hydrated, { headers: { 'X-Product-Cache': staleSnapshotDetail ? 'SNAPSHOT-STALE' : 'SNAPSHOT' } }, { success: true, resultCount: 1, note: staleSnapshotDetail ? 'DETAIL_SNAPSHOT_STALE' : 'DETAIL_SNAPSHOT' });
           }
-          hasNegativeDetailCache = true;
-        }
-
-        const snapshotProduct = getSnapshotProductById(id);
-        if (snapshotProduct) {
-          const hydrated = await normalizeAndEnrichProduct(snapshotProduct);
-          const staleSnapshotDetail = hasStaleProducts([hydrated], DB_STALE_AFTER_MS);
-          if (staleSnapshotDetail && !isRefreshRequest) scheduleBackgroundProductsRefresh(request, `detail:${detailKey}`);
-          await setCachedDetail(detailKey, hydrated);
-          snapshotProducts([hydrated]);
-          return respond(hydrated, { headers: { 'X-Product-Cache': staleSnapshotDetail ? 'SNAPSHOT-STALE' : 'SNAPSHOT' } }, { success: true, resultCount: 1, note: staleSnapshotDetail ? 'DETAIL_SNAPSHOT_STALE' : 'DETAIL_SNAPSHOT' });
         }
 
         const databaseProduct = await readProductByIdFromDatabase(id).catch((databaseError) => {

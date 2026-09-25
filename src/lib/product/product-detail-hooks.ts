@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { computeComparableStorePriceStats } from '@/lib/price-utils';
 import type { Product } from '@/lib/types';
 import {
@@ -25,6 +25,16 @@ export function useProductDetailState(id: string, initialProduct: Product | null
   );
   const [product, setProduct] = useState<Product | null>(initialClientState.product);
   const [isLoading, setIsLoading] = useState(initialClientState.isLoading);
+
+  const reloadProduct = useCallback(async () => {
+    const response = await fetch(`/api/products?id=${encodeURIComponent(id)}&preferDb=1`, { cache: 'no-store' });
+    if (!response.ok) throw new Error('La actualización terminó, pero no pudimos cargar la ficha. Volvé a abrirla en unos minutos.');
+    const fetched = normalizeFetchedProduct(await response.json() as Product);
+    const entry = { expiresAt: Date.now() + CLIENT_DETAIL_CACHE_TTL_MS, product: fetched };
+    setCachedProduct(id, fetched);
+    writeStoredProduct(id, entry);
+    setProduct(fetched);
+  }, [id]);
 
   useEffect(() => {
     if (!initialClientState.shouldFetch) return;
@@ -100,5 +110,6 @@ export function useProductDetailState(id: string, initialProduct: Product | null
     lowestComparablePrice,
     highestComparablePrice,
     latestSyncAtMs,
+    reloadProduct,
   };
 }

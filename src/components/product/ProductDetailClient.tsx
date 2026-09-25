@@ -17,6 +17,8 @@ import { StoresList } from './StoresList';
 import { SpecsTable } from './SpecsTable';
 import { ProductActions } from './ProductActions';
 import { AdvisoryCta } from '@/components/commercial/AdvisoryCta';
+import { RefreshOffersButton } from '@/components/pc-builder/RefreshOffersButton';
+import { buildProductRefreshTargets } from '@/lib/product/product-refresh-targets';
 
 type ProductDetailClientProps = {
   id: string;
@@ -43,6 +45,7 @@ function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientPro
     lowestComparablePrice,
     highestComparablePrice,
     latestSyncAtMs,
+    reloadProduct,
   } = useProductDetailState(id, initialProduct);
 
   useEffect(() => {
@@ -102,6 +105,7 @@ function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientPro
   const displayDescription = normalizeDisplayText(product.description || product.name);
 
   const relatedProducts: Product[] = [];
+  const refreshTargets = buildProductRefreshTargets(product);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -153,6 +157,14 @@ function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientPro
           <SpecsTable product={product} />
 
           <StoresList product={product} merchantPrices={merchantPrices} />
+
+          {refreshTargets.length > 0 && (
+            <section className="bg-card border-4 border-border p-4 md:p-6 pixel-shadow" aria-label="Actualización de ofertas">
+              <h2 className="text-[12px] font-bold uppercase mb-3 text-accent">ACTUALIZAR PRECIOS Y STOCK</h2>
+              <p className="font-body text-xs leading-relaxed mb-4">Podés pedir una nueva comprobación a las tiendas. Puede tardar unos minutos; hasta entonces conservamos la fecha anterior de cada precio.</p>
+              <RefreshOffersButton targets={refreshTargets} onUpdated={reloadProduct} />
+            </section>
+          )}
 
           <AdvisoryCta surface="product_detail" compact />
 

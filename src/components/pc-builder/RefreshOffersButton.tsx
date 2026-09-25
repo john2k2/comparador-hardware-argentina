@@ -69,6 +69,6 @@ export function RefreshOffersButton({ targets, onUpdated, onActivity }: {
       {busy && pending && <p>{job.status === 'queued' ? 'Solicitud en cola. Puede demorar varios minutos.' : 'Consultando las tiendas seleccionadas…'}</p>}
       {message && <p>{message}</p>}
     </div>
-    <p className="font-body text-xs text-muted-foreground">Se revisan las ofertas elegidas. La fecha de cada precio cambia sólo cuando llegan datos nuevos de la tienda.</p>
+    <p className="font-body text-xs text-muted-foreground">Se revisan estas ofertas. La fecha de cada precio cambia sólo cuando llegan datos nuevos de la tienda.</p>
   </div>;
 }
