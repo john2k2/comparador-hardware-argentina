@@ -201,6 +201,7 @@ export async function readGuideCatalogCandidatesFromDatabase(
     .eq('category', category)
     .like('id', 'agrupado-%')
     .gt('lowest_price', 0)
+    .order('last_scraped_at', { ascending: false, nullsFirst: false })
     .order('updated_at', { ascending: false })
     .limit(requestedLimit);
 
