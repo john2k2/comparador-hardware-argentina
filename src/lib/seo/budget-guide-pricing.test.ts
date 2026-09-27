@@ -118,6 +118,17 @@ describe('resolveGuideComponent', () => {
     expect(resolveGuideReferenceOffer(cpuSpec, [other])).toBeNull();
   });
 
+  it('no sustituye un kit DDR5 5600 de 2x16 por uno de 6000 o un módulo único', () => {
+    const ramSpec = { name: '32GB DDR5 5600MHz (2x16GB)', searchTerms: ['32gb ddr5'], category: 'memoria-ram' as const, description: '', estimatedPrice: 150_000 };
+    const wrongSpeed = product({ id: '6000', name: 'Memoria DDR5 32GB (2x16GB) 6000MHz', category: 'memoria-ram', prices: [price({ storeId: 'shop', storeName: 'Shop', price: 900_000 })] });
+    const single = product({ id: 'single', name: 'Memoria DDR5 32GB 5600MHz', category: 'memoria-ram', prices: [price({ storeId: 'shop2', storeName: 'Shop 2', price: 700_000 })] });
+    const exact = product({ id: '5600', name: 'Memoria DDR5 32GB (2x16GB) 5600MHz', category: 'memoria-ram', prices: [price({ storeId: 'shop3', storeName: 'Shop 3', price: 800_000 })] });
+
+    expect(resolveGuideComponent(ramSpec, [wrongSpeed, single]).priceSource).toBe('estimate');
+    expect(resolveGuideReferenceOffer(ramSpec, [wrongSpeed, single])).toBeNull();
+    expect(resolveGuideComponent(ramSpec, [wrongSpeed, single, exact]).productId).toBe('5600');
+  });
+
   it('usa el estimado y no inventa tienda si no hay match de catalogo', () => {
     const resolved = resolveGuideComponent(cpuSpec, [
       product({

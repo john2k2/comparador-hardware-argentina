@@ -177,6 +177,12 @@ function productMatchesGuideSpec(product: Product, spec: GuideSlotSpec): boolean
       chip.family === actualChip.family && chip.number === actualChip.number
       && chip.suffixes.join(',') === actualChip.suffixes.join(',')))) return false;
   }
+  if (spec.category === 'memoria-ram') {
+    const speed = requested.match(/\b([2-9]\d{3})\s*mhz\b/)?.[1];
+    const kit = requested.match(/\b2x(?:8|16|32)gb\b/)?.[0];
+    if (speed && !new RegExp(`\\b${speed}(?:\\s*mhz)?\\b`).test(actual)) return false;
+    if (kit && !actual.includes(kit)) return false;
+  }
   // Una coincidencia de capacidad o watts no convierte SATA en NVMe ni Bronze en Gold.
   if (spec.category === 'almacenamiento' && /\bnvme\b/.test(requested) && !/\bnvme\b/.test(actual)) return false;
   if (spec.category === 'fuentes-alimentacion') {
