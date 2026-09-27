@@ -47,3 +47,7 @@ Publicación propia visible en el perfil de Jonathan Ortiz: [https://www.linkedi
 ### Tarjeta social y reemplazo de LinkedIn — 2026-09-27T20:43:51.064624+00:00
 
 Imagen desplegada en commit `3bc2d78`; Workers Builds aprobado y HTTP público/metadata/PNG verificados. LinkedIn Post Inspector y publicación nueva muestran la imagen actual. Post activo: https://www.linkedin.com/feed/update/urn:li:activity:7510076468136194048/. Post anterior eliminado con confirmación de LinkedIn; conservar sus cortes históricos sin transferir métricas. Texto, UTM y comentarios abiertos conservados. Detalle y capturas: [registro de LinkedIn](LINKEDIN-Y-SCORPIOPC-2026-09-27.md). Cambios QVL permanecen locales; no se cierran tareas globales por esta acción.
+
+## Canal de contacto — control técnico del 27/09/2026
+
+La página /contacto publica CTA mailto al mismo correo operativo para asesoría, soporte y propuesta comercial. Una prueba desde la cuenta conectada hacia sí misma apareció en INBOX. Es correo de control, no consulta de cliente ni patrocinio; no demuestra entrega desde un remitente externo. G04 y los leads reales siguen en revisión.
