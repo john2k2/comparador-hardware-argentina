@@ -83,3 +83,12 @@ supabase/.temp/
 .wrangler
 .dev.vars*
 !.dev.vars.example
+
+# Evidencia de sesiones y conversaciones: conservar localmente, no publicar.
+/docs/reports/crecimiento-2026-09-12/cortes/
+/docs/reports/crecimiento-2026-09-12/PERMISOS-GRUPOS-2026-09-27.md
+/docs/reports/crecimiento-2026-09-12/DIFUSION-GRUPOS-2026-09-27.csv
+/outputs/**/_work/
+/outputs/**/*.inspect.ndjson
+/outputs/**/project-tracker-preview.png
+/.codex/config.toml
