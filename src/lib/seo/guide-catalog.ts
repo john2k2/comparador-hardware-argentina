@@ -1,5 +1,5 @@
 import { GUIDE_CATALOG_CATEGORIES } from '@/lib/seo/budget-guide-pricing';
-import { readGuideCatalogCandidatesFromDatabase } from '@/lib/persistence/product-read';
+import { readGuideCatalogCandidatesFromDatabase, readProductsFromDatabase } from '@/lib/persistence/product-read';
 import { logger } from '@/lib/logger';
 import type { HardwareCategory, Product } from '@/lib/types';
 
@@ -8,6 +8,7 @@ const CATEGORY_LIMIT = 24;
 const FETCH_CONCURRENCY = 2;
 
 let catalogMemo: { at: number; products: Product[] } | null = null;
+const priorityMemo = new Map<string, { at: number; products: Product[] }>();
 
 async function mapWithConcurrency<T, R>(
   items: readonly T[],
@@ -59,5 +60,27 @@ export async function loadGuideCatalogProducts(): Promise<Product[]> {
   if (products.length > 0) {
     catalogMemo = { at: now, products };
   }
+  return products;
+}
+
+/** Amplía una guía con modelos concretos que pueden quedar fuera del top 24 general. */
+export async function loadGuidePriorityProducts(category: HardwareCategory, terms: string[]): Promise<Product[]> {
+  const queries = [...new Set(terms.map((term) => term.trim()).filter(Boolean))].slice(0, 2);
+  if (queries.length === 0) return [];
+  const cacheKey = `${category}:${queries.join('|')}`;
+  const now = Date.now();
+  const cached = priorityMemo.get(cacheKey);
+  if (cached && now - cached.at < CATALOG_TTL_MS) return cached.products;
+
+  const batches = await mapWithConcurrency(queries, 2, async (query) => {
+    try {
+      return await readProductsFromDatabase({ category, query, limit: 8 });
+    } catch (error) {
+      logger.warn('No se pudo leer un modelo prioritario de la guia', { category, query, error });
+      return [];
+    }
+  });
+  const products = [...new Map(batches.flat().map((product) => [product.id, product])).values()];
+  priorityMemo.set(cacheKey, { at: now, products });
   return products;
 }

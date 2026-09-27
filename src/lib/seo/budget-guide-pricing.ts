@@ -157,6 +157,22 @@ export function productMatchesGuideTerms(product: Product, searchTerms: string[]
   return textMatchesGuideTerms(searchable, searchTerms);
 }
 
+function productMatchesGuideSpec(product: Product, spec: GuideSlotSpec): boolean {
+  const searchTerms = spec.searchTerms?.filter(Boolean) ?? [];
+  if (!productMatchesGuideTerms(product, searchTerms)) return false;
+  const requested = normalizeSearchText(spec.name);
+  const actual = normalizeSearchText(product.name);
+
+  // Una coincidencia de capacidad o watts no convierte SATA en NVMe ni Bronze en Gold.
+  if (spec.category === 'almacenamiento' && /\bnvme\b/.test(requested) && !/\bnvme\b/.test(actual)) return false;
+  if (spec.category === 'fuentes-alimentacion') {
+    for (const grade of ['gold', 'bronze', 'platinum', 'titanium']) {
+      if (new RegExp(`\\b${grade}\\b`).test(requested) && !new RegExp(`\\b${grade}\\b`).test(actual)) return false;
+    }
+  }
+  return true;
+}
+
 export function isBuyableGuideStock(stock: ProductPrice['stock']): stock is 'in-stock' | 'low-stock' {
   return stock === 'in-stock' || stock === 'low-stock';
 }
@@ -279,7 +295,7 @@ export function resolveGuideReferenceOffer(
   const candidates = products.flatMap((product) => {
     if (isPcBuild(product.name) || isExcludedProduct(product)) return [];
     if (spec.category && product.category !== spec.category) return [];
-    if (!productMatchesGuideTerms(product, searchTerms)) return [];
+    if (!productMatchesGuideSpec(product, spec)) return [];
 
     const eligible = product.prices.filter((offer) => {
       const observedAt = new Date(offer.lastUpdated).getTime();
@@ -401,7 +417,7 @@ export function resolveGuideComponent(
   const matches = products.filter((product) => {
     if (isPcBuild(product.name) || isExcludedProduct(product)) return false;
     if (spec.category && product.category !== spec.category) return false;
-    return productMatchesGuideTerms(product, searchTerms);
+    return productMatchesGuideSpec(product, spec);
   });
 
   if (matches.length === 0) {

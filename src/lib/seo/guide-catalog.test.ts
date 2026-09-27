@@ -1,74 +1,27 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Product } from '@/lib/types';
-import { GUIDE_CATALOG_CATEGORIES } from '@/lib/seo/budget-guide-pricing';
 
-const { readGuideCatalogCandidatesFromDatabaseMock } = vi.hoisted(() => ({
-  readGuideCatalogCandidatesFromDatabaseMock: vi.fn(),
-}));
-
+const mocks = vi.hoisted(() => ({ readProductsFromDatabase: vi.fn() }));
 vi.mock('@/lib/persistence/product-read', () => ({
-  readGuideCatalogCandidatesFromDatabase: readGuideCatalogCandidatesFromDatabaseMock,
+  readGuideCatalogCandidatesFromDatabase: vi.fn(async () => []),
+  readProductsFromDatabase: mocks.readProductsFromDatabase,
 }));
+vi.mock('@/lib/logger', () => ({ logger: { warn: vi.fn() } }));
 
-vi.mock('@/lib/logger', () => ({
-  logger: {
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  },
-}));
+import { loadGuidePriorityProducts } from './guide-catalog';
 
-function listed(id: string): Product {
-  return {
-    id,
-    name: 'AMD Ryzen 5 5600',
-    category: 'procesadores',
-    brand: 'AMD',
-    model: '5600',
-    specs: {},
-    prices: [],
-    lowestPrice: 0,
-    highestPrice: 0,
-    averagePrice: 0,
-    createdAt: new Date('2026-09-02T12:00:00.000Z'),
-    updatedAt: new Date('2026-09-02T12:00:00.000Z'),
-  };
-}
+describe('modelos prioritarios de la guía', () => {
+  it('rescata GPUs específicas fuera del top general sin repetir consultas en el TTL', async () => {
+    mocks.readProductsFromDatabase.mockImplementation(async ({ query }: { query: string }) => [
+      { id: `gpu-${query}`, name: query },
+    ] as Product[]);
 
-describe('loadGuideCatalogProducts', () => {
-  beforeEach(() => {
-    vi.resetModules();
-    readGuideCatalogCandidatesFromDatabaseMock.mockReset();
-  });
+    const first = await loadGuidePriorityProducts('tarjetas-graficas', ['rtx 4060', 'rx 7600']);
+    const second = await loadGuidePriorityProducts('tarjetas-graficas', ['rtx 4060', 'rx 7600']);
 
-  it('no cachea un catalogo vacio para reintentar en el proximo hit', async () => {
-    readGuideCatalogCandidatesFromDatabaseMock.mockResolvedValue([]);
-    const { loadGuideCatalogProducts } = await import('./guide-catalog');
-
-    await expect(loadGuideCatalogProducts()).resolves.toEqual([]);
-    await expect(loadGuideCatalogProducts()).resolves.toEqual([]);
-
-    expect(readGuideCatalogCandidatesFromDatabaseMock).toHaveBeenCalledTimes(
-      GUIDE_CATALOG_CATEGORIES.length * 2,
-    );
-  });
-
-  it('reusa un catalogo con productos dentro del TTL', async () => {
-    readGuideCatalogCandidatesFromDatabaseMock.mockResolvedValue([listed('cpu-1')]);
-    const { loadGuideCatalogProducts } = await import('./guide-catalog');
-
-    const first = await loadGuideCatalogProducts();
-    const second = await loadGuideCatalogProducts();
-
-    expect(first).toHaveLength(GUIDE_CATALOG_CATEGORIES.length);
-    expect(second).toBe(first);
-    expect(readGuideCatalogCandidatesFromDatabaseMock).toHaveBeenCalledTimes(
-      GUIDE_CATALOG_CATEGORIES.length,
-    );
-    expect(readGuideCatalogCandidatesFromDatabaseMock).toHaveBeenCalledWith(
-      GUIDE_CATALOG_CATEGORIES[0],
-      24,
-    );
+    expect(first.map((product) => product.id)).toEqual(['gpu-rtx 4060', 'gpu-rx 7600']);
+    expect(second).toEqual(first);
+    expect(mocks.readProductsFromDatabase).toHaveBeenCalledTimes(2);
+    expect(mocks.readProductsFromDatabase).toHaveBeenCalledWith({ category: 'tarjetas-graficas', query: 'rtx 4060', limit: 8 });
   });
 });

@@ -113,3 +113,6 @@ observado_el,periodo_inicio,periodo_fin,fuente,metrica,segmento,valor,unidad,est
 2026-09-27,,,Facebook Chrome,facebook_feedback_reactions,post_4520421824897693,3,reacciones,verificado,Lectura 15:09 UTC; Tres visibles; no atribución de visitas
 2026-09-27,,,GSC Chrome,product_snippet_missing_offer_review_rating,affected_items,3,elementos,verificado,Lectura 15:09 UTC; Aviso 27/09; informe actualizado25/09; rastreos23-24/09; tres URLs públicas sin Product incompleto
 2026-09-27,,,GSC Chrome,merchant_return_policy_validation_pending,affected_items,2,elementos,verificado,Lectura 15:09 UTC; Validación iniciada25/09; tiene buena pinta; 2 pendientes 0 correctos 0 errores; no crítica
+2026-09-27,2026-09-27,2026-09-27,API pública y GitHub Actions,budget_on_demand_targets,guide_2m_job_2f7a71c9,5,publicaciones,verificado,Despacho enviado 22:32 UTC; run 36355616678 exitoso; resultado del job parcial
+2026-09-27,2026-09-27,2026-09-27,API pública,budget_on_demand_updated,guide_2m_job_2f7a71c9,2,publicaciones,verificado,CPU Katech y RAM Maximus persistidas; tres publicaciones de GoldenTech fallaron
+2026-09-27,2026-09-27,2026-09-27,API pública y render,budget_recent_slots_after_refresh,guide_2m,1,partes,verificado,1/7 en la guía tras cache; CPU visible; RAM actualizada pero necesita revisión de identidad por baja confianza

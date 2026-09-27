@@ -85,6 +85,20 @@ describe('resolveGuideComponent', () => {
     expect(resolveGuideReferenceOffer(cpuSpec, [candidate])).toBeNull();
   });
 
+  it('no sustituye un NVMe por un SSD SATA ni una fuente Gold por Bronze', () => {
+    const ssdSpec = { name: 'SSD NVMe 1TB', searchTerms: ['ssd 1tb', 'nvme 1tb'], category: 'almacenamiento' as const, description: '', estimatedPrice: 80_000 };
+    const psuSpec = { name: '650W 80 Plus Gold', searchTerms: ['650w'], category: 'fuentes-alimentacion' as const, description: '', estimatedPrice: 100_000 };
+    const products = [
+      product({ id: 'sata', name: 'SSD SanDisk 1TB SATA 2.5', category: 'almacenamiento', prices: [price({ storeId: 'shop', storeName: 'Shop', price: 80_000 })] }),
+      product({ id: 'bronze', name: 'Fuente Thermaltake 650W 80 Plus Bronze', category: 'fuentes-alimentacion', prices: [price({ storeId: 'shop', storeName: 'Shop', price: 90_000 })] }),
+    ];
+
+    expect(resolveGuideComponent(ssdSpec, products).priceSource).toBe('estimate');
+    expect(resolveGuideComponent(psuSpec, products).priceSource).toBe('estimate');
+    expect(resolveGuideReferenceOffer(ssdSpec, products)).toBeNull();
+    expect(resolveGuideReferenceOffer(psuSpec, products)).toBeNull();
+  });
+
   it('usa el estimado y no inventa tienda si no hay match de catalogo', () => {
     const resolved = resolveGuideComponent(cpuSpec, [
       product({
