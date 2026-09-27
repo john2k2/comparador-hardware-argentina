@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { HardwareCategory, Product, ProductPrice } from '@/lib/types';
-import { resolveGuideComponent, resolveGuideSlots } from '@/lib/seo/budget-guide-pricing';
+import { resolveGuideComponent, resolveGuideReferenceOffer, resolveGuideSlots } from '@/lib/seo/budget-guide-pricing';
 
 function price(overrides: Partial<ProductPrice> & Pick<ProductPrice, 'storeId' | 'storeName' | 'price'>): ProductPrice {
   return {
@@ -54,6 +54,35 @@ describe('resolveGuideComponent', () => {
     expect(resolved.priceSource).toBe('estimate');
     expect(resolved.bestStoreUrl).toBeNull();
     expect(resolved.offers).toEqual([]);
+  });
+
+  it('separa la última referencia de un presupuesto actual y conserva el enlace para comprobarla', () => {
+    const older = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    const newer = new Date(Date.now() - 4 * 60 * 60 * 1000);
+    const candidate = product({
+      id: 'ryzen-7600x', name: 'Ryzen 5 7600X', category: 'procesadores',
+      prices: [
+        price({ storeId: 'old', storeName: 'Anterior', price: 250_000, lastUpdated: older }),
+        price({ storeId: 'recent', storeName: 'Reciente', price: 300_000, lastUpdated: newer }),
+      ],
+    });
+
+    expect(resolveGuideComponent(cpuSpec, [candidate]).priceSource).toBe('estimate');
+    expect(resolveGuideReferenceOffer(cpuSpec, [candidate])).toMatchObject({
+      productId: 'ryzen-7600x', storeId: 'recent', price: 300_000,
+      url: 'https://example.com/recent',
+    });
+  });
+
+  it('no ofrece refrescar enlaces inseguros o referencias de más de 30 días', () => {
+    const candidate = product({
+      id: 'ryzen-7600x', name: 'Ryzen 5 7600X', category: 'procesadores',
+      prices: [
+        price({ storeId: 'unsafe', storeName: 'Insegura', price: 100_000, url: 'javascript:alert(1)' }),
+        price({ storeId: 'old', storeName: 'Muy antigua', price: 200_000, lastUpdated: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000) }),
+      ],
+    });
+    expect(resolveGuideReferenceOffer(cpuSpec, [candidate])).toBeNull();
   });
 
   it('usa el estimado y no inventa tienda si no hay match de catalogo', () => {

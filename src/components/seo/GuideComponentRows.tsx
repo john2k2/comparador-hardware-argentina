@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { trackStoreClick } from '@/lib/analytics';
 import { formatPriceARS } from '@/lib/price-utils';
-import type { ResolvedGuideComponent } from '@/lib/seo/budget-guide-pricing';
+import type { GuideReferenceOffer, ResolvedGuideComponent } from '@/lib/seo/budget-guide-pricing';
 import { GUIDE_SLOT_KEYS, GUIDE_SLOT_LABELS, type GuideSlotKey } from '@/lib/seo/budget-builder';
 
 function observationDate(value?: string | null): string {
@@ -13,15 +13,17 @@ function observationDate(value?: string | null): string {
 
 export function GuideComponentRows({
   slots,
+  references = {},
   surface = 'budget_guide',
 }: {
   slots: Record<GuideSlotKey, ResolvedGuideComponent>;
+  references?: Partial<Record<GuideSlotKey, GuideReferenceOffer | null>>;
   surface?: 'budget_guide' | 'budget_builder';
 }) {
   return (
     <div className="space-y-4">
       {GUIDE_SLOT_KEYS.map((key) => (
-        <ComponentRow key={key} slotKey={key} label={GUIDE_SLOT_LABELS[key]} item={slots[key]} surface={surface} />
+        <ComponentRow key={key} slotKey={key} label={GUIDE_SLOT_LABELS[key]} item={slots[key]} reference={references[key]} surface={surface} />
       ))}
     </div>
   );
@@ -31,11 +33,13 @@ function ComponentRow({
   label,
   slotKey,
   item,
+  reference,
   surface,
 }: {
   label: string;
   slotKey: GuideSlotKey;
   item: ResolvedGuideComponent;
+  reference?: GuideReferenceOffer | null;
   surface: 'budget_guide' | 'budget_builder';
 }) {
   const extraOffers = item.offers.slice(1, 3);
@@ -62,6 +66,11 @@ function ComponentRow({
         {extraOffers.length > 0 && (
           <p className="text-[10px] uppercase text-muted-foreground mt-1 break-words">
             {extraOffers.map((offer) => `@${offer.storeName} ${formatPriceARS(offer.price)} — ${observationDate(offer.lastUpdated)}`).join(' · ')}
+          </p>
+        )}
+        {!isCatalog && reference && (
+          <p className="font-body text-xs mt-2 leading-relaxed">
+            Última referencia: {reference.productName} en {reference.storeName || reference.storeId}, {formatPriceARS(reference.price)} observado el {observationDate(reference.lastUpdated)}. No confirma el precio ni el stock actuales y no entra al subtotal.
           </p>
         )}
       </div>
@@ -111,6 +120,29 @@ function ComponentRow({
             >
               Comparar tiendas →
             </Link>
+          )}
+          {!isCatalog && reference && (
+            <a
+              href={reference.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackStoreClick({
+                productId: reference.productId,
+                productName: reference.productName,
+                storeName: reference.storeName,
+                storeId: reference.storeId,
+                price: reference.price,
+                position: 1,
+                category: slotKey,
+                ctaId: 'guide_store_reference',
+                destinationUrl: reference.url,
+                surface,
+                linkType: 'organic',
+              })}
+              className="inline-flex min-h-11 items-center text-[10px] text-secondary hover:underline"
+            >
+              Revisar publicación anterior →
+            </a>
           )}
         </div>
       </div>

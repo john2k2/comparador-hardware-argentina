@@ -13,6 +13,9 @@ import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
 import { GuideFpsPanel } from '@/components/seo/GuideFpsPanel';
 import { GuideComponentRows } from '@/components/seo/GuideComponentRows';
+import { GuideRefreshPanel } from '@/components/seo/GuideRefreshPanel';
+import { resolveGuideReferenceOffer } from '@/lib/seo/budget-guide-pricing';
+import type { RefreshTarget } from '@/lib/catalog/on-demand/contracts';
 import { AdvisoryCta } from '@/components/commercial/AdvisoryCta';
 import { BuilderCta } from '@/components/seo/BuilderCta';
 import Link from 'next/link';
@@ -47,6 +50,17 @@ export default async function BudgetGuidePage({ params }: Props) {
   const catalogProducts = await loadGuideCatalogProducts();
   const nonce = (await headers()).get('x-content-security-policy-nonce') ?? undefined;
   const resolved = resolveLiveGuideSlots(guide, catalogProducts);
+  const references = Object.fromEntries(GUIDE_SLOT_KEYS.map((key) => [
+    key,
+    resolved[key].priceSource === 'catalog' ? null : resolveGuideReferenceOffer(guide.components[key], catalogProducts),
+  ])) as Record<(typeof GUIDE_SLOT_KEYS)[number], ReturnType<typeof resolveGuideReferenceOffer>>;
+  const refreshTargets = GUIDE_SLOT_KEYS.flatMap((key): RefreshTarget[] => {
+    const current = resolved[key];
+    const offer = current.offers[0];
+    if (current.productId && offer) return [{ productId: current.productId, storeId: offer.storeId, url: offer.url }];
+    const reference = references[key];
+    return reference ? [{ productId: reference.productId, storeId: reference.storeId, url: reference.url }] : [];
+  });
   const faqs = resolveGuideFaqs(guide.faqs, resolved.cpu, resolved.gpu);
   const slotCount = GUIDE_SLOT_KEYS.length;
   const methodology = getEditorialMethodology(slug);
@@ -102,10 +116,12 @@ export default async function BudgetGuidePage({ params }: Props) {
             {slotCount - resolved.inStockSlots === 1
               ? 'Falta 1 parte sin oferta reciente.'
               : `Faltan ${slotCount - resolved.inStockSlots} partes sin oferta reciente.`}
-            No hay un precio comprobable para el armado completo; esas filas no entran al subtotal.
+            {' '}No hay un precio comprobable para el armado completo; esas filas no entran al subtotal.
           </p>
         )}
       </section>
+
+      {process.env.ENABLE_ON_DEMAND_REFRESH === '1' && <GuideRefreshPanel targets={refreshTargets} />}
 
       {/* Components */}
       <section className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow mb-8">
@@ -113,7 +129,7 @@ export default async function BudgetGuidePage({ params }: Props) {
           [ SELECCION TECNICA ORIENTATIVA ]
         </h2>
         
-        <GuideComponentRows slots={resolved} />
+        <GuideComponentRows slots={resolved} references={references} />
         <p className="mt-4 text-[10px] uppercase text-muted-foreground font-mono leading-relaxed">
           Cada precio es una observación de las últimas 3 horas, no una cotización en tiempo real. Si una pieza no tiene oferta reciente, no le asignamos precio. Confirmá stock y precio final en la tienda; CPU, mother y RAM deben coincidir en socket y generación.
         </p>

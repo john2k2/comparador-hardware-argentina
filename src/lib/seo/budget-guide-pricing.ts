@@ -34,6 +34,18 @@ export type ResolvedGuideComponent = {
   productId?: string;
 };
 
+export type GuideReferenceOffer = {
+  productId: string;
+  productName: string;
+  storeId: string;
+  storeName: string;
+  price: number;
+  url: string;
+  lastUpdated: string;
+};
+
+const GUIDE_REFERENCE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+
 const EXCLUDED_NAME_TERMS = [
   'sodimm',
   'so dimm',
@@ -253,6 +265,46 @@ function buyableOffers(product: Product): ProductPrice[] {
       && offerAgreesWithProductName(product, offer)
     ))
     .sort((left, right) => left.price - right.price);
+}
+
+/** Referencia histórica para pedir una nueva comprobación; nunca entra al subtotal actual. */
+export function resolveGuideReferenceOffer(
+  spec: GuideSlotSpec,
+  products: Product[],
+  now = Date.now(),
+): GuideReferenceOffer | null {
+  const searchTerms = spec.searchTerms?.filter(Boolean) ?? [];
+  if (searchTerms.length === 0) return null;
+
+  const candidates = products.flatMap((product) => {
+    if (isPcBuild(product.name) || isExcludedProduct(product)) return [];
+    if (spec.category && product.category !== spec.category) return [];
+    if (!productMatchesGuideTerms(product, searchTerms)) return [];
+
+    const eligible = product.prices.filter((offer) => {
+      const observedAt = new Date(offer.lastUpdated).getTime();
+      if (!Number.isFinite(observedAt) || observedAt > now + 60_000 || now - observedAt > GUIDE_REFERENCE_MAX_AGE_MS) return false;
+      if (offer.price <= 0 || !isBuyableGuideStock(offer.stock) || needsIdentityReview(offer, product)) return false;
+      if (offerConflictsWithGuide(offer) || !offerAgreesWithProductName(product, offer)) return false;
+      try {
+        const url = new URL(offer.url);
+        return url.protocol === 'https:' && !url.username && !url.password;
+      } catch { return false; }
+    });
+    return computeComparableStorePriceStats(eligible).comparablePrices.map((offer) => ({
+        productId: product.id,
+        productName: product.name,
+        storeId: offer.storeId,
+        storeName: offer.storeName,
+        price: offer.price,
+        url: offer.url,
+        lastUpdated: new Date(offer.lastUpdated).toISOString(),
+      }));
+  });
+
+  return candidates.sort((left, right) =>
+    Date.parse(right.lastUpdated) - Date.parse(left.lastUpdated) || left.price - right.price,
+  )[0] ?? null;
 }
 
 function toGuideOffers(offers: ProductPrice[]): GuideStoreOffer[] {
