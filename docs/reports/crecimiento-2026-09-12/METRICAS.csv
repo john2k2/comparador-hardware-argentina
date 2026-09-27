@@ -123,3 +123,6 @@ observado_el,periodo_inicio,periodo_fin,fuente,metrica,segmento,valor,unidad,est
 2026-09-27,2026-09-27,2026-09-27,API pública y GitHub Actions,budget_on_demand_failed,guide_1m_job_bf6531ca,1,publicaciones,verificado,0/1 verificadas; ficha histórica de motherboard A PRO abre actualmente modelo B y no se usa como precio actual
 2026-09-27,2026-09-27,2026-09-27,Render público previo a guarda RAM,budget_recent_slots_after_refresh,guide_2m_before_ram_guard,3,partes,verificado,3/7 incluía un kit DDR5 6000 en un slot 5600; corregido en código y pendiente de validación pública
 2026-09-27,2026-09-27,2026-09-27,Render público,budget_recent_slots_after_refresh,guide_3m_after_spec_guard,2,partes,verificado,2/7 kit DDR5 6000 y fuente Gold; Ryzen 5 y RTX 5070 Ti excluidos
+2026-09-27,2026-09-27,2026-09-27,Render público final,budget_recent_slots,guide_1m,0,partes,verificado,0/7 sin subtotal tras última corrección
+2026-09-27,2026-09-27,2026-09-27,Render público final,budget_recent_slots,guide_2m,2,partes,verificado,2/7 subtotal parcial ARS 904870; CPU y RX 7600; kit 6000 excluido del slot 5600
+2026-09-27,2026-09-27,2026-09-27,Render público final,budget_recent_slots,guide_3m,2,partes,verificado,2/7 subtotal parcial ARS 1180478; Ryzen 5 y RTX 5070 Ti excluidos
