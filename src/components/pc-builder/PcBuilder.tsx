@@ -13,6 +13,7 @@ import { trackBudgetBuilder, trackPcBuilderAction, trackStoreClick, type PcBuild
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
 import { isOfferFresh } from '@/lib/price-freshness';
 import { AdvisoryCta } from '@/components/commercial/AdvisoryCta';
+import { MotherboardMemorySupport } from '@/components/product/MotherboardMemorySupport';
 import { RefreshOffersButton } from './RefreshOffersButton';
 
 const control = 'min-h-11 w-full min-w-0 border-2 border-border bg-background px-3 py-2 font-body text-sm focus:outline-2 focus:outline-secondary';
@@ -36,6 +37,7 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
   const [sharedDraft, setSharedDraft] = useState<BuildDraft | null>(null);
   const [shareOrigin, setShareOrigin] = useState('');
   const quote = useMemo(() => quoteBuild(draft, products), [draft, products]);
+  const selectedMotherboard = quote.lines.find((line) => line.slot === 'motherboard')?.product;
   const componentCount = Object.keys(draft.selections).length;
   const whatsappUrl = shareOrigin && componentCount ? createWhatsAppShareUrl(draft, shareOrigin) : '';
 
@@ -139,7 +141,7 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
       <button className="pixel-button text-xs" disabled={loading} type="submit">{loading ? 'Cargando catálogo…' : 'Armar PC'}</button>
       <button className={button} type="button" onClick={() => { const empty = emptyBuild(draft.budget); setDraft(empty); setShareUrl(''); trackAction('reset', {}, empty); }}>Empezar de cero</button>
     </form>
-    {notice && <p role="status" className="border-l-4 border-accent bg-card p-3 mb-5 font-body text-sm">{notice}</p>}
+    {notice && <p role="status" className="border-2 border-border bg-card p-3 mb-5 font-body text-sm"><strong>Aviso: </strong>{notice}</p>}
     <div className="grid lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,1fr)] gap-6 items-start">
       <section aria-label="Componentes de tu PC" className="space-y-4 min-w-0">
         {BUILD_SLOTS.map((slot) => {
@@ -171,8 +173,8 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
                 {!selectedOffer && <option value={JSON.stringify([selection.storeId, selection.url])}>{reviewPending ? 'Modelo pendiente de revisión' : 'Oferta anterior — pendiente de confirmar'}</option>}
                 {offers.map((offer) => <option key={offer.url} value={JSON.stringify([offer.storeId, offer.url])}>{offer.storeName} — {formatPriceARS(offer.price)} contado{offer.installment ? ` / ${offer.installment.count} cuotas, total ${formatPriceARS(offer.installment.totalAmount)}` : ''}{isOfferFresh(offer.lastUpdated) ? '' : ' · pendiente de actualizar'}</option>)}
               </select></label>
-              {reviewPending && <p className="font-body text-sm border-l-4 border-accent pl-3 mt-3">La coincidencia del modelo requiere revisión. Conservamos el precio y la fecha informados, pero esta oferta no entra al total. Podés elegir otra tienda.</p>}
-              {recordedOffer && !isOfferFresh(recordedOffer.lastUpdated) && <p className="font-body text-sm border-l-4 border-accent pl-3 mt-3">Precio anterior: no se suma al presupuesto hasta volver a comprobar esta oferta.</p>}
+              {reviewPending && <p className="font-body text-sm mt-3 leading-relaxed"><strong>Oferta pendiente: </strong>La coincidencia del modelo requiere revisión. Conservamos el precio y la fecha informados, pero esta oferta no entra al total. Podés elegir otra tienda.</p>}
+              {recordedOffer && !isOfferFresh(recordedOffer.lastUpdated) && <p className="font-body text-sm mt-3 leading-relaxed"><strong>Precio anterior: </strong> no se suma al presupuesto hasta volver a comprobar esta oferta.</p>}
               <div className="flex flex-wrap items-center gap-4 mt-3 font-body text-xs">
                 {(slot === 'ram' || slot === 'ssd') && <label>Cantidad {slot === 'ram' ? 'de kits / unidades' : 'de unidades'}<select aria-label={`Cantidad de ${SLOT_LABELS[slot]}`} className="border-2 border-border bg-background min-h-11 ml-2 px-2" value={selection.quantity} onChange={(event) => setDraft((current) => ({ ...current, selections: { ...current.selections, [slot]: { ...selection, quantity: Number(event.target.value) } } }))}>{[1, 2, 3, 4].map((quantity) => <option key={quantity}>{quantity}</option>)}</select></label>}
                 {selectedOffer && selected && <a className="underline min-h-11 inline-flex items-center" href={selectedOffer.url} target="_blank" rel="noopener noreferrer" onClick={() => trackStoreClick({
@@ -192,7 +194,7 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
           <h2 className="font-pixel text-sm text-secondary">Tu presupuesto</h2>
           <label className="block font-body text-sm mt-4">Forma de pago<select className={`${control} mt-1`} value={draft.payment} onChange={(event) => setDraft((current) => ({ ...current, payment: event.target.value as BuildDraft['payment'] }))}><option value="cash">Contado publicado por la tienda</option><option value="installments">Total de las cuotas informadas</option></select></label>
           <dl className="font-body text-sm mt-5 space-y-2"><div className="flex justify-between gap-2"><dt>Piezas con precio reciente</dt><dd>{formatPriceARS(quote.subtotal)}</dd></div><div className="flex justify-between gap-2"><dt>Envíos ingresados</dt><dd>{formatPriceARS(quote.shipping)}</dd></div></dl>
-          {quote.referenceSubtotal > quote.subtotal && <p className="font-body text-sm border-l-4 border-accent pl-3 mt-4">Estimación orientativa de todas las piezas, incluidos precios anteriores: {formatPriceARS(quote.referenceSubtotal)}. Los importes antiguos no se suman al total hasta volver a comprobar las ofertas.</p>}
+          {quote.referenceSubtotal > quote.subtotal && <p className="font-body text-sm mt-4 leading-relaxed"><strong>Referencia: </strong>Estimación orientativa de todas las piezas, incluidos precios anteriores: {formatPriceARS(quote.referenceSubtotal)}. Los importes antiguos no se suman al total hasta volver a comprobar las ofertas.</p>}
           <div className="border-t-4 border-border mt-4 pt-4"><p className="font-body text-xs uppercase">{!quote.complete || quote.unquoted || quote.missingShipping.length ? 'Total parcial, no confirmado' : 'Total calculado'}</p><p className="font-mono text-3xl font-bold text-secondary mt-1" data-testid="build-total">{quote.unquoted && quote.subtotal === 0 ? 'Pendiente' : formatPriceARS(quote.total)}</p>
             <p className="font-body text-sm mt-2">{quote.unquoted ? 'No calculamos el margen final hasta actualizar todas las piezas.' : quote.overBudget ? `${formatPriceARS(quote.overBudget)} por encima de tu presupuesto.` : `${formatPriceARS(draft.budget - quote.total)} de margen sobre lo cotizado.`}</p></div>
           <p className="font-body text-xs mt-3 text-muted-foreground">{quote.missingShipping.length ? 'Faltan envíos por cotizar. ' : ''}{quote.unquoted ? `${quote.unquoted} piezas sin precio reciente o cotización válida; excluidas del total. ` : ''}No incluye armado, sistema operativo ni periféricos.</p>
@@ -205,8 +207,9 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
         </section>
         <section className="border-4 border-border bg-card p-4"><h2 className="font-pixel text-xs mb-3">Compatibilidad y pendientes</h2>
           <p className="font-body text-sm mb-3">{quote.issues.some((issue) => issue.severity === 'error') ? 'Revisá estas piezas antes de comprar.' : 'Sin incompatibilidades detectadas en los datos disponibles. Confirmá los puntos pendientes.'}</p>
-          <ul className="space-y-3 font-body text-sm">{quote.issues.map((issue) => <li key={issue.code} className={`border-l-4 pl-3 ${issue.severity === 'error' ? 'border-primary' : 'border-accent'}`}>{issue.message}</li>)}</ul>
+          <ul className="list-disc pl-5 space-y-3 font-body text-sm leading-relaxed">{quote.issues.map((issue) => <li key={issue.code}><strong>{issue.severity === 'error' ? 'Error: ' : 'Pendiente: '}</strong>{issue.message}</li>)}</ul>
         </section>
+        {selectedMotherboard && <MotherboardMemorySupport product={selectedMotherboard} />}
         <section className="border-4 border-border bg-card p-4" aria-label="Guardar presupuesto">
           <h2 className="font-pixel text-xs mb-3">Compartí tu armado</h2>
           <p className="font-body text-sm mb-3">Sin crear una cuenta. Quien abra el enlace verá las piezas elegidas y los precios disponibles en ese momento.</p>

@@ -93,6 +93,7 @@ const CATEGORY_CONTENT: Record<HardwareCategory, (product: Product) => ProductCo
     return {
       intro: `La motherboard es la columna vertebral de tu PC. ${name} determina qué componentes podés usar y qué features tendrás disponibles. Una buena elección de placa madre te da estabilidad, opciones de overclocking y conectividad moderna. Considerá el chipset, el tamaño del formato, las ranuras de expansión y la calidad de los VRMs para asegurar compatibilidad con tu procesador y futuros upgrades.`,
       tips: [
+        'Consultá la lista QVL de memorias del fabricante para el modelo y revisión exactos de motherboard; buscá el código del kit de RAM y sus condiciones de prueba.',
         'Verificá compatibilidad de socket con tu procesador.',
         'El chipset determina las features: overclocking, PCIe 4.0/5.0, USB 3.2 Gen 2x2.',
         'Las placas con mejores VRMs sostienen mejor CPUs de alto consumo.',
@@ -110,6 +111,10 @@ const CATEGORY_CONTENT: Record<HardwareCategory, (product: Product) => ProductCo
         {
           question: '¿Cuánta RAM soporta?',
           answer: 'Revisá las especificaciones del fabricante. La mayoría de placas modernas soportan 64GB o más, con velocidades que dependen del chipset y el procesador.',
+        },
+        {
+          question: '¿Qué es la lista QVL de memorias?',
+          answer: 'Es la lista de módulos y kits probados por el fabricante para una motherboard y configuración determinadas. Revisá código exacto de RAM, revisión de placa, CPU, BIOS y cantidad de módulos. Que una memoria no figure no demuestra incompatibilidad; figurar tampoco garantiza estabilidad con otra configuración.',
         },
       ],
       relatedTerms: ['procesador', 'memoria ram', 'gabinete', 'almacenamiento'],

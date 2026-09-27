@@ -15,6 +15,7 @@ import { ProductImage } from './ProductImage';
 import { PriceSummary } from './PriceSummary';
 import { StoresList } from './StoresList';
 import { SpecsTable } from './SpecsTable';
+import { MotherboardMemorySupport } from './MotherboardMemorySupport';
 import { ProductActions } from './ProductActions';
 import { AdvisoryCta } from '@/components/commercial/AdvisoryCta';
 import { RefreshOffersButton } from '@/components/pc-builder/RefreshOffersButton';
@@ -155,6 +156,8 @@ function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientPro
           />
 
           <SpecsTable product={product} />
+
+          <MotherboardMemorySupport product={product} />
 
           <StoresList product={product} merchantPrices={merchantPrices} />
 

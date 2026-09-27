@@ -61,6 +61,7 @@ export function checkBuildCompatibility(parts: Partial<Record<BuildSlot, Product
     add('bios', 'warning', 'Confirmá la versión de BIOS y el soporte del modelo exacto de CPU en la lista del fabricante de la motherboard.');
   }
   if (motherboard && ram) {
+    add('ram-qvl', 'warning', 'Falta verificar el código exacto del kit de RAM en la QVL del modelo y revisión de motherboard, junto con CPU, BIOS y cantidad de módulos probados.');
     const boardRam = ramGen(motherboard), memoryRam = ramGen(ram);
     if (boardRam && memoryRam && boardRam !== memoryRam) add('ram-generation', 'error', `La motherboard requiere DDR${boardRam} y elegiste DDR${memoryRam}.`);
     else if (!boardRam || !memoryRam) add('ram-generation-unknown', 'warning', 'Falta confirmar la generación DDR de motherboard o memoria.');

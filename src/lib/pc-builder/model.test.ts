@@ -36,6 +36,14 @@ function draftWithSelections(selections: BuildDraft['selections'], payment: Buil
 }
 
 describe('checkBuildCompatibility', () => {
+  it('mantiene QVL pendiente aunque DDR y cantidad de módulos coincidan', () => {
+    const issues = checkBuildCompatibility({
+      motherboard: product({ id: 'board', name: 'Motherboard AM5 DDR5', category: 'motherboards', specs: { 'slots de memoria': '4' } }),
+      ram: product({ id: 'ram', name: 'Kit 2x16GB DDR5', category: 'memoria-ram', specs: { módulos: '2' } }),
+    }, emptyBuild());
+    expect(issues).toContainEqual(expect.objectContaining({ code: 'ram-qvl', severity: 'warning' }));
+    expect(issues.some((issue) => issue.code === 'ram-generation' || issue.code === 'ram-slots')).toBe(false);
+  });
   it('no cotiza ventiladores como gabinete ni packs de ventiladores como disipador', () => {
     const offers = [price({ storeId: 'store', storeName: 'Store', price: 50_000 })];
     const products = [
