@@ -105,3 +105,7 @@ Sponsors se evalúan con derivaciones y canal comercial verificados, sin alterar
 3. Preparar contenido, privacidad y verificación antes de solicitar. Activar anuncios únicamente tras aprobación y comprobaciones del piloto.
 
 Presupuesto inicial: preparación con herramientas existentes y solicitud sin compra de tráfico. Cualquier servicio pagado, obligación fiscal o configuración comercial se decide con información real; no hay gasto aprobado por este documento. Revertir QVL como unidad independiente; revertir futuros anuncios mediante configuración y comprobar que el script deja de cargar. La documentación conserva motivos y resultados.
+
+## Resultado de la subida — 27/09/2026, 21:08 UTC
+
+main actualizado hasta af69ef8 y Workers Builds aprobado. Portada, armador y categorías CPU/GPU respondieron 200, pero dos fichas conocidas devolvieron 503/1102. Hay recuperación parcial y se mantiene el bloqueo de G01; no se solicita AdSense por llegar una fecha del calendario. Cuenta revisada: perfil particular chileno ofrecido sin asociación completada; modalidad, moneda y banco todavía no configurados/verificados. Próximo paso administrativo: Jonathan confirma y completa sus datos reales directamente en Google. El plan no incluye información personal de pagos. Ver VALIDACION.md.
