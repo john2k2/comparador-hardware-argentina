@@ -67,11 +67,16 @@ export async function scrapeVenexProducts(
       let pageProducts = 0;
 
       $('.product-box').each((_, el) => {
-        const title = $(el).find('h3').text().trim();
+        const title = ($(el).find('h3 a').attr('title') || $(el).find('h3').attr('title') || $(el).find('h3').text()).trim();
         if (!title) return;
 
         const urlRel = $(el).find('a').attr('href') || $(el).attr('href') || '';
-        const url = normalizeAbsoluteUrl(VENEX_BASE_URL, urlRel);
+        if (!urlRel.trim()) return;
+        let parsedUrl: URL;
+        try { parsedUrl = new URL(normalizeAbsoluteUrl(VENEX_BASE_URL, urlRel.trim())); } catch { return; }
+        if (parsedUrl.protocol !== 'https:' || !['www.venex.com.ar', 'venex.com.ar'].includes(parsedUrl.hostname)) return;
+        parsedUrl.searchParams.delete('keywords');
+        const url = parsedUrl.href;
 
         let image = $(el).find('img').attr('data-src') || $(el).find('img').attr('src') || '';
         if (image) {
@@ -81,6 +86,11 @@ export async function scrapeVenexProducts(
         const priceText = $(el).find('.current-price').text().trim() || $(el).find('.price').text().trim();
         const price = parseInt(priceText.split(',')[0].replace(/\D/g, ''), 10) || 0;
         if (price <= 0 || !url) return;
+        const cardText = $(el).text();
+        const hasPurchaseAction = $(el).find('a,button').toArray().some((action) =>
+          /^comprar$/i.test($(action).text().trim()) && !$(action).is('[disabled],.disabled,[aria-disabled="true"]'));
+        const stock = /sin\s+stock|agotad[oa]|no\s+disponible/i.test(cardText) ? 'out-of-stock'
+          : hasPurchaseAction || /en\s+stock|stock\s+disponible/i.test(cardText) ? 'in-stock' : 'unknown';
 
         const id = `venex-${url.split('/').pop()?.replace('.html', '') || Date.now().toString()}`;
         if (seenProductIds.has(id)) return;
@@ -105,7 +115,7 @@ export async function scrapeVenexProducts(
               url,
               price,
               installment: null,
-              stock: title.toLowerCase().includes('outlet') ? 'low-stock' : 'in-stock',
+              stock,
               lastUpdated: new Date(),
             },
           ],

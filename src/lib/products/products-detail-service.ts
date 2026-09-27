@@ -51,7 +51,7 @@ export async function resolveLiveProductDetail(
 
   const mexxSearchUrl = `https://www.mexx.com.ar/buscar/?p=${encodeURIComponent(searchQuery)}`;
   const fullh4rdSearchUrl = `https://www.fullh4rd.com.ar/cat/search/${encodeURIComponent(searchQuery)}`;
-  const venexSearchUrl = `https://www.venex.com.ar/resultados-busqueda.htm?keywords=${encodeURIComponent(searchQuery)}`;
+  const venexSearchUrl = `https://www.venex.com.ar/resultado-busqueda.htm?keywords=${encodeURIComponent(searchQuery)}`;
 
   const fallbackCategory: HardwareCategory = isHardwareCategory(category)
     ? category

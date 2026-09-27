@@ -77,6 +77,15 @@ describe('venex scraper', () => {
       expect(result).toEqual([]);
     });
 
+    it('conserva el título completo y distingue una oferta comprable de stock desconocido', async () => {
+      const html = `<div class="product-box"><h3><a title="Memoria Kingston DDR5 32GB Kit (2x16GB) 5600MHz" href="/ram.html?keywords=5600">Memoria Kingston...</a></h3><span class="current-price">$ 1.199.990</span><a href="/ram.html">Comprar</a></div><div class="product-box"><h3>Otra memoria</h3><a href="/otra.html"></a><span class="current-price">$ 500.000</span></div><div class="product-box"><h3>Memoria agotada</h3><a href="/agotada.html">Comprar</a><span class="current-price">$ 400.000</span><span>Sin stock</span></div>`;
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200, url: 'https://www.venex.com.ar/resultado-busqueda.htm?keywords=5600', text: async () => html }));
+      const found = await fetchVenexProducts('https://www.venex.com.ar/resultado-busqueda.htm?keywords=5600', 'memoria-ram');
+      expect(found[0]).toMatchObject({ name: 'Memoria Kingston DDR5 32GB Kit (2x16GB) 5600MHz', prices: [expect.objectContaining({ url: 'https://www.venex.com.ar/ram.html', stock: 'in-stock', price: 1_199_990 })] });
+      expect(found[1].prices[0].stock).toBe('unknown');
+      expect(found[2].prices[0].stock).toBe('out-of-stock');
+    });
+
     it('returns empty array when no products found', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
         ok: true,

@@ -61,7 +61,7 @@ export const STORE_SCRAPERS: StoreScraper[] = [
     id: 'venex',
     displayName: 'Venex',
     baseUrl: 'https://www.venex.com.ar',
-    buildSearchUrl: (query) => `https://www.venex.com.ar/resultados-busqueda.htm?keywords=${encodeURIComponent(query)}`,
+    buildSearchUrl: (query) => `https://www.venex.com.ar/resultado-busqueda.htm?keywords=${encodeURIComponent(query)}`,
     fn: ({ searchUrl, category, signal }) => fetchVenexProducts(searchUrl, category ?? DEFAULT_CATEGORY, signal),
   },
   {

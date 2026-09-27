@@ -41,6 +41,6 @@ export function buildCoreStoreCategoryUrls(
   return {
     mexx: `https://www.mexx.com.ar/buscar/?p=${encoded}`,
     fullh4rd: `https://www.fullh4rd.com.ar/cat/search/${encoded}`,
-    venex: `https://www.venex.com.ar/resultados-busqueda.htm?keywords=${encoded}`,
+    venex: `https://www.venex.com.ar/resultado-busqueda.htm?keywords=${encoded}`,
   };
 }
