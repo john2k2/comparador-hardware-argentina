@@ -378,3 +378,9 @@ La última versión consultada devuelve 200 en CPU/ASRock y guía; QVL visible e
 ## AdSense: avance de preparación — 27/09/2026
 
 G20 en revisión: tres piezas implementadas con fuentes y metodología, sin ensayos propios ni precios históricos presentados como actuales. G21: consentimiento GA4 publicado y flujo público escritorio/móvil comprobado después de corregir diferencia de configuración servidor/navegador (622f2d9). Falta recepción del contacto, CMP de anuncios, derechos de assets, revisión humana y perfil de pagos confirmado. Banco y moneda de esta cuenta aún no habilitados/verificados. Ver PLAN-ADSENSE-2026-09-27.md y VALIDACION.md; no hay solicitud ni anuncios activos.
+
+## Propiedad AdSense verificada — 27/09/2026
+
+G22 completado. Workers Builds de 0be5b5e aprobado. Comprobación pública: ads.txt exacto con ID de la cuenta en dominio raíz y www responde 200; portada y tres piezas piloto incluyen metadato correcto y cero scripts/peticiones de anuncios. Dominio raíz también devuelve metadato correcto con 200. En Chrome, Google confirmó explícitamente Tu sitio se ha verificado mediante etiqueta meta. Evidencia local privada: cortes/2026-09-27/adsense-verification/PUBLICO.json y google-sitio-verificado.png. La verificación de propiedad no equivale a aprobación publicitaria. Solicitar revisión no se accionó; el estado del rastreo ads.txt de Google puede actualizarse después y no se presume inmediato. CSP conserva sus orígenes previos porque la conexión no carga anuncios.
+
+G18/G19/G20/G21/G23/G24 continúan abiertos según sus controles. Perfil de pagos sin asociación completada; revisión humana y origen de recursos gráficos pendientes; CMP automática detectada pero sin prueba pública/regional ni retiro TCF verificados. G02 y confiabilidad conservan sus criterios. No hay anuncios activos ni ingresos verificados.
