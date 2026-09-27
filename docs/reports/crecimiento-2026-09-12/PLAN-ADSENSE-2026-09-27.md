@@ -109,3 +109,7 @@ Presupuesto inicial: preparación con herramientas existentes y solicitud sin co
 ## Resultado de la subida — 27/09/2026, 21:08 UTC
 
 main actualizado hasta af69ef8 y Workers Builds aprobado. Portada, armador y categorías CPU/GPU respondieron 200, pero dos fichas conocidas devolvieron 503/1102. Hay recuperación parcial y se mantiene el bloqueo de G01; no se solicita AdSense por llegar una fecha del calendario. Cuenta revisada: perfil particular chileno ofrecido sin asociación completada; modalidad, moneda y banco todavía no configurados/verificados. Próximo paso administrativo: Jonathan confirma y completa sus datos reales directamente en Google. El plan no incluye información personal de pagos. Ver VALIDACION.md.
+
+## Preparación en ejecución — 27/09/2026
+
+G21 ya comenzó: control GA4 básico y política alineada al flujo real, con 19 pruebas y comprobación local en escritorio/móvil; falta publicación/verificación pública, recepción real de contacto y preparación de CMP para anuncios aplicables. G19 cuenta con inventario de muestra y registro de incertidumbres en INVENTARIO-EDITORIAL-ADSENSE-2026-09-27.md. Tres mejoras G20 definidas, no completas. En la última comprobación de la versión 59981bda las fichas CPU/ASRock y una guía volvieron a 200; G01 sigue en observación tras fallo exceededCpu registrado en versión anterior. La solicitud sigue sin habilitarse hasta completar la auditoría de todos los controles.
