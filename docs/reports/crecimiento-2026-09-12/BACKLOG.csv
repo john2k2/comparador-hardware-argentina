@@ -16,3 +16,12 @@ G14,P2,Piloto comercial,Ejecutar piloto de 30 días,Jonathan,pendiente,2026-11-0
 G15,P3,Futuro servicio PCs,Definir zona y validar demanda de armado reparación,Jonathan,pendiente,2026-12-10,Consultas locales y hasta tres trabajos pagados comprobados
 G16,P2,Seguimiento,Completar matriz de todos los scrapers y permisos efectivos,Codex,pendiente,2026-10-09,Cobertura por tienda y roles con evidencia sin secretos
 G17,P1,Tráfico hacia tiendas,Auditar enlaces internos legacy y cobertura de resultados enriquecidos,Codex,pendiente,2026-10-09,Destinos canónicos revisados y oportunidades de Product y Merchant schema clasificadas sin inventar reseñas políticas ni audiencia
+G18,P1,Monetización AdSense,Comprobar cuenta AdSense y país de pagos,Jonathan + Codex,en_revision,2026-10-01,Cuenta y dominio observados; residencia y titular confirmados sin datos sensibles en repo
+G19,P1,Monetización AdSense,Auditar contenido original y derechos de uso,Codex,en_revision,2026-10-02,Muestra editorial y plantillas evaluadas con fuentes y rutas elegibles de anuncios
+G20,P1,Monetización AdSense,Mejorar tres contenidos originales prioritarios,Jonathan + Codex,pendiente,2026-10-07,Tres piezas con autoría real revisión humana fuentes y límites; meta interna no requisito de Google
+G21,P1,Monetización AdSense,Actualizar privacidad contacto y consentimiento,Jonathan + Codex,pendiente,2026-10-07,Política refleja flujo real; contacto recibido y consentimiento probado según audiencia
+G22,P1,Monetización AdSense,Verificar dominio AdSense y ads.txt,Codex,pendiente,2026-10-08,ID real; verificación y ads.txt públicos accesibles; CSP revisada sin anuncios activos
+G23,P2,Monetización AdSense,Preparar espacios de anuncios y validar experiencia,Codex,pendiente,2026-10-09,Configuración desactivada; rutas permitidas y pruebas de consentimiento rendimiento y accesibilidad
+G24,P2,Monetización AdSense,Completar revisión final y solicitar AdSense,Jonathan + Codex,pendiente,2026-10-12,G18 a G23 verificadas; confiabilidad resuelta; fecha y estado real de solicitud registrados
+G25,P2,Monetización AdSense,Medir piloto publicitario tras aprobación,Jonathan + Codex,pendiente,2026-11-09,Sitio apto en Google; 14 y 28 días completos de ingresos uso y consultas observados
+G26,P2,Monetización AdSense,Decidir continuidad de anuncios y monetización,Jonathan + Codex,pendiente,2026-11-12,Decisión con ingresos y embudo reales; si muestra insuficiente reprogramar sin declarar éxito
