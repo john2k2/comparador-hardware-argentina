@@ -89,6 +89,10 @@ export const metadata: Metadata = {
   verification: GOOGLE_SITE_VERIFICATION ? {
     google: GOOGLE_SITE_VERIFICATION,
   } : undefined,
+  // ID público confirmado en AdSense. Verifica propiedad; no carga anuncios.
+  other: {
+    'google-adsense-account': 'ca-pub-4559843439616138',
+  },
 };
 
 export const viewport: Viewport = {
