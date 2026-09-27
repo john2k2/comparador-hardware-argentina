@@ -50,15 +50,15 @@ export const PRIVACIDAD_FAQ = buildFaqSchema([
   },
   {
     question: 'Para que se usan los datos?',
-    answer: 'La finalidad principal es operar el comparador, monitorear estabilidad, mejorar agrupacion de productos y analizar problemas de scraping o integridad de precios.',
+    answer: 'Operamos el comparador con datos técnicos. Google Analytics mide visitas y clics solo después de aceptar analítica; podés rechazarla sin perder las funciones del sitio.',
   },
   {
     question: 'Se comparten datos con terceros?',
-    answer: 'Cuando haces clic en una oferta, sales del comparador y pasas a una tienda externa. Cada comercio tiene sus propias politicas, condiciones y practicas de datos.',
+    answer: 'Cloudflare y Supabase prestan infraestructura y funciones de cuenta. Google recibe analítica si aceptás. Imágenes y ofertas pueden llevar a servidores y tiendas externas con políticas propias.',
   },
   {
     question: 'Cuanto tiempo se conservan los datos?',
-    answer: 'Los registros operativos se conservan solo el tiempo necesario para diagnostico, seguridad, rendimiento o mejora del catalogo, salvo obligaciones tecnicas adicionales.',
+    answer: 'La elección de analítica caduca a los 180 días. Otros datos se conservan según su finalidad y la configuración de cada proveedor; no hay un plazo único verificado para todos.',
   },
   {
     question: 'Como contacto para temas de privacidad?',

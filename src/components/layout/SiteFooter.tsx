@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { CommercialDisclosure } from '@/components/functional/CommercialDisclosure';
+import { AnalyticsPreferencesButton } from '@/components/functional/AnalyticsPreferences';
 
 const columnTitleClass = 'font-semibold text-card-foreground mb-4 text-[12px] uppercase';
 
@@ -40,6 +41,7 @@ export function SiteFooter() {
               <li><Link href="/acerca" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Acerca de</Link></li>
               <li><Link href="/acerca" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Como funciona</Link></li>
               <li><Link href="/privacidad" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Politica de Privacidad</Link></li>
+              <li><AnalyticsPreferencesButton /></li>
               <li><Link href="/terminos" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Terminos de Uso</Link></li>
               <li><Link href="/contacto" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Contacto</Link></li>
               <li><Link href="/indice-precios-hardware" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Índice de precios</Link></li>

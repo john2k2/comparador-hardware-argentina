@@ -11,7 +11,7 @@ declare global {
  * Check if GA4 is configured and available
  */
 function isGA4Available(): boolean {
-  return Boolean(GA4_MEASUREMENT_ID && typeof window !== 'undefined' && typeof window.gtag === 'function');
+  return Boolean(GA4_MEASUREMENT_ID && typeof window !== 'undefined' && window.__chaAnalyticsAllowed === true && typeof window.gtag === 'function');
 }
 
 function toAbsolutePageLocation(url: string): string {

@@ -6,13 +6,20 @@ describe('ga4 analytics helpers', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.stubEnv('NEXT_PUBLIC_GA4_MEASUREMENT_ID', 'G-TEST123');
-    vi.stubGlobal('window', { gtag });
+    vi.stubGlobal('window', { gtag, __chaAnalyticsAllowed: true });
     gtag.mockReset();
   });
 
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
+  });
+
+  it('no envía eventos sin consentimiento o después de retirarlo', async () => {
+    const { pageview } = await import('./ga4');
+    window.__chaAnalyticsAllowed = false;
+    pageview('/search');
+    expect(gtag).not.toHaveBeenCalled();
   });
 
   it('tracks product selection with surface and position context', async () => {

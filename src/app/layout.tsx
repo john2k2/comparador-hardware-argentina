@@ -7,6 +7,7 @@ import { Navigation } from "@/components/layout/Navigation";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { ThemeScript } from "@/components/functional/ThemeScript";
 import { AnalyticsBootstrap } from "@/components/functional/AnalyticsBootstrap";
+import { AnalyticsPreferences } from "@/components/functional/AnalyticsPreferences";
 import { GOOGLE_SITE_VERIFICATION, SITE_NAME, SITE_URL } from "@/lib/site-config";
 import { Analytics } from "@/components/functional/Analytics";
 import { buildSiteJsonLd } from "@/lib/seo/site-jsonld";
@@ -126,6 +127,7 @@ export default async function RootLayout({
         />
         <ThemeScript nonce={nonce} />
         <Analytics />
+        {process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID && <AnalyticsPreferences />}
 
         {/* Preconnect to critical image domains for faster loading */}
         <link rel="preconnect" href="https://mexx-img-2019.s3.amazonaws.com" />

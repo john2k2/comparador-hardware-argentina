@@ -1,3 +1,5 @@
+import { buildAnalyticsBootstrap } from '@/lib/analytics/consent';
+
 const rawMeasurementId = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID?.trim() ?? '';
 const GA4_MEASUREMENT_ID = /^G-[A-Z0-9]+$/.test(rawMeasurementId)
   ? rawMeasurementId
@@ -14,21 +16,10 @@ type AnalyticsBootstrapProps = {
 export function AnalyticsBootstrap({ nonce }: AnalyticsBootstrapProps) {
   if (!GA4_MEASUREMENT_ID) return null;
 
-  const measurementId = JSON.stringify(GA4_MEASUREMENT_ID);
-  const bootstrap = [
-    'window.dataLayer = window.dataLayer || [];',
-    'window.gtag = window.gtag || function(){window.dataLayer.push(arguments);};',
-    "window.gtag('js', new Date());",
-    `window.gtag('config', ${measurementId});`,
-  ].join('\n');
+  const bootstrap = buildAnalyticsBootstrap(GA4_MEASUREMENT_ID);
 
   return (
     <>
-      <script
-        async
-        nonce={nonce}
-        src={`https://www.googletagmanager.com/gtag/js?id=${GA4_MEASUREMENT_ID}`}
-      />
       <script
         id="ga4-bootstrap"
         nonce={nonce}
