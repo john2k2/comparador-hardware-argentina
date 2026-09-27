@@ -6,6 +6,11 @@ import { formatPriceARS } from '@/lib/price-utils';
 import type { ResolvedGuideComponent } from '@/lib/seo/budget-guide-pricing';
 import { GUIDE_SLOT_KEYS, GUIDE_SLOT_LABELS, type GuideSlotKey } from '@/lib/seo/budget-builder';
 
+function observationDate(value?: string | null): string {
+  if (!value || !Number.isFinite(Date.parse(value))) return 'fecha no disponible';
+  return new Intl.DateTimeFormat('es-AR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date(value)) + ' (Argentina)';
+}
+
 export function GuideComponentRows({
   slots,
   surface = 'budget_guide',
@@ -49,13 +54,14 @@ function ComponentRow({
         <h3 className="text-[12px] font-bold break-words">{item.name}</h3>
         <p className="text-[10px] text-muted-foreground mt-1">{item.description}</p>
         {isCatalog && item.bestStoreName && (
-          <p className="text-[10px] uppercase text-accent font-bold mt-2 break-words">
-            {`Menor precio registrado (orientativo): @${item.bestStoreName}`}
-          </p>
+          <div className="mt-2">
+            <p className="text-[10px] uppercase text-accent font-bold break-words">{`Menor precio registrado (orientativo): @${item.bestStoreName}`}</p>
+            <p className="font-body text-xs mt-1">Última observación: {observationDate(item.offers[0]?.lastUpdated)}. Confirmá precio y stock en la tienda.</p>
+          </div>
         )}
         {extraOffers.length > 0 && (
           <p className="text-[10px] uppercase text-muted-foreground mt-1 break-words">
-            {extraOffers.map((offer) => `@${offer.storeName} ${formatPriceARS(offer.price)}`).join(' · ')}
+            {extraOffers.map((offer) => `@${offer.storeName} ${formatPriceARS(offer.price)} — ${observationDate(offer.lastUpdated)}`).join(' · ')}
           </p>
         )}
       </div>

@@ -47,32 +47,32 @@ export const COMPARISONS: ComparisonDefinition[] = [
       category: 'tarjetas-graficas',
       specs: '8GB GDDR6 | 128-bit | 115W TDP | DLSS 3 | Ray Tracing',
       pros: ['DLSS 3 y Frame Generation', 'Mejor Ray Tracing', 'Menor consumo energético', 'NVENC para streaming'],
-      cons: ['Precio más alto en Argentina'],
+      cons: ['8 GB pueden limitar ajustes de textura exigentes; revisar cada juego'],
     },
     product2: {
       name: 'RX 7600',
       searchTerms: ['rx 7600'],
       category: 'tarjetas-graficas',
       specs: '8GB GDDR6 | 128-bit | 165W TDP | FSR 3 | Mejor precio',
-      pros: ['Mejor precio por performance', 'FSR funciona en más juegos', 'Más stock disponible'],
+      pros: ['Alternativa de 8 GB para comparar según precio final', 'Compatibilidad FSR según juego y versión'],
       cons: ['Sin DLSS 3', 'Ray Tracing inferior', 'Mayor consumo energético'],
     },
     conclusion:
-      'En Argentina la RX 7600 suele salir más barata; la 4060 suma DLSS 3. Según TechPowerUp, en raster 1080p la RTX 4060 queda unos 4% adelante de la RX 7600; con ray tracing el margen sube a ~22%. El precio y el stock locales son el dato propio: no medimos FPS acá.',
+      'Elegí según los juegos, funciones y precio final que verificás en las tiendas. TechPowerUp aporta pruebas externas; no medimos FPS ni afirmamos que una placa sea siempre más barata en Argentina. Sin dos ofertas recientes comparables no declaramos una ganadora de precio.',
     faqs: [
       {
         question: '¿RTX 4060 o RX 7600 para gaming 1080p?',
         answer:
-          'TechPowerUp, en su review de la RTX 4060, midió ~4% a favor de NVIDIA en raster 1080p frente a la 7600. Con ray tracing la 4060 se abre más (~22%). En 1080p Ultra ambas siguen siendo cartas de 60+ FPS en la mayoría de títulos de esa prueba. Confirmá el precio en ARS antes de decidir.',
+          'Consultá pruebas de tus juegos con la misma resolución, calidad y uso de ray tracing. TechPowerUp es una referencia externa, no un resultado garantizado para tu PC. Compará funciones que uses y ofertas locales recientes con las mismas condiciones de pago.',
       },
       {
         question: '¿Cuánto cuesta la RTX 4060 en Argentina?',
-        answer: 'El precio cambia entre tiendas. Compará placas de video del mismo chip y VRAM para ver el valor publicado hoy.',
+        answer: 'El precio cambia entre tiendas y versiones del ensamblador. Compará el mismo chip y VRAM, revisá la fecha de relevamiento y confirmá envío y garantía en la publicación.',
       },
       {
         question: '¿La RX 7600 es mejor que la RTX 3060?',
         answer:
-          'No publicamos un head-to-head propio 7600 vs 3060. TechPowerUp sí midió a la 4060 ~20% sobre la 3060 y ~4% sobre la 7600 en 1080p raster: la 7600 no es un “sí, siempre gana”. Si el precio local de la 7600 cierra y no te importa DLSS, tiene sentido.',
+          'No hicimos una prueba propia entre esos modelos. Buscá una prueba que incluya la variante exacta de RTX 3060 y los juegos que te interesan; la memoria, los ajustes y las funciones cambian la decisión. No trasladamos porcentajes entre comparaciones distintas.',
       },
     ],
     sources: [
@@ -97,7 +97,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
       searchTerms: ['ryzen 5 7600x', '7600x'],
       category: 'procesadores',
       specs: '6 núcleos / 12 hilos | 4.7-5.3 GHz | AM5 | DDR5 | 105W',
-      pros: ['Mayor IPC y frecuencia', 'Plataforma AM5 futura', 'Soporte hasta 2027+', 'PCIe 5.0'],
+      pros: ['Plataforma AM5 con DDR5', 'Soporte sujeto a motherboard y BIOS exactas'],
       cons: ['No incluye cooler stock', 'Motherboards AM5 más caras', 'RAM DDR5 más cara'],
     },
     product2: {
@@ -105,11 +105,11 @@ export const COMPARISONS: ComparisonDefinition[] = [
       searchTerms: ['ryzen 7 5700x', '5700x'],
       category: 'procesadores',
       specs: '8 núcleos / 16 hilos | 3.4-4.6 GHz | AM4 | DDR4 | 65W',
-      pros: ['Más núcleos (8 vs 6)', 'Plataforma AM4 madura', 'Motherboards y RAM más baratas', 'Incluye cooler stock'],
+      pros: ['Más núcleos (8 vs 6)', 'Posible reutilización de AM4 y DDR4 con soporte de BIOS'],
       cons: ['Menor IPC', 'Plataforma sin futuro upgrades', 'Frecuencia más baja'],
     },
     conclusion:
-      'Hoy en Argentina el 5700X suele salir más barato si ya tenés AM4 y DDR4. El 7600X pide mother AM5 + DDR5: mirá el costo total, no solo el micro. TechPowerUp midió al 7600X ~25% sobre el 5600X en apps; el 5700X no es ese chip (8 núcleos vs 6). Armando de cero, AM5 suele ser la apuesta.',
+      'Si ya tenés AM4 y DDR4, compará el costo de actualizar frente a una plataforma AM5 completa para el 7600X. TechPowerUp aporta una review del 7600X; sus resultados contra otro CPU no prueban esta comparación. No hay una recomendación universal sin uso, compatibilidad y presupuesto completo.',
     faqs: [
       {
         question: '¿Vale la pena AM5 sobre AM4 en 2026?',
@@ -123,7 +123,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
       {
         question: '¿El Ryzen 7 5700X es mejor para streaming?',
         answer:
-          'Los 8 núcleos del 5700X ayudan a jugar y streamear a la vez. El 7600X tiene menos núcleos y más IPC: TechPowerUp lo mide fuerte en apps frente a 5600X, no frente al 5700X. Elegí según si ya tenés AM4 o si pagás AM5 completo.',
+          'Depende del codificador, juego y carga simultánea. El número de núcleos aislado no decide el resultado; revisá pruebas de esa tarea y si usás codificación por GPU. No presentamos una review frente al 5600X como un ensayo contra el 5700X.',
       },
     ],
     sources: [

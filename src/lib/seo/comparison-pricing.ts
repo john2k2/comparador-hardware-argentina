@@ -1,6 +1,7 @@
 import { getComparableStorePrices } from '@/lib/price-utils';
 import type { ProductPrice } from '@/lib/types';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
+import { isOfferFresh } from '@/lib/price-freshness';
 
 export type ComparisonSidePricing = {
   prices: ProductPrice[];
@@ -20,7 +21,7 @@ export type ComparisonPricing = {
 
 function inStockComparable(prices: ProductPrice[] | undefined): ProductPrice[] {
   // Filtrar antes de deduplicar: una oferta pendiente más barata no debe ocultar otra válida.
-  return getComparableStorePrices((prices ?? []).filter((price) => !needsIdentityReview(price)))
+  return getComparableStorePrices((prices ?? []).filter((price) => !needsIdentityReview(price) && isOfferFresh(price.lastUpdated)))
     .filter((price) => price.price > 0 && (price.stock === 'in-stock' || price.stock === 'low-stock'))
     .sort((a, b) => a.price - b.price);
 }
@@ -39,12 +40,12 @@ function uniqueStoreCount(left: ProductPrice[], right: ProductPrice[]): number {
 
 function buildStoreCoverageCopy(storeCount: number): string {
   if (storeCount === 0) {
-    return 'Hoy no hay ofertas en stock para comparar el precio de estos modelos.';
+    return 'No hay ofertas disponibles verificadas en las últimas 3 horas para comparar el precio de estos modelos. Consultá las fichas para ver referencias anteriores.';
   }
   if (storeCount === 1) {
-    return 'Los precios de esta comparativa salen de 1 tienda con stock.';
+    return 'Los precios de esta comparativa salen de 1 tienda con stock registrado y observación en las últimas 3 horas.';
   }
-  return `Los precios de esta comparativa salen de ${storeCount} tiendas con stock.`;
+  return `Los precios de esta comparativa salen de ${storeCount} tiendas con stock registrado y observación en las últimas 3 horas.`;
 }
 
 export function resolveComparisonPricing(input: {

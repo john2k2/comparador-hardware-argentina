@@ -17,6 +17,8 @@ import { AdvisoryCta } from '@/components/commercial/AdvisoryCta';
 import { BuilderCta } from '@/components/seo/BuilderCta';
 import Link from 'next/link';
 import { DEFAULT_OG_IMAGE } from '@/lib/seo/metadata';
+import { getEditorialMethodology } from '@/lib/seo/editorial-methodology';
+import { EditorialMethodology } from '@/components/seo/EditorialMethodology';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -47,6 +49,8 @@ export default async function BudgetGuidePage({ params }: Props) {
   const resolved = resolveLiveGuideSlots(guide, catalogProducts);
   const faqs = resolveGuideFaqs(guide.faqs, resolved.cpu, resolved.gpu);
   const slotCount = GUIDE_SLOT_KEYS.length;
+  const methodology = getEditorialMethodology(slug);
+  const editorialDate = methodology?.updatedAt ?? EDITORIAL_UPDATED_AT;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -68,7 +72,7 @@ export default async function BudgetGuidePage({ params }: Props) {
           {guide.description} Las piezas salen del catálogo con disponibilidad informada por las tiendas. Revisá las fechas, los envíos y las comprobaciones pendientes antes de comprar.
         </p>
         <div className="mt-3">
-          <EditorialUpdatedStamp isoDate={EDITORIAL_UPDATED_AT} />
+          <EditorialUpdatedStamp isoDate={editorialDate} />
         </div>
       </header>
 
@@ -116,6 +120,7 @@ export default async function BudgetGuidePage({ params }: Props) {
       </section>
 
       <BuilderCta budget={guide.budget} />
+      {methodology && <EditorialMethodology content={methodology} />}
 
       <div className="mb-8">
         <AdvisoryCta surface="budget_guide" />
@@ -198,7 +203,7 @@ export default async function BudgetGuidePage({ params }: Props) {
                 description: guide.description,
                 url: `${SITE_URL}/guia/${slug}`,
                 inLanguage: 'es-AR',
-                dateModified: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
+                dateModified: `${editorialDate}T00:00:00.000Z`,
                 author: { '@type': 'Organization', '@id': `${SITE_URL}#organization`, name: SITE_NAME },
                 publisher: { '@id': `${SITE_URL}#organization` },
                 image: DEFAULT_OG_IMAGE,

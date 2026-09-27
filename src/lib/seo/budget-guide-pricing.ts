@@ -17,6 +17,7 @@ export type GuideStoreOffer = {
   price: number;
   stock: 'in-stock' | 'low-stock';
   url: string;
+  lastUpdated?: string | null;
 };
 
 export type ResolvedGuideComponent = {
@@ -261,6 +262,7 @@ function toGuideOffers(offers: ProductPrice[]): GuideStoreOffer[] {
       price: offer.price,
       stock: offer.stock,
       url: offer.url,
+      lastUpdated: Number.isFinite(new Date(offer.lastUpdated).getTime()) ? new Date(offer.lastUpdated).toISOString() : null,
     }];
   });
 }

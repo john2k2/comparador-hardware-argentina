@@ -8,12 +8,22 @@ function offer(overrides: Partial<ProductPrice> & Pick<ProductPrice, 'storeId' |
     url: `https://example.com/${overrides.storeId}`,
     stock: 'in-stock',
     installment: null,
-    lastUpdated: new Date('2026-09-01T12:00:00.000Z'),
+    lastUpdated: new Date(),
     ...overrides,
   };
 }
 
 describe('resolveComparisonPricing', () => {
+  it('no declara ganador con precios antiguos o sin una fecha de observación válida', () => {
+    const pricing = resolveComparisonPricing({
+      product1Name: 'RTX 4060', product2Name: 'RX 7600',
+      product1Prices: [offer({ storeId: 'old', price: 1, lastUpdated: new Date(Date.now() - 4 * 60 * 60 * 1000) }), offer({ storeId: 'invalid', price: 2, lastUpdated: new Date(NaN) })],
+      product2Prices: [offer({ storeId: 'current', price: 10 })],
+    });
+    expect(pricing.side1.offerCount).toBe(0);
+    expect(pricing.canDeclareWinner).toBe(false);
+    expect(pricing.side2.offerCount).toBe(1);
+  });
   it('no declara ganador ni delta cuando un lado no tiene ofertas en stock', () => {
     const pricing = resolveComparisonPricing({
       product1Name: 'RTX 4060',

@@ -14,32 +14,32 @@ function buildCanBuildAnswer(cpu: ResolvedGuideComponent, gpu: ResolvedGuideComp
   const gpuName = catalogName(gpu);
 
   if (cpuName && gpuName) {
-    return `Sí, con partes en stock del catálogo: ${cpuName} y ${gpuName}. El total comprable se actualiza con ofertas reales; no uses filas marcadas sin stock.`;
+    return `El catálogo registra ofertas para ${cpuName} y ${gpuName}. Revisá la fecha de cada oferta y confirmá stock, compatibilidad y los costos que faltan; ese registro no garantiza una PC completa comprable hoy.`;
   }
   if (!cpuName && !gpuName) {
-    return 'Hoy no hay procesador ni placa de video en stock para este presupuesto. No armes la PC con esos slots estimados.';
+    return 'No encontramos ofertas registradas de procesador ni placa de video para esta selección. No armes la PC con esos slots estimados.';
   }
   if (!gpuName) {
-    return `Podés comprar el procesador en stock (${cpuName}), pero hoy la placa de video no tiene oferta en stock. No recomendamos esa GPU a precio estimado.`;
+    return `Hay una oferta registrada para el procesador (${cpuName}), pero no encontramos una para la placa de video; revisá fechas y confirmá stock. No recomendamos esa GPU a precio estimado.`;
   }
-  return `Podés comprar la placa de video en stock (${gpuName}), pero hoy el procesador no tiene oferta en stock. No recomendamos ese CPU a precio estimado.`;
+  return `Hay una oferta registrada para la placa de video (${gpuName}), pero no encontramos una para el procesador; revisá fechas y confirmá stock. No recomendamos ese CPU a precio estimado.`;
 }
 
 function buildGpuAnswer(gpu: ResolvedGuideComponent): string {
   const gpuName = catalogName(gpu);
   if (gpuName) {
-    return `La GPU en stock de esta guía es ${gpuName}. Compará el precio en las tiendas listadas antes de comprar.`;
+    return `La GPU con oferta registrada de esta guía es ${gpuName}. Revisá su fecha y confirmá precio y stock en las tiendas antes de comprar.`;
   }
-  return 'Hoy no hay una GPU en stock para este presupuesto. No elijas una placa solo por el estimado ni la trates como recomendación de compra.';
+  return 'La selección no tiene una oferta registrada de GPU; aparece sin stock verificado. No elijas una placa solo por el estimado ni la trates como recomendación de compra.';
 }
 
 function buildFpsAnswer(cpu: ResolvedGuideComponent, gpu: ResolvedGuideComponent): string {
   const cpuName = catalogName(cpu);
   const gpuName = catalogName(gpu);
   if (cpuName && gpuName) {
-    return `El rendimiento depende del juego y los ajustes. Esta guía usa ${cpuName} y ${gpuName} en stock; no publica FPS de un combo que no esté en el catálogo.`;
+    return `El rendimiento depende del juego y los ajustes. Esta selección registra ${cpuName} y ${gpuName}; no tenemos ensayos propios que permitan prometer FPS para tu equipo.`;
   }
-  return 'No hay FPS honestos para esta guía mientras CPU o GPU estén sin stock. No cites números de un combo estimado.';
+  return 'La selección está incompleta y no tenemos ensayos propios del conjunto. No prometemos FPS a partir de nombres o precios estimados.';
 }
 
 export function resolveGuideFaqs(

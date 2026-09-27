@@ -21,6 +21,8 @@ import type { HardwareCategory, Product } from '@/lib/types';
 import { getCategoryLabel } from '@/lib/search/search-seo';
 import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
 import { DEFAULT_OG_IMAGE } from '@/lib/seo/metadata';
+import { getEditorialMethodology } from '@/lib/seo/editorial-methodology';
+import { EditorialMethodology } from '@/components/seo/EditorialMethodology';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -46,14 +48,13 @@ export default async function ComparisonPage({ params }: Props) {
     notFound();
   }
 
-  // Fetch products from both categories (usually the same) with a high limit.
-  // Comparison products are often buried deep in the catalog, so we need
-  // enough headroom to find them after grouping/filtering.
-  const categories = new Set([comparison.product1.category, comparison.product2.category]);
+  // Filtrar por modelo en la base: no transformar mil filas dentro del Worker
+  // para encontrar solo dos productos. Los aliases se contrastan después.
+  const definitions = [comparison.product1, comparison.product2];
   const allProducts = (
     await Promise.all(
-      Array.from(categories).map((category) =>
-        readProductsFromDatabase({ limit: 1000, category: category as HardwareCategory }).catch(() => []),
+      definitions.map((definition) =>
+        readProductsFromDatabase({ limit: 32, category: definition.category, query: definition.searchTerms[0] }).catch(() => []),
       ),
     )
   ).flat();
@@ -70,6 +71,8 @@ export default async function ComparisonPage({ params }: Props) {
   const p2Prices = pricing.side2.prices;
   const p1BestPrice = pricing.side1.bestPrice ?? 0;
   const p2BestPrice = pricing.side2.bestPrice ?? 0;
+  const methodology = getEditorialMethodology(slug);
+  const editorialDate = methodology?.updatedAt ?? EDITORIAL_UPDATED_AT;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -98,7 +101,7 @@ export default async function ComparisonPage({ params }: Props) {
           {comparison.description}
         </p>
         <div className="mt-3">
-          <EditorialUpdatedStamp isoDate={EDITORIAL_UPDATED_AT} />
+          <EditorialUpdatedStamp isoDate={editorialDate} />
         </div>
       </header>
 
@@ -256,6 +259,7 @@ export default async function ComparisonPage({ params }: Props) {
       )}
 
       <ComparisonBenchSources sources={comparison.sources} />
+      {methodology && <EditorialMethodology content={methodology} />}
       <BuilderCta />
 
       {/* Conclusion */}
@@ -312,7 +316,7 @@ export default async function ComparisonPage({ params }: Props) {
                 description: comparison.description,
                 url: `${SITE_URL}/comparativa/${comparison.slug}`,
                 inLanguage: 'es-AR',
-                dateModified: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
+                dateModified: `${editorialDate}T00:00:00.000Z`,
                 author: { '@type': 'Organization', '@id': `${SITE_URL}#organization`, name: SITE_NAME },
                 publisher: { '@id': `${SITE_URL}#organization` },
                 image: DEFAULT_OG_IMAGE,
