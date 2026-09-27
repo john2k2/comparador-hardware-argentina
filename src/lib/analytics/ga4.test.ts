@@ -22,6 +22,14 @@ describe('ga4 analytics helpers', () => {
     expect(gtag).not.toHaveBeenCalled();
   });
 
+  it('utiliza la configuración pública del bootstrap aunque no existiera durante el build', async () => {
+    vi.stubEnv('NEXT_PUBLIC_GA4_MEASUREMENT_ID', '');
+    window.__chaAnalyticsMeasurementId = 'G-RUNTIME123';
+    const { pageview } = await import('./ga4');
+    pageview('/guia');
+    expect(gtag).toHaveBeenCalledWith('event', 'page_view', expect.objectContaining({ send_to: 'G-RUNTIME123' }));
+  });
+
   it('tracks product selection with surface and position context', async () => {
     const { trackProductSelection } = await import('./ga4');
 

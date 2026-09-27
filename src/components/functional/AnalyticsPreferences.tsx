@@ -90,7 +90,7 @@ export function AnalyticsPreferences() {
   );
 }
 
-export function AnalyticsPreferencesButton() {
-  if (!process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID) return null;
+export function AnalyticsPreferencesButton({ enabled = true }: { enabled?: boolean }) {
+  if (!enabled) return null;
   return <button type="button" className="min-h-11 text-left hover:text-primary underline underline-offset-4" onClick={() => window.dispatchEvent(new Event(ANALYTICS_CONSENT_EVENT))}>Preferencias de privacidad</button>;
 }

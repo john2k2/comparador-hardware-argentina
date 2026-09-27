@@ -17,6 +17,7 @@ export function parseAnalyticsChoice(raw: string | null, now = Date.now()): Anal
 declare global {
   interface Window {
     __chaAnalyticsAllowed?: boolean;
+    __chaAnalyticsMeasurementId?: string;
     __chaApplyAnalyticsChoice?: (allowed: boolean) => void;
   }
 }
@@ -30,6 +31,7 @@ export function buildAnalyticsBootstrap(measurementId: string): string {
     window.dataLayer=window.dataLayer||[];
     window.gtag=window.gtag||function(){window.dataLayer.push(arguments);};
     window.__chaAnalyticsAllowed=false;
+    window.__chaAnalyticsMeasurementId=id;
     window.gtag('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
     window.__chaApplyAnalyticsChoice=function(allowed){
       window.__chaAnalyticsAllowed=allowed===true;

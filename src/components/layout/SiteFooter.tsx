@@ -41,7 +41,7 @@ export function SiteFooter() {
               <li><Link href="/acerca" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Acerca de</Link></li>
               <li><Link href="/acerca" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Como funciona</Link></li>
               <li><Link href="/privacidad" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Politica de Privacidad</Link></li>
-              <li><AnalyticsPreferencesButton /></li>
+              <li><AnalyticsPreferencesButton enabled={Boolean(process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID)} /></li>
               <li><Link href="/terminos" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Terminos de Uso</Link></li>
               <li><Link href="/contacto" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Contacto</Link></li>
               <li><Link href="/indice-precios-hardware" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Índice de precios</Link></li>

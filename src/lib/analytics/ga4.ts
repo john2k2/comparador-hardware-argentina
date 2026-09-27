@@ -1,5 +1,10 @@
 const GA4_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID;
 
+function getMeasurementId(): string | undefined {
+  const value = typeof window === 'undefined' ? GA4_MEASUREMENT_ID : window.__chaAnalyticsMeasurementId ?? GA4_MEASUREMENT_ID;
+  return value && /^G-[A-Z0-9]+$/.test(value) ? value : undefined;
+}
+
 declare global {
   interface Window {
     dataLayer: unknown[];
@@ -11,7 +16,7 @@ declare global {
  * Check if GA4 is configured and available
  */
 function isGA4Available(): boolean {
-  return Boolean(GA4_MEASUREMENT_ID && typeof window !== 'undefined' && window.__chaAnalyticsAllowed === true && typeof window.gtag === 'function');
+  return Boolean(getMeasurementId() && typeof window !== 'undefined' && window.__chaAnalyticsAllowed === true && typeof window.gtag === 'function');
 }
 
 function toAbsolutePageLocation(url: string): string {
@@ -41,7 +46,7 @@ export function pageview(url: string): void {
   window.gtag('event', 'page_view', {
     page_location: toAbsolutePageLocation(url),
     page_title: typeof document === 'undefined' ? undefined : document.title,
-    send_to: GA4_MEASUREMENT_ID,
+    send_to: getMeasurementId(),
   });
 }
 
@@ -59,7 +64,7 @@ export function trackSearch(params: {
     search_term: params.searchTerm || '',
     search_category: params.category || 'all',
     number_of_results: params.resultCount,
-    send_to: GA4_MEASUREMENT_ID,
+    send_to: getMeasurementId(),
   });
 }
 
@@ -88,7 +93,7 @@ export function trackProductView(params: {
         quantity: 1,
       },
     ],
-    send_to: GA4_MEASUREMENT_ID,
+    send_to: getMeasurementId(),
   });
 }
 
@@ -122,7 +127,7 @@ export function trackProductSelection(params: {
       },
     ],
     selection_surface: params.surface,
-    send_to: GA4_MEASUREMENT_ID,
+    send_to: getMeasurementId(),
   });
 }
 
@@ -150,7 +155,7 @@ export function trackSponsoredStoreSelection(params: {
         index: params.position,
       },
     ],
-    send_to: GA4_MEASUREMENT_ID,
+    send_to: getMeasurementId(),
   });
 }
 
@@ -170,7 +175,7 @@ export function trackContactIntent(params: {
     contact_channel: params.channel,
     contact_surface: params.surface,
     cta_id: params.ctaId,
-    send_to: GA4_MEASUREMENT_ID,
+    send_to: getMeasurementId(),
   });
 }
 
@@ -185,7 +190,7 @@ export function trackAdvisoryCta(params: {
     service_type: 'pc_advisory',
     cta_surface: params.surface,
     cta_id: params.ctaId,
-    send_to: GA4_MEASUREMENT_ID,
+    send_to: getMeasurementId(),
   });
 }
 
@@ -200,7 +205,7 @@ export function trackBudgetBuilder(params: {
     currency: 'ARS',
     value: params.budget,
     budget_source: params.source,
-    send_to: GA4_MEASUREMENT_ID,
+    send_to: getMeasurementId(),
   });
 }
 
@@ -225,7 +230,7 @@ export function trackPcBuilderAction(params: {
     ...(params.slot ? { component_slot: params.slot } : {}),
     ...(params.status ? { refresh_status: params.status } : {}),
     ...(params.updatedCount !== undefined ? { updated_offers: params.updatedCount } : {}),
-    send_to: GA4_MEASUREMENT_ID,
+    send_to: getMeasurementId(),
   });
 }
 
@@ -260,7 +265,7 @@ export function trackStoreClick(params: {
     destination_host: toDestinationHost(params.destinationUrl),
     outbound_surface: params.surface,
     outbound_link_type: params.linkType,
-    send_to: GA4_MEASUREMENT_ID,
+    send_to: getMeasurementId(),
   });
 }
 
@@ -276,7 +281,7 @@ export function trackFilterChange(params: {
   window.gtag('event', 'filter_hardware', {
     filter_type: params.filterType,
     filter_value: params.filterValue,
-    send_to: GA4_MEASUREMENT_ID,
+    send_to: getMeasurementId(),
   });
 }
 
@@ -288,6 +293,6 @@ export function trackEvent(eventName: string, additionalParams?: Record<string, 
 
   window.gtag('event', eventName, {
     ...additionalParams,
-    send_to: GA4_MEASUREMENT_ID,
+    send_to: getMeasurementId(),
   });
 }
