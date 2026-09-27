@@ -346,3 +346,23 @@ Se movió la fecha objetivo de G02 al **03/10/2026** como primer control posible
 El [tablero actualizado](../../../outputs/project-tracker-2026-09-25-g02/Comparador-Hardware-Project-Tracker.xlsx) conserva G02 en curso y mueve su control al 03/10; la hoja anterior permanece como corte histórico. La automatización de seguimiento debe leer este tablero nuevo.
 
 El seguimiento de [feedback y preparación para sponsors](SEGUIMIENTO-FEEDBACK-Y-SPONSORS.md) registra qué señales se comprobarán y qué sigue sin verificarse. Los comentarios del grupo no se consideran inexistentes por falta de acceso; se contrastarán con clics hacia tiendas, consultas y frescura antes de presentar cifras comerciales.
+
+### Primer ciclo diario medido — 26/09/2026
+
+El [scheduler 36233869658](https://github.com/john2k2/comparador-hardware-argentina/actions/runs/36233869658) dejó 67 observaciones persistidas, 19 productos distintos y 13 tiendas: **1/7 ciclos diarios nuevos útiles**. El corte del artefacto de 09:49 UTC muestra 13/60 ofertas de la muestra fija observadas ≤24 h (21,7 %), y 8 de las 9 de ≤3 h pendientes de identidad. No se equipara frescura con comparabilidad ni se cambia el umbral con esta evidencia. Estado/fecha de G02 sin cambios. Ver [VALIDACION.md](VALIDACION.md), [registro de ciclos](G02-CICLOS.csv) y [artefacto conservado](cortes/2026-09-26/catalog-freshness-36233869658.json).
+
+### Segundo ciclo diario medido — 27/09/2026
+
+El scheduler 36312694788 dejó 73 observaciones persistidas, 19 productos distintos y 14 tiendas: **2/7 ciclos diarios nuevos útiles**. La muestra fija contó 10/60 ≤24 h (16,7 %) en el corte de 10:30 UTC, con GPU/RAM todavía sin observaciones recientes; ocho de las diez ofertas recientes tienen identidad pendiente. G02 sigue abierto sin cambio de fecha. El [corte adelantado](VALIDACION.md) deja constancia de la revisión pública 12:55 UTC y de la configuración diaria a las 10:00 de Chile.
+
+### Avisos y feedback autenticados — 27/09/2026
+
+Se leyó el aviso GSC de fragmentos del 27/09 y se contrastaron sus tres fichas con el HTML público: ya no emiten `Product` incompleto, aunque Google conserva rastreos del 23–24/09. Validación Merchant en curso, no superada. Chrome permitió verificar dos comentarios y tres reacciones: sugerencia QVL para motherboards y solicitud de inclusión de `scorpiopc.com`, sin verificación comercial ni contacto. Se incorporan como evidencia para G10 y G16/G13, sin cambios de estado. [Informe con fuentes y límites](GSC-AVISOS-2026-09-27.md).
+
+## Avance autorizado — QVL y difusión, 27/09/2026
+
+La sugerencia de QVL se incorporó al código local y pasó pruebas, lint, TypeScript y build. Queda pendiente despliegue y verificación pública; la identificación exacta de revisiones/MPN sigue siendo un límite para automatizar compatibilidad. Se revisaron 22 grupos, se publicaron dos pedidos nuevos de feedback y se solicitaron permisos mediante 12 contactos únicos, sin aprobación nueva confirmada. ScorpioPC queda como candidato pendiente de verificar identidad fiscal y condiciones del catálogo, sin sello de confianza. [Informe y decisiones](QVL-TIENDA-Y-DIFUSION-2026-09-27.md). Los criterios completos y estados de G10/G13/G16 se conservan; no se cierra G02 ni se habilita contacto a sponsors por estas acciones.
+
+## Preparación AdSense — 27/09/2026
+
+Jonathan autorizó el plan completo y subir las diferencias revisadas. [Plan de AdSense](PLAN-ADSENSE-2026-09-27.md): tareas G18–G26 con responsables, ventanas propuestas y criterios de cierre. Cuenta/país de pagos no verificados; no se solicitó aprobación ni se habilitaron anuncios. G19 comienza con inspección puntual de código; auditoría editorial completa pendiente. Prioridades inmediatas: confiabilidad G02 y embudo G04/G07; elegibilidad G18/G19; contenido/privacidad G20/G21. Las fechas dependen de evidencia y revisión de Google.
