@@ -38,6 +38,12 @@ const cpuSpec = {
 };
 
 describe('resolveGuideComponent', () => {
+  it('admite un kit de RAM de escritorio sin confundirlo con una PC armada', () => {
+    const spec = { name: '32GB DDR5 5600MHz (2x16GB)', searchTerms: ['32gb ddr5'], category: 'memoria-ram' as const, description: '', estimatedPrice: 150_000 };
+    const ram = product({ id: 'ram-kit', name: 'Memoria RAM Kingston Fury Beast DDR5 32GB Kit (2x16GB) 5600MHz RGB CL40', category: 'memoria-ram', prices: [price({ storeId: 'venex', storeName: 'Venex', price: 1_199_990, url: 'https://www.venex.com.ar/memoria-ram-kingston-fury-beast-ddr5-32gb-kit-2x16gb-5600mhz-rgb-cl40.html' })] });
+    expect(resolveGuideComponent(spec, [ram])).toMatchObject({ priceSource: 'catalog', productId: 'ram-kit', price: 1_199_990 });
+  });
+
   it('usa la siguiente tienda comprobada cuando la más barata no tiene stock o tiene un precio anterior', () => {
     const candidate = product({
       id: 'ryzen-7600x', name: 'Ryzen 5 7600X', category: 'procesadores',

@@ -1,5 +1,6 @@
 import { GUIDE_CATALOG_CATEGORIES } from '@/lib/seo/budget-guide-pricing';
-import { readGuideCatalogCandidatesFromDatabase, readProductsFromDatabase } from '@/lib/persistence/product-read';
+import { readGuideCatalogCandidatesFromDatabase } from '@/lib/persistence/product-read';
+import type { BudgetGuideDefinition } from '@/lib/seo/budget-guides-data';
 import { logger } from '@/lib/logger';
 import type { HardwareCategory, Product } from '@/lib/types';
 
@@ -50,7 +51,14 @@ async function fetchGuideCatalogProducts(): Promise<Product[]> {
   return batches.flat();
 }
 
-export async function loadGuideCatalogProducts(): Promise<Product[]> {
+export async function loadGuideCatalogProducts(guide?: BudgetGuideDefinition): Promise<Product[]> {
+  if (guide) {
+    // Hasta dos modelos y ocho candidatos por consulta. Resolver una pieza a
+    // la vez mantiene el máximo de dos lecturas concurrentes del Worker.
+    const batches = await mapWithConcurrency(Object.values(guide.components), 1,
+      (spec) => loadGuidePriorityProducts(spec.category, spec.searchTerms));
+    return [...new Map(batches.flat().map((product) => [product.id, product])).values()];
+  }
   const now = Date.now();
   if (catalogMemo && now - catalogMemo.at < CATALOG_TTL_MS && catalogMemo.products.length > 0) {
     return catalogMemo.products;
@@ -74,7 +82,7 @@ export async function loadGuidePriorityProducts(category: HardwareCategory, term
 
   const batches = await mapWithConcurrency(queries, 2, async (query) => {
     try {
-      return await readProductsFromDatabase({ category, query, limit: 8 });
+      return await readGuideCatalogCandidatesFromDatabase(category, 8, query);
     } catch (error) {
       logger.warn('No se pudo leer un modelo prioritario de la guia', { category, query, error });
       return [];

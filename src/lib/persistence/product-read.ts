@@ -190,20 +190,26 @@ export async function readCategoryLandingPageFromDatabase(
 export async function readGuideCatalogCandidatesFromDatabase(
   category: NonNullable<ReadProductsParams['category']>,
   limit: number = 24,
+  query?: string,
 ): Promise<Product[]> {
   const supabase = getServerSupabaseReadClient();
   if (!supabase) return [];
 
   const requestedLimit = Math.min(48, Math.max(1, Math.trunc(limit) || 1));
-  const { data, error } = await supabase
+  const searchTerm = query ? sanitizeSearchTerm(query) : '';
+  let queryBuilder = supabase
     .from('products')
     .select(PRODUCT_SELECT_FIELDS)
     .eq('category', category)
-    .like('id', 'agrupado-%')
     .gt('lowest_price', 0)
     .order('last_scraped_at', { ascending: false, nullsFirst: false })
     .order('updated_at', { ascending: false })
     .limit(requestedLimit);
+  // Las consultas por modelo también admiten una oferta individual recién
+  // observada, aunque todavía no se haya persistido su agrupación canónica.
+  if (!searchTerm) queryBuilder = queryBuilder.like('id', 'agrupado-%');
+  else queryBuilder = applySharedProductFilters(queryBuilder, { searchTerm });
+  const { data, error } = await queryBuilder;
 
   if (error) {
     if (EMPTY_RESULT_ERROR_CODES.has(error.code ?? '')) return [];

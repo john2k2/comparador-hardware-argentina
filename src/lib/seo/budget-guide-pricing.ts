@@ -313,7 +313,7 @@ export function resolveGuideReferenceOffer(
   if (searchTerms.length === 0) return null;
 
   const candidates = products.flatMap((product) => {
-    if (isPcBuild(product.name) || isExcludedProduct(product)) return [];
+    if (isBlockedBuilderProduct(product)) return [];
     if (spec.category && product.category !== spec.category) return [];
     if (!productMatchesGuideSpec(product, spec)) return [];
 
@@ -435,7 +435,7 @@ export function resolveGuideComponent(
   }
 
   const matches = products.filter((product) => {
-    if (isPcBuild(product.name) || isExcludedProduct(product)) return false;
+    if (isBlockedBuilderProduct(product)) return false;
     if (spec.category && product.category !== spec.category) return false;
     return productMatchesGuideSpec(product, spec);
   });

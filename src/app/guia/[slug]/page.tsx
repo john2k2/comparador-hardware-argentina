@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { loadGuideCatalogProducts, loadGuidePriorityProducts } from '@/lib/seo/guide-catalog';
+import { loadGuideCatalogProducts } from '@/lib/seo/guide-catalog';
 import { formatPriceARS } from '@/lib/price-utils';
 import { GUIDE_SLOT_KEYS, resolveLiveGuideSlots } from '@/lib/seo/budget-builder';
 import { getBudgetGuideBySlug } from '@/lib/seo/budget-guides-data';
@@ -47,14 +47,9 @@ export default async function BudgetGuidePage({ params }: Props) {
     notFound();
   }
 
-  let catalogProducts = await loadGuideCatalogProducts();
+  const catalogProducts = await loadGuideCatalogProducts(guide);
   const nonce = (await headers()).get('x-content-security-policy-nonce') ?? undefined;
-  let resolved = resolveLiveGuideSlots(guide, catalogProducts);
-  if (resolved.gpu.priceSource !== 'catalog' && !resolveGuideReferenceOffer(guide.components.gpu, catalogProducts)) {
-    const priorityProducts = await loadGuidePriorityProducts(guide.components.gpu.category, guide.components.gpu.searchTerms);
-    catalogProducts = [...new Map([...catalogProducts, ...priorityProducts].map((product) => [product.id, product])).values()];
-    resolved = resolveLiveGuideSlots(guide, catalogProducts);
-  }
+  const resolved = resolveLiveGuideSlots(guide, catalogProducts);
   const references = Object.fromEntries(GUIDE_SLOT_KEYS.map((key) => [
     key,
     resolved[key].priceSource === 'catalog' ? null : resolveGuideReferenceOffer(guide.components[key], catalogProducts),
