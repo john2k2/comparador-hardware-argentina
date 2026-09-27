@@ -60,7 +60,7 @@ function ComponentRow({
         {isCatalog && item.bestStoreName && (
           <div className="mt-2">
             <p className="text-[10px] uppercase text-accent font-bold break-words">{`Menor precio observado (no garantizado): @${item.bestStoreName}`}</p>
-            <p className="font-body text-xs mt-1">Última observación: {observationDate(item.offers[0]?.lastUpdated)}. El precio o stock puede haber cambiado; confirmalos en la publicación de la tienda.</p>
+            <p className="font-body text-xs mt-1">Última observación: {observationDate(item.offers[0]?.lastUpdated)}. El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda.</p>
           </div>
         )}
         {extraOffers.length > 0 && (

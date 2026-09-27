@@ -124,6 +124,11 @@ export default async function BudgetGuidePage({ params }: Props) {
             {' '}No hay un precio comprobable para el armado completo; esas filas no entran al subtotal.
           </p>
         )}
+        {resolved.catalogTotal > guide.budget && (
+          <p className="mt-4 text-[10px] md:text-[11px] uppercase text-accent font-mono leading-relaxed">
+            El subtotal observado ya supera el presupuesto objetivo y todavía puede haber piezas sin precio reciente. Revisá alternativas antes de comprar.
+          </p>
+        )}
       </section>
 
       {process.env.ENABLE_ON_DEMAND_REFRESH === '1' && <GuideRefreshPanel targets={refreshTargets} />}

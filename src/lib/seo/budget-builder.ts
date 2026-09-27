@@ -404,30 +404,18 @@ export function resolveLiveGuideSlots(
   guide: BudgetGuideDefinition,
   products: Product[],
 ): ResolvedGuideSlotTotals<Record<GuideSlotKey, ResolvedGuideComponent>> {
-  const built = buildBudgetFromCatalog({ budget: guide.budget, products });
-  const slots: Partial<Record<GuideSlotKey, ResolvedGuideComponent>> = { ...built.slots };
-  let platform = inferPlatformFromSlots(slots, built.platform);
+  const slots: Partial<Record<GuideSlotKey, ResolvedGuideComponent>> = {};
+  let platform: PlatformId | null = null;
 
   for (const key of GUIDE_SLOT_KEYS) {
-    if (slots[key]) continue;
     const spec = guide.components[key];
-    const fallback = resolveGuideComponent(spec, products);
-    const catalogSpend = Object.values(slots)
-      .filter((slot) => slot?.priceSource === 'catalog')
-      .reduce((sum, slot) => sum + (slot?.price ?? 0), 0);
-    const fitsBudget = fallback.priceSource !== 'catalog' || catalogSpend + fallback.price <= guide.budget;
-    const compatible = isNameCompatible(key, fallback.name, platform, slots);
-
-    if (fitsBudget && compatible) {
-      slots[key] = fallback;
+    const matched = resolveGuideComponent(spec, products);
+    if (isNameCompatible(key, matched.name, platform, slots)) {
+      slots[key] = matched;
       platform = inferPlatformFromSlots(slots, platform);
       continue;
     }
-
-    slots[key] = toEstimatedGuideComponent({
-      ...spec,
-      name: genericSlotName(key, platform),
-    });
+    slots[key] = toEstimatedGuideComponent(spec);
   }
 
   return summarizeGuideComponents(slots as Record<GuideSlotKey, ResolvedGuideComponent>);

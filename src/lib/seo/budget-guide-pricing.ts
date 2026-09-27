@@ -1,4 +1,4 @@
-import { isBundleLikeTitle, isCompleteComputerTitle } from '@/lib/product-identity';
+import { isBundleLikeTitle, isCompleteComputerTitle, parseCpuModelSignature, parseGpuChipSignature } from '@/lib/product-identity';
 import { computeComparableStorePriceStats } from '@/lib/price-utils';
 import type { HardwareCategory, Product, ProductPrice } from '@/lib/types';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
@@ -163,6 +163,20 @@ function productMatchesGuideSpec(product: Product, spec: GuideSlotSpec): boolean
   const requested = normalizeSearchText(spec.name);
   const actual = normalizeSearchText(product.name);
 
+  if (spec.category === 'procesadores') {
+    const actualChip = parseCpuModelSignature(product.name);
+    const wantedChips = searchTerms.map(parseCpuModelSignature).filter((chip) => chip !== null);
+    if (wantedChips.length > 0 && (!actualChip || !wantedChips.some((chip) =>
+      chip.family === actualChip.family && chip.number === actualChip.number
+      && chip.suffixes.join(',') === actualChip.suffixes.join(',')))) return false;
+  }
+  if (spec.category === 'tarjetas-graficas') {
+    const actualChip = parseGpuChipSignature(product.name);
+    const wantedChips = searchTerms.map(parseGpuChipSignature).filter((chip) => chip !== null);
+    if (wantedChips.length > 0 && (!actualChip || !wantedChips.some((chip) =>
+      chip.family === actualChip.family && chip.number === actualChip.number
+      && chip.suffixes.join(',') === actualChip.suffixes.join(',')))) return false;
+  }
   // Una coincidencia de capacidad o watts no convierte SATA en NVMe ni Bronze en Gold.
   if (spec.category === 'almacenamiento' && /\bnvme\b/.test(requested) && !/\bnvme\b/.test(actual)) return false;
   if (spec.category === 'fuentes-alimentacion') {

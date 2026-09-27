@@ -99,6 +99,25 @@ describe('resolveGuideComponent', () => {
     expect(resolveGuideReferenceOffer(psuSpec, products)).toBeNull();
   });
 
+  it('no sustituye la GPU pedida por una variante Ti o XT', () => {
+    const gpuSpec = { name: 'RTX 5070 / RX 7800 XT', searchTerms: ['rtx 5070', 'rx 7800 xt'], category: 'tarjetas-graficas' as const, description: '', estimatedPrice: 900_000 };
+    const products = [
+      product({ id: 'ti', name: 'GeForce RTX 5070 Ti 16GB', category: 'tarjetas-graficas', prices: [price({ storeId: 'shop', storeName: 'Shop', price: 1_500_000 })] }),
+      product({ id: 'xtx', name: 'Radeon RX 7800 XTX 16GB', category: 'tarjetas-graficas', prices: [price({ storeId: 'shop2', storeName: 'Shop 2', price: 1_700_000 })] }),
+    ];
+
+    expect(resolveGuideComponent(gpuSpec, products).priceSource).toBe('estimate');
+    expect(resolveGuideReferenceOffer(gpuSpec, products)).toBeNull();
+    const exact = product({ id: 'plain', name: 'GeForce RTX 5070 12GB', category: 'tarjetas-graficas', prices: [price({ storeId: 'shop3', storeName: 'Shop 3', price: 1_600_000 })] });
+    expect(resolveGuideComponent(gpuSpec, [...products, exact]).productId).toBe('plain');
+  });
+
+  it('no sustituye un CPU X por un X3D', () => {
+    const other = product({ id: 'x3d', name: 'AMD Ryzen 5 7600X3D', category: 'procesadores', prices: [price({ storeId: 'shop', storeName: 'Shop', price: 400_000 })] });
+    expect(resolveGuideComponent(cpuSpec, [other]).priceSource).toBe('estimate');
+    expect(resolveGuideReferenceOffer(cpuSpec, [other])).toBeNull();
+  });
+
   it('usa el estimado y no inventa tienda si no hay match de catalogo', () => {
     const resolved = resolveGuideComponent(cpuSpec, [
       product({

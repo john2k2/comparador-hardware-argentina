@@ -217,20 +217,20 @@ describe('buildBudgetFromCatalog', () => {
 });
 
 describe('resolveLiveGuideSlots', () => {
-  it('arma la guia de 1 millon con el catalogo y no cae al BOM editorial incompatible', () => {
+  it('respeta las piezas de la guía aunque exista una alternativa comprable fuera de la selección', () => {
     const guide = getBudgetGuideBySlug('pc-gamer-1-millon');
     if (!guide) throw new Error('missing guide');
 
     const resolved = resolveLiveGuideSlots(guide, starterCatalog);
 
     expect(resolved.cpu.priceSource).toBe('catalog');
-    expect(resolved.gpu.name).toMatch(/4060/);
+    expect(resolved.gpu.priceSource).toBe('catalog');
+    expect(resolved.gpu.name).toMatch(/RX 6600/);
+    expect(resolved.gpu.name).not.toMatch(/4060/);
     expect(resolved.motherboard.name).toMatch(/B450/i);
-    expect(resolved.hasEstimates).toBe(false);
-    expect(resolved.catalogTotal).toBeLessThanOrEqual(guide.budget);
   });
 
-  it('si el catálogo no alcanza, no estima una mother AM5 para un CPU AM4', () => {
+  it('no presenta un CPU AM4 como reemplazo de un Ryzen AM5 especificado', () => {
     const guide = getBudgetGuideBySlug('pc-gamer-2-millones');
     if (!guide) throw new Error('missing guide');
 
@@ -243,11 +243,22 @@ describe('resolveLiveGuideSlots', () => {
       listed('case-mid', 'Gabinete Mid Tower Mesh', 'gabinetes', 40_000),
     ]);
 
-    expect(resolved.cpu.priceSource).toBe('catalog');
-    expect(resolved.cpu.name).toMatch(/5600/);
+    expect(resolved.cpu.priceSource).toBe('estimate');
+    expect(resolved.cpu.name).toMatch(/7600X/);
     expect(resolved.motherboard.priceSource).toBe('estimate');
-    expect(resolved.motherboard.name).not.toMatch(/B650|X670|B650E/i);
-    expect(resolved.motherboard.name).toMatch(/AM4/i);
+    expect(resolved.motherboard.name).toMatch(/B650/i);
+  });
+
+  it('no incorpora un Ryzen 5 reciente en la guía que especifica Ryzen 7', () => {
+    const guide = getBudgetGuideBySlug('pc-gamer-3-millones');
+    if (!guide) throw new Error('missing guide');
+    const resolved = resolveLiveGuideSlots(guide, [
+      listed('cpu-7600x', 'AMD Ryzen 5 7600X', 'procesadores', 371_520),
+    ]);
+
+    expect(resolved.cpu.priceSource).toBe('estimate');
+    expect(resolved.cpu.name).toMatch(/Ryzen 7/);
+    expect(resolved.catalogTotal).toBe(0);
   });
 });
 
