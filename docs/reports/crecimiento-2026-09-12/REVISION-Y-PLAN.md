@@ -374,3 +374,7 @@ QVL, documentos publicables y plan AdSense están en main hasta `af69ef8`, con W
 ### Preparación activa — 27/09/2026
 
 La última versión consultada devuelve 200 en CPU/ASRock y guía; QVL visible en ficha, G01 aún en observación por fallo de CPU previo. G21 inicia control de analítica y política coherente, con pruebas locales; publicación/recepción de contacto/CMP de anuncios pendientes. G19 tiene [inventario editorial](INVENTARIO-EDITORIAL-ADSENSE-2026-09-27.md), con fuentes/derechos y muestra incompleta explícitos. No se cierran requisitos por documentos o tests. Siguiente lote: mejorar las tres piezas G20, completar inventario/runtime y derechos, verificar cuenta/domino y CMP con datos reales, luego auditar solicitud G24.
+
+## AdSense: avance de preparación — 27/09/2026
+
+G20 en revisión: tres piezas implementadas con fuentes y metodología, sin ensayos propios ni precios históricos presentados como actuales. G21: consentimiento GA4 publicado y flujo público escritorio/móvil comprobado después de corregir diferencia de configuración servidor/navegador (622f2d9). Falta recepción del contacto, CMP de anuncios, derechos de assets, revisión humana y perfil de pagos confirmado. Banco y moneda de esta cuenta aún no habilitados/verificados. Ver PLAN-ADSENSE-2026-09-27.md y VALIDACION.md; no hay solicitud ni anuncios activos.

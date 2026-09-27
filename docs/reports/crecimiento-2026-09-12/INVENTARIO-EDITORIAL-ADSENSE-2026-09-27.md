@@ -43,3 +43,9 @@ No atribuir revisión humana, ensayos, FPS ni experiencia de compra al titular s
 3. Comparativa GPU: precio observado por variante, VRAM/consumo verificados en fabricante y advertencia de que juegos/ajustes/configuración cambian resultados.
 
 G19 sigue en revisión hasta completar runtime y registro de derechos. G20 requiere cambios publicados y revisión humana de las tres piezas. G21 es independiente: consentimiento y privacidad se implementan y se prueban antes de cualquier publicidad; falta CMP certificada para los territorios aplicables y comprobar recepción de consultas. El nuevo control de GA4 no es esa CMP.
+
+## Mejoras de la muestra — 27/09/2026, f2ac9f3
+
+Las tres piezas G20 ahora tienen metodología y fuentes primarias, fecha por pieza y alcance de redacción asistida. Runtime local desktop/móvil verificado en las tres, sin errores JS ni desbordamiento. Los cambios se publicaron en GitHub; la comprobación pública del nuevo build se registra aparte en VALIDACION. Comparativas usan consulta por modelo acotada y ganador solo con ofertas disponibles observadas en las últimas tres horas. Las guías muestran fecha por oferta y distinguen selección/costo parcial de una PC comprable hoy. Las afirmaciones de FPS no se presentan como ensayo propio.
+
+Las tres piezas no incorporan fotografías de tiendas en el cuerpo editorial: se revisaron las plantillas y el módulo nuevo. Esto no demuestra derechos sobre el logo, fondo, imagen OG u otras rutas del catálogo. El origen/licencia/permiso de assets compartidos sigue por documentar. No se otorgó aval legal a las imágenes por estar en Git. G19 y G20 siguen abiertos hasta completar sus evidencias y la revisión humana del responsable.
