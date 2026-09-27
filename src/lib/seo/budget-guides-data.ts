@@ -32,7 +32,7 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
   {
     slug: 'pc-gamer-1-millon',
     title: 'PC Gamer $1M 2026',
-    description: 'Armá la mejor PC gamer por 1 millón de pesos. Componentes recomendados con precios actualizados de tiendas de Argentina.',
+    description: 'Explorá una PC gamer con presupuesto objetivo de 1 millón de pesos. Los precios solo se muestran cuando hay ofertas observadas recientemente en tiendas argentinas.',
     keywords: ['pc gamer 1 millon', 'pc gamer barata argentina', 'armar pc 1 millon pesos', 'pc gaming economica'],
     budget: 1000000,
     components: {

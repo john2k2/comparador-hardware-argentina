@@ -70,7 +70,7 @@ export function resolveGuiasHubMetadata(): Metadata {
     path: '/guia',
     title: 'Guías PC Gamer Argentina',
     description:
-      'Armá tu PC gamer según presupuesto. Configuraciones recomendadas desde $1.000.000 con precios actualizados de tiendas argentinas.',
+      'Explorá armados de PC según presupuesto objetivo desde $1.000.000. Las guías distinguen ofertas observadas recientemente de piezas sin precio comprobable.',
     keywords: [
       'guia pc gamer',
       'armar pc argentina',

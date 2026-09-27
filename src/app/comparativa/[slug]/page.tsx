@@ -119,11 +119,11 @@ export default async function ComparisonPage({ params }: Props) {
           <p>
             {pricing.storeCoverageCopy} El rendimiento, el consumo y las temperaturas los tomamos de
             reviews de TechPowerUp (resumen, no copia). Acá el dato propio es el precio en tiendas
-            argentinas con stock.
+            argentinas que informaron stock al observar la publicación.
           </p>
           <p>
             Compará la variante exacta, VRAM o socket, consumo, garantía y condiciones de envío. Si no hay una oferta
-            comparable en stock, no mostramos un ganador de precio.
+            comparable observada recientemente, no mostramos un ganador de precio. Confirmá ambos valores en las tiendas antes de decidir.
           </p>
         </div>
       </section>
@@ -154,7 +154,7 @@ export default async function ComparisonPage({ params }: Props) {
 
         {pricing.canDeclareWinner && pricing.cheaperName && pricing.priceDiff != null && (
           <div className="mt-4 p-3 bg-primary/10 border-2 border-primary text-[11px] font-mono">
-            <strong>{pricing.cheaperName}</strong> es ${formatPriceARS(pricing.priceDiff).replace('$', '')} más barato
+            Según las últimas observaciones, <strong>{pricing.cheaperName}</strong> figuró ${formatPriceARS(pricing.priceDiff).replace('$', '')} más barato. La diferencia puede haber cambiado.
           </div>
         )}
       </section>
@@ -220,6 +220,7 @@ export default async function ComparisonPage({ params }: Props) {
           <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">
             [ COMPARATIVA DE PRECIOS POR TIENDA ]
           </h2>
+          <p className="mb-4 text-[10px] md:text-[11px] font-mono text-muted-foreground">Precios observados en las últimas 3 horas, no garantizados. Abrí cada publicación para comprobar precio, stock y variante antes de comprar.</p>
           
           <div className="overflow-x-auto">
             <table className="w-full text-[10px] md:text-[11px] font-mono">
@@ -228,23 +229,26 @@ export default async function ComparisonPage({ params }: Props) {
                   <th className="text-left py-2 px-3">Tienda</th>
                   <th className="text-right py-2 px-3">{comparison.product1.name}</th>
                   <th className="text-right py-2 px-3">{comparison.product2.name}</th>
-                  <th className="text-right py-2 px-3">Diferencia</th>
+                  <th className="text-right py-2 px-3">Diferencia observada</th>
                 </tr>
               </thead>
               <tbody>
-                {Array.from(new Set([...p1Prices, ...p2Prices].map(p => p.storeName || p.storeId))).map(store => {
-                  const p1Price = p1Prices.find(p => (p.storeName || p.storeId) === store)?.price || 0;
-                  const p2Price = p2Prices.find(p => (p.storeName || p.storeId) === store)?.price || 0;
+                {Array.from(new Set([...p1Prices, ...p2Prices].map(p => p.storeId))).map(storeId => {
+                  const p1Offer = p1Prices.find(p => p.storeId === storeId);
+                  const p2Offer = p2Prices.find(p => p.storeId === storeId);
+                  const p1Price = p1Offer?.price ?? 0;
+                  const p2Price = p2Offer?.price ?? 0;
+                  const store = p1Offer?.storeName || p2Offer?.storeName || storeId;
                   const diff = p1Price && p2Price ? p1Price - p2Price : 0;
                   
                   return (
-                    <tr key={store} className="border-b border-border/50">
+                    <tr key={storeId} className="border-b border-border/50">
                       <td className="py-2 px-3">{store}</td>
                       <td className="text-right py-2 px-3">
-                        {p1Price > 0 ? formatPriceARS(p1Price) : '-'}
+                        {p1Offer ? <ObservedStorePrice offer={p1Offer} store={store} /> : '-'}
                       </td>
                       <td className="text-right py-2 px-3">
-                        {p2Price > 0 ? formatPriceARS(p2Price) : '-'}
+                        {p2Offer ? <ObservedStorePrice offer={p2Offer} store={store} /> : '-'}
                       </td>
                       <td className={`text-right py-2 px-3 ${diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : ''}`}>
                         {diff !== 0 ? formatPriceARS(Math.abs(diff)) : '-'}
@@ -351,20 +355,24 @@ function ProductCard({
   prices: Product['prices'];
   bestPrice: number;
 }) {
+  const bestOffer = prices[0];
+  const bestStoreUrl = bestOffer ? safeStoreUrl(bestOffer.url) : null;
   return (
     <div className="border-2 border-border p-4">
       <h3 className="text-[12px] font-bold text-foreground mb-2">{product.name}</h3>
       <div className="text-[10px] text-muted-foreground mb-2 font-mono">{product.specs}</div>
       <div className="text-[16px] sm:text-[24px] md:text-[28px] font-pixel text-primary mb-1 break-words">
-        {bestPrice > 0 ? formatPriceARS(bestPrice) : 'Consultar'}
+        {bestPrice > 0 ? formatPriceARS(bestPrice) : 'Sin precio reciente'}
       </div>
       <p className="text-[10px] text-muted-foreground font-mono">
         {prices.length === 0
-          ? 'Sin ofertas en stock'
+          ? 'Sin observaciones recientes de precio y stock'
           : prices.length === 1
-            ? '1 tienda con stock'
-            : `${prices.length} tiendas con stock`}
+            ? '1 tienda informó stock en las últimas 3 h'
+            : `${prices.length} tiendas informaron stock en las últimas 3 h`}
       </p>
+      {bestOffer && <p className="mt-1 text-[10px] text-muted-foreground font-mono">Menor precio observado en {bestOffer.storeName || bestOffer.storeId} el {formatObservationDate(bestOffer.lastUpdated)}. Puede haber cambiado.</p>}
+      {bestStoreUrl && <a href={bestStoreUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-[10px] text-secondary hover:underline">Comprobar en tienda →</a>}
       {realProduct && (
         <Link 
           href={`/product/${realProduct.id}`}
@@ -373,6 +381,29 @@ function ProductCard({
           VER DETALLES →
         </Link>
       )}
+    </div>
+  );
+}
+
+function formatObservationDate(value: Date | string | number): string {
+  return new Intl.DateTimeFormat('es-AR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date(value)) + ' (Argentina)';
+}
+
+function safeStoreUrl(rawUrl: string): string | null {
+  try {
+    const url = new URL(rawUrl);
+    return url.protocol === 'https:' && !url.username && !url.password ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+function ObservedStorePrice({ offer, store }: { offer: Product['prices'][number]; store: string }) {
+  const url = safeStoreUrl(offer.url);
+  return (
+    <div>
+      {url ? <a href={url} target="_blank" rel="noopener noreferrer" className="text-secondary hover:underline" aria-label={`Comprobar precio de ${store} en la tienda`}>{formatPriceARS(offer.price)} ↗</a> : formatPriceARS(offer.price)}
+      <span className="block text-[9px] text-muted-foreground">Obs. {formatObservationDate(offer.lastUpdated)}</span>
     </div>
   );
 }

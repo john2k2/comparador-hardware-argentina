@@ -14,23 +14,23 @@ function buildCanBuildAnswer(cpu: ResolvedGuideComponent, gpu: ResolvedGuideComp
   const gpuName = catalogName(gpu);
 
   if (cpuName && gpuName) {
-    return `El catálogo registra ofertas para ${cpuName} y ${gpuName}. Revisá la fecha de cada oferta y confirmá stock, compatibilidad y los costos que faltan; ese registro no garantiza una PC completa comprable hoy.`;
+    return `El catálogo observó ofertas recientes para ${cpuName} y ${gpuName}. Confirmá precio, stock, compatibilidad y los costos que faltan directamente en cada tienda; esa observación no garantiza una PC completa comprable hoy.`;
   }
   if (!cpuName && !gpuName) {
-    return 'No encontramos ofertas registradas de procesador ni placa de video para esta selección. No armes la PC con esos slots estimados.';
+    return 'No encontramos ofertas observadas en las últimas 3 horas de procesador ni placa de video para esta selección. No hay un precio comprobable para ese armado.';
   }
   if (!gpuName) {
-    return `Hay una oferta registrada para el procesador (${cpuName}), pero no encontramos una para la placa de video; revisá fechas y confirmá stock. No recomendamos esa GPU a precio estimado.`;
+    return `Hay una oferta reciente observada para el procesador (${cpuName}), pero la placa de video no tiene precio ni stock observados recientemente. Confirmá el CPU en la tienda y no compres la GPU por un estimado.`;
   }
-  return `Hay una oferta registrada para la placa de video (${gpuName}), pero no encontramos una para el procesador; revisá fechas y confirmá stock. No recomendamos ese CPU a precio estimado.`;
+  return `Hay una oferta reciente observada para la placa de video (${gpuName}), pero el procesador no tiene precio ni stock observados recientemente. Confirmá la GPU en la tienda y no compres el CPU por un estimado.`;
 }
 
 function buildGpuAnswer(gpu: ResolvedGuideComponent): string {
   const gpuName = catalogName(gpu);
   if (gpuName) {
-    return `La GPU con oferta registrada de esta guía es ${gpuName}. Revisá su fecha y confirmá precio y stock en las tiendas antes de comprar.`;
+    return `La GPU con oferta observada recientemente en esta guía es ${gpuName}. Su precio y stock pueden haber cambiado; confirmalos en la tienda antes de comprar.`;
   }
-  return 'La selección no tiene una oferta registrada de GPU; aparece sin stock verificado. No elijas una placa solo por el estimado ni la trates como recomendación de compra.';
+  return 'La selección no tiene una oferta reciente de GPU; aparece sin stock observado recientemente. No elijas una placa por un precio estimado ni la trates como recomendación de compra.';
 }
 
 function buildFpsAnswer(cpu: ResolvedGuideComponent, gpu: ResolvedGuideComponent): string {

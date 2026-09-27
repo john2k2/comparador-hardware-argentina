@@ -40,7 +40,7 @@ function ComponentRow({
 }) {
   const extraOffers = item.offers.slice(1, 3);
   const isCatalog = item.priceSource === 'catalog';
-  const showPrice = isCatalog || item.price > 0;
+  const showPrice = isCatalog && item.price > 0;
 
   return (
     <div className={`border-2 p-4 flex flex-col md:flex-row md:items-center gap-4 ${isCatalog ? 'border-border' : 'border-dashed border-muted'}`}>
@@ -48,15 +48,15 @@ function ComponentRow({
         <div className="flex flex-wrap items-center gap-2 mb-1">
           <span className="text-[10px] text-muted-foreground">{label}</span>
           <span className={`text-[8px] uppercase font-bold px-2 py-1 border-2 ${isCatalog ? 'border-secondary text-secondary' : 'border-muted text-muted-foreground'}`}>
-            {isCatalog ? (item.offers[0]?.stock === 'low-stock' ? 'STOCK BAJO REGISTRADO' : 'STOCK REGISTRADO') : 'SIN OFERTA REGISTRADA'}
+            {isCatalog ? (item.offers[0]?.stock === 'low-stock' ? 'STOCK BAJO INFORMADO' : 'STOCK INFORMADO') : 'SIN OFERTA RECIENTE'}
           </span>
         </div>
         <h3 className="text-[12px] font-bold break-words">{item.name}</h3>
         <p className="text-[10px] text-muted-foreground mt-1">{item.description}</p>
         {isCatalog && item.bestStoreName && (
           <div className="mt-2">
-            <p className="text-[10px] uppercase text-accent font-bold break-words">{`Menor precio registrado (orientativo): @${item.bestStoreName}`}</p>
-            <p className="font-body text-xs mt-1">Última observación: {observationDate(item.offers[0]?.lastUpdated)}. Confirmá precio y stock en la tienda.</p>
+            <p className="text-[10px] uppercase text-accent font-bold break-words">{`Menor precio observado (no garantizado): @${item.bestStoreName}`}</p>
+            <p className="font-body text-xs mt-1">Última observación: {observationDate(item.offers[0]?.lastUpdated)}. El precio o stock puede haber cambiado; confirmalos en la publicación de la tienda.</p>
           </div>
         )}
         {extraOffers.length > 0 && (
@@ -67,14 +67,14 @@ function ComponentRow({
       </div>
       <div className="text-left md:text-right shrink-0 min-w-0">
         <div className="text-[14px] sm:text-[16px] font-pixel text-primary break-words">
-          {showPrice ? formatPriceARS(item.price) : 'Sin oferta'}
+          {showPrice ? formatPriceARS(item.price) : 'Sin precio reciente'}
         </div>
         {isCatalog ? (
           <div className="text-[10px] text-muted-foreground">
-            {item.storeCount === 1 ? '1 tienda con stock registrado' : `${item.storeCount} tiendas con stock registrado`}
+            {item.storeCount === 1 ? '1 tienda informó stock en las últimas 3 h' : `${item.storeCount} tiendas informaron stock en las últimas 3 h`}
           </div>
         ) : (
-          <div className="text-[10px] uppercase text-muted-foreground">Estimado. No recomendar compra.</div>
+          <div className="text-[10px] uppercase text-muted-foreground">Sin oferta observada en las últimas 3 h. No inferimos un precio de compra.</div>
         )}
         <div className="flex flex-col md:items-end gap-1 mt-1">
           {item.bestStoreUrl && (

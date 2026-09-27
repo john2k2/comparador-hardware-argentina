@@ -40,12 +40,12 @@ function uniqueStoreCount(left: ProductPrice[], right: ProductPrice[]): number {
 
 function buildStoreCoverageCopy(storeCount: number): string {
   if (storeCount === 0) {
-    return 'No hay ofertas disponibles verificadas en las últimas 3 horas para comparar el precio de estos modelos. Consultá las fichas para ver referencias anteriores.';
+    return 'No hay precios con stock informado observados en las últimas 3 horas para comparar estos modelos. Consultá las fichas para ver referencias anteriores.';
   }
   if (storeCount === 1) {
-    return 'Los precios de esta comparativa salen de 1 tienda con stock registrado y observación en las últimas 3 horas.';
+    return 'Los precios de esta comparativa son observaciones de 1 tienda que informó stock en las últimas 3 horas; pueden haber cambiado.';
   }
-  return `Los precios de esta comparativa salen de ${storeCount} tiendas con stock registrado y observación en las últimas 3 horas.`;
+  return `Los precios de esta comparativa son observaciones de ${storeCount} tiendas que informaron stock en las últimas 3 horas; pueden haber cambiado.`;
 }
 
 export function resolveComparisonPricing(input: {

@@ -13,7 +13,7 @@ vi.mock('@/lib/server/shared-cache', () => ({ getSharedCache: vi.fn(), setShared
 vi.mock('@/lib/logger', () => ({ logger: { info: vi.fn(), warn: vi.fn() } }));
 
 const name = 'Patriot Viper Venom DDR5 32GB 6000MHz CL30';
-const observedAt = new Date('2026-09-21T12:00:00Z');
+const observedAt = new Date();
 const guide = { name, category: 'memoria-ram' as const, searchTerms: ['viper venom'], description: 'Memoria', estimatedPrice: 350_000 };
 
 function offer(storeId: string, family: string, price: number): ProductPrice {

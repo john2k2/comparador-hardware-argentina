@@ -8,7 +8,7 @@ function price(overrides: Partial<ProductPrice> & Pick<ProductPrice, 'storeId' |
     url: `https://example.com/${overrides.storeId}`,
     stock: 'in-stock',
     installment: null,
-    lastUpdated: new Date('2026-09-02T12:00:00.000Z'),
+    lastUpdated: new Date(),
     ...overrides,
   };
 }

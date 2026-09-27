@@ -7,7 +7,7 @@ function price(overrides: Partial<ProductPrice> & Pick<ProductPrice, 'storeId' |
     url: `https://example.com/${overrides.storeId}`,
     stock: 'in-stock',
     installment: null,
-    lastUpdated: new Date('2026-08-29T12:00:00.000Z'),
+    lastUpdated: new Date(),
     ...overrides,
   };
 }
@@ -38,6 +38,24 @@ const cpuSpec = {
 };
 
 describe('resolveGuideComponent', () => {
+  it('no presenta como comprable una oferta sin observación reciente', () => {
+    const resolved = resolveGuideComponent(cpuSpec, [
+      product({
+        id: 'ryzen-7600x',
+        name: 'Ryzen 5 7600X',
+        category: 'procesadores',
+        prices: [
+          price({ storeId: 'stale', storeName: 'Tienda anterior', price: 100_000, lastUpdated: new Date(Date.now() - 4 * 60 * 60 * 1000) }),
+          price({ storeId: 'invalid', storeName: 'Tienda sin fecha', price: 90_000, lastUpdated: new Date(NaN) }),
+        ],
+      }),
+    ]);
+
+    expect(resolved.priceSource).toBe('estimate');
+    expect(resolved.bestStoreUrl).toBeNull();
+    expect(resolved.offers).toEqual([]);
+  });
+
   it('usa el estimado y no inventa tienda si no hay match de catalogo', () => {
     const resolved = resolveGuideComponent(cpuSpec, [
       product({

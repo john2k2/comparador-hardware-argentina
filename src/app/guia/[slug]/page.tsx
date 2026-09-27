@@ -84,15 +84,15 @@ export default async function BudgetGuidePage({ params }: Props) {
         
         <div className="grid md:grid-cols-2 gap-4">
           <div className="border-2 border-border p-4 text-center">
-            <div className="text-[10px] text-muted-foreground mb-1">PRESUPUESTO</div>
+            <div className="text-[10px] text-muted-foreground mb-1">PRESUPUESTO OBJETIVO</div>
             <div className="text-[16px] md:text-[24px] font-pixel text-primary break-words">{formatPriceARS(guide.budget)}</div>
           </div>
           
           <div className="border-2 border-border p-4 text-center">
-            <div className="text-[10px] text-muted-foreground mb-1">TOTAL ORIENTATIVO DE PIEZAS</div>
-            <div className="text-[16px] md:text-[24px] font-pixel text-primary break-words">{formatPriceARS(resolved.catalogTotal)}</div>
+            <div className="text-[10px] text-muted-foreground mb-1">{resolved.hasEstimates ? 'SUBTOTAL OBSERVADO — ARMADO INCOMPLETO' : 'TOTAL OBSERVADO — NO GARANTIZADO'}</div>
+            <div className="text-[16px] md:text-[24px] font-pixel text-primary break-words">{resolved.inStockSlots > 0 ? formatPriceARS(resolved.catalogTotal) : 'Sin precios recientes'}</div>
             <p className="mt-2 text-[10px] uppercase text-muted-foreground">
-              {resolved.inStockSlots} de {slotCount} partes con oferta registrada
+              {resolved.inStockSlots} de {slotCount} partes con oferta observada en las últimas 3 h
             </p>
           </div>
           
@@ -100,9 +100,9 @@ export default async function BudgetGuidePage({ params }: Props) {
         {resolved.hasEstimates && (
           <p className="mt-4 text-[10px] md:text-[11px] uppercase text-muted-foreground font-mono leading-relaxed">
             {slotCount - resolved.inStockSlots === 1
-              ? 'Falta 1 parte sin oferta en stock.'
-              : `Faltan ${slotCount - resolved.inStockSlots} partes sin oferta en stock.`}
-            Esas filas no entran al total de precios registrados y muestran un estimado de referencia.
+              ? 'Falta 1 parte sin oferta reciente.'
+              : `Faltan ${slotCount - resolved.inStockSlots} partes sin oferta reciente.`}
+            No hay un precio comprobable para el armado completo; esas filas no entran al subtotal.
           </p>
         )}
       </section>
@@ -110,12 +110,12 @@ export default async function BudgetGuidePage({ params }: Props) {
       {/* Components */}
       <section className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow mb-8">
         <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">
-          [ CONFIGURACION RECOMENDADA ]
+          [ SELECCION TECNICA ORIENTATIVA ]
         </h2>
         
         <GuideComponentRows slots={resolved} />
         <p className="mt-4 text-[10px] uppercase text-muted-foreground font-mono leading-relaxed">
-          Los precios registrados pueden ser anteriores y el total es orientativo. Confirmá stock y precio final en la tienda; CPU, mother y RAM deben coincidir en socket y generación.
+          Cada precio es una observación de las últimas 3 horas, no una cotización en tiempo real. Si una pieza no tiene oferta reciente, no le asignamos precio. Confirmá stock y precio final en la tienda; CPU, mother y RAM deben coincidir en socket y generación.
         </p>
       </section>
 
