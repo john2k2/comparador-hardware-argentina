@@ -11,7 +11,7 @@ import { GOOGLE_SITE_VERIFICATION, SITE_NAME, SITE_URL } from "@/lib/site-config
 import { Analytics } from "@/components/functional/Analytics";
 import { buildSiteJsonLd } from "@/lib/seo/site-jsonld";
 import { serializeJsonLd } from "@/lib/seo/serialize-jsonld";
-import { DEFAULT_SITE_DESCRIPTION } from "@/lib/seo/metadata";
+import { DEFAULT_OG_IMAGE, DEFAULT_SITE_DESCRIPTION } from "@/lib/seo/metadata";
 
 
 const pixelFont = Press_Start_2P({
@@ -60,10 +60,11 @@ export const metadata: Metadata = {
     description: DEFAULT_SITE_DESCRIPTION,
     images: [
       {
-        url: "/og-image.png",
+        url: DEFAULT_OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: "Comparador de Precios Hardware Argentina",
+        alt: "Comparador Hardware Argentina: compará tiendas y armá tu presupuesto",
+        type: "image/png",
       },
     ],
   },
@@ -71,7 +72,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SITE_NAME,
     description: DEFAULT_SITE_DESCRIPTION,
-    images: ["/og-image.png"],
+    images: [DEFAULT_OG_IMAGE],
   },
   robots: {
     index: true,

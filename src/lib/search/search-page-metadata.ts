@@ -4,8 +4,7 @@ import { getCategorySeoCopy, isCategoryCanonicalLanding, isIndexableCategoryLand
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
 import { stores as defaultStores } from '@/lib/scrapers/static-data';
-
-const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
+import { DEFAULT_OG_IMAGE } from '@/lib/seo/metadata';
 
 function buildSearchMetadata(input: {
   title: string;

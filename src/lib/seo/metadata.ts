@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 
-const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
+// URL versionada para que las redes distingan la portada social renovada.
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image-2026-09-27.png`;
 
 export const HOME_PAGE_TITLE = 'Comparador Hardware Argentina: precios de PC';
 export const HOME_PAGE_DESCRIPTION = 'Compará componentes de PC entre tiendas argentinas: precios, stock y enlaces de procesadores, placas de video, RAM y SSD. No vendemos hardware.';

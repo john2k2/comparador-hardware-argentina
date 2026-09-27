@@ -20,6 +20,7 @@ import Link from 'next/link';
 import type { HardwareCategory, Product } from '@/lib/types';
 import { getCategoryLabel } from '@/lib/search/search-seo';
 import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
+import { DEFAULT_OG_IMAGE } from '@/lib/seo/metadata';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -314,7 +315,7 @@ export default async function ComparisonPage({ params }: Props) {
                 dateModified: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
                 author: { '@type': 'Organization', '@id': `${SITE_URL}#organization`, name: SITE_NAME },
                 publisher: { '@id': `${SITE_URL}#organization` },
-                image: `${SITE_URL}/og-image.png`,
+                image: DEFAULT_OG_IMAGE,
               },
               {
                 '@type': 'FAQPage',

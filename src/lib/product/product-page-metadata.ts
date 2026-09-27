@@ -5,8 +5,9 @@ import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
 import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
+import { DEFAULT_OG_IMAGE as DEFAULT_SITE_OG_IMAGE } from '@/lib/seo/metadata';
 
-export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
+export const DEFAULT_OG_IMAGE = DEFAULT_SITE_OG_IMAGE;
 export const PRODUCT_TITLE_SUFFIX = ` | ${SITE_NAME}`;
 
 export function buildCanonicalUrl(id: string): string {
