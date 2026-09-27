@@ -165,6 +165,19 @@ describe('runRequestedRefresh', () => {
     });
   });
 
+  it('busca una publicación de CompraGamer por ID aunque el título agrupado sea anterior', async () => {
+    const currentTarget = { productId: 'mother-msi', storeId: 'compragamer', url: 'https://compragamer.com/producto/Mother_MSI_PRO_B650M_B_AM5_18056' };
+    const grouped = product({ id: currentTarget.productId, name: 'Mother MSI PRO B650M-B DDR5 AM5 (Serie 7000/8000) (4797)', category: 'motherboards' });
+    const observed = product({ id: 'cg-18056', name: 'Mother MSI PRO B650M-B AM5', category: 'motherboards', prices: [price({ storeId: 'compragamer', storeName: 'CompraGamer', price: 146_200, url: currentTarget.url })] });
+    configureClaimedJob([observed]);
+    mocks.rpc.mockImplementation(async (name: string) => name === 'claim_offer_refresh'
+      ? { data: { ...job, targets: [currentTarget] }, error: null } : { data: true, error: null });
+    mocks.readBuilderCatalog.mockResolvedValue([grouped]);
+    expect((await runRequestedRefresh()).status).toBe('completed');
+    expect(mocks.scrape).toHaveBeenCalledWith(expect.objectContaining({ query: '18056', selectedStoreIds: new Set(['compragamer']) }));
+    expect(mocks.rpc).toHaveBeenCalledWith('persist_requested_offer', expect.objectContaining({ p_price: 146_200, p_url: currentTarget.url }));
+  });
+
   it('does not persist or report success when the result is empty, mismatched, or stale', async () => {
     const scenarios: Product[][] = [
       [],

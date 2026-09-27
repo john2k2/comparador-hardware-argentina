@@ -42,7 +42,7 @@ describe('resolveGuideFaqs', () => {
 
     const answers = resolved.map((faq) => faq.answer).join(' ');
     expect(answers).toContain('AMD Ryzen 5 5500');
-    expect(answers).toMatch(/sin stock/i);
+    expect(answers).toContain('Estamos buscando una GPU disponible');
     expect(answers).not.toContain('Ryzen 5 5600');
     expect(answers).not.toMatch(/mejor opción/i);
     expect(answers).not.toContain('120+ FPS');

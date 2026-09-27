@@ -38,6 +38,21 @@ const cpuSpec = {
 };
 
 describe('resolveGuideComponent', () => {
+  it('usa la siguiente tienda comprobada cuando la más barata no tiene stock o tiene un precio anterior', () => {
+    const candidate = product({
+      id: 'ryzen-7600x', name: 'Ryzen 5 7600X', category: 'procesadores',
+      prices: [
+        price({ storeId: 'no-stock', storeName: 'Sin stock', price: 200_000, stock: 'out-of-stock' }),
+        price({ storeId: 'stale', storeName: 'Precio anterior', price: 250_000, lastUpdated: new Date(Date.now() - 4 * 60 * 60 * 1000) }),
+        price({ storeId: 'available', storeName: 'Disponible', price: 300_000 }),
+        price({ storeId: 'next', storeName: 'Otra disponible', price: 320_000 }),
+      ],
+    });
+    const resolved = resolveGuideComponent(cpuSpec, [candidate]);
+    expect(resolved).toMatchObject({ priceSource: 'catalog', price: 300_000, bestStoreName: 'Disponible' });
+    expect(resolved.offers.map((offer) => offer.storeId)).toEqual(['available', 'next']);
+  });
+
   it('no presenta como comprable una oferta sin observación reciente', () => {
     const resolved = resolveGuideComponent(cpuSpec, [
       product({

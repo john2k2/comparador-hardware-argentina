@@ -15,14 +15,16 @@ export function GuideComponentRows({
   slots,
   references = {},
   surface = 'budget_guide',
+  buyableOnly = false,
 }: {
   slots: Record<GuideSlotKey, ResolvedGuideComponent>;
   references?: Partial<Record<GuideSlotKey, GuideReferenceOffer | null>>;
   surface?: 'budget_guide' | 'budget_builder';
+  buyableOnly?: boolean;
 }) {
   return (
     <div className="space-y-4">
-      {GUIDE_SLOT_KEYS.map((key) => (
+      {GUIDE_SLOT_KEYS.filter((key) => !buyableOnly || (slots[key].priceSource === 'catalog' && slots[key].price > 0 && slots[key].offers.length > 0)).map((key) => (
         <ComponentRow key={key} slotKey={key} label={GUIDE_SLOT_LABELS[key]} item={slots[key]} reference={references[key]} surface={surface} />
       ))}
     </div>

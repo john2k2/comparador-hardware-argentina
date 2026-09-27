@@ -21,8 +21,11 @@ async function fetchTarget(product: Product, target: RefreshTarget, startedAt: n
     : product.category === 'tarjetas-graficas' ? parseGpuChipSignature(product.name) : null;
   // Buscar por chip evita exigir a una tienda el título comercial de otra.
   // La aceptación sigue exigiendo coincidencia con la URL exacta seleccionada.
-  const query = chip ? `${chip.family === 'unknown' ? '' : chip.family.replace('ryzen', 'ryzen ').replace('corei', 'core i')} ${chip.number}${chip.suffixes.join('')}`.trim()
-    : product.name.slice(0, 120);
+  // El ID de CompraGamer es estable aunque el catálogo agrupado conserve un
+  // título anterior, con palabras que ya no figuran en la publicación.
+  const compraGamerId = target.storeId === 'compragamer' ? new URL(target.url).pathname.match(/_(\d+)$/)?.[1] : undefined;
+  const query = compraGamerId ?? (chip ? `${chip.family === 'unknown' ? '' : chip.family.replace('ryzen', 'ryzen ').replace('corei', 'core i')} ${chip.number}${chip.suffixes.join('')}`.trim()
+    : product.name.slice(0, 120));
   // Los adaptadores de plataforma filtran por tienda antes de hacer solicitudes.
   // El límite se aplica a toda esta búsqueda, no se multiplica por plataforma.
   const batches = await Promise.all(scrapers.map((scraper) => withPromiseTimeout(withAbortTimeout((signal) => scraper.fn({ query,

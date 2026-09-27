@@ -30,7 +30,7 @@ function buildGpuAnswer(gpu: ResolvedGuideComponent): string {
   if (gpuName) {
     return `La GPU con oferta observada recientemente en esta guía es ${gpuName}. Su precio y stock pueden haber cambiado; confirmalos en la tienda antes de comprar.`;
   }
-  return 'La selección no tiene una oferta reciente de GPU; aparece sin stock observado recientemente. No elijas una placa por un precio estimado ni la trates como recomendación de compra.';
+  return 'Estamos buscando una GPU disponible para este presupuesto. La lista de compra solo incluye placas con precio y stock comprobados; no recomendamos comprar a partir de una estimación.';
 }
 
 function buildFpsAnswer(cpu: ResolvedGuideComponent, gpu: ResolvedGuideComponent): string {

@@ -109,7 +109,7 @@ export default async function BudgetGuidePage({ params }: Props) {
           
           <div className="border-2 border-border p-4 text-center">
             <div className="text-[10px] text-muted-foreground mb-1">{resolved.hasEstimates ? 'SUBTOTAL OBSERVADO — ARMADO INCOMPLETO' : 'TOTAL OBSERVADO — NO GARANTIZADO'}</div>
-            <div className="text-[16px] md:text-[24px] font-pixel text-primary break-words">{resolved.inStockSlots > 0 ? formatPriceARS(resolved.catalogTotal) : 'Sin precios recientes'}</div>
+            <div className="text-[16px] md:text-[24px] font-pixel text-primary break-words">{resolved.inStockSlots > 0 ? formatPriceARS(resolved.catalogTotal) : 'En preparación'}</div>
             <p className="mt-2 text-[10px] uppercase text-muted-foreground">
               {resolved.inStockSlots} de {slotCount} partes con oferta observada en las últimas 3 h
             </p>
@@ -119,9 +119,9 @@ export default async function BudgetGuidePage({ params }: Props) {
         {resolved.hasEstimates && (
           <p className="mt-4 text-[10px] md:text-[11px] uppercase text-muted-foreground font-mono leading-relaxed">
             {slotCount - resolved.inStockSlots === 1
-              ? 'Falta 1 parte sin oferta reciente.'
-              : `Faltan ${slotCount - resolved.inStockSlots} partes sin oferta reciente.`}
-            {' '}No hay un precio comprobable para el armado completo; esas filas no entran al subtotal.
+              ? 'Estamos buscando una oferta disponible para la pieza que falta.'
+              : `Estamos buscando ofertas disponibles para las ${slotCount - resolved.inStockSlots} piezas que faltan.`}
+            {' '}La lista muestra solo piezas con precio y stock comprobados; el subtotal todavía no alcanza para comprar una PC completa.
           </p>
         )}
         {resolved.catalogTotal > guide.budget && (
@@ -136,12 +136,20 @@ export default async function BudgetGuidePage({ params }: Props) {
       {/* Components */}
       <section className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow mb-8">
         <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">
-          [ SELECCION TECNICA ORIENTATIVA ]
+          [ PIEZAS DISPONIBLES EN TIENDAS ]
         </h2>
         
-        <GuideComponentRows slots={resolved} references={references} />
+        {resolved.inStockSlots > 0 ? (
+          <GuideComponentRows slots={resolved} buyableOnly />
+        ) : (
+          <p className="font-body text-sm leading-relaxed">
+            Este presupuesto está en preparación. Mientras buscamos ofertas disponibles, podés{' '}
+            <Link href={`/guia/armar?pesos=${guide.budget}`} className="text-primary underline underline-offset-4">armar tu propia selección</Link>{' '}
+            o pedirnos ayuda para elegir las piezas.
+          </p>
+        )}
         <p className="mt-4 text-[10px] uppercase text-muted-foreground font-mono leading-relaxed">
-          Cada precio es una observación de las últimas 3 horas, no una cotización en tiempo real. Si una pieza no tiene oferta reciente, no le asignamos precio. Confirmá stock y precio final en la tienda; CPU, mother y RAM deben coincidir en socket y generación.
+          Elegimos la oferta válida de menor precio entre las comprobadas en las últimas 3 horas. Si la más barata no tiene stock o no se pudo confirmar, usamos la siguiente disponible. Confirmá el precio final, el envío y la compatibilidad antes de comprar.
         </p>
       </section>
 
