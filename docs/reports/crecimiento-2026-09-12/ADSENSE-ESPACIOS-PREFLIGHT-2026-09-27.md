@@ -42,7 +42,7 @@ Antes de una integración activa: revisión humana G20; país/perfil administrat
 
 La CMP certificada de Google debe comprobarse con entrega regional, consentir/no consentir/gestionar, retiro y navegación entre páginas. La función oficial de revocación es `googlefc.callbackQueue.push(googlefc.showRevocationMessage)`. Google indica que el enlace automático de revocación se añade a sitios aprobados que contienen el código AdSense; no se cierra ese control usando una maqueta local. Fuente: https://support.google.com/adsense/answer/10959060?hl=en.
 
-G23 continúa abierto: faltan el cargador único del proveedor, la CSP con orígenes observados exactos y pruebas reales de privacidad, carga, estabilidad visual y bloqueador. No habilitar publicidad por cambiar una variable. G24 conserva sus dependencias; la revisión de Google no se solicitó.
+G23 continúa abierto: faltan el cargador único del proveedor, diseño revisado de CSP con nonce y pruebas de privacidad, carga, estabilidad visual y bloqueador. La propuesta previa de orígenes exactos se corrigió al consultar la documentación de Google; detalle en ADSENSE-CSP-Y-CONSENTIMIENTO-2026-09-28.md. Las pruebas con anuncios reales corresponden a G25 después de aprobación. No habilitar publicidad por cambiar una variable. G24 conserva sus dependencias; la revisión de Google no se solicitó.
 
 ## Publicación comprobada — 28/09/2026 01:14 UTC
 

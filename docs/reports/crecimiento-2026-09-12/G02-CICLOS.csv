@@ -1,3 +1,4 @@
 fecha,run_id,event,inicio_ciclo,corte,observaciones,productos,tiendas_observadas,disponibles,frescas24h,frescas3h,identidad_pendiente3h,muestra_disponibles,muestra_frescas24h,muestra_frescas3h,muestra_identidad_pendiente3h,ciclo_util,fuente
 2026-09-26,36233869658,schedule,2026-09-26T09:48:44Z,2026-09-26T09:49:02.941Z,67,19,13,47607,132,59,14,60,13,9,8,si,cortes/2026-09-26/catalog-freshness-36233869658.json
 2026-09-27,36312694788,schedule,2026-09-27T10:29:56Z,2026-09-27T10:30:23.638Z,73,19,14,47607,65,65,14,60,10,10,8,si,cortes/2026-09-27/catalog-freshness-36312694788.json
+2026-09-28,36416720473,schedule,2026-09-28T11:37:34Z,2026-09-28T11:37:48.936Z,1,1,1,47610,16,0,0,60,1,0,0,pendiente_calidad,cortes/2026-09-28/catalog-freshness-36416720473.json
