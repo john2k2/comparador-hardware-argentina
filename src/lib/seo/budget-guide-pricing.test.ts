@@ -38,6 +38,27 @@ const cpuSpec = {
 };
 
 describe('resolveGuideComponent', () => {
+  it('conserva el modelo de motherboard comprobado frente a variantes más baratas', () => {
+    const spec = { name: 'MSI PRO B650M-B', exactModel: 'B650M-B', searchTerms: ['b650'], category: 'motherboards' as const, description: '', estimatedPrice: 0 };
+    const valid = product({ id: 'board-b', name: 'Mother MSI PRO B650M-B DDR5 AM5', category: 'motherboards', prices: [price({ storeId: 'shop', storeName: 'Shop', price: 146_200 })] });
+    const differentSuffix = product({ ...valid, id: 'board-p', name: 'Mother MSI PRO B650M-P DDR5 AM5', prices: [price({ storeId: 'shop', storeName: 'Shop', price: 100_000 })] });
+    const atx = product({ ...valid, id: 'board-atx', name: 'Mother MSI B650 Gaming Plus ATX DDR5 AM5', prices: [price({ storeId: 'shop', storeName: 'Shop', price: 90_000 })] });
+
+    expect(resolveGuideComponent(spec, [differentSuffix, atx, valid]).productId).toBe('board-b');
+    expect(resolveGuideComponent(spec, [differentSuffix, atx]).offers).toEqual([]);
+    expect(resolveGuideReferenceOffer(spec, [differentSuffix, atx])).toBeNull();
+  });
+
+  it('no trata un sufijo distinto de gabinete como el modelo de dimensiones comprobadas', () => {
+    const spec = { name: 'Cooler Master Elite 302', exactModel: 'Elite 302', searchTerms: ['cooler master elite 302'], category: 'gabinetes' as const, description: '', estimatedPrice: 0 };
+    const valid = product({ id: 'case-302', name: 'Gabinete Cooler Master Elite 302', category: 'gabinetes', prices: [price({ storeId: 'shop', storeName: 'Shop', price: 71_999 })] });
+    const variant = product({ ...valid, id: 'case-302d', name: 'Gabinete Cooler Master Elite 302D', prices: [price({ storeId: 'shop', storeName: 'Shop', price: 50_000 })] });
+
+    expect(resolveGuideComponent(spec, [variant, valid]).productId).toBe('case-302');
+    expect(resolveGuideComponent(spec, [variant]).offers).toEqual([]);
+    expect(resolveGuideReferenceOffer(spec, [variant])).toBeNull();
+  });
+
   it('admite CPU con cooler de caja y conserva el rechazo de combos con motherboard', () => {
     const spec = { name: 'Ryzen 5 7600 con Wraith Stealth', searchTerms: ['ryzen 5 7600'], category: 'procesadores' as const, description: '', estimatedPrice: 0 };
     const included = product({ id: 'cpu-included', name: 'Procesador AMD Ryzen 5 7600 AM5 + Wraith Stealth Cooler', category: 'procesadores', prices: [price({ storeId: 'shop', storeName: 'Shop', price: 354_700 })] });

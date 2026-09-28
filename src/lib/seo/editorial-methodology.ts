@@ -8,6 +8,8 @@ const ryzenSource = { name: 'AMD: ficha Ryzen 5 7600X, socket, memoria y refrige
 const ryzen7600Source = { name: 'AMD: Ryzen 5 7600, AM5, DDR5 y Wraith Stealth', url: 'https://www.amd.com/en/products/processors/desktops/ryzen/7000-series/amd-ryzen-5-7600.html' };
 const nvidiaSource = { name: 'NVIDIA: especificaciones RTX 4060 y RTX 4060 Ti (columnas diferentes)', url: 'https://www.nvidia.com/en-gb/geforce/graphics-cards/40-series/rtx-4060-4060ti/' };
 const radeonSource = { name: 'AMD: ficha RX 7600, memoria y alimentación', url: 'https://www.amd.com/en/products/graphics/desktops/radeon/7000-series/amd-radeon-rx-7600.html' };
+const motherboardSource = { name: 'MSI: PRO B650M-B, formato mATX, DDR5 y PCIe 4.0', url: 'https://www.msi.com/Motherboard/PRO-B650M-B/Specification' };
+const caseSource = { name: 'Cooler Master: Elite 302, formatos de motherboard y espacios internos', url: 'https://www.coolermaster.com/en-global/products/elite-302.html' };
 
 const methodology: Record<string, EditorialMethodology> = {
   'pc-gamer-2-millones': {
@@ -16,9 +18,9 @@ const methodology: Record<string, EditorialMethodology> = {
       { title: 'Qué representa este presupuesto', text: 'Dos millones de pesos argentinos es el límite objetivo de componentes. La selección se revisó para entrar en ese monto con ofertas comprobadas; no es un precio garantizado de PC armada. Si una oferta deja de estar disponible, elegimos la siguiente válida del mismo modelo o selección compatible. Solo mostramos piezas con oferta reciente y stock informado; un subtotal incompleto no alcanza para comprar el conjunto. La cobertura consultada es limitada y puede haber una combinación mejor.' },
       { title: 'Decidir por el uso y la plataforma', text: 'La selección conserva AM5 y usa Ryzen 5 7600, GPU de 8 GB, SSD NVMe de 1 TB y 16 GB DDR5 en un módulo. Reducir la RAM desde 32 GB permite respetar el presupuesto, pero limita capacidad y ancho de banda frente a dos módulos. Para ampliar, revisá BIOS y QVL, y preferí una combinación probada; mezclar módulos separados no garantiza estabilidad. AMD especifica DDR5-5200 para este CPU; el perfil de 5600 depende del conjunto. Una RAM DDR4 no sirve para esta plataforma.' },
       { title: 'Costos que no incluye el total', text: 'Esta selección exige una publicación del Ryzen 5 7600 que incluya Wraith Stealth, documentado por AMD para su caja estándar. Confirmá que la tienda entregue el cooler; una versión sin él requiere sumar refrigeración. Agregá envío de cada tienda, armado, licencia del sistema, monitor y periféricos si los necesitás. El margen hasta dos millones no garantiza que cubra esos servicios: depende del destino y de cada vendedor.' },
-      { title: 'Comprobaciones antes de pagar', text: 'Revisá CPU admitida y BIOS en la página oficial de la motherboard, generación de RAM y código de kit en su QVL. Comprobá largo de GPU, altura de cooler, conectores de fuente y ventiladores incluidos. XMP o EXPO son perfiles de memoria: no garantizamos que cualquier kit alcance su frecuencia anunciada en toda combinación. Confirmá precio y stock en la tienda, especialmente si la fecha del registro es anterior.' },
+      { title: 'Comprobaciones antes de pagar', text: 'Esta selección mantiene MSI PRO B650M-B de formato mATX y Cooler Master Elite 302, que admite mATX y Mini-ITX; no reemplazamos esa placa por una ATX solo porque sea otra B650 más barata. Revisá CPU admitida y BIOS en la página oficial de la motherboard, generación de RAM y código de kit en su QVL. Comprobá largo de GPU con ventiladores instalados, altura de cooler, conectores de fuente y ventiladores incluidos. XMP o EXPO son perfiles de memoria: no garantizamos que cualquier kit alcance su frecuencia anunciada en toda combinación. Confirmá precio y stock en la tienda, especialmente si la fecha del registro es anterior.' },
     ],
-    sources: [ryzen7600Source, nvidiaSource, radeonSource],
+    sources: [ryzen7600Source, nvidiaSource, radeonSource, motherboardSource, caseSource],
   },
   'ryzen-5-7600x-vs-ryzen-7-5700x': {
     updatedAt: '2026-09-27',

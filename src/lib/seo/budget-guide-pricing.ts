@@ -6,6 +6,8 @@ import { isOfferFresh } from '@/lib/price-freshness';
 
 export type GuideSlotSpec = {
   name: string;
+  // Fija una pieza editorial comprobada sin confundirla con otra variante del catálogo.
+  exactModel?: string;
   description: string;
   estimatedPrice: number;
   searchTerms?: string[];
@@ -163,6 +165,12 @@ function productMatchesGuideSpec(product: Product, spec: GuideSlotSpec): boolean
   if (!productMatchesGuideTerms(product, searchTerms)) return false;
   const requested = normalizeSearchText(spec.name);
   const actual = normalizeSearchText(product.name);
+  if (spec.exactModel) {
+    const modelTokens = normalizeSearchText(spec.exactModel).split(' ').filter(Boolean);
+    if (modelTokens.length === 0) return false;
+    const modelPattern = new RegExp(`(?:^|\\s)${modelTokens.join('\\s+')}(?:\\s|$)`);
+    if (!modelPattern.test(actual)) return false;
+  }
 
   if (spec.category === 'procesadores') {
     const actualChip = parseCpuModelSignature(product.name);

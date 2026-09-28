@@ -43,3 +43,11 @@ Pruebas: 752 unitarias aprobadas y dos omitidas; lint, TypeScript y build aproba
 G01 continúa en observación; G02 y G20 siguen abiertos. Las guías de $1M y $3M necesitan rearmado y fuentes completas antes de presentarlas como listas completas de compra. No se solicita AdSense ni se habilita contacto a sponsors por este corte.
 
 Comprobación pública final 28/09/2026 00:16 UTC: escritorio1280 y móvil390; seis respuestas200; sin erroresJavaScript ni desbordamiento; listas sin filas sin oferta. $2M7/7 total1934428; $1M1/7 subtotal71999; $3M2/7 subtotal1180478. Capturas inspeccionadas; enlaces de las siete piezas y fechas observadas incluidos en PUBLICO-FINAL.json.
+
+## Resguardo de los modelos comprobados — 28/09/2026, 00:36 UTC
+
+La revisión posterior encontró un riesgo en la selección dinámica: términos genéricos B650 y Mid Tower podían reemplazar la motherboard por otra ATX conservando el Elite 302, que solo admite Mini-ITX/mATX. La guía de $2M fija MSI PRO B650M-B y Cooler Master Elite 302 como modelos de esa pareja. El selector exige el modelo declarado también para referencias históricas; un sufijo distinto o una placa ATX más barata no reemplazan esas piezas. Se conserva la selección de la siguiente tienda con oferta elegible del modelo comprobado.
+
+Fuentes oficiales consultadas: [MSI PRO B650M-B](https://www.msi.com/Motherboard/PRO-B650M-B/Specification), mATX y PCIe 4.0; [Cooler Master Elite 302](https://www.coolermaster.com/en-global/products/elite-302.html), Mini Tower y soporte Mini-ITX/mATX. El título comercial de Mexx dice Mid Tower; se conserva como nombre de la oferta, pero la descripción editorial utiliza el formato del fabricante. La guía enlaza ambas fuentes. La fuente de alimentación ya no promete margen genérico para upgrades: requiere revisar conectores y el modelo elegido.
+
+754 pruebas unitarias aprobadas y dos omitidas; lint y TypeScript aprobados. Dos regresiones verifican exclusión de otras motherboards/sufijos y variantes de gabinete, tanto en ofertas actuales como en referencias. Publicación y comprobación pública de este resguardo pendientes en este corte. No certifica QVL, BIOS ni un ensayo físico de todo el conjunto. El armador libre y las otras guías conservan su evaluación de compatibilidad pendiente; no se declara resuelto globalmente ese asunto.
