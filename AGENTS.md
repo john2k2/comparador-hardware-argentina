@@ -214,3 +214,23 @@ Ver `.env.example` para listado completo.
 - Normalización de títulos usa heurística local determinística. No requiere servicios externos.
 - Estado de auditoría y backlog técnico: `docs/archive/AUDITORIA_Y_PLAN.md`. Auditoría técnica (2026-08-15): `docs/archive/AUDITORIA_TECNICA_2026-08-15.md`.
 - Sprites SVG de fondo parallax se precargan en `layout.tsx` vía `<link rel="preload">`.
+
+## Publicación de guías con presupuesto
+
+Requisito de Jonathan, 28/09/2026: antes de crear o renovar una guía, verificar todas las piezas en publicaciones comprables. El importe indicado es un máximo, no una obligación de gastarlo.
+
+- Exigir siete ofertas elegibles: precio positivo, stock informado, identidad y variante correctas, observación real de cada oferta de hasta tres horas y total dentro del máximo. Elegir la siguiente oferta válida del mismo modelo si la más barata no cumple; si no alcanza, revisar la selección y su compatibilidad antes de publicar.
+- Contrastar precio, condición de pago, SKU y stock en la tienda. Una fixture, un timestamp de producto, un build aprobado o HTTP 200 no prueban disponibilidad. No inferir agotamiento porque venza la ventana de frescura.
+- Comprobar CPU y refrigeración incluida o presupuestada, socket/BIOS, generación y kit de RAM, QVL sin inventar certificación, almacenamiento, conectores de fuente y espacio de gabinete/GPU. Separar envío, armado, licencia y periféricos.
+- Registrar fuentes, URLs, fecha/hora, siete precios y total; revisar la guía publicada en escritorio y móvil. No presentar como PC completa un subtotal parcial ni prometer FPS sin evidencia. Mantener las reglas de identidad y frescura activas.
+- La verificación es un corte, no una garantía futura ni autorización para ampliar el piloto AdSense. El seguimiento automático conserva sus límites y no despacha refresh.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

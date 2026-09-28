@@ -4,7 +4,7 @@ export const HOME_CITATION_BLOCK =
 export const HOME_BUDGET_GUIDE_LINKS = [
   { slug: 'pc-gamer-1-millon', title: 'Hasta $1.000.000', target: 'Gaming de entrada' },
   { slug: 'pc-gamer-2-millones', title: '$2.000.000', target: 'AM5 + GPU de 8 GB' },
-  { slug: 'pc-gamer-3-millones', title: '$3.000.000', target: '1440p 144Hz' },
+  { slug: 'pc-gamer-3-millones', title: 'Hasta $3.000.000', target: '32 GB RAM + GPU de 16 GB' },
 ] as const;
 
 export function countWords(text: string): number {

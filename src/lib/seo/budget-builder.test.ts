@@ -76,6 +76,26 @@ function entryGuideCatalog(): Product[] {
   });
 }
 
+// Corte editorial reproducible; la fixture no demuestra disponibilidad presente.
+function expandedGuideCatalog(gpuPrice = 956_600): Product[] {
+  const components: [string, string, HardwareCategory, number, number][] = [
+    ['cpu', 'Procesador AMD Ryzen 5 7600 5.1GHz Turbo AM5 + Wraith Stealth Cooler', 'procesadores', 355_850, 14309],
+    ['gpu', 'Placa de Video Asrock Radeon RX 9060 XT 16GB GDDR6 Challenger OC', 'tarjetas-graficas', gpuPrice, 17960],
+    ['ram', 'Memoria Patriot DDR5 32GB (2x16GB) 6000MHz Viper Venom CL36 XMP 3.0/AMD EXPO', 'memoria-ram', 859_100, 17061],
+    ['ssd', 'Disco Solido SSD M.2 Kingston 1TB NV3 6000MB/s NVMe PCI-E Gen4 x4', 'almacenamiento', 291_850, 16872],
+    ['mother', 'Mother MSI B650M GAMING WIFI AM5 DDR5', 'motherboards', 212_050, 17076],
+    ['psu', 'Fuente Asrock 750W 80 Plus Gold Steel Legend Full Modular ATX 3.1 PCIe 5.1 Cybenetics Platinum', 'fuentes-alimentacion', 131_250, 18173],
+    ['case', 'Gabinete Antec VX310 RGB Black 4x120mm Vidrio Templado', 'gabinetes', 60_360, 18607],
+  ];
+  return components.map(([id, name, category, amount, sourceId]) => {
+    const slug = name.replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    return product({ id: `expanded-${id}`, name, category,
+      prices: [price({ storeId: 'compragamer', storeName: 'CompraGamer', price: amount,
+        url: `https://compragamer.com/producto/${slug}_${sourceId}` })],
+    });
+  });
+}
+
 const starterCatalog = [
   listed('cpu-5600', 'AMD Ryzen 5 5600', 'procesadores', 150_000),
   listed('cpu-5500', 'AMD Ryzen 5 5500', 'procesadores', 120_000),
@@ -307,16 +327,54 @@ describe('resolveLiveGuideSlots', () => {
     expect(resolved.motherboard.name).toMatch(/B650/i);
   });
 
-  it('no incorpora un Ryzen 5 reciente en la guía que especifica Ryzen 7', () => {
-    const guide = getBudgetGuideBySlug('pc-gamer-3-millones');
-    if (!guide) throw new Error('missing guide');
-    const resolved = resolveLiveGuideSlots(guide, [
-      listed('cpu-7600x', 'AMD Ryzen 5 7600X', 'procesadores', 371_520),
-    ]);
+  it('resuelve la guía de tres millones con siete piezas, cooler incluido y sin estimaciones', () => {
+    const guide = getBudgetGuideBySlug('pc-gamer-3-millones')!;
+    const resolved = resolveLiveGuideSlots(guide, expandedGuideCatalog());
+    expect(resolved.inStockSlots).toBe(7);
+    expect(resolved.hasEstimates).toBe(false);
+    expect(resolved.catalogTotal).toBe(2_867_060);
+    expect(resolved.fitsBudget).toBe(true);
+    expect(resolved.cpu.name).toMatch(/Wraith Stealth/);
+    expect(resolved.ram.name).toContain('2x16GB');
+    expect(resolved.gpu.name).toContain('16GB');
+  });
 
+  it.each([
+    { gpuPrice: 1_089_540, total: 3_000_000, fitsBudget: true },
+    { gpuPrice: 1_089_541, total: 3_000_001, fitsBudget: false },
+  ])('trata tres millones como máximo para $total', ({ gpuPrice, total, fitsBudget }) => {
+    const guide = getBudgetGuideBySlug('pc-gamer-3-millones')!;
+    const resolved = resolveLiveGuideSlots(guide, expandedGuideCatalog(gpuPrice));
+    expect(resolved.inStockSlots).toBe(7);
+    expect(resolved.catalogTotal).toBe(total);
+    expect(resolved.fitsBudget).toBe(fitsBudget);
+  });
+
+  it.each(['AMD Ryzen 5 7600X', 'AMD Ryzen 5 7600 AM5 sin cooler', 'AMD Ryzen 7 7700X'])('rechaza %s como reemplazo del CPU con cooler de tres millones', (name) => {
+    const guide = getBudgetGuideBySlug('pc-gamer-3-millones')!;
+    const resolved = resolveLiveGuideSlots(guide, [listed('other-cpu', name, 'procesadores', 300_000)]);
     expect(resolved.cpu.priceSource).toBe('estimate');
-    expect(resolved.cpu.name).toMatch(/Ryzen 7/);
     expect(resolved.catalogTotal).toBe(0);
+  });
+
+  it('no usa una GPU de 8 GB aunque su título normalizado anuncie los 16 GB de la guía', () => {
+    const guide = getBudgetGuideBySlug('pc-gamer-3-millones')!;
+    const catalog = expandedGuideCatalog();
+    catalog[1].name = 'Placa de Video Asrock Radeon RX 9060 XT 8GB GDDR6 Challenger OC';
+    catalog[1].normalizedTitle = guide.components.gpu.name;
+    const resolved = resolveLiveGuideSlots(guide, catalog);
+    expect(resolved.gpu.priceSource).toBe('estimate');
+    expect(resolved.inStockSlots).toBe(6);
+  });
+
+  it.each(['out-of-stock', 'expired'] as const)('no publica siete ofertas cuando una pieza está %s', (condition) => {
+    const guide = getBudgetGuideBySlug('pc-gamer-3-millones')!;
+    const catalog = expandedGuideCatalog();
+    if (condition === 'out-of-stock') catalog[2].prices[0].stock = 'out-of-stock';
+    else catalog[2].prices[0].lastUpdated = new Date(Date.now() - 3 * 60 * 60 * 1000 - 1000);
+    const resolved = resolveLiveGuideSlots(guide, catalog);
+    expect(resolved.inStockSlots).toBe(6);
+    expect(resolved.hasEstimates).toBe(true);
   });
 
   it('resuelve el presupuesto revisado dentro de dos millones con cooler y siete piezas compatibles', () => {

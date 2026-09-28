@@ -40,6 +40,24 @@ const methodology: Record<string, EditorialMethodology> = {
     ],
     sources: [ryzen7600Source, nvidiaSource, radeonSource, motherboardSource, caseSource],
   },
+  'pc-gamer-3-millones': {
+    updatedAt: '2026-09-28',
+    sections: [
+      { title: 'Un máximo de tres millones', text: 'La selección reúne siete piezas: Ryzen 5 7600 con Wraith Stealth, ASRock RX 9060 XT Challenger OC de 16 GB, kit Patriot Viper Venom de 32 GB, SSD Kingston NV3 de 1 TB, MSI B650M GAMING WIFI, fuente ASRock SL-750G y gabinete Antec VX310. Priorizamos capacidad de RAM y memoria de GPU dentro del techo de tres millones de pesos argentinos. La cobertura consultada es limitada y puede haber otras combinaciones que convengan más para tu uso. Los precios visibles provienen de ofertas con stock informado, identidad coherente y observación de hasta tres horas; un subtotal incompleto no permite comprar toda la PC.' },
+      { title: 'Memoria y posibilidades de ampliación', text: 'El kit PVV532G600C36K contiene dos módulos DDR5 de 16 GB y ocupa las dos ranuras de esta motherboard. La placa admite Ryzen 7000, DDR5 y EXPO; AMD especifica DDR5-5200 para el Ryzen 5 7600. Los 6000 anunciados son un perfil de overclock, no una frecuencia garantizada. No acreditamos que este código concreto esté en la QVL de MSI: consultá su lista para Ryzen 7000 y confirmá el SKU, la BIOS y el perfil disponible con la tienda. Arrancá con parámetros estándar y comprobá estabilidad antes de activar el perfil. Ampliar capacidad requerirá reemplazar el kit.' },
+      { title: 'Compatibilidad física y alimentación', text: 'La MSI B650M GAMING WIFI es mATX y admite el SSD NVMe M.2 2280 en PCIe 4.0 x4. La RX 9060 XT Challenger OC elegida mide 249 × 132 × 41 mm, utiliza un conector PCIe de 8 pines y ASRock recomienda una fuente de 550 W. La SL-750G de 750 W aporta cables PCIe 6+2 y EPS 4+4; conectá cada uno a su función y usá solamente los cables originales de esa fuente. Mide 150 mm de largo, dentro del espacio de 160 mm indicado para el VX310 con cables y bandeja de HDD. El gabinete admite mATX y GPU de hasta 320 mm. Confirmá antes del armado los ventiladores y su alimentación; la tienda titula RGB y el fabricante ARGB para el mismo UPC 0-761345-10232-2. El cooler Wraith Stealth debe venir en la publicación del CPU seleccionada.' },
+      { title: 'Rendimiento y costo final', text: 'No medimos FPS de este conjunto ni garantizamos 144 Hz o 4K Ultra en todos los juegos. Compará pruebas de los títulos y aplicaciones que usás con resolución, calidad y drivers equivalentes. Una GPU AMD no ofrece CUDA: verificá la compatibilidad de tu software antes de elegir. Los precios especiales de contado o transferencia pueden diferir de las cuotas. Envío, armado, licencia, monitor y periféricos no forman parte del total; el margen hasta tres millones no garantiza cubrirlos. Verificá el precio final, stock y garantía con el vendedor antes de pagar.' },
+    ],
+    sources: [
+      ryzen7600Source,
+      { name: 'ASRock: RX 9060 XT Challenger 16GB OC, código, dimensiones y alimentación', url: 'https://www.asrock.com/Graphics-Card/AMD/Radeon%20RX%209060%20XT%20Challenger%2016GB%20OC/' },
+      { name: 'MSI: B650M GAMING WIFI, AM5, DDR5, formato y almacenamiento', url: 'https://www.msi.com/Motherboard/B650M-GAMING-WIFI/Specification' },
+      { name: 'MSI: soporte de B650M GAMING WIFI, CPU, BIOS y QVL', url: 'https://www.msi.com/Motherboard/B650M-GAMING-WIFI/support' },
+      { name: 'Patriot: Viper Venom DDR5, perfiles y condiciones de compatibilidad', url: 'https://www.patriotmemory.com/en/products/viper-venom-ddr5-performance-ram' },
+      { name: 'ASRock: SL-750G, certificación, dimensiones y conectores', url: 'https://www.asrock.com/Power-Supply/SteelLegend/SL-750G/' },
+      { name: 'Antec: VX310 ARGB, UPC, formatos y dimensiones', url: 'https://antecplay.com/products/vx-310-argb-gaming-case' },
+    ],
+  },
   'ryzen-5-7600x-vs-ryzen-7-5700x': {
     updatedAt: '2026-09-27',
     sections: [

@@ -79,10 +79,10 @@ export const TOP_BUDGETS = [
   },
   {
     slug: 'pc-gamer-3-millones',
-    title: 'PC Gamer por $3.000.000: Alta gama en Argentina [2026]',
-    description: 'PC gamer de alta gama por 3 millones. RTX 5070, Ryzen 7 9800X3D y más. Precios actualizados.',
+    title: 'PC Gamer hasta $3 millones: componentes y precios',
+    description: 'Ryzen 5 7600 con cooler, RX 9060 XT de 16 GB y 32 GB DDR5 dentro de un máximo de tres millones en componentes. Compará stock, ofertas recientes y costos adicionales.',
     budget: 3000000,
-    keywords: ['pc gamer 3 millones', 'pc alta gama argentina', 'pc gamer rtx 5070'],
+    keywords: ['pc gamer 3 millones', 'pc gamer rx 9060 xt 16gb', 'pc gamer 32gb ddr5'],
   },
 ];
 

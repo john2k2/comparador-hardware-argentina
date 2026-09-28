@@ -74,3 +74,12 @@ La lista inicial se limita exactamente a `/guia/pc-gamer-2-millones`, `/comparat
 Los datos estructurados de fichas tienen una guarda de ofertas; no se cambió la indexación de todo el catálogo por esta auditoría. La calidad editorial y los derechos se evalúan aparte de la condición de indexación. Toda ampliación a fichas requiere revisar esos asuntos con evidencia y conservar el contraste con GSC.
 
 La declaración de procedencia y las referencias activas compartidas se actualizan en REGISTRO-ASSETS-ADSENSE-2026-09-27.md. G19 permanece en revisión por los asuntos de catálogo registrados; G20 necesita confirmación humana expresa. No se solicitan anuncios ni se presume elegibilidad definitiva.
+
+
+## Corte editorial — guía hasta ARS 3 millones, 28/09/2026, 21:06 UTC
+
+La selección anterior de 3M fue reemplazada por siete modelos con oferta observada en CompraGamer, stock informado, identidad coherente y frescura menor a tres horas: Ryzen 5 7600 con Wraith Stealth, RX 9060 XT Challenger OC de 16 GB, kit Patriot Viper Venom 2×16 GB DDR5-6000 CL36, Kingston NV3 1 TB, MSI B650M GAMING WIFI, ASRock SL-750G y Antec VX310. Total del corte: ARS 2.867.060, antes de envío/armado/licencia/periféricos. No es un total congelado.
+
+Evidencia y límites en [PRESUPUESTO-3-MILLONES-2026-09-28.md](./PRESUPUESTO-3-MILLONES-2026-09-28.md): solicitud interactiva b4d908a9-8cbb-4c4f-b7ee-68e36d42fde4, runner 36483815034 success y 7/7 ofertas comparables persistidas a las 21:06:39 UTC. Se retiraron claims de rendimiento sin prueba, se exige cooler incluido y se impide confundir GPU de ocho y dieciséis GB. RAM/BIOS/QVL requieren confirmación para el perfil de 6000, sin inventar certificación o pruebas físicas.
+
+3M queda candidata a revisión editorial con fuentes y metodología nuevas. Los cortes anteriores de 2/7 y selección Ryzen 7/RTX 5070 son históricos. El piloto inicial de AdSense conserva exactamente las tres rutas documentadas; 3M sigue fuera. G02/G19/G20/G23/G24 no se cierran por este corte. Ver publicación y runtime en el corte posterior del reporte específico.

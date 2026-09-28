@@ -174,7 +174,7 @@ export default async function BudgetGuidePage({ params }: Props) {
               {guide.productivity.map((task, i) => (
                 <div key={i} className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-[10px] font-mono">
                   <span className="min-w-0 break-words">{task.task}</span>
-                  <span className="shrink-0">{task.performance}</span>
+                  <span className="min-w-0 max-w-full break-words">{task.performance}</span>
                 </div>
               ))}
             </div>

@@ -187,6 +187,8 @@ function productMatchesGuideSpec(product: Product, spec: GuideSlotSpec): boolean
     if (wantedChips.length > 0 && (!actualChip || !wantedChips.some((chip) =>
       chip.family === actualChip.family && chip.number === actualChip.number
       && chip.suffixes.join(',') === actualChip.suffixes.join(',')))) return false;
+    const memory = requested.match(/\b(\d+)\s*gb\b/)?.[1];
+    if (memory && actual.match(/\b(\d+)\s*gb\b/)?.[1] !== memory) return false;
   }
   if (spec.category === 'memoria-ram') {
     const generation = requested.match(/\bddr[45]\b/)?.[0];

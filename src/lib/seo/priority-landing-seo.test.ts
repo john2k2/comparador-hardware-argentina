@@ -69,14 +69,14 @@ describe('priority SEO landings', () => {
   });
 
   it.each([
-    ['pc-gamer-2-millones', 'PC Gamer por $2 millones: componentes y precios'],
-    ['pc-gamer-3-millones', 'PC Gamer por $3 millones: componentes y precios'],
+    ['pc-gamer-2-millones', 'PC Gamer hasta $2 millones: componentes y precios'],
+    ['pc-gamer-3-millones', 'PC Gamer hasta $3 millones: componentes y precios'],
   ])('orienta %s a componentes y precios actuales', (slug, expectedTitle) => {
     const guide = getBudgetGuideBySlug(slug);
 
     expect(guide?.title).toBe(expectedTitle);
     expect(guide?.metadataTitle).toBe(
-      `${slug.includes('-2-') ? 'PC gamer 2 millones' : 'PC gamer 3 millones'}: componentes y precios | Comparador Hardware Argentina`,
+      `${slug.includes('-2-') ? 'PC gamer hasta 2 millones' : 'PC gamer hasta 3 millones'}: componentes y precios | Comparador Hardware Argentina`,
     );
     expect(guide?.description).toContain('Compará componentes');
   });
