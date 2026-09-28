@@ -52,3 +52,12 @@ Build final aprobado sin avisos de lectura del catálogo. En la primera compilac
 Runtime local de la guía con scraping y refresh internos desactivados: 7/7 ofertas, ARS 2.867.060, siete enlaces de tienda, fuentes y metodología visibles. Se detectó y corrigió un desbordamiento de descripciones de productividad: en la prueba final móvil de 390 px el ancho de contenido fue 378 px y no hubo errores/avisos JS. La corrección permite ajuste de línea y alcanza todas las guías. La guía no integra el piloto publicitario: las tres rutas exactas originales permanecen iguales y no se cargó proveedor AdSense.
 
 Publicación y prueba pública pendientes del corte posterior. No cambia el cierre de G02/G19/G20/G23/G24, no cuenta el job manual como ciclo diario útil de G02, ni se habilitan anuncios o revisión AdSense.
+
+
+## Corte de publicación — 28/09/2026, 21:20–21:21 UTC
+
+Publicado en main con commit `de96d52dbae402927e98454e4da4954c6832f03e`. Workers Builds `f36e21cf-413f-43d9-ab05-a5807c8869ea` terminó success a las 21:19:47 UTC. Chrome en una pestaña propia mostró el título nuevo, siete referencias/enlaces de tienda, **7/7 ofertas y ARS 2.867.060**, metodología y fuentes. Escritorio: viewport 2048 px/contenido 2036; móvil: viewport 390/contenido 378. Sin desbordamiento horizontal ni errores/avisos JS en la muestra; cero scripts AdSense. La pestaña pública quedó abierta y el ajuste de viewport se restauró.
+
+Comprobación HTTP con agente de revisión identificado a las 21:21:40 UTC: 200, título nuevo, total esperado y sin adscript. El cliente Python sin identificar había recibido 403; se conserva como limitación de ese cliente, no como fallo confirmado del runtime humano ni prueba de acceso de Googlebot.
+
+El corte sustituye la publicación pendiente del apartado anterior. Precio/stock observados a las 21:06 UTC y fecha editorial del 28/09 permanecen separados de la hora de revisión de la página. No garantiza disponibilidad futura. El seguimiento existente quedó ACTIVE, mismo horario/restricciones y lectura diaria ligera de esta guía; no despacha refresh. No se modificaron estados de tareas ni se amplió el piloto AdSense. Los cambios ajenos del seguimiento semanal siguen preservados.
