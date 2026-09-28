@@ -23,6 +23,7 @@ import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
 import { DEFAULT_OG_IMAGE } from '@/lib/seo/metadata';
 import { getEditorialMethodology } from '@/lib/seo/editorial-methodology';
 import { EditorialMethodology } from '@/components/seo/EditorialMethodology';
+import { EditorialAdPreview } from '@/components/adsense/EditorialAdPreview';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -264,6 +265,7 @@ export default async function ComparisonPage({ params }: Props) {
 
       <ComparisonBenchSources sources={comparison.sources} />
       {methodology && <EditorialMethodology content={methodology} />}
+      <EditorialAdPreview pathname={`/comparativa/${slug}`} contentReady={Boolean(methodology)} />
       <BuilderCta />
 
       {/* Conclusion */}

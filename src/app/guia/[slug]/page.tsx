@@ -22,6 +22,7 @@ import Link from 'next/link';
 import { DEFAULT_OG_IMAGE } from '@/lib/seo/metadata';
 import { getEditorialMethodology } from '@/lib/seo/editorial-methodology';
 import { EditorialMethodology } from '@/components/seo/EditorialMethodology';
+import { EditorialAdPreview } from '@/components/adsense/EditorialAdPreview';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -150,6 +151,7 @@ export default async function BudgetGuidePage({ params }: Props) {
 
       <BuilderCta budget={guide.budget} />
       {methodology && <EditorialMethodology content={methodology} />}
+      <EditorialAdPreview pathname={`/guia/${slug}`} contentReady={Boolean(methodology) && resolved.inStockSlots === slotCount} />
 
       <div className="mb-8">
         <AdvisoryCta surface="budget_guide" />
