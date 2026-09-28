@@ -193,7 +193,7 @@ export function buildProductJsonLd(product: Product, id: string) {
       '@id': `${SITE_URL}#organization`,
       name: SITE_NAME,
       url: SITE_URL,
-      logo: `${SITE_URL}/og-image.png`,
+      logo: DEFAULT_SITE_OG_IMAGE,
     },
     ...(aggregateOffers ? [{
       '@context': 'https://schema.org',

@@ -151,7 +151,7 @@ export default function GuiasIndexPage() {
           </div>
           <div>
             <p className="font-bold text-primary mb-1">¿Qué pasa si un componente no tiene stock?</p>
-            <p>Si no hay una oferta observada en las últimas 3 horas, esa parte figura sin precio reciente y no entra al subtotal. La guía no presenta el armado incompleto como comprable.</p>
+            <p>Buscamos la siguiente oferta disponible que corresponda a la pieza elegida y haya sido observada en las últimas 3 horas. Solo las ofertas que cumplen esos controles aparecen en la lista de compra. Si falta una pieza, el subtotal se identifica como parcial.</p>
           </div>
         </div>
       </section>

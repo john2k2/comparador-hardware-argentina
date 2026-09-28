@@ -55,3 +55,22 @@ Las tres piezas no incorporan fotografías de tiendas en el cuerpo editorial: se
 Workers Builds de f2ac9f3 aprobado. Las tres piezas G20 respondieron 200 y mostraron metodología, fuentes y fecha editorial correctas en escritorio/móvil; la comprobación no detectó errores JS ni desbordamiento. El script de prueba bloqueó telemetría externa. Ficha GPU fija Gigabyte RTX 5060 Eagle, ID agrupado-tarjetas-graficas-gigabyte-rtx-5060-eagle-8gb-1i1rdb: 200, título correspondiente y advertencias de referencia/actualización visibles. Esto valida render de la muestra, no stock ni frescura de sus ofertas. Muestra runtime de G19 completada; registro de derechos de assets compartidos y revisión humana siguen pendientes. G20/G21 permanecen en revisión; no hay solicitud de AdSense, anuncios activos ni ingresos verificados. G01 sigue en observación. El cambio de consentimiento del 27/09 altera cobertura GA4: conservar fecha y comparar ventanas identificadas, sin interpretar usuarios no medidos como cero ni pérdida confirmada de tráfico.
 
 Registro por asset compartido completado en REGISTRO-ASSETS-ADSENSE-2026-09-27.md. Licencia de Press Start 2P verificada y conservada. La procedencia original del resto permanece pendiente del responsable; se distingue uso/historial de permiso. G19 no cerrado.
+
+## Revisión de plantillas y selección — 28/09/2026, 00:28 UTC
+
+Lectura independiente acotada de las plantillas de guías, comparativas, fichas, metadatos y datos estructurados, contrastada con los cambios de precios y las comprobaciones públicas anteriores. Se conserva la muestra de runtime completada a las 21:53 UTC; no se presenta esta lectura como inspección de todas las fichas.
+
+| Superficie | Resultado de esta revisión | Decisión inicial |
+|---|---|---|
+| Guía de $2 millones | Siete ofertas elegibles a ARS 1.934.428 en corte público 00:16 UTC; criterios y límites específicos para AM5, 16 GB single y NV3. Fuentes y fecha por oferta. El total puede cambiar al cambiar las ofertas. | Candidata, pendiente de aprobación humana G20 y restantes controles |
+| Comparativas CPU y GPU prioritarias | Metodología diferenciada, fuentes primarias, alcance de pruebas externas y selección de precios con identidad/frescura. No se atribuyen ensayos propios. | Candidatas, pendiente de aprobación humana G20 y restantes controles |
+| Guías de $1M y $3M, otras comparativas | Plantilla compartida; selecciones incompletas o revisión editorial no terminada. | Excluidas del primer piloto |
+| Portada, categorías y búsqueda | Herramientas de comparación; no son las tres piezas editoriales elegidas. | Excluidas del primer piloto |
+| Fichas del catálogo | Contexto repetido por categoría no equivale a una reseña específica del SKU. Fotos de comercios con permisos no acreditados. | Excluidas del primer piloto; conservar asuntos pendientes |
+| Armador, autenticación, administración y formularios | Uso de herramientas, cuenta y contacto. | Excluidos del primer piloto |
+
+La lista inicial se limita exactamente a `/guia/pc-gamer-2-millones`, `/comparativa/ryzen-5-7600x-vs-ryzen-7-5700x` y `/comparativa/rtx-4060-vs-rx-7600`, una vez aprobadas. No habilitar anuncios por prefijo general `/guia/` o `/comparativa/`. Esta decisión documentada no es todavía un interruptor publicitario implementado o un piloto activo: G23 conserva su integración y pruebas pendientes.
+
+Los datos estructurados de fichas tienen una guarda de ofertas; no se cambió la indexación de todo el catálogo por esta auditoría. La calidad editorial y los derechos se evalúan aparte de la condición de indexación. Toda ampliación a fichas requiere revisar esos asuntos con evidencia y conservar el contraste con GSC.
+
+La declaración de procedencia y las referencias activas compartidas se actualizan en REGISTRO-ASSETS-ADSENSE-2026-09-27.md. G19 permanece en revisión por los asuntos de catálogo registrados; G20 necesita confirmación humana expresa. No se solicitan anuncios ni se presume elegibilidad definitiva.

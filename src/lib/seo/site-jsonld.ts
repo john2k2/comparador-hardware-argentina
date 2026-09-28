@@ -1,4 +1,5 @@
 import { SITE_BRAND_SHORT, SITE_NAME, SITE_URL, SUPPORT_EMAIL } from '@/lib/site-config';
+import { DEFAULT_OG_IMAGE } from '@/lib/seo/metadata';
 
 export function buildSiteJsonLd() {
   return [
@@ -9,7 +10,7 @@ export function buildSiteJsonLd() {
       name: SITE_NAME,
       alternateName: SITE_BRAND_SHORT,
       url: SITE_URL,
-      logo: `${SITE_URL}/og-image.png`,
+      logo: DEFAULT_OG_IMAGE,
       description: 'Comparador independiente de precios y stock de hardware entre tiendas argentinas.',
       knowsAbout: [
         'Comparación de precios de hardware',
