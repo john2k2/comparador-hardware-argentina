@@ -21,3 +21,9 @@ No se encontró un botón **Buscar actualizaciones** en los controles visibles d
 **Debe revisarse** significa que Google todavía no ha comprobado el sitio; no es por sí mismo un rechazo. La solicitud se inicia mediante Solicitar revisión tras las tareas requeridas de la cuenta. [Estados oficiales de sitios](https://support.google.com/adsense/answer/12170222?hl=es).
 
 La preparación interna sigue abierta: datos administrativos reales, revisión del contenido corregido, confiabilidad del sitio/catálogo e integración de consentimiento publicitario. Esos controles no se presentan como un mínimo de tráfico ni de artículos exigido por Google. Se conserva G22 completado a su alcance de publicación/verificación de propiedad; no se cierra G24 ni se declara ads.txt reconocido por Google. No cambian estado, prioridad, responsable o fecha del tablero.
+
+## Corte posterior — 28/09/2026, 16:40 UTC
+
+La publicación pendiente finalizó: Workers Build `5b179268-a4bf-42e4-9b1c-c09ab567f92d`, commit `1cb8c40`, resultado success a las 16:12:02 UTC. Lectura pública de guía $2M: HTTP 200, encabezado **PC Gamer hasta $ 2.000.000**, presupuesto máximo y aclaración de que no hace falta gastar todo el presupuesto visibles en HTML; sin etiqueta del proveedor publicitario. Esto verifica la redacción desplegada, no un presupuesto completo comprable ni disponibilidad sostenida.
+
+[Preparación técnica aislada](ADSENSE-CARGADOR-PREPARADO-2026-09-28.md): controles de aprobación/consentimiento y runtime con fixtures; no se conecta al sitio ni modifica su CSP. Todas las puertas reales permanecen cerradas. Se mantienen pendientes la integración, navegación, revisión de privacidad/contenido y tareas administrativas. No se solicitó revisión ni se activaron anuncios.

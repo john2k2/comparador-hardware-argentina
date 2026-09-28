@@ -422,3 +422,13 @@ Corte posterior14:26UTC: b2433da publicado con build67c8df39 success.84pruebas f
 Guía$2M pasa a hasta$2M. El subtotal observado bajo el techo no obliga a gastar el saldo; una selección por encima del máximo no se ofrece como lista comprable ni maqueta publicitaria. 67pruebas focalizadas aprobadas, incluyendo siete piezas con1.6M/2M aceptados y2M+1 fuera del límite; lint, TypeScript y build51rutas aprobados. No cambia modelos/compatibilidad, ni completa las ofertas faltantes por un test. Ver GUIA-ALTERNATIVAS-2026-09-28.md. Publicación pendiente de lectura pública; G02/G20 y solicitudAdSense siguen abiertos.
 
 Corte15:59UTC: `127e37f` subido a main; Workers Build `037058f6-a173-4c87-9205-48c1b43300c0` continúa queued, sin inicio ni resultado. No se fuerza otro despliegue. Guía pública200 todavía muestra PC Gamer por$2M/PRESUPUESTO OBJETIVO, sin script publicitario; confirma que no se puede declarar publicada la nueva redacción. Comprobar versión cuando finalice el build. La consola TypeSafe muestra créditos disponibles, sin cambios de pagos ni nueva evaluación; no demuestra la causa HTTP de provider-unavailable. El cliente conserva códigos específicos, pero el registro del revisor los resume: diagnóstico pendiente documentado.
+
+## Corte posterior — 28/09/2026, 16:40 UTC
+
+Publicación del presupuesto máximo comprobada: Workers Build `5b179268-a4bf-42e4-9b1c-c09ab567f92d`, commit `1cb8c40`, resultado success a las 16:12:02 UTC. Guía pública HTTP 200 con **hasta $2M**, presupuesto máximo y aclaración de no gastar todo; sin script publicitario. No acredita selección completa, stock actual o cierre G01/G02/G20.
+
+[Preparación aislada del cargador](ADSENSE-CARGADOR-PREPARADO-2026-09-28.md): 54 pruebas de configuración/consentimiento/CSP y 21 de runtime con fixture DOM/Window aprobadas. Ninguna red Google ni anuncio real; no se integra con páginas/proxy/layout. Todas las puertas de activación reales cerradas. Faltan controles visibles, documento/CSP, navegación, privacidad y pruebas reales tras aprobación. G21/G23/G24 conservan estado; tablero sin cambios de estado, prioridad, responsable o fecha. No se solicitó revisión.
+
+Diagnóstico Jev conserva códigos propios seguros sin cuerpos/mensajes/secretos. 18 pruebas aprobadas; ante error la oferta sigue needs-review. Sin llamadas o reintentos adicionales. Causa real y recuperación pendientes de ejecución posterior. Ver GUIA-ALTERNATIVAS-2026-09-28.md.
+
+ESLint y TypeScript aprobados, build de 51 páginas finalizó; hubo seis lecturas de categoría con fetch failed y fallback durante generación. Build correcto no prueba conectividad DB ni disponibilidad pública sostenida. Cambios AGENTS ajenos preservados.
