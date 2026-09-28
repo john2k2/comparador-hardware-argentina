@@ -27,6 +27,10 @@ Corte técnico: 20:17 UTC. Solicitud interactiva de Jonathan; no es una ejecuci�
 - Las visitas locales se ejecutaron con scraping vivo y refresco interno desactivados. Las comprobaciones de tiendas fueron puntuales.
 - Publicación y verificación pública: pendientes al crear este corte; registrar el resultado posterior sin interpretar el build como prueba del navegador.
 
+### Corte público posterior — 20:24 UTC
+
+Código subido en `61e2cc5`. Workers Builds `c04d80ec-01af-4ba5-aa87-a2a898865c19` terminó `success`. Chrome confirmó en el sitio público 12/12 fotos reales cargadas en `/comparar/procesadores` y 12/12 en `/comparar/placas-de-video`, sin dibujos de reserva en esas muestras. Las fotos de CompraGamer tienen ancho natural de 150 px, las dos de Maximus 600 px y la foto reparada de XTPC 610 px. La ficha del i5-12600KF también carga su foto con la ruta `/productos/` correcta. Se leyó nuevamente la fila corregida en Supabase y se confirmó que las fechas de catálogo y de oferta indicadas arriba permanecen intactas. Esta comprobación certifica las muestras y la ficha; no certifica el catálogo completo ni la frescura de precios.
+
 ## Límites y seguimiento
 
 La muestra no certifica todas las imágenes del catálogo. Se restauraron los permisos de Venex a partir del contrato de su scraper y del CSP, pero todavía no se verificó una foto concreta de Venex en Chrome. La disponibilidad de una foto no prueba stock, precio reciente, identidad revisada ni permiso de reutilización comercial; los controles de ofertas y los pendientes de derechos de fotografías para AdSense siguen vigentes.
