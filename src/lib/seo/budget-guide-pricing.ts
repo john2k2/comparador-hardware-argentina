@@ -419,7 +419,7 @@ export function toResolvedCatalogComponent(
 }
 
 function toCatalogOffer(spec: GuideSlotSpec, product: Product, offers: ProductPrice[]): ResolvedGuideComponent {
-  const resolved = toResolvedCatalogComponent(product, offers, '');
+  const resolved = toResolvedCatalogComponent(product, offers, spec.exactModel ? spec.description : '');
   if (resolved.price > 0) return resolved;
   return { ...resolved, price: spec.estimatedPrice };
 }
