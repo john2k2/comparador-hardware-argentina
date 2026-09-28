@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-27T22:10:45-03:00",
+  "title": "Design System: Maqueta local de anuncios editoriales",
+  "extensions": {
+    "typographyMeta": {
+      "label": {
+        "displayName": "Etiqueta auxiliar",
+        "purpose": "Identifica el espacio de prueba sin simular una creatividad publicitaria."
+      },
+      "body": {
+        "displayName": "Texto de preview",
+        "purpose": "Explica que el bloque no carga anuncios reales."
+      }
+    },
+    "breakpoints": [
+      {
+        "name": "container-min-300",
+        "value": "300px"
+      }
+    ],
+    "components": [
+      {
+        "name": "Editorial preview slot",
+        "kind": "custom",
+        "refersTo": "editorial-ad-slot",
+        "description": "Bloque local centrado de 300×250 para revisar espacio editorial en desarrollo.",
+        "html": "<div class=\"ds-editorial-ad-container\"><div class=\"ds-editorial-ad-preview\"><p class=\"ds-editorial-ad-label\">Publicidad</p><div class=\"ds-editorial-ad-slot\">Vista previa del espacio de anuncios. No se cargan anuncios reales.</div></div></div>",
+        "css": ".ds-editorial-ad-container { container-type: inline-size; } .ds-editorial-ad-preview { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; margin-block: 2.5rem; } .ds-editorial-ad-label { margin: 0; color: var(--foreground); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif; font-size: 0.75rem; line-height: 1rem; } .ds-editorial-ad-slot { box-sizing: border-box; display: flex; align-items: center; justify-content: center; width: 300px; height: 250px; padding: 0 1.5rem; border: 1px dashed var(--border); border-radius: 0; background: var(--muted); color: var(--foreground); text-align: center; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif; font-size: 0.875rem; line-height: 1.25rem; } @container (width < 300px) { .ds-editorial-ad-preview { display: none; } }"
+      }
+    ],
+    "narrative": {
+      "northStar": "Un espacio de prueba honesto dentro del mundo pixel",
+      "overview": "Este componente conserva el lenguaje retro pixel existente del sitio mientras resuelve una necesidad estrecha: comprobar que un espacio editorial de anuncios cabe y queda ubicado en contenido listo. La maqueta tiene una presencia deliberadamente contenida: etiqueta textual, bloque de medidas fijas y señales de borde/fondo ya provistas por el tema.\n\nSu contrato es local y reversible. No representa una entrega publicitaria, no incorpora proveedor, enlaces, animaciones, `ins`, scripts ni consentimiento, y no convierte una variable de entorno en publicidad de producción.",
+      "keyCharacteristics": [
+        "Bloque único de 300×250 px con etiqueta \"Publicidad\".",
+        "Tipografía Inter para texto auxiliar y contenido de la maqueta.",
+        "Radio cero, borde discontinuo y fondo `muted`, en continuidad con la interfaz pixel.",
+        "Renderizado solo en desarrollo, con contenido editorial listo y habilitación explícita."
+      ],
+      "rules": [
+        { "name": "The Theme-Bound Preview Rule", "body": "El bloque usa los roles cromáticos existentes (`foreground`, `muted`, `border`) y no inventa colores de proveedor ni una identidad comercial de anuncios.", "section": "colors" },
+        { "name": "The Auxiliary-Text Rule", "body": "La tipografía del componente describe el espacio; no se usa para simular una creatividad, una llamada comercial ni un anuncio servido.", "section": "typography" },
+        { "name": "The Fixed-Slot Rule", "body": "El espacio visual conserva 300×250 px (`ADSENSE_EDITORIAL_PILOT.width` y `.height`) para que la prueba mida el formato solicitado, incluso cuando no haya proveedor.", "section": "layout" },
+        { "name": "The Quiet-Surface Rule", "body": "Una maqueta local se reconoce por su estructura y copy explícitos, no por efectos que parezcan una entrega publicitaria.", "section": "elevation" }
+      ],
+      "dos": [
+        "Do conservar el formato de 300×250 y la etiqueta `Publicidad` cuando se pruebe este espacio.",
+        "Do mantener el bloque atado al tema (`foreground`, `muted`, `border`) y a la tipografía de cuerpo existente.",
+        "Do comprobar las tres rutas permitidas, el estado de contenido listo y el umbral de container query.",
+        "Do tratar la maqueta como evidencia de layout local: las capturas son `espacio-local-1280.png` y `espacio-local-390.png`."
+      ],
+      "donts": [
+        "Don't registrar este bloque como monetización activada, entrega de anuncios o integración de AdSense.",
+        "Don't añadir `ins`, scripts, enlaces, proveedor, animaciones o lógica de consentimiento al componente de preview.",
+        "Don't mostrarlo en producción: `canPreviewEditorialAd` devuelve `false` aunque `ADSENSE_PREVIEW=1` esté presente.",
+        "Don't forzar overflow en containers menores de 300 px; la regla observada oculta el bloque."
+      ]
+    }
+  }
+}

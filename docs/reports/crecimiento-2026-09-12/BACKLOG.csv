@@ -21,7 +21,7 @@ G19,P1,Monetización AdSense,Auditar contenido original y derechos de uso,Codex,
 G20,P1,Monetización AdSense,Mejorar tres contenidos originales prioritarios,Jonathan + Codex,en_revision,2026-10-07,Tres piezas con autoría real revisión humana fuentes y límites; meta interna no requisito de Google
 G21,P1,Monetización AdSense,Actualizar privacidad contacto y consentimiento,Jonathan + Codex,en_revision,2026-10-07,Política refleja flujo real; contacto recibido y consentimiento probado según audiencia
 G22,P1,Monetización AdSense,Verificar dominio AdSense y ads.txt,Codex,completado_produccion,2026-10-08,ID real; verificación y ads.txt públicos accesibles; CSP revisada sin anuncios activos
-G23,P2,Monetización AdSense,Preparar espacios de anuncios y validar experiencia,Codex,pendiente,2026-10-09,Configuración desactivada; rutas permitidas y pruebas de consentimiento rendimiento y accesibilidad
+G23,P2,Monetización AdSense,Preparar espacios de anuncios y validar experiencia,Codex,en_revision,2026-10-09,Bloque real y maqueta local desactivada en producción; tres rutas exactas; faltan CMP cargador y experiencia del proveedor
 G24,P2,Monetización AdSense,Completar revisión final y solicitar AdSense,Jonathan + Codex,pendiente,2026-10-12,G18 a G23 verificadas; confiabilidad resuelta; fecha y estado real de solicitud registrados
 G25,P2,Monetización AdSense,Medir piloto publicitario tras aprobación,Jonathan + Codex,pendiente,2026-11-09,Sitio apto en Google; 14 y 28 días completos de ingresos uso y consultas observados
 G26,P2,Monetización AdSense,Decidir continuidad de anuncios y monetización,Jonathan + Codex,pendiente,2026-11-12,Decisión con ingresos y embudo reales; si muestra insuficiente reprogramar sin declarar éxito
