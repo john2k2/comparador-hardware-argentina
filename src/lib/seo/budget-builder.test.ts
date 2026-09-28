@@ -56,6 +56,26 @@ function reviewedGuideCatalog(gpuPrice: number): Product[] {
   ];
 }
 
+// Importes del corte editorial como fixture; no prueban stock ni precios actuales.
+function entryGuideCatalog(): Product[] {
+  const components: [string, string, HardwareCategory, number, number][] = [
+    ['cpu', 'Procesador AMD Ryzen 5 5500 4.2GHz Turbo AM4 + Wraith Stealth Cooler', 'procesadores', 159_450, 13359],
+    ['gpu', 'Placa de Video Asrock Intel ARC A380 6GB GDDR6 Challenger ITX OC', 'tarjetas-graficas', 266_691, 19298],
+    ['ram', 'Memoria Mancer DDR4 16GB 3200MHz Vant S Black CL19', 'memoria-ram', 191_850, 21515],
+    ['ssd', 'Disco Solido SSD Adata 512GB SU650SS SATA 520MB/s', 'almacenamiento', 120_650, 17143],
+    ['mother', 'Mother Asrock B550M-HDV DDR4 AM4', 'motherboards', 121_050, 10535],
+    ['psu', 'Fuente Antec 650W 80 Plus Bronze ATX 3.1 PCIe 5.1 CSK650DC AR', 'fuentes-alimentacion', 74_252, 18257],
+    ['case', 'Gabinete Antec VX310 RGB Black 4x120mm Vidrio Templado', 'gabinetes', 60_360, 18607],
+  ];
+  return components.map(([id, name, category, amount, sourceId]) => {
+    const slug = name.replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    return product({ id: `agrupado-${id}`, name, category,
+      prices: [price({ storeId: 'compragamer', storeName: 'CompraGamer', price: amount,
+        url: `https://compragamer.com/producto/${slug}_${sourceId}` })],
+    });
+  });
+}
+
 const starterCatalog = [
   listed('cpu-5600', 'AMD Ryzen 5 5600', 'procesadores', 150_000),
   listed('cpu-5500', 'AMD Ryzen 5 5500', 'procesadores', 120_000),
@@ -233,13 +253,39 @@ describe('resolveLiveGuideSlots', () => {
     const guide = getBudgetGuideBySlug('pc-gamer-1-millon');
     if (!guide) throw new Error('missing guide');
 
-    const resolved = resolveLiveGuideSlots(guide, starterCatalog);
+    const resolved = resolveLiveGuideSlots(guide, [...entryGuideCatalog(), ...starterCatalog]);
 
     expect(resolved.cpu.priceSource).toBe('catalog');
     expect(resolved.gpu.priceSource).toBe('catalog');
-    expect(resolved.gpu.name).toMatch(/RX 6600/);
-    expect(resolved.gpu.name).not.toMatch(/4060/);
-    expect(resolved.motherboard.name).toMatch(/B450/i);
+    expect(resolved.gpu.name).toMatch(/A380/);
+    expect(resolved.gpu.name).not.toMatch(/4060|RX 6600/);
+    expect(resolved.motherboard.name).toMatch(/B550M-HDV/i);
+    expect(resolved.inStockSlots).toBe(7);
+    expect(resolved.hasEstimates).toBe(false);
+    expect(resolved.catalogTotal).toBe(994_303);
+    expect(resolved.catalogTotal).toBeLessThanOrEqual(guide.budget);
+    expect(resolved.fitsBudget).toBe(true);
+  });
+
+  it('no completa la guía de un millón con ofertas vencidas o un CPU sin cooler publicado', () => {
+    const guide = getBudgetGuideBySlug('pc-gamer-1-millon')!;
+    const catalog = entryGuideCatalog();
+    catalog[0].name = 'Procesador AMD Ryzen 5 5500 AM4';
+    catalog[1].prices[0].lastUpdated = new Date(Date.now() - 4 * 60 * 60 * 1000);
+    const resolved = resolveLiveGuideSlots(guide, catalog);
+    expect(resolved.cpu.priceSource).toBe('estimate');
+    expect(resolved.gpu.priceSource).toBe('estimate');
+    expect(resolved.inStockSlots).toBe(5);
+  });
+
+  it('deja de cumplir el límite de un millón si sube una de las siete ofertas', () => {
+    const guide = getBudgetGuideBySlug('pc-gamer-1-millon')!;
+    const catalog = entryGuideCatalog();
+    catalog[1].prices[0].price += 6_000;
+    const resolved = resolveLiveGuideSlots(guide, catalog);
+    expect(resolved.inStockSlots).toBe(7);
+    expect(resolved.catalogTotal).toBe(1_000_303);
+    expect(resolved.fitsBudget).toBe(false);
   });
 
   it('no presenta un CPU AM4 como reemplazo de un Ryzen AM5 especificado', () => {

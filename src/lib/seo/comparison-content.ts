@@ -65,8 +65,8 @@ export const TOP_COMPARISONS = [
 export const TOP_BUDGETS = [
   {
     slug: 'pc-gamer-1-millon',
-    title: 'PC Gamer por $1.000.000: La mejor configuración [2026]',
-    description: 'Armá la mejor PC gamer por 1 millón de pesos. Componentes recomendados con precios actualizados de 20+ tiendas.',
+    title: 'PC Gamer hasta $1 millón: componentes y precios',
+    description: 'Una selección de entrada con siete componentes y un máximo de $1 millón. Compará ofertas recientes y sumá envío y servicios por separado.',
     budget: 1000000,
     keywords: ['pc gamer 1 millon', 'pc gamer barata argentina', 'armar pc 1 millon pesos'],
   },

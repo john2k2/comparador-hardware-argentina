@@ -29,8 +29,8 @@ describe('modelos prioritarios de la guía', () => {
     mocks.readGuideCatalogCandidatesFromDatabase.mockClear();
     const guide = getBudgetGuideBySlug('pc-gamer-1-millon')!;
     await loadGuideCatalogProducts(guide);
-    expect(mocks.readGuideCatalogCandidatesFromDatabase).toHaveBeenCalledWith('memoria-ram', 8, '16gb ddr4');
-    expect(mocks.readGuideCatalogCandidatesFromDatabase).toHaveBeenCalledWith('gabinetes', 8, 'mid tower');
+    expect(mocks.readGuideCatalogCandidatesFromDatabase).toHaveBeenCalledWith('memoria-ram', 8, 'mancer 16gb ddr4 3200 vant');
+    expect(mocks.readGuideCatalogCandidatesFromDatabase).toHaveBeenCalledWith('gabinetes', 8, 'antec vx310');
     expect(mocks.readGuideCatalogCandidatesFromDatabase.mock.calls.every((call) => call[1] === 8 && call[2])).toBe(true);
     expect(new Set(mocks.readGuideCatalogCandidatesFromDatabase.mock.calls.map((call) => call[0])).size).toBe(7);
   });

@@ -12,6 +12,24 @@ const motherboardSource = { name: 'MSI: PRO B650M-B, formato mATX, DDR5 y PCIe 4
 const caseSource = { name: 'Cooler Master: Elite 302, formatos de motherboard y espacios internos', url: 'https://www.coolermaster.com/en-global/products/elite-302.html' };
 
 const methodology: Record<string, EditorialMethodology> = {
+  'pc-gamer-1-millon': {
+    updatedAt: '2026-09-28',
+    sections: [
+      { title: 'Un máximo de un millón, con siete piezas', text: 'El objetivo es una PC de entrada completa dentro de un máximo de un millón de pesos argentinos en componentes. Elegimos Ryzen 5 5500 con Wraith Stealth, Arc A380 Challenger ITX OC de 6 GB, 16 GB DDR4, SSD SATA de 512 GB, ASRock B550M-HDV, Antec CSK650DC AR y gabinete Antec VX310. La selección se contrastó con publicaciones comprables; los importes visibles se calculan desde ofertas con stock informado, identidad coherente y observación de hasta tres horas. Se toma la siguiente oferta válida del mismo modelo cuando la más barata no sirve. Un subtotal con faltantes no representa una PC completa, y este corte no garantiza precios futuros ni ser la combinación más barata de todas las tiendas.' },
+      { title: 'Lo que permite entrar en el presupuesto', text: 'Usamos un módulo de 16 GB: no ofrece dual channel y deja una ranura para una ampliación que requiere revisar QVL, código y BIOS. El SSD es SATA de 2,5 pulgadas, no NVMe. La A380 es una GPU de entrada; no la presentamos como equivalente a la RX 6600 de la selección anterior ni prometemos FPS, ajustes Ultra o resultados de una prueba propia. El rendimiento debe contrastarse para cada juego y aplicación, con drivers y Resizable BAR configurados.' },
+      { title: 'Compatibilidad y preparación del armado', text: 'Ryzen 5 5500 usa AM4, DDR4 y PCIe 3.0; necesita GPU dedicada. La B550M-HDV admite la plataforma, pero la tienda debe confirmar la BIOS para ese CPU y Resizable BAR. Intel indica arranque UEFI, CSM desactivado, Above 4G Decoding y Resizable BAR para Arc. Conectá el monitor a la GPU. ASRock especifica un conector PCIe de 8 pines y recomienda fuente de 500 W para esta A380; confirmá ese cable en la CSK650DC AR de 650 W. No trasladamos especificaciones de otra revisión CSK al modelo AR. La placa de video mide 190 mm y el VX310 con UPC 0-761345-10232-2 admite mATX y hasta 320 mm de GPU. La tienda lo titula RGB y el fabricante ARGB: verificá el SKU, la alimentación de sus cuatro ventiladores y la variante de iluminación; no asumimos un conector ARGB en esta motherboard.' },
+      { title: 'Condiciones de precio y costos adicionales', text: 'Compará el precio especial de contado o transferencia con el de cuotas: no son necesariamente iguales. El cooler debe estar incluido en la publicación del Ryzen 5 5500. El SSD necesita cable SATA de datos y alimentación SATA; confirmá que el paquete de la motherboard traiga el cable. Envío, armado, licencia, Wi-Fi si lo necesitás, monitor y periféricos se suman aparte. El margen hasta el millón es pequeño y no garantiza cubrir esos costos. Confirmá stock, precio final, conectores y garantía con cada vendedor antes de pagar.' },
+    ],
+    sources: [
+      { name: 'AMD: Ryzen 5 5500, plataforma y Wraith Stealth', url: 'https://www.amd.com/en/support/downloads/drivers.html/processors/ryzen/ryzen-5000-series/amd-ryzen-5-5500.html' },
+      { name: 'Intel: requisitos de sistema y Resizable BAR para Arc de escritorio', url: 'https://www.intel.com/content/www/us/en/support/articles/000091128/graphics/intel-arc-dedicated-graphics-family.html' },
+      { name: 'ASRock: Arc A380 Challenger ITX 6GB OC, tamaño y alimentación', url: 'https://www.asrock.com/Graphics-Card/Intel/Intel%20Arc%20A380%20Challenger%20ITX%206GB%20OC/' },
+      { name: 'ASRock: B550M-HDV, soporte de CPU, BIOS y QVL', url: 'https://www.asrock.com/mb/AMD/B550M-HDV/index.asp#CPU' },
+      { name: 'ADATA: SU650 SATA de 2,5 pulgadas, código ASU650SS-512GT-R', url: 'https://www.adata.com/storage/downloadfile/datasheet_ultimate_su650_25_inch_sata_ssd_20231103.pdf' },
+      { name: 'Antec: VX310 ARGB, UPC, formatos y dimensiones', url: 'https://antecplay.com/products/vx-310-argb-gaming-case' },
+      { name: 'CompraGamer: CSK650DC AR, conectores PCIe 6+2 y SATA', url: 'https://compragamer.com/producto/Fuente_Antec_650W_80_Plus_Bronze_ATX_3_1_PCIe_5_1_CSK650DC_AR_18257' },
+    ],
+  },
   'pc-gamer-2-millones': {
     updatedAt: '2026-09-27',
     sections: [
