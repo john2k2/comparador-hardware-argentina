@@ -70,6 +70,9 @@ jobs:
           done
           # Un máximo de dos presupuestos por ejecución; cada uno tiene hasta ocho ofertas.
           for batch in 1 2; do
+            # El navegador sondea cada cinco segundos: permite que encole la
+            # alternativa tras observar el primer resultado. No amplía los lotes.
+            if [[ "$batch" == '2' ]]; then sleep 10; fi
             RESPONSE="$(curl --silent --show-error --fail --max-time 480 \
               -X POST -H "Authorization: Bearer $CATALOG_REFRESH_CRON_SECRET" \
               'http://127.0.0.1:3101/api/admin/catalog-refresh/requested')"
