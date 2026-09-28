@@ -128,6 +128,7 @@ function isGroupedProduct(product: Product): boolean {
 
 function tokenMatchesGuideWord(token: string, word: string): boolean {
   if (token === word) return true;
+  if (/^\d{4,5}$/.test(word) && token === `${word}mhz`) return true;
   if (/^\d+w$/.test(word)) return false;
   return token.startsWith(word) && token.length <= word.length + 2;
 }
@@ -169,6 +170,7 @@ function productMatchesGuideSpec(product: Product, spec: GuideSlotSpec): boolean
     if (wantedChips.length > 0 && (!actualChip || !wantedChips.some((chip) =>
       chip.family === actualChip.family && chip.number === actualChip.number
       && chip.suffixes.join(',') === actualChip.suffixes.join(',')))) return false;
+    if (/\bwraith\b/.test(requested) && !/\bwraith\b/.test(actual)) return false;
   }
   if (spec.category === 'tarjetas-graficas') {
     const actualChip = parseGpuChipSignature(product.name);
@@ -178,6 +180,11 @@ function productMatchesGuideSpec(product: Product, spec: GuideSlotSpec): boolean
       && chip.suffixes.join(',') === actualChip.suffixes.join(',')))) return false;
   }
   if (spec.category === 'memoria-ram') {
+    const generation = requested.match(/\bddr[45]\b/)?.[0];
+    const capacity = requested.match(/\b(\d+)gb\b/)?.[1];
+    if (generation && !actual.includes(generation)) return false;
+    if (capacity && actual.match(/\b(\d+)gb\b/)?.[1] !== capacity) return false;
+    if (/\b1 modulo\b/.test(requested) && /\b[24]\s*x\s*\d+\s*gb\b/.test(actual)) return false;
     const speed = requested.match(/\b([2-9]\d{3})\s*mhz\b/)?.[1];
     const kit = requested.match(/\b2x(?:8|16|32)gb\b/)?.[0];
     if (speed && !new RegExp(`\\b${speed}(?:\\s*mhz)?\\b`).test(actual)) return false;
@@ -244,6 +251,16 @@ function offerConflictsWithGuide(offer: ProductPrice): boolean {
 function offerAgreesWithProductName(product: Product, offer: ProductPrice): boolean {
   const urlTokens = normalizeSearchText(offer.url).split(' ').filter((token) => token.length > 2);
   if (urlTokens.length < 5) return true;
+  if (product.category === 'motherboards') {
+    // Las generaciones admitidas y códigos internos del catálogo no son el
+    // modelo. Sí conservamos cada sufijo: B650M-B no equivale a B650M-P.
+    const model = normalizeSearchText(product.name
+      .replace(/\(\s*serie[^)]*\)/gi, '')
+      .replace(/\(\s*\d+\s*\)/g, ''))
+      .split(' ').filter((token) => !['mother', 'motherboard', 'placa', 'madre', 'ddr4', 'ddr5', 'am4', 'am5'].includes(token));
+    const urlWords = ` ${normalizeSearchText(offer.url)} `;
+    return model.length > 0 && model.every((token) => urlWords.includes(` ${token} `));
+  }
 
   const nameTokens = normalizeSearchText(product.name)
     .split(' ')
@@ -408,7 +425,11 @@ export type BuyableGuideCandidate = {
 function isBlockedBuilderProduct(product: Product): boolean {
   if (isExcludedProduct(product) || isCompleteComputerTitle(product.name)) return true;
   if (product.category === 'memoria-ram' || product.category === 'almacenamiento') return false;
-  return isPcBuild(product.name) || isBundleLikeTitle(product.name);
+  // Un cooler de caja incluido no convierte un CPU en un combo de piezas.
+  const title = product.category === 'procesadores'
+    ? product.name.replace(/\s*\+\s*(?:amd\s+)?wraith\s+(?:stealth|spire|prism)(?:\s+cooler)?\s*$/i, '')
+    : product.name;
+  return isPcBuild(title) || isBundleLikeTitle(title);
 }
 
 export function listBuyableGuideCandidates(
@@ -451,10 +472,10 @@ export function resolveGuideComponent(
     })
     .filter((candidate) => candidate.offers.length > 0)
     .sort((left, right) => {
+      if (left.bestPrice !== right.bestPrice) return left.bestPrice - right.bestPrice;
       const leftGrouped = isGroupedProduct(left.product) ? 1 : 0;
       const rightGrouped = isGroupedProduct(right.product) ? 1 : 0;
-      if (leftGrouped !== rightGrouped) return leftGrouped - rightGrouped;
-      return left.bestPrice - right.bestPrice;
+      return leftGrouped - rightGrouped;
     });
 
   const winner = ranked[0];

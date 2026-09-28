@@ -20,7 +20,7 @@ export function GuideRefreshPanel({ targets }: { targets: RefreshTarget[] }) {
   return (
     <section className="border-4 border-secondary bg-card p-5 md:p-6 pixel-shadow mb-8" aria-label="Actualizar precios del presupuesto">
       <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-secondary mb-3">[ ACTUALIZAR PRECIOS DEL PRESUPUESTO ]</h2>
-      <p className="font-body text-xs leading-relaxed mb-4">Comprobamos las publicaciones conocidas de estas piezas a pedido. El proceso puede demorar varios minutos; solo una respuesta nueva de la tienda cambia la fecha y el precio. Si una placa ya no aparece, sigue sin precio reciente.</p>
+      <p className="font-body text-xs leading-relaxed mb-4">Comprobamos las publicaciones conocidas de estas piezas a pedido. El proceso puede demorar varios minutos; solo una respuesta nueva de la tienda cambia la fecha y el precio. La lista de compra incluye únicamente ofertas disponibles que pudimos comprobar.</p>
       {targets.length > 0 ? (
         <>
           <RefreshOffersButton targets={targets} onUpdated={onUpdated} actionLabel={`Comprobar ${targets.length} ${targets.length === 1 ? 'publicación' : 'publicaciones'}`} />

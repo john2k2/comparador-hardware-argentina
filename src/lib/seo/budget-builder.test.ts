@@ -244,7 +244,7 @@ describe('resolveLiveGuideSlots', () => {
     ]);
 
     expect(resolved.cpu.priceSource).toBe('estimate');
-    expect(resolved.cpu.name).toMatch(/7600X/);
+    expect(resolved.cpu.name).toMatch(/7600/);
     expect(resolved.motherboard.priceSource).toBe('estimate');
     expect(resolved.motherboard.name).toMatch(/B650/i);
   });
@@ -259,6 +259,24 @@ describe('resolveLiveGuideSlots', () => {
     expect(resolved.cpu.priceSource).toBe('estimate');
     expect(resolved.cpu.name).toMatch(/Ryzen 7/);
     expect(resolved.catalogTotal).toBe(0);
+  });
+
+  it('resuelve el presupuesto revisado dentro de dos millones con cooler y siete piezas compatibles', () => {
+    const guide = getBudgetGuideBySlug('pc-gamer-2-millones')!;
+    const catalog = [
+      listed('cpu', 'Procesador AMD Ryzen 5 7600 AM5 + Wraith Stealth Cooler', 'procesadores', 354_700),
+      listed('gpu', 'Asrock Radeon RX 7600 Challenger 8GB', 'tarjetas-graficas', 533_350),
+      listed('ram', 'Memoria Adata DDR5 16GB 5600MHz XPG Lancer Blade White RGB CL46', 'memoria-ram', 436_400),
+      listed('ssd', 'SSD Kingston 1TB NV3 NVMe Gen4', 'almacenamiento', 290_950),
+      listed('mother', 'Mother MSI PRO B650M-B AM5 DDR5', 'motherboards', 146_200),
+      listed('psu', 'Fuente MSI MAG 650W 80 Plus Gold A650GN II', 'fuentes-alimentacion', 100_829),
+      listed('case', 'Gabinete Mid Tower Cooler Master Elite 302', 'gabinetes', 71_999),
+    ];
+    const resolved = resolveLiveGuideSlots(guide, catalog);
+    expect(resolved.inStockSlots).toBe(7);
+    expect(resolved.hasEstimates).toBe(false);
+    expect(resolved.catalogTotal).toBe(1_934_428);
+    expect(resolved.catalogTotal).toBeLessThan(guide.budget);
   });
 });
 

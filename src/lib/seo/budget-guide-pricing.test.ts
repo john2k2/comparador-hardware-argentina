@@ -38,6 +38,37 @@ const cpuSpec = {
 };
 
 describe('resolveGuideComponent', () => {
+  it('admite CPU con cooler de caja y conserva el rechazo de combos con motherboard', () => {
+    const spec = { name: 'Ryzen 5 7600 con Wraith Stealth', searchTerms: ['ryzen 5 7600'], category: 'procesadores' as const, description: '', estimatedPrice: 0 };
+    const included = product({ id: 'cpu-included', name: 'Procesador AMD Ryzen 5 7600 AM5 + Wraith Stealth Cooler', category: 'procesadores', prices: [price({ storeId: 'shop', storeName: 'Shop', price: 354_700 })] });
+    const bundle = product({ ...included, id: 'cpu-bundle', name: 'Kit Mother ASUS A620M + Procesador AMD Ryzen 5 7600 AM5 + Wraith Stealth Cooler' });
+    const tray = product({ ...included, id: 'cpu-tray', name: 'Procesador AMD Ryzen 5 7600 AM5 OEM sin cooler' });
+    expect(resolveGuideComponent(spec, [bundle, tray]).priceSource).toBe('estimate');
+    expect(resolveGuideComponent(spec, [bundle, tray, included]).productId).toBe('cpu-included');
+  });
+
+  it('no confunde la lista de generaciones admitidas con el modelo de motherboard', () => {
+    const spec = { name: 'AM5 B650', searchTerms: ['b650'], category: 'motherboards' as const, description: '', estimatedPrice: 0 };
+    const board = product({ id: 'board', name: 'Mother MSI PRO B650M-B DDR5 AM5 (Serie 7000/8000) (4797)', category: 'motherboards', prices: [price({ storeId: 'cg', storeName: 'CompraGamer', price: 146_200, url: 'https://compragamer.com/producto/Mother_MSI_PRO_B650M_B_AM5_18056' })] });
+    expect(resolveGuideComponent(spec, [board]).productId).toBe('board');
+    const wrong = product({ ...board, prices: [price({ storeId: 'cg', storeName: 'CompraGamer', price: 100_000, url: 'https://compragamer.com/producto/Mother_MSI_PRO_B650M_P_AM5_18057' })] });
+    expect(resolveGuideComponent(spec, [wrong]).priceSource).toBe('estimate');
+  });
+
+  it('prioriza el precio válido también cuando el agrupado es más barato que la oferta individual', () => {
+    const cheap = product({ id: 'agrupado-cpu', name: 'Ryzen 5 7600X', category: 'procesadores', prices: [price({ storeId: 'shop', storeName: 'Shop', price: 300_000 })] });
+    const individual = product({ ...cheap, id: 'cpu-single', prices: [price({ storeId: 'other', storeName: 'Other', price: 350_000 })] });
+    expect(resolveGuideComponent(cpuSpec, [individual, cheap]).productId).toBe('agrupado-cpu');
+  });
+
+  it('respeta un módulo DDR5 de 16 GB frente a kits o generaciones diferentes', () => {
+    const spec = { name: '16GB DDR5 5600MHz (1 módulo)', searchTerms: ['16gb ddr5 5600'], category: 'memoria-ram' as const, description: '', estimatedPrice: 0 };
+    const single = product({ id: 'single', name: 'Memoria Adata DDR5 16GB 5600MHz', category: 'memoria-ram', prices: [price({ storeId: 'shop', storeName: 'Shop', price: 441_450 })] });
+    const kit = product({ ...single, id: 'kit', name: 'Memoria DDR5 16GB (2x8GB) 5600MHz' });
+    const wrongGen = product({ ...single, id: 'ddr4', name: 'Memoria DDR4 16GB 5600MHz' });
+    expect(resolveGuideComponent(spec, [kit, wrongGen]).priceSource).toBe('estimate');
+    expect(resolveGuideComponent(spec, [kit, wrongGen, single]).productId).toBe('single');
+  });
   it('admite un kit de RAM de escritorio sin confundirlo con una PC armada', () => {
     const spec = { name: '32GB DDR5 5600MHz (2x16GB)', searchTerms: ['32gb ddr5'], category: 'memoria-ram' as const, description: '', estimatedPrice: 150_000 };
     const ram = product({ id: 'ram-kit', name: 'Memoria RAM Kingston Fury Beast DDR5 32GB Kit (2x16GB) 5600MHz RGB CL40', category: 'memoria-ram', prices: [price({ storeId: 'venex', storeName: 'Venex', price: 1_199_990, url: 'https://www.venex.com.ar/memoria-ram-kingston-fury-beast-ddr5-32gb-kit-2x16gb-5600mhz-rgb-cl40.html' })] });

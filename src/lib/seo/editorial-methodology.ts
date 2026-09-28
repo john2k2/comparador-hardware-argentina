@@ -5,6 +5,7 @@ export type EditorialMethodology = {
 };
 
 const ryzenSource = { name: 'AMD: ficha Ryzen 5 7600X, socket, memoria y refrigeración', url: 'https://www.amd.com/en/products/processors/desktops/ryzen/7000-series/amd-ryzen-5-7600x.html' };
+const ryzen7600Source = { name: 'AMD: Ryzen 5 7600, AM5, DDR5 y Wraith Stealth', url: 'https://www.amd.com/en/products/processors/desktops/ryzen/7000-series/amd-ryzen-5-7600.html' };
 const nvidiaSource = { name: 'NVIDIA: especificaciones RTX 4060 y RTX 4060 Ti (columnas diferentes)', url: 'https://www.nvidia.com/en-gb/geforce/graphics-cards/40-series/rtx-4060-4060ti/' };
 const radeonSource = { name: 'AMD: ficha RX 7600, memoria y alimentación', url: 'https://www.amd.com/en/products/graphics/desktops/radeon/7000-series/amd-radeon-rx-7600.html' };
 
@@ -12,12 +13,12 @@ const methodology: Record<string, EditorialMethodology> = {
   'pc-gamer-2-millones': {
     updatedAt: '2026-09-27',
     sections: [
-      { title: 'Qué representa este presupuesto', text: 'Dos millones de pesos argentinos es el límite de selección de esta guía, no el precio garantizado de una PC completa. El sistema intenta combinar piezas compatibles por plataforma dentro del presupuesto con candidatos del catálogo. Una fila sin oferta muestra una referencia y queda fuera del total registrado. El conjunto consultado es limitado: puede haber una combinación mejor en una tienda o fuera de nuestra cobertura.' },
-      { title: 'Decidir por el uso y la plataforma', text: 'Antes de elegir, anotá resolución del monitor, juegos o aplicaciones y piezas que ya tenés. Para una PC nueva, compará CPU, motherboard y RAM como un conjunto. La propuesta AM5 requiere memoria DDR5; una RAM DDR4 que tengas no se traslada a esa plataforma. El catálogo puede elegir otra combinación si faltan ofertas, por eso importa revisar los modelos finales y no comprar solo por el título de la guía.' },
-      { title: 'Costos que no incluye el total', text: 'Sumá envío de cada tienda, armado, licencia del sistema, monitor y periféricos si los necesitás. El cooler también puede ser un gasto adicional: AMD indica que el Ryzen 5 7600X no incluye solución térmica en su caja estándar. Confirmá el contenido de la publicación, anclaje y altura del disipador. Una selección de siete filas no demuestra por sí sola que alcance para montar y usar la PC.' },
+      { title: 'Qué representa este presupuesto', text: 'Dos millones de pesos argentinos es el límite objetivo de componentes. La selección se revisó para entrar en ese monto con ofertas comprobadas; no es un precio garantizado de PC armada. Si una oferta deja de estar disponible, elegimos la siguiente válida del mismo modelo o selección compatible. Solo mostramos piezas con oferta reciente y stock informado; un subtotal incompleto no alcanza para comprar el conjunto. La cobertura consultada es limitada y puede haber una combinación mejor.' },
+      { title: 'Decidir por el uso y la plataforma', text: 'La selección conserva AM5 y usa Ryzen 5 7600, GPU de 8 GB, SSD NVMe de 1 TB y 16 GB DDR5 en un módulo. Reducir la RAM desde 32 GB permite respetar el presupuesto, pero limita capacidad y ancho de banda frente a dos módulos. Para ampliar, revisá BIOS y QVL, y preferí una combinación probada; mezclar módulos separados no garantiza estabilidad. AMD especifica DDR5-5200 para este CPU; el perfil de 5600 depende del conjunto. Una RAM DDR4 no sirve para esta plataforma.' },
+      { title: 'Costos que no incluye el total', text: 'Esta selección exige una publicación del Ryzen 5 7600 que incluya Wraith Stealth, documentado por AMD para su caja estándar. Confirmá que la tienda entregue el cooler; una versión sin él requiere sumar refrigeración. Agregá envío de cada tienda, armado, licencia del sistema, monitor y periféricos si los necesitás. El margen hasta dos millones no garantiza que cubra esos servicios: depende del destino y de cada vendedor.' },
       { title: 'Comprobaciones antes de pagar', text: 'Revisá CPU admitida y BIOS en la página oficial de la motherboard, generación de RAM y código de kit en su QVL. Comprobá largo de GPU, altura de cooler, conectores de fuente y ventiladores incluidos. XMP o EXPO son perfiles de memoria: no garantizamos que cualquier kit alcance su frecuencia anunciada en toda combinación. Confirmá precio y stock en la tienda, especialmente si la fecha del registro es anterior.' },
     ],
-    sources: [ryzenSource, nvidiaSource, radeonSource],
+    sources: [ryzen7600Source, nvidiaSource, radeonSource],
   },
   'ryzen-5-7600x-vs-ryzen-7-5700x': {
     updatedAt: '2026-09-27',
