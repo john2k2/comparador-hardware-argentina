@@ -406,3 +406,7 @@ Mejora de scripts/catalog-freshness-report.mjs: campos compatibles anteriores m�
 Implementación del informe versionada en `3405025`; el scheduler de hoy corresponde a `99531b0` y todavía no demuestra el esquema nuevo en producción. No se ejecuta un refresh para adelantar esa evidencia.
 
 Verificación pública final01:14UTC: db38b9e publicado, buildWorkers e5307819-5af7-466d-8c08-e7164f42206a success. Tres200 en1280/390/320, ninguna maqueta, ins, script, petición publicitaria, errorJavaScript u overflow; PRODUCCION-PUBLICA.json. Comparación ZIP/XML del XLSX contra copia anterior: solo B50/E46/G46 cambiados;865fórmulas, estilos y características nativas conservadas. Reporte de diseño acotado del componente conservado en docs/design/adsense-editorial-preview, sin rediseño global ni evidencia privada publicada. Seguimiento automático actualizado mediante herramienta Codex conservando horario y estadoACTIVE.
+
+## Presupuestos: alternativas seriales — 28/09/2026
+
+[Detalle y reversión](GUIA-ALTERNATIVAS-2026-09-28.md). La selección de $2M se renueva por grupos: hasta tres rondas, solo piezas pendientes y sin solicitudes simultáneas. Persistir una observación no equivale a tener una oferta disponible; el worker devuelve elegibilidad por separado. Se mantienen cuotas, frescura de tres horas, modelos y caché de cinco minutos. HTTP200 local, fixture con siete piezas y alternativa de GPU: rondas7+1, sin errorJavaScript/overflow320/390/1280. No prueba stock real ni autoriza cierreG02/G20/AdSense. Publicación y medición real pendientes de registro.

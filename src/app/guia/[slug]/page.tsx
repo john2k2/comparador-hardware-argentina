@@ -14,8 +14,8 @@ import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
 import { GuideFpsPanel } from '@/components/seo/GuideFpsPanel';
 import { GuideComponentRows } from '@/components/seo/GuideComponentRows';
 import { GuideRefreshPanel } from '@/components/seo/GuideRefreshPanel';
-import { resolveGuideReferenceOffer } from '@/lib/seo/budget-guide-pricing';
-import type { RefreshTarget } from '@/lib/catalog/on-demand/contracts';
+import { resolveGuideRefreshOffers } from '@/lib/seo/budget-guide-pricing';
+import { MAX_GUIDE_REFRESH_ROUNDS, type RefreshTarget } from '@/lib/catalog/on-demand/contracts';
 import { AdvisoryCta } from '@/components/commercial/AdvisoryCta';
 import { BuilderCta } from '@/components/seo/BuilderCta';
 import Link from 'next/link';
@@ -51,16 +51,14 @@ export default async function BudgetGuidePage({ params }: Props) {
   const catalogProducts = await loadGuideCatalogProducts(guide);
   const nonce = (await headers()).get('x-content-security-policy-nonce') ?? undefined;
   const resolved = resolveLiveGuideSlots(guide, catalogProducts);
-  const references = Object.fromEntries(GUIDE_SLOT_KEYS.map((key) => [
-    key,
-    resolved[key].priceSource === 'catalog' ? null : resolveGuideReferenceOffer(guide.components[key], catalogProducts),
-  ])) as Record<(typeof GUIDE_SLOT_KEYS)[number], ReturnType<typeof resolveGuideReferenceOffer>>;
-  const refreshTargets = GUIDE_SLOT_KEYS.flatMap((key): RefreshTarget[] => {
+  const refreshGroups = GUIDE_SLOT_KEYS.flatMap((key): RefreshTarget[][] => {
     const current = resolved[key];
     const offer = current.offers[0];
-    if (current.productId && offer) return [{ productId: current.productId, storeId: offer.storeId, url: offer.url }];
-    const reference = references[key];
-    return reference ? [{ productId: reference.productId, storeId: reference.storeId, url: reference.url }] : [];
+    const candidates = resolveGuideRefreshOffers(guide.components[key], catalogProducts)
+      .map(reference => ({ productId: reference.productId, storeId: reference.storeId, url: reference.url }));
+    if (current.productId && offer) candidates.unshift({ productId: current.productId, storeId: offer.storeId, url: offer.url });
+    const group = [...new Map(candidates.map(target => [JSON.stringify(target), target])).values()].slice(0, MAX_GUIDE_REFRESH_ROUNDS);
+    return group.length ? [group] : [];
   });
   const faqs = resolveGuideFaqs(guide.faqs, resolved.cpu, resolved.gpu);
   const slotCount = GUIDE_SLOT_KEYS.length;
@@ -127,7 +125,7 @@ export default async function BudgetGuidePage({ params }: Props) {
         )}
       </section>
 
-      {process.env.ENABLE_ON_DEMAND_REFRESH === '1' && <GuideRefreshPanel targets={refreshTargets} />}
+      {process.env.ENABLE_ON_DEMAND_REFRESH === '1' && <GuideRefreshPanel groups={refreshGroups} />}
 
       {/* Components */}
       <section className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow mb-8">
