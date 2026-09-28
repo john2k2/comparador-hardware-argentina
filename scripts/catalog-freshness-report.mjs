@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { readFile, writeFile } from 'node:fs/promises';
+import { createObservedOfferSummary } from './lib/observed-offers.mjs';
 
 const args = process.argv.slice(2);
 const valueAfter = (flag) => args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined;
@@ -18,6 +19,7 @@ if (!url || !key) throw new Error('Falta la configuración de lectura del catál
 const supabase = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 const { data: stores, error: storesError } = await supabase.from('stores').select('id,name').order('id');
 if (storesError) throw storesError;
+const measuredStoreIds = new Set((stores ?? []).map(store => store.id));
 
 const cutoff3h = new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString();
 const cutoff24h = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
@@ -37,26 +39,27 @@ for (const store of stores ?? []) {
   ]);
   const failed = [available, fresh24h, fresh3h, identityPending3h].find((result) => result.error);
   if (failed) throw failed.error;
+  if ([available, fresh24h, fresh3h, identityPending3h].some(result => !Number.isInteger(result.count) || result.count < 0)) {
+    throw new Error('No se recibió un conteo exacto de frescura; no se convierte una medición ausente en cero.');
+  }
   if (!available.count) continue;
   byStore.push({ storeId: store.id, available: available.count, fresh24h: fresh24h.count ?? 0,
     fresh3h: fresh3h.count ?? 0, identityPending3h: identityPending3h.count ?? 0 });
 }
 
-const observedByStore = {};
-const observedProducts = new Set();
+const observations = createObservedOfferSummary();
 if (since) {
   for (let offset = 0; ; offset += 1000) {
-    const { data, error } = await supabase.from('product_prices').select('store_id,product_id')
+    const { data, error } = await supabase.from('product_prices').select('store_id,product_id,price,stock')
       .gte('last_updated', since).lte('last_updated', now.toISOString())
       .order('last_updated', { ascending: true }).order('id', { ascending: true }).range(offset, offset + 999);
     if (error) throw error;
-    for (const row of data ?? []) {
-      observedByStore[row.store_id] = (observedByStore[row.store_id] ?? 0) + 1;
-      observedProducts.add(row.product_id);
-    }
+    observations.add(data ?? []);
     if (!data || data.length < 1000) break;
   }
 }
+const observedSummary = observations.getSummary();
+const { observedByStore } = observedSummary;
 
 const sum = (field) => byStore.reduce((total, row) => total + row[field], 0);
 let sample;
@@ -107,8 +110,9 @@ const report = {
   denominator: sum('available'), fresh24h: sum('fresh24h'), fresh3h: sum('fresh3h'),
   identityPending3h: sum('identityPending3h'),
   candidateComparable3h: sum('fresh3h') - sum('identityPending3h'),
-  ...(since ? { windowStart: since, observedRows: Object.values(observedByStore).reduce((total, count) => total + count, 0),
-    persistedProducts: observedProducts.size, observedByStore } : {}),
+  ...(since ? { windowStart: since,
+    observationDefinition: 'Filas de precio actualizadas en la ventana, con o sin disponibilidad; productos distintos contados globalmente y por tienda. availableObservedRows solo cuenta stock disponible y precio positivo, sin acreditar identidad ni compra real.',
+    ...observedSummary } : {}),
   ...(sample ? { sample } : {}),
   byStore,
 };
@@ -120,10 +124,14 @@ if (process.env.GITHUB_STEP_SUMMARY) {
     `Corte: ${report.measuredAt}. Denominador: ${report.denominator} ofertas disponibles almacenadas.`,
     `≤24 h: ${report.fresh24h}; ≤3 h: ${report.fresh3h}; pendientes de identidad entre las de 3 h: ${report.identityPending3h}.`,
     ...(sample ? [`Muestra prioritaria fija: ${sample.fresh24h}/${sample.denominator} ofertas disponibles observadas ≤24 h; ${sample.fresh3h} ≤3 h.`] : []),
-    ...(since ? [`Observaciones persistidas desde ${since}: ${report.observedRows}; productos distintos: ${report.persistedProducts}.`] : []),
-    '', '| Tienda | Disponibles | ≤24 h | ≤3 h | Identidad pendiente ≤3 h | Observadas en ciclo |',
-    '|---|---:|---:|---:|---:|---:|',
-    ...byStore.map((row) => `| ${row.storeId} | ${row.available} | ${row.fresh24h} | ${row.fresh3h} | ${row.identityPending3h} | ${observedByStore[row.storeId] ?? 0} |`),
+    ...(since ? [`Filas actualizadas desde ${since}: ${report.observedRows}; productos distintos: ${report.persistedProducts}; filas con stock disponible y precio positivo: ${report.availableObservedRows}.`] : []),
+    '', '| Tienda | Disponibles | ≤24 h | ≤3 h | Identidad pendiente ≤3 h | Filas actualizadas | Productos distintos del ciclo | Filas disponibles del ciclo |',
+    '|---|---:|---:|---:|---:|---:|---:|---:|',
+    ...[...new Set([...byStore.map(row => row.storeId), ...Object.keys(observedByStore)])].sort().map(id => {
+      const row = byStore.find(store => store.storeId === id);
+      const absent = measuredStoreIds.has(id) ? 0 : 'no verificado';
+      return `| ${id} | ${row?.available ?? absent} | ${row?.fresh24h ?? absent} | ${row?.fresh3h ?? absent} | ${row?.identityPending3h ?? absent} | ${observedByStore[id] ?? 0} | ${observedSummary.persistedProductsByStore[id] ?? 0} | ${observedSummary.availableObservedByStore[id] ?? 0} |`;
+    }),
   ];
   await writeFile(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`, { flag: 'a' });
 }
