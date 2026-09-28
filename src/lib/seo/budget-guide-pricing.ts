@@ -3,6 +3,7 @@ import { computeComparableStorePriceStats } from '@/lib/price-utils';
 import type { HardwareCategory, Product, ProductPrice } from '@/lib/types';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
 import { isOfferFresh } from '@/lib/price-freshness';
+import { MAX_GUIDE_REFRESH_ROUNDS } from '@/lib/catalog/on-demand/contracts';
 
 export type GuideSlotSpec = {
   name: string;
@@ -329,13 +330,14 @@ function buyableOffers(product: Product): ProductPrice[] {
 }
 
 /** Referencia histórica para pedir una nueva comprobación; nunca entra al subtotal actual. */
-export function resolveGuideReferenceOffer(
+function collectGuideReferenceOffers(
   spec: GuideSlotSpec,
   products: Product[],
-  now = Date.now(),
-): GuideReferenceOffer | null {
+  now: number,
+  requireBuyableStock: boolean,
+): GuideReferenceOffer[] {
   const searchTerms = spec.searchTerms?.filter(Boolean) ?? [];
-  if (searchTerms.length === 0) return null;
+  if (searchTerms.length === 0) return [];
 
   const candidates = products.flatMap((product) => {
     if (isBlockedBuilderProduct(product)) return [];
@@ -345,7 +347,7 @@ export function resolveGuideReferenceOffer(
     const eligible = product.prices.filter((offer) => {
       const observedAt = new Date(offer.lastUpdated).getTime();
       if (!Number.isFinite(observedAt) || observedAt > now + 60_000 || now - observedAt > GUIDE_REFERENCE_MAX_AGE_MS) return false;
-      if (offer.price <= 0 || !isBuyableGuideStock(offer.stock) || needsIdentityReview(offer, product)) return false;
+      if (!Number.isFinite(offer.price) || offer.price <= 0 || (requireBuyableStock && !isBuyableGuideStock(offer.stock)) || needsIdentityReview(offer, product)) return false;
       if (offerConflictsWithGuide(offer) || !offerAgreesWithProductName(product, offer)) return false;
       try {
         const url = new URL(offer.url);
@@ -365,7 +367,22 @@ export function resolveGuideReferenceOffer(
 
   return candidates.sort((left, right) =>
     Date.parse(right.lastUpdated) - Date.parse(left.lastUpdated) || left.price - right.price,
-  )[0] ?? null;
+  );
+}
+
+/** Referencia histórica con disponibilidad anterior; no entra al subtotal actual. */
+export function resolveGuideReferenceOffer(spec: GuideSlotSpec, products: Product[], now = Date.now()): GuideReferenceOffer | null {
+  return collectGuideReferenceOffers(spec, products, now, true)[0] ?? null;
+}
+
+/** Publicaciones conocidas a comprobar, incluso si antes estaban agotadas; no son ofertas de compra. */
+export function resolveGuideRefreshOffers(spec: GuideSlotSpec, products: Product[], now = Date.now()): GuideReferenceOffer[] {
+  const unique = new Map<string, GuideReferenceOffer>();
+  for (const offer of collectGuideReferenceOffers(spec, products, now, false)) {
+    const key = JSON.stringify([offer.storeId, offer.url]);
+    if (!unique.has(key)) unique.set(key, offer);
+  }
+  return [...unique.values()].slice(0, MAX_GUIDE_REFRESH_ROUNDS);
 }
 
 function toGuideOffers(offers: ProductPrice[]): GuideStoreOffer[] {

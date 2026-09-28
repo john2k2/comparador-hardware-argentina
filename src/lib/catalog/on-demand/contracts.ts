@@ -1,5 +1,6 @@
 export type RefreshTarget = { productId: string; storeId: string; url: string };
-export type RefreshItemResult = RefreshTarget & { state: 'updated' | 'unavailable' | 'failed'; observedAt: string | null };
+export type RefreshItemResult = RefreshTarget & { state: 'updated' | 'unavailable' | 'failed'; observedAt: string | null; comparable?: boolean };
+export const MAX_GUIDE_REFRESH_ROUNDS = 3;
 export type RefreshJob = {
   id: string; status: 'queued' | 'running' | 'completed' | 'partial' | 'failed'; targets: RefreshTarget[];
   results: RefreshItemResult[]; created_at: string; started_at: string | null; finished_at: string | null; expires_at: string;

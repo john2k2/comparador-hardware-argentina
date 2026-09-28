@@ -163,6 +163,9 @@ describe('runRequestedRefresh', () => {
       p_price: 420_000,
       p_observed_at: '2026-09-21T12:00:01.000Z',
     });
+    expect(mocks.from.mock.results[0].value.update).toHaveBeenCalledWith(expect.objectContaining({
+      results: [expect.objectContaining({ state: 'updated', comparable: true })],
+    }));
   });
 
   it('busca una publicación de CompraGamer por ID aunque el título agrupado sea anterior', async () => {
@@ -205,7 +208,7 @@ describe('runRequestedRefresh', () => {
 
     expect(result.status).toBe('completed');
     expect(persistCall?.[1]).toMatchObject({ p_stock: 'out-of-stock' });
-    expect(mocks.from.mock.results[0].value.update).toHaveBeenCalledWith(expect.objectContaining({ results: [expect.objectContaining({ state: 'unavailable' })] }));
+    expect(mocks.from.mock.results[0].value.update).toHaveBeenCalledWith(expect.objectContaining({ results: [expect.objectContaining({ state: 'unavailable', comparable: false })] }));
   });
 
   it('keeps an RTX 4060 versus RTX 4070 conflict pending without sending it to Jev', async () => {
@@ -216,6 +219,9 @@ describe('runRequestedRefresh', () => {
 
     expect(mocks.reviewProductOffers).toHaveBeenCalledWith([], { authorizedRefresh: true, sourceTitles: {} });
     expect(persistCall?.[1].p_review).toMatchObject({ status: 'needs-review', reason: 'explicit-conflict' });
+    expect(mocks.from.mock.results[0].value.update).toHaveBeenCalledWith(expect.objectContaining({
+      results: [expect.objectContaining({ state: 'updated', comparable: false })],
+    }));
   });
 
   it('marks a rejected persistence RPC as failed instead of updated', async () => {

@@ -5,7 +5,8 @@ import { getStoreScraper, FRAMEWORK_SCRAPERS } from '@/lib/scrapers/scraper-regi
 import { withAbortTimeout, withPromiseTimeout } from '@/lib/async/with-abort-timeout';
 import { reviewProductOffers } from '@/lib/ai/review-product-offers';
 import { buildPriceStateSignature } from '@/lib/persistence/product-write-dedupe';
-import { hasExplicitIdentityConflict } from '@/lib/quality/offer-identity';
+import { hasExplicitIdentityConflict, needsIdentityReview } from '@/lib/quality/offer-identity';
+import { isOfferFresh } from '@/lib/price-freshness';
 import { normalizeIdentityText, parseCpuModelSignature, parseGpuChipSignature } from '@/lib/product-identity';
 import type { Product, ProductPrice } from '@/lib/types';
 import type { RefreshItemResult, RefreshJob, RefreshTarget } from './contracts';
@@ -77,7 +78,12 @@ export async function runRequestedRefresh(): Promise<{ processed: boolean; jobId
         p_price: state.price, p_original_price: state.original_price, p_stock: state.stock, p_installment_count: state.installment_count, p_installment_amount: state.installment_amount,
         p_observed_at: new Date(price.lastUpdated).toISOString(), p_review: price.identityReview ?? null, p_signature: buildPriceStateSignature(state),
       });
-      results.push({ ...item.target, state: error || data !== true ? 'failed' : price.stock === 'out-of-stock' ? 'unavailable' : 'updated', observedAt: error || data !== true ? null : new Date(price.lastUpdated).toISOString() });
+      const persisted = !error && data === true;
+      const comparable = persisted && (price.stock === 'in-stock' || price.stock === 'low-stock')
+        && Number.isFinite(price.price) && price.price > 0
+        && isOfferFresh(price.lastUpdated) && !needsIdentityReview(price, item.product);
+      results.push({ ...item.target, state: !persisted ? 'failed' : price.stock === 'out-of-stock' ? 'unavailable' : 'updated',
+        observedAt: persisted ? new Date(price.lastUpdated).toISOString() : null, comparable });
     }
   } catch {
     for (const target of job.targets) if (!results.some((result) => result.productId === target.productId && result.storeId === target.storeId && result.url === target.url)) results.push({ ...target, state: 'failed', observedAt: null });

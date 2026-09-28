@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { HardwareCategory, Product, ProductPrice } from '@/lib/types';
-import { resolveGuideComponent, resolveGuideReferenceOffer, resolveGuideSlots } from '@/lib/seo/budget-guide-pricing';
+import { resolveGuideComponent, resolveGuideReferenceOffer, resolveGuideRefreshOffers, resolveGuideSlots } from '@/lib/seo/budget-guide-pricing';
 
 function price(overrides: Partial<ProductPrice> & Pick<ProductPrice, 'storeId' | 'storeName' | 'price'>): ProductPrice {
   return {
@@ -156,6 +156,29 @@ describe('resolveGuideComponent', () => {
       ],
     });
     expect(resolveGuideReferenceOffer(cpuSpec, [candidate])).toBeNull();
+    expect(resolveGuideRefreshOffers(cpuSpec, [candidate])).toEqual([]);
+  });
+
+  it('puede volver a comprobar una publicación antes agotada sin incluirla como oferta comprable', () => {
+    const candidate = product({ id: 'ryzen-7600x', name: 'Ryzen 5 7600X', category: 'procesadores', prices: [
+      price({ storeId: 'sold-out', storeName: 'Agotada', price: 200_000, stock: 'out-of-stock', url: 'https://example.com/procesador-amd-ryzen-5-7600x' }),
+    ] });
+    expect(resolveGuideReferenceOffer(cpuSpec, [candidate])).toBeNull();
+    expect(resolveGuideComponent(cpuSpec, [candidate]).priceSource).toBe('estimate');
+    expect(resolveGuideRefreshOffers(cpuSpec, [candidate])).toMatchObject([{ storeId: 'sold-out' }]);
+  });
+
+  it('limita las alternativas conocidas a tres y no permite cambiar la pieza comprobada', () => {
+    const spec = { name: 'Mother MSI PRO B650M-B DDR5 AM5', exactModel: 'MSI PRO B650M-B', searchTerms: ['b650'], category: 'motherboards' as const, description: '', estimatedPrice: 100_000 };
+    const candidates = [product({ id: 'correct', name: 'Mother MSI PRO B650M-B DDR5 AM5', category: 'motherboards', prices:
+      ['one', 'two', 'three', 'four'].map((storeId, i) => price({ storeId, storeName: storeId, price: 100_000 + i * 1000,
+        url: `https://example.com/${storeId}/mother-msi-pro-b650m-b-ddr5-am5` })),
+    }), product({ id: 'wrong', name: 'Mother MSI PRO B650-P DDR5 AM5', category: 'motherboards', prices: [
+      price({ storeId: 'cheap', storeName: 'Otra', price: 50_000, url: 'https://example.com/mother-msi-pro-b650-p-ddr5-am5' }),
+    ] })];
+    const references = resolveGuideRefreshOffers(spec, candidates);
+    expect(references).toHaveLength(3);
+    expect(references.every(reference => reference.productId === 'correct')).toBe(true);
   });
 
   it('no sustituye un NVMe por un SSD SATA ni una fuente Gold por Bronze', () => {
