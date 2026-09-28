@@ -16,6 +16,14 @@ const CATEGORIES = new Set(['procesadores', 'tarjetas-graficas', 'memoria-ram'])
 
 type Candidate = { product: Product; price: ProductPrice; evidence: IdentityEvidence };
 
+function safeProviderErrorCode(error: unknown): string {
+  // Solo códigos propios exactos: nunca mensajes, cuerpos o credenciales del proveedor.
+  return error instanceof Error
+    && /^JEV_(?:HTTP_[1-5]\d{2}|INVALID_REQUEST|INVALID_RESPONSE|RESPONSE_TOO_LARGE|TIMEOUT|UNAVAILABLE)$/.test(error.message)
+    ? error.message
+    : 'JEV_UNAVAILABLE';
+}
+
 export function collectOfferSourceTitles(products: Product[]): Record<string, string> {
   const titles: Record<string, string> = Object.create(null);
   for (const product of products) {
@@ -101,7 +109,11 @@ export async function reviewProductOffers(products: Product[], options: { author
         candidate.price.identityReview = reviewFor(candidate, invalid ? 'invalid-response' : 'provider-unavailable', now);
         pending++;
       }
-      logger.warn('Offer identity review unavailable', { reason: invalid ? 'invalid-response' : 'provider-unavailable', offerCount: batch.length });
+      logger.warn('Offer identity review unavailable', {
+        reason: invalid ? 'invalid-response' : 'provider-unavailable',
+        providerErrorCode: safeProviderErrorCode(error),
+        offerCount: batch.length,
+      });
     }
   }
   logger.info('Offer identity review completed', { evaluated, pending, explicitConflicts, model: JEV_MODEL, maxOffers: MAX_OFFERS_PER_REFRESH });

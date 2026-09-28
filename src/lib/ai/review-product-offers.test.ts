@@ -222,6 +222,19 @@ describe('reviewProductOffers', () => {
     expect(mocks.evaluateOfferIdentity).toHaveBeenCalledTimes(1);
     expect(result.every(({ prices }) => prices[0].identityReview?.status === 'needs-review')).toBe(true);
     expect(result.every(({ prices }) => prices[0].identityReview?.reason === 'provider-unavailable')).toBe(true);
-    expect(mocks.loggerWarn).toHaveBeenCalledWith('Offer identity review unavailable', expect.objectContaining({ reason: 'provider-unavailable' }));
+    expect(mocks.loggerWarn).toHaveBeenCalledWith('Offer identity review unavailable', expect.objectContaining({ reason: 'provider-unavailable', providerErrorCode: 'JEV_UNAVAILABLE' }));
+    expect(JSON.stringify(mocks.loggerWarn.mock.calls)).not.toContain('private-test-key');
+  });
+
+  it.each(['JEV_HTTP_401', 'JEV_HTTP_429', 'JEV_HTTP_529', 'JEV_TIMEOUT'])('retains the safe diagnostic code %s without allowing an offer', async (providerErrorCode) => {
+    mocks.evaluateOfferIdentity.mockRejectedValueOnce(new Error(providerErrorCode));
+
+    const result = await reviewProductOffers([product(1)], { authorizedRefresh: true });
+
+    expect(mocks.evaluateOfferIdentity).toHaveBeenCalledTimes(1);
+    expect(result[0].prices[0].identityReview).toMatchObject({ status: 'needs-review', reason: 'provider-unavailable' });
+    expect(mocks.loggerWarn).toHaveBeenCalledWith('Offer identity review unavailable', {
+      reason: 'provider-unavailable', providerErrorCode, offerCount: 1,
+    });
   });
 });
