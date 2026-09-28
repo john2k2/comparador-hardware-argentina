@@ -17,12 +17,12 @@ vi.mock('@/lib/logger', () => ({ logger: { warn: mocks.loggerWarn } }));
 
 import { persistProductsSnapshot } from './product-catalog';
 
-function createServiceClient() {
+function createServiceClient(persistedProducts: Array<Record<string, unknown>> = []) {
   return {
     from: (table: string) => ({
       select: () => ({ in: () => table === 'price_alerts'
         ? { eq: async () => ({ data: [], error: null }) }
-        : Promise.resolve({ data: table === 'stores' ? [{ id: 'mexx' }] : [], error: null }) }),
+        : Promise.resolve({ data: table === 'stores' ? [{ id: 'mexx' }] : table === 'products' ? persistedProducts : [], error: null }) }),
       upsert: table === 'product_prices' ? mocks.priceUpsert : mocks.productUpsert,
       insert: mocks.historyInsert,
     }),
@@ -95,5 +95,26 @@ describe('persistencia de revisión de ofertas', () => {
       .rejects.toThrow('Catalog refresh requires Supabase service credentials');
     await expect(persistProductsSnapshot([product()], { requirePersistence: false })).resolves.toBeUndefined();
     expect(mocks.priceUpsert).not.toHaveBeenCalled();
+  });
+
+  it.each([undefined, '', '/pixel-box.svg'])('conserva la foto persistida cuando la nueva observación trae %s', async (image) => {
+    const existingImage = 'https://www.mexx.com.ar/images/ryzen-5600.jpg';
+    mocks.getServerClient.mockReturnValue(createServiceClient([{ id: 'cpu-5600', image: existingImage, content_signature: 'old', last_seen_at: null, last_scraped_at: null }]));
+    await persistProductsSnapshot([{ ...product(), image }]);
+    expect(mocks.productUpsert.mock.calls[0][0][0].image).toBe(existingImage);
+    expect(mocks.priceUpsert.mock.calls[0][0][0].last_updated).toBe('2026-09-21T12:00:00.000Z');
+  });
+
+  it('acepta una foto nueva real del mismo producto aunque ya exista otra', async () => {
+    mocks.getServerClient.mockReturnValue(createServiceClient([{ id: 'cpu-5600', image: 'https://www.mexx.com.ar/images/old.jpg', content_signature: 'old', last_seen_at: null, last_scraped_at: null }]));
+    const newImage = 'https://www.mexx.com.ar/images/new.jpg';
+    await persistProductsSnapshot([{ ...product(), image: newImage }]);
+    expect(mocks.productUpsert.mock.calls[0][0][0].image).toBe(newImage);
+  });
+
+  it('conserva la foto de la primera observación del lote si otra del mismo id no la trae', async () => {
+    const image = 'https://www.mexx.com.ar/images/ryzen-5600.jpg';
+    await persistProductsSnapshot([{ ...product(), image }, product()]);
+    expect(mocks.productUpsert.mock.calls[0][0][0].image).toBe(image);
   });
 });

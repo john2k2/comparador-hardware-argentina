@@ -49,6 +49,18 @@ function buildProduct(
 }
 
 describe('search-dedupe', () => {
+  it.each([undefined, '', '/pixel-box.svg'])('rescata una foto real al agrupar cuando la primera es %s', (missing) => {
+    const first = buildProduct('AMD Ryzen 5 7600', { id: 'first', category: 'procesadores' });
+    first.image = missing;
+    const second = buildProduct('AMD Ryzen 5 7600 Box', { id: 'second', category: 'procesadores' });
+    second.image = 'https://mexx-img-2019.s3.amazonaws.com/7600.jpg';
+
+    for (const result of [groupSearchProducts([first, second], new Map(), [], '', 'procesadores'), dedupeNearDuplicates([first, second])]) {
+      expect(result).toHaveLength(1);
+      expect(result[0].image).toBe(second.image);
+    }
+  });
+
   describe('dedupeNearDuplicates', () => {
     it('retorna el mismo array si hay 0 o 1 producto', () => {
       const empty: Product[] = [];

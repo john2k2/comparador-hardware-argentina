@@ -1,4 +1,5 @@
 import { computeComparableStorePriceStats, preferStorePrice } from '@/lib/price-utils';
+import { pickProductImage } from '@/lib/product-images';
 import {
   buildProductIdentityKey,
   compactGpuChip,
@@ -192,9 +193,7 @@ export function dedupeProductsByCanonicalName(products: Product[]): Product[] {
 
     const mergedPrices = mergeGroupedPrices(existing.prices, product.prices);
     const stats = computeComparableStorePriceStats(mergedPrices);
-    const pickedImage = existing.image === '/pixel-box.svg' && product.image !== '/pixel-box.svg'
-      ? product.image
-      : existing.image;
+    const pickedImage = pickProductImage(existing.image, product.image);
 
     grouped.set(key, {
       ...existing,
@@ -227,6 +226,7 @@ export function dedupeProductsByCanonicalName(products: Product[]): Product[] {
 
     final[targetIndex] = {
       ...existing,
+      image: pickProductImage(existing.image, candidate.image),
       name: preferredName,
       model: preferredName,
       prices: stats.comparablePrices,

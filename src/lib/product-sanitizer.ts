@@ -1,5 +1,6 @@
 import { computeComparableStorePriceStats } from '@/lib/price-utils';
 import { normalizeDisplayText } from '@/lib/text-utils';
+import { normalizeProductImageUrl } from '@/lib/product-images';
 import type { Product, ProductPrice } from '@/lib/types';
 
 function sanitizeText(value: string | null | undefined, fallback = ''): string {
@@ -50,6 +51,7 @@ export function sanitizeProduct(product: Product): Product {
     brand: sanitizeText(product.brand, 'Generica'),
     model: sanitizeText(product.model, fallbackName),
     description: sanitizeText(product.description, fallbackName),
+    image: normalizeProductImageUrl(product.image),
     specs: sanitizeSpecs(product.specs),
     prices: comparableStats?.comparablePrices ?? sanitizedPrices,
     lowestPrice: comparableStats?.lowest ?? product.lowestPrice,

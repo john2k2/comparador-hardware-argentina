@@ -1,4 +1,5 @@
 import { computeComparableStorePriceStats, preferStorePrice } from '@/lib/price-utils';
+import { pickProductImage } from '@/lib/product-images';
 import {
   buildProductFamilyKey,
   buildProductIdentityKey,
@@ -146,9 +147,7 @@ function mergeProductEntries(existing: Product, candidate: Product): Product {
   const existingTokens = tokenizeForDedupe(existing.name).length;
   const candidateTokens = tokenizeForDedupe(candidate.name).length;
   const preferred = candidateTokens > existingTokens ? candidate : existing;
-  const mergedImage = existing.image === '/pixel-box.svg' && candidate.image !== '/pixel-box.svg'
-    ? candidate.image
-    : existing.image;
+  const mergedImage = pickProductImage(existing.image, candidate.image);
 
   return {
     ...existing,
@@ -240,10 +239,7 @@ export function groupSearchProducts(
     const mergedPrices = mergePriceOptions(existingProduct.prices, product.prices);
     const stats = computeComparableStorePriceStats(mergedPrices);
 
-    let finalImage = existingProduct.image;
-    if (finalImage === '/pixel-box.svg' && product.image !== '/pixel-box.svg') {
-      finalImage = product.image;
-    }
+    const finalImage = pickProductImage(existingProduct.image, product.image);
 
     const existingScore = scoreProductRelevance(existingProduct, queryWords, query, category);
     const incomingScore = scoreProductRelevance(product, queryWords, query, category);

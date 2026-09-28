@@ -3,7 +3,7 @@ import { extractKnownHardwareBrand, normalizeScrapedAbsoluteUrl, parseScrapedArs
 import { extractBrandFromName as extractBrandFromNameShared } from './brand-utils';
 import type { CompraGamerProductResponse } from './compragamer-catalog';
 
-const COMPRAGAMER_IMAGE_BASE_URL = 'https://imagenes.compragamer.com/productos';
+const COMPRAGAMER_IMAGE_BASE_URL = 'https://imagenes.compragamer.com/productos/';
 
 function toPositiveInteger(value: unknown): number | null {
   const parsed = Number(value);
@@ -143,7 +143,7 @@ function buildImageUrl(imageName: string | undefined): string | undefined {
   if (!normalizedName) return undefined;
   return normalizeScrapedAbsoluteUrl(
     COMPRAGAMER_IMAGE_BASE_URL,
-    `/compragamer_Imganen_general_${normalizedName}-med.jpg`,
+    `compragamer_Imganen_general_${normalizedName}-med.jpg`,
   );
 }
 

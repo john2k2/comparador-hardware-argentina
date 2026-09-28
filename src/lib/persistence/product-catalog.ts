@@ -11,6 +11,7 @@ import {
 import { selectStaleProductPricesToPrune } from '@/lib/persistence/stale-product-prices';
 import { deleteProductPriceIdentities } from '@/lib/persistence/stale-product-prices-maintenance';
 import { logger } from '@/lib/logger';
+import { pickProductImage, PRODUCT_IMAGE_FALLBACK } from '@/lib/product-images';
 
 const UPSERT_CHUNK_SIZE = 250;
 const HISTORY_CHUNK_SIZE = 500;
@@ -68,6 +69,7 @@ type PriceHistoryRow = {
 
 type PersistedProductStateRow = {
   id: string;
+  image: string | null;
   content_signature: string | null;
   last_seen_at: string | null;
   last_scraped_at: string | null;
@@ -178,7 +180,7 @@ async function readPersistedCatalogState(
     const [{ data: productsData, error: productsError }, { data: pricesData, error: pricesError }] = await Promise.all([
       supabase
         .from('products')
-        .select('id,content_signature,last_seen_at,last_scraped_at')
+        .select('id,image,content_signature,last_seen_at,last_scraped_at')
         .in('id', batch),
       supabase
         .from('product_prices')
@@ -292,8 +294,10 @@ export async function persistProductsSnapshot(
     } as const;
     const productPlan = planProductRowPersistence(productRowBase, undefined, now);
 
+    const candidateImage = pickProductImage(productRowBase.image, candidateProductRowsById.get(product.id)?.image);
     candidateProductRowsById.set(product.id, {
       ...productRowBase,
+      image: candidateImage === PRODUCT_IMAGE_FALLBACK ? null : candidateImage,
       last_scraped_at: lastScrapedAt,
       last_normalized_at: lastNormalizedAt,
       last_seen_at: now.toISOString(),
@@ -341,6 +345,10 @@ export async function persistProductsSnapshot(
   const historyRows: PriceHistoryRow[] = [];
 
   for (const row of candidateProductRowsById.values()) {
+    // Una observación sin foto no borra la anterior del mismo producto.
+    // Se elige antes de calcular la firma para conservar la deduplicación.
+    const image = pickProductImage(row.image, productsById.get(row.id)?.image);
+    row.image = image === PRODUCT_IMAGE_FALLBACK ? null : image;
     const plan = planProductRowPersistence({
       name: row.name,
       category: row.category,

@@ -12,10 +12,10 @@ export const IMAGE_DOMAINS = [
   'images.unsplash.com',
   '*.vteximg.com.br',
   'mexx-img-2019.s3.amazonaws.com',
-  // 'imagenes.compragamer.com' - REMOVIDO: el servidor responde 502
-  // cuando Next.js intenta optimizar, causando errores en producción.
-  // Los productos de CompraGamer ahora cargan directamente sin optimization.
-  // 'www.venex.com.ar' - REMOVIDO: thumbnails sin extensión rompen Next image optimizer.
+  // Las fotos de productos se cargan directamente, sin el optimizador de Next.
+  // Sus orígenes también deben estar permitidos en img-src.
+  'imagenes.compragamer.com',
+  'www.venex.com.ar',
   'www.fullh4rd.com.ar',
   'compugarden.com.ar',
   '*.compugarden.com.ar',
@@ -24,7 +24,8 @@ export const IMAGE_DOMAINS = [
   'logg.api.cygnus.market',
   'katech.com.ar',
   'dinobyte.ar',
-  // 'maximus.com.ar' - REMOVIDO: varias URLs devuelven 400 vía Next image optimizer.
+  'www.maximus.com.ar',
+  'maximus.com.ar',
   'maxtecno.com.ar',
   'www.maxtecno.com.ar',
   'thegamershop.com.ar',

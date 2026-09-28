@@ -40,6 +40,7 @@ describe('compragamer-mapper', () => {
     expect(mapped?.brand).toBe('ASUS');
     expect(mapped?.prices[0].price).toBe(1_249_999);
     expect(mapped?.prices[0].stock).toBe('low-stock');
+    expect(mapped?.image).toBe('https://imagenes.compragamer.com/productos/compragamer_Imganen_general_rtx5070ti-med.jpg');
     expect(mapped?.specs).toMatchObject({
       SKU: 'RTX5070TI',
       Garantia: '36 meses',

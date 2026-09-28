@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { isKnownBlockedImageHost } from '@/lib/whitelisted-hosts';
+import { normalizeProductImageUrl, PRODUCT_IMAGE_FALLBACK } from '@/lib/product-images';
 
 type ProductImageWithFallbackProps = {
   src: string | null | undefined;
@@ -19,10 +19,10 @@ export function ProductImageWithFallback({
   fallbackClassName,
   eager = false,
 }: ProductImageWithFallbackProps) {
-  const usableSource = src && !isKnownBlockedImageHost(src) ? src : null;
+  const usableSource = normalizeProductImageUrl(src) ?? null;
   const [failedSource, setFailedSource] = useState<string | null>(null);
-  const displayedSource = usableSource && failedSource !== usableSource ? usableSource : '/pixel-box.svg';
-  const isFallback = displayedSource === '/pixel-box.svg';
+  const displayedSource = usableSource && failedSource !== usableSource ? usableSource : PRODUCT_IMAGE_FALLBACK;
+  const isFallback = displayedSource === PRODUCT_IMAGE_FALLBACK;
 
   // Se usa el recurso remoto directamente: evita que una respuesta HTML o un
   // MIME incorrecto derribe el optimizador de Next. onError conserva el espacio.

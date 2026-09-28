@@ -35,6 +35,17 @@ function createProduct(input: Partial<Product> & Pick<Product, 'id' | 'name'>): 
 }
 
 describe('product-read-grouping', () => {
+  it('rescata la foto de un candidato en el segundo merge de modelos equivalentes', () => {
+    const first = createProduct({ id: 'first', name: 'AMD Ryzen 5 7600', canonicalProductKey: 'legacy:first' });
+    const second = createProduct({
+      id: 'second', name: 'AMD Ryzen 5 7600 Box', canonicalProductKey: 'legacy:second',
+      image: 'https://mexx-img-2019.s3.amazonaws.com/7600.jpg',
+    });
+    const result = dedupeProductsByCanonicalName([first, second]);
+    expect(result).toHaveLength(1);
+    expect(result[0].image).toBe(second.image);
+  });
+
   it('filters by normalized text over multiple searchable fields', () => {
     const products = [
       createProduct({ id: '1', name: 'AMD Ryzen 5 7600', normalizedTitle: 'amd ryzen 5 7600' }),
