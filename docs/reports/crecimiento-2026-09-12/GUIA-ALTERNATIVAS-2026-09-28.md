@@ -53,3 +53,11 @@ Render público 14:26:25 UTC: HTTP200, **4/7 piezas elegibles, subtotal incomple
 Prioridades siguientes dentro de G02/G20: diagnosticar la indisponibilidad de Jev sin leer credenciales ni inventar la causa; ampliar referencias de GPU con disponibilidad demostrada; volver a sumar siete piezas compatibles dentro del objetivo. Si no hay cobertura válida, el presupuesto no se declara completo ni listo para recomendar. No hubo aprobación editorial, alta final AdSense ni anuncios activos en este control.
 
 Seguimiento existente actualizado y releído: conserva horario, estadoACTIVE, hilo e histórico completo; añade el caso de cola, proveedor y distinción entre recuperación manual/automática. La automatización no despacha ni pulsa refresh. Estados/fechas/responsables/prioridades del tablero permanecen iguales.
+
+## Aclaración de Jonathan: el importe es un máximo
+
+No se busca gastar exactamente ARS2.000.000. La guía dice **hasta $2 millones** y admite una selección más económica. El resolver conserva las ofertas observadas para renovación, pero informa por separado si su subtotal respeta el límite; si lo excede, la página no ofrece esa lista como propuesta comprable ni habilita la maqueta publicitaria editorial. El corte incompleto conserva su advertencia: estar bajo el techo no significa tener siete piezas disponibles.
+
+Tres casos de frontera con siete piezas verifican ARS1.600.000 y ARS2.000.000 aceptados y ARS2.000.001 fuera del máximo. Son fixtures, no precios del mercado. En total, 67 pruebas de selección/precios/compatibilidad/catálogo, TypeScript, ESLint focalizado y build de51rutas aprobados. La pareja exacta motherboard/gabinete y las guardas de identidad/frescura se conservan; no se implementó todavía sustitución automática entre plataformas o modelos sin compatibilidad revisada. Publicación y lectura pública de esta aclaración pendientes. G02/G20/G24 siguen abiertos.
+
+Reversión independiente: retirar `fitsBudget` y sus guardas de la página junto al texto actualizado. No afecta la cola, las cuotas, los scrapers ni las observaciones persistidas; reabre la presentación de una selección por encima del límite y requiere una solución equivalente antes de recomendarla.

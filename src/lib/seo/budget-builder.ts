@@ -403,7 +403,7 @@ function isNameCompatible(
 export function resolveLiveGuideSlots(
   guide: BudgetGuideDefinition,
   products: Product[],
-): ResolvedGuideSlotTotals<Record<GuideSlotKey, ResolvedGuideComponent>> {
+): ResolvedGuideSlotTotals<Record<GuideSlotKey, ResolvedGuideComponent>> & { fitsBudget: boolean } {
   const slots: Partial<Record<GuideSlotKey, ResolvedGuideComponent>> = {};
   let platform: PlatformId | null = null;
 
@@ -418,7 +418,8 @@ export function resolveLiveGuideSlots(
     slots[key] = toEstimatedGuideComponent(spec);
   }
 
-  return summarizeGuideComponents(slots as Record<GuideSlotKey, ResolvedGuideComponent>);
+  const resolved = summarizeGuideComponents(slots as Record<GuideSlotKey, ResolvedGuideComponent>);
+  return { ...resolved, fitsBudget: resolved.catalogTotal <= guide.budget };
 }
 
 export function resolveCustomBudgetSlots(

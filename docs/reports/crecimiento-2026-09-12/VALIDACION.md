@@ -416,3 +416,7 @@ Corte posterior14:26UTC: b2433da publicado con build67c8df39 success.84pruebas f
 ## Estado AdSense — 28/09/2026, 15:50 UTC
 
 [Comprobación autenticada y pública](ADSENSE-ESTADO-2026-09-28.md): Debe revisarse, botón Solicitar revisión disponible, sin motivo de rechazo mostrado en el detalle. No se solicitó revisión. ads.txt conserva No se encuentra con fecha27/09 18:54GMT-3; raíz/www responden200 con texto e ID correctos. Metadato público correcto y robots permite el archivo. No se encontró Buscar actualizaciones en los controles visibles. El reconocimiento por Google sigue sin verificarse; la respuesta pública no demuestra su rastreo. Datos administrativos y controles internos G18/G20/G21/G23/G24 siguen pendientes. Tablero sin cambio de estado/fecha/prioridad/responsable.
+
+## Presupuesto máximo — 28/09/2026
+
+Guía$2M pasa a hasta$2M. El subtotal observado bajo el techo no obliga a gastar el saldo; una selección por encima del máximo no se ofrece como lista comprable ni maqueta publicitaria. 67pruebas focalizadas aprobadas, incluyendo siete piezas con1.6M/2M aceptados y2M+1 fuera del límite; lint, TypeScript y build51rutas aprobados. No cambia modelos/compatibilidad, ni completa las ofertas faltantes por un test. Ver GUIA-ALTERNATIVAS-2026-09-28.md. Publicación pendiente de lectura pública; G02/G20 y solicitudAdSense siguen abiertos.

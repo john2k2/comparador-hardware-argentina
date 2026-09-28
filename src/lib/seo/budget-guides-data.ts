@@ -117,9 +117,9 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
   },
   {
     slug: 'pc-gamer-2-millones',
-    title: 'PC Gamer por $2 millones: componentes y precios',
-    metadataTitle: `PC gamer 2 millones: componentes y precios | ${SITE_NAME}`,
-    description: 'Compará componentes y precios para armar una PC gamer por $2 millones en Argentina: Ryzen 5 7600 con cooler, RTX 4060 o RX 7600, 16 GB DDR5 y SSD NVMe de 1 TB.',
+    title: 'PC Gamer hasta $2 millones: componentes y precios',
+    metadataTitle: `PC gamer hasta 2 millones: componentes y precios | ${SITE_NAME}`,
+    description: 'Compará componentes para una PC gamer con un máximo de $2 millones en Argentina. Un armado más económico también sirve: verificá disponibilidad, compatibilidad, envíos y costos adicionales.',
     keywords: ['pc gamer 2 millones', 'pc gaming argentina 2m', 'mejor pc gamer precio calidad', 'pc gamer rtx 4060'],
     budget: 2000000,
     components: {

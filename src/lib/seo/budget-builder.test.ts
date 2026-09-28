@@ -44,6 +44,18 @@ function listed(
   });
 }
 
+function reviewedGuideCatalog(gpuPrice: number): Product[] {
+  return [
+    listed('cpu', 'Procesador AMD Ryzen 5 7600 AM5 + Wraith Stealth Cooler', 'procesadores', 354_700),
+    listed('gpu', 'Asrock Radeon RX 7600 Challenger 8GB', 'tarjetas-graficas', gpuPrice),
+    listed('ram', 'Memoria Adata DDR5 16GB 5600MHz XPG Lancer Blade White RGB CL46', 'memoria-ram', 436_400),
+    listed('ssd', 'SSD Kingston 1TB NV3 NVMe Gen4', 'almacenamiento', 290_950),
+    listed('mother', 'Mother MSI PRO B650M-B AM5 DDR5', 'motherboards', 146_200),
+    listed('psu', 'Fuente MSI MAG 650W 80 Plus Gold A650GN II', 'fuentes-alimentacion', 100_829),
+    listed('case', 'Gabinete Mid Tower Cooler Master Elite 302', 'gabinetes', 71_999),
+  ];
+}
+
 const starterCatalog = [
   listed('cpu-5600', 'AMD Ryzen 5 5600', 'procesadores', 150_000),
   listed('cpu-5500', 'AMD Ryzen 5 5500', 'procesadores', 120_000),
@@ -263,20 +275,25 @@ describe('resolveLiveGuideSlots', () => {
 
   it('resuelve el presupuesto revisado dentro de dos millones con cooler y siete piezas compatibles', () => {
     const guide = getBudgetGuideBySlug('pc-gamer-2-millones')!;
-    const catalog = [
-      listed('cpu', 'Procesador AMD Ryzen 5 7600 AM5 + Wraith Stealth Cooler', 'procesadores', 354_700),
-      listed('gpu', 'Asrock Radeon RX 7600 Challenger 8GB', 'tarjetas-graficas', 533_350),
-      listed('ram', 'Memoria Adata DDR5 16GB 5600MHz XPG Lancer Blade White RGB CL46', 'memoria-ram', 436_400),
-      listed('ssd', 'SSD Kingston 1TB NV3 NVMe Gen4', 'almacenamiento', 290_950),
-      listed('mother', 'Mother MSI PRO B650M-B AM5 DDR5', 'motherboards', 146_200),
-      listed('psu', 'Fuente MSI MAG 650W 80 Plus Gold A650GN II', 'fuentes-alimentacion', 100_829),
-      listed('case', 'Gabinete Mid Tower Cooler Master Elite 302', 'gabinetes', 71_999),
-    ];
+    const catalog = reviewedGuideCatalog(533_350);
     const resolved = resolveLiveGuideSlots(guide, catalog);
     expect(resolved.inStockSlots).toBe(7);
     expect(resolved.hasEstimates).toBe(false);
     expect(resolved.catalogTotal).toBe(1_934_428);
     expect(resolved.catalogTotal).toBeLessThan(guide.budget);
+  });
+
+  it.each([
+    { gpuPrice: 198_922, total: 1_600_000, fitsBudget: true },
+    { gpuPrice: 598_922, total: 2_000_000, fitsBudget: true },
+    { gpuPrice: 598_923, total: 2_000_001, fitsBudget: false },
+  ])('trata dos millones como techo para un total de $total', ({ gpuPrice, total, fitsBudget }) => {
+    const guide = getBudgetGuideBySlug('pc-gamer-2-millones')!;
+    const resolved = resolveLiveGuideSlots(guide, reviewedGuideCatalog(gpuPrice));
+
+    expect(resolved.inStockSlots).toBe(7);
+    expect(resolved.catalogTotal).toBe(total);
+    expect(resolved.fitsBudget).toBe(fitsBudget);
   });
 });
 
