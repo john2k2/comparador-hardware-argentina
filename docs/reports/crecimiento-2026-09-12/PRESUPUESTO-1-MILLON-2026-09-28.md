@@ -57,3 +57,9 @@ Dos títulos de CompraGamer habían cambiado conservando el ID/SKU: SSD 17143 ah
 - Esta solicitud interactiva no se suma a los siete ciclos diarios útiles de G02. G02 continúa abierto; tampoco se cierran G20 ni la preparación AdSense. La guía de un millón sigue fuera de las tres rutas del piloto publicitario.
 
 Si una oferta supera las tres horas, comprobar la siguiente oferta elegible del mismo modelo. Si cambia el conjunto o excede un millón, volver a revisar selección completa y costos; no renovar fechas artificialmente ni mostrar este total histórico como actual.
+
+## Corte de publicación — 28/09/2026, 20:56 UTC
+
+Publicado en `main` mediante commit `63f6bf18554d09b556f37286ae665ab99344345c`. Workers Builds `684acc2c-920c-4fe7-b7d2-7a0a3c558006` terminó `success`. La guía pública se recargó después del despliegue: título nuevo, siete modelos y siete enlaces de tienda, **7/7 ofertas y ARS 994.303**. Los controles en Chrome desktop y 390 px no mostraron desbordamiento horizontal; no se registraron avisos/errores JS en la muestra. No se cargaron scripts publicitarios.
+
+La página muestra la fecha editorial 28/09 y separa las observaciones de precio de las 20:42 UTC. La comprobación pública reemplaza el estado de publicación pendiente del corte local anterior, sin convertirlo en una garantía permanente ni cerrar confiabilidad, G02 o AdSense.
