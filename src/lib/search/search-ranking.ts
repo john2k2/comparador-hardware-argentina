@@ -19,6 +19,7 @@ const STRICT_VARIANT_QUERY_TOKENS = new Set([
 
 // Cache simple para normalizacion de texto (evita recomputar en loops calientes)
 const NORMALIZE_CACHE = new Map<string, string>();
+const NORMALIZE_CACHE_MAX = 2_000;
 
 const SEARCH_SYNONYMS: Array<{ pattern: RegExp; canonical: string }> = [
   { pattern: /\b(?:placas?\s+de\s+video|tarjetas?\s+graficas?|gpu)\b/g, canonical: 'gpu' },
@@ -46,6 +47,10 @@ export function normalizeSearchText(value: string): string {
   }
   result = result.replace(/\s+/g, ' ').trim();
 
+  if (NORMALIZE_CACHE.size >= NORMALIZE_CACHE_MAX) {
+    const oldest = NORMALIZE_CACHE.keys().next().value;
+    if (oldest !== undefined) NORMALIZE_CACHE.delete(oldest);
+  }
   NORMALIZE_CACHE.set(value, result);
   return result;
 }

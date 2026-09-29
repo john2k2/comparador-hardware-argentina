@@ -3,7 +3,6 @@ import { withAbortTimeout, withPromiseTimeout } from '@/lib/async/with-abort-tim
 import { withConcurrencyLimit } from '@/lib/async/concurrency';
 import { normalizeProductTitlesWithStats } from '@/lib/ai/normalize-products';
 import { collectOfferSourceTitles, reviewProductOffers } from '@/lib/ai/review-product-offers';
-import { snapshotProducts } from '@/lib/cache/search-snapshot';
 import {
   inferHardwareCategoryFromName,
   resolveHardwareCategoryForProduct,
@@ -276,6 +275,5 @@ export async function runLiveSearch({
     });
 
   await setCachedSearchResponse(cacheKey, payload);
-  snapshotProducts(payload.products);
   return { payload, normalizationSummaryNote };
 }

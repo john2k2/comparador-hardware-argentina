@@ -1,13 +1,11 @@
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Product } from '@/lib/types';
 
 vi.mock('server-only', () => ({}));
 
 const mockGetSharedCache = vi.fn();
 const mockSetSharedCache = vi.fn();
-const mockGetSnapshotProductById = vi.fn();
-const mockSnapshotProducts = vi.fn();
 const mockReadProductByIdFromDatabase = vi.fn();
 const mockReadProductsFromDatabase = vi.fn();
 const mockResolveAdminAccessFromToken = vi.fn();
@@ -35,14 +33,13 @@ vi.mock('@/lib/server/shared-cache', () => ({
   setSharedCache: mockSetSharedCache,
 }));
 
-vi.mock('@/lib/cache/search-snapshot', () => ({
-  getSnapshotProductById: mockGetSnapshotProductById,
-  snapshotProducts: mockSnapshotProducts,
-}));
-
 vi.mock('@/lib/persistence/product-read', () => ({
   readProductByIdFromDatabase: mockReadProductByIdFromDatabase,
   readProductsFromDatabase: mockReadProductsFromDatabase,
+  readProductsPageFromDatabase: async (params: { page: number; pageSize: number }) => {
+    const value = await mockReadProductsFromDatabase(params);
+    return Array.isArray(value) ? { products: value, total: value.length, totalPages: value.length ? 1 : 0, page: 1, pageSize: params.pageSize } : value;
+  },
 }));
 
 vi.mock('@/lib/server/admin-auth', () => ({
@@ -159,12 +156,43 @@ const sampleProduct: Product = {
 };
 
 describe('/api/products route', () => {
+  it('serves explicitly enabled stable list fixtures without a database', async () => {
+    vi.stubEnv('E2E_STABLE_MODE', '1');
+    mockReadProductsFromDatabase.mockRejectedValue(new Error('unavailable'));
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest('http://localhost/api/products?category=procesadores'));
+    expect(response.status).toBe(200);
+    expect((await response.json()).pagination.pageSize).toBe(12);
+    expect(mockReadProductsFromDatabase).not.toHaveBeenCalled();
+  });
+  it('preserves the RPC page, total and list filters', async () => {
+    vi.stubEnv('DISABLE_LIVE_SCRAPING', '1');
+    mockReadProductsFromDatabase.mockResolvedValue({ products: [{ ...sampleProduct, id: 'target50' }], total: 1501, totalPages: 126, page: 2, pageSize: 12 });
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest('http://localhost/api/products?q=target50&page=2&stores=MEXX,mexx&minPrice=20&maxPrice=10&sort=price-asc'));
+    expect(response.status).toBe(200);
+    const payload = await response.json();
+    expect(payload.pagination).toMatchObject({ total: 1501, page: 2, offset: 12, totalPages: 126 });
+    expect(payload.products[0].id).toBe('target50');
+    expect(mockReadProductsFromDatabase).toHaveBeenCalledWith(expect.objectContaining({ page: 2, pageSize: 12, minPrice: 10, maxPrice: 20, sortBy: 'price-asc', storeIds: new Set(['mexx']) }));
+  });
+
+  it('distinguishes an empty catalog page from an unavailable database', async () => {
+    vi.stubEnv('DISABLE_LIVE_SCRAPING', '1');
+    mockReadProductsFromDatabase.mockResolvedValue({ products: [], total: 0, totalPages: 0, page: 1, pageSize: 48 });
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest('http://localhost/api/products?page=99&pageSize=99'));
+    expect(response.status).toBe(200);
+    expect((await response.json()).pagination).toMatchObject({ page: 1, total: 0, pageSize: 48 });
+    mockReadProductsFromDatabase.mockRejectedValue(new Error('database unavailable'));
+    expect((await GET(new NextRequest('http://localhost/api/products?category=procesadores'))).status).toBe(503);
+    expect(mockRunObservedStoreScrape).not.toHaveBeenCalled();
+  });
   beforeEach(() => {
+    vi.stubEnv('DISABLE_INTERNAL_BACKGROUND_REFRESH', '1');
     vi.resetModules();
     mockGetSharedCache.mockReset();
     mockSetSharedCache.mockReset();
-    mockGetSnapshotProductById.mockReset();
-    mockSnapshotProducts.mockReset();
     mockReadProductByIdFromDatabase.mockReset();
     mockReadProductsFromDatabase.mockReset();
     mockResolveAdminAccessFromToken.mockReset();
@@ -186,12 +214,95 @@ describe('/api/products route', () => {
       retryAfterSeconds: 60,
     });
     mockGetSharedCache.mockResolvedValue(undefined);
-    mockGetSnapshotProductById.mockReturnValue(null);
     mockReadProductByIdFromDatabase.mockResolvedValue(null);
     mockReadProductsFromDatabase.mockResolvedValue([]);
     mockFetchWooCommerceProductById.mockResolvedValue(null);
     mockFetchAllWooCommerceSearch.mockResolvedValue([]);
     mockPersistProductsSnapshot.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllEnvs();
+  });
+
+  it.each([
+    { time: '2026-03-08T12:00:00.000Z', suffix: '' },
+    { time: '2026-03-08T13:00:00.000Z', suffix: '-STALE' },
+  ])('expires detail cache from its original write despite repeated hits across replicas ($suffix)', async ({ time, suffix }) => {
+    vi.useFakeTimers();
+    const startedAt = new Date(time).getTime();
+    vi.setSystemTime(startedAt);
+    const cache = new Map<string, { value: Product | null; expiresAt: number }>();
+    cache.set(`product-detail:${sampleProduct.id}`, {
+      value: { ...sampleProduct, prices: [] },
+      expiresAt: startedAt + 60 * 60 * 1000,
+    });
+    mockGetSharedCache.mockImplementation(async (scope: string, key: string) => {
+      const entry = cache.get(`${scope}:${key}`);
+      return entry && entry.expiresAt > Date.now() ? entry.value : undefined;
+    });
+    mockSetSharedCache.mockImplementation(async (scope: string, key: string, value: Product | null, ttlMs: number) => {
+      cache.set(`${scope}:${key}`, { value, expiresAt: Date.now() + ttlMs });
+    });
+    mockReadProductByIdFromDatabase.mockResolvedValue(sampleProduct);
+    const { GET } = await import('./route');
+    const { DETAIL_CACHE_TTL_MS } = await import('@/lib/products/products-handler-shared');
+    const request = () => new NextRequest(`http://localhost/api/products?id=${sampleProduct.id}`);
+
+    expect((await GET(request())).headers.get('X-Product-Cache')).toBe(`DB${suffix}`);
+    expect(mockSetSharedCache).toHaveBeenCalledWith('product-detail-v2', sampleProduct.id, expect.any(Object), DETAIL_CACHE_TTL_MS);
+    vi.setSystemTime(startedAt + DETAIL_CACHE_TTL_MS / 2);
+    expect((await GET(request())).headers.get('X-Product-Cache')).toBe(`HIT${suffix}`);
+
+    // A new module instance shares the backend, not process-local route state.
+    vi.resetModules();
+    const { GET: replicaGET } = await import('./route');
+    vi.setSystemTime(startedAt + DETAIL_CACHE_TTL_MS - 1);
+    expect((await replicaGET(request())).headers.get('X-Product-Cache')).toBe(`HIT${suffix}`);
+    expect(mockReadProductByIdFromDatabase).toHaveBeenCalledTimes(1);
+    expect(mockSetSharedCache).toHaveBeenCalledTimes(1);
+    expect(mockGetSharedCache).toHaveBeenCalledWith('product-detail-v2', sampleProduct.id);
+
+    const refreshed = { ...sampleProduct, prices: [{ ...sampleProduct.prices[0], price: 1_100_000 }] };
+    mockReadProductByIdFromDatabase.mockResolvedValue(refreshed);
+    vi.setSystemTime(startedAt + DETAIL_CACHE_TTL_MS);
+    const response = await replicaGET(request());
+    expect(response.headers.get('X-Product-Cache')).toBe(`DB${suffix}`);
+    await expect(response.json()).resolves.toMatchObject({ prices: [{ price: 1_100_000 }] });
+    expect(mockReadProductByIdFromDatabase).toHaveBeenCalledTimes(2);
+    expect(mockSetSharedCache).toHaveBeenCalledTimes(2);
+  });
+
+  it('reads and caches the complete database detail with all store offers', async () => {
+    const completeProduct = {
+      ...sampleProduct,
+      prices: [...sampleProduct.prices, { ...sampleProduct.prices[0], storeId: 'mexx', storeName: 'Mexx', price: 1_100_000 }],
+    };
+    mockReadProductByIdFromDatabase.mockResolvedValue(completeProduct);
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest(`http://localhost/api/products?id=${sampleProduct.id}`));
+
+    expect(response.status).toBe(200);
+    expect(mockReadProductByIdFromDatabase).toHaveBeenCalledWith(sampleProduct.id);
+    await expect(response.json()).resolves.toMatchObject({ prices: expect.arrayContaining([
+      expect.objectContaining({ storeId: 'venex' }), expect.objectContaining({ storeId: 'mexx' }),
+    ]) });
+    expect(mockSetSharedCache.mock.calls[0][2].prices).toHaveLength(2);
+  });
+
+  it('returns not found without persisting a fallback when DB and scraping miss', async () => {
+    vi.stubEnv('DISABLE_LIVE_SCRAPING', '0');
+    vi.stubEnv('E2E_STABLE_MODE', '0');
+    vi.stubEnv('CI_E2E', '0');
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest(`http://localhost/api/products?id=${sampleProduct.id}`));
+
+    expect(response.status).toBe(404);
+    expect(mockReadProductByIdFromDatabase).toHaveBeenCalledWith(sampleProduct.id);
+    expect(mockFetchWooCommerceProductById).toHaveBeenCalled();
+    expect(mockPersistProductsSnapshot).not.toHaveBeenCalled();
+    expect(mockSetSharedCache).toHaveBeenCalledWith('product-detail-v2', sampleProduct.id, null, expect.any(Number));
   });
 
   it('falls back to DB even when a negative detail cache entry exists', async () => {
@@ -208,7 +319,6 @@ describe('/api/products route', () => {
 
   it('reads the database after an on-demand refresh even when a cached detail exists', async () => {
     mockGetSharedCache.mockResolvedValue(sampleProduct);
-    mockGetSnapshotProductById.mockReturnValue(sampleProduct);
     const refreshed = { ...sampleProduct, prices: [{ ...sampleProduct.prices[0], price: 1_100_000 }] };
     mockReadProductByIdFromDatabase.mockResolvedValue(refreshed);
 

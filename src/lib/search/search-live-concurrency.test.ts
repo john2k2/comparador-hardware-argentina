@@ -51,7 +51,6 @@ vi.mock('@/lib/ai/review-product-offers', () => ({
   reviewProductOffers: mocks.reviewProductOffers,
 }));
 vi.mock('@/lib/persistence/product-catalog', () => ({ persistProductsSnapshot: mocks.persistProductsSnapshot }));
-vi.mock('@/lib/cache/search-snapshot', () => ({ snapshotProducts: vi.fn() }));
 vi.mock('@/lib/catalog/hardware-categories', () => ({
   inferHardwareCategoryFromName: vi.fn(() => undefined),
   resolveHardwareCategoryForProduct: vi.fn((_name: string, category: unknown) => category ?? 'perifericos'),

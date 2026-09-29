@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import type { HardwareCategory } from '@/lib/types';
 import { reviewProductOffers } from '@/lib/ai/review-product-offers';
-import { getSnapshotProductById, snapshotProducts } from '@/lib/cache/search-snapshot';
 import { isHardwareCategory } from '@/lib/catalog/hardware-categories';
-import { readProductByIdFromDatabase, readProductsFromDatabase } from '@/lib/persistence/product-read';
+import { readProductByIdFromDatabase, readProductsPageFromDatabase } from '@/lib/persistence/product-read';
 import { hasStaleProducts } from '@/lib/persistence/product-staleness';
 import { normalizeId } from '@/lib/products/product-detail-helpers';
 import { resolveLiveProductDetail } from '@/lib/products/products-detail-service';
@@ -29,7 +28,9 @@ import { logger } from '@/lib/logger';
 import { recordCatalogRefreshDemand } from '@/lib/catalog/refresh-demand';
 import { isStableRuntimeMode, shouldSkipLiveScraping } from '@/lib/server/runtime-flags';
 import { getStableFixtureProducts } from '@/lib/server/stable-search-fixtures';
-import { parseStoreIds } from '@/lib/search/search-handler-shared';
+import { catalogPageResponse, parseNonNegativeNumber, parsePositiveInteger, parseStoreIds, VALID_SORTS, type SortBy } from '@/lib/search/search-handler-shared';
+import { paginateProducts } from '@/lib/search/search-pagination';
+import { applyDatabaseReadTransforms } from '@/lib/persistence/product-read-grouping';
 
 export async function GET(request: NextRequest) {
   const endpointStartedAtMs = Date.now();
@@ -91,10 +92,6 @@ export async function GET(request: NextRequest) {
   });
 
   try {
-    if (!id && !category && !query) {
-      return respond({ products: [] }, undefined, { success: true, resultCount: 0, note: 'EMPTY_QUERY' });
-    }
-
     if (id) {
       const detailKey = normalizeId(id);
       let hasNegativeDetailCache = false;
@@ -107,21 +104,9 @@ export async function GET(request: NextRequest) {
               const hydrated = await normalizeAndEnrichProduct(cachedProduct);
               const staleCachedDetail = hasStaleProducts([hydrated], DB_STALE_AFTER_MS);
               if (staleCachedDetail && !isRefreshRequest) scheduleBackgroundProductsRefresh(request, `detail:${detailKey}`);
-              await setCachedDetail(detailKey, hydrated);
-              snapshotProducts([hydrated]);
               return respond(hydrated, { headers: { 'X-Product-Cache': staleCachedDetail ? 'HIT-STALE' : 'HIT' } }, { success: true, resultCount: 1, note: staleCachedDetail ? 'DETAIL_HIT_STALE' : 'DETAIL_HIT' });
             }
             hasNegativeDetailCache = true;
-          }
-
-          const snapshotProduct = getSnapshotProductById(id);
-          if (snapshotProduct) {
-            const hydrated = await normalizeAndEnrichProduct(snapshotProduct);
-            const staleSnapshotDetail = hasStaleProducts([hydrated], DB_STALE_AFTER_MS);
-            if (staleSnapshotDetail && !isRefreshRequest) scheduleBackgroundProductsRefresh(request, `detail:${detailKey}`);
-            await setCachedDetail(detailKey, hydrated);
-            snapshotProducts([hydrated]);
-            return respond(hydrated, { headers: { 'X-Product-Cache': staleSnapshotDetail ? 'SNAPSHOT-STALE' : 'SNAPSHOT' } }, { success: true, resultCount: 1, note: staleSnapshotDetail ? 'DETAIL_SNAPSHOT_STALE' : 'DETAIL_SNAPSHOT' });
           }
         }
 
@@ -139,7 +124,6 @@ export async function GET(request: NextRequest) {
           const staleDatabaseDetail = hasStaleProducts([normalized], DB_STALE_AFTER_MS);
           if (staleDatabaseDetail && !isRefreshRequest) scheduleBackgroundProductsRefresh(request, `detail:${detailKey}`);
           await setCachedDetail(detailKey, normalized);
-          snapshotProducts([normalized]);
           return respond(normalized, { headers: { 'X-Product-Cache': staleDatabaseDetail ? 'DB-STALE' : 'DB' } }, { success: true, resultCount: 1, note: staleDatabaseDetail ? 'DETAIL_DB_STALE' : 'DETAIL_DB' });
         }
 
@@ -174,7 +158,6 @@ export async function GET(request: NextRequest) {
         if (sharedProduct) {
           const hydrated = await normalizeAndEnrichProduct(sharedProduct);
           await setCachedDetail(detailKey, hydrated);
-          snapshotProducts([hydrated]);
           return respond(hydrated, { headers: { 'X-Product-Cache': 'INFLIGHT' } }, { success: true, resultCount: 1, note: 'DETAIL_INFLIGHT' });
         }
       }
@@ -190,43 +173,49 @@ export async function GET(request: NextRequest) {
         const [hydrated] = await reviewProductOffers([normalized], { authorizedRefresh: internalRefreshRequest || privilegedBypass });
         await persistProductDetailSnapshot(hydrated);
         await setCachedDetail(detailKey, hydrated);
-        snapshotProducts([hydrated]);
         return respond(hydrated, { headers: { 'X-Product-Cache': isRefreshRequest ? 'REFRESH' : 'MISS' } }, { success: true, resultCount: 1, note: isRefreshRequest ? 'DETAIL_REFRESH' : 'DETAIL_MISS' });
-      }
-
-      const snapshotAfterScrape = getSnapshotProductById(id);
-      if (snapshotAfterScrape) {
-        const hydrated = await normalizeAndEnrichProduct(snapshotAfterScrape);
-        await persistProductDetailSnapshot(hydrated);
-        await setCachedDetail(detailKey, hydrated);
-        snapshotProducts([hydrated]);
-        return respond(hydrated, { headers: { 'X-Product-Cache': 'SNAPSHOT' } }, { success: true, resultCount: 1, note: 'DETAIL_SNAPSHOT_AFTER_SCRAPE' });
       }
 
       await setCachedDetail(detailKey, null);
       return respond({ error: 'Producto no encontrado en vivo (requiere DB para historial)' }, { status: 404 }, { success: false, resultCount: 0, note: 'DETAIL_NOT_FOUND' });
     }
 
-    const categorySlug: HardwareCategory = isHardwareCategory(category) ? category : 'procesadores';
+    const categorySlug: HardwareCategory | undefined = isHardwareCategory(category) ? category : undefined;
     const listRefreshKey = `list:${categorySlug}:${(query ?? '').toLowerCase()}`;
+    const page = parsePositiveInteger(searchParams.get('page'));
+    const pageSize = Math.min(48, parsePositiveInteger(searchParams.get('pageSize'), 12));
+    const rawSort = searchParams.get('sortBy') ?? searchParams.get('sort');
+    const sortBy: SortBy = VALID_SORTS.has(rawSort as SortBy) ? rawSort as SortBy : 'relevance';
+    const storeIds = parseStoreIds(searchParams.get('stores'));
+    const rawMin = parseNonNegativeNumber(searchParams.get('minPrice'));
+    const rawMax = parseNonNegativeNumber(searchParams.get('maxPrice'));
+    const minPrice = rawMin !== undefined && rawMax !== undefined ? Math.min(rawMin, rawMax) : rawMin;
+    const maxPrice = rawMin !== undefined && rawMax !== undefined ? Math.max(rawMin, rawMax) : rawMax;
+    const readParams = { query, category: categorySlug, sortBy, storeIds, minPrice, maxPrice, page, pageSize };
+    const fromCompleteList = (products: import('@/lib/types').Product[]) => {
+      const slice = paginateProducts(products, page, pageSize);
+      return catalogPageResponse({ products: slice.paginatedProducts, total: products.length,
+        totalPages: slice.totalPages, page: slice.currentPage, pageSize });
+    };
+    if (stableRuntimeMode) {
+      return respond(fromCompleteList(getStableFixtureProducts({ ...readParams, selectedStoreIds: storeIds })),
+        { headers: { 'X-Product-Cache': 'STABLE-FIXTURE' } });
+    }
 
     if (!bypassDb) {
-      const databaseProducts = await readProductsFromDatabase({
-        query: query || undefined,
-        category: categorySlug,
-        sortBy: 'relevance',
-        limit: 1000,
-      }).catch((databaseError) => {
+      const databasePage = await readProductsPageFromDatabase(readParams).catch((databaseError) => {
         logger.warn('DB-first product list read skipped', {
           endpoint: '/api/products',
           category: categorySlug,
           query,
           error: databaseError,
         });
-        return [];
+        if (catalogOnlyMode) throw databaseError;
+        return null;
       });
 
-      if (databaseProducts.length > 0) {
+      if (databasePage && (databasePage.total > 0 || catalogOnlyMode)) {
+        const databaseProducts = databasePage.products;
         const staleDatabaseProducts = hasStaleProducts(databaseProducts, DB_STALE_AFTER_MS);
         if (staleDatabaseProducts && !isRefreshRequest) {
           // Esperar la escritura evita que el runtime serverless la cancele al
@@ -234,42 +223,19 @@ export async function GET(request: NextRequest) {
           await recordCatalogRefreshDemand({ query: query || undefined, category: categorySlug });
           scheduleBackgroundProductsRefresh(request, listRefreshKey);
         }
-        snapshotProducts(databaseProducts);
-        return respond({ products: databaseProducts, pagination: { limit: databaseProducts.length, offset: 0, total: databaseProducts.length } }, { headers: { 'X-Product-Cache': staleDatabaseProducts ? 'DB-STALE' : 'DB' } }, { success: true, resultCount: databaseProducts.length, note: staleDatabaseProducts ? 'CATEGORY_DB_STALE' : 'CATEGORY_DB' });
+        return respond(catalogPageResponse(databasePage), { headers: { 'X-Product-Cache': staleDatabaseProducts ? 'DB-STALE' : 'DB' } }, { success: true, resultCount: databaseProducts.length, note: staleDatabaseProducts ? 'CATEGORY_DB_STALE' : 'CATEGORY_DB' });
       }
     }
 
     if (catalogOnlyMode) {
-      if (!stableRuntimeMode) {
-        await recordCatalogRefreshDemand({ query: query || undefined, category: categorySlug });
-        return respond(
-          { products: [], pagination: { limit: 0, offset: 0, total: 0 } },
-          { headers: { 'X-Product-Cache': 'CATALOG-PENDING' } },
-          { success: true, resultCount: 0, note: 'CATALOG_PENDING_CATEGORY_REFRESH' },
-        );
-      }
-
-      const fixtureProducts = getStableFixtureProducts({
-        query: query || undefined,
-        category: categorySlug,
-        sortBy: 'relevance',
-      });
-      return respond(
-        {
-          products: fixtureProducts,
-          pagination: { limit: fixtureProducts.length, offset: 0, total: fixtureProducts.length },
-        },
-        { headers: { 'X-Product-Cache': fixtureProducts.length > 0 ? 'STABLE-FIXTURE' : 'STABLE-EMPTY' } },
-        {
-          success: true,
-          resultCount: fixtureProducts.length,
-          note: fixtureProducts.length > 0 ? 'CATEGORY_STABLE_FIXTURE' : 'CATEGORY_STABLE_SKIP_LIVE',
-        },
-      );
+      return respond(catalogPageResponse(await readProductsPageFromDatabase(readParams)));
     }
 
-    const liveProducts = await resolveLiveProductsList(categorySlug, query || undefined, observeSource, internalRefreshRequest || privilegedBypass, parseStoreIds(searchParams.get('stores')));
-    return respond({ products: liveProducts, pagination: { limit: liveProducts.length, offset: 0, total: liveProducts.length } }, { headers: { 'X-Product-Cache': isRefreshRequest ? 'REFRESH' : 'MISS' } }, { success: true, resultCount: liveProducts.length, note: isRefreshRequest ? 'CATEGORY_REFRESH' : 'CATEGORY_LIST' });
+    const liveProducts = await resolveLiveProductsList(categorySlug ?? 'procesadores', query || undefined, observeSource, internalRefreshRequest || privilegedBypass, storeIds);
+    const refreshedPage = await readProductsPageFromDatabase(readParams).catch(() => null);
+    const payload = refreshedPage && refreshedPage.total > 0 ? catalogPageResponse(refreshedPage)
+      : fromCompleteList(applyDatabaseReadTransforms(liveProducts, { searchTerm: query, storeIds, minPrice, maxPrice, sortBy }));
+    return respond(payload, { headers: { 'X-Product-Cache': isRefreshRequest ? 'REFRESH' : 'MISS' } }, { success: true, resultCount: payload.products.length, note: isRefreshRequest ? 'CATEGORY_REFRESH' : 'CATEGORY_LIST' });
   } catch (error) {
     logger.error('Products API error', {
       endpoint: '/api/products',
@@ -278,6 +244,6 @@ export async function GET(request: NextRequest) {
       query,
       error,
     });
-    return respond({ error: 'Error al obtener productos' }, { status: 500 }, { success: false, resultCount: 0, note: 'ERROR' });
+    return respond({ error: 'Error al obtener productos' }, { status: !id && catalogOnlyMode ? 503 : 500 }, { success: false, resultCount: 0, note: 'ERROR' });
   }
 }

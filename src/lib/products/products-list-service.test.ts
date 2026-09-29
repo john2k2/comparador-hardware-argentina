@@ -16,7 +16,6 @@ const mocks = vi.hoisted(() => ({
   fetchWooCommerceSearch: vi.fn(async () => [] as Product[]),
   reviewProductOffers: vi.fn(async (products: Product[]) => products),
   persistProductsSnapshot: vi.fn(async () => undefined),
-  snapshotProducts: vi.fn(),
   loggerWarn: vi.fn(),
 }));
 
@@ -48,7 +47,6 @@ vi.mock('@/lib/persistence/product-catalog', () => ({
   persistProductsSnapshot: mocks.persistProductsSnapshot,
   REFRESH_PERSISTENCE_TIMEOUT_MS: 45_000,
 }));
-vi.mock('@/lib/cache/search-snapshot', () => ({ snapshotProducts: mocks.snapshotProducts }));
 vi.mock('@/lib/logger', () => ({ logger: { info: vi.fn(), warn: mocks.loggerWarn, error: vi.fn(), debug: vi.fn() } }));
 
 import { resolveLiveProductsList } from './products-list-service';
@@ -136,15 +134,13 @@ describe('resolveLiveProductsList', () => {
     const observe = vi.fn(async (storeId: string) => [observedProduct(storeId)]);
 
     await expect(resolveLiveProductsList('procesadores', undefined, observe, true)).rejects.toThrow('service credentials unavailable');
-    expect(mocks.snapshotProducts).not.toHaveBeenCalled();
   });
 
-  it('tolera un fallo de persistencia en modo público y conserva el resultado en memoria', async () => {
+  it('returns live results when persistence fails in public mode', async () => {
     mocks.persistProductsSnapshot.mockRejectedValue(new Error('temporary persistence failure'));
     const observe = vi.fn(async () => [observedProduct('mexx')]);
 
     await expect(resolveLiveProductsList('procesadores', undefined, observe, false, new Set(['mexx']))).resolves.toHaveLength(1);
-    expect(mocks.snapshotProducts).toHaveBeenCalledTimes(1);
     expect(mocks.loggerWarn).toHaveBeenCalled();
   });
 

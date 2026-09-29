@@ -40,6 +40,10 @@ vi.mock('@/lib/telemetry/operational-metrics', () => ({
 
 vi.mock('@/lib/persistence/product-read', () => ({
   readProductsFromDatabase: mockReadProductsFromDatabase,
+  readProductsPageFromDatabase: async (params: { page: number; pageSize: number }) => {
+    const value = await mockReadProductsFromDatabase(params);
+    return Array.isArray(value) ? { products: value, total: value.length, totalPages: value.length ? 1 : 0, page: 1, pageSize: params.pageSize } : value;
+  },
 }));
 
 vi.mock('@/lib/products/products-handler-shared', () => ({
@@ -94,10 +98,6 @@ vi.mock('@/lib/ai/normalize-products', () => ({
       },
     },
   })),
-}));
-
-vi.mock('@/lib/cache/search-snapshot', () => ({
-  snapshotProducts: vi.fn(),
 }));
 
 vi.mock('@/lib/scrapers/mexx', () => ({ fetchMexxProducts: vi.fn(async () => []) }));
@@ -313,5 +313,36 @@ describe('/api/search route', () => {
 
     expect(response.status).toBe(403);
     expect(payload.error).toMatch(/admin/i);
+  });
+
+  it('preserves RPC totals and page two without slicing or filtering the page', async () => {
+    vi.stubEnv('DISABLE_LIVE_SCRAPING', '1');
+    mockReadProductsFromDatabase.mockResolvedValue({ products: [{ id: 'target50', prices: [], updatedAt: new Date() }], total: 1501, totalPages: 126, page: 2, pageSize: 12 });
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest('http://localhost/api/search?q=target50&page=2&stores=MEXX,mexx'));
+    const payload = await response.json();
+    expect(payload.pagination).toMatchObject({ total: 1501, page: 2, offset: 12, totalPages: 126 });
+    expect(payload.products.map((p: { id: string }) => p.id)).toEqual(['target50']);
+    expect(mockReadProductsFromDatabase).toHaveBeenCalledWith(expect.objectContaining({ page: 2, storeIds: new Set(['mexx']) }));
+    expect(mockSetSharedCache).toHaveBeenCalledWith('search-response-v2', expect.any(String), expect.any(Object), expect.any(Number));
+  });
+
+  it('returns 503 without scraping or caching when catalog RPC fails', async () => {
+    vi.stubEnv('DISABLE_LIVE_SCRAPING', '1');
+    mockReadProductsFromDatabase.mockRejectedValue(new Error('database unavailable'));
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest('http://localhost/api/search?q=target50'));
+    expect(response.status).toBe(503);
+    expect(mockResolveLiveProductsList).not.toHaveBeenCalled();
+    expect(mockSetSharedCache).not.toHaveBeenCalled();
+  });
+
+  it('uses fixtures only in explicitly enabled stable mode without reading the database', async () => {
+    vi.stubEnv('E2E_STABLE_MODE', '1');
+    mockReadProductsFromDatabase.mockRejectedValue(new Error('unavailable'));
+    const { GET } = await import('./route');
+    expect((await GET(new NextRequest('http://localhost/api/search?category=procesadores'))).status).toBe(200);
+    expect(mockReadProductsFromDatabase).not.toHaveBeenCalled();
+    expect(mockResolveLiveProductsList).not.toHaveBeenCalled();
   });
 });

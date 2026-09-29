@@ -12,10 +12,12 @@ export interface ReadProductsParams {
   limit?: number;
 }
 
-export interface ReadProductsPageParams extends ReadProductsParams {
+export interface ReadProductsPageParams extends Omit<ReadProductsParams, 'limit'> {
   page: number;
   pageSize: number;
 }
+
+export type DbCatalogPage = Omit<ProductPageResult, 'products'> & { products: DbProductRow[] };
 
 export type ProductPageResult = {
   products: import('@/lib/types').Product[];

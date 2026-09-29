@@ -2,7 +2,6 @@ import type { HardwareCategory, Product } from '@/lib/types';
 import { collectOfferSourceTitles, reviewProductOffers } from '@/lib/ai/review-product-offers';
 import { withAbortTimeout, withPromiseTimeout } from '@/lib/async/with-abort-timeout';
 import { hardwareCategoryToSearchTerm } from '@/lib/catalog/hardware-categories';
-import { snapshotProducts } from '@/lib/cache/search-snapshot';
 import { persistProductsSnapshot, REFRESH_PERSISTENCE_TIMEOUT_MS } from '@/lib/persistence/product-catalog';
 import { normalizeProductContent } from '@/lib/products/normalize-product-content';
 import { buildCoreStoreCategoryUrls } from '@/lib/products/products-list-targets';
@@ -206,6 +205,5 @@ export async function resolveLiveProductsList(
       });
     });
 
-  snapshotProducts(liveProducts);
   return liveProducts;
 }

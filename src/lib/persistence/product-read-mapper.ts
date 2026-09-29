@@ -1,6 +1,6 @@
 import { stores as staticStores } from '@/lib/scrapers/static-data';
 import { computeComparableStorePriceStats } from '@/lib/price-utils';
-import { sanitizeProduct } from '@/lib/product-sanitizer';
+import { sanitizeGuideProduct, sanitizeProduct } from '@/lib/product-sanitizer';
 import { buildIdentityEvidence, hasExplicitIdentityConflict, readIdentityReview } from '@/lib/quality/offer-identity';
 import { buildProductIdentityKey, extractExactModelIdentity, normalizeIdentityText } from '@/lib/product-identity';
 import type { Product } from '@/lib/types';
@@ -10,6 +10,14 @@ import type { DbProductRow } from '@/lib/persistence/product-read-types';
 const storeNameById = new Map<string, string>(staticStores.map((store) => [store.id, store.name]));
 
 export function mapDbProduct(row: DbProductRow): Product {
+  return mapProductRow(row, false);
+}
+
+export function mapDbGuideProduct(row: DbProductRow): Product {
+  return mapProductRow(row, true);
+}
+
+function mapProductRow(row: DbProductRow, preserveOffers: boolean): Product {
   const category = row.category as Product['category'];
   const normalizedTitle = row.normalized_title ?? row.name;
   const staleKey = row.canonical_product_key?.includes('::')
@@ -81,7 +89,7 @@ export function mapDbProduct(row: DbProductRow): Product {
     lastScrapedAt: row.last_scraped_at ? toDate(row.last_scraped_at) : undefined,
     lastNormalizedAt: row.last_normalized_at ? toDate(row.last_normalized_at) : null,
     specs: row.specs ?? {},
-    prices: hasComparablePrices ? comparableStats.comparablePrices : prices,
+    prices: !preserveOffers && hasComparablePrices ? comparableStats.comparablePrices : prices,
     lowestPrice: hasComparablePrices
       ? comparableStats.lowest
       : toNumber(row.lowest_price, prices.length > 0 ? Math.min(...prices.map((price) => price.price)) : 0),
@@ -98,5 +106,5 @@ export function mapDbProduct(row: DbProductRow): Product {
     updatedAt: toDate(row.updated_at),
   };
 
-  return sanitizeProduct(mapped);
+  return preserveOffers ? sanitizeGuideProduct(mapped) : sanitizeProduct(mapped);
 }

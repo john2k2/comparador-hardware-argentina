@@ -36,6 +36,15 @@ function sanitizePrice(price: ProductPrice): ProductPrice | null {
 }
 
 export function sanitizeProduct(product: Product): Product {
+  return sanitizeProductOffers(product, false);
+}
+
+/** Conserva publicaciones alternativas hasta evaluar la elegibilidad de la guía. */
+export function sanitizeGuideProduct(product: Product): Product {
+  return sanitizeProductOffers(product, true);
+}
+
+function sanitizeProductOffers(product: Product, preserveOffers: boolean): Product {
   const name = sanitizeText(product.name);
   const fallbackName = name || product.name.trim();
   const sanitizedPrices = (product.prices ?? [])
@@ -53,7 +62,7 @@ export function sanitizeProduct(product: Product): Product {
     description: sanitizeText(product.description, fallbackName),
     image: normalizeProductImageUrl(product.image),
     specs: sanitizeSpecs(product.specs),
-    prices: comparableStats?.comparablePrices ?? sanitizedPrices,
+    prices: preserveOffers ? sanitizedPrices : comparableStats?.comparablePrices ?? sanitizedPrices,
     lowestPrice: comparableStats?.lowest ?? product.lowestPrice,
     highestPrice: comparableStats?.highest ?? product.highestPrice,
     averagePrice: comparableStats?.average ?? product.averagePrice,

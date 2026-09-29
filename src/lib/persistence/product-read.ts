@@ -7,14 +7,16 @@ import {
   PRODUCT_SELECT_FIELDS,
   sanitizeSearchTerm,
 } from '@/lib/persistence/product-read-helpers';
-import { mapDbProduct } from '@/lib/persistence/product-read-mapper';
+import { mapDbGuideProduct, mapDbProduct } from '@/lib/persistence/product-read-mapper';
 import type {
   DbProductRow,
   ProductPageResult,
   ReadProductsPageParams,
   ReadProductsParams,
 } from '@/lib/persistence/product-read-types';
-import { paginateProducts } from '@/lib/search/search-pagination';
+import { inferHardwareCategoryFromName } from '@/lib/catalog/hardware-categories';
+import type { DbCatalogPage } from './product-read-types';
+import { toNumber } from './product-read-helpers';
 import type { Product } from '@/lib/types';
 
 export type { ProductSort } from '@/lib/persistence/product-read-types';
@@ -100,86 +102,46 @@ export async function readProductsFromDatabase(params: ReadProductsParams) {
 }
 
 export async function readProductsPageFromDatabase(params: ReadProductsPageParams): Promise<ProductPageResult> {
-  const pageSize = Math.max(1, Math.trunc(params.pageSize) || 1);
+  const pageSize = Math.min(48, Math.max(1, Math.trunc(params.pageSize) || 12));
   const requestedPage = Math.max(1, Math.trunc(params.page) || 1);
-
-  const products = await readProductsFromDatabase({
-    query: params.query,
-    category: params.category,
-    minPrice: params.minPrice,
-    maxPrice: params.maxPrice,
-    storeIds: params.storeIds,
-    sortBy: params.sortBy,
-    limit: params.limit ?? 1000,
+  const supabase = getServerSupabaseReadClient();
+  if (!supabase) throw new Error('Catalog database unavailable');
+  const query = params.query?.trim() ?? '';
+  const { data, error } = await supabase.rpc('search_catalog_page', {
+    p_query: query,
+    p_category: params.category ?? inferHardwareCategoryFromName(query) ?? null,
+    p_stores: [...new Set([...params.storeIds ?? []].map((id) => id.trim().toLowerCase()).filter(Boolean))].sort(),
+    p_min_price: params.minPrice ?? null,
+    p_max_price: params.maxPrice ?? null,
+    p_sort: params.sortBy ?? 'relevance',
+    p_page: requestedPage,
+    p_page_size: pageSize,
   });
+  if (error) throw new Error(`readProductsPageFromDatabase: ${error.message}`);
+  if (!data || !Array.isArray(data.products) || !Number.isInteger(data.total)
+    || !Number.isInteger(data.totalPages) || !Number.isInteger(data.page)
+    || !Number.isInteger(data.pageSize)) throw new Error('Invalid catalog page response');
+  const result = data as DbCatalogPage;
+  return { ...result, products: result.products.map(mapCatalogProduct) };
+}
 
-  const pageSlice = paginateProducts(products, requestedPage, pageSize);
-
+// SQL decide selección, estadísticas y orden. El mapper conserva sanitización y
+// revisión de identidad, pero no vuelve a reducir las publicaciones de la página.
+function mapCatalogProduct(row: DbProductRow): Product {
   return {
-    products: pageSlice.paginatedProducts,
-    total: products.length,
-    totalPages: pageSlice.totalPages,
-    page: pageSlice.currentPage,
-    pageSize,
+    ...mapDbGuideProduct(row),
+    lowestPrice: toNumber(row.lowest_price, 0),
+    highestPrice: toNumber(row.highest_price, 0), averagePrice: toNumber(row.average_price, 0),
   };
 }
 
-/**
- * Lectura acotada para la primera carga de una landing de categoría. Estas
- * filas ya están agrupadas en persistencia, por lo que evitamos normalizar y
- * comparar cientos de productos dentro del Worker sólo para mostrar una página.
- */
+/** Las categorías usan el mismo contrato paginado que la búsqueda pública. */
 export async function readCategoryLandingPageFromDatabase(
   category: NonNullable<ReadProductsParams['category']>,
   page: number,
   pageSize: number,
 ): Promise<ProductPageResult> {
-  const supabase = getServerSupabaseReadClient();
-  const safePageSize = Math.max(1, Math.trunc(pageSize) || 1);
-  const requestedPage = Math.max(1, Math.trunc(page) || 1);
-
-  if (!supabase) {
-    return {
-      products: [],
-      total: 0,
-      totalPages: 0,
-      page: requestedPage,
-      pageSize: safePageSize,
-    };
-  }
-
-  const from = (requestedPage - 1) * safePageSize;
-  const to = from + safePageSize - 1;
-  const { data, error, count } = await supabase
-    .from('products')
-    .select(PRODUCT_SELECT_FIELDS, { count: 'exact' })
-    .eq('category', category)
-    .like('id', 'agrupado-%')
-    .gt('lowest_price', 0)
-    .order('updated_at', { ascending: false })
-    .range(from, to);
-
-  if (error) {
-    if (EMPTY_RESULT_ERROR_CODES.has(error.code ?? '')) {
-      return {
-        products: [],
-        total: 0,
-        totalPages: 0,
-        page: requestedPage,
-        pageSize: safePageSize,
-      };
-    }
-    throw new Error(`readCategoryLandingPageFromDatabase: ${error.message}`);
-  }
-
-  const total = Math.max(0, count ?? (data?.length ?? 0));
-  return {
-    products: ((data as DbProductRow[] | null) ?? []).map(mapDbProduct),
-    total,
-    totalPages: Math.ceil(total / safePageSize),
-    page: requestedPage,
-    pageSize: safePageSize,
-  };
+  return readProductsPageFromDatabase({ category, page, pageSize });
 }
 
 /**
@@ -216,7 +178,7 @@ export async function readGuideCatalogCandidatesFromDatabase(
     throw new Error(`readGuideCatalogCandidatesFromDatabase: ${error.message}`);
   }
 
-  return ((data as DbProductRow[] | null) ?? []).map(mapDbProduct);
+  return ((data as DbProductRow[] | null) ?? []).map(mapDbGuideProduct);
 }
 
 export async function readPopularProductsFromDatabase(limit: number = 8): Promise<Product[]> {

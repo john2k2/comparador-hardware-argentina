@@ -5,7 +5,7 @@ import { isTrustedInternalRefreshRequest } from '@/lib/server/internal-refresh-a
 import { buildRateLimitHeaders, checkRateLimit, getRequestIp } from '@/lib/server/rate-limit';
 import { recordEndpointRequestEvent, runObservedStoreScrape } from '@/lib/telemetry/operational-metrics';
 import { hasStaleProducts } from '@/lib/persistence/product-staleness';
-import { readProductsFromDatabase } from '@/lib/persistence/product-read';
+import { readProductsPageFromDatabase } from '@/lib/persistence/product-read';
 import { sortProducts } from '@/lib/persistence/product-read-grouping';
 import { sortProductsBySearchRelevance } from '@/lib/search/search-ranking';
 import { createObservedProductsSourceRunner } from '@/lib/products/products-handler-shared';
@@ -18,6 +18,7 @@ import {
   SEARCH_RATE_LIMIT,
   VALID_SORTS,
   buildSearchCacheKey,
+  catalogPageResponse,
   emptySearchResponse,
   getCachedSearchResponse,
   hasSearchFiltersIntent,
@@ -29,7 +30,6 @@ import {
   scheduleBackgroundSearchRefresh,
   setCachedSearchResponse,
 } from '@/lib/search/search-handler-shared';
-import { snapshotProducts } from '@/lib/cache/search-snapshot';
 import type { SearchApiResponse } from '@/lib/search/search-api';
 import { dedupeNearDuplicates, filterProductStores } from '@/lib/search/search-dedupe';
 import { paginateProducts, SEARCH_PAGE_SIZE } from '@/lib/search/search-pagination';
@@ -37,7 +37,6 @@ import type { HardwareCategory, Product } from '@/lib/types';
 import { logger } from '@/lib/logger';
 import { recordCatalogRefreshDemand } from '@/lib/catalog/refresh-demand';
 import { isStableRuntimeMode, shouldSkipLiveScraping } from '@/lib/server/runtime-flags';
-import { normalizeSearchText } from '@/lib/search/search-ranking';
 import { getStableFixtureProducts } from '@/lib/server/stable-search-fixtures';
 
 function buildPayloadFromProducts(products: Product[], page: number): SearchApiResponse {
@@ -95,42 +94,15 @@ async function buildStableSearchFallback(input: {
   page: number;
 }): Promise<SearchApiResponse> {
   const fallbackCategory = input.category ?? inferHardwareCategoryFromName(input.query);
-  const baseProducts = await readProductsFromDatabase({
+  const fixtureProducts = getStableFixtureProducts({
+    query: input.query,
     category: fallbackCategory,
+    selectedStoreIds: input.selectedStoreIds,
     minPrice: input.minPrice,
     maxPrice: input.maxPrice,
-    storeIds: input.selectedStoreIds,
     sortBy: input.sortBy,
-    limit: 250,
-  }).catch(() => []);
-
-  const normalizedQuery = normalizeSearchText(input.query);
-  const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
-
-  const filteredProducts = baseProducts.filter((product) => {
-    const normalizedName = normalizeSearchText(product.name);
-    if (normalizedQuery && normalizedName.includes(normalizedQuery)) return true;
-    return queryWords.every((word) => normalizedName.includes(word));
   });
-
-  if (filteredProducts.length === 0) {
-    const fixtureProducts = getStableFixtureProducts({
-      query: input.query,
-      category: fallbackCategory,
-      selectedStoreIds: input.selectedStoreIds,
-      minPrice: input.minPrice,
-      maxPrice: input.maxPrice,
-      sortBy: input.sortBy,
-    });
-
-    if (fixtureProducts.length === 0) {
-      return emptySearchResponse(input.page);
-    }
-
-    return buildPayloadFromProducts(fixtureProducts, input.page);
-  }
-
-  return buildPayloadFromProducts(filteredProducts, input.page);
+  return buildPayloadFromProducts(fixtureProducts, input.page);
 }
 
 export async function GET(request: NextRequest) {
@@ -207,6 +179,11 @@ export async function GET(request: NextRequest) {
     return respond(payload, undefined, { success: true, resultCount: payload.products.length, note: 'EMPTY_QUERY' });
   }
 
+  if (stableRuntimeMode) {
+    return respond(await buildStableSearchFallback({ query, category: effectiveCategory, minPrice, maxPrice,
+      selectedStoreIds, sortBy, page }), { headers: { 'X-Search-Cache': 'STABLE-FIXTURE' } });
+  }
+
   if (!bypassDb && !isRefreshRequest) {
     const cached = await getCachedSearchResponse(cacheKey);
     if (cached) {
@@ -217,21 +194,20 @@ export async function GET(request: NextRequest) {
         await recordCatalogRefreshDemand({ query: query || undefined, category: effectiveCategory });
         if (query) scheduleBackgroundSearchRefresh(request, cacheKey);
       }
-      snapshotProducts(cached.products);
       return respond(cached, { headers: { 'X-Search-Cache': staleCache ? 'HIT-STALE' : 'HIT' } }, { success: true, resultCount: cached.products.length, note: staleCache ? 'HIT_STALE' : 'HIT' });
     }
   }
 
   try {
-    if (!bypassDb) {
-      const databaseProducts = await readProductsFromDatabase({
+    if (!bypassDb || catalogOnlyMode) {
+      const databasePage = await readProductsPageFromDatabase({
         query: query || undefined,
         category: effectiveCategory,
         minPrice,
         maxPrice,
         storeIds: selectedStoreIds,
         sortBy,
-        limit: 1000,
+        page, pageSize: SEARCH_PAGE_SIZE,
       }).catch((databaseError) => {
         logger.warn('DB-first search read skipped', {
           endpoint: '/api/search',
@@ -239,58 +215,48 @@ export async function GET(request: NextRequest) {
           category: effectiveCategory,
           error: databaseError,
         });
-        return [];
+        if (catalogOnlyMode) throw databaseError;
+        return null;
       });
 
-      if (databaseProducts.length > 0) {
-      const staleDatabase = hasStaleProducts(databaseProducts, DB_STALE_AFTER_MS);
-      if (staleDatabase && !isRefreshRequest) {
-        await recordCatalogRefreshDemand({ query: query || undefined, category: effectiveCategory });
+      if (databasePage && (databasePage.total > 0 || catalogOnlyMode)) {
+        const staleDatabase = hasStaleProducts(databasePage.products, DB_STALE_AFTER_MS);
+        if (staleDatabase && !isRefreshRequest) {
+          await recordCatalogRefreshDemand({ query: query || undefined, category: effectiveCategory });
           if (query) scheduleBackgroundSearchRefresh(request, cacheKey);
         }
 
-        const payload = buildPayloadFromProducts(databaseProducts, page);
+        const payload = catalogPageResponse(databasePage);
+        if (databasePage.total === 0) await recordCatalogRefreshDemand({ query: query || undefined, category: effectiveCategory });
 
         await setCachedSearchResponse(cacheKey, payload);
-        snapshotProducts(payload.products);
-        return respond(payload, { headers: { 'X-Search-Cache': staleDatabase ? 'DB-STALE' : 'DB' } }, { success: true, resultCount: payload.products.length, note: staleDatabase ? 'DB_STALE' : 'DB_HIT' });
+        return respond(payload, { headers: { 'X-Search-Cache': databasePage.total === 0 ? 'CATALOG-PENDING' : staleDatabase ? 'DB-STALE' : 'DB' } }, { success: true, resultCount: payload.products.length, note: staleDatabase ? 'DB_STALE' : 'DB_HIT' });
       }
     }
 
     if (!query && effectiveCategory) {
-      if (catalogOnlyMode) {
-        await recordCatalogRefreshDemand({ category: effectiveCategory });
-        const emptyPayload = emptySearchResponse(page);
-        return respond(
-          emptyPayload,
-          { headers: { 'X-Search-Cache': stableRuntimeMode ? 'STABLE-EMPTY' : 'CATALOG-PENDING' } },
-          { success: true, resultCount: 0, note: stableRuntimeMode ? 'STABLE_MODE_SKIP_CATEGORY_LIVE' : 'CATALOG_PENDING_CATEGORY_REFRESH' },
-        );
-      }
-
       const observeSource = createObservedProductsSourceRunner(runObservedStoreScrape);
       const liveCategoryProducts = await resolveLiveProductsList(effectiveCategory, undefined, observeSource, internalRefreshRequest || privilegedBypass, selectedStoreIds);
-      const refreshedDatabaseProducts = await readProductsFromDatabase({
+      const refreshedDatabasePage = await readProductsPageFromDatabase({
         query: undefined,
         category: effectiveCategory,
         minPrice,
         maxPrice,
         storeIds: selectedStoreIds,
         sortBy,
-        limit: 1000,
+        page, pageSize: SEARCH_PAGE_SIZE,
       }).catch((databaseError) => {
         logger.warn('DB category reread after live refresh skipped', {
           endpoint: '/api/search',
           category: effectiveCategory,
           error: databaseError,
         });
-        return [];
+        return null;
       });
 
-      if (refreshedDatabaseProducts.length > 0) {
-        const payload = buildPayloadFromProducts(refreshedDatabaseProducts, page);
+      if (refreshedDatabasePage && refreshedDatabasePage.total > 0) {
+        const payload = catalogPageResponse(refreshedDatabasePage);
         if (!bypassDb) await setCachedSearchResponse(cacheKey, payload);
-        snapshotProducts(payload.products);
         return respond(payload, { headers: { 'X-Search-Cache': isRefreshRequest ? 'CATEGORY-REFRESH-DB' : 'CATEGORY-MISS-DB' } }, { success: true, resultCount: payload.products.length, note: isRefreshRequest ? 'CATEGORY_REFRESH_DB' : 'CATEGORY_MISS_DB' });
       }
 
@@ -304,45 +270,12 @@ export async function GET(request: NextRequest) {
       const payload = buildPayloadFromProducts(fallbackProducts, page);
 
       if (!bypassDb && payload.pagination.total > 0) await setCachedSearchResponse(cacheKey, payload);
-      snapshotProducts(payload.products);
       return respond(payload, { headers: { 'X-Search-Cache': isRefreshRequest ? 'CATEGORY-REFRESH-LIVE' : 'CATEGORY-MISS-LIVE' } }, { success: true, resultCount: payload.products.length, note: isRefreshRequest ? 'CATEGORY_REFRESH_LIVE' : 'CATEGORY_MISS_LIVE' });
     }
 
     if (!query) {
       const emptyPayload = emptySearchResponse(page);
       return respond(emptyPayload, { headers: { 'X-Search-Cache': 'DB-EMPTY' } }, { success: true, resultCount: 0, note: 'DB_EMPTY_FILTER_ONLY' });
-    }
-
-    if (catalogOnlyMode) {
-      const stablePayload = await buildStableSearchFallback({
-        query,
-        category: effectiveCategory,
-        minPrice,
-        maxPrice,
-        selectedStoreIds,
-        sortBy,
-        page,
-      });
-      if (stablePayload.products.length === 0) {
-        await recordCatalogRefreshDemand({ query, category: effectiveCategory });
-      }
-      return respond(
-        stablePayload,
-        {
-          headers: {
-            'X-Search-Cache': stableRuntimeMode
-              ? (stablePayload.products.length > 0 ? 'STABLE-DB-FALLBACK' : 'STABLE-EMPTY')
-              : (stablePayload.products.length > 0 ? 'CATALOG-DB-FALLBACK' : 'CATALOG-PENDING'),
-          },
-        },
-        {
-          success: true,
-          resultCount: stablePayload.products.length,
-          note: stablePayload.products.length > 0
-            ? (stableRuntimeMode ? 'STABLE_MODE_DB_FALLBACK' : 'CATALOG_MODE_DB_FALLBACK')
-            : (stableRuntimeMode ? 'STABLE_MODE_SKIP_LIVE_SEARCH' : 'CATALOG_PENDING_QUERY_REFRESH'),
-        },
-      );
     }
 
     const pending = inFlightSearchRequests.get(cacheKey);
@@ -362,6 +295,15 @@ export async function GET(request: NextRequest) {
       cacheKey,
       bypassDb,
       authorizedRefresh: internalRefreshRequest || privilegedBypass,
+    }).then(async (result) => {
+      const refreshedPage = await readProductsPageFromDatabase({
+        query, category: effectiveCategory, storeIds: selectedStoreIds, minPrice, maxPrice,
+        sortBy, page, pageSize: SEARCH_PAGE_SIZE,
+      }).catch(() => null);
+      if (!refreshedPage || refreshedPage.total === 0) return result;
+      const payload = catalogPageResponse(refreshedPage);
+      await setCachedSearchResponse(cacheKey, payload);
+      return { ...result, payload };
     });
 
     const trackedPromise = searchPromise.finally(() => {
@@ -381,6 +323,6 @@ export async function GET(request: NextRequest) {
         category: effectiveCategory,
       error,
     });
-    return respond({ error: 'Error al buscar productos de manera global' }, { status: 500 }, { success: false, resultCount: 0, note: 'ERROR' });
+    return respond({ error: 'Error al buscar productos de manera global' }, { status: catalogOnlyMode ? 503 : 500 }, { success: false, resultCount: 0, note: 'ERROR' });
   }
 }

@@ -54,19 +54,10 @@ export async function deleteProductPriceIdentities(
 
   for (let index = 0; index < rows.length; index += DELETE_CHUNK_SIZE) {
     const chunk = rows.slice(index, index + DELETE_CHUNK_SIZE);
-    const results = await Promise.all(chunk.map(async (row) => {
-      const { error } = await supabase
-        .from('product_prices')
-        .delete()
-        .eq('product_id', row.product_id)
-        .eq('store_id', row.store_id)
-        .eq('url', row.url);
-
-      if (error) {
-        throw new Error(`Error delete product_prices: ${error.message}`);
-      }
-    }));
-    deleted += results.length;
+    const { data, error } = await supabase.rpc('delete_catalog_offers', { p_offers: chunk });
+    if (error) throw new Error(`Error delete product_prices: ${error.message}`);
+    if (!Number.isInteger(data) || data < 0) throw new Error('Invalid deleted offer count');
+    deleted += data;
   }
 
   return deleted;

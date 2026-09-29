@@ -10,11 +10,9 @@ import {
 } from '@/lib/persistence/product-write-dedupe';
 import { selectStaleProductPricesToPrune } from '@/lib/persistence/stale-product-prices';
 import { deleteProductPriceIdentities } from '@/lib/persistence/stale-product-prices-maintenance';
-import { logger } from '@/lib/logger';
 import { pickProductImage, PRODUCT_IMAGE_FALLBACK } from '@/lib/product-images';
 
 const UPSERT_CHUNK_SIZE = 250;
-const HISTORY_CHUNK_SIZE = 500;
 // El consumidor espera la escritura completa antes de confirmar una actualización.
 export const REFRESH_PERSISTENCE_TIMEOUT_MS = 45_000;
 
@@ -55,16 +53,6 @@ type ProductPriceRow = {
   updated_at: string;
   state_signature: string;
   identity_review?: NonNullable<Product['prices'][number]['identityReview']> | null;
-};
-
-type PriceHistoryRow = {
-  product_id: string;
-  store_id: string;
-  offer_url: string;
-  price: number;
-  original_price: number | null;
-  stock: 'in-stock' | 'low-stock' | 'out-of-stock' | 'unknown';
-  recorded_at: string;
 };
 
 type PersistedProductStateRow = {
@@ -342,7 +330,6 @@ export async function persistProductsSnapshot(
   const { productsById, pricesByKey } = await readPersistedCatalogState(supabase, productIds);
   const productRows: ProductRow[] = [];
   const priceRows: ProductPriceRow[] = [];
-  const historyRows: PriceHistoryRow[] = [];
 
   for (const row of candidateProductRowsById.values()) {
     // Una observación sin foto no borra la anterior del mismo producto.
@@ -388,18 +375,6 @@ export async function persistProductsSnapshot(
     if (plan.shouldUpsert) {
       priceRows.push(row);
     }
-
-    if (plan.changed) {
-      historyRows.push({
-        product_id: row.product_id,
-        store_id: row.store_id,
-        offer_url: row.url,
-        price: row.price,
-        original_price: row.original_price,
-        stock: row.stock,
-        recorded_at: row.last_updated,
-      });
-    }
   }
 
   for (const batch of chunk(productRows, UPSERT_CHUNK_SIZE)) {
@@ -416,28 +391,14 @@ export async function persistProductsSnapshot(
     priceRows.map((row) => row.store_id),
   );
 
-  // PostgREST reúne las columnas del lote: separar las filas sin revisión evita
-  // que una actualización de precio borre una revisión previa por un null implícito.
-  const priceBatches = [
-    priceRows.filter((row) => row.identity_review !== undefined),
-    priceRows.filter((row) => row.identity_review === undefined),
-  ].flatMap((rows) => chunk(rows, UPSERT_CHUNK_SIZE));
-  for (const batch of priceBatches) {
-    let { error } = await supabase.from('product_prices').upsert(batch, {
-      onConflict: 'product_id,store_id,url',
+  // La RPC vuelve a comparar bajo bloqueo y guarda precio e historial juntos.
+  // Requiere la migración: no volver a escrituras separadas si falta la función.
+  for (const batch of chunk(priceRows, UPSERT_CHUNK_SIZE)) {
+    const { error } = await supabase.rpc('persist_catalog_offers', {
+      p_offers: batch,
     });
-    if (error && ['42703', 'PGRST204'].includes(error.code) && error.message.includes('identity_review')) {
-      // Despliegue escalonado: conservar el catálogo si todavía falta la columna aditiva.
-      logger.warn('Offer identity review persistence requires database migration');
-      const legacyBatch = batch.map((row) => {
-        const legacyRow = { ...row };
-        delete legacyRow.identity_review;
-        return legacyRow;
-      });
-      ({ error } = await supabase.from('product_prices').upsert(legacyBatch, { onConflict: 'product_id,store_id,url' }));
-    }
     if (error) {
-      throw new Error(`Error upsert product_prices: ${error.message}`);
+      throw new Error(`Error persist catalog offers transaction: ${error.message}`);
     }
   }
 
@@ -460,11 +421,4 @@ export async function persistProductsSnapshot(
     now,
   });
   await deleteProductPriceIdentities(supabase, stalePrices);
-
-  for (const batch of chunk(historyRows, HISTORY_CHUNK_SIZE)) {
-    const { error } = await supabase.from('price_history').insert(batch);
-    if (error) {
-      throw new Error(`Error insert price_history: ${error.message}`);
-    }
-  }
 }

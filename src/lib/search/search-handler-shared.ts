@@ -5,6 +5,18 @@ import { scheduleInternalRefresh } from '@/lib/server/internal-refresh';
 import { getSharedCache, setSharedCache } from '@/lib/server/shared-cache';
 import type { SearchApiResponse } from '@/lib/search/search-api';
 import { SEARCH_PAGE_SIZE } from '@/lib/search/search-pagination';
+import type { ProductPageResult } from '@/lib/persistence/product-read-types';
+
+export function catalogPageResponse(result: ProductPageResult): SearchApiResponse {
+  return {
+    products: result.products,
+    pagination: {
+      limit: result.products.length, offset: (result.page - 1) * result.pageSize,
+      total: result.total, totalPages: result.totalPages, page: result.page, pageSize: result.pageSize,
+    },
+    facets: { categories: [], brands: [], stores: [] },
+  };
+}
 
 export type SortBy = 'relevance' | 'price-asc' | 'price-desc' | 'name' | 'newest';
 
@@ -127,6 +139,7 @@ export function buildSearchCacheKey(input: {
 }) {
   const stores = Array.from(input.stores).sort().join(',');
   return [
+    'catalog-v2',
     `q=${input.query.toLowerCase()}`,
     `cat=${input.category ?? ''}`,
     `sort=${input.sortBy}`,
@@ -138,7 +151,7 @@ export function buildSearchCacheKey(input: {
 }
 
 export async function getCachedSearchResponse(cacheKey: string): Promise<SearchApiResponse | null> {
-  const cached = await getSharedCache<SearchApiResponse>('search-response', cacheKey);
+  const cached = await getSharedCache<SearchApiResponse>('search-response-v2', cacheKey);
   if (!cached) return null;
 
   return {
@@ -148,5 +161,5 @@ export async function getCachedSearchResponse(cacheKey: string): Promise<SearchA
 }
 
 export async function setCachedSearchResponse(cacheKey: string, payload: SearchApiResponse): Promise<void> {
-  await setSharedCache('search-response', cacheKey, payload, SEARCH_CACHE_TTL_MS);
+  await setSharedCache('search-response-v2', cacheKey, payload, SEARCH_CACHE_TTL_MS);
 }

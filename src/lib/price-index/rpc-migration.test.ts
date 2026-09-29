@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const migrationPath = join(process.cwd(), 'supabase/migrations/20260902140000_hardware_price_index_rpc_fast.sql');
+const migrationPath = join(process.cwd(), 'supabase/migrations/20260902040126_hardware_price_index_rpc_fast_plpgsql_fix.sql');
 
 describe('hardware price index RPC migration', () => {
   const sql = readFileSync(migrationPath, 'utf8').toLowerCase();
