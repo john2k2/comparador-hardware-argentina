@@ -42,6 +42,9 @@ function cachedResponse(count: number) {
   };
 }
 
+type SharedCacheRecord = { savedAt: number; response: unknown };
+const sharedCache = new Map<string, SharedCacheRecord>();
+
 function price(index: number, url = `https://store.example/amd-ryzen-7-7800x3d-${index}`): ProductPrice {
   return {
     storeId: `store-${index}`,
@@ -76,10 +79,13 @@ describe('reviewProductOffers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useRealTimers();
+    sharedCache.clear();
     process.env.ENABLE_JEV_OFFER_REVIEW = '1';
     process.env.TYPESAFE_API_KEY = 'private-test-key';
-    mocks.getSharedCache.mockResolvedValue(undefined);
-    mocks.setSharedCache.mockResolvedValue(undefined);
+    mocks.getSharedCache.mockImplementation(async (scope: string, key: string) => sharedCache.get(`${scope}:${key}`));
+    mocks.setSharedCache.mockImplementation(async (scope: string, key: string, value: SharedCacheRecord) => {
+      sharedCache.set(`${scope}:${key}`, value);
+    });
     mocks.evaluateOfferIdentity.mockImplementation(async (items: unknown[]) => jevEvaluation(items.length));
   });
 
@@ -148,8 +154,8 @@ describe('reviewProductOffers', () => {
     expect(mocks.evaluateOfferIdentity.mock.calls.map(([items]) => (items as unknown[]).length)).toEqual([8, 8]);
     expect(result.slice(0, 16).every(({ prices }) => prices[0].identityReview?.status === 'consistent')).toBe(true);
     expect(result[16].prices[0].identityReview).toBeUndefined();
-    expect(mocks.getSharedCache).toHaveBeenCalledTimes(2);
-    expect(mocks.setSharedCache).toHaveBeenCalledTimes(2);
+    expect(mocks.getSharedCache).toHaveBeenCalledTimes(16);
+    expect(mocks.setSharedCache).toHaveBeenCalledTimes(16);
   });
 
   it('reuses a fresh cache response without calling Jev or renewing its reviewedAt', async () => {
@@ -168,6 +174,99 @@ describe('reviewProductOffers', () => {
       reviewedAt: new Date(savedAt).toISOString(),
     });
     expect(result[0].prices[0].lastUpdated).toBe(sourceLastUpdated);
+  });
+
+  it('stores the first evaluation in the shared cache Map and reuses it on the next call', async () => {
+    const now = Date.parse('2026-09-21T12:00:00.000Z');
+    vi.setSystemTime(new Date(now));
+    const input = [product(1)];
+
+    const first = await reviewProductOffers(input, { authorizedRefresh: true });
+    const firstReviewedAt = first[0].prices[0].identityReview?.reviewedAt;
+    expect(sharedCache.size).toBe(1);
+    expect(mocks.evaluateOfferIdentity).toHaveBeenCalledTimes(1);
+    expect(mocks.setSharedCache).toHaveBeenCalledTimes(1);
+
+    const second = await reviewProductOffers([product(1)], { authorizedRefresh: true });
+
+    expect(mocks.evaluateOfferIdentity).toHaveBeenCalledTimes(1);
+    expect(mocks.setSharedCache).toHaveBeenCalledTimes(1);
+    expect(second[0].prices[0].identityReview?.reviewedAt).toBe(firstReviewedAt);
+  });
+
+  it('reuses evidence after reordering and price or stock changes without renewing lastUpdated', async () => {
+    const now = Date.parse('2026-09-21T12:00:00.000Z');
+    vi.setSystemTime(new Date(now));
+    const firstInput = [product(1), product(2)];
+    const first = await reviewProductOffers(firstInput, { authorizedRefresh: true });
+    const firstReviewedAt = first.map(({ prices }) => prices[0].identityReview?.reviewedAt);
+    const secondOne = product(1);
+    const secondTwo = product(2);
+    secondOne.prices[0].price += 50_000;
+    secondOne.prices[0].stock = 'out-of-stock';
+    secondTwo.prices[0].price -= 25_000;
+    secondTwo.prices[0].stock = 'limited';
+    const secondLastUpdated = [secondTwo.prices[0].lastUpdated, secondOne.prices[0].lastUpdated];
+
+    const result = await reviewProductOffers([secondTwo, secondOne], { authorizedRefresh: true });
+
+    expect(mocks.evaluateOfferIdentity).toHaveBeenCalledTimes(1);
+    expect(mocks.setSharedCache).toHaveBeenCalledTimes(2);
+    expect(result.map(({ prices }) => prices[0].identityReview?.reviewedAt)).toEqual([firstReviewedAt[1], firstReviewedAt[0]]);
+    expect(result.map(({ prices }) => prices[0].lastUpdated)).toEqual(secondLastUpdated);
+    expect(result.map(({ prices }) => prices[0].price)).toEqual([325_002, 400_001]);
+    expect(result.map(({ prices }) => prices[0].stock)).toEqual(['limited', 'out-of-stock']);
+  });
+
+  it('invalidates only the evidence whose sourceTitle changes', async () => {
+    const now = Date.parse('2026-09-21T12:00:00.000Z');
+    vi.setSystemTime(new Date(now));
+    const firstInput = [product(1), product(2)];
+    const firstSourceTitles = {
+      [firstInput[0].prices[0].url]: 'AMD Ryzen 7 7800X3D BOX',
+      [firstInput[1].prices[0].url]: 'AMD Ryzen 7 7800X3D WOF',
+    };
+    const first = await reviewProductOffers(firstInput, { authorizedRefresh: true, sourceTitles: firstSourceTitles });
+    const firstReviewedAt = first.map(({ prices }) => prices[0].identityReview?.reviewedAt);
+    vi.setSystemTime(new Date(now + 1_000));
+
+    const second = await reviewProductOffers(firstInput, {
+      authorizedRefresh: true,
+      sourceTitles: {
+        ...firstSourceTitles,
+        [firstInput[0].prices[0].url]: 'AMD Ryzen 7 7800X3D 16-Core BOX',
+      },
+    });
+
+    expect(mocks.evaluateOfferIdentity).toHaveBeenCalledTimes(2);
+    expect(mocks.evaluateOfferIdentity.mock.calls[1][0]).toEqual([expect.objectContaining({ sourceTitle: 'AMD Ryzen 7 7800X3D 16-Core BOX' })]);
+    expect(second[0].prices[0].identityReview?.reviewedAt).not.toBe(firstReviewedAt[0]);
+    expect(second[1].prices[0].identityReview?.reviewedAt).toBe(firstReviewedAt[1]);
+    expect(mocks.setSharedCache).toHaveBeenCalledTimes(3);
+  });
+
+  it('evaluates duplicate evidence only once and applies the result to every duplicate', async () => {
+    const duplicate = { ...product(1), id: 'product-duplicate' };
+
+    const result = await reviewProductOffers([product(1), duplicate], { authorizedRefresh: true });
+
+    expect(mocks.evaluateOfferIdentity).toHaveBeenCalledTimes(1);
+    expect(mocks.evaluateOfferIdentity.mock.calls[0][0]).toHaveLength(1);
+    expect(mocks.setSharedCache).toHaveBeenCalledTimes(1);
+    expect(result.map(({ prices }) => prices[0].identityReview?.status)).toEqual(['consistent', 'consistent']);
+  });
+
+  it('keeps cache hits valid when a missing evidence evaluation fails', async () => {
+    await reviewProductOffers([product(1)], { authorizedRefresh: true });
+    mocks.evaluateOfferIdentity.mockRejectedValueOnce(new Error('JEV_HTTP_429'));
+
+    const result = await reviewProductOffers([product(1), product(2)], { authorizedRefresh: true });
+
+    expect(mocks.evaluateOfferIdentity).toHaveBeenCalledTimes(2);
+    expect(mocks.evaluateOfferIdentity.mock.calls[1][0]).toHaveLength(1);
+    expect(result[0].prices[0].identityReview).toMatchObject({ status: 'consistent' });
+    expect(result[1].prices[0].identityReview).toMatchObject({ status: 'needs-review', reason: 'provider-unavailable' });
+    expect(mocks.setSharedCache).toHaveBeenCalledTimes(1);
   });
 
   it('uses a distinct cache key when the evidence variant changes', async () => {

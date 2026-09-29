@@ -314,8 +314,11 @@ export function extractRamModelKey(value: string): string | null {
   const gen = firstMatch(/\b(ddr[45])\b/, normalized) ?? 'na';
   const speed = firstMatch(/\b([2-8]\d{3})\s*(?:mhz|mt\/s|mts)?\b/, normalized) ?? 'na';
   if (capacity === 'na' || gen === 'na' || speed === 'na') return null;
-  const variant = firstMatch(/\b(lpx|rs|pro|elite|sl|rgb)\b/, normalized) ?? 'base';
-  return `ram:${brand}:${family}:${capacity}:${gen}:${speed}:${form}:${variant}`;
+  const variant = [...new Set(normalized.match(/\b(lpx|rs|pro|elite|sl|rgb)\b/g) ?? [])].sort().join('-') || 'base';
+  const kit = normalized.match(/\b(\d)\s*x\s*(\d{1,3})\s*gb\b/);
+  const latency = firstMatch(/\bcl\s*(\d{2,3})\b/, normalized) ?? 'na';
+  const color = firstMatch(/\b(white|blanco|blanca|black|negro|negra)\b/, normalized)?.replace(/blanc[oa]/, 'white').replace(/negr[oa]/, 'black') ?? 'na';
+  return `ram:${brand}:${family}:${capacity}:${gen}:${speed}:${form}:${variant}:${kit ? `${kit[1]}x${kit[2]}` : 'unknown-kit'}:${latency}:${color}`;
 }
 
 export function extractCpuModelKey(value: string): string | null {

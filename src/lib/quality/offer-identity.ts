@@ -14,6 +14,7 @@ export type OfferIdentityReview = {
   model: string | null;
   confidence: number | null;
   subject: { name: string; category: string; url: string };
+  sourceIdentity?: import('@/lib/types').OfferSourceIdentity;
 };
 
 export type IdentityEvidence = {
@@ -21,6 +22,7 @@ export type IdentityEvidence = {
   category: HardwareCategory;
   offerText: string;
   sourceTitle?: string;
+  sourceIdentity?: import('@/lib/types').OfferSourceIdentity;
 };
 
 const REASONS = new Set<IdentityReviewReason>([
@@ -76,6 +78,8 @@ export function buildIdentityEvidence(name: string, category: HardwareCategory, 
 }
 
 export function hasExplicitIdentityConflict(evidence: IdentityEvidence): boolean {
+  if (/\b(outlet|reacondicionado|usado|refurbished)\b/i.test(evidence.offerText) && !/\b(outlet|reacondicionado|usado|refurbished)\b/i.test(evidence.name)) return true;
+  if (evidence.sourceTitle && hasExplicitIdentityConflict({ name: evidence.name, category: evidence.category, offerText: evidence.sourceTitle })) return true;
   if (evidence.category === 'tarjetas-graficas') {
     const capacity = (value: string) => {
       const match = value.match(/\b(\d{1,4})\s*(gb|mb)\b/i);
@@ -103,6 +107,11 @@ export function hasExplicitIdentityConflict(evidence: IdentityEvidence): boolean
   if (leftBrand && rightBrand && leftBrand !== rightBrand) return true;
   const leftSeries = ramSeries(evidence.name), rightSeries = ramSeries(evidence.offerText);
   if (leftSeries && rightSeries && leftSeries !== rightSeries) return true;
+  const kit = (value: string) => value.match(/\b(\d)\s*x\s*(\d{1,3})\s*gb\b/i)?.slice(1).join('x');
+  const leftKit = kit(evidence.name), rightKit = kit(evidence.offerText);
+  if (leftKit && rightKit && leftKit !== rightKit) return true;
+  const rgbConflict = (a: string, b: string) => /\brgb\b/i.test(a) && /\b(?:sin|no|non)[ -]?rgb\b/i.test(b) && !/\b(?:sin|no|non)[ -]?rgb\b/i.test(a);
+  if (rgbConflict(evidence.name, evidence.offerText) || rgbConflict(evidence.offerText, evidence.name)) return true;
   // Sólo atributos explícitos en ambos textos. Una omisión no prueba contradicción.
   return [/\bcl\s*(\d{2,3})\b/i, /\b(\d{1,3})\s*gb\b/i, /\b(\d{4,5})\s*(?:mhz|mt\s*\/\s*s)\b/i, /\bddr\s*([345])\b/i]
     .some((pattern) => {

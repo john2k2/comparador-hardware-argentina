@@ -107,3 +107,11 @@ describe('product identity', () => {
     expect(isCompleteComputerTitle('Memoria RAM para PC 32GB DDR5')).toBe(false);
   });
 });
+
+it('separa kits, CL, color y RGB aunque la serie RAM coincida', () => {
+  const key = (suffix: string) => buildProductIdentityKey('memoria-ram', `Corsair Vengeance RS 32GB DDR4 3200 ${suffix}`);
+  expect(key('RGB 2x16GB CL16 Black')).not.toBe(key('2x16GB CL16 Black'));
+  expect(key('RGB 2x16GB CL16 Black')).not.toBe(key('RGB 1x32GB CL16 Black'));
+  expect(key('RGB 2x16GB CL16 Black')).not.toBe(key('RGB 2x16GB CL18 Black'));
+  expect(key('RGB 2x16GB CL16 Black')).not.toBe(key('RGB 2x16GB CL16 White'));
+});

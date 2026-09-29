@@ -65,6 +65,8 @@ export interface Product {
   updatedAt: Date;
 }
 
+export type OfferSourceIdentity = { listingRef: string; title: string; storeSku?: string };
+
 export interface ProductPrice {
   storeId: string;
   storeName: string;
@@ -75,6 +77,7 @@ export interface ProductPrice {
   installment: InstallmentInfo | null;
   lastUpdated: Date;
   identityReview?: import('@/lib/quality/offer-identity').OfferIdentityReview;
+  sourceIdentity?: OfferSourceIdentity;
 }
 
 export type StockStatus = 'in-stock' | 'low-stock' | 'out-of-stock' | 'unknown';
