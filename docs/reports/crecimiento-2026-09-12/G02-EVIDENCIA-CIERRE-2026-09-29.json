@@ -1,0 +1,168 @@
+{
+  "measuredAt": "2026-09-29T17:44:40.377Z",
+  "source": "Lectura del catalogo con catalog-freshness-report; sin refresh ni consultas a tiendas",
+  "global": {
+    "denominator": 47636,
+    "fresh24h": 222,
+    "fresh3h": 66,
+    "identityPending3h": 40
+  },
+  "sample": {
+    "source": "docs/reports/crecimiento-2026-09-12/G02-MUESTRA-PRIORITARIA.json",
+    "selectedAtUtc": "2026-09-25",
+    "definition": "Ofertas almacenadas disponibles de fichas fijas; identityAccepted3h exige revisión válida ligada a producto/URL y título observado, sin contradicción explícita. No acredita compra real ni render público.",
+    "denominator": 57,
+    "fresh24h": 48,
+    "fresh3h": 48,
+    "identityPending3h": 40,
+    "candidateComparable3h": 8,
+    "identityAccepted3h": 3,
+    "identityUnverified3h": 45,
+    "explicitConflicts3h": 2,
+    "productsWithAcceptedOffer3h": 3,
+    "productsWithoutAcceptedOffer3h": [
+      "agrupado-procesadores-amd-ryzen-5-5600-1ru8te5",
+      "agrupado-procesadores-intel-core-i5-12400-gfjrbb",
+      "agrupado-tarjetas-graficas-gigabyte-rtx-5060-eagle-8gb-1i1rdb",
+      "maximus-15359-memoria-ram-corsair-vengeance-lpx-black-16gb-3200-mhz-ddr4",
+      "agrupado-memoria-ram-corsair-16gb-x4icqy",
+      "agrupado-memoria-ram-kingston-16gb-11mqs9y"
+    ],
+    "byProduct": [
+      {
+        "productId": "agrupado-procesadores-amd-ryzen-5-5600-1ru8te5",
+        "category": "procesadores",
+        "available": 8,
+        "fresh24h": 6,
+        "fresh3h": 6,
+        "identityPending3h": 6,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 6,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-procesadores-intel-core-i5-12400-gfjrbb",
+        "category": "procesadores",
+        "available": 11,
+        "fresh24h": 10,
+        "fresh3h": 10,
+        "identityPending3h": 7,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 10,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-procesadores-amd-ryzen-5-7600x-am5-12rxuv9",
+        "category": "procesadores",
+        "available": 2,
+        "fresh24h": 2,
+        "fresh3h": 2,
+        "identityPending3h": 1,
+        "identityAccepted3h": 1,
+        "identityUnverified3h": 1,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-tarjetas-graficas-gigabyte-rtx-5060-eagle-8gb-1i1rdb",
+        "category": "tarjetas-graficas",
+        "available": 8,
+        "fresh24h": 5,
+        "fresh3h": 5,
+        "identityPending3h": 5,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 5,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-tarjetas-graficas-msi-rtx-5060-shadow-8gb-csxx7o",
+        "category": "tarjetas-graficas",
+        "available": 10,
+        "fresh24h": 9,
+        "fresh3h": 9,
+        "identityPending3h": 7,
+        "identityAccepted3h": 1,
+        "identityUnverified3h": 8,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-tarjetas-graficas-asus-rtx-5060-dual-8gb-1lrxth",
+        "category": "tarjetas-graficas",
+        "available": 9,
+        "fresh24h": 9,
+        "fresh3h": 9,
+        "identityPending3h": 8,
+        "identityAccepted3h": 1,
+        "identityUnverified3h": 8,
+        "explicitConflicts3h": 1
+      },
+      {
+        "productId": "maximus-15359-memoria-ram-corsair-vengeance-lpx-black-16gb-3200-mhz-ddr4",
+        "category": "memoria-ram",
+        "available": 1,
+        "fresh24h": 1,
+        "fresh3h": 1,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 1,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-memoria-ram-corsair-16gb-x4icqy",
+        "category": "memoria-ram",
+        "available": 2,
+        "fresh24h": 2,
+        "fresh3h": 2,
+        "identityPending3h": 2,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 2,
+        "explicitConflicts3h": 1
+      },
+      {
+        "productId": "agrupado-memoria-ram-kingston-16gb-11mqs9y",
+        "category": "memoria-ram",
+        "available": 6,
+        "fresh24h": 4,
+        "fresh3h": 4,
+        "identityPending3h": 4,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 4,
+        "explicitConflicts3h": 0
+      }
+    ]
+  },
+  "readiness": {
+    "measuredAt": "2026-09-29T17:45:05.905Z",
+    "status": "not-ready",
+    "definition": "Diagnóstico basado en ciclos documentados como útiles; no revalida artefactos históricos ni autoriza cierre. El 95% sigue siendo la meta propuesta, no una garantía de compra.",
+    "usefulDailyCycles": 3,
+    "requiredUsefulDailyCycles": 7,
+    "acceptedRuns": [
+      {
+        "runId": "36233869658",
+        "day": "2026-09-26",
+        "source": "cortes/2026-09-26/catalog-freshness-36233869658.json"
+      },
+      {
+        "runId": "36312694788",
+        "day": "2026-09-27",
+        "source": "cortes/2026-09-27/catalog-freshness-36312694788.json"
+      },
+      {
+        "runId": "36560676167",
+        "day": "2026-09-29",
+        "source": "cortes/2026-09-29/catalog-freshness-36560676167.json"
+      }
+    ],
+    "fixedSampleMatches": true,
+    "productsWithAcceptedOffer3h": 3,
+    "requiredSampleProducts": 9,
+    "globalFresh24hRatio": 0.004660340918632966,
+    "sampleFresh24hRatio": 0.8421052631578947,
+    "blockers": [
+      "fewer-than-seven-useful-daily-cycles",
+      "global-freshness-below-proposed-95-percent",
+      "sample-freshness-below-proposed-95-percent",
+      "fixed-products-without-accepted-recent-offer"
+    ]
+  }
+}

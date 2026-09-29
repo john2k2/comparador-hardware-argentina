@@ -147,3 +147,26 @@ describe('product-read-mapper', () => {
     expect(mapped.prices[0]?.identityReview).toMatchObject({ status: 'needs-review', reason: 'explicit-conflict' });
   });
 });
+
+it('una aprobación vieja no oculta una contradicción del título observado de GPU', () => {
+  const name = 'ASUS Dual RTX 5060 8GB EVO OC';
+  const url = 'https://store.example/123';
+  const row: DbProductRow = {
+    id: 'asus-evo', name, category: 'tarjetas-graficas', brand: 'ASUS', model: name,
+    description: null, image: null, normalized_title: null,
+    canonical_product_key: 'tarjetas-graficas::gpu:rtx5060:8gb:asus:dual',
+    family_key: null, variant_key: null, refresh_priority: null, last_scraped_at: null,
+    last_normalized_at: null, specs: null, lowest_price: 100, highest_price: 100, average_price: 100,
+    created_at: '2026-09-29T12:00:00Z', updated_at: '2026-09-29T12:00:00Z',
+    product_prices: [{ store_id: 'mexx', url, price: 100, original_price: null, stock: 'in-stock',
+      installment_count: null, installment_amount: null, last_updated: '2026-09-29T12:00:00Z',
+      identity_review: { version: 1, status: 'consistent', reason: 'consistent-text', reviewedAt: '2026-09-29T12:00:00Z',
+        model: 'jev-1.13.0', confidence: 0.95, subject: { name: name.toLowerCase(), category: 'tarjetas-graficas', url },
+        sourceIdentity: { listingRef: 'mexx:123', title: 'ASUS Dual RTX 5060 8GB ADVANCED OC' } } }],
+  };
+  const mapped = mapDbProduct(row);
+  expect(mapped.id).toBe('asus-evo');
+  expect(mapped.canonicalProductKey).toContain(':evo:');
+  expect(mapped.prices[0]?.identityReview).toMatchObject({ status: 'needs-review', reason: 'explicit-conflict',
+    sourceIdentity: { listingRef: 'mexx:123' } });
+});
