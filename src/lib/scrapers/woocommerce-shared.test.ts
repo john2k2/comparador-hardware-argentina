@@ -106,3 +106,9 @@ describe('woocommerce-shared', () => {
     expect(products[0]?.prices[0].price).toBe(221_468);
   });
 });
+
+it('no convierte ausencia de stock en disponibilidad y reconoce el título de Katech', () => {
+  const product = parseWooProductDetail('<body class="single-product"><h1 class="post_title">SSD Kingston NV3 1TB</h1><p class="price"><bdi>$ 311.039</bdi><span class="woocommerce-Price-amount"><bdi>$ 311.039</bdi></span></p><span class="sku">DIS793</span></body>', 'https://katech.com.ar/producto/ssd/', {id:'katech',name:'Katech',baseUrl:'https://katech.com.ar'}, 'almacenamiento', 'ssd');
+  expect(product?.prices[0].stock).toBe('unknown');
+  expect(product?.specs.SKU).toBe('DIS793');
+});

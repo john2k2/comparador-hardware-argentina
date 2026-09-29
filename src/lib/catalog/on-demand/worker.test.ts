@@ -30,7 +30,7 @@ vi.mock('@/lib/async/with-abort-timeout', () => ({
 vi.mock('@/lib/ai/review-product-offers', () => ({ reviewProductOffers: mocks.reviewProductOffers }));
 vi.mock('@/lib/persistence/product-write-dedupe', () => ({ buildPriceStateSignature: mocks.buildPriceStateSignature }));
 
-import { runRequestedRefresh } from './worker';
+import { runRequestedRefresh, fetchKnownOffer, createKnownOfferContext } from './worker';
 import type { RefreshJob, RefreshTarget } from './contracts';
 
 const target: RefreshTarget = {
@@ -277,4 +277,25 @@ describe('runRequestedRefresh', () => {
 
     await expect(runRequestedRefresh()).rejects.toThrow('REFRESH_LEASE_EXPIRED');
   });
+});
+
+it('comparte una lectura de publicación entre dos fichas sin compartir su dictamen de identidad', async () => {
+  vi.resetAllMocks();
+  vi.useFakeTimers();
+  configureClaimedJob([sourceProduct({ offer: { price: 420_000 } })]);
+  mocks.withAbortTimeout.mockImplementation(async (fn: (signal: AbortSignal) => Promise<unknown>) => fn(new AbortController().signal));
+  mocks.withPromiseTimeout.mockImplementation((promise: Promise<unknown>) => promise);
+  const context = createKnownOfferContext();
+  const original = catalogProduct();
+  const different = { ...original, id: 'other-id', name: 'Gigabyte RTX 4070 12GB' };
+  const started = Date.parse('2026-09-21T12:00:00Z');
+  vi.setSystemTime(new Date('2026-09-21T12:00:02Z'));
+  const first = await fetchKnownOffer(original, target, started, context);
+  const second = await fetchKnownOffer(different, { ...target, productId: different.id }, started, context);
+  expect(mocks.scrape).toHaveBeenCalledTimes(1);
+  expect(context.sharedReads).toBe(1);
+  expect(first).not.toBeNull();
+  expect(first?.price.identityReview).toBeUndefined();
+  expect(second?.price.identityReview?.reason).toBe('explicit-conflict');
+  vi.useRealTimers();
 });

@@ -69,31 +69,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Start local refresh runtime
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-          CATALOG_REFRESH_CRON_SECRET: ${{ secrets.CATALOG_REFRESH_CRON_SECRET }}
-          CATALOG_REQUESTED_RUNNER: '1'
-          DISABLE_INTERNAL_BACKGROUND_REFRESH: '1'
-          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
-          ENABLE_JEV_OFFER_REVIEW: ${{ vars.ENABLE_JEV_OFFER_REVIEW || '0' }}
-        run: |
-          set -euo pipefail
-          npm run dev -- --hostname 127.0.0.1 --port 3101 > "$RUNNER_TEMP/catalog-refresh-runtime.log" 2>&1 &
-          echo $! > "$RUNNER_TEMP/catalog-refresh-runtime.pid"
-
-          for attempt in {1..30}; do
-            if curl --silent --fail --max-time 5 'http://127.0.0.1:3101/api/categories' > /dev/null; then
-              exit 0
-            fi
-            sleep 1
-          done
-
-          cat "$RUNNER_TEMP/catalog-refresh-runtime.log"
-          exit 1
-
       - name: Resolve refresh target
         id: resolve
         shell: bash
@@ -197,12 +172,45 @@ jobs:
           echo "request_path=$REQUEST_PATH" >> "$GITHUB_OUTPUT"
           echo "Resolved mode=$MODE path=$REQUEST_PATH"
 
-      - name: Invoke catalog refresh endpoint
+      - name: Start local refresh runtime
+        if: steps.resolve.outputs.mode != 'priority' && steps.resolve.outputs.mode != 'guides'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          CATALOG_REFRESH_CRON_SECRET: ${{ secrets.CATALOG_REFRESH_CRON_SECRET }}
+          CATALOG_REQUESTED_RUNNER: '1'
+          DISABLE_INTERNAL_BACKGROUND_REFRESH: '1'
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          ENABLE_JEV_OFFER_REVIEW: ${{ vars.ENABLE_JEV_OFFER_REVIEW || '0' }}
+        run: |
+          set -euo pipefail
+          npm run dev -- --hostname 127.0.0.1 --port 3101 > "$RUNNER_TEMP/catalog-refresh-runtime.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/catalog-refresh-runtime.pid"
+
+          for attempt in {1..30}; do
+            if curl --silent --fail --max-time 5 'http://127.0.0.1:3101/api/categories' > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          cat "$RUNNER_TEMP/catalog-refresh-runtime.log"
+          exit 1
+
+      - name: Run catalog refresh
         shell: bash
         env:
           CRON_SECRET: ${{ secrets.CATALOG_REFRESH_CRON_SECRET }}
           REQUEST_PATH: ${{ steps.resolve.outputs.request_path }}
           MODE: ${{ steps.resolve.outputs.mode }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          CATALOG_REQUESTED_RUNNER: '1'
+          DISABLE_INTERNAL_BACKGROUND_REFRESH: '1'
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          ENABLE_JEV_OFFER_REVIEW: ${{ vars.ENABLE_JEV_OFFER_REVIEW || '0' }}
         run: |
           set -euo pipefail
 
@@ -217,6 +225,10 @@ jobs:
 
           RESPONSE_FILE="$(mktemp)"
           echo "REFRESH_WINDOW_START=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+          if [[ "$MODE" == 'priority' || "$MODE" == 'guides' ]]; then
+            STATUS_CODE=200
+            node scripts/run-catalog-refresh.mjs "$MODE" "$RESPONSE_FILE" || STATUS_CODE=503
+          else
           STATUS_CODE="$(
             curl \
               --silent \
@@ -229,6 +241,8 @@ jobs:
               --header "Authorization: Bearer $CRON_SECRET" \
               "${BASE_URL%/}${REQUEST_PATH}"
           )"
+
+          fi
 
           cp "$RESPONSE_FILE" "$RUNNER_TEMP/catalog-refresh-result.json"
           echo "HTTP ${STATUS_CODE}"

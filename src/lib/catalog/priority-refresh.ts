@@ -7,7 +7,8 @@ import { reviewProductOffers } from '@/lib/ai/review-product-offers';
 import { buildPriceStateSignature } from '@/lib/persistence/product-write-dedupe';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
 import { isOfferFresh } from '@/lib/price-freshness';
-import { fetchKnownOffer } from './on-demand/worker';
+import { sourceHttpMetrics } from '@/lib/scrapers/source-http';
+import { fetchKnownOffer, createKnownOfferContext } from './on-demand/worker';
 import type { RefreshItemResult, RefreshTarget } from './on-demand/contracts';
 import { nextPriorityTargets, planGuideGroups, planSampleTargets, targetKey, PRIORITY_MAX_GUIDE_OFFERS, PRIORITY_MAX_SAMPLE_OFFERS, type PriorityGroup } from './priority-planning';
 import type { Product } from '@/lib/types';
@@ -37,6 +38,7 @@ export async function runPriorityRefresh(includeSample: boolean) {
     catalog.forEach(product => products.set(product.id, product));
     groups.push(...planGuideGroups(guide, catalog, started));
   }
+  const context = createKnownOfferContext();
   const attempted = new Set<string>();
   const results: RefreshItemResult[] = [];
   let deadlineReached = false;
@@ -48,9 +50,9 @@ export async function runPriorityRefresh(includeSample: boolean) {
       if (attempted.has(targetKey(target))) continue;
       attempted.add(targetKey(target));
       const product = products.get(target.productId);
-      const observed = product ? await fetchKnownOffer(product, target, started).catch(() => null) : null;
+      const observed = product ? await fetchKnownOffer(product, target, started, context).catch(() => null) : null;
       if (observed) observations.push({ ...observed, target });
-      else results.push({ ...target, state: 'failed', observedAt: null, comparable: false });
+      else results.push({ ...target, state: 'failed', observedAt: null, comparable: false, failureReason: context.failures.get(target.url) });
       await wait(2_000);
     }
     const reviewable = observations.filter(item => item.price.identityReview?.reason !== 'explicit-conflict');
@@ -71,6 +73,7 @@ export async function runPriorityRefresh(includeSample: boolean) {
       const persisted = !error && data === true;
       results.push({ ...item.target, state: !persisted ? 'failed' : price.stock === 'out-of-stock' ? 'unavailable' : 'updated',
         observedAt: persisted ? new Date(price.lastUpdated).toISOString() : null,
+        sourceIdentity: price.sourceIdentity,
         comparable: persisted && ['in-stock', 'low-stock'].includes(price.stock) && price.price > 0
           && isOfferFresh(price.lastUpdated) && !needsIdentityReview(price, item.product) });
     }
@@ -104,5 +107,5 @@ export async function runPriorityRefresh(includeSample: boolean) {
   return { source: 'priority-known-offers', startedAt, finishedAt: new Date().toISOString(), includeSample,
     attempted: attempted.size, observed: results.filter(result => result.observedAt).length,
     comparable: results.filter(result => result.comparable).length, missingGuideSlots, sampleRequested,
-    sampleTruncated, deadlineReached, results };
+    sampleTruncated, deadlineReached, results, sourceHttp: sourceHttpMetrics(), sharedListingReads: context.sharedReads };
 }

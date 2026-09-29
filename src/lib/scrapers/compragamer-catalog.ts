@@ -1,3 +1,4 @@
+import { sourceFetch, SourceHttpError } from './source-http';
 import type { HardwareCategory } from '../types';
 
 const COMPRAGAMER_PRODUCTS_URL = 'https://static.compragamer.com/productos';
@@ -108,17 +109,23 @@ function inferCategoryFromSubcategoryName(name: string): HardwareCategory | null
   return null;
 }
 
+// Validadores sólo sobre el JSON que contiene precio y stock, nunca sobre un shell.
+const httpCache = new Map<string, { items: unknown[]; etag: string | null; modified: string | null }>();
 async function fetchJsonArray<T>(url: string, signal?: AbortSignal): Promise<T[]> {
-  const res = await fetch(url, {
-    headers: SCRAPE_HEADERS,
-    signal,
-  });
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status} en ${url}`);
+  const cached = httpCache.get(url);
+  const res = await sourceFetch('compragamer', url, {
+    headers: { ...SCRAPE_HEADERS,
+      ...(cached?.etag ? { 'If-None-Match': cached.etag } : {}),
+      ...(cached?.modified ? { 'If-Modified-Since': cached.modified } : {}),
+    }, signal,
+  }, 16_000_000);
+  if (res.status === 304) {
+    if (!cached) throw new SourceHttpError('invalid-response');
+    return cached.items as T[];
   }
-
-  const data = (await res.json()) as unknown;
-  if (!Array.isArray(data)) return [];
+  const data: unknown = await res.json();
+  if (!Array.isArray(data)) throw new SourceHttpError('invalid-response');
+  httpCache.set(url, { items: data, etag: res.headers.get('etag'), modified: res.headers.get('last-modified') });
   return data as T[];
 }
 

@@ -1,3 +1,4 @@
+import { sourceFetch } from './source-http';
 import { HardwareCategory, Product } from '../types';
 import { logger } from '../logger';
 import { extractBrandFromName as extractBrandFromNameShared } from './brand-utils';
@@ -94,19 +95,33 @@ function buildMaximusSearchUrl(query: string): string {
   return `${MAXIMUS_BASE_URL}/Productos/maximus.aspx?/CAT=-1/SCAT=-1/M=-1/BUS=${encodeURIComponent(query)}/OR=1/PAGE=1/`;
 }
 
+type MaximusSession = { websiteId: string; cookieHeader: string; expiresAt: number };
+let session: MaximusSession | undefined;
+let sessionPending: Promise<MaximusSession> | undefined;
+async function anonymousSession(searchUrl: string, signal?: AbortSignal): Promise<MaximusSession> {
+  if (session && session.expiresAt > Date.now()) return session;
+  if (sessionPending) return sessionPending;
+  sessionPending = (async () => {
+    const pageRes = await sourceFetch('maximus', searchUrl, { headers: SCRAPE_HEADERS, signal });
+    const websiteId = parseWebsiteIdFromHtml(await pageRes.text());
+    if (!websiteId) throw new Error('MAXIMUS_SESSION_UNAVAILABLE');
+    const cookies = getSetCookies(pageRes.headers);
+    const now = Date.now();
+    let expiresAt = now + 5 * 60_000;
+    for (const cookie of cookies) {
+      const age = cookie.match(/;\s*max-age=(-?\d+)/i)?.[1];
+      const expires = cookie.match(/;\s*expires=([^;]+)/i)?.[1];
+      const until = age !== undefined ? now + Number(age) * 1000 : expires ? Date.parse(expires) : expiresAt;
+      if (Number.isFinite(until)) expiresAt = Math.min(expiresAt, until);
+    }
+    session = { websiteId, cookieHeader: buildCookieHeader(cookies), expiresAt };
+    return session;
+  })().finally(() => { sessionPending = undefined; });
+  return sessionPending;
+}
 async function fetchMaximusItems(query: string, signal?: AbortSignal): Promise<MaximusItem[]> {
   const searchUrl = buildMaximusSearchUrl(query);
-  const pageRes = await fetch(searchUrl, {
-    headers: SCRAPE_HEADERS,
-    signal,
-  });
-  if (!pageRes.ok) throw new Error(`Error HTTP page: ${pageRes.status}`);
-
-  const pageHtml = await pageRes.text();
-  const websiteId = parseWebsiteIdFromHtml(pageHtml);
-  if (!websiteId) throw new Error('No se pudo resolver hidWebSiteID');
-
-  const cookieHeader = buildCookieHeader(getSetCookies(pageRes.headers));
+  const { websiteId, cookieHeader } = await anonymousSession(searchUrl, signal);
   const params = {
     ws_id: websiteId,
     comp_id: 1,
@@ -124,7 +139,7 @@ async function fetchMaximusItems(query: string, signal?: AbortSignal): Promise<M
     wco_tV: [] as Array<{ wco_id: number; tV: string }>,
   };
 
-  const scriptRes = await fetch(MAXIMUS_PAGE_METHOD_URL, {
+  const scriptRes = await sourceFetch('maximus', MAXIMUS_PAGE_METHOD_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json; charset=UTF-8',
@@ -170,7 +185,8 @@ export async function fetchMaximusProducts(
 
     for (const item of items) {
       const itemId = Number(item.item_id);
-      const name = (item.item_desc ?? '').trim();
+      const rawName = (item.item_desc ?? '').trim();
+      const name = rawName && item.item_outlet ? `${rawName} (Outlet)` : rawName;
       if (!Number.isFinite(itemId) || !name) continue;
 
       const price = parseArsPrice(item.prli_price_original ?? item.prli_price);
@@ -205,11 +221,11 @@ export async function fetchMaximusProducts(
             url: productUrl,
             price,
             installment: null,
-            stock: item.item_outlet ? 'low-stock' : 'in-stock',
+            stock: 'in-stock',
             lastUpdated: new Date(),
           },
         ],
-        specs: {},
+        specs: item.item_code4web ? { SKU: item.item_code4web } : {},
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -218,7 +234,8 @@ export async function fetchMaximusProducts(
     logger.info(`[Maximus Scraper] Productos detectados: ${products.length}`);
     return products;
   } catch (error) {
-    logger.error('[Maximus Scraper] Error', { error });
+    session = undefined;
+    logger.error('[Maximus Scraper] Error', { code: error instanceof Error ? error.name : 'unknown' });
     return [];
   }
 }

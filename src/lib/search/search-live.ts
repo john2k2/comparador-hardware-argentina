@@ -62,7 +62,7 @@ export async function runLiveSearch({
     category,
   });
   const defaultCategory = category ?? inferHardwareCategoryFromName(query) ?? 'perifericos';
-  const sourceTasks: Promise<Product[]>[] = [];
+  const sourceTasks: Array<() => Promise<Product[]>> = [];
 
   // Scrapers de tiendas individuales (via registry)
   for (const scraper of STORE_SCRAPERS) {
@@ -73,7 +73,7 @@ export async function runLiveSearch({
       : query;
 
     sourceTasks.push(
-      runObservedStoreScrape({
+      () => runObservedStoreScrape({
         endpoint: '/api/search',
         storeId: scraper.id,
         storeName: scraper.displayName,
@@ -90,7 +90,7 @@ export async function runLiveSearch({
   // P0: Pasar selectedStoreIds para filtrar tiendas internas
   for (const scraper of FRAMEWORK_SCRAPERS) {
     sourceTasks.push(
-      withAbortTimeout(
+      () => withAbortTimeout(
         (signal) => scraper.fn({ query, searchUrl: query, category: defaultCategory, selectedStoreIds, signal }),
         SCRAPER_TIMEOUT_MS,
         scraper.id,
@@ -100,7 +100,7 @@ export async function runLiveSearch({
 
   // Ejecutar con limite de concurrencia para no sobrecargar el servidor
   const sourceResults = await withConcurrencyLimit(
-    sourceTasks.map((task) => () => task),
+    sourceTasks,
     MAX_CONCURRENT_SCRAPERS,
   );
   let liveProducts: Product[] = sanitizeProducts(sourceResults.flat()).map((product) => ({

@@ -1,5 +1,5 @@
 export type RefreshTarget = { productId: string; storeId: string; url: string };
-export type RefreshItemResult = RefreshTarget & { state: 'updated' | 'unavailable' | 'failed'; observedAt: string | null; comparable?: boolean };
+export type RefreshItemResult = RefreshTarget & { state: 'updated' | 'unavailable' | 'failed'; observedAt: string | null; comparable?: boolean; failureReason?: string; sourceIdentity?: import('@/lib/types').OfferSourceIdentity };
 export const MAX_GUIDE_REFRESH_ROUNDS = 3;
 export type RefreshJob = {
   id: string; status: 'queued' | 'running' | 'completed' | 'partial' | 'failed'; targets: RefreshTarget[];

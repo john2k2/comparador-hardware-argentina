@@ -1,4 +1,7 @@
 import 'server-only';
+import { SourceHttpError, type SourceFailure } from '@/lib/scrapers/source-http';
+import { sameListing, listingReference } from '@/lib/scrapers/listing-reference';
+import { fetchWooCommerceKnownOffer } from '@/lib/scrapers/woocommerce-shared';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 import { readBuilderCatalog } from '@/lib/pc-builder/catalog';
 import { getStoreScraper, FRAMEWORK_SCRAPERS } from '@/lib/scrapers/scraper-registry';
@@ -12,10 +15,9 @@ import type { Product, ProductPrice } from '@/lib/types';
 import type { RefreshItemResult, RefreshJob, RefreshTarget } from './contracts';
 
 type ClaimedJob = RefreshJob & { lease_token: string };
-function sameUrl(first: string, second: string): boolean {
-  try { const a = new URL(first), b = new URL(second); a.hash = ''; b.hash = ''; return a.href === b.href; } catch { return false; }
-}
-export async function fetchKnownOffer(product: Product, target: RefreshTarget, startedAt: number): Promise<{ product: Product; price: ProductPrice; sourceTitle: string } | null> {
+export type KnownOfferContext = { sources: Map<string, Promise<Product[][]>>; failures: Map<string, SourceFailure | 'no-observation'>; sharedReads: number };
+export function createKnownOfferContext(): KnownOfferContext { return { sources: new Map(), failures: new Map(), sharedReads: 0 }; }
+export async function fetchKnownOffer(product: Product, target: RefreshTarget, startedAt: number, context = createKnownOfferContext()): Promise<{ product: Product; price: ProductPrice; sourceTitle: string } | null> {
   const direct = getStoreScraper(target.storeId);
   const scrapers = direct ? [direct] : FRAMEWORK_SCRAPERS;
   const chip = product.category === 'procesadores' ? parseCpuModelSignature(product.name)
@@ -34,31 +36,59 @@ export async function fetchKnownOffer(product: Product, target: RefreshTarget, s
     product.name.match(/\bddr\s*([345])\b/i)?.[1]?.replace(/^/, 'ddr'),
   ] : [];
   const ramQuery = ramTerms.length === 3 && ramTerms.every(Boolean) ? ramTerms.join(' ') : undefined;
-  const query = compraGamerId ?? (chip ? `${chip.family === 'unknown' ? '' : chip.family.replace('ryzen', 'ryzen ').replace('corei', 'core i')} ${chip.number}${chip.suffixes.join('')}`.trim()
+  const maximusCode = target.storeId === 'maximus' ? new URL(target.url).searchParams.get('PN')?.trim() : undefined;
+  const query = compraGamerId ?? maximusCode ?? (chip ? `${chip.family === 'unknown' ? '' : chip.family.replace('ryzen', 'ryzen ').replace('corei', 'core i')} ${chip.number}${chip.suffixes.join('')}`.trim()
     : ramQuery ?? product.name.slice(0, 120));
   // Los adaptadores de plataforma filtran por tienda antes de hacer solicitudes.
   // El límite se aplica a toda esta búsqueda, no se multiplica por plataforma.
-  const batches = await Promise.all(scrapers.map((scraper) => withPromiseTimeout(withAbortTimeout((signal) => scraper.fn({ query,
-      searchUrl: scraper.buildSearchUrl?.(query) ?? query, category: product.category,
-      selectedStoreIds: new Set([target.storeId]), signal }), 25_000, 'requested-offer'), 26_000, 'requested-offer-hard-limit').catch(() => [])));
+  // Piloto verificado: habilitar otras plantillas tras probar su detalle real.
+  const woo = target.storeId === 'katech';
+  const key = `${listingReference(target.storeId, target.url)}:${product.category}`;
+  const existing = context.sources.get(key);
+  if (existing) context.sharedReads++;
+  const request = existing ?? (async () => {
+    if (woo) {
+      const item = await withAbortTimeout(
+        signal => fetchWooCommerceKnownOffer(target.storeId, target.url, product.category, signal),
+        25_000, 'known-woo',
+      );
+      return [item ? [item] : []];
+    }
+    return Promise.all(scrapers.map(scraper => withPromiseTimeout(
+      withAbortTimeout(signal => scraper.fn({
+        query, searchUrl: scraper.buildSearchUrl?.(query) ?? query,
+        category: product.category, selectedStoreIds: new Set([target.storeId]), signal,
+      }), 25_000, 'requested-offer'), 26_000, 'requested-offer-hard-limit',
+    ).catch(() => [])));
+  })();
+  context.sources.set(key, request);
+  const batches = await request.catch((error: unknown) => {
+    context.failures.set(target.url, error instanceof SourceHttpError ? error.reason : 'no-observation');
+    return [];
+  });
   for (const found of batches) {
     for (const source of found) {
-      const price = source.prices.find((offer) => offer.storeId === target.storeId && sameUrl(offer.url, target.url));
+      const price = source.prices.find((offer) => offer.storeId === target.storeId && sameListing(target.storeId, offer.url, target.url));
       if (!price || !Number.isFinite(price.price) || price.price <= 0 || price.stock === 'unknown') continue;
       const observedAt = new Date(price.lastUpdated).getTime();
       if (!Number.isFinite(observedAt) || observedAt < startedAt || observedAt > Date.now() + 60_000) continue;
-      // La URL exacta identifica la oferta. Un título contradictorio requiere revisión.
+      // La URL o el ID estable de la tienda identifican la oferta. Un título contradictorio requiere revisión.
       const conflict = hasExplicitIdentityConflict({ name: product.name, category: product.category, offerText: source.name });
-      const previousReview = product.prices.find(offer => offer.storeId === target.storeId && sameUrl(offer.url, target.url))?.identityReview;
-      const refreshed: ProductPrice = { ...price, url: target.url, identityReview: price.identityReview ?? previousReview };
+      const previousReview = product.prices.find(offer => offer.storeId === target.storeId && sameListing(target.storeId, offer.url, target.url))?.identityReview;
+      const sku = source.specs.SKU?.trim();
+      const reference = listingReference(target.storeId, price.url);
+      const sourceIdentity = reference ? { listingRef: reference, title: source.name.slice(0, 400),
+        ...(sku && sku.length <= 160 && !/[\x00-\x1f]/.test(sku) ? { storeSku: sku } : {}) } : undefined;
+      const refreshed: ProductPrice = { ...price, url: target.url, identityReview: price.identityReview ?? previousReview, sourceIdentity };
       if (conflict) refreshed.identityReview = { version: 1, status: 'needs-review', reason: 'explicit-conflict', reviewedAt: new Date().toISOString(), model: null, confidence: null,
         subject: { name: normalizeIdentityText(product.name), category: product.category, url: target.url } };
       return { product: { ...product, prices: [refreshed] }, price: refreshed, sourceTitle: source.name };
     }
   }
+  if (!context.failures.has(target.url)) context.failures.set(target.url, 'no-observation');
   return null;
 }
-export async function runRequestedRefresh(): Promise<{ processed: boolean; jobId?: string; status?: RefreshJob['status'] }> {
+export async function runRequestedRefresh(context = createKnownOfferContext()): Promise<{ processed: boolean; jobId?: string; status?: RefreshJob['status'] }> {
   const supabase = getServerSupabaseServiceClient();
   if (!supabase) throw new Error('REFRESH_UNAVAILABLE');
   const claimed = await supabase.rpc('claim_offer_refresh');
@@ -71,9 +101,9 @@ export async function runRequestedRefresh(): Promise<{ processed: boolean; jobId
     const products = await readBuilderCatalog({ ids: job.targets.map((target) => target.productId) });
     for (const target of job.targets) {
       const product = products.find((item) => item.id === target.productId);
-      const fresh = product ? await fetchKnownOffer(product, target, Date.parse(job.started_at ?? job.created_at)) : null;
+      const fresh = product ? await fetchKnownOffer(product, target, Date.parse(job.started_at ?? job.created_at), context) : null;
       if (fresh) observed.push({ target, ...fresh });
-      else results.push({ ...target, state: 'failed', observedAt: null });
+      else results.push({ ...target, state: 'failed', observedAt: null, failureReason: context.failures.get(target.url) });
     }
     const reviewable = observed.filter((item) => item.price.identityReview?.reason !== 'explicit-conflict');
     const reviewed = await reviewProductOffers(reviewable.map((item) => item.product), { authorizedRefresh: true,
@@ -93,7 +123,7 @@ export async function runRequestedRefresh(): Promise<{ processed: boolean; jobId
         && Number.isFinite(price.price) && price.price > 0
         && isOfferFresh(price.lastUpdated) && !needsIdentityReview(price, item.product);
       results.push({ ...item.target, state: !persisted ? 'failed' : price.stock === 'out-of-stock' ? 'unavailable' : 'updated',
-        observedAt: persisted ? new Date(price.lastUpdated).toISOString() : null, comparable });
+        observedAt: persisted ? new Date(price.lastUpdated).toISOString() : null, comparable, sourceIdentity: price.sourceIdentity });
     }
   } catch {
     for (const target of job.targets) if (!results.some((result) => result.productId === target.productId && result.storeId === target.storeId && result.url === target.url)) results.push({ ...target, state: 'failed', observedAt: null });

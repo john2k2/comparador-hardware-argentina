@@ -1,3 +1,4 @@
+import { sourceFetch } from './source-http';
 import * as cheerio from 'cheerio';
 import type { HardwareCategory, Product } from '../types';
 import {
@@ -235,7 +236,8 @@ export function parseWooProductDetail(
     $('h1.product_title').first().text().trim() ||
     $('h1.entry-title').first().text().trim() ||
     (store.id === 'scphardstore' ? $('h1.scp-single-product__title').first().text().trim() : '') ||
-    $('h1[itemprop="name"]').first().text().trim();
+    $('h1[itemprop="name"]').first().text().trim() ||
+    $('body.single-product h1.post_title').first().text().trim();
   if (!name) return null;
 
   const insPrice = $('p.price ins .woocommerce-Price-amount bdi, .summary ins bdi').first().text().trim();
@@ -262,7 +264,8 @@ export function parseWooProductDetail(
     ? 'out-of-stock'
     : hasLowStockText
       ? 'low-stock'
-      : 'in-stock';
+      : $('.stock.in-stock, button.single_add_to_cart_button:not([disabled]), input[name=add-to-cart]').length > 0 || /(?:hay existencias|disponible|in stock)/i.test(stockText)
+        ? 'in-stock' : 'unknown';
 
   const canonical = $('link[rel="canonical"]').attr('href') || pageUrl;
   const productUrl = normalizeAbsoluteUrl(store.baseUrl, canonical);
@@ -273,7 +276,7 @@ export function parseWooProductDetail(
     cleanScrapedText($('meta[property="og:description"]').attr('content')) ||
     '';
 
-  return buildSinglePriceProduct({
+  const product = buildSinglePriceProduct({
     id: `${store.id}-${slugPart}`,
     name,
     category,
@@ -287,6 +290,9 @@ export function parseWooProductDetail(
     description: detailDescription || name,
     brand: extractKnownHardwareBrand(name),
   });
+  const sku = $('.sku').last().text().replace(/^sku\s*:\s*/i, '').trim();
+  if (product && sku && sku !== 'N/A') product.specs.SKU = sku;
+  return product;
 }
 
 export async function fetchWooCommerceProductBySlug(
@@ -327,4 +333,17 @@ export async function fetchWooCommerceProductBySlug(
   }
 
   return null;
+}
+
+/** Publicación conocida: una sola ruta, host configurado y sin búsqueda paginada. */
+export async function fetchWooCommerceKnownOffer(storeId: string, rawUrl: string, category: HardwareCategory, signal?: AbortSignal): Promise<Product | null> {
+  const store = WOOCOMMERCE_STORES.find(item => item.id === storeId);
+  if (!store) return null;
+  const url = new URL(rawUrl);
+  const host = (value: string) => new URL(value).hostname.replace(/^www\./, '');
+  if (url.protocol !== 'https:' || url.username || url.password || url.port || host(rawUrl) !== host(store.baseUrl)) return null;
+  const response = await sourceFetch(store.id, url.href, { headers: SCRAPE_HEADERS, signal });
+  const product = parseWooProductDetail(await response.text(), url.href, store, category, slugFromScrapedUrl(url.href));
+  if (!product || host(product.prices[0].url) !== host(store.baseUrl)) return null;
+  return product;
 }

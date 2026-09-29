@@ -9,7 +9,7 @@ vi.mock('@/lib/seo/guide-catalog', () => ({ loadGuideCatalogProducts: mocks.load
 vi.mock('@/lib/persistence/product-read', () => ({ readProductByIdFromDatabase: vi.fn() }));
 vi.mock('@/lib/ai/review-product-offers', () => ({ reviewProductOffers: async (products: Product[]) => products }));
 vi.mock('@/lib/persistence/product-write-dedupe', () => ({ buildPriceStateSignature: () => 'test-signature' }));
-vi.mock('./on-demand/worker', () => ({ fetchKnownOffer: mocks.fetch }));
+vi.mock('./on-demand/worker', () => ({ fetchKnownOffer: mocks.fetch, createKnownOfferContext: () => ({ sources: new Map(), failures: new Map(), sharedReads: 0 }) }));
 vi.mock('./priority-planning', async () => {
   const original = await vi.importActual<typeof import('./priority-planning')>('./priority-planning');
   return { ...original, planGuideGroups: () => [{ key: 'test/cpu', covered: false,
