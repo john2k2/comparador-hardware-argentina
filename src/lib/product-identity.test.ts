@@ -16,7 +16,7 @@ describe('product identity', () => {
         'MSI RTX 5060 8GB',
         'MSI RTX 5060 Shadow 2X OC 8GB',
       ),
-    ).toBe('tarjetas-graficas::gpu:rtx5060:8gb:msi:shadow');
+    ).toBe('tarjetas-graficas::gpu:rtx5060:8gb:msi:shadow:2x:oc');
 
     expect(
       buildProductIdentityKey(
@@ -24,7 +24,7 @@ describe('product identity', () => {
         'MSI RTX 5060 8GB',
         'MSI RTX 5060 Ventus 2X OC 8GB',
       ),
-    ).toBe('tarjetas-graficas::gpu:rtx5060:8gb:msi:ventus');
+    ).toBe('tarjetas-graficas::gpu:rtx5060:8gb:msi:ventus:2x:oc');
   });
 
   it('keeps close peripheral variants separated', () => {
@@ -115,4 +115,13 @@ it('separa kits, CL, color y RGB aunque la serie RAM coincida', () => {
   expect(key('RGB 2x16GB CL16 Black')).not.toBe(key('RGB 1x32GB CL16 Black'));
   expect(key('RGB 2x16GB CL16 Black')).not.toBe(key('RGB 2x16GB CL18 Black'));
   expect(key('RGB 2x16GB CL16 Black')).not.toBe(key('RGB 2x16GB CL16 White'));
+});
+
+it('mantiene separadas ediciones de GPU aunque coincidan chip, marca y memoria', () => {
+  const key = (name: string) => buildProductIdentityKey('tarjetas-graficas', name);
+  expect(key('ASUS Dual RTX 5060 8GB EVO OC')).not.toBe(key('ASUS Dual RTX 5060 8GB ADVANCED OC'));
+  expect(key('Gigabyte Eagle RTX 5060 8GB OC')).not.toBe(key('Gigabyte Eagle RTX 5060 8GB OC ICE'));
+  expect(key('MSI Shadow RTX 5060 8GB 2X OC')).not.toBe(key('MSI Shadow RTX 5060 8GB 3X OC'));
+  expect(key('ASUS Dual RTX 5060 8GB OC White')).not.toBe(key('ASUS Dual RTX 5060 8GB OC Black'));
+  expect(key('ASRock AMD RX 7600 Challenger 8GB OC')).toBe(key('AMD Radeon RX 7600 ASRock Challenger OC 8GB'));
 });

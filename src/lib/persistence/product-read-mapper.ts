@@ -19,9 +19,9 @@ export function mapDbProduct(row: DbProductRow): Product {
     : null;
   // Las claves antiguas usaban la categoría de la búsqueda. Solo corregimos
   // en lectura si el modelo de CPU/GPU es inequívoco; el ID público se conserva.
-  // Las claves de RAM anteriores omitían velocidades DDR4 y series LPX/RS.
+  // Las claves anteriores omitían variantes RAM (LPX/RS) y GPU (EVO/ICE/OC).
   // No se usan para agrupar fichas en lectura porque podrían unir SKUs distintos.
-  const canonicalProductKey = category === 'memoria-ram'
+  const canonicalProductKey = ['memoria-ram', 'tarjetas-graficas'].includes(category)
     ? buildProductIdentityKey(category, row.name)
     : staleKey && exactModel
       ? buildProductIdentityKey(category, normalizedTitle, [row.brand, row.model, row.name].filter(Boolean).join(' '))
@@ -29,7 +29,9 @@ export function mapDbProduct(row: DbProductRow): Product {
   const prices = (row.product_prices ?? []).map((price) => {
     const installmentCount = price.installment_count;
     const installmentAmount = toNumber(price.installment_amount, 0);
-    const evidence = category === 'memoria-ram' ? buildIdentityEvidence(row.name, category, price.url) : null;
+    const storedReview = readIdentityReview(price.identity_review);
+    const evidence = ['memoria-ram', 'tarjetas-graficas', 'procesadores'].includes(category)
+      ? buildIdentityEvidence(row.name, category, price.url, storedReview?.sourceIdentity?.title) : null;
     const explicitConflict = evidence && hasExplicitIdentityConflict(evidence);
 
     return {
@@ -50,10 +52,11 @@ export function mapDbProduct(row: DbProductRow): Product {
       // La falta de fecha no representa una observación de hoy.
       lastUpdated: price.last_updated && Number.isFinite(Date.parse(price.last_updated)) ? new Date(price.last_updated) : new Date(0),
       identityReview: explicitConflict ? {
+        ...(storedReview?.sourceIdentity ? { sourceIdentity: storedReview.sourceIdentity } : {}),
         version: 1 as const, status: 'needs-review' as const, reason: 'explicit-conflict' as const,
         reviewedAt: null, model: null, confidence: null,
         subject: { name: normalizeIdentityText(row.name), category, url: price.url },
-      } : readIdentityReview(price.identity_review),
+      } : storedReview,
     };
   });
 

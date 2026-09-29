@@ -320,3 +320,12 @@ describe('product-read-grouping', () => {
     expect(transformed[1]?.lowestPrice).toBe(900);
   });
 });
+
+it('no vuelve a fusionar EVO y ADVANCED por compartir una clave GPU antigua', () => {
+  const common = { category: 'tarjetas-graficas' as const, brand: 'ASUS', canonicalProductKey: 'tarjetas-graficas::gpu:rtx5060:8gb:asus:dual' };
+  const result = dedupeProductsByCanonicalName([
+    createProduct({ ...common, id: 'evo', name: 'ASUS RTX 5060 Dual EVO OC 8GB' }),
+    createProduct({ ...common, id: 'advanced', name: 'ASUS RTX 5060 Dual ADVANCED OC 8GB' }),
+  ]);
+  expect(result.map(product => product.id)).toEqual(['evo', 'advanced']);
+});

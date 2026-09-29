@@ -1,4 +1,4 @@
-import { normalizeIdentityText, parseCpuModelSignature, parseGpuChipSignature } from '@/lib/product-identity';
+import { extractGpuBoardAttributes, normalizeIdentityText, parseCpuModelSignature, parseGpuChipSignature } from '@/lib/product-identity';
 import type { HardwareCategory } from '@/lib/types';
 
 export const IDENTITY_REVIEW_MIN_CONFIDENCE = 0.8;
@@ -34,6 +34,10 @@ export function readIdentityReview(value: unknown): OfferIdentityReview | undefi
   if (value == null) return undefined;
   const review = value as Partial<OfferIdentityReview>;
   if (review.version === 1 && ['consistent', 'needs-review'].includes(review.status ?? '')
+    && (review.sourceIdentity === undefined || (review.sourceIdentity !== null
+      && typeof review.sourceIdentity.title === 'string' && review.sourceIdentity.title.trim().length > 0 && review.sourceIdentity.title.length <= 400
+      && typeof review.sourceIdentity.listingRef === 'string' && review.sourceIdentity.listingRef.length > 0
+      && (review.sourceIdentity.storeSku === undefined || typeof review.sourceIdentity.storeSku === 'string')))
     && REASONS.has(review.reason as IdentityReviewReason)
     && (review.reviewedAt === null || (typeof review.reviewedAt === 'string' && Number.isFinite(Date.parse(review.reviewedAt))))
     && (review.model === null || (typeof review.model === 'string' && /^jev-[\w.-]{1,40}$/.test(review.model)))
@@ -81,6 +85,10 @@ export function hasExplicitIdentityConflict(evidence: IdentityEvidence): boolean
   if (/\b(outlet|reacondicionado|usado|refurbished)\b/i.test(evidence.offerText) && !/\b(outlet|reacondicionado|usado|refurbished)\b/i.test(evidence.name)) return true;
   if (evidence.sourceTitle && hasExplicitIdentityConflict({ name: evidence.name, category: evidence.category, offerText: evidence.sourceTitle })) return true;
   if (evidence.category === 'tarjetas-graficas') {
+    const target = extractGpuBoardAttributes(evidence.name);
+    const source = extractGpuBoardAttributes(evidence.offerText);
+    // Sólo contradicciones explícitas. Omitir EVO/OC/color no prueba equivalencia.
+    if ((Object.keys(target) as Array<keyof typeof target>).some(key => target[key] && source[key] && target[key] !== source[key])) return true;
     const capacity = (value: string) => {
       const match = value.match(/\b(\d{1,4})\s*(gb|mb)\b/i);
       return match ? Number(match[1]) * (match[2].toLowerCase() === 'gb' ? 1024 : 1) : null;

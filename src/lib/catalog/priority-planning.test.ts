@@ -35,6 +35,11 @@ describe('plan prioritario de ofertas conocidas', () => {
       { ...second, lastUpdated: new Date(now - 1000) },
       { storeId: 'unknown', url: 'http://insecure.test/cpu', lastUpdated: new Date(0) },
     ] } as unknown as Product;
+    expect(planSampleTargets([product], now)).toEqual([first, second]);
+    product.prices[2].identityReview = { version: 1, status: 'consistent', reason: 'consistent-text',
+      reviewedAt: new Date(now).toISOString(), model: 'jev-1.13.0', confidence: 0.95,
+      sourceIdentity: { title: product.name, listingRef: 'venex:cpu-1' },
+      subject: { name: 'ryzen 5 5600', category: product.category, url: second.url } };
     expect(planSampleTargets([product], now)).toEqual([first]);
     product.prices[2].identityReview = { version: 1, status: 'needs-review', reason: 'provider-unavailable',
       reviewedAt: null, model: null, confidence: null, subject: { name: product.name, category: product.category, url: second.url } };

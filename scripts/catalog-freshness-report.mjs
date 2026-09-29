@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { readFile, writeFile } from 'node:fs/promises';
 import { createObservedOfferSummary } from './lib/observed-offers.mjs';
+import { loadG02SampleEvaluator } from './lib/load-g02-sample.mjs';
 
 const args = process.argv.slice(2);
 const valueAfter = (flag) => args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined;
@@ -71,39 +72,24 @@ if (samplePath) {
       || typeof item.category !== 'string')
     || new Set(products.map((item) => item.id)).size !== products.length) throw new Error('Muestra prioritaria inválida.');
   const ids = products.map((item) => item.id);
-  const { data: catalogRows, error: catalogError } = await supabase.from('products').select('id,category').in('id', ids);
+  const { data: catalogRows, error: catalogError } = await supabase.from('products').select('id,name,category').in('id', ids);
   if (catalogError) throw catalogError;
   const catalogById = new Map((catalogRows ?? []).map((row) => [row.id, row.category]));
   if (products.some((item) => catalogById.get(item.id) !== item.category)) throw new Error('Una ficha de la muestra no existe o cambió de categoría.');
-  const byProduct = products.map((item) => ({ productId: item.id, category: item.category,
-    available: 0, fresh24h: 0, fresh3h: 0, identityPending3h: 0 }));
-  const countsById = new Map(byProduct.map((item) => [item.productId, item]));
+  const prices = [];
   for (let offset = 0; ; offset += 1000) {
     const { data, error } = await supabase.from('product_prices')
-      .select('id,product_id,price,stock,last_updated,identity_review').in('product_id', ids)
+      .select('id,product_id,url,price,stock,last_updated,identity_review').in('product_id', ids)
       .order('id', { ascending: true }).range(offset, offset + 999);
     if (error) throw error;
-    for (const price of data ?? []) {
-      if (!['in-stock', 'low-stock'].includes(price.stock) || !(Number(price.price) > 0)) continue;
-      const row = countsById.get(price.product_id);
-      if (!row) continue;
-      row.available++;
-      const observedAt = Date.parse(price.last_updated);
-      if (!Number.isFinite(observedAt) || observedAt > now.getTime()) continue;
-      if (observedAt >= Date.parse(cutoff24h)) row.fresh24h++;
-      if (observedAt >= Date.parse(cutoff3h)) {
-        row.fresh3h++;
-        if (price.identity_review?.status === 'needs-review') row.identityPending3h++;
-      }
-    }
+    prices.push(...(data ?? []));
     if (!data || data.length < 1000) break;
   }
-  const sampleSum = (field) => byProduct.reduce((total, row) => total + row[field], 0);
+  const evaluateSample = await loadG02SampleEvaluator();
   sample = { source: samplePath, selectedAtUtc: configured.selectedAtUtc,
-    definition: 'Ofertas almacenadas disponibles de fichas fijas; no verifica identidad completa ni render público.',
-    denominator: sampleSum('available'), fresh24h: sampleSum('fresh24h'), fresh3h: sampleSum('fresh3h'),
-    identityPending3h: sampleSum('identityPending3h'),
-    candidateComparable3h: sampleSum('fresh3h') - sampleSum('identityPending3h'), byProduct };
+    definition: 'Ofertas almacenadas disponibles de fichas fijas; identityAccepted3h exige revisión válida ligada a producto/URL y título observado, sin contradicción explícita. No acredita compra real ni render público.',
+    ...evaluateSample(products.map(item => catalogRows.find(row => row.id === item.id)), prices, now.toISOString()) };
+
 }
 const report = {
   measuredAt: now.toISOString(), definition: 'Ofertas almacenadas con precio positivo y stock disponible; frescura según last_updated. candidateComparable3h excluye status needs-review pero no verifica identidad contra el producto ni render público.',
@@ -123,7 +109,7 @@ if (process.env.GITHUB_STEP_SUMMARY) {
     '### Frescura del catálogo',
     `Corte: ${report.measuredAt}. Denominador: ${report.denominator} ofertas disponibles almacenadas.`,
     `≤24 h: ${report.fresh24h}; ≤3 h: ${report.fresh3h}; pendientes de identidad entre las de 3 h: ${report.identityPending3h}.`,
-    ...(sample ? [`Muestra prioritaria fija: ${sample.fresh24h}/${sample.denominator} ofertas disponibles observadas ≤24 h; ${sample.fresh3h} ≤3 h.`] : []),
+    ...(sample ? [`Muestra prioritaria fija: ${sample.fresh24h}/${sample.denominator} ofertas disponibles observadas ≤24 h; ${sample.fresh3h} ≤3 h. Identidad aceptada: ${sample.identityAccepted3h}; fichas con una oferta aceptada reciente: ${sample.productsWithAcceptedOffer3h}/${sample.byProduct.length}.`] : []),
     ...(since ? [`Filas actualizadas desde ${since}: ${report.observedRows}; productos distintos: ${report.persistedProducts}; filas con stock disponible y precio positivo: ${report.availableObservedRows}.`] : []),
     '', '| Tienda | Disponibles | ≤24 h | ≤3 h | Identidad pendiente ≤3 h | Filas actualizadas | Productos distintos del ciclo | Filas disponibles del ciclo |',
     '|---|---:|---:|---:|---:|---:|---:|---:|',

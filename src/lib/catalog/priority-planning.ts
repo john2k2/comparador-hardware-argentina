@@ -1,5 +1,5 @@
 import { isOfferFresh } from '@/lib/price-freshness';
-import { needsIdentityReview } from '@/lib/quality/offer-identity';
+import { needsIdentityReview, readIdentityReview } from '@/lib/quality/offer-identity';
 import { resolveGuideComponent, resolveGuideRefreshOffers } from '@/lib/seo/budget-guide-pricing';
 import type { BudgetGuideDefinition } from '@/lib/seo/budget-guides-data';
 import type { Product } from '@/lib/types';
@@ -45,7 +45,10 @@ export function nextPriorityTargets(groups: PriorityGroup[], attempted: Set<stri
 export function planSampleTargets(products: Product[], now = Date.now()): RefreshTarget[] {
   const targets = products.flatMap(product => product.prices.filter(price => {
     const observed = new Date(price.lastUpdated).getTime();
-    return !Number.isFinite(observed) || observed > now || now - observed >= PRIORITY_RECHECK_MS || needsIdentityReview(price, product);
+    const review = readIdentityReview(price.identityReview);
+    // Una oferta legacy recién fechada no acredita la identidad de la muestra.
+    return !Number.isFinite(observed) || observed > now || now - observed >= PRIORITY_RECHECK_MS
+      || !review?.sourceIdentity || needsIdentityReview(price, product);
   }).map(price => ({ productId: product.id, storeId: price.storeId, url: price.url })))
     .filter(target => parseRefreshTargets([target]));
   return [...new Map(targets.map(target => [targetKey(target), target])).values()];

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { createServer } from 'node:http';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,6 +19,10 @@ async function withFakeCatalog(missingCount, run) {
       response.end(JSON.stringify([{ id: 'a', name: 'A' }, { id: 'shopgamer', name: 'Shopgamer' }]));
       return;
     }
+    if (url.pathname === '/rest/v1/products') {
+      response.end(JSON.stringify([{ id: 'cpu', name: 'AMD Ryzen 5 5600', category: 'procesadores' }]));
+      return;
+    }
     if (url.pathname !== '/rest/v1/product_prices') {
       response.statusCode = 404;
       response.end('{}');
@@ -32,7 +36,11 @@ async function withFakeCatalog(missingCount, run) {
       response.end();
       return;
     }
-    response.end(JSON.stringify([
+    response.end(JSON.stringify(url.searchParams.has('product_id') ? [{
+      product_id: 'cpu', store_id: 'a', url: 'https://store.example/amd-ryzen-5-5600',
+      price: 100, stock: 'in-stock', last_updated: new Date(Date.now() - 1000).toISOString(),
+      identity_review: null,
+    }] : [
       { store_id: 'a', product_id: 'cpu', price: 100, stock: 'in-stock' },
       { store_id: 'a', product_id: 'gpu', price: 300, stock: 'low-stock' },
       { store_id: 'shopgamer', product_id: 'cpu', price: 0, stock: 'out-of-stock' },
@@ -82,5 +90,18 @@ test('un conteo exacto ausente falla el informe en lugar de publicar ceros', asy
       assert.equal(error.stdout, '');
       return true;
     });
+  });
+});
+
+test('el CLI de muestra compila el contrato real y no aprueba una revisión legacy ausente', async () => {
+  await withFakeCatalog(false, async env => {
+    const sample = join(env.GITHUB_STEP_SUMMARY, '..', 'sample.json');
+    await writeFile(sample, JSON.stringify({ products: [{ id: 'cpu', category: 'procesadores' }] }));
+    const { stdout } = await execute(process.execPath, [...args(), '--sample', sample], { env, timeout: 5000 });
+    const report = JSON.parse(stdout);
+    assert.equal(report.sample.fresh3h, 1);
+    assert.equal(report.sample.candidateComparable3h, 1);
+    assert.equal(report.sample.identityAccepted3h, 0);
+    assert.deepEqual(report.sample.productsWithoutAcceptedOffer3h, ['cpu']);
   });
 });

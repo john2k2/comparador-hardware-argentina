@@ -179,10 +179,10 @@ export function dedupeProductsByCanonicalName(products: Product[]): Product[] {
     const normalizedName = normalizeGroupName(product.name);
     if (!normalizedName) continue;
 
-    // Las claves RAM antiguas omitían kit/CL/RGB. No reutilizarlas para
+    // Las claves RAM/GPU antiguas omitían kit/CL/RGB o EVO/ICE/OC. No reutilizarlas para
     // fusionar fichas aunque sigan persistidas por compatibilidad de IDs.
-    const key = product.category === 'memoria-ram'
-      ? buildProductIdentityKey(product.category, normalizedName, buildIdentityFallback(product))
+    const key = ['memoria-ram', 'tarjetas-graficas'].includes(product.category)
+      ? buildProductIdentityKey(product.category, normalizedName)
       : product.canonicalProductKey ?? buildProductIdentityKey(product.category, normalizedName, buildIdentityFallback(product));
     const existing = grouped.get(key);
 

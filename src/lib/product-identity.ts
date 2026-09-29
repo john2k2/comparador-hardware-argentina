@@ -21,7 +21,7 @@ export type ChipSignature = {
 const GPU_VARIANTS = [
   'aorus', 'strix', 'tuf', 'dual', 'prime', 'proart', 'eagle', 'windforce',
   'gaming', 'ventus', 'shadow', 'suprim', 'trinity', 'phoenix', 'pulse',
-  'nitro', 'challenger', 'hellhound', 'red devil', 'white',
+  'nitro', 'challenger', 'hellhound', 'red devil',
 ];
 const MB_VARIANTS = [
   'aorus', 'strix', 'tuf', 'prime', 'tomahawk', 'mortar',
@@ -329,6 +329,21 @@ export function extractCpuModelKey(value: string): string | null {
   return `cpu:${signature.family}${signature.number}${signature.suffixes.join('')}`;
 }
 
+export function extractGpuBoardAttributes(value: string) {
+  const normalized = normalizeIdentityText(value);
+  // AMD/Intel pueden describir el chip antes que al fabricante de la placa.
+  const brand = firstMatch(/\b(asus|gigabyte|msi|zotac|palit|inno3d|asrock|pny|xfx|sapphire|powercolor|gainward)\b/, normalized);
+  return {
+    brand,
+    series: pickVariant(normalized, GPU_VARIANTS),
+    edition: [...new Set(normalized.match(/\b(evo|advanced|ice|aero)\b/g) ?? [])].sort().join('-') || null,
+    fans: firstMatch(/\b([1234]\s*x)\b/, normalized),
+    color: firstMatch(/\b(white|blanco|blanca|black|negro|negra)\b/, normalized)?.replace(/blanc[oa]/, 'white').replace(/negr[oa]/, 'black') ?? null,
+    memoryType: firstMatch(/\b(gddr\s*[567]x?)\b/, normalized),
+    clock: /\b(?:non|no|sin)\s*oc\b/.test(normalized) ? 'non-oc' : /\boc\b/.test(normalized) ? 'oc' : null,
+  };
+}
+
 export function extractGpuModelKey(value: string): string | null {
   const normalized = normalizeIdentityText(value);
   if (!normalized) return null;
@@ -337,10 +352,12 @@ export function extractGpuModelKey(value: string): string | null {
   if (!chip) return null;
 
   const memory = firstMatch(/\b(\d{1,2}\s*gb)\b/, normalized) ?? 'na';
-  const brand = firstMatch(BRAND_PATTERN, normalized) ?? 'na';
-  const variant = pickVariant(normalized, GPU_VARIANTS) ?? 'base';
+  const board = extractGpuBoardAttributes(normalized);
+  const brand = board.brand ?? firstMatch(/\b(intel|amd)\b/, normalized) ?? 'na';
+  const variant = board.series ?? 'base';
+  const details = [board.edition, board.fans, board.color, board.memoryType, board.clock].filter(Boolean);
 
-  return `gpu:${compactGpuChip(chip)}:${memory}:${brand}:${variant}`;
+  return `gpu:${compactGpuChip(chip)}:${memory}:${brand}:${variant}${details.length ? `:${details.join(':')}` : ''}`;
 }
 
 export function extractMotherboardModelKey(value: string): string | null {

@@ -106,3 +106,12 @@ describe('stored offer identity reviews', () => {
     expect(lowPending).toMatchObject({ status: 'needs-review', reason: 'low-confidence', confidence: 0.79 });
   });
 });
+
+it('detecta contradicciones de ensamblador y edición sin inventar detalles omitidos', () => {
+  const conflict = (name: string, offerText: string) => hasExplicitIdentityConflict({ name, offerText, category: 'tarjetas-graficas' });
+  expect(conflict('ASUS Dual RTX 5060 8GB EVO OC', 'ASUS Dual RTX 5060 8GB ADVANCED OC')).toBe(true);
+  expect(conflict('MSI Shadow RTX 5060 8GB 2X OC', 'MSI Shadow RTX 5060 8GB 3X OC')).toBe(true);
+  expect(conflict('ASUS Dual RTX 5060 8GB', 'MSI Shadow RTX 5060 8GB')).toBe(true);
+  expect(conflict('ASUS Dual RTX 5060 8GB EVO OC', 'ASUS Dual RTX 5060 8GB')).toBe(false);
+  expect(conflict('ASUS Dual RTX 5060 8GB White', 'ASUS Dual RTX 5060 8GB Black')).toBe(true);
+});
