@@ -44,9 +44,12 @@ describe('resolveGuideComponent', () => {
       identityReview: { version: 1, status: 'needs-review', reason: 'provider-unavailable', reviewedAt: null,
         model: null, confidence: null, subject: { name: 'amd ryzen 5 7600x', category: 'procesadores', url: 'https://example.com/amd-ryzen-5-7600x' } } });
     const item = product({ id: 'cpu', name: 'AMD Ryzen 5 7600X', category: 'procesadores', prices: [offer] });
-    expect(resolveGuideRefreshOffers(cpuSpec, [item])).toHaveLength(1);
-    expect(resolveGuideComponent(cpuSpec, [item]).offers).toEqual([]);
-    expect(resolveGuideReferenceOffer(cpuSpec, [item])).toBeNull();
+    for (const reason of ['provider-unavailable', 'invalid-response', 'low-confidence', 'insufficient-evidence'] as const) {
+      offer.identityReview!.reason = reason;
+      expect(resolveGuideRefreshOffers(cpuSpec, [item])).toHaveLength(1);
+      expect(resolveGuideComponent(cpuSpec, [item]).offers).toEqual([]);
+      expect(resolveGuideReferenceOffer(cpuSpec, [item])).toBeNull();
+    }
     offer.identityReview!.reason = 'explicit-conflict';
     expect(resolveGuideRefreshOffers(cpuSpec, [item])).toEqual([]);
   });

@@ -174,7 +174,8 @@ Tablas de usuario (`user_profiles`, `user_favorites`, `price_alerts`) tienen Row
 
 ### GitHub Actions
 - Workflow: `.github/workflows/catalog-refresh.yml`.
-- **Schedule actual** (reducido para cuenta gratuita): `full` diario a las `05:05` UTC.
+- **Schedule actual**: `priority` diario a las `05:05` UTC (guías y muestra fija G02); `guides` al minuto 17 de las otras horas. Revisa ofertas conocidas desde 90 minutos sin ampliar su elegibilidad de tres horas. GitHub puede retrasar cron: verificar horarios reales y cobertura.
+- Proceso prioritario: exclusivo del runner, destinos conocidos y límites por ejecución; registra observaciones guardadas y comparables en el artefacto. Las comprobaciones horarias y las ejecuciones manuales no cuentan como ciclos diarios útiles G02.
 - Soporta `workflow_dispatch` con parámetros (`mode`, `query`, `categories`, `stores`, `max_queries`, `stale_minutes`).
 - Requiere secret: `CATALOG_REFRESH_CRON_SECRET`.
 - Opcional: `CATALOG_REFRESH_BASE_URL` (default `https://www.comparador-hardware.com.ar`).
