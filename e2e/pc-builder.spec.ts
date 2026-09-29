@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test, browserNow } from './fixtures/deterministic.fixture';
 import type { Product, ProductPrice } from '../src/lib/types';
 
 const slotLabels = [
@@ -136,6 +137,19 @@ async function choose(page: Page, label: typeof slotLabels[number]) {
 }
 
 test.describe('armador de PC', () => {
+  test.beforeEach(async ({ page }) => { await page.clock.setFixedTime(browserNow); });
+
+  test('expired offers remain references and are excluded from the total', async ({ page }) => {
+    await page.clock.setFixedTime(new Date('2026-09-21T13:00:01.000Z'));
+    await installCatalogRoute(page);
+    await loadBuilder(page);
+    await choose(page, 'Procesador');
+    await expect(page.getByLabel('Elegir Procesador')).toHaveValue('cpu-5600');
+    await expect(page.getByTestId('build-total')).toHaveText('Pendiente');
+    await expect(page.getByText('Precio anterior:', { exact: true })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Resumen del presupuesto' })).toContainText('100.000');
+    await expect(page.getByText('1 piezas sin precio reciente o cotización válida; excluidas del total.', { exact: false })).toBeVisible();
+  });
   test('selecciona ocho piezas, distribuye dos tiendas, suma RAM y no usa contado en cuotas', async ({ page }, testInfo) => {
     const { products } = await installCatalogRoute(page);
     await loadBuilder(page);
@@ -156,9 +170,10 @@ test.describe('armador de PC', () => {
     await expect(page.getByTestId('build-total')).toContainText('825.000');
     await page.screenshot({ path: testInfo.outputPath('pc-builder-desktop.png'), fullPage: true });
     await page.getByLabel('Forma de pago').selectOption('installments');
-    await expect(page.getByText('Piezas cotizadas').locator('..').locator('dd')).toContainText(/\$\s*0/);
+    await expect(page.getByText('Piezas con precio reciente').locator('..').locator('dd')).toContainText(/\$\s*0/);
     await expect(page.getByTestId('build-total')).not.toContainText('800.000');
-    await expect(page.getByText('8 piezas sin cotización válida')).toBeVisible();
+    await expect(page.getByTestId('build-total')).toHaveText('Pendiente');
+    await expect(page.getByText('8 piezas sin precio reciente o cotización válida; excluidas del total.', { exact: false })).toBeVisible();
   });
 
   test('guarda, recupera y comparte IDs sin precios, y descarga precio con fecha', async ({ page }) => {
@@ -182,6 +197,9 @@ test.describe('armador de PC', () => {
     expect(JSON.stringify(sharedDraft)).not.toMatch(/price|lastUpdated|100000/);
 
     await expect(page.getByRole('link', { name: 'Ir a la tienda ↗', exact: true })).toHaveAttribute('href', refreshTarget.url);
+    await expect(page.getByRole('link', { name: 'Ir a la tienda ↗', exact: true })).toHaveAttribute('target', '_blank');
+    await expect(page.getByRole('link', { name: 'Ir a la tienda ↗', exact: true })).toHaveAttribute('rel', /noopener/);
+    await expect(page.getByRole('link', { name: 'Ir a la tienda ↗', exact: true })).toHaveAttribute('rel', /noreferrer/);
     const whatsappHref = await page.getByRole('link', { name: 'Compartir por WhatsApp ↗' }).getAttribute('href');
     expect(whatsappHref).toMatch(/^https:\/\/wa\.me\/\?text=/);
     const whatsappMessage = new URL(whatsappHref!).searchParams.get('text') ?? '';
@@ -260,7 +278,7 @@ test.describe('armador de PC', () => {
   test('deja una oferta con identidad pendiente fuera del total y permite elegir otra tienda', async ({ page }) => {
     const { state, products } = await installCatalogRoute(page, { reviewCpuAfterRefresh: true });
     await page.route('**/api/catalog/refresh**', async (route) => {
-      if (route.request().method() !== 'POST') return;
+      expect(route.request().method()).toBe('POST');
       state.refreshed = true;
       await route.fulfill({ status: 202, contentType: 'application/json', body: JSON.stringify({ job: {
         id: '123e4567-e89b-12d3-a456-426614174099',
@@ -282,7 +300,7 @@ test.describe('armador de PC', () => {
     await page.getByRole('button', { name: 'Actualizar estas ofertas' }).click();
     await expect(page.getByRole('status')).toContainText('1 ofertas actualizadas');
     await expect(page.getByText('La coincidencia del modelo requiere revisión. Conservamos el precio y la fecha informados, pero esta oferta no entra al total. Podés elegir otra tienda.')).toBeVisible();
-    await expect(total).toContainText(/\$\s*0/);
+    await expect(total).toHaveText('Pendiente');
 
     const storeSelect = page.getByLabel('Tienda para Procesador');
     await expect(storeSelect).toContainText('Modelo pendiente de revisión');

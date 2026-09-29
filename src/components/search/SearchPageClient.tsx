@@ -1,15 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SearchApiResponse } from '@/lib/search/search-api';
 import { hydrateProducts } from '@/lib/product-serialization';
-import { buildApiSearchKey, buildSearchRoute, toSearchFilters, type SearchPageState } from '@/lib/search/search-state';
-import { getCategorySeoCopy, isIndexableCategoryLanding } from '@/lib/search/search-seo';
+import { buildApiSearchKey, buildSearchRoute, parseSearchState, toSearchFilters, type SearchPageState } from '@/lib/search/search-state';
+import { getCategorySeoCopy, isCategoryCanonicalLanding, isIndexableCategoryLanding } from '@/lib/search/search-seo';
 import { stores as defaultStores } from '@/lib/scrapers/static-data';
 import type { Product, SearchFilters } from '@/lib/types';
 import { trackFilterChange, trackSearch } from '@/lib/analytics';
-import { SearchCacheProvider, useProductLoader, useSearchCache, useScrollRestoration } from '@/lib/search/search-hooks';
+import { SearchCacheProvider, useProductLoader, useSearchCache, useScrollRestoration, useSearchMetadata } from '@/lib/search/search-hooks';
 import { SearchPageView } from './SearchPageView';
 
 export type SearchPageClientProps = {
@@ -43,13 +43,16 @@ function SearchPageClientInner({
   const { setCached } = useSearchCache();
 
   const [currentState, setCurrentState] = useState<SearchPageState>(initialState);
+  const [draftFilters, setDraftFilters] = useState(() => toSearchFilters(initialState));
   const [baseProducts, setBaseProducts] = useState<Product[]>(hydrateProducts(initialBaseProducts));
   const [pagination, setPagination] = useState(initialPagination);
   const [isLoading, setIsLoading] = useState(initialHasSearchIntent && initialPagination.total === 0);
   const [resolvedRequestKey, setResolvedRequestKey] = useState<string | null>(initialResolvedRequestKey);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [isNavigating, startNavigation] = useTransition();
   const pendingSearchTrackRef = useRef<{ query: string; category?: string } | null>(null);
   const filterDebounceRef = useRef<number | null>(null);
+  const initialRouteRef = useRef(buildSearchRoute(initialState));
 
   useEffect(() => {
     if (!initialResolvedRequestKey || initialPagination.total === 0) return;
@@ -61,7 +64,7 @@ function SearchPageClientInner({
   }, [initialBaseProducts, initialPagination, initialResolvedRequestKey, setCached]);
 
   const availableStores = useMemo(() => defaultStores, []);
-  const filters = useMemo(() => toSearchFilters(currentState), [currentState]);
+  const filters = draftFilters;
   const searchQuery = currentState.query;
   const apiSearchKey = useMemo(() => buildApiSearchKey(currentState) ?? '__empty__', [currentState]);
   const requestKey = useMemo(() => `${apiSearchKey}|page=${currentState.page}`, [apiSearchKey, currentState.page]);
@@ -71,7 +74,7 @@ function SearchPageClientInner({
   const hasActiveFilters = Boolean(filters.category || hasStoreFilters || hasPriceFilters || filters.sortBy !== 'relevance');
   const hasSearchIntent = apiSearchKey !== '__empty__';
   const isSearchSyncing = hasSearchIntent && resolvedRequestKey !== null && resolvedRequestKey !== requestKey;
-  const isBusy = isLoading || isSearchSyncing;
+  const isBusy = isLoading || isSearchSyncing || isNavigating;
   const searchRoute = useMemo(() => buildSearchRoute(currentState), [currentState]);
   const categorySeoCopy = useMemo(() => getCategorySeoCopy(currentState.category), [currentState.category]);
   // La URL puede cambiar en el cliente sin remontar este componente. La copia
@@ -84,6 +87,7 @@ function SearchPageClientInner({
   const currentPage = pagination.page;
 
   useScrollRestoration(isBusy, searchRoute, initialPagination);
+  useSearchMetadata(currentState);
 
   useProductLoader({
     currentState,
@@ -124,10 +128,50 @@ function SearchPageClientInner({
     page,
   }), []);
 
+  const cancelFilterDebounce = useCallback(() => {
+    if (filterDebounceRef.current !== null) {
+      window.clearTimeout(filterDebounceRef.current);
+      filterDebounceRef.current = null;
+    }
+  }, []);
+
   const commitState = useCallback((nextState: SearchPageState) => {
-    router.replace(buildSearchRoute(nextState), { scroll: false });
-    setCurrentState(nextState);
-  }, [router]);
+    cancelFilterDebounce();
+    const route = buildSearchRoute(nextState);
+    // Las landings necesitan una navegación real para renovar metadatos y JSON-LD.
+    // No iniciamos también el loader cliente durante esa transición.
+    if (window.location.pathname !== '/search' || isCategoryCanonicalLanding(currentState) || isCategoryCanonicalLanding(nextState)) {
+      startNavigation(() => router.push(route, { scroll: false }));
+      return;
+    }
+    // Una sola fuente de resultados por interacción: API cliente, sin respuesta RSC.
+    if (`${window.location.pathname}${window.location.search}` !== route) {
+      window.history.pushState(null, '', route);
+    }
+    const normalizedState = parseSearchState(Object.fromEntries(new URLSearchParams(route.split('?')[1])));
+    setDraftFilters(toSearchFilters(normalizedState));
+    setCurrentState(normalizedState);
+  }, [router, cancelFilterDebounce, startNavigation, currentState]);
+
+  useEffect(() => {
+    const restoreFromHistory = () => {
+      cancelFilterDebounce();
+      // Next conserva la navegación de documentos y de landings de categorías.
+      if (window.location.pathname !== '/search') return;
+      const nextState = parseSearchState(Object.fromEntries(new URLSearchParams(window.location.search)));
+      pendingSearchTrackRef.current = null;
+      setDraftFilters(toSearchFilters(nextState));
+      setCurrentState(nextState);
+    };
+    // Al volver desde un producto, Next puede restaurar el árbol SSR original
+    // con una URL que ya contiene filtros añadidos mediante historial nativo.
+    if (window.location.pathname === '/search') {
+      const urlState = parseSearchState(Object.fromEntries(new URLSearchParams(window.location.search)));
+      if (buildSearchRoute(urlState) !== initialRouteRef.current) restoreFromHistory();
+    }
+    window.addEventListener('popstate', restoreFromHistory);
+    return () => window.removeEventListener('popstate', restoreFromHistory);
+  }, [cancelFilterDebounce]);
 
   const handleSearch = useCallback((query: string) => {
     const nextQuery = query.trim();
@@ -137,6 +181,7 @@ function SearchPageClientInner({
 
   const handleFiltersChange = useCallback((newFilters: Partial<SearchFilters>) => {
     const nextFilters: SearchFilters = { ...filters, ...newFilters, query: searchQuery };
+    setDraftFilters(nextFilters);
     if (newFilters.category !== undefined && newFilters.category !== filters.category) {
       trackFilterChange({ filterType: 'category', filterValue: newFilters.category || 'all' });
     }
@@ -154,7 +199,7 @@ function SearchPageClientInner({
       trackFilterChange({ filterType: 'sort', filterValue: newFilters.sortBy });
     }
 
-    // P2: Debounce de 250ms para evitar navegaciones excesivas al cambiar filtros
+    // Los campos se actualizan inmediatamente; solo se demora la búsqueda confirmada.
     if (filterDebounceRef.current !== null) {
       window.clearTimeout(filterDebounceRef.current);
     }

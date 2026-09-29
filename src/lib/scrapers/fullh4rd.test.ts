@@ -19,6 +19,7 @@ const validProductHtml = `
       <h3>Placa de Video RTX 4080 Super 16GB</h3>
       <div class="image"><img src="/images/rtx4080.jpg" /></div>
       <span class="price">$ 1.899.999</span>
+      <span class="stock">En stock</span>
     </a>
   </div>
   <div class="item">
@@ -26,6 +27,7 @@ const validProductHtml = `
       <h3>Procesador AMD Ryzen 9 7950X</h3>
       <div class="image"><img src="/images/ryzen9.jpg" /></div>
       <span class="price">$ 899.999</span>
+      <span class="stock">En stock</span>
     </a>
   </div>
 </body>
@@ -44,6 +46,23 @@ describe('fullh4rd scraper', () => {
   });
 
   describe('fetchFullh4rdProducts', () => {
+    it.each([
+      ['<span class="stock out-of-stock">Sin stock</span>', 'out-of-stock'],
+      ['<span class="stock">No disponible</span>', 'out-of-stock'],
+      ['<span class="stock">Últimas unidades</span>', 'low-stock'],
+      ['<span class="stock">En stock</span>', 'in-stock'],
+      ['<link itemprop="availability" href="https://schema.org/InStock">', 'in-stock'],
+      ['', 'unknown'],
+      ['<span>Consultar stock</span>', 'unknown'],
+    ])('exige evidencia de stock y respeta señales negativas: %s', async (markup, stock) => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+        ok: true, status: 200,
+        text: async () => `<div class="item"><a href="/producto/ryzen-5600"><h3>AMD Ryzen 5 5600</h3><span class="price">$100.000</span>${markup}</a></div>`,
+      }));
+      const result = await fetchFullh4rdProducts('https://www.fullh4rd.com.ar/cat/search/5600', 'procesadores');
+      expect(result).toHaveLength(1);
+      expect(result[0].prices[0].stock).toBe(stock);
+    });
     it('parses products from HTML response', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
         ok: true,

@@ -66,6 +66,8 @@ export function proxy(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-content-security-policy-nonce', nonce);
+  // Next.js extrae el nonce de esta política para sus scripts de hidratación.
+  requestHeaders.set('Content-Security-Policy', cspPolicy);
   if (
     requestHeaders.has(INTERNAL_REFRESH_HEADER)
     && !isTrustedInternalRefreshRequest(request)

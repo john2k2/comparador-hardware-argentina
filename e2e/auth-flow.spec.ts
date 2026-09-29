@@ -1,15 +1,18 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/deterministic.fixture';
 
 // ============================================================================
 // E2E: AUTH - Login, registro, sesión, logout
 // ============================================================================
 
 test.describe('Auth Flow', () => {
+  // Allow the mocked auth transport; production CSP is covered by csp-hydration.
+  test.use({ bypassCSP: true });
+
   test('pagina de auth muestra opciones de login', async ({ page }) => {
     await page.goto('/auth');
 
     // Formulario de login visible
-    await expect(page.getByRole('heading', { level: 1, name: /entrar o crear cuenta/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: /entrar o crear cuenta/i })).toBeVisible();
     await expect(page.getByRole('textbox', { name: 'Email' })).toBeVisible();
     await expect(page.locator('input[type="password"]')).toBeVisible();
     await expect(page.getByRole('button', { name: 'INGRESAR' })).toBeVisible();
@@ -22,6 +25,14 @@ test.describe('Auth Flow', () => {
   });
 
   test('login con credenciales invalidas muestra error', async ({ page }) => {
+    const submitted: unknown[] = [];
+    await page.route('**/auth/v1/token?grant_type=password', async (route) => {
+      expect(route.request().method()).toBe('POST');
+      submitted.push(route.request().postDataJSON());
+      await route.fulfill({ status: 400, json: {
+        code: 'invalid_credentials', message: 'Invalid login credentials',
+      } });
+    });
     await page.goto('/auth');
 
     const emailInput = page.locator('input[type="email"]');
@@ -33,11 +44,12 @@ test.describe('Auth Flow', () => {
 
     await submitButton.click();
 
-    // Esperar a que aparezca el mensaje de error
-    await expect(page.getByText(/error/i)).toBeVisible({ timeout: 5000 }).catch(() => {});
-    // Puede mostrar error o simplemente no loguearse
-    const hasError = await page.getByText(/error/i).isVisible().catch(() => false);
-    expect(hasError || page.url().includes('/auth')).toBe(true);
+    await expect(page.getByText('Invalid login credentials', { exact: true })).toBeVisible();
+    expect(submitted).toHaveLength(1);
+    expect(submitted[0]).toMatchObject({ email: 'invalid@test.com', password: 'wrongpassword123' });
+    await expect(submitButton).toBeEnabled();
+    await expect(page).toHaveURL(/\/auth$/);
+    await expect(page.getByText('[ Cuenta activa ]', { exact: true })).toHaveCount(0);
   });
 
   test('admin panel protegido - redirige a auth sin sesión', async ({ page }) => {

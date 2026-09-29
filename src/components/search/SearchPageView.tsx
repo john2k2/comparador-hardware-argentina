@@ -290,7 +290,11 @@ export function PaginationControls({
       {currentPage > 1 ? (
         <Link
           href={buildSearchPaginationHref(searchRoute, currentPage - 1)}
-          onClick={() => navigateToPage(currentPage - 1)}
+          prefetch={false}
+          onNavigate={(event) => {
+            event.preventDefault();
+            navigateToPage(currentPage - 1);
+          }}
           rel="prev"
           aria-label={`Ir a la página ${currentPage - 1}`}
           className="pixel-button text-[10px] min-h-11"
@@ -308,7 +312,11 @@ export function PaginationControls({
       {currentPage < totalPages ? (
         <Link
           href={buildSearchPaginationHref(searchRoute, currentPage + 1)}
-          onClick={() => navigateToPage(currentPage + 1)}
+          prefetch={false}
+          onNavigate={(event) => {
+            event.preventDefault();
+            navigateToPage(currentPage + 1);
+          }}
           rel="next"
           aria-label={`Ir a la página ${currentPage + 1}`}
           className="pixel-button text-[10px] min-h-11"

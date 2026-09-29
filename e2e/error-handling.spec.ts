@@ -1,204 +1,133 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, installSearchCatalog, searchFromIdle, searchProducts } from './fixtures/deterministic.fixture';
 
-// ============================================================================
-// E2E: ERRORES Y EDGE CASES - 404, timeouts, errores de red
-// ============================================================================
-
-test.describe('Error Handling', () => {
-  test('pagina 404 para ruta inexistente', async ({ page }) => {
-    const response = await page.goto('/ruta-que-no-existe-xyz-123');
-
-    // El status HTTP importa tanto como la UI: un 200 con pantalla de 404 es un
-    // soft 404 y Google lo indexa como pagina fina.
-    expect(response?.status()).toBe(404);
-
-    const bodyText = await page.textContent('body');
-    expect(bodyText && (bodyText.includes('404') || bodyText.includes('no encontrado') || bodyText.includes('not found'))).toBe(true);
-  });
-
-  // Rutas dinamicas que resuelven el slug en el servidor y llaman notFound().
-  const slugRoutesSinResultado = [
+test.describe('HTTP not-found responses', () => {
+  for (const path of [
+    '/ruta-que-no-existe-xyz-123',
     '/guia/guia-que-no-existe-xyz-123',
     '/comparativa/comparativa-que-no-existe-xyz-123',
     '/comparar/categoria-que-no-existe-xyz-123',
     '/product/producto-que-no-existe-xyz-123',
-  ];
-
-  for (const ruta of slugRoutesSinResultado) {
-    test(`${ruta} responde 404 real y noindex`, async ({ page }) => {
-      const response = await page.goto(ruta);
-
-      expect(response?.status()).toBe(404);
-
-      // La ruta y not-found.tsx aportan cada una su meta robots; ninguna puede
-      // quedar indexable.
-      const robots = await page
-        .locator('meta[name="robots"]')
-        .evaluateAll((tags) => tags.map((tag) => tag.getAttribute('content')));
+  ]) {
+    test(`${path} returns a real 404 and a recoverable noindex page`, async ({ page }) => {
+      const response = await page.goto(path);
+      expect(response).not.toBeNull();
+      expect(response!.status()).toBe(404);
+      await expect(page.getByRole('heading', { name: '[ ERROR 404: PAGINA NO ENCONTRADA ]', exact: true })).toBeVisible();
+      const robots = await page.locator('meta[name="robots"]').evaluateAll((tags) => tags.map((tag) => tag.getAttribute('content')));
       expect(robots.length).toBeGreaterThan(0);
-      expect(robots.every((content) => content?.includes('noindex'))).toBe(true);
+      for (const content of robots) expect(content).toContain('noindex');
+      await expect(page.getByRole('link', { name: '< BUSCAR PRODUCTOS' })).toHaveAttribute('href', '/search');
+    });
+  }
+});
+
+test.describe('Search error and empty states', () => {
+  test.beforeEach(async ({ page }) => { await installSearchCatalog(page); });
+
+  test('renders special characters as text without executing markup', async ({ page }) => {
+    const dialogs: string[] = [];
+    const errors: string[] = [];
+    page.on('dialog', async (dialog) => { dialogs.push(dialog.message()); await dialog.dismiss(); });
+    page.on('pageerror', (error) => errors.push(error.message));
+    const query = '<script>alert("xss")</script>';
+    await searchFromIdle(page, query);
+    await expect(page.getByRole('heading', { name: `Resultados para ${query}`, exact: true })).toHaveText(`Resultados para ${query}`);
+    await expect(page.getByText('[ SIN RESULTADOS ]', { exact: true })).toBeVisible();
+    await expect(page.locator('#product-grid-start article')).toHaveCount(0);
+    expect(await page.locator('script').evaluateAll((scripts) => scripts.some((script) => script.textContent === 'alert("xss")'))).toBe(false);
+    expect(dialogs).toEqual([]);
+    expect(errors).toEqual([]);
+  });
+
+  for (const path of ['/search?q=', '/search?page=abc&minPrice=xyz&sortBy=invalid', '/search?minPrice=-100']) {
+    test(`${path} normalizes to the idle state`, async ({ page }) => {
+      await page.goto(path);
+      await expect(page.getByText('[ LISTO PARA BUSCAR ]', { exact: true })).toBeVisible();
+      await expect(page.getByLabel('Precio mínimo')).toHaveValue('');
+      await expect(page.locator('#product-grid-start article')).toHaveCount(0);
+      await expect(page.getByRole('main').getByRole('alert')).toHaveCount(0);
     });
   }
 
-  test('producto inexistente muestra error amigable', async ({ page }) => {
-    const response = await page.goto('/product/producto-que-no-existe-123');
-    expect(response?.status()).toBe(404);
-
-    // Esperar a que cargue la página
-    await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(1000);
-
-    const title = await page.title();
-    // El título puede o no contener "no encontrado" dependiendo de la implementación
-    // Lo importante es que la página cargó sin crashear
-    expect(title.length).toBeGreaterThan(0);
-
-    // Verificar que no crasheó (hay contenido visible)
-    const bodyText = await page.textContent('body');
-    expect(bodyText?.length).toBeGreaterThan(100);
-  });
-
-  test('búsqueda con caracteres especiales no crashea', async ({ page }) => {
-    await page.goto('/search');
-
-    const searchInput = page.getByPlaceholder(/BUSCAR|NUEVA/i);
-    await searchInput.fill('<script>alert("xss")</script>');
-    await searchInput.press('Enter');
-
-    await page.waitForTimeout(2000);
-
-    // No debería crashar, debería mostrar algo
-    const bodyText = await page.textContent('body');
-    expect(bodyText?.length).toBeGreaterThan(0);
-  });
-
-  test('búsqueda vacía no genera error', async ({ page }) => {
-    await page.goto('/search?q=');
-
-    // Debería mostrar estado idle
-    await expect(page.getByText('[ LISTO PARA BUSCAR ]')).toBeVisible();
-  });
-
-  test('categoría inexistente no crashea', async ({ page }) => {
+  test('unknown category normalizes to the idle state', async ({ page }) => {
     await page.goto('/search?category=categoria-inexistente-xyz');
-
-    // Debería cargar sin crash
-    const bodyText = await page.textContent('body');
-    expect(bodyText?.length).toBeGreaterThan(0);
+    await expect(page.getByText('[ LISTO PARA BUSCAR ]', { exact: true })).toBeVisible();
+    await expect(page.locator('#product-grid-start article')).toHaveCount(0);
   });
 
-  test('parámetros inválidos en URL no crashean', async ({ page }) => {
-    await page.goto('/search?page=abc&minPrice=xyz&sortBy=invalid');
-
-    // Debería manejar gracefully
-    const bodyText = await page.textContent('body');
-    expect(bodyText?.length).toBeGreaterThan(0);
+  test('a genuinely empty catalog shows no results, not an idle or error state', async ({ page }) => {
+    await searchFromIdle(page, 'no-fixture-matches');
+    await expect(page.getByText('[ SIN RESULTADOS ]', { exact: true })).toBeVisible();
+    await expect(page.getByText('RESULTADOS: 0 ITEMS', { exact: true })).toBeVisible();
+    await expect(page.getByText('[ LISTO PARA BUSCAR ]', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('main').getByRole('alert')).toHaveCount(0);
+    await expect(page.locator('#product-grid-start article')).toHaveCount(0);
   });
 
-  test('precio negativo en URL manejado', async ({ page }) => {
-    await page.goto('/search?minPrice=-100');
-
-    const bodyText = await page.textContent('body');
-    expect(bodyText?.length).toBeGreaterThan(0);
+  test('out-of-range history navigation renders the final page and permits returning to page one', async ({ page }) => {
+    await searchFromIdle(page);
+    await expect(page.locator('#product-grid-start article')).toHaveCount(12);
+    // Se conserva un único catálogo simulado durante la navegación cliente.
+    // El clamp de la lectura SSR está cubierto por el contrato SQL y su adaptador.
+    await page.evaluate(() => {
+      history.pushState(null, '', '/search?q=Ryzen&category=procesadores&page=99999');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    await expect(page.locator('#product-grid-start h3')).toHaveText(['AMD Ryzen fixture 13']);
+    await expect(page.getByRole('link', { name: 'Ir a la página 3', exact: true })).toHaveCount(0);
+    await page.getByRole('link', { name: 'Ir a la página 1', exact: true }).click();
+    await expect(page).toHaveURL((url) => url.searchParams.get('q') === 'Ryzen' &&
+      url.searchParams.get('category') === 'procesadores' && !url.searchParams.has('page'));
+    await expect(page.locator('#product-grid-start article')).toHaveCount(12);
+    await expect(page.locator('#product-grid-start h3').first()).toHaveText(searchProducts[0].name);
   });
 
-  test('pagina muy grande en pagination no crashea', async ({ page }) => {
-    await page.goto('/search?category=procesadores&page=99999');
-
-    // Debería mostrar página válida o última página
-    const bodyText = await page.textContent('body');
-    expect(bodyText?.length).toBeGreaterThan(0);
-  });
+  for (const failure of ['http', 'network'] as const) {
+    test(`${failure} failure displays an error and retry restores actual results`, async ({ page }) => {
+      let failing = true;
+      let attempts = 0;
+      await page.route('**/api/search**', async (route) => {
+        attempts += 1;
+        if (!failing) { await route.fallback(); return; }
+        if (failure === 'network') await route.abort('failed');
+        else await route.fulfill({ status: 503, json: { error: 'Fixture unavailable' } });
+      });
+      await searchFromIdle(page);
+      const alert = page.getByRole('main').getByRole('alert');
+      await expect(alert).toContainText('[ ERROR EN LA BUSQUEDA ]');
+      await expect(page.getByText('[ SIN RESULTADOS ]', { exact: true })).toHaveCount(0);
+      await expect(page.locator('#product-grid-start article')).toHaveCount(0);
+      const failedAttempts = attempts;
+      expect(failedAttempts).toBeGreaterThan(0);
+      failing = false;
+      await alert.getByRole('button', { name: 'REINTENTAR', exact: true }).click();
+      await expect(page.locator('#product-grid-start article')).toHaveCount(12);
+      await expect(page.locator('#product-grid-start h3').first()).toHaveText(searchProducts[0].name);
+      await expect(alert).toHaveCount(0);
+      expect(attempts).toBeGreaterThan(failedAttempts);
+    });
+  }
 });
 
-test.describe('Network Resilience', () => {
-  test('home funciona sin datos de secciones', async ({ page }) => {
-    // Home debería cargar aunque las secciones estén vacías
-    await page.goto('/');
-
-    // Al menos el header y search deberían estar
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await expect(page.getByPlaceholder(/BUSCAR|NUEVA/i)).toBeVisible();
-  });
-
-  test('search funciona sin resultados de DB', async ({ page }) => {
-    await page.goto('/search');
-
-    // Debería mostrar estado idle incluso si no hay datos
-    await expect(page.getByText('[ LISTO PARA BUSCAR ]')).toBeVisible();
-  });
-});
-
-test.describe('Content Integrity', () => {
-  test('sin scripts maliciosos inyectados', async ({ page }) => {
-    await page.goto('/');
-
-    // Verificar que no hay scripts sospechosos
-    const scripts = page.locator('script:not([src])');
-    const count = await scripts.count();
-
-    // Los scripts inline deberían ser mínimos (analytics, theme, Next.js chunks)
-    // En dev mode Next.js inyecta muchos scripts, así que el límite es mayor
-    expect(count).toBeLessThan(50);
-  });
-
-  test('todas las imágenes tienen alt text', async ({ page }) => {
-    await page.goto('/comparar/procesadores');
-    await page.waitForTimeout(3000);
-
-    const images = page.locator('img');
-    const imageCount = await images.count();
-
-    if (imageCount > 0) {
-      for (let i = 0; i < Math.min(imageCount, 5); i++) {
-        const img = images.nth(i);
-        const alt = await img.getAttribute('alt');
-        // Next.js Image siempre tiene alt (puede ser vacío)
-        expect(alt !== undefined).toBe(true);
-      }
+test.describe('Catalog content integrity', () => {
+  test('every fixture product image has the matching accessible name', async ({ page }) => {
+    await installSearchCatalog(page);
+    await searchFromIdle(page);
+    const cards = page.locator('#product-grid-start article');
+    await expect(cards).toHaveCount(12);
+    for (let index = 0; index < 12; index += 1) {
+      const image = cards.nth(index).getByRole('img');
+      await expect(image).toHaveCount(1);
+      await expect(image).toHaveAttribute('alt', searchProducts[index].name);
     }
   });
 
-  test('links externos tienen target="_blank"', async ({ page }) => {
-    await page.goto('/comparar/procesadores');
-    await page.waitForTimeout(3000);
-
-    const productLinks = page.locator('#product-grid-start a[href^="/product/"]');
-    const firstLink = productLinks.first();
-    if (await firstLink.isVisible()) {
-      await firstLink.click();
-      await page.waitForURL(/\/product\//);
-
-      // Links a tiendas deberían abrir en nueva pestaña
-      const storeLinks = page.getByRole('link', { name: /VER EN TIENDA/i });
-      const count = await storeLinks.count();
-
-      if (count > 0) {
-        const target = await storeLinks.first().getAttribute('target');
-        expect(target).toBe('_blank');
-      }
-    }
-  });
-});
-
-test.describe('Performance Basics', () => {
-  test('home carga en tiempo razonable', async ({ page }) => {
-    const startTime = Date.now();
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    const loadTime = Date.now() - startTime;
-
-    // Debería cargar en menos de 10 segundos
-    expect(loadTime).toBeLessThan(10000);
-  });
-
-  test('búsqueda responde en tiempo razonable', async ({ page }) => {
-    const startTime = Date.now();
-    await page.goto('/comparar/procesadores');
-    await page.waitForLoadState('networkidle');
-    const loadTime = Date.now() - startTime;
-
-    // Debería cargar en menos de 15 segundos (puede incluir scraping)
-    expect(loadTime).toBeLessThan(15000);
+  test('search results become usable within the local response budget', async ({ page }) => {
+    await installSearchCatalog(page);
+    const startedAt = Date.now();
+    await searchFromIdle(page);
+    await expect(page.locator('#product-grid-start article')).toHaveCount(12);
+    await expect(page.getByRole('link', { name: 'Ir a la página 2', exact: true })).toBeVisible();
+    expect(Date.now() - startedAt).toBeLessThan(15_000);
   });
 });

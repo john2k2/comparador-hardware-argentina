@@ -141,6 +141,7 @@ export function AuthScreen() {
 
       if (oauthError) {
         setError(oauthError.message);
+        setIsSubmitting(false);
       }
     } catch (caughtError) {
       const messageText = caughtError instanceof Error ? caughtError.message : 'No se pudo iniciar sesion con Google.';

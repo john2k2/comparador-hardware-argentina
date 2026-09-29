@@ -1,23 +1,24 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, installSearchCatalog, searchFromIdle } from './fixtures/deterministic.fixture';
 
-test('navigates search pagination without losing category context', async ({ page }) => {
-  await page.goto('/comparar/procesadores');
-  await page.waitForTimeout(3000);
-
-  const productLinks = page.locator('#product-grid-start a[href^="/product/"]');
-  const hasProducts = await productLinks.first().isVisible().catch(() => false);
-  if (!hasProducts) return; // Skip si no hay productos
-
-  const nextButton = page.getByRole('button', { name: 'NEXT >>' });
-  const hasNext = await nextButton.isVisible().catch(() => false);
-  if (!hasNext) return; // Skip si no hay paginación
-
-  await nextButton.click();
-  await page.waitForURL(/\/search\?category=procesadores&page=2/);
-
-  const prevButton = page.getByRole('button', { name: '<< PREV' });
-  await expect(prevButton).toBeVisible();
-  await prevButton.click();
-
-  await page.waitForURL(/\/search\?category=procesadores$/);
+test('pagination preserves category and query and replaces the result set in both directions', async ({ page }) => {
+  await installSearchCatalog(page);
+  await searchFromIdle(page);
+  await expect(page.locator('#product-grid-start article')).toHaveCount(12);
+  await page.getByRole('button', { name: 'Filtrar por categoría: Procesadores', exact: true }).click();
+  await expect(page).toHaveURL((url) => url.pathname === '/search' && url.searchParams.get('q') === 'Ryzen' &&
+    url.searchParams.get('category') === 'procesadores');
+  const headings = page.locator('#product-grid-start h3');
+  const firstPageNames = Array.from({ length: 12 }, (_, i) => `AMD Ryzen fixture ${String(i + 1).padStart(2, '0')}`);
+  await expect(headings).toHaveText(firstPageNames);
+  const next = page.getByRole('link', { name: 'Ir a la página 2', exact: true });
+  await expect(next).toHaveAttribute('href', /category=procesadores/);
+  await next.click();
+  await expect(page).toHaveURL((url) => url.pathname === '/search' && url.searchParams.get('q') === 'Ryzen' &&
+    url.searchParams.get('category') === 'procesadores' && url.searchParams.get('page') === '2');
+  await expect(headings).toHaveText(['AMD Ryzen fixture 13']);
+  await expect(page.getByText('RESULTADOS: 13 ITEMS', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Ir a la página 1', exact: true }).click();
+  await expect(page).toHaveURL((url) => url.searchParams.get('q') === 'Ryzen' &&
+    url.searchParams.get('category') === 'procesadores' && !url.searchParams.has('page'));
+  await expect(headings).toHaveText(firstPageNames);
 });

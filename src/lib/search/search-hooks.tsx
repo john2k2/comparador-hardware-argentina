@@ -6,6 +6,9 @@ import { createContext, useCallback, useContext, useEffect, useRef } from 'react
 import type { SearchPageState } from './search-state';
 import { buildSearchRoute } from './search-state';
 import type { SearchApiResponse } from './search-api';
+import { resolveSearchMetadata } from './search-page-metadata';
+import { isCategoryCanonicalLanding } from './search-seo';
+import { SITE_NAME } from '@/lib/site-config';
 import {
   readStoredSearch,
   writeStoredSearch,
@@ -16,6 +19,39 @@ import {
 } from './search-cache-utils';
 
 type SearchCacheEntry = { expiresAt: number; payload: SearchApiResponse };
+
+// El historial nativo no vuelve a ejecutar generateMetadata. Se reutiliza su
+// resolver para mantener la búsqueda coherente sin tocar las landings SEO.
+export function useSearchMetadata(state: SearchPageState) {
+  useEffect(() => {
+    if (window.location.pathname !== '/search' || isCategoryCanonicalLanding(state)) return;
+    const metadata = resolveSearchMetadata(state);
+    const title = typeof metadata.title === 'string' ? `${metadata.title} | ${SITE_NAME}` : undefined;
+    if (title) document.title = title;
+
+    const setMeta = (attribute: 'name' | 'property', key: string, value: unknown) => {
+      if (typeof value !== 'string') return;
+      const element = document.head.querySelector<HTMLMetaElement>(`meta[${attribute}="${key}"]`) ?? document.createElement('meta');
+      element.setAttribute(attribute, key);
+      element.content = value;
+      if (!element.isConnected) document.head.append(element);
+    };
+    setMeta('name', 'description', metadata.description);
+    setMeta('name', 'robots', 'noindex, follow');
+    setMeta('property', 'og:title', metadata.openGraph?.title);
+    setMeta('property', 'og:description', metadata.openGraph?.description);
+    setMeta('property', 'og:url', metadata.openGraph?.url);
+    setMeta('name', 'twitter:title', metadata.twitter?.title);
+    setMeta('name', 'twitter:description', metadata.twitter?.description);
+    const canonical = metadata.alternates?.canonical;
+    if (typeof canonical === 'string') {
+      const element = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]') ?? document.createElement('link');
+      element.rel = 'canonical';
+      element.href = canonical;
+      if (!element.isConnected) document.head.append(element);
+    }
+  }, [state]);
+}
 
 type SearchCacheContextValue = {
   getCached: (key: string) => SearchApiResponse | null;
@@ -208,9 +244,8 @@ export function useProductLoader({
         if (controller.signal.aborted) return;
         onProductsLoaded(data.products, data.pagination);
       } catch (error) {
-        if ((error as Error).name !== 'AbortError') {
+        if (!controller.signal.aborted && (error as Error).name !== 'AbortError') {
           const errorMessage = (error as Error).message || 'Error al buscar productos';
-          onError?.(errorMessage);
           onProductsLoaded([], {
             limit: 0,
             offset: 0,
@@ -219,6 +254,7 @@ export function useProductLoader({
             page: currentState.page,
             pageSize,
           });
+          onError?.(errorMessage);
         }
       } finally {
         if (!controller.signal.aborted) {

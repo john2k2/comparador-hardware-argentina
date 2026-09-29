@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import { Product, HardwareCategory } from '../types';
+import { Product, HardwareCategory, StockStatus } from '../types';
 import {
   buildPaginatedUrl,
   findNextPageUrl,
@@ -12,6 +12,22 @@ import { logger } from '../logger';
 const FULLH4RD_BASE_URL = 'https://www.fullh4rd.com.ar';
 const FULLH4RD_CATEGORY_MAX_PAGES = 5;
 const FULLH4RD_SEARCH_MAX_PAGES = 3;
+
+function readStock(card: cheerio.Cheerio<import('domhandler').Element>): StockStatus {
+  const text = card.find('*').addBack().contents()
+    .map((_, node) => node.type === 'text' ? node.data : '').get().join(' ')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const availability = card.find('[itemprop="availability"]').attr('href') ?? '';
+  if (card.hasClass('out-of-stock') || card.find('.out-of-stock, .sin-stock').length > 0
+    || /sin\s+stock|agotad[oa]|no\s+disponible|sin\s+existencias/.test(text)
+    || /OutOfStock|Discontinued|SoldOut/i.test(availability)) return 'out-of-stock';
+  if (/ultimas?\s+unidades|pocas?\s+unidades/.test(text)) return 'low-stock';
+  if (card.hasClass('in-stock') || card.find('.in-stock').length > 0
+    || /\ben\s+stock\b|\bstock\s+disponible\b|\bhay\s+existencias\b/.test(text)
+    || /InStock|LimitedAvailability/i.test(availability)) return 'in-stock';
+  // Un precio o una tarjeta visible no prueban disponibilidad comprable.
+  return 'unknown';
+}
 
 export async function fetchFullh4rdProducts(
   categoryUrl: string,
@@ -98,7 +114,7 @@ export async function fetchFullh4rdProducts(
               url,
               price,
               installment: null,
-              stock: 'in-stock',
+              stock: readStock($(el)),
               lastUpdated: new Date(),
             },
           ],

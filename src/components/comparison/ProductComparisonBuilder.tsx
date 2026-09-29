@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { HardwareCategory, Product } from '@/lib/types';
 import { COMPARABLE_CATEGORIES, COMPARISON_USE_CASES, compareProducts, type ComparisonUseCase } from '@/lib/comparison/dynamic-comparison';
@@ -18,22 +18,34 @@ function ProductFinder({ category, side, selected, onSelect }: {
   const [query, setQuery] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
+  const requestRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    setQuery('');
+  useEffect(() => () => requestRef.current?.abort(), []);
+
+  function changeQuery(value: string) {
+    requestRef.current?.abort();
+    setQuery(value);
     setProducts([]);
-    onSelect(null);
-  }, [category]); // eslint-disable-line react-hooks/exhaustive-deps
+    setLoading(false);
+  }
 
   async function search() {
+    requestRef.current?.abort();
     if (query.trim().length < 2) return;
+    const controller = new AbortController();
+    requestRef.current = controller;
     setLoading(true);
     try {
-      const response = await fetch(`/api/products?category=${encodeURIComponent(category)}&q=${encodeURIComponent(query.trim())}`);
+      const response = await fetch(`/api/products?category=${encodeURIComponent(category)}&q=${encodeURIComponent(query.trim())}`, { signal: controller.signal });
+      if (!response.ok) throw new Error(`Product request failed: ${response.status}`);
       const payload = await response.json() as { products?: Product[] };
-      setProducts((payload.products ?? []).slice(0, 8));
+      if (!controller.signal.aborted) {
+        setProducts((payload.products ?? []).filter((product) => product.category === category).slice(0, 8));
+      }
+    } catch {
+      if (!controller.signal.aborted) setProducts([]);
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   }
 
@@ -51,7 +63,7 @@ function ProductFinder({ category, side, selected, onSelect }: {
           <div className="flex gap-2">
             <input
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => changeQuery(event.target.value)}
               onKeyDown={(event) => { if (event.key === 'Enter') void search(); }}
               placeholder="Ej: Ryzen 5 5600"
               aria-label={`Buscar ${side === 'left' ? 'producto A' : 'producto B'}`}
@@ -81,14 +93,19 @@ export function ProductComparisonBuilder() {
   const [useCase, setUseCase] = useState<ComparisonUseCase>('gaming');
   const [left, setLeft] = useState<Product | null>(null);
   const [right, setRight] = useState<Product | null>(null);
-  const comparison = useMemo(() => left && right ? compareProducts(left, right, useCase) : null, [left, right, useCase]);
+  const comparison = useMemo(() => left && right && left.category === category && right.category === category
+    ? compareProducts(left, right, useCase) : null, [left, right, useCase, category]);
 
   return (
     <div>
       <div className="mb-5 grid gap-4 md:grid-cols-2">
         <div>
           <label htmlFor="comparison-category" className="mb-2 block text-[10px] font-bold text-muted-foreground">TIPO DE COMPONENTE</label>
-          <select id="comparison-category" value={category} onChange={(event) => setCategory(event.target.value as HardwareCategory)} className="w-full border-2 border-border bg-background px-3 py-3 text-[11px] font-bold focus:border-primary focus:outline-none">
+          <select id="comparison-category" value={category} onChange={(event) => {
+            setLeft(null);
+            setRight(null);
+            setCategory(event.target.value as HardwareCategory);
+          }} className="w-full border-2 border-border bg-background px-3 py-3 text-[11px] font-bold focus:border-primary focus:outline-none">
             {COMPARABLE_CATEGORIES.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
           </select>
         </div>
@@ -102,8 +119,8 @@ export function ProductComparisonBuilder() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <ProductFinder category={category} side="left" selected={left} onSelect={setLeft} />
-        <ProductFinder category={category} side="right" selected={right} onSelect={setRight} />
+        <ProductFinder key={`${category}-left`} category={category} side="left" selected={left} onSelect={(product) => setLeft(product?.category === category ? product : null)} />
+        <ProductFinder key={`${category}-right`} category={category} side="right" selected={right} onSelect={(product) => setRight(product?.category === category ? product : null)} />
       </div>
 
       {!comparison && <p className="mt-5 border-2 border-dashed border-border p-4 text-[10px] text-muted-foreground">Elegí dos productos para generar la comparación completa.</p>}
