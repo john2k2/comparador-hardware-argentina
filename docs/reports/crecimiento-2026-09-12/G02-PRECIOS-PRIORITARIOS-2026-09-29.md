@@ -39,3 +39,49 @@ Run manual `36596115073`: 16:13:53–16:21:53 UTC, 87 destinos intentados, 65 ob
 La revisión puntual `abd72e92-faad-4c7d-b7b8-d3d359372ee6`, runner `36596670538`, terminó el 29/09 a las 16:23:07 UTC con RX 7600 de CompraGamer comparable. Falta el contraste de la guía después de su caché.
 
 La muestra reveló títulos agrupados de RAM con serie/RGB distintos a algunas URLs asociadas (Corsair RS frente a LPX; Kingston RGB frente a publicaciones sin ese atributo). Buscar el título completo impedía siquiera encontrar esas publicaciones. La búsqueda de RAM ahora usa marca, capacidad y generación para recuperar candidatos, pero exige la misma URL y conserva los controles de serie/variante; el test prueba que recuperar una LPX no aprueba su asociación con RS. Esto mejora el diagnóstico y no reagrupa variantes a ciegas. Trece pruebas enfocadas y TypeScript/lint aprobados para el ajuste. Los fallos de agrupación permanecen pendientes; no cambiar los nueve IDs de la muestra para mejorar artificialmente su porcentaje.
+
+## Corte público final, 29/09/2026 16:27 UTC
+
+Las tres rutas respondieron 200 y mostraron siete piezas con precios positivos, enlace de compra y fecha reciente. Evidencia de cada pieza en [G02-GUIAS-VERIFICADAS-2026-09-29.json](G02-GUIAS-VERIFICADAS-2026-09-29.json).
+
+| Guía | Ofertas | Total ARS | Máximo ARS |
+|---|---:|---:|---:|
+| pc-gamer-1-millon | 7/7 | 994303 | 1000000 |
+| pc-gamer-2-millones | 7/7 | 1954279 | 2000000 |
+| pc-gamer-3-millones | 7/7 | 2886249 | 3000000 |
+
+Envío, armado, licencia y periféricos aparte. No se presentan estos importes como precios congelados. La RX 7600 Challenger OC de la guía 2M declara 269,2 mm, alimentación de ocho pines y PSU recomendada de 550 W en [ASRock](https://www.asrock.com/Graphics-Card/AMD/Radeon%20RX%207600%20Challenger%208GB%20OC/); el Elite 302 declara 365 mm de espacio para GPU en [Cooler Master](https://www.coolermaster.com/es-global/products/elite-302.html). Esto respalda el espacio para esa GPU; no certifica BIOS/QVL ni sustituye comprobar la revisión y conectores entregados por la tienda.
+
+### Observaciones por tienda del proceso principal
+
+| Tienda | Filas observadas | Productos distintos | Con precio positivo y stock informado |
+|---|---:|---:|---:|
+| beings | 1 | 1 | 1 |
+| compragamer | 17 | 17 | 17 |
+| compugarden | 1 | 1 | 1 |
+| dinobyte | 4 | 4 | 4 |
+| gamerspoint | 1 | 1 | 1 |
+| gamingcity | 3 | 3 | 3 |
+| goldentechstore | 2 | 2 | 2 |
+| katech | 6 | 6 | 6 |
+| logg | 2 | 2 | 2 |
+| maximus | 5 | 5 | 5 |
+| maxtecno | 4 | 4 | 4 |
+| mexx | 3 | 3 | 3 |
+| scphardstore | 6 | 6 | 6 |
+| shopgamer | 6 | 6 | 0 |
+| xtpc | 4 | 4 | 4 |
+
+Estas cantidades no acreditan identidad ni compra final. Artefacto original: [run 36596115073](https://github.com/john2k2/comparador-hardware-argentina/actions/runs/36596115073). La suma de productos por tienda no equivale a productos distintos globales.
+
+### Dos publicaciones de RAM: control directo y corrección de disponibilidad
+
+La solicitud `32f8d3c3-f933-4759-b9d2-962fca724d9a` / run `36597661670` terminó failed: los adaptadores no obtuvieron observaciones y no se modificaron fechas o precios por ese resultado. Lectura directa posterior: la publicación Maximus ITEM=8958 responde 200 con «Artículo sin stock»; GoldenTech Corsair LPX responde 404/Página no encontrada. Se corrigió únicamente stock de esas dos ternas existentes, respectivamente `out-of-stock` y `unknown`, con condición que evita pisar una observación más reciente. No se borraron ofertas, no se cambió precio ni `last_updated`, y no se convirtió un 404 en agotamiento probado.
+
+Corte SQL de 16:31:04 UTC: misma muestra de nueve productos, **42/58 ≤24 h, 42/58 ≤3 h y 37 pendientes de identidad** entre las recientes. El denominador pasó de 60 a 58 por las dos correcciones comprobadas; conservar el 42/60 anterior como histórico. Los cinco candidatos restantes no equivalen a cinco fichas completas. Este ajuste manual no es un ciclo diario útil ni mejora por sí mismo la calidad de asociación.
+
+### Publicación y seguimiento
+
+Código publicado en `59e8e85`, `c52af9a`, `ab59cb5` y `1487230`. Workers Builds aprobó el último en `8415f840-7987-4386-8d85-2fe2b8ec799e` a las 16:29:36 UTC. Endpoint prioritario público sin autorización: 401. Workflow prioritario real success en ocho minutos; revisión puntual GPU success; prueba de las dos RAM failed por ausencia de observaciones, clasificada arriba sin ocultarla. No se inició ninguna solicitud AdSense ni se cambiaron credenciales.
+
+G02 sigue en observación con la misma fecha y criterios; no se modifica el tablero a completado. Próximos controles: medir cron horario real, reparar asociaciones de variantes con evidencia y resolver publicaciones retiradas/sin stock sin renovar artificialmente sus precios, y completar siete ciclos diarios útiles. La automatización conserva el horario de seguimiento, la muestra y sus restricciones; las ejecuciones de esta sesión son manuales y quedan fuera del contador diario.

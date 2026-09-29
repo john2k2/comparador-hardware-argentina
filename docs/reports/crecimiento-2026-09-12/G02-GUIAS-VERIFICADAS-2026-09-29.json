@@ -1,0 +1,161 @@
+{
+  "definition": "Corte de HTML público; siete ofertas por guía, precio positivo, URL y fecha observada. No es una garantía futura ni incluye costos adicionales.",
+  "guides": [
+    {
+      "at": "2026-09-29T16:27:12.441Z",
+      "slug": "pc-gamer-1-millon",
+      "status": 200,
+      "pieces": 7,
+      "total": 994303,
+      "max": 1000000,
+      "parts": [
+        {
+          "name": "Procesador AMD Ryzen 5 5500 4.2GHz Turbo AM4 + Wraith Stealth Cooler",
+          "price": 159450,
+          "source": "https://compragamer.com/producto/Procesador_AMD_Ryzen_5_5500_4_2GHz_Turbo_AM4_Wraith_Stealth_Cooler_13359",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        },
+        {
+          "name": "Placa de Video Asrock Intel ARC A380 6GB GDDR6 Challenger ITX OC",
+          "price": 266691,
+          "source": "https://compragamer.com/producto/Placa_de_Video_Asrock_Intel_ARC_A380_6GB_GDDR6_Challenger_ITX_OC_19298",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        },
+        {
+          "name": "Memoria Mancer DDR4 16GB 3200MHz Vant S Black CL19",
+          "price": 191850,
+          "source": "https://compragamer.com/producto/Memoria_Mancer_DDR4_16GB_3200MHz_Vant_S_Black_CL19_21515",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        },
+        {
+          "name": "Disco Solido SSD ADATA 512GB SU650SS 520MB/s",
+          "price": 120650,
+          "source": "https://compragamer.com/producto/Disco_Solido_SSD_Adata_512GB_SU650SS_SATA_520MB_s_17143",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        },
+        {
+          "name": "Mother Asrock B550M-HDV DDR4 AM4",
+          "price": 121050,
+          "source": "https://compragamer.com/producto/Mother_Asrock_B550M_HDV_DDR4_AM4_10535",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        },
+        {
+          "name": "Fuente Antec 650W 80 Plus Bronze ATX 3.1 PCIe 5.1 CSK650DC AR",
+          "price": 74252,
+          "source": "https://compragamer.com/producto/Fuente_Antec_650W_80_Plus_Bronze_ATX_3_1_PCIe_5_1_CSK650DC_AR_18257",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        },
+        {
+          "name": "Gabinete Antec VX310 RGB Black 4x120mm Vidrio Templado",
+          "price": 60360,
+          "source": "https://compragamer.com/producto/Gabinete_Antec_VX310_RGB_Black_4x120mm_Vidrio_Templado_18607",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        }
+      ]
+    },
+    {
+      "at": "2026-09-29T16:27:14.600Z",
+      "slug": "pc-gamer-2-millones",
+      "status": 200,
+      "pieces": 7,
+      "total": 1954279,
+      "max": 2000000,
+      "parts": [
+        {
+          "name": "Procesador AMD Ryzen 5 7600 5.1GHz Turbo AM5 + Wraith Stealth Cooler",
+          "price": 355850,
+          "source": "https://compragamer.com/producto/Procesador_AMD_Ryzen_5_7600_5_1GHz_Turbo_AM5_Wraith_Stealth_Cooler_14309",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        },
+        {
+          "name": "Placa de Video Asrock Radeon RX 7600 8GB GDDR6 Challenger OC",
+          "price": 535100,
+          "source": "https://compragamer.com/producto/Placa_de_Video_Asrock_Radeon_RX_7600_8GB_GDDR6_Challenger_OC_14722",
+          "observed": "Última observación: 29/9/26, 1:23 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        },
+        {
+          "name": "Memoria Adata DDR5 16GB 5600MHz XPG Lancer Blade White RGB CL46 Intel XMP 3.0 / AMD EXPO",
+          "price": 437800,
+          "source": "https://compragamer.com/producto/Memoria_Adata_DDR5_16GB_5600MHz_XPG_Lancer_Blade_White_RGB_CL46_Intel_XMP_3_0_AMD_EXPO_21049",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        },
+        {
+          "name": "DISCO SSD 1TB KINGSTON NV3 NVME",
+          "price": 311039,
+          "source": "https://katech.com.ar/producto/disco-ssd-1tb-kingston-nv3-nvme/",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        },
+        {
+          "name": "Mother MSI PRO B650M-B DDR5 AM5 (Serie 7000/8000) (4797)",
+          "price": 146650,
+          "source": "https://compragamer.com/producto/Mother_MSI_PRO_B650M_B_AM5_18056",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        },
+        {
+          "name": "Fuente 650W MSI MAG A650GN II 80 PLUS Gold",
+          "price": 95841,
+          "source": "https://www.scphardstore.com/producto/fuente-msi-mag-650w-80-plus-gold-a650gn-ii/",
+          "observed": "Última observación: 29/9/26, 1:15 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        },
+        {
+          "name": "Gabinete Mid Tower Cooler Master Elite 302 3 Fan Argb",
+          "price": 71999,
+          "source": "https://www.mexx.com.ar/productos-rubro/gabinetes/50942-gabinete-mid-tower-cooler-master-elite-302-3-fan-argb.html",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        }
+      ]
+    },
+    {
+      "at": "2026-09-29T16:27:17.883Z",
+      "slug": "pc-gamer-3-millones",
+      "status": 200,
+      "pieces": 7,
+      "total": 2886249,
+      "max": 3000000,
+      "parts": [
+        {
+          "name": "Procesador AMD Ryzen 5 7600 5.1GHz Turbo AM5 + Wraith Stealth Cooler",
+          "price": 355850,
+          "source": "https://compragamer.com/producto/Procesador_AMD_Ryzen_5_7600_5_1GHz_Turbo_AM5_Wraith_Stealth_Cooler_14309",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        },
+        {
+          "name": "Placa de Video Asrock Radeon RX 9060 XT 16GB GDDR6 Challenger OC",
+          "price": 956600,
+          "source": "https://compragamer.com/producto/Placa_de_Video_Asrock_Radeon_RX_9060_XT_16GB_GDDR6_Challenger_OC_17960",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        },
+        {
+          "name": "Memoria Patriot DDR5 32GB (2x16GB) 6000MHz Viper Venom CL36 XMP 3.0/AMD EXPO",
+          "price": 859100,
+          "source": "https://compragamer.com/producto/Memoria_Patriot_DDR5_32GB_2x16GB_6000MHz_Viper_Venom_CL36_XMP_3_0_AMD_EXPO_17061",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        },
+        {
+          "name": "DISCO SSD 1TB KINGSTON NV3 NVME",
+          "price": 311039,
+          "source": "https://katech.com.ar/producto/disco-ssd-1tb-kingston-nv3-nvme/",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        },
+        {
+          "name": "Motherboard MSI B650M GAMING WIFI AM5",
+          "price": 212050,
+          "source": "https://compragamer.com/producto/Mother_MSI_B650M_GAMING_WIFI_AM5_DDR5_17076",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        },
+        {
+          "name": "Fuente Asrock 750W 80 Plus Gold Steel Legend Full Modular ATX 3.1 PCIe 5.1 Cybenetics Platinum",
+          "price": 131250,
+          "source": "https://compragamer.com/producto/Fuente_Asrock_750W_80_Plus_Gold_Steel_Legend_Full_Modular_ATX_3_1_PCIe_5_1_Cybenetics_Platinum_18173",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        },
+        {
+          "name": "Gabinete Antec VX310 RGB Black 4x120mm Vidrio Templado",
+          "price": 60360,
+          "source": "https://compragamer.com/producto/Gabinete_Antec_VX310_RGB_Black_4x120mm_Vidrio_Templado_18607",
+          "observed": "Última observación: 29/9/26, 1:14 p. m. (Argentina). El precio puede depender del medio de pago y no incluye necesariamente envío; confirmá precio final y stock en la tienda."
+        }
+      ]
+    }
+  ]
+}
