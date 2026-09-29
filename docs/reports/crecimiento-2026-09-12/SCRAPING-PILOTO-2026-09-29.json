@@ -1,0 +1,378 @@
+{
+  "runId": 36603362470,
+  "event": "workflow_dispatch",
+  "commit": "20e21d356a396215f7f7412cdeb48538921e7b01",
+  "countsAsDailyG02Cycle": false,
+  "run": {
+    "source": "priority-known-offers",
+    "startedAt": "2026-09-29T17:13:32.565Z",
+    "finishedAt": "2026-09-29T17:21:00.419Z",
+    "includeSample": true,
+    "attempted": 60,
+    "observed": 47,
+    "comparable": 3,
+    "missingGuideSlots": [],
+    "sampleRequested": 60,
+    "sampleTruncated": false,
+    "deadlineReached": false,
+    "sourceHttp": {
+      "katech": {
+        "requests": 6,
+        "bytes": 2587076,
+        "durationMs": 9774,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0
+      },
+      "compragamer": {
+        "requests": 3,
+        "bytes": 2085625,
+        "durationMs": 4095,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0
+      },
+      "maximus": {
+        "requests": 6,
+        "bytes": 435886,
+        "durationMs": 5801,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0
+      }
+    },
+    "sharedListingReads": 0
+  },
+  "freshness": {
+    "measuredAt": "2026-09-29T17:21:00.554Z",
+    "definition": "Ofertas almacenadas con precio positivo y stock disponible; frescura según last_updated. candidateComparable3h excluye status needs-review pero no verifica identidad contra el producto ni render público.",
+    "denominator": 47636,
+    "fresh24h": 222,
+    "fresh3h": 66,
+    "identityPending3h": 40,
+    "candidateComparable3h": 26,
+    "windowStart": "2026-09-29T17:13:31Z",
+    "observationDefinition": "Filas de precio actualizadas en la ventana, con o sin disponibilidad; productos distintos contados globalmente y por tienda. availableObservedRows solo cuenta stock disponible y precio positivo, sin acreditar identidad ni compra real.",
+    "observedRows": 47,
+    "persistedProducts": 8,
+    "observedByStore": {
+      "gamingcity": 3,
+      "goldentechstore": 3,
+      "maxtecno": 5,
+      "katech": 6,
+      "scphardstore": 6,
+      "shopgamer": 5,
+      "compragamer": 2,
+      "xtpc": 4,
+      "logg": 2,
+      "dinobyte": 3,
+      "maximus": 3,
+      "compugarden": 2,
+      "mexx": 1,
+      "gamerspoint": 1,
+      "liontech": 1
+    },
+    "persistedProductsByStore": {
+      "gamingcity": 3,
+      "goldentechstore": 3,
+      "maxtecno": 5,
+      "katech": 6,
+      "scphardstore": 6,
+      "shopgamer": 5,
+      "compragamer": 2,
+      "xtpc": 4,
+      "logg": 2,
+      "dinobyte": 3,
+      "maximus": 3,
+      "compugarden": 2,
+      "mexx": 1,
+      "gamerspoint": 1,
+      "liontech": 1
+    },
+    "availableObservedRows": 41,
+    "availableObservedByStore": {
+      "gamingcity": 3,
+      "goldentechstore": 3,
+      "maxtecno": 5,
+      "katech": 6,
+      "scphardstore": 6,
+      "shopgamer": 0,
+      "compragamer": 2,
+      "xtpc": 4,
+      "logg": 2,
+      "dinobyte": 3,
+      "maximus": 3,
+      "compugarden": 1,
+      "mexx": 1,
+      "gamerspoint": 1,
+      "liontech": 1
+    },
+    "sample": {
+      "source": "docs/reports/crecimiento-2026-09-12/G02-MUESTRA-PRIORITARIA.json",
+      "selectedAtUtc": "2026-09-25",
+      "definition": "Ofertas almacenadas disponibles de fichas fijas; no verifica identidad completa ni render público.",
+      "denominator": 57,
+      "fresh24h": 48,
+      "fresh3h": 48,
+      "identityPending3h": 40,
+      "candidateComparable3h": 8,
+      "byProduct": [
+        {
+          "productId": "agrupado-procesadores-amd-ryzen-5-5600-1ru8te5",
+          "category": "procesadores",
+          "available": 8,
+          "fresh24h": 6,
+          "fresh3h": 6,
+          "identityPending3h": 6
+        },
+        {
+          "productId": "agrupado-procesadores-intel-core-i5-12400-gfjrbb",
+          "category": "procesadores",
+          "available": 11,
+          "fresh24h": 10,
+          "fresh3h": 10,
+          "identityPending3h": 7
+        },
+        {
+          "productId": "agrupado-procesadores-amd-ryzen-5-7600x-am5-12rxuv9",
+          "category": "procesadores",
+          "available": 2,
+          "fresh24h": 2,
+          "fresh3h": 2,
+          "identityPending3h": 1
+        },
+        {
+          "productId": "agrupado-tarjetas-graficas-gigabyte-rtx-5060-eagle-8gb-1i1rdb",
+          "category": "tarjetas-graficas",
+          "available": 8,
+          "fresh24h": 5,
+          "fresh3h": 5,
+          "identityPending3h": 5
+        },
+        {
+          "productId": "agrupado-tarjetas-graficas-msi-rtx-5060-shadow-8gb-csxx7o",
+          "category": "tarjetas-graficas",
+          "available": 10,
+          "fresh24h": 9,
+          "fresh3h": 9,
+          "identityPending3h": 7
+        },
+        {
+          "productId": "agrupado-tarjetas-graficas-asus-rtx-5060-dual-8gb-1lrxth",
+          "category": "tarjetas-graficas",
+          "available": 9,
+          "fresh24h": 9,
+          "fresh3h": 9,
+          "identityPending3h": 8
+        },
+        {
+          "productId": "maximus-15359-memoria-ram-corsair-vengeance-lpx-black-16gb-3200-mhz-ddr4",
+          "category": "memoria-ram",
+          "available": 1,
+          "fresh24h": 1,
+          "fresh3h": 1,
+          "identityPending3h": 0
+        },
+        {
+          "productId": "agrupado-memoria-ram-corsair-16gb-x4icqy",
+          "category": "memoria-ram",
+          "available": 2,
+          "fresh24h": 2,
+          "fresh3h": 2,
+          "identityPending3h": 2
+        },
+        {
+          "productId": "agrupado-memoria-ram-kingston-16gb-11mqs9y",
+          "category": "memoria-ram",
+          "available": 6,
+          "fresh24h": 4,
+          "fresh3h": 4,
+          "identityPending3h": 4
+        }
+      ]
+    },
+    "byStore": [
+      {
+        "storeId": "armytech",
+        "available": 419,
+        "fresh24h": 0,
+        "fresh3h": 0,
+        "identityPending3h": 0
+      },
+      {
+        "storeId": "beings",
+        "available": 584,
+        "fresh24h": 4,
+        "fresh3h": 1,
+        "identityPending3h": 0
+      },
+      {
+        "storeId": "compragamer",
+        "available": 4860,
+        "fresh24h": 31,
+        "fresh3h": 18,
+        "identityPending3h": 2
+      },
+      {
+        "storeId": "compugarden",
+        "available": 1035,
+        "fresh24h": 11,
+        "fresh3h": 1,
+        "identityPending3h": 1
+      },
+      {
+        "storeId": "dinobyte",
+        "available": 2097,
+        "fresh24h": 17,
+        "fresh3h": 4,
+        "identityPending3h": 4
+      },
+      {
+        "storeId": "fullh4rd",
+        "available": 3268,
+        "fresh24h": 0,
+        "fresh3h": 0,
+        "identityPending3h": 0
+      },
+      {
+        "storeId": "gamerspoint",
+        "available": 698,
+        "fresh24h": 4,
+        "fresh3h": 1,
+        "identityPending3h": 1
+      },
+      {
+        "storeId": "gamingcity",
+        "available": 2776,
+        "fresh24h": 10,
+        "fresh3h": 3,
+        "identityPending3h": 3
+      },
+      {
+        "storeId": "gezatek",
+        "available": 765,
+        "fresh24h": 0,
+        "fresh3h": 0,
+        "identityPending3h": 0
+      },
+      {
+        "storeId": "goldentechstore",
+        "available": 2392,
+        "fresh24h": 11,
+        "fresh3h": 3,
+        "identityPending3h": 3
+      },
+      {
+        "storeId": "hardcore",
+        "available": 1308,
+        "fresh24h": 0,
+        "fresh3h": 0,
+        "identityPending3h": 0
+      },
+      {
+        "storeId": "hftecnologia",
+        "available": 248,
+        "fresh24h": 0,
+        "fresh3h": 0,
+        "identityPending3h": 0
+      },
+      {
+        "storeId": "katech",
+        "available": 4522,
+        "fresh24h": 26,
+        "fresh3h": 7,
+        "identityPending3h": 5
+      },
+      {
+        "storeId": "liontech",
+        "available": 316,
+        "fresh24h": 1,
+        "fresh3h": 1,
+        "identityPending3h": 1
+      },
+      {
+        "storeId": "logg",
+        "available": 987,
+        "fresh24h": 8,
+        "fresh3h": 2,
+        "identityPending3h": 2
+      },
+      {
+        "storeId": "maximus",
+        "available": 2686,
+        "fresh24h": 14,
+        "fresh3h": 5,
+        "identityPending3h": 4
+      },
+      {
+        "storeId": "maxtecno",
+        "available": 5908,
+        "fresh24h": 21,
+        "fresh3h": 6,
+        "identityPending3h": 5
+      },
+      {
+        "storeId": "mexx",
+        "available": 3376,
+        "fresh24h": 10,
+        "fresh3h": 3,
+        "identityPending3h": 0
+      },
+      {
+        "storeId": "portaltech",
+        "available": 369,
+        "fresh24h": 0,
+        "fresh3h": 0,
+        "identityPending3h": 0
+      },
+      {
+        "storeId": "scphardstore",
+        "available": 1340,
+        "fresh24h": 25,
+        "fresh3h": 7,
+        "identityPending3h": 6
+      },
+      {
+        "storeId": "spacevideojuegos",
+        "available": 420,
+        "fresh24h": 0,
+        "fresh3h": 0,
+        "identityPending3h": 0
+      },
+      {
+        "storeId": "thegamershop",
+        "available": 576,
+        "fresh24h": 0,
+        "fresh3h": 0,
+        "identityPending3h": 0
+      },
+      {
+        "storeId": "venex",
+        "available": 666,
+        "fresh24h": 7,
+        "fresh3h": 0,
+        "identityPending3h": 0
+      },
+      {
+        "storeId": "wiztech",
+        "available": 488,
+        "fresh24h": 0,
+        "fresh3h": 0,
+        "identityPending3h": 0
+      },
+      {
+        "storeId": "xtpc",
+        "available": 5532,
+        "fresh24h": 22,
+        "fresh3h": 4,
+        "identityPending3h": 3
+      }
+    ]
+  },
+  "jev": {
+    "providerCalls": 8,
+    "uniqueEvidenceCached": 45,
+    "cacheHitsFirstRun": 0,
+    "note": "Caché nueva fría; reutilización probada por tests, sin atribuir ahorro real de llamadas en este primer ciclo."
+  }
+}
