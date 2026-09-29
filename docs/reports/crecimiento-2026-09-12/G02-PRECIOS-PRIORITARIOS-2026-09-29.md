@@ -31,3 +31,11 @@ G02 continúa **en observación**, no completado. Las ejecuciones manuales y las
 ## Ajuste tras el primer contraste real, 16:16 UTC
 
 El proceso ya guardó observaciones nuevas: la guía 1M devuelve 7/7 por ARS 994.303 y la 3M 7/7 por ARS 2.886.249; son cortes, no garantías futuras. La guía 2M tiene 6/7 y subtotal ARS 1.419.179, con GPU pendiente. Una RX 7600 conocida estaba excluida de nuevos intentos por una revisión `low-confidence` anterior. Se permite reunir evidencia nueva también ante `low-confidence` e `insufficient-evidence`; la oferta sigue fuera del precio comprable hasta superar la revisión. Los conflictos explícitos o del modelo no se habilitan. 52 pruebas de este ajuste y TypeScript/lint aprobados. La comprobación específica usa la cola pública existente y no cuenta como ciclo diario G02.
+
+## Resultado del proceso prioritario y revisión de RAM
+
+Run manual `36596115073`: 16:13:53–16:21:53 UTC, 87 destinos intentados, 65 observaciones guardadas, 59 con stock disponible/precio positivo y 22 comparables. Quince tiendas; 26 productos distintos globales. Sin truncamiento ni vencimiento del límite. Muestra: 42/60 ≤24 h y 42/60 ≤3 h; 37 de esas 42 pendientes de identidad, cinco candidatas comparables. Catálogo global: 215/47639 ≤24 h, 59/47639 ≤3 h. No se presenta esto como 95% ni cobertura del catálogo completo.
+
+La revisión puntual `abd72e92-faad-4c7d-b7b8-d3d359372ee6`, runner `36596670538`, terminó el 29/09 a las 16:23:07 UTC con RX 7600 de CompraGamer comparable. Falta el contraste de la guía después de su caché.
+
+La muestra reveló títulos agrupados de RAM con serie/RGB distintos a algunas URLs asociadas (Corsair RS frente a LPX; Kingston RGB frente a publicaciones sin ese atributo). Buscar el título completo impedía siquiera encontrar esas publicaciones. La búsqueda de RAM ahora usa marca, capacidad y generación para recuperar candidatos, pero exige la misma URL y conserva los controles de serie/variante; el test prueba que recuperar una LPX no aprueba su asociación con RS. Esto mejora el diagnóstico y no reagrupa variantes a ciegas. Trece pruebas enfocadas y TypeScript/lint aprobados para el ajuste. Los fallos de agrupación permanecen pendientes; no cambiar los nueve IDs de la muestra para mejorar artificialmente su porcentaje.

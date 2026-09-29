@@ -25,8 +25,17 @@ export async function fetchKnownOffer(product: Product, target: RefreshTarget, s
   // El ID de CompraGamer es estable aunque el catálogo agrupado conserve un
   // título anterior, con palabras que ya no figuran en la publicación.
   const compraGamerId = target.storeId === 'compragamer' ? new URL(target.url).pathname.match(/_(\d+)$/)?.[1] : undefined;
+  // El título agrupado de RAM puede traer RGB/CL/serie de otra publicación.
+  // Buscar por atributos comunes permite recuperar la URL exacta y revisar
+  // después esas diferencias, en vez de no encontrar nunca la publicación.
+  const ramTerms = product.category === 'memoria-ram' ? [
+    product.name.match(/\b(corsair|kingston|adata|crucial|gskill|patriot|lexar|mushkin|teamgroup|mancer)\b/i)?.[1],
+    product.name.match(/\b(\d{1,3})\s*gb\b/i)?.[1]?.concat('gb'),
+    product.name.match(/\bddr\s*([345])\b/i)?.[1]?.replace(/^/, 'ddr'),
+  ] : [];
+  const ramQuery = ramTerms.length === 3 && ramTerms.every(Boolean) ? ramTerms.join(' ') : undefined;
   const query = compraGamerId ?? (chip ? `${chip.family === 'unknown' ? '' : chip.family.replace('ryzen', 'ryzen ').replace('corei', 'core i')} ${chip.number}${chip.suffixes.join('')}`.trim()
-    : product.name.slice(0, 120));
+    : ramQuery ?? product.name.slice(0, 120));
   // Los adaptadores de plataforma filtran por tienda antes de hacer solicitudes.
   // El límite se aplica a toda esta búsqueda, no se multiplica por plataforma.
   const batches = await Promise.all(scrapers.map((scraper) => withPromiseTimeout(withAbortTimeout((signal) => scraper.fn({ query,

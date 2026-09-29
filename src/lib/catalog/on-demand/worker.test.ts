@@ -200,6 +200,25 @@ describe('runRequestedRefresh', () => {
     }
   });
 
+  it('busca RAM por atributos comunes pero bloquea el conflicto real de serie en la URL exacta', async () => {
+    const ramTarget = { productId: 'ram', storeId: 'mexx', url: 'https://store.example/corsair-vengeance-lpx-16gb-ddr4' };
+    const grouped = product({ id: 'ram', name: 'CORSAIR VENGEANCE RS 16GB DDR4 3200 RGB', category: 'memoria-ram' });
+    const observed = product({ id: 'source-ram', name: 'Corsair Vengeance LPX 16GB DDR4', category: 'memoria-ram',
+      prices: [price({ storeId: 'mexx', storeName: 'Mexx', price: 100_000, url: ramTarget.url })] });
+    configureClaimedJob([observed]);
+    mocks.rpc.mockImplementation(async (name: string) => name === 'claim_offer_refresh'
+      ? { data: { ...job, targets: [ramTarget] }, error: null } : { data: true, error: null });
+    mocks.readBuilderCatalog.mockResolvedValue([grouped]);
+    await runRequestedRefresh();
+    expect(mocks.scrape).toHaveBeenCalledWith(expect.objectContaining({ query: 'CORSAIR 16gb ddr4' }));
+    expect(mocks.rpc).toHaveBeenCalledWith('persist_requested_offer', expect.objectContaining({
+      p_review: expect.objectContaining({ status: 'needs-review', reason: 'explicit-conflict' }),
+    }));
+    expect(mocks.from.mock.results[0].value.update).toHaveBeenCalledWith(expect.objectContaining({
+      results: [expect.objectContaining({ comparable: false })],
+    }));
+  });
+
   it('persists a current out-of-stock offer as unavailable', async () => {
     configureClaimedJob([sourceProduct({ offer: { stock: 'out-of-stock', price: 420_000 } })]);
 
