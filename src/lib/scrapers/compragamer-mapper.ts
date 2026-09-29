@@ -294,7 +294,7 @@ export function mapCompraGamerProduct(input: {
         price: specialPrice,
         installment: null,
         stock: stockStatus,
-        lastUpdated: new Date(),
+        lastUpdated: input.item.observedAt ?? new Date(),
       },
     ],
     specs: buildCompraGamerSpecs(input.item, stockStatus),

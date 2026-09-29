@@ -15,7 +15,7 @@ type ClaimedJob = RefreshJob & { lease_token: string };
 function sameUrl(first: string, second: string): boolean {
   try { const a = new URL(first), b = new URL(second); a.hash = ''; b.hash = ''; return a.href === b.href; } catch { return false; }
 }
-async function fetchTarget(product: Product, target: RefreshTarget, startedAt: number): Promise<{ product: Product; price: ProductPrice; sourceTitle: string } | null> {
+export async function fetchKnownOffer(product: Product, target: RefreshTarget, startedAt: number): Promise<{ product: Product; price: ProductPrice; sourceTitle: string } | null> {
   const direct = getStoreScraper(target.storeId);
   const scrapers = direct ? [direct] : FRAMEWORK_SCRAPERS;
   const chip = product.category === 'procesadores' ? parseCpuModelSignature(product.name)
@@ -40,7 +40,8 @@ async function fetchTarget(product: Product, target: RefreshTarget, startedAt: n
       if (!Number.isFinite(observedAt) || observedAt < startedAt || observedAt > Date.now() + 60_000) continue;
       // La URL exacta identifica la oferta. Un título contradictorio requiere revisión.
       const conflict = hasExplicitIdentityConflict({ name: product.name, category: product.category, offerText: source.name });
-      const refreshed: ProductPrice = { ...price, url: target.url };
+      const previousReview = product.prices.find(offer => offer.storeId === target.storeId && sameUrl(offer.url, target.url))?.identityReview;
+      const refreshed: ProductPrice = { ...price, url: target.url, identityReview: price.identityReview ?? previousReview };
       if (conflict) refreshed.identityReview = { version: 1, status: 'needs-review', reason: 'explicit-conflict', reviewedAt: new Date().toISOString(), model: null, confidence: null,
         subject: { name: normalizeIdentityText(product.name), category: product.category, url: target.url } };
       return { product: { ...product, prices: [refreshed] }, price: refreshed, sourceTitle: source.name };
@@ -61,7 +62,7 @@ export async function runRequestedRefresh(): Promise<{ processed: boolean; jobId
     const products = await readBuilderCatalog({ ids: job.targets.map((target) => target.productId) });
     for (const target of job.targets) {
       const product = products.find((item) => item.id === target.productId);
-      const fresh = product ? await fetchTarget(product, target, Date.parse(job.started_at ?? job.created_at)) : null;
+      const fresh = product ? await fetchKnownOffer(product, target, Date.parse(job.started_at ?? job.created_at)) : null;
       if (fresh) observed.push({ target, ...fresh });
       else results.push({ ...target, state: 'failed', observedAt: null });
     }

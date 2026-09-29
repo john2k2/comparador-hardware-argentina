@@ -238,6 +238,20 @@ describe('runRequestedRefresh', () => {
     expect(update).not.toHaveBeenCalledWith(expect.objectContaining({ results: [expect.objectContaining({ state: 'updated' })] }));
   });
 
+  it('conserva una revisión pendiente si el revisor no devuelve otra nueva', async () => {
+    configureClaimedJob([sourceProduct({ offer: { price: 420_000 } })]);
+    const previous = price({ storeId: target.storeId, storeName: 'Mexx', price: 100,
+      identityReview: { version: 1, status: 'needs-review', reason: 'provider-unavailable', reviewedAt: null,
+        model: null, confidence: null, subject: { name: 'gpu', category: 'tarjetas-graficas', url: target.url } } });
+    mocks.readBuilderCatalog.mockResolvedValue([{ ...catalogProduct(), prices: [previous] }]);
+    await runRequestedRefresh();
+    const persistCall = mocks.rpc.mock.calls.find(([name]) => name === 'persist_requested_offer');
+    expect(persistCall?.[1].p_review).toMatchObject({ status: 'needs-review', reason: 'provider-unavailable' });
+    expect(mocks.from.mock.results[0].value.update).toHaveBeenCalledWith(expect.objectContaining({
+      results: [expect.objectContaining({ comparable: false })],
+    }));
+  });
+
   it('throws REFRESH_LEASE_EXPIRED when the final update returns no valid lease row', async () => {
     configureClaimedJob();
     configureFinalUpdate([]);

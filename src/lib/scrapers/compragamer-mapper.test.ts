@@ -20,6 +20,12 @@ function buildRawProduct(overrides: Partial<CompraGamerProductResponse> = {}): C
 }
 
 describe('compragamer-mapper', () => {
+  it('conserva la hora de observación del catálogo al mapear una respuesta cacheada', () => {
+    const observedAt = new Date('2026-09-29T12:00:00Z');
+    const mapped = mapCompraGamerProduct({ item: buildRawProduct({ observedAt }),
+      subcategoryMap: new Map(), brandMap: new Map() });
+    expect(mapped?.prices[0].lastUpdated).toEqual(observedAt);
+  });
   it('normaliza queries y encuentra coincidencias por texto o id', () => {
     const product = buildRawProduct();
     expect(normalizeCompraGamerText('  RTX 5070   Ti  ')).toBe('rtx 5070 ti');

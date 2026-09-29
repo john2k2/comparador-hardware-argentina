@@ -38,6 +38,18 @@ const cpuSpec = {
 };
 
 describe('resolveGuideComponent', () => {
+  it('permite reintentar una revisión temporal fallida sin habilitar la compra', () => {
+    const offer = price({ storeId: 'shop', storeName: 'Shop', price: 300_000,
+      url: 'https://example.com/amd-ryzen-5-7600x',
+      identityReview: { version: 1, status: 'needs-review', reason: 'provider-unavailable', reviewedAt: null,
+        model: null, confidence: null, subject: { name: 'amd ryzen 5 7600x', category: 'procesadores', url: 'https://example.com/amd-ryzen-5-7600x' } } });
+    const item = product({ id: 'cpu', name: 'AMD Ryzen 5 7600X', category: 'procesadores', prices: [offer] });
+    expect(resolveGuideRefreshOffers(cpuSpec, [item])).toHaveLength(1);
+    expect(resolveGuideComponent(cpuSpec, [item]).offers).toEqual([]);
+    expect(resolveGuideReferenceOffer(cpuSpec, [item])).toBeNull();
+    offer.identityReview!.reason = 'explicit-conflict';
+    expect(resolveGuideRefreshOffers(cpuSpec, [item])).toEqual([]);
+  });
   it('conserva el modelo de motherboard comprobado frente a variantes más baratas', () => {
     const spec = { name: 'MSI PRO B650M-B', exactModel: 'B650M-B', searchTerms: ['b650'], category: 'motherboards' as const, description: 'mATX | DDR5 | PCIe 4.0', estimatedPrice: 0 };
     const valid = product({ id: 'board-b', name: 'Mother MSI PRO B650M-B DDR5 AM5', category: 'motherboards', prices: [price({ storeId: 'shop', storeName: 'Shop', price: 146_200 })] });

@@ -349,7 +349,9 @@ function collectGuideReferenceOffers(
     const eligible = product.prices.filter((offer) => {
       const observedAt = new Date(offer.lastUpdated).getTime();
       if (!Number.isFinite(observedAt) || observedAt > now + 60_000 || now - observedAt > GUIDE_REFERENCE_MAX_AGE_MS) return false;
-      if (!Number.isFinite(offer.price) || offer.price <= 0 || (requireBuyableStock && !isBuyableGuideStock(offer.stock)) || needsIdentityReview(offer, product)) return false;
+      const retryableReview = !requireBuyableStock && ['provider-unavailable', 'invalid-response'].includes(offer.identityReview?.reason ?? '');
+      if (!Number.isFinite(offer.price) || offer.price <= 0 || (requireBuyableStock && !isBuyableGuideStock(offer.stock))
+        || (needsIdentityReview(offer, product) && !retryableReview)) return false;
       if (offerConflictsWithGuide(offer) || !offerAgreesWithProductName(product, offer)) return false;
       try {
         const url = new URL(offer.url);

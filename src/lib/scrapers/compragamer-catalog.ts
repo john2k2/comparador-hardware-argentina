@@ -19,6 +19,8 @@ export interface CompraGamerImage {
 }
 
 export interface CompraGamerProductResponse {
+  /** Hora de lectura real del catálogo; reutilizar caché no renueva la oferta. */
+  observedAt?: Date;
   id_producto?: number | string;
   nombre?: string;
   precioEspecial?: number | string;
@@ -129,11 +131,13 @@ export async function getCompraGamerCatalog(signal?: AbortSignal): Promise<Compr
 
   inFlightCatalogRequest = fetchJsonArray<CompraGamerProductResponse>(COMPRAGAMER_PRODUCTS_URL, signal)
     .then((items) => {
+      const observedAt = new Date();
+      const observedItems = items.map(item => ({ ...item, observedAt }));
       catalogCache = {
-        value: items,
+        value: observedItems,
         expiresAt: nowMs() + STATIC_CACHE_TTL_MS,
       };
-      return items;
+      return observedItems;
     })
     .finally(() => {
       inFlightCatalogRequest = null;
