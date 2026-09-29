@@ -205,7 +205,7 @@ describe('reviewProductOffers', () => {
     secondOne.prices[0].price += 50_000;
     secondOne.prices[0].stock = 'out-of-stock';
     secondTwo.prices[0].price -= 25_000;
-    secondTwo.prices[0].stock = 'limited';
+    secondTwo.prices[0].stock = 'low-stock';
     const secondLastUpdated = [secondTwo.prices[0].lastUpdated, secondOne.prices[0].lastUpdated];
 
     const result = await reviewProductOffers([secondTwo, secondOne], { authorizedRefresh: true });
@@ -215,7 +215,7 @@ describe('reviewProductOffers', () => {
     expect(result.map(({ prices }) => prices[0].identityReview?.reviewedAt)).toEqual([firstReviewedAt[1], firstReviewedAt[0]]);
     expect(result.map(({ prices }) => prices[0].lastUpdated)).toEqual(secondLastUpdated);
     expect(result.map(({ prices }) => prices[0].price)).toEqual([325_002, 400_001]);
-    expect(result.map(({ prices }) => prices[0].stock)).toEqual(['limited', 'out-of-stock']);
+    expect(result.map(({ prices }) => prices[0].stock)).toEqual(['low-stock', 'out-of-stock']);
   });
 
   it('invalidates only the evidence whose sourceTitle changes', async () => {
@@ -267,6 +267,17 @@ describe('reviewProductOffers', () => {
     expect(result[0].prices[0].identityReview).toMatchObject({ status: 'consistent' });
     expect(result[1].prices[0].identityReview).toMatchObject({ status: 'needs-review', reason: 'provider-unavailable' });
     expect(mocks.setSharedCache).toHaveBeenCalledTimes(1);
+  });
+
+  it('invalida identidad si cambia el SKU de la publicación y conserva evidencia por oferta', async () => {
+    const first = product(1);
+    first.prices[0].sourceIdentity = { listingRef: 'test:id:1', title: first.name, storeSku: 'sku-a' };
+    const reviewed = await reviewProductOffers([first], { authorizedRefresh: true });
+    expect(reviewed[0].prices[0].identityReview?.sourceIdentity?.storeSku).toBe('sku-a');
+    const next = product(1);
+    next.prices[0].sourceIdentity = { ...first.prices[0].sourceIdentity, storeSku: 'sku-b' };
+    await reviewProductOffers([next], { authorizedRefresh: true });
+    expect(mocks.evaluateOfferIdentity).toHaveBeenCalledTimes(2);
   });
 
   it('uses a distinct cache key when the evidence variant changes', async () => {

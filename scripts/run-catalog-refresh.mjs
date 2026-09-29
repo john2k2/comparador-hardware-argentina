@@ -14,7 +14,8 @@ try {
       builder.onLoad({ filter: /.*/, namespace: 'cli-marker' }, () => ({ contents: 'export {};', loader: 'js' }));
     } }]  });
   const child = spawn(process.execPath, ['--conditions=react-server', outfile, ...process.argv.slice(2)], { stdio: 'inherit', env: process.env });
-  const timer = setTimeout(() => child.kill('SIGTERM'), 19 * 60_000);
+  const timeoutMs = process.argv[2] === 'requested' ? 8 * 60_000 : 19 * 60_000;
+  const timer = setTimeout(() => child.kill('SIGTERM'), timeoutMs);
   const code = await new Promise((resolve, reject) => { child.once('error', reject); child.once('exit', code => resolve(code ?? 1)); });
   clearTimeout(timer);
   process.exitCode = code;
