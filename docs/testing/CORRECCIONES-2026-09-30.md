@@ -1,6 +1,14 @@
-# Corrección de búsqueda y clasificación — 30/09/2026
+# Correcciones de búsqueda, clasificación y guías — 30/09/2026
 
 La búsqueda y la clasificación están corregidas en producción. Se conservaron los IDs, las ofertas y el historial de precios.
+
+## Guías publicadas
+
+Por indicación de Jonathan, las guías editoriales conservan su selección y admiten **hasta un 10% sobre el presupuesto de referencia** entre revisiones semanales o a pedido: $1M → $1.100.000, $2M → $2.200.000 y $3M → $3.300.000. Un peso sobre esos límites deja de cumplir el margen; las pruebas cubren las tres fronteras. El armador personalizado conserva el máximo exacto elegido.
+
+La página explica la referencia, el límite con margen y la revisión semanal. Se ajustaron las descripciones, metodología y títulos para no prometer un máximo estricto que contradiga el margen. No se cambió la selección de piezas de la guía de un millón: el contraste en CompraGamer dio **$1.005.191**, un **0,52%** sobre la referencia, con siete publicaciones disponibles.
+
+El seguimiento existente `seguimiento-comparador-hardware` revisará las guías **los lunes, o a pedido**, sin repetir una revisión de la misma semana ni alertar por oscilaciones dentro del margen. Se eliminaron las tres instrucciones de lectura diaria de guías; los demás controles diarios mantienen su alcance. La observación automática de ofertas conserva identidad, stock y frescura de tres horas: actualizar una oferta no equivale a renovar la selección editorial.
 
 ## Búsqueda
 
@@ -20,6 +28,7 @@ La búsqueda y la clasificación están corregidas en producción. Se conservaro
 | Comprobación | Resultado |
 | --- | --- |
 | Unitarios | 987 aprobados; 2 pruebas externas opcionales omitidas |
+| Navegación local | 121/121 aprobados; sin omisiones ni fallos intermitentes |
 | Base local PostgreSQL UTF8 | Paridad del matcher, clasificación, paginación y persistencia atómica aprobadas |
 | Dos escritores concurrentes | Aprobado; precio, resumen e historial coherentes |
 | API y páginas públicas | 39/39 aprobados |
@@ -34,4 +43,4 @@ La evidencia está en `testsprite_tests/full-validation/2026-09-30/` (ignorado p
 
 Las cuatro migraciones tienen la misma versión local y remota. Para revertir la unidad de búsqueda se puede reponer la definición anterior de la RPC y el Worker anterior, conservando las categorías reparadas y la columna auxiliar sin borrar ofertas o historial. Una reversión de categorías requiere revisar los respaldos frente a los cambios posteriores; no restaurarlos indiscriminadamente.
 
-La versión de Worker verificada es `c213f8c0-2f04-4c37-a844-0d681dbd7286`; la anterior al trabajo era `9a32730c-014a-4f92-878f-070c2fb5a76a`.
+La versión de Worker verificada es `e34b950a-a85b-4bbe-b6b7-96d58e8318a4`; la anterior al trabajo era `9a32730c-014a-4f92-878f-070c2fb5a76a`.

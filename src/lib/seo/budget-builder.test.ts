@@ -298,14 +298,17 @@ describe('resolveLiveGuideSlots', () => {
     expect(resolved.inStockSlots).toBe(5);
   });
 
-  it('deja de cumplir el límite de un millón si sube una de las siete ofertas', () => {
+  it.each([
+    { gpuPrice: 372_388, total: 1_100_000, fitsBudget: true },
+    { gpuPrice: 372_389, total: 1_100_001, fitsBudget: false },
+  ])('trata un millón como techo editorial de $total', ({ gpuPrice, total, fitsBudget }) => {
     const guide = getBudgetGuideBySlug('pc-gamer-1-millon')!;
     const catalog = entryGuideCatalog();
-    catalog[1].prices[0].price += 6_000;
+    catalog[1].prices[0].price = gpuPrice;
     const resolved = resolveLiveGuideSlots(guide, catalog);
     expect(resolved.inStockSlots).toBe(7);
-    expect(resolved.catalogTotal).toBe(1_000_303);
-    expect(resolved.fitsBudget).toBe(false);
+    expect(resolved.catalogTotal).toBe(total);
+    expect(resolved.fitsBudget).toBe(fitsBudget);
   });
 
   it('no presenta un CPU AM4 como reemplazo de un Ryzen AM5 especificado', () => {
@@ -341,8 +344,9 @@ describe('resolveLiveGuideSlots', () => {
 
   it.each([
     { gpuPrice: 1_089_540, total: 3_000_000, fitsBudget: true },
-    { gpuPrice: 1_089_541, total: 3_000_001, fitsBudget: false },
-  ])('trata tres millones como máximo para $total', ({ gpuPrice, total, fitsBudget }) => {
+    { gpuPrice: 1_389_540, total: 3_300_000, fitsBudget: true },
+    { gpuPrice: 1_389_541, total: 3_300_001, fitsBudget: false },
+  ])('trata tres millones como techo editorial para $total', ({ gpuPrice, total, fitsBudget }) => {
     const guide = getBudgetGuideBySlug('pc-gamer-3-millones')!;
     const resolved = resolveLiveGuideSlots(guide, expandedGuideCatalog(gpuPrice));
     expect(resolved.inStockSlots).toBe(7);
@@ -390,8 +394,9 @@ describe('resolveLiveGuideSlots', () => {
   it.each([
     { gpuPrice: 198_922, total: 1_600_000, fitsBudget: true },
     { gpuPrice: 598_922, total: 2_000_000, fitsBudget: true },
-    { gpuPrice: 598_923, total: 2_000_001, fitsBudget: false },
-  ])('trata dos millones como techo para un total de $total', ({ gpuPrice, total, fitsBudget }) => {
+    { gpuPrice: 798_922, total: 2_200_000, fitsBudget: true },
+    { gpuPrice: 798_923, total: 2_200_001, fitsBudget: false },
+  ])('trata dos millones como techo editorial para $total', ({ gpuPrice, total, fitsBudget }) => {
     const guide = getBudgetGuideBySlug('pc-gamer-2-millones')!;
     const resolved = resolveLiveGuideSlots(guide, reviewedGuideCatalog(gpuPrice));
 

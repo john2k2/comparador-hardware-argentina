@@ -31,9 +31,9 @@ export type BudgetGuideDefinition = {
 export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
   {
     slug: 'pc-gamer-1-millon',
-    title: 'PC Gamer hasta $1 millón: componentes y precios',
-    metadataTitle: `PC gamer hasta 1 millón: componentes y precios | ${SITE_NAME}`,
-    description: 'Componentes para una PC gamer de entrada con un máximo de $1 millón en Argentina: Ryzen 5 5500, Arc A380 y 16 GB DDR4. Compará ofertas recientes, stock y costos adicionales.',
+    title: 'PC Gamer de $1 millón: componentes y precios',
+    metadataTitle: `PC gamer de 1 millón: componentes y precios | ${SITE_NAME}`,
+    description: 'Componentes para una PC gamer de entrada con un presupuesto de referencia de $1 millón en Argentina: Ryzen 5 5500, Arc A380 y 16 GB DDR4. Compará ofertas recientes, stock y costos adicionales.',
     keywords: ['pc gamer 1 millon', 'pc gamer barata argentina', 'armar pc 1 millon pesos', 'pc gaming economica'],
     budget: 1000000,
     components: {
@@ -102,7 +102,7 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
       { task: 'Programación', performance: 'Según herramientas, contenedores y memoria requerida' },
     ],
     tips: [
-      'Presupuesto máximo: El millón es un máximo para componentes, no una cantidad que debas gastar exactamente. Sumá envío, armado, licencia y periféricos antes de pagar.',
+      'Presupuesto de referencia: El millón admite hasta un 10% de variación entre revisiones semanales o a pedido, no una cantidad que debas gastar exactamente. Sumá envío, armado, licencia y periféricos antes de pagar.',
       'Arc A380: activá Above 4G Decoding y Resizable BAR; usá arranque UEFI con CSM desactivado y drivers actuales. No garantizamos FPS ni calidad Ultra en todos los juegos.',
       'Ryzen 5 5500: requiere placa de video dedicada; conectá el monitor a la A380. La publicación elegida incluye Wraith Stealth: confirmalo con la tienda.',
       'Motherboard: pedí una BIOS que admita Ryzen 5 5500 y verificá Resizable BAR antes del armado. El procesador trabaja con PCIe 3.0 aunque la placa anuncie PCIe 4.0.',
@@ -113,7 +113,7 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
     faqs: [
       {
         question: '¿Se puede armar una PC gamer con 1 millón de pesos?',
-        answer: 'La selección se revisó para respetar un máximo de $1 millón con siete componentes: Ryzen 5 5500 con cooler, Arc A380 de 6 GB, 16 GB DDR4, SSD SATA de 512 GB, motherboard B550, fuente y gabinete. Verificá que las siete ofertas sigan disponibles y el total entre en el límite; envío y servicios se suman aparte.',
+        answer: 'La selección se revisó para respetar un presupuesto de referencia de $1 millón con siete componentes: Ryzen 5 5500 con cooler, Arc A380 de 6 GB, 16 GB DDR4, SSD SATA de 512 GB, motherboard B550, fuente y gabinete. Verificá que las siete ofertas sigan disponibles y el total no supere el presupuesto de referencia más el 10%; envío y servicios se suman aparte.',
       },
       {
         question: '¿Qué placa de video comprar para PC de 1 millón?',
@@ -127,9 +127,9 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
   },
   {
     slug: 'pc-gamer-2-millones',
-    title: 'PC Gamer hasta $2 millones: componentes y precios',
-    metadataTitle: `PC gamer hasta 2 millones: componentes y precios | ${SITE_NAME}`,
-    description: 'Compará componentes para una PC gamer con un máximo de $2 millones en Argentina. Un armado más económico también sirve: verificá disponibilidad, compatibilidad, envíos y costos adicionales.',
+    title: 'PC Gamer de $2 millones: componentes y precios',
+    metadataTitle: `PC gamer de 2 millones: componentes y precios | ${SITE_NAME}`,
+    description: 'Compará componentes para una PC gamer con un presupuesto de referencia de $2 millones en Argentina. Un armado más económico también sirve: verificá disponibilidad, compatibilidad, envíos y costos adicionales.',
     keywords: ['pc gamer 2 millones', 'pc gaming argentina 2m', 'mejor pc gamer precio calidad', 'pc gamer rtx 4060'],
     budget: 2000000,
     components: {
@@ -217,9 +217,9 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
   },
   {
     slug: 'pc-gamer-3-millones',
-    title: 'PC Gamer hasta $3 millones: componentes y precios',
-    metadataTitle: `PC gamer hasta 3 millones: componentes y precios | ${SITE_NAME}`,
-    description: 'Compará componentes y ofertas recientes para una PC gamer de hasta $3 millones en Argentina: Ryzen 5 7600 con cooler, RX 9060 XT de 16 GB y 32 GB DDR5.',
+    title: 'PC Gamer de $3 millones: componentes y precios',
+    metadataTitle: `PC gamer de 3 millones: componentes y precios | ${SITE_NAME}`,
+    description: 'Compará componentes y ofertas recientes para una PC gamer con una referencia de $3 millones en Argentina: Ryzen 5 7600 con cooler, RX 9060 XT de 16 GB y 32 GB DDR5.',
     keywords: ['pc gamer 3 millones', 'pc gamer rx 9060 xt 16gb', 'pc gaming argentina', 'pc gamer 32gb ddr5'],
     budget: 3000000,
     components: {
@@ -287,7 +287,7 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
       { task: '3D y cómputo', performance: 'GPU AMD: verificar soporte de la aplicación; no ofrece CUDA' },
     ],
     tips: [
-      'Presupuesto: El máximo es de tres millones en componentes, no una obligación de gastar todo. Sumá envío, armado, licencia y periféricos por separado.',
+      'Presupuesto: La referencia es de tres millones en componentes, con hasta un 10% de variación entre revisiones semanales o a pedido, no una obligación de gastar todo. Sumá envío, armado, licencia y periféricos por separado.',
       'Refrigeración: El Ryzen 5 7600 elegido incluye Wraith Stealth. No lo sustituyas por un 7600X o una publicación sin cooler sin recalcular la refrigeración.',
       'Variante de GPU: La RX 9060 XT elegida es la Challenger OC de 16 GB. Una variante de 8 GB o de otro tamaño no es la misma selección.',
       'Ampliación de RAM: El kit de 32 GB ocupa las dos ranuras DDR5. Para ampliar, habrá que reemplazar el kit; revisá código, QVL y BIOS antes de comprar.',
@@ -296,8 +296,8 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
     ],
     faqs: [
       {
-        question: '¿Se puede armar una PC gamer con un máximo de 3 millones?',
-        answer: 'La lista necesita siete ofertas elegibles y un total dentro del máximo. Envío, armado, licencia y periféricos se suman aparte.',
+        question: '¿Se puede armar una PC gamer con una referencia de 3 millones?',
+        answer: 'La lista necesita siete ofertas elegibles y un total dentro de la referencia más el 10% de margen. Envío, armado, licencia y periféricos se suman aparte.',
       },
       {
         question: '¿Qué placa de video incluye esta guía de 3 millones?',

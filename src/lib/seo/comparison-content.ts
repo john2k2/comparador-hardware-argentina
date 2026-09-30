@@ -65,7 +65,7 @@ export const TOP_COMPARISONS = [
 export const TOP_BUDGETS = [
   {
     slug: 'pc-gamer-1-millon',
-    title: 'PC Gamer hasta $1 millón: componentes y precios',
+    title: 'PC Gamer de $1 millón: componentes y precios',
     description: 'Una selección de entrada con siete componentes y un máximo de $1 millón. Compará ofertas recientes y sumá envío y servicios por separado.',
     budget: 1000000,
     keywords: ['pc gamer 1 millon', 'pc gamer barata argentina', 'armar pc 1 millon pesos'],
@@ -79,7 +79,7 @@ export const TOP_BUDGETS = [
   },
   {
     slug: 'pc-gamer-3-millones',
-    title: 'PC Gamer hasta $3 millones: componentes y precios',
+    title: 'PC Gamer de $3 millones: componentes y precios',
     description: 'Ryzen 5 7600 con cooler, RX 9060 XT de 16 GB y 32 GB DDR5 dentro de un máximo de tres millones en componentes. Compará stock, ofertas recientes y costos adicionales.',
     budget: 3000000,
     keywords: ['pc gamer 3 millones', 'pc gamer rx 9060 xt 16gb', 'pc gamer 32gb ddr5'],

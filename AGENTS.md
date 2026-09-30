@@ -218,9 +218,9 @@ Ver `.env.example` para listado completo.
 
 ## Publicación de guías con presupuesto
 
-Requisito de Jonathan, 28/09/2026: antes de crear o renovar una guía, verificar todas las piezas en publicaciones comprables. El importe indicado es un máximo, no una obligación de gastarlo.
+Criterio de Jonathan, actualizado el 30/09/2026: antes de crear o renovar una guía, verificar todas las piezas en publicaciones comprables. Las guías editoriales publicadas admiten hasta un 10% sobre su presupuesto de referencia entre revisiones semanales o a pedido. No rehacerlas ni realizar una revisión manual diaria por variaciones dentro de ese margen. El armador personalizado conserva el máximo exacto elegido por el usuario. La observación automática de ofertas conserva stock, identidad y frescura; no equivale a renovar la selección editorial.
 
-- Exigir siete ofertas elegibles: precio positivo, stock informado, identidad y variante correctas, observación real de cada oferta de hasta tres horas y total dentro del máximo. Elegir la siguiente oferta válida del mismo modelo si la más barata no cumple; si no alcanza, revisar la selección y su compatibilidad antes de publicar.
+- Exigir siete ofertas elegibles: precio positivo, stock informado, identidad y variante correctas, observación real de cada oferta de hasta tres horas y total dentro de la referencia más el margen editorial del 10%. Elegir la siguiente oferta válida del mismo modelo si la más barata no cumple; si no alcanza, revisar la selección y su compatibilidad antes de publicar.
 - Contrastar precio, condición de pago, SKU y stock en la tienda. Una fixture, un timestamp de producto, un build aprobado o HTTP 200 no prueban disponibilidad. No inferir agotamiento porque venza la ventana de frescura.
 - Comprobar CPU y refrigeración incluida o presupuestada, socket/BIOS, generación y kit de RAM, QVL sin inventar certificación, almacenamiento, conectores de fuente y espacio de gabinete/GPU. Separar envío, armado, licencia y periféricos.
 - Registrar fuentes, URLs, fecha/hora, siete precios y total; revisar la guía publicada en escritorio y móvil. No presentar como PC completa un subtotal parcial ni prometer FPS sin evidencia. Mantener las reglas de identidad y frescura activas.

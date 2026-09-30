@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { loadGuideCatalogProducts } from '@/lib/seo/guide-catalog';
 import { formatPriceARS } from '@/lib/price-utils';
-import { GUIDE_SLOT_KEYS, resolveLiveGuideSlots } from '@/lib/seo/budget-builder';
+import { GUIDE_SLOT_KEYS, publishedGuideBudgetLimit, resolveLiveGuideSlots } from '@/lib/seo/budget-builder';
 import { getBudgetGuideBySlug } from '@/lib/seo/budget-guides-data';
 import { resolveGuideFaqs } from '@/lib/seo/guide-faqs';
 import { resolveGuidePageMetadata } from '@/lib/seo/landing-metadata';
@@ -73,13 +73,13 @@ export default async function BudgetGuidePage({ params }: Props) {
         <span className="mx-2">/</span>
         <Link href="/guia" className="hover:text-primary transition-colors">Guías</Link>
         <span className="mx-2">/</span>
-        <span className="text-foreground">PC Gamer hasta ${(guide.budget / 1000000).toFixed(0)}M</span>
+        <span className="text-foreground">PC Gamer de ${(guide.budget / 1000000).toFixed(0)}M</span>
       </nav>
 
       {/* Header */}
       <header className="mb-8">
         <h1 className="font-mono! text-base md:text-[20px] md:font-pixel! text-primary mb-3 leading-snug tracking-normal break-words max-w-full">
-          PC Gamer hasta {formatPriceARS(guide.budget)}
+          PC Gamer de {formatPriceARS(guide.budget)}
         </h1>
         <p className="text-[11px] md:text-[12px] text-muted-foreground font-mono leading-relaxed">
           {guide.description} Las piezas salen del catálogo con disponibilidad informada por las tiendas. Revisá las fechas, los envíos y las comprobaciones pendientes antes de comprar.
@@ -97,8 +97,9 @@ export default async function BudgetGuidePage({ params }: Props) {
         
         <div className="grid md:grid-cols-2 gap-4">
           <div className="border-2 border-border p-4 text-center">
-            <div className="text-[10px] text-muted-foreground mb-1">PRESUPUESTO MÁXIMO</div>
+            <div className="text-[10px] text-muted-foreground mb-1">PRESUPUESTO DE REFERENCIA</div>
             <div className="text-[16px] md:text-[24px] font-pixel text-primary break-words">{formatPriceARS(guide.budget)}</div>
+            <p className="mt-2 text-[10px] text-muted-foreground">Margen de precios: hasta {formatPriceARS(publishedGuideBudgetLimit(guide.budget))} (+10%). Revisamos la selección una vez por semana o a pedido.</p>
           </div>
           
           <div className="border-2 border-border p-4 text-center">
@@ -120,7 +121,7 @@ export default async function BudgetGuidePage({ params }: Props) {
         )}
         {!resolved.fitsBudget && (
           <p className="mt-4 text-[10px] md:text-[11px] uppercase text-accent font-mono leading-relaxed">
-            El presupuesto es un techo: un armado más económico también sirve. No mostramos como propuesta una selección que lo supera. Buscamos alternativas compatibles dentro del máximo.
+            Las ofertas superan el presupuesto de referencia más el margen del 10%. Revisaremos alternativas compatibles; también podés pedir una revisión de la selección.
           </p>
         )}
       </section>

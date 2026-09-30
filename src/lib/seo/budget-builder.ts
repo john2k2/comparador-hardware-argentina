@@ -42,6 +42,11 @@ export const GUIDE_SLOT_KEYS = [
   'case',
 ] as const;
 
+// Margen editorial entre revisiones semanales; no se aplica al armador personal.
+export function publishedGuideBudgetLimit(budget: number): number {
+  return Math.floor(budget * 110 / 100);
+}
+
 export type GuideSlotKey = (typeof GUIDE_SLOT_KEYS)[number];
 
 export const GUIDE_SLOT_LABELS: Record<GuideSlotKey, string> = {
@@ -419,7 +424,7 @@ export function resolveLiveGuideSlots(
   }
 
   const resolved = summarizeGuideComponents(slots as Record<GuideSlotKey, ResolvedGuideComponent>);
-  return { ...resolved, fitsBudget: resolved.catalogTotal <= guide.budget };
+  return { ...resolved, fitsBudget: resolved.catalogTotal <= publishedGuideBudgetLimit(guide.budget) };
 }
 
 export function resolveCustomBudgetSlots(
