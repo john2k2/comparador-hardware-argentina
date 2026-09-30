@@ -20,6 +20,9 @@ export function isHardwareCategory(value: string | null | undefined): value is H
 
 export function inferHardwareCategoryFromName(name: string): HardwareCategory | undefined {
   if (isCompleteComputerTitle(name)) return 'computadoras';
+  if (isCoolingProductTitle(name)) return 'refrigeracion';
+  const primaryCategory = inferPrimaryComponentCategory(name);
+  if (primaryCategory) return primaryCategory;
   const lowerName = name.toLowerCase();
   if (lowerName.includes('ryzen') || lowerName.includes('core i') || lowerName.includes('procesador')) {
     return 'procesadores';
@@ -48,7 +51,7 @@ export function inferHardwareCategoryFromName(name: string): HardwareCategory | 
   if (lowerName.includes('gabinete') || lowerName.includes('case')) {
     return 'gabinetes';
   }
-  if (lowerName.includes('cooler') || lowerName.includes('refrigeracion') || lowerName.includes('ventilador')) {
+  if ((lowerName.includes('cooler') && !/^cooler ?master(?:$| )/.test(lowerName)) || lowerName.includes('refrigeracion') || lowerName.includes('ventilador')) {
     return 'refrigeracion';
   }
   if (
@@ -82,6 +85,9 @@ export function inferHardwareCategoryFromName(name: string): HardwareCategory | 
 
 export function inferDetailHardwareCategory(value: string): HardwareCategory {
   if (isCompleteComputerTitle(value.replace(/-/g, ' '))) return 'computadoras';
+  if (isCoolingProductTitle(value.replace(/-/g, ' '))) return 'refrigeracion';
+  const primaryCategory = inferPrimaryComponentCategory(value.replace(/-/g, ' '));
+  if (primaryCategory) return primaryCategory;
   const normalized = value.toLowerCase();
 
   if (
@@ -131,6 +137,25 @@ export function inferDetailHardwareCategory(value: string): HardwareCategory {
   }
 
   return 'perifericos';
+}
+
+// La compatibilidad con Ryzen/RTX no convierte un cooler en CPU/GPU.
+// Cooler Master también fabrica fuentes y gabinetes: la marca sola no basta.
+function isCoolingProductTitle(value: string): boolean {
+  const title = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+  return /^(?:water\s*cooler|refrigeracion|ventilador|disipador)\b/.test(title)
+    || /^cooler\s+(?!master\b)/.test(title)
+    || /^cooler\s+master\s+(?:masterliquid|ml\d+\w*|hyper|liquid)\b/.test(title);
+}
+
+function inferPrimaryComponentCategory(value: string): HardwareCategory | undefined {
+  const title = value.trim().toLowerCase();
+  if (/^(?:motherboard|mother|placa madre)\b/.test(title)) return 'motherboards';
+  if (/^(?:gabinete|case)\b/.test(title)) return 'gabinetes';
+  if (/^(?:fuente|psu)\b/.test(title)) return 'fuentes-alimentacion';
+  if (/^(?:memoria|ram)\b/.test(title)) return 'memoria-ram';
+  if (/^(?:ssd|nvme|hdd|disco)\b/.test(title)) return 'almacenamiento';
+  return undefined;
 }
 
 export function resolveHardwareCategoryForProduct(

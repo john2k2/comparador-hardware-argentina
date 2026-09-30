@@ -24,6 +24,19 @@ describe('hardware-categories', () => {
     expect(inferHardwareCategoryFromName('Kit Mother ASUS B850 + Procesador Ryzen 5 9600X')).toBe('computadoras');
     expect(inferHardwareCategoryFromName('5600x')).toBeUndefined();
     expect(inferHardwareCategoryFromName('producto sin categoria')).toBeUndefined();
+    expect(inferHardwareCategoryFromName('Cooler DeepCool AG400')).toBe('refrigeracion');
+    expect(inferHardwareCategoryFromName('Watercooler DeepCool LS520')).toBe('refrigeracion');
+    expect(inferHardwareCategoryFromName('Water Cooler DeepCool LS520')).toBe('refrigeracion');
+    expect(inferHardwareCategoryFromName('Refrigeración líquida DeepCool LE520')).toBe('refrigeracion');
+    expect(inferHardwareCategoryFromName('Ventilador para gabinete 120mm')).toBe('refrigeracion');
+    expect(inferHardwareCategoryFromName('Disipador CPU DeepCool AG400')).toBe('refrigeracion');
+    expect(inferHardwareCategoryFromName('Cooler Master Hyper 212')).toBe('refrigeracion');
+    expect(inferHardwareCategoryFromName('Cooler Master MasterLiquid ML240')).toBe('refrigeracion');
+    expect(inferHardwareCategoryFromName('Cooler Master ML240 ARGB')).toBe('refrigeracion');
+    expect(inferHardwareCategoryFromName('Cooler Master')).toBeUndefined();
+    expect(inferHardwareCategoryFromName('AMD Ryzen 5 7600 + Wraith Stealth Cooler')).toBe('procesadores');
+    expect(inferHardwareCategoryFromName('Fuente Cooler Master MWE Gold 850W')).toBe('fuentes-alimentacion');
+    expect(inferHardwareCategoryFromName('Gabinete Cooler Master TD500')).toBe('gabinetes');
     expect(inferHardwareCategoryFromName('PC Armada Gamer AMD Ryzen 7 7800X3D RTX 5070')).toBe('computadoras');
     expect(inferHardwareCategoryFromName('PC Creadores Intel Core Ultra 7 RTX 4070')).toBe('computadoras');
     expect(inferHardwareCategoryFromName(
@@ -36,6 +49,17 @@ describe('hardware-categories', () => {
     expect(inferDetailHardwareCategory('intel-core-i7-14700k')).toBe('procesadores');
     expect(inferDetailHardwareCategory('ssd-nvme-2tb')).toBe('almacenamiento');
     expect(inferDetailHardwareCategory('pc-completa-ryzen-5-rtx-4060')).toBe('computadoras');
+    expect(inferDetailHardwareCategory('cooler-master-hyper-212')).toBe('refrigeracion');
+    expect(inferDetailHardwareCategory('cooler-master-masterliquid-ml240')).toBe('refrigeracion');
+    expect(inferDetailHardwareCategory('cooler-master-ml240')).toBe('refrigeracion');
+    expect(inferDetailHardwareCategory('watercooler-deepcool-ls520')).toBe('refrigeracion');
+    expect(inferDetailHardwareCategory('water-cooler-deepcool-ls520')).toBe('refrigeracion');
+    expect(inferDetailHardwareCategory('refrigeracion-liquida-deepcool-le520')).toBe('refrigeracion');
+    expect(inferDetailHardwareCategory('ventilador-gabinete-120mm')).toBe('refrigeracion');
+    expect(inferDetailHardwareCategory('disipador-cpu-deepcool-ag400')).toBe('refrigeracion');
+    expect(inferDetailHardwareCategory('amd-ryzen-5-7600-wraith-cooler')).toBe('procesadores');
+    expect(inferDetailHardwareCategory('fuente-cooler-master-mwe-850w')).toBe('fuentes-alimentacion');
+    expect(inferDetailHardwareCategory('gabinete-cooler-master-td500')).toBe('gabinetes');
   });
 
   it('prefers strong evidence from the product name over a scraper search category', () => {
@@ -43,6 +67,28 @@ describe('hardware-categories', () => {
     expect(resolveHardwareCategoryForProduct('Producto 5600X', 'procesadores')).toBe('procesadores');
     expect(resolveHardwareCategoryForProduct('AMD Ryzen 5 5600X')).toBe('procesadores');
     expect(resolveHardwareCategoryForProduct('GeForce RTX 4060')).toBe('tarjetas-graficas');
+    expect(resolveHardwareCategoryForProduct('Cooler Master Hyper 212', 'procesadores')).toBe('refrigeracion');
+    expect(resolveHardwareCategoryForProduct('Cooler Master MasterLiquid ML240', 'tarjetas-graficas')).toBe('refrigeracion');
+    expect(resolveHardwareCategoryForProduct('AMD Ryzen 5 7600 + Wraith Stealth Cooler', 'refrigeracion')).toBe('procesadores');
+    expect(resolveHardwareCategoryForProduct('Fuente Cooler Master MWE Gold 850W', 'refrigeracion')).toBe('fuentes-alimentacion');
+    expect(resolveHardwareCategoryForProduct('Gabinete Cooler Master TD500', 'refrigeracion')).toBe('gabinetes');
+  });
+
+  it.each(['Cooler CPU ID-Cooling SE-224-XTS compatible AMD Ryzen AM4 AM5', 'Watercooler Corsair TITAN 240 RX RGB'])('clasifica el accesorio %s por su función, no por la compatibilidad', (name) => {
+    expect(inferHardwareCategoryFromName(name)).toBe('refrigeracion');
+    expect(inferDetailHardwareCategory(name)).toBe('refrigeracion');
+    expect(resolveHardwareCategoryForProduct(name, 'procesadores')).toBe('refrigeracion');
+  });
+
+  it.each([
+    ['Gabinete Thermaltake V200 Ryzen Edition', 'gabinetes'],
+    ['Mother Asrock A320M-HDV Ryzen M-ATX', 'motherboards'],
+    ['Memoria DDR4 compatible Ryzen', 'memoria-ram'],
+    ['Fuente Cooler Master 650W compatible Ryzen', 'fuentes-alimentacion'],
+  ] as const)('conserva la función principal de %s', (name, category) => {
+    expect(inferHardwareCategoryFromName(name)).toBe(category);
+    expect(inferDetailHardwareCategory(name)).toBe(category);
+    expect(resolveHardwareCategoryForProduct(name, 'procesadores')).toBe(category);
   });
 
   it('maps categories to default search terms', () => {
