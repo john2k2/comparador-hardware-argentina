@@ -18,6 +18,12 @@ begin
   assert result#>>'{products,0,id}'='agrupado-audit-1501', 'El mínimo real no depende de las 1000 filas más recientes';
   assert jsonb_array_length(result->'products')=12;
 
+  -- Consulta global sin categoría ni texto: mismo contrato, sin la rama de tiendas.
+  result := public.search_catalog_page(p_sort=>'price-asc',p_min_price=>100000,p_page=>2);
+  assert (result->>'total')::int=1500 and (result->>'page')::int=2;
+  assert result#>>'{products,0,id}'='agrupado-audit-13';
+  assert jsonb_array_length(result->'products')=12;
+
   result := public.search_catalog_page(p_query=>'auditcatalog',p_sort=>'newest',p_page=>2,p_page_size=>48);
   assert result#>>'{products,1,id}'='agrupado-audit-50';
   assert (result->>'total')::int=1501 and (result->>'totalPages')::int=32;

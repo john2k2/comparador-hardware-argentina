@@ -38,9 +38,17 @@ y planes personalizados sin JIT para esta RPC. En una medición posterior con
 `EXPLAIN ANALYZE` la misma consulta global costó aproximadamente 1,27 s. Es un
 corte de medición, no un SLO ni una garantía de latencia futura.
 
+La comprobación posterior por la API pública detectó que el plan global todavía
+podía superar el límite del rol `anon`. Las migraciones `20260930140000` a
+`20260930142000` especializan el SQL mediante parámetros enlazados, limitan la
+segunda ordenación a la página y añaden índices de cobertura. La consulta real
+sin categoría (`minPrice=100000&sortBy=price-asc`) respondió HTTP 200 con total
+22.802 y 12 productos; otras dos consultas globales nuevas también respondieron
+HTTP 200. Los totales corresponden al catálogo observado en esa comprobación.
+
 ## Despliegue y verificación
 
-Aplicar las migraciones hasta `20260930135000` antes de desplegar el consumidor.
+Aplicar las migraciones hasta `20260930142000` antes de desplegar el consumidor.
 Las migraciones intermedias conservan la evolución que ya se aplicó en Supabase;
 no deben renumerarse ni volver a ejecutarse sobre una base con historial vigente.
 

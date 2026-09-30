@@ -3,11 +3,12 @@
 El historial local quedó alineado con `argen-prices-db` (`zyiyziubpcpgoqlkcrie`):
 27 versiones locales y remotas coincidentes. Se instaló
 `20260930120000_atomic_catalog_offers.sql` antes del despliegue del consumidor.
-La aplicación web todavía requiere desplegar sus cambios de código.
+El código consumidor se publicó posteriormente en `main` y fue desplegado por
+Workers Builds; las verificaciones de GitHub quedaron aprobadas.
 
 La ampliación posterior de búsqueda y rendimiento se describe en
-[`CATALOG_READ_MODEL.md`](CATALOG_READ_MODEL.md). Agrega cinco migraciones hasta
-`20260930135000`; el corte de 27 versiones de este documento corresponde a la
+[`CATALOG_READ_MODEL.md`](CATALOG_READ_MODEL.md). Agrega ocho migraciones hasta
+`20260930142000`; el corte de 27 versiones de este documento corresponde a la
 reconciliación inicial, antes de esa ampliación.
 
 ## Cambios de historial
