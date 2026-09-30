@@ -5,8 +5,7 @@ test('restores scroll when going back from product detail', async ({ page }) => 
   await page.waitForTimeout(3000);
 
   const productLinks = page.locator('#product-grid-start a[href^="/product/"]');
-  const hasProducts = await productLinks.first().isVisible().catch(() => false);
-  if (!hasProducts) return; // Skip si no hay productos
+  await expect(productLinks.first()).toBeVisible();
 
   await page.evaluate(() => {
     window.scrollTo(0, 1400);

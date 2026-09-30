@@ -17,6 +17,8 @@
 /.next/
 /out/
 /test-results
+/playwright-report/
+/testsprite_tests/
 
 # production
 /build

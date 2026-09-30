@@ -67,23 +67,18 @@ test.describe('Mobile Responsiveness', () => {
 
       const productLinks = page.locator('#product-grid-start a[href^="/product/"]');
       const firstLink = productLinks.first();
-      if (await firstLink.isVisible()) {
-        await firstLink.click();
-        await page.waitForURL(/\/product\//);
+      await expect(firstLink).toBeVisible();
+      await firstLink.click();
+      await page.waitForURL(/\/product\//);
 
-        // Información básica legible
-        await expect(page.locator('h1')).toBeVisible();
-
-        // Precio visible (usar .first() para evitar strict mode)
-        await expect(page.getByText(/\$/).first()).toBeVisible();
-
-        // Botón VER EN TIENDA accesible
-        const storeButtons = page.getByRole('link', { name: /VER EN TIENDA/i });
-        const count = await storeButtons.count();
-        if (count > 0) {
-          await expect(storeButtons.first()).toBeVisible();
-        }
-      }
+      // El producto sintético tiene dos ofertas conocidas.
+      await expect(page.locator('h1')).toBeVisible();
+      await expect(page.getByText(/\$/).first()).toBeVisible();
+      await expect(page.getByRole('link', { name: /VER EN TIENDA/i }).first()).toBeVisible();
+      const dimensions = await page.locator('html').evaluate((el) => ({
+        scroll: el.scrollWidth, viewport: el.clientWidth,
+      }));
+      expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.viewport + 5);
     });
   });
 

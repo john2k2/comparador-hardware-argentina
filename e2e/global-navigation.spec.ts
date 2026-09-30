@@ -25,18 +25,17 @@ test.describe('Global Navigation', () => {
     await page.goto('/search');
 
     // Click en logo/home
-    const homeLink = page.getByRole('link', { name: /comparador|home|inicio/i }).first();
-    if (await homeLink.isVisible()) {
-      await homeLink.click();
-      await page.waitForURL('/');
-      await expect(page).toHaveURL('/');
-    }
+    const homeLink = page.locator('header a[href="/"]');
+    await expect(homeLink).toBeVisible();
+    await homeLink.click();
+    await page.waitForURL('/');
+    await expect(page).toHaveURL('/');
   });
 
   test('link a búsqueda desde cualquier página', async ({ page }) => {
     await page.goto('/acerca');
 
-    await page.getByRole('link', { name: /buscar|ir a busqueda/i }).click();
+    await page.getByRole('link', { name: '< IR A BUSCAR >', exact: true }).click();
     await page.waitForURL(/\/search/);
     await expect(page).toHaveURL(/\/search/);
   });
@@ -143,13 +142,11 @@ test.describe('SEO & Metadata', () => {
 
   test('robots.txt accesible y configurado', async ({ page }) => {
     const response = await page.goto('/robots.txt');
-    // En dev mode puede devolver 500, pero debería funcionar en producción
-    if (response?.status() === 200) {
-      const content = await page.textContent('body');
-      expect(content).toContain('Sitemap');
-      expect(content).toContain('/admin');
-      expect(content).toContain('/api');
-    }
+    expect(response?.status()).toBe(200);
+    const content = await page.textContent('body');
+    expect(content).toContain('Sitemap');
+    expect(content).toContain('/admin');
+    expect(content).toContain('/api');
   });
 
   test('sitemap.xml accesible', async ({ page }) => {

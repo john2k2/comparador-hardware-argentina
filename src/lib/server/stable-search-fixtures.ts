@@ -7,7 +7,8 @@ function createPrice(
   price: number,
   path: string,
 ): ProductPrice {
-  const now = new Date('2026-04-22T12:00:00.000Z');
+  // La oferta sintética está recién observada al iniciar el servidor de prueba.
+  const now = new Date();
   return {
     storeId,
     storeName,
@@ -29,7 +30,7 @@ function createProduct(input: {
   prices: ProductPrice[];
   specs: Record<string, string>;
 }): Product {
-  const now = new Date('2026-04-22T12:00:00.000Z');
+  const now = new Date();
   const priceValues = input.prices.map((entry) => entry.price);
 
   return {

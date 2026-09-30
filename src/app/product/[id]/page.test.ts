@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   permanentRedirectMock,
@@ -13,7 +13,7 @@ const {
 }));
 
 vi.mock('next/navigation', () => ({
-  notFound: vi.fn(),
+  notFound: vi.fn(() => { throw new Error('NOT_FOUND'); }),
   permanentRedirect: permanentRedirectMock,
 }));
 
@@ -33,6 +33,7 @@ vi.mock('@/lib/persistence/product-read', () => ({
 import ProductDetailPage from './page';
 
 describe('product canonical redirects', () => {
+  afterEach(() => vi.unstubAllEnvs());
   beforeEach(() => {
     vi.clearAllMocks();
     readProductByIdFromDatabaseMock.mockResolvedValue({
@@ -51,5 +52,22 @@ describe('product canonical redirects', () => {
     })).rejects.toThrow('PERMANENT_REDIRECT:/product/group%3Acanonical-product');
 
     expect(permanentRedirectMock).toHaveBeenCalledWith('/product/group%3Acanonical-product');
+  });
+
+  it('resolves a search fixture detail locally in stable mode without consulting the database', async () => {
+    vi.stubEnv('E2E_STABLE_MODE', '1');
+    await expect(ProductDetailPage({
+      params: Promise.resolve({ id: 'fixture-ryzen-5600' }),
+    })).resolves.toBeTruthy();
+    expect(readProductByIdFromDatabaseMock).not.toHaveBeenCalled();
+    expect(readCanonicalProductIdByKeyMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps unknown fixture ids as 404 without consulting the database', async () => {
+    vi.stubEnv('E2E_STABLE_MODE', '1');
+    await expect(ProductDetailPage({
+      params: Promise.resolve({ id: 'unknown-fixture' }),
+    })).rejects.toThrow('NOT_FOUND');
+    expect(readProductByIdFromDatabaseMock).not.toHaveBeenCalled();
   });
 });
