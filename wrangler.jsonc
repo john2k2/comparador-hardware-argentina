@@ -1,6 +1,6 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"main": ".open-next/worker.js",
+	"main": "custom-worker.mjs",
 	"name": "comparador-hardware-argentina",
 	"workers_dev": true,
 	"preview_urls": true,
@@ -9,8 +9,10 @@
 		"DISABLE_INTERNAL_BACKGROUND_REFRESH": "1",
 		"DISABLE_LIVE_SCRAPING": "1",
 		"ENABLE_ON_DEMAND_REFRESH": "1",
-		"CATALOG_REQUESTED_RUNNER": "0"
+		"CATALOG_REQUESTED_RUNNER": "0",
+		"CATALOG_SCHEDULER_ENABLED": "1"
 	},
+	"triggers": { "crons": ["11 * * * *"] },
 	"compatibility_date": "2026-09-05",
 	"compatibility_flags": [
 		"nodejs_compat",

@@ -144,7 +144,7 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   if (coverage.error) status = 'failed';
   const sourceFailureReasons: Record<string,number> = {};
   for (const reason of context.failures.values()) sourceFailureReasons[reason]=(sourceFailureReasons[reason] ?? 0)+1;
-  const summary = { source: 'adaptive-catalog', runId: run.data.id, startedAt, finishedAt: new Date().toISOString(),
+  const summary = { source: 'adaptive-catalog', trigger: ['github-schedule','cloudflare-fallback'].includes(process.env.CATALOG_RUN_TRIGGER ?? '') ? process.env.CATALOG_RUN_TRIGGER : 'manual', runId: run.data.id, startedAt, finishedAt: new Date().toISOString(),
     status, failureCode, feedClaimed, sourceFailureReasons, limitReached: counts.attempted >= maxOffers, ...counts, groups, seeded: seeded.data, sharedReads: context.sharedReads, coverage: coverage.data ?? [] };
   const completed = await client.from('catalog_refresh_runs').update({ status, finished_at: summary.finishedAt, summary }).eq('id', run.data.id);
   if (completed.error) throw new Error('REFRESH_PROGRESS_FAILED');

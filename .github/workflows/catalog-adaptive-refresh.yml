@@ -10,6 +10,11 @@ on:
         type: number
         default: 2500
         required: true
+      trigger:
+        description: Origen de la solicitud (para evidencia operativa)
+        type: choice
+        options: [manual, cloudflare-fallback]
+        default: manual
 permissions:
   contents: read
 concurrency:
@@ -33,6 +38,7 @@ jobs:
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           CATALOG_REQUESTED_RUNNER: '1'
           CATALOG_ADAPTIVE_MAX_OFFERS: ${{ github.event.inputs.max_offers || '2500' }}
+          CATALOG_RUN_TRIGGER: ${{ github.event_name == 'schedule' && 'github-schedule' || github.event.inputs.trigger || 'manual' }}
           # Mantener revisiones existentes; este barrido no contrata nuevas consultas de IA.
           ENABLE_JEV_OFFER_REVIEW: '0'
           LOG_LEVEL: warn

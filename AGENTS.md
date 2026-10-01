@@ -183,6 +183,15 @@ Tablas de usuario (`user_profiles`, `user_favorites`, `price_alerts`) tienen Row
 - Requiere secret: `CATALOG_REFRESH_CRON_SECRET`.
 - Opcional: `CATALOG_REFRESH_BASE_URL` (default `https://www.comparador-hardware.com.ar`).
 
+### Barrido adaptativo del catálogo (01/10/2026)
+
+- `.github/workflows/catalog-adaptive-refresh.yml`: minuto 41 de cada hora, máximo 2500 ofertas y 17 minutos de procesamiento; cola y progreso persistentes en Supabase. El límite de ejecución no acredita cobertura completa.
+- Componentes: 24 h; gabinetes/refrigeración: 72 h; mantenimiento: 168 h. Favoritos/alertas y guías conservan sus reglas más estrictas. Analytics puede promover interés real sin degradar la base por datos escasos.
+- CompraGamer comparte el feed; MaxTecno/Katech agrupan URLs conocidas mediante Store API y contrastan una página visible por fuente/ejecución. SCP permanece en HTML por discrepancia de precio comprobada. Una ausencia o un bloqueo no es agotamiento ni observación nueva.
+- `custom-worker.mjs` conserva el handler de OpenNext y añade un respaldo al minuto 11. Sólo comprueba y despacha Actions; no ejecuta scraping en Cloudflare. Omite trabajos activos o iniciados hace menos de 75 minutos y limita los despachos a uno por hora mediante Supabase.
+- `CATALOG_SCHEDULER_ENABLED=0` desactiva el respaldo. Usa las credenciales privadas existentes; jamás publicarlas. Registrar el origen `manual`, `github-schedule` o `cloudflare-fallback` en los resúmenes y comprobar ejecuciones reales, no sólo la configuración.
+- Medir ofertas observadas y comparables por separado. La meta de 95% del subconjunto prioritario en 24 h requiere siete días reales y permanece abierta mientras no haya evidencia. No reducir el denominador ni renovar fechas para simular cumplimiento.
+
 ## Variables de entorno clave
 
 Ver `.env.example` para listado completo.
