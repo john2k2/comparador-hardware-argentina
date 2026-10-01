@@ -29,6 +29,9 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   const cleanup = await client.from('catalog_refresh_runs').delete()
     .lt('started_at',new Date(started-30*86400000).toISOString());
   if (cleanup.error) throw new Error('REFRESH_RUN_RETENTION_FAILED');
+  const interrupted = await client.from('catalog_refresh_runs').update({ status:'failed',finished_at:startedAt })
+    .eq('status','running').lt('started_at',new Date(started-60*60_000).toISOString());
+  if (interrupted.error) throw new Error('REFRESH_PROGRESS_FAILED');
   const seeded = await client.rpc('seed_catalog_refresh_queue');
   if (seeded.error) throw new Error('REFRESH_SEED_FAILED');
   const run = await client.from('catalog_refresh_runs').insert({ started_at: startedAt }).select('id').single();
