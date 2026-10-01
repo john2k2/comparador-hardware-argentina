@@ -311,6 +311,10 @@ describe('adaptive known offers', () => {
     mocks.withPromiseTimeout.mockImplementation((promise: Promise<unknown>) => promise);
   });
   afterEach(() => vi.useRealTimers());
+  it('un título de plantilla sin resolver no produce observación aunque coincidan URL y precio', async () => {
+    configureClaimedJob([sourceProduct({ name:'§ITEMTIT§', offer:{price:1} })]);
+    expect(await fetchKnownOffer(catalogProduct(), target, Date.parse('2026-09-21T12:00:00Z'), createKnownOfferContext(true))).toBeNull();
+  });
   it('observa un precio con stock desconocido sólo en el catálogo, sin inventar disponibilidad', async () => {
     configureClaimedJob([sourceProduct({ offer: { price:420000,stock:'unknown' } })]);
     const started=Date.parse('2026-09-21T12:00:00Z');

@@ -35,6 +35,7 @@ describe('fichas conocidas con DOM específico', () => {
     const html = `<div id="detalle"><h1 class="prod-titulo" id="COD123">GPU RTX 5060</h1><span id="precio">$382.288,70</span><div class="cg-stock-api"><div class="stock-box"><div class="stock-title">DISPONIBLE PARA ENVÍO</div></div><div class="local"><div class="stock-box"><div class="stock-title">SIN STOCK EN EL LOCAL</div></div></div></div></div>`;
     expect(parse('compugarden', html, url)?.prices[0]).toMatchObject({ price: 382289, stock: 'in-stock' });
     expect(parse('compugarden', html.replace('COD123', 'COD124'), url)).toBeNull();
+    expect(parse('compugarden', html.replace('GPU RTX 5060', '§ITEMTIT§').replace('$382.288,70', '$1'), url)).toBeNull();
   });
   it('GamingCity toma precio con impuestos y unidades disponibles del detalle, nunca el relacionado', () => {
     const url = 'https://www.gamingcity.com.ar/gpu--det--123';

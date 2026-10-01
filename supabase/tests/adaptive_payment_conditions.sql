@@ -13,6 +13,7 @@ BEGIN
    VALUES ('payment-test-product',sid,'https://example.com/payment-test',100,'out-of-stock',now()-interval '3 days') RETURNING id INTO target;
   INSERT INTO public.catalog_offer_refresh_state(offer_id,category,lease_token,leased_until) VALUES (target,'procesadores',tok,now()+interval '20 minutes');
   evidence:=jsonb_build_object('listingRef',sid||':url:https://example.com/payment-test','title','Procesador Ryzen 7600');
+  IF persist_adaptive_offer(target,tok,1,NULL,'in-stock',NULL,NULL,now(),observed,NULL,'template',jsonb_set(evidence,'{title}','"§ITEMTIT§"'),'special') THEN RAISE EXCEPTION 'Acepta plantilla no resuelta'; END IF;
   IF persist_adaptive_offer(target,gen_random_uuid(),200,NULL,'unknown',NULL,NULL,now(),observed,NULL,'payment',evidence,'special') THEN RAISE EXCEPTION 'Acepta token incorrecto'; END IF;
   IF sid='katech' THEN
    IF persist_adaptive_offer(target,tok,200,NULL,'unknown',NULL,NULL,now(),observed,NULL,'payment',evidence,'special') THEN RAISE EXCEPTION 'Amplió condiciones a una fuente sin constatación'; END IF;

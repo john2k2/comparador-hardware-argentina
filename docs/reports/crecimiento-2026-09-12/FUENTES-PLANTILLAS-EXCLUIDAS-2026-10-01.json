@@ -1,0 +1,110 @@
+{
+  "at": "2026-10-01",
+  "reason": "Compugarden devolvió plantillas §ITEMTIT§ y precio $1 sin observación válida. Cuarentena, precio no informado, fecha desconocida y retiro de los registros erróneos generados por estas pruebas.",
+  "offers": [
+    {
+      "id": "6305d54d-03c1-4833-86fc-d60a652e00ec",
+      "product_id": "agrupado-almacenamiento-disco-solido-ssd-1tb-sandisk-ssd-plus-m-2-nvme-similar-960gb",
+      "url": "https://www.compugarden.com.ar/DETALLE/Disco-Solido-Ssd-1TB-Sandisk-SSD-Plus-M2-Nvme-Similar-960GB/ITEM_ID=12851/OR=/H=/CANT=/compugarden.aspx",
+      "price": "1.00",
+      "stock": "in-stock",
+      "last_updated": "2026-10-01 20:56:50.566+00",
+      "source_identity": {
+        "title": "§ITEMTIT§",
+        "storeSku": "SA400S37-240G",
+        "listingRef": "compugarden:url:https://compugarden.com.ar/DETALLE/Disco-Solido-Ssd-1TB-Sandisk-SSD-Plus-M2-Nvme-Similar-960GB/ITEM_ID=12851/OR=/H=/CANT=/compugarden.aspx"
+      },
+      "erroneous_history": [
+        {
+          "id": "9134eff7-51b8-4198-981e-4dd2461987e0",
+          "price": 1,
+          "stock": "in-stock",
+          "recorded_at": "2026-10-01T20:56:50.566+00:00"
+        }
+      ]
+    },
+    {
+      "id": "1e61c344-ba56-42bc-9437-234113745816",
+      "product_id": "agrupado-almacenamiento-disco-solido-ssd-1tb-kingston-fury-renegade-con-disipador-termico-m-2-nvme-pcie-x4-4-0-7000-mb-s",
+      "url": "https://www.compugarden.com.ar/DETALLE/Disco-Solido-SSD-1TB-Kingston-Fury-Renegade-Con-Disipador-TErmico-M2-NVMe-PCIe-x4-40-7000-MBs/ITEM_ID=11907/OR=/H=/CANT=/compugarden.aspx",
+      "price": "1.00",
+      "stock": "in-stock",
+      "last_updated": "2026-10-01 20:56:14.116+00",
+      "source_identity": {
+        "title": "§ITEMTIT§",
+        "storeSku": "SA400S37-240G",
+        "listingRef": "compugarden:url:https://compugarden.com.ar/DETALLE/Disco-Solido-SSD-1TB-Kingston-Fury-Renegade-Con-Disipador-TErmico-M2-NVMe-PCIe-x4-40-7000-MBs/ITEM_ID=11907/OR=/H=/CANT=/compugarden.aspx"
+      },
+      "erroneous_history": [
+        {
+          "id": "8482694f-f3a7-4533-8e4a-37746ff49231",
+          "price": 1,
+          "stock": "in-stock",
+          "recorded_at": "2026-10-01T20:56:14.116+00:00"
+        }
+      ]
+    },
+    {
+      "id": "d8d76cea-0ab3-477e-a3ad-a7c35be8825f",
+      "product_id": "agrupado-tarjetas-graficas-16-16gb-1tb-240hz-275hx-5080-ddr5-hx-intel-msi-notebook-rtx-ssd-ultra-vector-win11",
+      "url": "https://www.compugarden.com.ar/DETALLE/Notebook-MSI-Vector-16-HX-16-Intel-Ultra-9-275HX-16GB-DDR5-1TB-SSD-RTX-5080-240HZ-WIN11/ITEM_ID=12874/OR=/H=/CANT=/compugarden.aspx",
+      "price": "1.00",
+      "stock": "in-stock",
+      "last_updated": "2026-10-01 20:55:58.806+00",
+      "source_identity": {
+        "title": "§ITEMTIT§",
+        "storeSku": "B14WGK-293US",
+        "listingRef": "compugarden:url:https://compugarden.com.ar/DETALLE/Notebook-MSI-Vector-16-HX-16-Intel-Ultra-9-275HX-16GB-DDR5-1TB-SSD-RTX-5080-240HZ-WIN11/ITEM_ID=12874/OR=/H=/CANT=/compugarden.aspx"
+      },
+      "erroneous_history": [
+        {
+          "id": "0bf5e6dd-a62f-4b95-a0a7-972006bd5fe5",
+          "price": 1,
+          "stock": "in-stock",
+          "recorded_at": "2026-10-01T20:55:58.806+00:00"
+        }
+      ]
+    },
+    {
+      "id": "e60be94b-92c3-4402-8ec8-0db0c77924b3",
+      "product_id": "agrupado-motherboards-pc-diseno-ryzen-7-7700x-b650m-32gb-2tb-ssd-850w-rx-9070-xt-gabinete-gamer",
+      "url": "https://www.compugarden.com.ar/DETALLE/PC-DiseNo---RYZEN-7-7700X---B650M---32GB---2TB-SSD---850W---RX-9070-XT----GABINETE-GAMER/ITEM_ID=11012/OR=/H=/CANT=/compugarden.aspx",
+      "price": "1.00",
+      "stock": "in-stock",
+      "last_updated": "2026-10-01 20:51:30.888+00",
+      "source_identity": {
+        "title": "§ITEMTIT§",
+        "listingRef": "compugarden:url:https://compugarden.com.ar/DETALLE/PC-DiseNo---RYZEN-7-7700X---B650M---32GB---2TB-SSD---850W---RX-9070-XT----GABINETE-GAMER/ITEM_ID=11012/OR=/H=/CANT=/compugarden.aspx"
+      },
+      "erroneous_history": [
+        {
+          "id": "c87d3d4b-e7bd-431c-9441-d22228990947",
+          "price": 1,
+          "stock": "in-stock",
+          "recorded_at": "2026-10-01T20:51:30.888+00:00"
+        }
+      ]
+    },
+    {
+      "id": "edf58f10-07be-43de-86dc-4becff40df54",
+      "product_id": "agrupado-motherboards-motherboard-asus-tuf-gaming-b650em-plus-wifi-am5",
+      "url": "https://www.compugarden.com.ar/DETALLE/Motherboard-Asus-TUF-Gaming-B650EM-Plus-Wifi-AM5/ITEM_ID=12765/OR=/H=/CANT=/compugarden.aspx",
+      "price": "1.00",
+      "stock": "in-stock",
+      "last_updated": "2026-10-01 20:50:16.528+00",
+      "source_identity": {
+        "title": "§ITEMTIT§",
+        "storeSku": "90MB1LQ0-M0EAY0",
+        "listingRef": "compugarden:url:https://compugarden.com.ar/DETALLE/Motherboard-Asus-TUF-Gaming-B650EM-Plus-Wifi-AM5/ITEM_ID=12765/OR=/H=/CANT=/compugarden.aspx"
+      },
+      "erroneous_history": [
+        {
+          "id": "8fff80ee-9328-4029-aab9-755c5172dd3a",
+          "price": 1,
+          "stock": "in-stock",
+          "recorded_at": "2026-10-01T20:50:16.528+00:00"
+        }
+      ]
+    }
+  ]
+}

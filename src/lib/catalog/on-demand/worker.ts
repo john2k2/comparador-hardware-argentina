@@ -1,5 +1,6 @@
 import 'server-only';
 import { SourceHttpError, type SourceFailure } from '@/lib/scrapers/source-http';
+import { isUnresolvedSourceTitle } from '@/lib/scrapers/source-title';
 import { fetchKnownProductDetail } from '@/lib/scrapers/known-product-detail';
 import { stores as configuredStores } from '@/lib/scrapers/static-data';
 import { fetchCompraGamerCatalogProducts } from '@/lib/scrapers/compragamer';
@@ -91,6 +92,7 @@ export async function fetchKnownOffer(product: Product, target: RefreshTarget, s
   });
   for (const found of batches) {
     for (const source of found) {
+      if (isUnresolvedSourceTitle(source.name)) continue;
       const price = source.prices.find((offer) => offer.storeId === target.storeId && sameListing(target.storeId, offer.url, target.url));
       if (!price || !Number.isFinite(price.price) || price.price <= 0 || (price.stock === 'unknown' && !context.batchCatalog)) continue;
       const observedAt = new Date(price.lastUpdated).getTime();

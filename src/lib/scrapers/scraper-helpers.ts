@@ -1,5 +1,6 @@
 import { parseLocalizedArsPrice } from '../price-utils';
 import { sanitizeProduct } from '../product-sanitizer';
+import { isUnresolvedSourceTitle } from './source-title';
 import type { HardwareCategory, Product, StockStatus } from '../types';
 
 export const KNOWN_HARDWARE_BRANDS = [
@@ -130,7 +131,7 @@ export function buildSinglePriceProduct(input: BuildSinglePriceProductInput): Pr
   const url = normalizeScrapedAbsoluteUrl(input.storeBaseUrl ?? '', input.url);
   const price = parseScrapedArsPrice(input.price);
 
-  if (!name || !url || price <= 0) return null;
+  if (!name || isUnresolvedSourceTitle(name) || !url || price <= 0) return null;
 
   const createdAt = input.createdAt ?? new Date();
   const updatedAt = input.updatedAt ?? createdAt;
