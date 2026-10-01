@@ -96,7 +96,7 @@ export async function fetchKnownOffer(product: Product, target: RefreshTarget, s
       if (!Number.isFinite(observedAt) || observedAt < startedAt || observedAt > Date.now() + 60_000) continue;
       // La URL o el ID estable de la tienda identifican la oferta. Un título contradictorio requiere revisión.
       const categoryConflict = context.batchCatalog && (source.category !== product.category
-        || (product.category !== 'computadoras' && /\b(?:pc gamer|pc armada|notebook|laptop|computadora)\b/i.test(source.name)));
+        || (product.category !== 'computadoras' && /^(?:pc|notebook|laptop|computadora)\b|\b(?:pc gamer|pc armada|notebook|laptop|computadora)\b/i.test(source.name)));
       const conflict = categoryConflict || hasExplicitIdentityConflict({ name: product.name, category: product.category, offerText: source.name });
       const previousReview = product.prices.find(offer => offer.storeId === target.storeId && sameListing(target.storeId, offer.url, target.url))?.identityReview;
       const sku = source.specs.SKU?.trim();

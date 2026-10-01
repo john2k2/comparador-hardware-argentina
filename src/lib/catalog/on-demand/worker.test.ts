@@ -331,4 +331,11 @@ describe('adaptive known offers', () => {
     expect(wrong?.price.identityReview?.reason).toBe('explicit-conflict');
     expect(valid?.price.identityReview).toBeUndefined();
   });
+  it('no presenta una PC completa mal categorizada como un componente comparable', async () => {
+    const source = { ...sourceProduct({ name:'PC Intel i7 12700 con SSD 240GB',offer:{price:900000} }),category:'almacenamiento' as const };
+    configureClaimedJob([source]);
+    const observation=await fetchKnownOffer({ ...catalogProduct(),name:'PC Intel i7 12700 con SSD 240GB',category:'almacenamiento' },target,Date.parse('2026-09-21T12:00:00Z'),createKnownOfferContext(true));
+    expect(observation?.price.identityReview?.reason).toBe('explicit-conflict');
+  });
+
 });
