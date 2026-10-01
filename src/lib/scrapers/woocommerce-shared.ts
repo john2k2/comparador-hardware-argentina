@@ -1,4 +1,5 @@
 import { sourceFetch } from './source-http';
+import { parseKnownProductDetail } from './known-product-detail';
 import * as cheerio from 'cheerio';
 import type { HardwareCategory, Product } from '../types';
 import {
@@ -239,11 +240,14 @@ export function parseWooProductDetail(
     $('h1.entry-title').first().text().trim() ||
     (store.id === 'scphardstore' ? $('h1.scp-single-product__title').first().text().trim() : '') ||
     $('h1[itemprop="name"]').first().text().trim() ||
+    (store.id === 'maxtecno' ? $('main.product h1.product-title').first().text().trim() : '') ||
+    (store.id === 'liontech' && $('body.single-product').length ? $('h1').first().text().trim() : '') ||
     $('body.single-product h1.post_title').first().text().trim();
   if (!name) return null;
 
   // Las recomendaciones pueden contener un precio rebajado antes del importe
   // principal. Nunca usar sus montos como precio de la publicación consultada.
+  const primary = (selector: string) => $(selector).filter((_, element) => $(element).parents('.related, .up-sells, .upsells, .cross-sells, .products, .w-grid-item').length === 0);
   const primaryPrices = $('.summary, p.price, .product_field.price').filter((_, element) => (
     $(element).parents('.related, .up-sells, .upsells, .cross-sells, .products, .w-grid-item').length === 0
   ));
@@ -252,7 +256,8 @@ export function parseWooProductDetail(
   const anyPrice = primaryPrices.find('.woocommerce-Price-amount bdi, bdi').first().text().trim();
   const metaPrice = $('meta[property="product:price:amount"]').attr('content') || '';
   // El importe sin impuestos de SCP también usa las clases estándar de Woo.
-  const storePrice = store.id === 'scphardstore' ? $('.scp-price-main__current').first().text().trim() : '';
+  const storePrice = store.id === 'scphardstore' ? primary('.scp-price-main__current').first().text().trim()
+    : store.id === 'maxtecno' ? primary('main.product .price-showcase-box .price-main').first().text().trim() : '';
   const price = parseWooPrice(storePrice || productFieldPrice || insPrice || anyPrice || metaPrice);
   if (price <= 0) return null;
 
@@ -264,16 +269,16 @@ export function parseWooProductDetail(
     '';
   const image = imageRaw ? normalizeAbsoluteUrl(store.baseUrl, imageRaw) : undefined;
 
-  const primary = (selector: string) => $(selector).filter((_, element) => $(element).parents('.related, .up-sells, .upsells, .cross-sells, .products, .w-grid-item').length === 0);
   const stockText = primary('.stock').first().text().toLowerCase();
-  const hasOutOfStockClass = primary('.stock.out-of-stock, .out-of-stock').length > 0;
+  const primaryProduct = $('[id^=product-].product, main.product').filter((_, element) => $(element).parents('.related, .products, .w-grid-item').length === 0);
+  const hasOutOfStockClass = primary('.stock.out-of-stock, .out-of-stock').length > 0 || primaryProduct.hasClass('outofstock');
   const hasLowStockText = stockText.includes('ultim') || stockText.includes('pocas');
   const hasOutOfStockText = stockText.includes('sin stock') || stockText.includes('agotad');
   const stock = hasOutOfStockClass || hasOutOfStockText
     ? 'out-of-stock'
     : hasLowStockText
       ? 'low-stock'
-      : primary('.stock.in-stock, button.single_add_to_cart_button:not([disabled]), input[name=add-to-cart]:not([disabled])').length > 0 || /(?:hay existencias|disponible|in stock)/i.test(stockText)
+      : primaryProduct.hasClass('instock') || primary('.stock.in-stock, button.single_add_to_cart_button:not([disabled]), input[name=add-to-cart]:not([disabled])').length > 0 || /(?:hay existencias|disponible|in stock)/i.test(stockText)
         ? 'in-stock' : 'unknown';
 
   const canonical = $('link[rel="canonical"]').attr('href') || pageUrl;
@@ -301,6 +306,7 @@ export function parseWooProductDetail(
   });
   const sku = primary('.sku').first().text().replace(/^sku\s*:\s*/i, '').trim();
   if (product && sku && sku !== 'N/A') product.specs.SKU = sku;
+  if (product && store.id === 'maxtecno' && storePrice) product.prices[0].priceCondition = 'special';
   return product;
 }
 
@@ -352,7 +358,10 @@ export async function fetchWooCommerceKnownOffer(storeId: string, rawUrl: string
   const host = (value: string) => new URL(value).hostname.replace(/^www\./, '');
   if (url.protocol !== 'https:' || url.username || url.password || url.port || host(rawUrl) !== host(store.baseUrl)) return null;
   const response = await sourceFetch(store.id, url.href, { headers: SCRAPE_HEADERS, signal },8_000_000,[host(store.baseUrl)]);
-  const product = parseWooProductDetail(await response.text(), url.href, store, category, slugFromScrapedUrl(url.href));
+  const html = await response.text();
+  const product = parseWooProductDetail(html, url.href, store, category, slugFromScrapedUrl(url.href))
+    ?? (cheerio.load(html)('form.variations_form, table.variations').length === 0
+      ? parseKnownProductDetail(html, url.href, store, category) : null);
   if (!product || host(product.prices[0].url) !== host(store.baseUrl)) return null;
   return product;
 }

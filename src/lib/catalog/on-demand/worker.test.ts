@@ -337,5 +337,10 @@ describe('adaptive known offers', () => {
     const observation=await fetchKnownOffer({ ...catalogProduct(),name:'PC Intel i7 12700 con SSD 240GB',category:'almacenamiento' },target,Date.parse('2026-09-21T12:00:00Z'),createKnownOfferContext(true));
     expect(observation?.price.identityReview?.reason).toBe('explicit-conflict');
   });
+  it.each(['Mouse Trust Gamer', 'Teclado Logitech K120', 'Monitor Samsung 24 pulgadas'])('bloquea %s mal clasificado como procesador aunque la URL coincida', async (name) => {
+    configureClaimedJob([{ ...sourceProduct({ name, offer:{price:100000} }), category:'procesadores' as const }]);
+    const observation = await fetchKnownOffer({ ...catalogProduct(), name, category:'procesadores' }, target, Date.parse('2026-09-21T12:00:00Z'), createKnownOfferContext(true));
+    expect(observation?.price.identityReview?.reason).toBe('explicit-conflict');
+  });
 
 });

@@ -64,6 +64,8 @@ jobs:
           done
           psql -v ON_ERROR_STOP=1 -f supabase/tests/atomic_catalog_offers.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/paginated_catalog.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/peripheral_reclassification.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/adaptive_payment_conditions.sql
           node --test supabase/tests/catalog-concurrency.test.mjs
       - name: Verify browser behavior with isolated data
         run: npm run test:e2e:critical

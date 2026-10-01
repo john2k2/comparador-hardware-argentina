@@ -1,5 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { fetchGezatekProducts } from './gezatek';
+import { fetchGezatekProducts, parseGezatekCatalog } from './gezatek';
+// El transporte tiene pruebas propias; estas comprueban el contrato del lector.
+vi.mock('./source-http', () => ({ sourceFetch: (...args: Parameters<typeof fetch>) => fetch(...args) }));
 
 vi.mock('../logger', () => ({
   logger: {
@@ -37,6 +39,17 @@ const validGezatekHtml = `
 const emptyGezatekHtml = `<!DOCTYPE html><html><body></body></html>`;
 
 describe('gezatek scraper', () => {
+  it('lee el catálogo nuevo sin usar cuotas ni confundir SKU con stock', () => {
+    const card = `<div class="card-ecommerce"><h4 class="card-title"><a href="https://gezatek.com.ar/procesadores/ryzen-7600-7906.html">Micro AMD Ryzen 5 7600</a></h4><h6 class="card-category"><span class="articulo_field">CPA009</span><font class="et">En stock</font></h6><h6 class="precio_mp">$417989</h6><h4 class="pecio_final" data-precio="379990"><b>$379990</b><small>Precio Geza</small></h4></div>`;
+    const product = parseGezatekCatalog(card, 'memoria-ram')[0];
+    expect(product?.category).toBe('procesadores');
+    expect(product?.prices[0]).toMatchObject({ price:379990, stock:'in-stock', priceCondition:'special' });
+    expect(product?.specs.SKU).toBe('CPA009');
+    expect(parseGezatekCatalog(card.replace('En stock',''), 'procesadores')[0]?.prices[0].stock).toBe('unknown');
+    expect(parseGezatekCatalog(card.replace('En stock','Sin stock'), 'procesadores')[0]?.prices[0].stock).toBe('out-of-stock');
+    expect(parseGezatekCatalog(card.replace('data-precio="379990"','data-precio="1"'), 'procesadores')).toEqual([]);
+    expect(parseGezatekCatalog(card.replace('https://gezatek.com.ar/procesadores','https://other.example/procesadores'), 'procesadores')).toEqual([]);
+  });
   beforeEach(() => {
     vi.restoreAllMocks();
   });

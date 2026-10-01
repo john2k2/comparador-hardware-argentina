@@ -14,6 +14,7 @@ import { buildPriceStateSignature } from '@/lib/persistence/product-write-dedupe
 import { hasExplicitIdentityConflict, needsIdentityReview } from '@/lib/quality/offer-identity';
 import { isOfferFresh } from '@/lib/price-freshness';
 import { normalizeIdentityText, parseCpuModelSignature, parseGpuChipSignature } from '@/lib/product-identity';
+import { inferHardwareCategoryFromName } from '@/lib/catalog/hardware-categories';
 import type { Product, ProductPrice } from '@/lib/types';
 import type { RefreshItemResult, RefreshJob, RefreshTarget } from './contracts';
 
@@ -95,7 +96,9 @@ export async function fetchKnownOffer(product: Product, target: RefreshTarget, s
       const observedAt = new Date(price.lastUpdated).getTime();
       if (!Number.isFinite(observedAt) || observedAt < startedAt || observedAt > Date.now() + 60_000) continue;
       // La URL o el ID estable de la tienda identifican la oferta. Un título contradictorio requiere revisión.
+      const inferredCategory = inferHardwareCategoryFromName(source.name);
       const categoryConflict = context.batchCatalog && (source.category !== product.category
+        || (inferredCategory !== undefined && inferredCategory !== product.category)
         || (product.category !== 'computadoras' && /^(?:pc|notebook|laptop|computadora)\b|\b(?:pc gamer|pc armada|notebook|laptop|computadora)\b/i.test(source.name)));
       const conflict = categoryConflict || hasExplicitIdentityConflict({ name: product.name, category: product.category, offerText: source.name });
       const previousReview = product.prices.find(offer => offer.storeId === target.storeId && sameListing(target.storeId, offer.url, target.url))?.identityReview;

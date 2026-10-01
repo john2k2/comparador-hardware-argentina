@@ -2,6 +2,10 @@ import * as cheerio from 'cheerio';
 import { HardwareCategory, Product, StockStatus } from '../types';
 import { extractBrandFromName as extractBrandFromNameShared } from './brand-utils';
 import { logger } from '../logger';
+import { sourceFetch } from './source-http';
+import { parseLocalizedArsPrice } from '../price-utils';
+import { buildSinglePriceProduct } from './scraper-helpers';
+import { inferHardwareCategoryFromName } from '../catalog/hardware-categories';
 
 const GEZATEK_BASE_URL = 'https://www.gezatek.com.ar';
 
@@ -54,6 +58,34 @@ function inferStock(stockText: string): StockStatus {
   return 'unknown';
 }
 
+/** Catálogo Qloud actual: precio Geza, stock explícito y SKU del mismo card. */
+export function parseGezatekCatalog(html: string, category: HardwareCategory): Product[] {
+  const $ = cheerio.load(html), products: Product[] = [], seen = new Set<string>();
+  $('.card-ecommerce').each((_, element) => {
+    const card = $(element), anchor = card.find('h4.card-title a').first();
+    const name = anchor.text().replace(/\s+/g, ' ').trim(), href = anchor.attr('href');
+    if (!name || !href) return;
+    const url = new URL(href, GEZATEK_BASE_URL);
+    if (url.protocol !== 'https:' || url.username || url.password || url.port
+      || url.hostname.replace(/^www\./, '') !== 'gezatek.com.ar') return;
+    const id = url.pathname.match(/-(\d+)\.html$/)?.[1];
+    const primary = card.find('.pecio_final[data-precio]');
+    if (!id || primary.length !== 1 || seen.has(id)) return;
+    const price = Number(primary.attr('data-precio'));
+    const visible = parseLocalizedArsPrice(primary.find('b').first().text());
+    if (!Number.isFinite(price) || price <= 0 || Math.abs(price-visible) > 1) return;
+    const product = buildSinglePriceProduct({ id:`gezatek-${id}-${slugify(name)}`, name,
+      category:inferHardwareCategoryFromName(name) ?? category, storeId:'gezatek', storeName:'Gezatek', storeBaseUrl:GEZATEK_BASE_URL,
+      url:url.href, price, stock:inferStock(card.find('.card-category .et').text()), image:card.find('img').first().attr('src') });
+    if (!product) return;
+    product.prices[0].priceCondition = 'special';
+    const sku = card.find('.articulo_field').first().text().trim();
+    if (sku) product.specs.SKU = sku;
+    seen.add(id); products.push(product);
+  });
+  return products;
+}
+
 export async function fetchGezatekProducts(
   query: string,
   categorySlug: HardwareCategory,
@@ -62,18 +94,20 @@ export async function fetchGezatekProducts(
   const searchQuery = query.trim();
   if (!searchQuery) return [];
 
-  const searchUrl = `${GEZATEK_BASE_URL}/tienda/?busqueda=${encodeURIComponent(searchQuery)}`;
+  const searchUrl = `${GEZATEK_BASE_URL}/buscar/?q=${encodeURIComponent(searchQuery)}`;
 
   try {
     logger.info(`[Gezatek Scraper] Extrayendo productos de: ${searchUrl}`);
 
-    const res = await fetch(searchUrl, {
+    const res = await sourceFetch('gezatek', searchUrl, {
       headers: SCRAPE_HEADERS,
       signal,
-    });
+    }, 8_000_000, ['gezatek.com.ar']);
     if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
 
     const html = await res.text();
+    const currentProducts = parseGezatekCatalog(html, categorySlug);
+    if (currentProducts.length) return currentProducts;
     const $ = cheerio.load(html);
     const products: Product[] = [];
     const seenIds = new Set<string>();

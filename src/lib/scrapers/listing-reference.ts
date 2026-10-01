@@ -6,6 +6,11 @@ export function listingReference(storeId: string, rawUrl: string): string | null
     const host = url.hostname.replace(/^www\./, '');
     if (storeId === 'compragamer' && host !== 'compragamer.com') return null;
     if (storeId === 'maximus' && host !== 'maximus.com.ar') return null;
+    if (storeId === 'xtpc') {
+      if (host !== 'xt-pc.com.ar') return null;
+      const id = url.pathname.match(/^\/prod\/(\d+)\/[^/]+\/?$/i)?.[1];
+      return id && !url.search ? `${storeId}:id:${id}` : null;
+    }
     if (storeId === 'compragamer') {
       const id = url.pathname.match(/^\/producto\/(?:[^/]*_)?(\d+)\/?$/)?.[1];
       return id ? `${storeId}:id:${id}` : null;

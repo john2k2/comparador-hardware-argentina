@@ -3,6 +3,7 @@ import { sourceFetch } from './source-http';
 import { sameListing } from './listing-reference';
 import { buildSinglePriceProduct } from './scraper-helpers';
 import { normalizeIdentityText } from '@/lib/product-identity';
+import { parseKnownDomDetail } from './known-dom-detail';
 import type { HardwareCategory, Product, StockStatus } from '@/lib/types';
 
 type JsonRecord = Record<string, unknown>;
@@ -10,8 +11,11 @@ const record = (value: unknown): value is JsonRecord => !!value && typeof value 
 
 /** Sólo datos del producto principal: nunca lowPrice de un agregado o similares. */
 export function parseKnownProductDetail(html: string, url: string, store: { id: string; name: string; baseUrl: string }, category: HardwareCategory): Product | null {
+  // Estas fuentes requieren corroboración visible; un fallo no habilita volver
+  // al JSON-LD de plantilla, que puede conservar precio o stock vencidos.
+  if (['mexx', 'xtpc', 'gamingcity', 'compugarden'].includes(store.id)) return parseKnownDomDetail(html, url, store, category);
   const $ = cheerio.load(html);
-  const heading = $('h1').first().text().replace(/\s+/g,' ').trim();
+  const heading = $('h1').filter((_, element) => $(element).text().trim().length > 0).first().text().replace(/\s+/g,' ').trim();
   const canonical = $('link[rel=canonical]').attr('href');
   if (!heading || !canonical || !sameListing(store.id,new URL(canonical,url).href,url)) return null;
   const nodes: JsonRecord[] = [];

@@ -2,6 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { listingReference, sameListing } from './listing-reference';
 
 describe('listing-reference', () => {
+  it('XTPC conserva el ID al cambiar el slug sin mezclar hosts, IDs ni opciones', () => {
+    const url = 'https://www.xt-pc.com.ar/prod/32420/old-slug';
+    expect(sameListing('xtpc', url, 'https://xt-pc.com.ar/prod/32420/new-slug')).toBe(true);
+    expect(sameListing('xtpc', url, url.replace('32420', '32421'))).toBe(false);
+    expect(sameListing('xtpc', url, url.replace('xt-pc.com.ar', 'other.example'))).toBe(false);
+    expect(listingReference('xtpc', `${url}?variant=1`)).toBeNull();
+  });
   it('keeps a CompraGamer listing identity when its slug changes', () => {
     const first = 'https://compragamer.com/producto/amd_ryzen_7_7800x3d_12345';
     const second = 'https://compragamer.com/producto/ryzen-7-7800x3d-box_12345';

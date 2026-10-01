@@ -30,6 +30,23 @@ afterEach(() => {
 });
 
 describe('woocommerce-shared', () => {
+  it('MaxTecno usa el efectivo/transferencia visible y excluye lista, cuotas e impuestos', () => {
+    const product = parseWooProductDetail(`<body class="single-product"><main class="product instock"><h1 class="product-title">Memoria Corsair 16GB</h1><div class="price-showcase-box"><span class="price-old">$120.000</span><span class="price-main">$100.000</span></div><div class="cuotas">12 x $10.000</div></main><section class="related products"><p class="price"><bdi>$1.000</bdi></p><div class="product outofstock"></div></section></body>`, 'https://maxtecno.com.ar/producto/ram/', { id:'maxtecno', name:'MaxTecno', baseUrl:'https://maxtecno.com.ar' }, 'memoria-ram', 'ram');
+    expect(product?.prices[0]).toMatchObject({ price:100000, stock:'in-stock', priceCondition:'special' });
+  });
+  it('SCP reconoce stock sólo en la raíz principal y conserva el agotamiento explícito', () => {
+    const html = scpDetailHtml.replace('<main class="product">', '<main id="product-123" class="product instock">');
+    expect(parseWooProductDetail(html, scpProductUrl, scpStore, 'motherboards', 'mother')?.prices[0].stock).toBe('in-stock');
+    expect(parseWooProductDetail(html.replace('product instock', 'product outofstock'), scpProductUrl, scpStore, 'motherboards', 'mother')?.prices[0].stock).toBe('out-of-stock');
+  });
+  it('LionTech reconoce el encabezado simple y no presume stock por tener precio', () => {
+    const html = '<body class="single-product"><h1>GPU RTX 5060</h1><p class="price"><bdi>$500.000</bdi></p><p class="stock out-of-stock">Agotado</p></body>';
+    expect(parseWooProductDetail(html, 'https://liontech.com.ar/producto/gpu/', { id:'liontech', name:'LionTech', baseUrl:'https://liontech.com.ar' }, 'tarjetas-graficas', 'gpu')?.prices[0]).toMatchObject({ price:500000, stock:'out-of-stock' });
+  });
+  it('no recupera el importe personalizado de MaxTecno desde un relacionado', () => {
+    const html = '<main class="product"><h1 class="product-title">GPU RTX 5060</h1><section class="related products"><div class="price-showcase-box"><span class="price-main">$100.000</span></div></section></main>';
+    expect(parseWooProductDetail(html, 'https://maxtecno.com.ar/producto/gpu/', { id:'maxtecno', name:'MaxTecno', baseUrl:'https://maxtecno.com.ar' }, 'tarjetas-graficas', 'gpu')).toBeNull();
+  });
   it('usa el precio principal de Katech y no el descuento de otra memoria recomendada', () => {
     const product = parseWooProductDetail(`
       <body class="single-product">

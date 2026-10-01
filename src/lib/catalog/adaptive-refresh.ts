@@ -100,7 +100,7 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
             p_installment_count: state.installment_count, p_installment_amount: state.installment_amount,
             p_run_started_at: startedAt, p_observed_at: new Date(price.lastUpdated).toISOString(),
             p_review: price.identityReview ?? null, p_signature: buildPriceStateSignature(state),
-            p_source_identity: price.sourceIdentity ?? null, p_price_condition: price.storeId === 'compragamer' ? 'special' : 'unspecified',
+            p_source_identity: price.sourceIdentity ?? null, p_price_condition: price.priceCondition ?? (price.storeId === 'compragamer' ? 'special' : 'unspecified'),
           });
           const saved = !persisted.error && persisted.data === true;
           await finish(item.target, saved ? 'observed' : 'persist-failed', saved && isCatalogOfferFresh(price.lastUpdated) && isComparableStoreOffer(price, item.product));
