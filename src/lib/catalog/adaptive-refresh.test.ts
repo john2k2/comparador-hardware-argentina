@@ -40,3 +40,24 @@ it('registra el motivo operativo y libera leases ante una falla de lectura',asyn
  expect(await runAdaptiveRefresh({maxOffers:24})).toMatchObject({status:'failed',failureCode:'REFRESH_CLAIM_FAILED'});
  expect(mocks.from).toHaveBeenCalledWith('catalog_offer_refresh_state');
 });
+it('reintenta una confirmación de respuesta perdida sin contar la oferta dos veces',async()=>{
+ let claimed=false,finishes=0;
+ mocks.rpc.mockImplementation(async(name:string)=>{
+  if(name==='claim_catalog_feed_refresh')return {data:claimed?[]:(claimed=true,[target]),error:null};
+  if(name==='finish_catalog_refresh' && ++finishes===1)return {data:null,error:{code:'NETWORK'}};
+  return {data:name==='catalog_refresh_coverage'?[]:name==='claim_catalog_refresh'?[]:true,error:null};
+ });
+ const promise=runAdaptiveRefresh({maxOffers:2});await vi.runAllTimersAsync();
+ expect(await promise).toMatchObject({attempted:1,observed:1,status:'completed'});expect(finishes).toBe(2);
+});
+it('reintenta la misma observación ante un fallo temporal de guardado',async()=>{
+ let claimed=false,persists=0;
+ mocks.rpc.mockImplementation(async(name:string)=>{
+  if(name==='claim_catalog_feed_refresh')return {data:claimed?[]:(claimed=true,[target]),error:null};
+  if(name==='persist_adaptive_offer' && ++persists===1)return {data:null,error:{code:'NETWORK'}};
+  return {data:name==='catalog_refresh_coverage'?[]:name==='claim_catalog_refresh'?[]:true,error:null};
+ });
+ const promise=runAdaptiveRefresh({maxOffers:2});await vi.runAllTimersAsync();
+ expect(await promise).toMatchObject({attempted:1,observed:1,status:'completed'});
+ const calls=mocks.rpc.mock.calls.filter(([name])=>name==='persist_adaptive_offer');expect(calls).toHaveLength(2);expect(calls[0][1]).toEqual(calls[1][1]);
+});

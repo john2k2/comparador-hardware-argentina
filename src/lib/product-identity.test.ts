@@ -132,3 +132,12 @@ it.each(['Procesador AMD Ryzen 5 5600GT + Radeon Vega + Cooler', 'CPU Cooler Int
 it('conserva como paquete un CPU con memoria adicional', () => {
   expect(isCompleteComputerTitle('Procesador AMD Ryzen 5 5600G + Radeon Vega + memoria 16GB DDR4')).toBe(true);
 });
+
+it('conserva el paquete de memoria y CPU como bundle, aunque empiece con RAM', () => {
+ expect(isCompleteComputerTitle('Memoria DDR4 16GB + Procesador AMD Ryzen 5 5600')).toBe(true);
+});
+
+it('no cuenta compatibilidad DDR5 como memoria incluida en una APU', () => {
+ expect(isCompleteComputerTitle('Procesador AMD Ryzen 5 8600G + Radeon 760M AM5 DDR5')).toBe(false);
+ expect(isCompleteComputerTitle('Procesador AMD Ryzen 5 8600G + Radeon 760M + 16GB DDR5')).toBe(true);
+});

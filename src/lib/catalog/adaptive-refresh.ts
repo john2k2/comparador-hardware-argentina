@@ -46,8 +46,14 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   const feedLimit = Math.min(1200, Math.floor(maxOffers / 2));
   let status: 'completed' | 'deadline' | 'failed' = 'completed';
   async function finish(target: Target, outcome: Outcome, comparable = false) {
-    const finished = await client!.rpc('finish_catalog_refresh', { p_offer_id: target.offer_id, p_token: token, p_result: outcome });
-    if (finished.error || finished.data !== true) throw new Error('REFRESH_LEASE_LOST');
+    let finished = await client!.rpc('finish_catalog_refresh', { p_offer_id: target.offer_id, p_token: token, p_result: outcome });
+    // La RPC confirma el mismo token sin repetir el cambio si la respuesta se perdió.
+    for (let retry=0; finished.error && retry<2; retry++) {
+      await new Promise(resolve=>setTimeout(resolve,300 * (retry+1)));
+      finished=await client!.rpc('finish_catalog_refresh', { p_offer_id: target.offer_id, p_token: token, p_result: outcome });
+    }
+    if (finished.error) throw new Error('REFRESH_FINISH_FAILED');
+    if (finished.data !== true) throw new Error('REFRESH_LEASE_LOST');
     const group = groups[`${target.store_id}:${target.reason}`] ??= emptyCounts();
     for (const scope of [counts, group]) {
       scope.attempted++;
@@ -103,7 +109,7 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
           const item = batch[index], price = reviewed[index].prices[0];
           const state = { price: price.price, original_price: price.originalPrice ?? null, stock: price.stock,
             installment_count: price.installment?.count ?? null, installment_amount: price.installment?.amount ?? null };
-          const persisted = await client.rpc('persist_adaptive_offer', {
+          const persist = () => client.rpc('persist_adaptive_offer', {
             p_offer_id: item.target.offer_id, p_token: token,
             p_price: state.price, p_original_price: state.original_price, p_stock: state.stock,
             p_installment_count: state.installment_count, p_installment_amount: state.installment_amount,
@@ -111,6 +117,12 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
             p_review: price.identityReview ?? null, p_signature: buildPriceStateSignature(state),
             p_source_identity: price.sourceIdentity ?? null, p_price_condition: price.priceCondition ?? (price.storeId === 'compragamer' ? 'special' : 'unspecified'),
           });
+          let persisted=await persist();
+          // Repetir la misma observación no inserta otro historial; su fecha se conserva.
+          for (let retry=0; persisted.error && retry<2; retry++) {
+            await new Promise(resolve=>setTimeout(resolve,300 * (retry+1)));
+            persisted=await persist();
+          }
           const saved = !persisted.error && persisted.data === true;
           await finish(item.target, saved ? 'observed' : 'persist-failed', saved && isCatalogOfferFresh(price.lastUpdated) && isComparableStoreOffer(price, item.product));
         }

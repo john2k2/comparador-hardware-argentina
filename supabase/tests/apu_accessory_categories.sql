@@ -1,5 +1,8 @@
 BEGIN;
 DO $$ BEGIN
+ IF NOT public.catalog_standalone('Procesador AMD Ryzen 5 8600G + Radeon 760M AM5 DDR5','procesadores') THEN RAISE EXCEPTION 'Compatibilidad DDR como RAM incluida'; END IF;
+ IF public.catalog_standalone('Procesador AMD Ryzen 5 8600G + Radeon 760M + 16GB DDR5','procesadores') THEN RAISE EXCEPTION 'RAM incluida omitida'; END IF;
+ IF public.catalog_standalone('Memoria DDR4 16GB + Procesador AMD Ryzen 5 5600','memoria-ram') THEN RAISE EXCEPTION 'Bundle como RAM'; END IF;
  IF NOT public.catalog_standalone('Procesadores Core I5 10400 (PARA PC ARMADA)','procesadores') THEN RAISE EXCEPTION 'CPU para PC armada rechazada'; END IF;
  IF public.catalog_primary_category('Micro SD Kingston 128GB') <> 'almacenamiento' THEN RAISE EXCEPTION 'Micro SD como CPU'; END IF;
  IF NOT public.catalog_standalone('Procesador AMD Ryzen 5 5600GT + Radeon Vega + Cooler','procesadores') THEN RAISE EXCEPTION 'APU rechazada como bundle'; END IF;
