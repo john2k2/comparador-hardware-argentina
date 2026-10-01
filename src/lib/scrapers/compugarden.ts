@@ -44,7 +44,8 @@ function inferStock(card: cheerio.Cheerio<AnyNode>): StockStatus {
   const lowered = `${stockImgSrc} ${buttonClass}`.toLowerCase();
   if (lowered.includes('semaforo3')) return 'out-of-stock';
   if (lowered.includes('semaforo1')) return 'low-stock';
-  return 'in-stock';
+  if (lowered.includes('semaforo2')) return 'in-stock';
+  return 'unknown';
 }
 
 export async function fetchCompugardenProducts(

@@ -54,7 +54,8 @@ function inferStock(card: cheerio.Cheerio<Element>): StockStatus {
   if (!text) return 'unknown';
   if (text.includes('sin stock') || text.includes('agotad')) return 'out-of-stock';
   if (text.includes('quedan pocas')) return 'low-stock';
-  return 'in-stock';
+  if (/en stock|disponible|hay existencias/.test(text)) return 'in-stock';
+  return 'unknown';
 }
 
 function getLoggCategoryName(categorySlug: HardwareCategory): string {

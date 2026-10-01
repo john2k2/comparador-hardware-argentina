@@ -221,7 +221,8 @@ export async function fetchMaximusProducts(
             url: productUrl,
             price,
             installment: null,
-            stock: 'in-stock',
+            // La búsqueda entrega precio, pero no confirma disponibilidad.
+            stock: 'unknown',
             lastUpdated: new Date(),
           },
         ],

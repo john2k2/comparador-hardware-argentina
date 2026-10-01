@@ -174,7 +174,10 @@ Tablas de usuario (`user_profiles`, `user_favorites`, `price_alerts`) tienen Row
 
 ### GitHub Actions
 - Workflow: `.github/workflows/catalog-refresh.yml`.
-- **Schedule actual**: `priority` diario a las `05:05` UTC (guías y muestra fija G02); `guides` al minuto 17 de las otras horas. Revisa ofertas conocidas desde 90 minutos sin ampliar su elegibilidad de tres horas. GitHub puede retrasar cron: verificar horarios reales y cobertura.
+- **Catálogo adaptativo**: `.github/workflows/catalog-adaptive-refresh.yml` al minuto 41 de cada hora, runner Node con máximo de 17 min y 2500 ofertas por ejecución, cola privada persistente con reservas de mantenimiento. GitHub puede retrasar cron.
+- Catálogo general admite observaciones de hasta 24 h; guías y armador mantienen 3 h. Frecuencias objetivo: favoritos/alertas 3 h, componentes o interés de Analytics 24 h, gabinete/refrigeración 72 h y mantenimiento 168 h. Un intento fallido no renueva precio ni stock.
+- Analytics se importa semanalmente como usuarios únicos agregados por ID exacto; no usar contadores del API como demanda humana.
+- **Schedule de guías**: `priority` diario a las `05:05` UTC (guías y muestra fija G02); `guides` al minuto 17 de las otras horas. Revisa ofertas conocidas desde 90 minutos sin ampliar su elegibilidad de tres horas. GitHub puede retrasar cron: verificar horarios reales y cobertura.
 - Proceso prioritario: exclusivo del runner, destinos conocidos y límites por ejecución; registra observaciones guardadas y comparables en el artefacto. Las comprobaciones horarias y las ejecuciones manuales no cuentan como ciclos diarios útiles G02.
 - Soporta `workflow_dispatch` con parámetros (`mode`, `query`, `categories`, `stores`, `max_queries`, `stale_minutes`).
 - Requiere secret: `CATALOG_REFRESH_CRON_SECRET`.

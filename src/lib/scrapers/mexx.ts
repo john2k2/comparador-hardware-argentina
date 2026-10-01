@@ -84,10 +84,9 @@ export async function scrapeMexxProducts(
         const rawPrice = $(el).find('b, strong').first().text() || '';
         const priceClean = parseInt(rawPrice.split(',')[0].replace(/\D/g, ''), 10) || 0;
 
-        let stock: 'in-stock' | 'out-of-stock' | 'low-stock' = 'in-stock';
-        if (!priceClean || rawTitle.toLowerCase().includes('sin stock')) {
-          stock = 'out-of-stock';
-        }
+        const stockText = $(el).text().toLowerCase();
+        const stock = /sin stock|agotad/.test(stockText) ? 'out-of-stock'
+          : /en stock|disponible|hay existencias/.test(stockText) ? 'in-stock' : 'unknown';
         const id = `mexx-${url.split('/').pop()?.replace('.html', '') || Date.now().toString()}`;
         if (seenProductIds.has(id)) return;
         seenProductIds.add(id);

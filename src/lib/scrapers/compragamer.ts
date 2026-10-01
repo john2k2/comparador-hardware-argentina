@@ -80,3 +80,9 @@ export async function searchCompraGamerProducts(
     return [];
   }
 }
+
+/** Una lectura del feed sirve para todas las publicaciones conocidas del runner. */
+export async function fetchCompraGamerCatalogProducts(signal?: AbortSignal): Promise<Product[]> {
+  const [catalog, subcategoryMap, brandMap] = await loadCompraGamerLookups(signal);
+  return dedupeCompraGamerProducts(catalog.map(item => mapCompraGamerProduct({ item, subcategoryMap, brandMap })));
+}

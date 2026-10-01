@@ -60,10 +60,11 @@ function extractBrand(name: string): string {
 
 function inferStock(text: string): StockStatus {
   const normalized = text.toLowerCase();
-  if (!normalized) return 'in-stock';
+  if (!normalized) return 'unknown';
   if (normalized.includes('sin stock') || normalized.includes('agotado')) return 'out-of-stock';
   if (normalized.includes('ultim')) return 'low-stock';
-  return 'in-stock';
+  if (/en stock|disponible|hay existencias/.test(normalized)) return 'in-stock';
+  return 'unknown';
 }
 
 async function scrapeXtpcPage(url: string, category: HardwareCategory, signal?: AbortSignal): Promise<Product[]> {

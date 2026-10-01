@@ -1,0 +1,47 @@
+name: Adaptive catalog refresh
+on:
+  schedule:
+    # Progreso persistente en Supabase; GitHub puede retrasar este horario.
+    - cron: '41 * * * *'
+  workflow_dispatch:
+    inputs:
+      max_offers:
+        description: Máximo de ofertas (1–5000), sujeto a 17 minutos
+        type: number
+        default: 2500
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: catalog-adaptive-refresh
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Refresh due catalog offers
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          CATALOG_REQUESTED_RUNNER: '1'
+          CATALOG_ADAPTIVE_MAX_OFFERS: ${{ github.event.inputs.max_offers || '2500' }}
+          # Mantener revisiones existentes; este barrido no contrata nuevas consultas de IA.
+          ENABLE_JEV_OFFER_REVIEW: '0'
+          LOG_LEVEL: warn
+        run: node scripts/run-catalog-refresh.mjs adaptive "$RUNNER_TEMP/catalog-adaptive-result.json"
+      - name: Preserve measured coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-adaptive-${{ github.run_id }}
+          path: ${{ runner.temp }}/catalog-adaptive-result.json
+          if-no-files-found: warn
+          retention-days: 7

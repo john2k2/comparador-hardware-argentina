@@ -158,7 +158,7 @@ async function scrapeWooPage(
       storeBaseUrl: store.baseUrl,
       url: productUrl,
       price,
-      stock: outOfStock ? 'out-of-stock' : 'in-stock',
+      stock: outOfStock ? 'out-of-stock' : $(el).hasClass('instock') || $(el).find('.stock.in-stock').length > 0 ? 'in-stock' : 'unknown',
       image,
       brand: extractKnownHardwareBrand(name),
     });
@@ -231,6 +231,8 @@ export function parseWooProductDetail(
   fallbackSlug: string,
 ): Product | null {
   const $ = cheerio.load(html);
+  // Una publicación con variantes necesita observar la opción exacta.
+  if ($('form.variations_form, table.variations').length > 0) return null;
 
   const name =
     $('h1.product_title').first().text().trim() ||
@@ -240,12 +242,18 @@ export function parseWooProductDetail(
     $('body.single-product h1.post_title').first().text().trim();
   if (!name) return null;
 
-  const insPrice = $('p.price ins .woocommerce-Price-amount bdi, .summary ins bdi').first().text().trim();
-  const anyPrice = $('p.price .woocommerce-Price-amount bdi, .summary .woocommerce-Price-amount bdi, .price bdi').first().text().trim();
+  // Las recomendaciones pueden contener un precio rebajado antes del importe
+  // principal. Nunca usar sus montos como precio de la publicación consultada.
+  const primaryPrices = $('.summary, p.price, .product_field.price').filter((_, element) => (
+    $(element).parents('.related, .up-sells, .upsells, .cross-sells, .products, .w-grid-item').length === 0
+  ));
+  const productFieldPrice = primaryPrices.filter('.product_field.price').first().text().trim();
+  const insPrice = primaryPrices.find('ins .woocommerce-Price-amount bdi, ins bdi').first().text().trim();
+  const anyPrice = primaryPrices.find('.woocommerce-Price-amount bdi, bdi').first().text().trim();
   const metaPrice = $('meta[property="product:price:amount"]').attr('content') || '';
   // El importe sin impuestos de SCP también usa las clases estándar de Woo.
   const storePrice = store.id === 'scphardstore' ? $('.scp-price-main__current').first().text().trim() : '';
-  const price = parseWooPrice(storePrice || insPrice || anyPrice || metaPrice);
+  const price = parseWooPrice(storePrice || productFieldPrice || insPrice || anyPrice || metaPrice);
   if (price <= 0) return null;
 
   const imageRaw =
@@ -256,15 +264,16 @@ export function parseWooProductDetail(
     '';
   const image = imageRaw ? normalizeAbsoluteUrl(store.baseUrl, imageRaw) : undefined;
 
-  const stockText = $('.stock').first().text().toLowerCase();
-  const hasOutOfStockClass = $('.stock.out-of-stock, .out-of-stock').length > 0;
+  const primary = (selector: string) => $(selector).filter((_, element) => $(element).parents('.related, .up-sells, .upsells, .cross-sells, .products, .w-grid-item').length === 0);
+  const stockText = primary('.stock').first().text().toLowerCase();
+  const hasOutOfStockClass = primary('.stock.out-of-stock, .out-of-stock').length > 0;
   const hasLowStockText = stockText.includes('ultim') || stockText.includes('pocas');
   const hasOutOfStockText = stockText.includes('sin stock') || stockText.includes('agotad');
   const stock = hasOutOfStockClass || hasOutOfStockText
     ? 'out-of-stock'
     : hasLowStockText
       ? 'low-stock'
-      : $('.stock.in-stock, button.single_add_to_cart_button:not([disabled]), input[name=add-to-cart]').length > 0 || /(?:hay existencias|disponible|in stock)/i.test(stockText)
+      : primary('.stock.in-stock, button.single_add_to_cart_button:not([disabled]), input[name=add-to-cart]:not([disabled])').length > 0 || /(?:hay existencias|disponible|in stock)/i.test(stockText)
         ? 'in-stock' : 'unknown';
 
   const canonical = $('link[rel="canonical"]').attr('href') || pageUrl;
@@ -290,7 +299,7 @@ export function parseWooProductDetail(
     description: detailDescription || name,
     brand: extractKnownHardwareBrand(name),
   });
-  const sku = $('.sku').last().text().replace(/^sku\s*:\s*/i, '').trim();
+  const sku = primary('.sku').first().text().replace(/^sku\s*:\s*/i, '').trim();
   if (product && sku && sku !== 'N/A') product.specs.SKU = sku;
   return product;
 }
@@ -342,7 +351,7 @@ export async function fetchWooCommerceKnownOffer(storeId: string, rawUrl: string
   const url = new URL(rawUrl);
   const host = (value: string) => new URL(value).hostname.replace(/^www\./, '');
   if (url.protocol !== 'https:' || url.username || url.password || url.port || host(rawUrl) !== host(store.baseUrl)) return null;
-  const response = await sourceFetch(store.id, url.href, { headers: SCRAPE_HEADERS, signal });
+  const response = await sourceFetch(store.id, url.href, { headers: SCRAPE_HEADERS, signal },8_000_000,[host(store.baseUrl)]);
   const product = parseWooProductDetail(await response.text(), url.href, store, category, slugFromScrapedUrl(url.href));
   if (!product || host(product.prices[0].url) !== host(store.baseUrl)) return null;
   return product;

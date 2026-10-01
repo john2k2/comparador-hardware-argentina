@@ -10,6 +10,14 @@ describe('listing-reference', () => {
     expect(sameListing('compragamer', first, second)).toBe(true);
   });
 
+  it('normalizes the CompraGamer numeric suffix form to the same listing ID', () => {
+    const suffixForm = 'https://compragamer.com/producto/12345';
+    const slugForm = 'https://compragamer.com/producto/amd_ryzen_7_7800x3d_12345';
+
+    expect(listingReference('compragamer', suffixForm)).toBe('compragamer:id:12345');
+    expect(sameListing('compragamer', suffixForm, slugForm)).toBe(true);
+  });
+
   it('keeps a Maximus listing identity when its slug changes', () => {
     const first = 'https://maximus.com.ar/Producto/amd-ryzen-7-7800x3d/ITEM=67890/maximus.aspx?PN=RYZEN7800';
     const second = 'https://maximus.com.ar/Producto/ryzen-7-7800x3d-box/ITEM=67890/maximus.aspx?PN=RENAMED';
@@ -34,6 +42,18 @@ describe('listing-reference', () => {
     expect(listingReference('compragamer', 'https://user:password@compragamer.com/producto/ryzen_12345')).toBeNull();
     expect(listingReference('compragamer', 'https://compragamer.com:8443/producto/ryzen_12345')).toBeNull();
     expect(sameListing('compragamer', 'https://compragamer.com/producto/ryzen_12345', 'http://compragamer.com/producto/ryzen_12345')).toBe(false);
+  });
+
+  it('treats www and trailing slash as aliases for generic references', () => {
+    const first = 'https://www.generic.example/producto/ryzen-7600/';
+    const second = 'https://generic.example/producto/ryzen-7600';
+
+    expect(sameListing('generic-store', first, second)).toBe(true);
+  });
+
+  it('does not merge distinct path IDs or query parameters', () => {
+    expect(sameListing('generic-store', 'https://generic.example/producto/ryzen-7600-123', 'https://generic.example/producto/ryzen-7600-124')).toBe(false);
+    expect(sameListing('generic-store', 'https://generic.example/producto/ryzen-7600?id=123', 'https://generic.example/producto/ryzen-7600?id=124')).toBe(false);
   });
 
   it('uses the Maximus item ID and never PN as the listing reference', () => {

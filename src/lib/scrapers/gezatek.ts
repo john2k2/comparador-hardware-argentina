@@ -50,7 +50,8 @@ function inferStock(stockText: string): StockStatus {
   const normalized = stockText.toLowerCase();
   if (normalized.includes('sin stock') || normalized.includes('agotad')) return 'out-of-stock';
   if (normalized.includes('ultim') || normalized.includes('pocas')) return 'low-stock';
-  return 'in-stock';
+  if (/en stock|disponible|hay existencias/.test(normalized)) return 'in-stock';
+  return 'unknown';
 }
 
 export async function fetchGezatekProducts(

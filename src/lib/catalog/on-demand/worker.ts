@@ -1,7 +1,10 @@
 import 'server-only';
 import { SourceHttpError, type SourceFailure } from '@/lib/scrapers/source-http';
+import { fetchKnownProductDetail } from '@/lib/scrapers/known-product-detail';
+import { stores as configuredStores } from '@/lib/scrapers/static-data';
+import { fetchCompraGamerCatalogProducts } from '@/lib/scrapers/compragamer';
 import { sameListing, listingReference } from '@/lib/scrapers/listing-reference';
-import { fetchWooCommerceKnownOffer } from '@/lib/scrapers/woocommerce-shared';
+import { fetchWooCommerceKnownOffer, WOOCOMMERCE_STORES } from '@/lib/scrapers/woocommerce-shared';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 import { readBuilderCatalog } from '@/lib/pc-builder/catalog';
 import { getStoreScraper, FRAMEWORK_SCRAPERS } from '@/lib/scrapers/scraper-registry';
@@ -15,8 +18,8 @@ import type { Product, ProductPrice } from '@/lib/types';
 import type { RefreshItemResult, RefreshJob, RefreshTarget } from './contracts';
 
 type ClaimedJob = RefreshJob & { lease_token: string };
-export type KnownOfferContext = { sources: Map<string, Promise<Product[][]>>; failures: Map<string, SourceFailure | 'no-observation'>; sharedReads: number };
-export function createKnownOfferContext(): KnownOfferContext { return { sources: new Map(), failures: new Map(), sharedReads: 0 }; }
+export type KnownOfferContext = { sources: Map<string, Promise<Product[][]>>; failures: Map<string, SourceFailure | 'no-observation'>; sharedReads: number; batchCatalog?: boolean };
+export function createKnownOfferContext(batchCatalog = false): KnownOfferContext { return { batchCatalog, sources: new Map(), failures: new Map(), sharedReads: 0 }; }
 export async function fetchKnownOffer(product: Product, target: RefreshTarget, startedAt: number, context = createKnownOfferContext()): Promise<{ product: Product; price: ProductPrice; sourceTitle: string } | null> {
   const direct = getStoreScraper(target.storeId);
   const scrapers = direct ? [direct] : FRAMEWORK_SCRAPERS;
@@ -26,7 +29,7 @@ export async function fetchKnownOffer(product: Product, target: RefreshTarget, s
   // La aceptación sigue exigiendo coincidencia con la URL exacta seleccionada.
   // El ID de CompraGamer es estable aunque el catálogo agrupado conserve un
   // título anterior, con palabras que ya no figuran en la publicación.
-  const compraGamerId = target.storeId === 'compragamer' ? new URL(target.url).pathname.match(/_(\d+)$/)?.[1] : undefined;
+  const compraGamerId = target.storeId === 'compragamer' ? listingReference(target.storeId,target.url)?.split(':').pop() : undefined;
   // El título agrupado de RAM puede traer RGB/CL/serie de otra publicación.
   // Buscar por atributos comunes permite recuperar la URL exacta y revisar
   // después esas diferencias, en vez de no encontrar nunca la publicación.
@@ -41,12 +44,15 @@ export async function fetchKnownOffer(product: Product, target: RefreshTarget, s
     : ramQuery ?? product.name.slice(0, 120));
   // Los adaptadores de plataforma filtran por tienda antes de hacer solicitudes.
   // El límite se aplica a toda esta búsqueda, no se multiplica por plataforma.
-  // Piloto verificado: habilitar otras plantillas tras probar su detalle real.
-  const woo = target.storeId === 'katech';
+  // El detalle exige precio principal, disponibilidad explícita y URL exacta.
+  const woo = WOOCOMMERCE_STORES.some(store => store.id === target.storeId);
   const key = `${listingReference(target.storeId, target.url)}:${product.category}`;
-  const existing = context.sources.get(key);
+  const batchKey = target.storeId === 'compragamer' ? 'compragamer:catalog'
+    : key;
+  const existing = context.sources.get(key) ?? (context.batchCatalog ? context.sources.get(batchKey) : undefined);
   if (existing) context.sharedReads++;
   const request = existing ?? (async () => {
+    if (context.batchCatalog && target.storeId === 'compragamer') return [await withAbortTimeout(signal => fetchCompraGamerCatalogProducts(signal), 25_000, 'known-cg')];
     if (woo) {
       const item = await withAbortTimeout(
         signal => fetchWooCommerceKnownOffer(target.storeId, target.url, product.category, signal),
@@ -54,14 +60,30 @@ export async function fetchKnownOffer(product: Product, target: RefreshTarget, s
       );
       return [item ? [item] : []];
     }
-    return Promise.all(scrapers.map(scraper => withPromiseTimeout(
+    if (context.batchCatalog) {
+      const store = configuredStores.find(item => item.id === target.storeId);
+      if (store) {
+        const item = await withAbortTimeout(signal => fetchKnownProductDetail(target.url, { id:store.id,name:store.name,baseUrl:store.url },product.category,signal),25000,'known-detail').catch((error: unknown) => {
+          if (error instanceof SourceHttpError && ['blocked','rate-limited'].includes(error.reason)) throw error;
+          return null;
+        });
+        if (item) return [[item]];
+      }
+    }
+    const searchKey = `${target.storeId}:search:${product.category}:${query}`;
+    const sharedSearch = context.batchCatalog ? context.sources.get(searchKey) : undefined;
+    if (sharedSearch) { context.sharedReads++; return sharedSearch; }
+    const search = Promise.all(scrapers.map(scraper => withPromiseTimeout(
       withAbortTimeout(signal => scraper.fn({
         query, searchUrl: scraper.buildSearchUrl?.(query) ?? query,
         category: product.category, selectedStoreIds: new Set([target.storeId]), signal,
       }), 25_000, 'requested-offer'), 26_000, 'requested-offer-hard-limit',
     ).catch(() => [])));
+    if (context.batchCatalog) context.sources.set(searchKey,search);
+    return search;
   })();
   context.sources.set(key, request);
+  if (context.batchCatalog) context.sources.set(batchKey, request);
   const batches = await request.catch((error: unknown) => {
     context.failures.set(target.url, error instanceof SourceHttpError ? error.reason : 'no-observation');
     return [];
@@ -69,11 +91,13 @@ export async function fetchKnownOffer(product: Product, target: RefreshTarget, s
   for (const found of batches) {
     for (const source of found) {
       const price = source.prices.find((offer) => offer.storeId === target.storeId && sameListing(target.storeId, offer.url, target.url));
-      if (!price || !Number.isFinite(price.price) || price.price <= 0 || price.stock === 'unknown') continue;
+      if (!price || !Number.isFinite(price.price) || price.price <= 0 || (price.stock === 'unknown' && !context.batchCatalog)) continue;
       const observedAt = new Date(price.lastUpdated).getTime();
       if (!Number.isFinite(observedAt) || observedAt < startedAt || observedAt > Date.now() + 60_000) continue;
       // La URL o el ID estable de la tienda identifican la oferta. Un título contradictorio requiere revisión.
-      const conflict = hasExplicitIdentityConflict({ name: product.name, category: product.category, offerText: source.name });
+      const categoryConflict = context.batchCatalog && (source.category !== product.category
+        || (product.category !== 'computadoras' && /\b(?:pc gamer|pc armada|notebook|laptop|computadora)\b/i.test(source.name)));
+      const conflict = categoryConflict || hasExplicitIdentityConflict({ name: product.name, category: product.category, offerText: source.name });
       const previousReview = product.prices.find(offer => offer.storeId === target.storeId && sameListing(target.storeId, offer.url, target.url))?.identityReview;
       const sku = source.specs.SKU?.trim();
       const reference = listingReference(target.storeId, price.url);

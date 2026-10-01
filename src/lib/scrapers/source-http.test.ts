@@ -108,6 +108,48 @@ describe('source-http', () => {
     expect(sourceHttpMetrics()['conditional-store']).toMatchObject({ requests: 1, bytes: 0, conditionalHits: 1, failures: 0 });
   });
 
+  it('follows same-host redirects manually for at most three hops', async () => {
+    const { sourceFetch } = await loadSourceHttp();
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(null, { status: 302, headers: { location: '/second' } }))
+      .mockResolvedValueOnce(new Response(null, { status: 303, headers: { location: '/third' } }))
+      .mockResolvedValueOnce(new Response(null, { status: 307, headers: { location: '/fourth' } }))
+      .mockResolvedValueOnce(new Response('final body'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await sourceFetch('redirect-store', 'https://redirect-store.example/first', {}, 8_000_000, ['redirect-store.example']);
+
+    expect(await result.text()).toBe('final body');
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    expect(fetchMock.mock.calls.every(([, options]) => options?.redirect === 'manual')).toBe(true);
+  });
+
+  it.each([
+    ['offhost', 'https://other.example/next'],
+    ['http', 'http://trusted.example/next'],
+    ['credentials', 'https://user:password@trusted.example/next'],
+    ['port', 'https://trusted.example:8443/next'],
+  ])('rejects %s redirects without a second fetch', async (label, location) => {
+    const { sourceFetch } = await loadSourceHttp();
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 302, headers: { location } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(sourceFetch(`redirect-${label}`, 'https://trusted.example/first', {}, 8_000_000, ['trusted.example']))
+      .rejects.toMatchObject({ reason: 'invalid-response' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('mantiene redirect:error cuando no se habilita la lista de hosts confiables', async () => {
+    const { sourceFetch } = await loadSourceHttp();
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 302, headers: { location: '/next' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(sourceFetch('legacy-redirect-store', 'https://legacy-redirect-store.example/first'))
+      .rejects.toMatchObject({ reason: 'http-error', status: 302 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ redirect: 'error' });
+  });
+
   it('parses Retry-After as seconds or an HTTP date', async () => {
     const { retryAfterMs } = await loadSourceHttp();
     const now = Date.parse('2026-09-29T12:00:00.000Z');

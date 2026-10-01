@@ -3,17 +3,17 @@ export type SourceFailure = 'not-found' | 'rate-limited' | 'blocked' | 'http-err
 export class SourceHttpError extends Error {
   constructor(public readonly reason: SourceFailure, public readonly status?: number) { super(reason); }
 }
-type Metric = { requests: number; bytes: number; durationMs: number; conditionalHits: number; backoffSkips: number; failures: number };
+type Metric = { requests: number; bytes: number; durationMs: number; conditionalHits: number; backoffSkips: number; failures: number; failureReasons: Record<string,number> };
 const metrics = new Map<string, Metric>();
 const state = new Map<string, { tail: Promise<void>; nextAt: number; blockedUntil: number; consecutiveFailures: number }>();
 let active = 0;
 const waiters: Array<() => void> = [];
 function metric(store: string): Metric {
-  if (!metrics.has(store)) metrics.set(store, { requests: 0, bytes: 0, durationMs: 0, conditionalHits: 0, backoffSkips: 0, failures: 0 });
+  if (!metrics.has(store)) metrics.set(store, { requests: 0, bytes: 0, durationMs: 0, conditionalHits: 0, backoffSkips: 0, failures: 0, failureReasons: {} });
   return metrics.get(store)!;
 }
 export function sourceHttpMetrics(): Record<string, Metric> {
-  return Object.fromEntries([...metrics].map(([key, value]) => [key, { ...value }]));
+  return Object.fromEntries([...metrics].map(([key, value]) => [key, { ...value, failureReasons: { ...value.failureReasons } }]));
 }
 export function retryAfterMs(value: string | null, now = Date.now()): number {
   if (!value) return 60_000;
@@ -21,7 +21,7 @@ export function retryAfterMs(value: string | null, now = Date.now()): number {
   const delay = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(value) - now;
   return Number.isFinite(delay) ? Math.max(1000, Math.min(delay, 24 * 60 * 60 * 1000)) : 60_000;
 }
-export async function sourceFetch(store: string, url: string, options: RequestInit = {}, maxBytes = 8_000_000): Promise<Response> {
+export async function sourceFetch(store: string, url: string, options: RequestInit = {}, maxBytes = 8_000_000, redirectHosts: string[] = []): Promise<Response> {
   if (!state.has(store)) state.set(store, { tail: Promise.resolve(), nextAt: 0, blockedUntil: 0, consecutiveFailures: 0 });
   const gate = state.get(store)!;
   const previous = gate.tail;
@@ -41,8 +41,21 @@ export async function sourceFetch(store: string, url: string, options: RequestIn
     else active++;
     acquired = true;
     options.signal?.throwIfAborted();
-    stats.requests++;
-    const response = await fetch(url, { ...options, redirect: 'error', signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(25_000)]) : AbortSignal.timeout(25_000) });
+    const signal = options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(25_000)]) : AbortSignal.timeout(25_000);
+    let current = url;
+    let response: Response;
+    for (let hop = 0; ; hop++) {
+      stats.requests++;
+      response = await fetch(current, { ...options, redirect: redirectHosts.length ? 'manual' : 'error', signal });
+      if (!redirectHosts.length || ![301,302,303,307,308].includes(response.status)) break;
+      const location = response.headers.get('location');
+      await response.body?.cancel();
+      if (!location || hop >= 3) throw new SourceHttpError('invalid-response');
+      const next = new URL(location,current);
+      if (next.protocol !== 'https:' || next.username || next.password || next.port
+        || !redirectHosts.includes(next.hostname.replace(/^www\./,''))) throw new SourceHttpError('invalid-response');
+      current = next.href;
+    }
     gate.nextAt = Date.now() + 2000;
     if (response.status === 429 || response.status >= 500 || response.status === 403) {
       gate.consecutiveFailures++;
@@ -69,7 +82,13 @@ export async function sourceFetch(store: string, url: string, options: RequestIn
     let offset = 0;
     for (const chunk of chunks) { body.set(chunk, offset); offset += chunk.byteLength; }
     return new Response(body, { status: response.status, headers: response.headers });
-  } catch (error) { stats.failures++; throw error; }
+  } catch (error) {
+    stats.failures++;
+    const reason = error instanceof SourceHttpError ? error.reason
+      : error instanceof Error && ['TimeoutError','AbortError'].includes(error.name) ? 'timeout' : 'network';
+    stats.failureReasons[reason] = (stats.failureReasons[reason] ?? 0)+1;
+    throw error;
+  }
   finally {
     stats.durationMs += Date.now() - startedAt;
     gate.nextAt = Math.max(gate.nextAt, Date.now() + 2000);

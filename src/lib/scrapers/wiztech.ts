@@ -114,20 +114,19 @@ function inferCategory(component: string, name: string): HardwareCategory {
 }
 
 function inferStock(product: WiztechApiProduct): StockStatus {
-  const quantity = Number(product.Cantidad ?? 0);
+  const quantity = product.Cantidad == null || product.Cantidad === '' ? NaN : Number(product.Cantidad);
   if (Number.isFinite(quantity)) {
     if (quantity <= 0) return 'out-of-stock';
     if (quantity <= 3) return 'low-stock';
     return 'in-stock';
   }
-  if (product.Consultar) return 'unknown';
-  return 'in-stock';
+  return 'unknown';
 }
 
 function isWebEnabled(product: WiztechApiProduct): boolean {
   const habilitado = product.HabilitadoWeb;
   if (habilitado === false || habilitado === 0) return false;
-  const quantity = Number(product.Cantidad ?? 0);
+  const quantity = product.Cantidad == null || product.Cantidad === '' ? NaN : Number(product.Cantidad);
   if (Number.isFinite(quantity)) return quantity > 0;
   return true;
 }

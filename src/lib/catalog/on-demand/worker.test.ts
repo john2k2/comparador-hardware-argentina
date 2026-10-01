@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   readBuilderCatalog: vi.fn(),
   getStoreScraper: vi.fn(),
   scrape: vi.fn(),
+  compraGamerCatalog: vi.fn(),
   reviewProductOffers: vi.fn(),
   buildPriceStateSignature: vi.fn(),
   withAbortTimeout: vi.fn(),
@@ -15,6 +16,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('server-only', () => ({}));
+vi.mock('@/lib/scrapers/compragamer', () => ({ fetchCompraGamerCatalogProducts: mocks.compraGamerCatalog }));
 vi.mock('@/lib/server/supabase-server', () => ({
   getServerSupabaseServiceClient: mocks.getServerSupabaseServiceClient,
 }));
@@ -298,4 +300,35 @@ it('comparte una lectura de publicación entre dos fichas sin compartir su dicta
   expect(first?.price.identityReview).toBeUndefined();
   expect(second?.price.identityReview?.reason).toBe('explicit-conflict');
   vi.useRealTimers();
+});
+
+
+describe('adaptive known offers', () => {
+  beforeEach(() => {
+    vi.resetAllMocks(); vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-21T12:00:02Z'));
+    mocks.withAbortTimeout.mockImplementation(async (fn: (signal: AbortSignal) => Promise<unknown>) => fn(new AbortController().signal));
+    mocks.withPromiseTimeout.mockImplementation((promise: Promise<unknown>) => promise);
+  });
+  afterEach(() => vi.useRealTimers());
+  it('observa un precio con stock desconocido sólo en el catálogo, sin inventar disponibilidad', async () => {
+    configureClaimedJob([sourceProduct({ offer: { price:420000,stock:'unknown' } })]);
+    const started=Date.parse('2026-09-21T12:00:00Z');
+    expect(await fetchKnownOffer(catalogProduct(),target,started)).toBeNull();
+    const observation=await fetchKnownOffer(catalogProduct(),target,started,createKnownOfferContext(true));
+    expect(observation?.price.stock).toBe('unknown');
+  });
+  it('comparte el feed de CompraGamer entre categorías y mantiene separada la revisión de cada ficha', async () => {
+    const offer={ ...target,storeId:'compragamer',url:'https://compragamer.com/producto/12345' };
+    const source={ ...sourceProduct({ offer:{storeId:'compragamer',url:'https://compragamer.com/producto/gpu_12345',price:420000} }) };
+    mocks.compraGamerCatalog.mockResolvedValue([source]);
+    const context=createKnownOfferContext(true),started=Date.parse('2026-09-21T12:00:00Z');
+    const valid=await fetchKnownOffer(catalogProduct(),offer,started,context);
+    const wrong=await fetchKnownOffer({ ...catalogProduct(),category:'almacenamiento' },offer,started,context);
+    expect(mocks.compraGamerCatalog).toHaveBeenCalledTimes(1);
+    expect(valid?.price.price).toBe(420000);
+    expect(valid?.price.identityReview).toBeUndefined();
+    expect(wrong?.price.identityReview?.reason).toBe('explicit-conflict');
+    expect(valid?.price.identityReview).toBeUndefined();
+  });
 });

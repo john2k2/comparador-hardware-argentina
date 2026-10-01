@@ -7,7 +7,7 @@ export function listingReference(storeId: string, rawUrl: string): string | null
     if (storeId === 'compragamer' && host !== 'compragamer.com') return null;
     if (storeId === 'maximus' && host !== 'maximus.com.ar') return null;
     if (storeId === 'compragamer') {
-      const id = url.pathname.match(/^\/producto\/[^/]*_(\d+)\/?$/)?.[1];
+      const id = url.pathname.match(/^\/producto\/(?:[^/]*_)?(\d+)\/?$/)?.[1];
       return id ? `${storeId}:id:${id}` : null;
     }
     if (storeId === 'maximus') {
@@ -15,6 +15,8 @@ export function listingReference(storeId: string, rawUrl: string): string | null
       return id ? `${storeId}:id:${id}` : null;
     }
     url.hash = '';
+    url.hostname = host;
+    if (url.pathname !== '/') url.pathname = url.pathname.replace(/\/$/, '');
     return `${storeId}:url:${url.href}`;
   } catch { return null; }
 }
