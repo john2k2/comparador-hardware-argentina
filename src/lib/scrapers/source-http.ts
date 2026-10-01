@@ -1,5 +1,5 @@
 /** Transporte acotado para las fuentes del piloto; no utiliza sesiones del usuario. */
-export type SourceFailure = 'not-found' | 'rate-limited' | 'blocked' | 'http-error' | 'invalid-response' | 'too-large';
+export type SourceFailure = 'not-found' | 'rate-limited' | 'blocked' | 'http-error' | 'invalid-response' | 'too-large' | 'inconsistent-source';
 export class SourceHttpError extends Error {
   constructor(public readonly reason: SourceFailure, public readonly status?: number) { super(reason); }
 }

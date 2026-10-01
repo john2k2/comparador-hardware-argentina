@@ -1,5 +1,6 @@
 import { sourceFetch, SourceHttpError } from './source-http';
-import { WOOCOMMERCE_STORES } from './woocommerce-shared';
+import { normalizeIdentityText } from '@/lib/product-identity';
+import { WOOCOMMERCE_STORES, fetchWooCommerceKnownOffer } from './woocommerce-shared';
 import { sameListing } from './listing-reference';
 import { buildSinglePriceProduct } from './scraper-helpers';
 import { resolveHardwareCategoryForProduct } from '@/lib/catalog/hardware-categories';
@@ -45,7 +46,7 @@ export function parseWooStoreKnownProducts(data: unknown,storeId: string,targets
  }
  return result;
 }
-export async function fetchWooStoreKnownBatch(storeId:string,targets:WooKnownTarget[],signal?:AbortSignal):Promise<Product[]> {
+export async function fetchWooStoreKnownBatch(storeId:string,targets:WooKnownTarget[],signal?:AbortSignal,verifiedStores=new Set<string>()):Promise<Product[]> {
  const store=WOOCOMMERCE_STORES.find(item=>item.id===storeId);
  if(!store || !WOO_BATCH_STORES.has(storeId) || !targets.length || targets.length>24) return [];
  const host=new URL(store.baseUrl).hostname.replace(/^www\./,'');
@@ -61,5 +62,19 @@ export async function fetchWooStoreKnownBatch(storeId:string,targets:WooKnownTar
  const response=await sourceFetch(storeId,url.href,{signal,headers:{'User-Agent':'Mozilla/5.0',Accept:'application/json'}},8000000,[host]);
  const data:unknown=await response.json();
  if(!Array.isArray(data) || data.length>100) throw new SourceHttpError('invalid-response');
- return parseWooStoreKnownProducts(data,storeId,targets,new Date());
+ const products=parseWooStoreKnownProducts(data,storeId,targets,new Date());
+ // Una lectura visible por fuente y ejecución detecta cambios de moneda, pago o caché.
+ // La oferta conserva la hora original de la API, nunca la del control posterior.
+ if(products.length && !verifiedStores.has(storeId)){
+  const probe=products[0],price=probe.prices[0];
+  const visible=await fetchWooCommerceKnownOffer(storeId,price.url,probe.category,signal);
+  const observed=visible?.prices[0];
+  if(!visible || !observed || normalizeIdentityText(visible.name)!==normalizeIdentityText(probe.name)
+   || Math.abs(observed.price-price.price)>1
+   || (price.stock!=='unknown' && observed.stock!==price.stock
+     && !(['in-stock','low-stock'].includes(price.stock) && ['in-stock','low-stock'].includes(observed.stock)))
+   || (visible.specs.SKU && probe.specs.SKU && visible.specs.SKU!==probe.specs.SKU)) throw new SourceHttpError('inconsistent-source');
+  verifiedStores.add(storeId);
+ }
+ return products;
 }

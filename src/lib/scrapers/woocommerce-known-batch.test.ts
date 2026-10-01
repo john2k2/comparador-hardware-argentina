@@ -25,13 +25,18 @@ it('excluye SCP aunque responda un JSON válido: no pasó la corroboración de p
  expect(parseWooStoreKnownProducts([item],'scphardstore',targets,at)).toEqual([]);
 });
 it('agrupa slugs en una lectura y no inventa observaciones para publicaciones ausentes',async()=>{
- mocks.fetch.mockResolvedValue(new Response(JSON.stringify([item]),{headers:{'content-type':'application/json'}}));
+ mocks.fetch.mockResolvedValueOnce(new Response(JSON.stringify([item]),{headers:{'content-type':'application/json'}})).mockResolvedValueOnce(new Response('<body class="single-product"><main class="product instock"><h1 class="product-title">Memoria RAM Kingston DDR4 16GB</h1><div class="price-showcase-box"><span class="price-main">$403.489,31</span></div></main></body>'));
  const products=await fetchWooStoreKnownBatch('maxtecno',[...targets,{url:'https://maxtecno.com.ar/producto/otra/',category:'memoria-ram'}]);
- expect(products).toHaveLength(1);expect(mocks.fetch).toHaveBeenCalledTimes(1);
+ expect(products).toHaveLength(1);expect(mocks.fetch).toHaveBeenCalledTimes(2);
  const called=new URL(mocks.fetch.mock.calls[0][1]);expect(called.searchParams.get('slug')).toBe('ram-kingston,otra');
  expect(called.searchParams.get('per_page')).toBe('100');
 });
 it('no realiza solicitudes para destinos de otro dominio',async()=>{
  await expect(fetchWooStoreKnownBatch('maxtecno',[{url:'https://evil.example/producto/ram/',category:'memoria-ram'}])).rejects.toThrow('invalid-response');
  expect(mocks.fetch).not.toHaveBeenCalled();
+});
+
+it('rechaza el lote si el control visible informa otro precio',async()=>{
+ mocks.fetch.mockResolvedValueOnce(new Response(JSON.stringify([item]))).mockResolvedValueOnce(new Response('<body class="single-product"><main class="product instock"><h1 class="product-title">Memoria RAM Kingston DDR4 16GB</h1><div class="price-showcase-box"><span class="price-main">$500.000</span></div></main></body>'));
+ await expect(fetchWooStoreKnownBatch('maxtecno',targets)).rejects.toThrow('inconsistent-source');
 });

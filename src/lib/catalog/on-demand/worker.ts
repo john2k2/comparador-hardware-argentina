@@ -21,14 +21,14 @@ import type { Product, ProductPrice } from '@/lib/types';
 import type { RefreshItemResult, RefreshJob, RefreshTarget } from './contracts';
 
 type ClaimedJob = RefreshJob & { lease_token: string };
-export type KnownOfferContext = { sources: Map<string, Promise<Product[][]>>; failures: Map<string, SourceFailure | 'no-observation'>; sharedReads: number; batchCatalog?: boolean };
-export function createKnownOfferContext(batchCatalog = false): KnownOfferContext { return { batchCatalog, sources: new Map(), failures: new Map(), sharedReads: 0 }; }
+export type KnownOfferContext = { sources: Map<string, Promise<Product[][]>>; failures: Map<string, SourceFailure | 'no-observation'>; sharedReads: number; batchCatalog?: boolean; verifiedBatchStores: Set<string> };
+export function createKnownOfferContext(batchCatalog = false): KnownOfferContext { return { batchCatalog, verifiedBatchStores:new Set(), sources: new Map(), failures: new Map(), sharedReads: 0 }; }
 /** Agrupa destinos ya conocidos; no descubre productos ni cambia sus URLs. */
 export async function prepareKnownOfferBatch(products: Map<string, Product>, targets: RefreshTarget[], context: KnownOfferContext): Promise<void> {
   for (const storeId of WOO_BATCH_STORES) {
     const selected=targets.filter(target=>target.storeId===storeId && products.has(target.productId));
     if (!selected.length) continue;
-    const request=withAbortTimeout(signal=>fetchWooStoreKnownBatch(storeId,selected.map(target=>({url:target.url,category:products.get(target.productId)!.category})),signal),25000,'known-woo-batch');
+    const request=withAbortTimeout(signal=>fetchWooStoreKnownBatch(storeId,selected.map(target=>({url:target.url,category:products.get(target.productId)!.category})),signal,context.verifiedBatchStores),25000,'known-woo-batch');
     for (const target of selected) {
       const key=`${listingReference(storeId,target.url)}:${products.get(target.productId)!.category}`;
       context.sources.set(key,request.then(found=>[found]).catch((error: unknown)=>{
