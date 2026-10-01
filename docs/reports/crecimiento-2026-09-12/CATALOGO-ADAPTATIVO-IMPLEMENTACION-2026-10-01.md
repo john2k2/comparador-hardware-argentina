@@ -45,3 +45,13 @@ No se usan días anteriores al 03/10: el filtro de IP interna no elimina el hist
 - Validación: pruebas de leases, permisos, mantenimiento, promoción por Analytics, observaciones desconocidas, rechazo de observaciones viejas/futuras e historial sin duplicados en PostgreSQL aislado. 1.018 pruebas de aplicación aprobadas, 17 pruebas de navegación/móvil/consentimiento aprobadas, tipos y lint aprobados y build OpenNext aprobado.
 
 La meta de al menos 95% del subconjunto prioritario observado en 24 h se evalúa con siete días reales. Todavía no está lograda. Cobertura por observación y disponibilidad para comparar son indicadores distintos.
+
+## Activación y primera ejecución remota
+
+El 01/10 se aplicaron las cinco migraciones y se activó el workflow en `main`. El repositorio es público y el trabajo corre en el runner Linux estándar de GitHub; no depende del presupuesto de CPU del Worker ni del Mac encendido. La importación semanal de Analytics usa la automatización local de Codex y sí requiere que pueda ejecutarse en su equipo.
+
+[Ejecución manual de comprobación 36916939067](https://github.com/john2k2/comparador-hardware-argentina/actions/runs/36916939067): 19:48:26–19:50:27 UTC, límite deliberado de 72 ofertas, 22 observaciones persistidas y 12 comparables; 40 sin observación y 10 con fallo de fuente. Se contrastaron las 22 fechas reales en `product_prices` y no quedaron leases activos. Esta comprobación manual no acredita un ciclo diario útil G02. En el corte del artefacto había 107 ofertas observadas en 24 h sobre las 60.781 en cola: no atribuirlas todas al piloto ni extrapolar su muestra al catálogo.
+
+Cloudflare Workers Builds publicó `21ba5dbbb216fabc12314d0bdfd33fdbc7689e94` el 01/10 a las 19:50 UTC, versión `37ce54ab-3e7c-436c-8585-1865c68ee109` con el 100% del tráfico. No se desplegaron cambios ajenos del checkout principal. La validación del piloto Node detectó un import de aplicación no resoluble por el cargador nativo; se corrigió compilando las utilidades reales con el mismo mecanismo que el evaluador G02 y sus 19 pruebas operativas pasaron.
+
+Próxima prioridad: reparar las fuentes y URLs con más ofertas vencidas y demanda real, medir intentos/observaciones/comparables por tienda y comprobar la cobertura durante siete días. Subir límites o bajar la frecuencia sin esa medición no demuestra precios precisos.

@@ -8,7 +8,9 @@ import {
   parseCpuModelSignature,
   parseGpuChipSignature,
 } from '../../src/lib/product-identity.ts';
-import { getComparableStorePrices } from '../../src/lib/price-utils.ts';
+import { loadPriceUtils } from '../lib/load-price-utils.mjs';
+
+const { getComparableStorePrices } = await loadPriceUtils();
 
 export const PILOT_POLICY_VERSION = 'offer-quality-pilot-v1';
 const IDENTITY_CHOICES = new Set(['identity_consistent', 'identity_conflict', 'identity_uncertain']);
