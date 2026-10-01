@@ -3,7 +3,7 @@
 import { PriceDisplay, InstallmentPicker } from '@/components/functional';
 import { computeComparableStorePriceStats, formatPriceARS } from '@/lib/price-utils';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
-import { isOfferFresh } from '@/lib/price-freshness';
+import { isCatalogOfferFresh } from '@/lib/price-freshness';
 import type { Product, ProductPrice } from '@/lib/types';
 
 type PriceSummaryProps = {
@@ -33,13 +33,13 @@ export function PriceSummary({
 }: PriceSummaryProps) {
   const comparable = merchantPrices.filter((price) => !needsIdentityReview(price, product) && (price.stock === 'in-stock' || price.stock === 'low-stock'));
   const { comparablePrices: eligiblePrices, lowest: lowestComparablePrice, highest: highestComparablePrice } = computeComparableStorePriceStats(
-    comparable.filter((price) => isOfferFresh(price.lastUpdated)),
+    comparable.filter((price) => isCatalogOfferFresh(price.lastUpdated)),
   );
   if (eligiblePrices.length === 0) {
     return (
       <div className="bg-card border-4 border-border p-4 md:p-6 pixel-shadow">
         <h2 className="text-[12px] font-bold uppercase mb-3 text-accent">OFERTAS POR CORROBORAR</h2>
-        <p className="text-[10px] leading-relaxed">{comparable.length ? 'Hay precios anteriores, pero ninguno relevado en las últimas 3 horas. Se muestran abajo como referencia; confirmá el precio y el stock en la tienda.' : 'Todavía no hay una oferta disponible con identidad apta para comparar. Podés consultar las condiciones en cada tienda.'}</p>
+        <p className="text-[10px] leading-relaxed">{comparable.length ? 'Hay precios anteriores, pero ninguno relevado en las últimas 24 horas. Se muestran abajo como referencia; confirmá el precio y el stock en la tienda.' : 'Todavía no hay una oferta disponible con identidad apta para comparar. Podés consultar las condiciones en cada tienda.'}</p>
       </div>
     );
   }
@@ -81,14 +81,14 @@ export function PriceSummary({
         </div>
 
         <p className="text-[8px] uppercase text-foreground/80 mt-3">
-          {`Rango relevado en las últimas 3 horas: ${formatPriceARS(lowestComparablePrice)} - ${formatPriceARS(highestComparablePrice)}`}
+          {`Rango relevado en las últimas 24 horas: ${formatPriceARS(lowestComparablePrice)} - ${formatPriceARS(highestComparablePrice)}`}
         </p>
       </div>
 
       <div className="bg-muted border-4 border-border p-4 md:p-6 pixel-shadow flex flex-col gap-4 min-w-0">
         <div>
           <p className="text-[10px] uppercase font-bold text-foreground/80 mb-2">
-            {currentInstallment ? `TOTAL EN ${currentInstallment.count} CUOTAS` : 'MEJOR PRECIO DETECTADO'}
+            {currentInstallment ? `TOTAL EN ${currentInstallment.count} CUOTAS` : bestPrice.priceCondition === 'special' ? 'PRECIO ESPECIAL INFORMADO POR LA TIENDA' : 'MEJOR PRECIO DETECTADO'}
           </p>
           <PriceDisplay
             price={currentInstallment ? currentInstallment.totalAmount : bestPrice.price}

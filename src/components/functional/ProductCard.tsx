@@ -7,11 +7,10 @@
 import Link from 'next/link';
 import React, { useMemo } from 'react';
 import { trackProductSelection } from '@/lib/analytics';
-import { computeComparableStorePriceStats, formatPriceARS } from '@/lib/price-utils';
+import { computeComparableStorePriceStats, formatPriceARS, isComparableStoreOffer } from '@/lib/price-utils';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import { freshnessLabel } from '@/lib/ui/freshness-label';
-import { needsIdentityReview } from '@/lib/quality/offer-identity';
-import { isOfferFresh } from '@/lib/price-freshness';
+import { isCatalogOfferFresh } from '@/lib/price-freshness';
 import type { Product } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { PriceDisplay } from './PriceDisplay';
@@ -57,11 +56,9 @@ export const ProductCard = React.memo(function ProductCard({
     priceDropAmount,
     priceDropPercent,
   } = useMemo(() => {
-    const eligible = product.prices.filter((price) => (
-      !needsIdentityReview(price, product) && (price.stock === 'in-stock' || price.stock === 'low-stock')
-    ));
-    const comparableStats = computeComparableStorePriceStats(eligible.filter((price) => !isOfferFresh(price.lastUpdated)));
-    const freshStats = computeComparableStorePriceStats(eligible.filter((price) => isOfferFresh(price.lastUpdated)));
+    const eligible = product.prices.filter((price) => isComparableStoreOffer(price, product));
+    const comparableStats = computeComparableStorePriceStats(eligible.filter((price) => !isCatalogOfferFresh(price.lastUpdated)));
+    const freshStats = computeComparableStorePriceStats(eligible.filter((price) => isCatalogOfferFresh(price.lastUpdated)));
     const comparableStoreCount = new Set(eligible.map((price) => price.storeId)).size;
     const freshStoreCount = freshStats.comparablePrices.length;
     const hasFreshPrice = freshStoreCount > 0;

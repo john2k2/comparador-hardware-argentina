@@ -198,6 +198,188 @@ describe('search ranking', () => {
       .toBe('AMD Ryzen 5 5600X Tray');
   });
 
+  it('does not use an inherited lowest price when prices are empty', () => {
+    const inheritedPrice = buildProduct('NVIDIA GeForce RTX 5060', {
+      id: 'rtx-5060-inherited-price',
+      category: 'tarjetas-graficas',
+      lowestPrice: 100000,
+      prices: [],
+    });
+    const available = buildProduct('NVIDIA GeForce RTX 5060', {
+      id: 'rtx-5060-available',
+      category: 'tarjetas-graficas',
+      lowestPrice: 240000,
+    });
+
+    expect(sortProductsBySearchRelevance([inheritedPrice, available], 'RTX 5060', 'tarjetas-graficas')[0]?.id)
+      .toBe('rtx-5060-available');
+  });
+
+  it('does not rank an identity-review offer ahead of a comparable offer', () => {
+    const needsReview = buildProduct('NVIDIA GeForce RTX 5060', {
+      id: 'rtx-5060-needs-review',
+      category: 'tarjetas-graficas',
+      lowestPrice: 120000,
+      prices: [{
+        storeId: 'test-store',
+        storeName: 'Test Store',
+        url: 'https://example.com/rtx-5060-review',
+        price: 120000,
+        stock: 'in-stock',
+        installment: null,
+        lastUpdated: new Date(),
+        identityReview: {
+          version: 1,
+          status: 'needs-review',
+          reason: 'low-confidence',
+          reviewedAt: null,
+          model: null,
+          confidence: null,
+          subject: {
+            name: 'NVIDIA GeForce RTX 5060',
+            category: 'tarjetas-graficas',
+            url: 'https://example.com/rtx-5060-review',
+          },
+        },
+      }],
+    });
+    const comparable = buildProduct('NVIDIA GeForce RTX 5060', {
+      id: 'rtx-5060-comparable',
+      category: 'tarjetas-graficas',
+      lowestPrice: 240000,
+    });
+
+    expect(sortProductsBySearchRelevance([needsReview, comparable], 'RTX 5060', 'tarjetas-graficas')[0]?.id)
+      .toBe('rtx-5060-comparable');
+  });
+
+  it('does not count unknown stock or zero-price offers as comparable', () => {
+    const invalidOffers = buildProduct('NVIDIA GeForce RTX 5060', {
+      id: 'rtx-5060-invalid-offers',
+      category: 'tarjetas-graficas',
+      lowestPrice: 0,
+      prices: [
+        {
+          storeId: 'zero-price',
+          storeName: 'Zero Price',
+          url: 'https://example.com/rtx-5060-zero',
+          price: 0,
+          stock: 'in-stock',
+          installment: null,
+          lastUpdated: new Date(),
+        },
+        {
+          storeId: 'unknown-stock',
+          storeName: 'Unknown Stock',
+          url: 'https://example.com/rtx-5060-unknown',
+          price: 180000,
+          stock: 'unknown',
+          installment: null,
+          lastUpdated: new Date(),
+        },
+      ],
+    });
+    const comparable = buildProduct('NVIDIA GeForce RTX 5060', {
+      id: 'rtx-5060-stocked',
+      category: 'tarjetas-graficas',
+      lowestPrice: 240000,
+    });
+
+    expect(sortProductsBySearchRelevance([invalidOffers, comparable], 'RTX 5060', 'tarjetas-graficas')[0]?.id)
+      .toBe('rtx-5060-stocked');
+  });
+
+  it('uses the offer lastUpdated for freshness instead of product updatedAt', () => {
+    const now = Date.now();
+    const freshOfferUpdatedAt = new Date(now - 2 * 60 * 60 * 1000);
+    const staleOfferUpdatedAt = new Date(now - 26 * 60 * 60 * 1000);
+    const fresh = buildProduct('NVIDIA GeForce RTX 5060', {
+      id: 'rtx-5060-fresh-offer',
+      category: 'tarjetas-graficas',
+      updatedAt: new Date(now - 7 * 24 * 60 * 60 * 1000),
+      lowestPrice: 240000,
+      prices: [{
+        storeId: 'fresh-store',
+        storeName: 'Fresh Store',
+        url: 'https://example.com/rtx-5060-fresh',
+        price: 240000,
+        stock: 'in-stock',
+        installment: null,
+        lastUpdated: freshOfferUpdatedAt,
+      }],
+    });
+    const stale = buildProduct('NVIDIA GeForce RTX 5060', {
+      id: 'rtx-5060-stale-offer',
+      category: 'tarjetas-graficas',
+      updatedAt: new Date(now),
+      lowestPrice: 240000,
+      prices: [{
+        storeId: 'stale-store',
+        storeName: 'Stale Store',
+        url: 'https://example.com/rtx-5060-stale',
+        price: 240000,
+        stock: 'in-stock',
+        installment: null,
+        lastUpdated: staleOfferUpdatedAt,
+      }],
+    });
+
+    expect(sortProductsBySearchRelevance([stale, fresh], 'RTX 5060', 'tarjetas-graficas')[0]?.id)
+      .toBe('rtx-5060-fresh-offer');
+  });
+
+  it('keeps pending products at the end without dropping them', () => {
+    const fresh = buildProduct('NVIDIA GeForce RTX 5060', {
+      id: 'rtx-5060-fresh',
+      category: 'tarjetas-graficas',
+    });
+    const pending = buildProduct('NVIDIA GeForce RTX 5060', {
+      id: 'rtx-5060-pending',
+      category: 'tarjetas-graficas',
+      prices: [{
+        storeId: 'pending-store',
+        storeName: 'Pending Store',
+        url: 'https://example.com/rtx-5060-pending',
+        price: 120000,
+        stock: 'in-stock',
+        installment: null,
+        lastUpdated: new Date(),
+        identityReview: {
+          version: 1,
+          status: 'needs-review',
+          reason: 'low-confidence',
+          reviewedAt: null,
+          model: null,
+          confidence: null,
+          subject: {
+            name: 'NVIDIA GeForce RTX 5060',
+            category: 'tarjetas-graficas',
+            url: 'https://example.com/rtx-5060-pending',
+          },
+        },
+      }],
+    });
+    const noComparableOffer = buildProduct('NVIDIA GeForce RTX 5060', {
+      id: 'rtx-5060-no-comparable-offer',
+      category: 'tarjetas-graficas',
+      lowestPrice: 999999,
+      prices: [],
+    });
+
+    const sorted = sortProductsBySearchRelevance(
+      [pending, noComparableOffer, fresh],
+      'RTX 5060',
+      'tarjetas-graficas',
+    );
+
+    expect(sorted).toHaveLength(3);
+    expect(sorted.map((product) => product.id)).toEqual([
+      'rtx-5060-fresh',
+      'rtx-5060-pending',
+      'rtx-5060-no-comparable-offer',
+    ]);
+  });
+
   it('prefers an equally relevant product with several current offers', () => {
     const stale = buildProduct('AMD Ryzen 5 7600 Box', {
       category: 'procesadores',

@@ -1,5 +1,5 @@
 import { formatPriceARS, getAvailableComparableStorePrices } from '@/lib/price-utils';
-import { isOfferFresh } from '@/lib/price-freshness';
+import { isCatalogOfferFresh } from '@/lib/price-freshness';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { normalizeDisplayText } from '@/lib/text-utils';
@@ -85,14 +85,14 @@ export function buildProductDescription(product: Product): string {
       : `Compará precios de ${name} en tiendas de Argentina.`,
     120,
   );
-  const withPrice = lowest > 0 ? `${core} Mejor precio relevado en 3 horas: ${formatPriceARS(lowest)}.` : core;
+  const withPrice = lowest > 0 ? `${core} Mejor precio relevado en 24 horas: ${formatPriceARS(lowest)}.` : core;
 
   return withPrice.length <= 160 ? withPrice : core.endsWith('…') ? `${core.slice(0, -1).trimEnd()}.` : core;
 }
 
 export function getRecentProductOffers(product: Product) {
   return getAvailableComparableStorePrices(product.prices.filter((price) => (
-    isOfferFresh(price.lastUpdated)
+    isCatalogOfferFresh(price.lastUpdated)
     && !needsIdentityReview(price, product)
     && (price.stock === 'in-stock' || price.stock === 'low-stock')
   )));

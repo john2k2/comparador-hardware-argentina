@@ -141,7 +141,7 @@ export function ProductComparisonBuilder() {
             <table className="w-full min-w-[620px] text-[10px] font-mono">
               <thead><tr className="border-b-2 border-border"><th className="p-2 text-left">Dato</th><th className="p-2 text-left">{left.name}</th><th className="p-2 text-left">{right.name}</th></tr></thead>
               <tbody>
-                <tr className="border-b border-border"><th className="p-2 text-left">Mejor precio reciente (3 h)</th><td className="p-2">{comparison.leftPrice ? formatPriceARS(comparison.leftPrice) : 'Sin precio reciente'}</td><td className="p-2">{comparison.rightPrice ? formatPriceARS(comparison.rightPrice) : 'Sin precio reciente'}</td></tr>
+                <tr className="border-b border-border"><th className="p-2 text-left">Mejor precio reciente (24 h)</th><td className="p-2">{comparison.leftPrice ? formatPriceARS(comparison.leftPrice) : 'Sin precio reciente'}</td><td className="p-2">{comparison.rightPrice ? formatPriceARS(comparison.rightPrice) : 'Sin precio reciente'}</td></tr>
                 <tr className="border-b border-border"><th className="p-2 text-left">Ofertas relevadas</th><td className="p-2">{left.prices.length}</td><td className="p-2">{right.prices.length}</td></tr>
                 {comparison.specificationRows.map((row) => <tr key={row.label} className="border-b border-border/60"><th className="p-2 text-left">{row.label}</th><td className="p-2">{row.left}</td><td className="p-2">{row.right}</td></tr>)}
               </tbody>

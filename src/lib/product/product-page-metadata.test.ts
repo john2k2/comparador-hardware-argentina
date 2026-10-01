@@ -9,6 +9,7 @@ import {
   truncateText,
 } from './product-page-metadata';
 import type { Product } from '@/lib/types';
+import { CATALOG_OFFER_FRESH_MS } from '@/lib/price-freshness';
 
 function makeProduct(overrides: Partial<Product> = {}): Product {
   return {
@@ -118,7 +119,7 @@ describe('buildProductDescription', () => {
     const product = makeProduct({ name: 'RTX 4060' });
     const description = buildProductDescription(product);
     expect(description).toContain('Compará precios de RTX 4060 en 2 tiendas');
-    expect(description).toContain('Mejor precio relevado en 3 horas:');
+    expect(description).toContain('Mejor precio relevado en 24 horas:');
     expect(description).toContain('$');
   });
 
@@ -281,7 +282,7 @@ describe('buildProductJsonLd', () => {
 
   it('no publica ofertas antiguas como precios vigentes en el snippet ni en los datos estructurados', () => {
     const product = makeProduct({ name: 'RTX 4060', prices: makeProduct().prices.map((offer) => ({
-      ...offer, lastUpdated: new Date('2026-05-01T00:00:00.000Z'),
+      ...offer, lastUpdated: new Date(Date.now() - CATALOG_OFFER_FRESH_MS - 1),
     })) });
     const jsonLd = buildProductJsonLd(product, product.id);
     expect(buildProductDescription(product)).not.toContain('Mejor precio relevado');

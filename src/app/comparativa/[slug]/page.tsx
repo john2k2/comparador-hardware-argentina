@@ -221,7 +221,7 @@ export default async function ComparisonPage({ params }: Props) {
           <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">
             [ COMPARATIVA DE PRECIOS POR TIENDA ]
           </h2>
-          <p className="mb-4 text-[10px] md:text-[11px] font-mono text-muted-foreground">Precios observados en las últimas 3 horas, no garantizados. Abrí cada publicación para comprobar precio, stock y variante antes de comprar.</p>
+          <p className="mb-4 text-[10px] md:text-[11px] font-mono text-muted-foreground">Precios observados en las últimas 24 horas, no garantizados. Abrí cada publicación para comprobar precio, stock y variante antes de comprar.</p>
           
           <div className="overflow-x-auto">
             <table className="w-full text-[10px] md:text-[11px] font-mono">
@@ -370,8 +370,8 @@ function ProductCard({
         {prices.length === 0
           ? 'Sin observaciones recientes de precio y stock'
           : prices.length === 1
-            ? '1 tienda informó stock en las últimas 3 h'
-            : `${prices.length} tiendas informaron stock en las últimas 3 h`}
+            ? '1 tienda informó stock en las últimas 24 h'
+            : `${prices.length} tiendas informaron stock en las últimas 24 h`}
       </p>
       {bestOffer && <p className="mt-1 text-[10px] text-muted-foreground font-mono">Menor precio observado en {bestOffer.storeName || bestOffer.storeId} el {formatObservationDate(bestOffer.lastUpdated)}. Puede haber cambiado.</p>}
       {bestStoreUrl && <a href={bestStoreUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-[10px] text-secondary hover:underline">Comprobar en tienda →</a>}

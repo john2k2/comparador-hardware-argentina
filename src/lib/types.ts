@@ -78,6 +78,7 @@ export interface ProductPrice {
   lastUpdated: Date;
   identityReview?: import('@/lib/quality/offer-identity').OfferIdentityReview;
   sourceIdentity?: OfferSourceIdentity;
+  priceCondition?: 'special' | 'unspecified';
 }
 
 export type StockStatus = 'in-stock' | 'low-stock' | 'out-of-stock' | 'unknown';

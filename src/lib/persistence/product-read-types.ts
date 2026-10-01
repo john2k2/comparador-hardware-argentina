@@ -37,6 +37,8 @@ export interface DbProductPriceRow {
   installment_amount: number | string | null;
   last_updated: string | null;
   identity_review?: unknown;
+  source_identity?: import('@/lib/types').OfferSourceIdentity | null;
+  price_condition?: 'special' | 'unspecified' | null;
 }
 
 export interface DbProductRow {

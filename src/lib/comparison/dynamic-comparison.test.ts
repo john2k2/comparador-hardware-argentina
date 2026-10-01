@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { HardwareCategory, Product } from '@/lib/types';
+import { CATALOG_OFFER_FRESH_MS } from '@/lib/price-freshness';
 import { compareProducts } from './dynamic-comparison';
 
 function product(id: string, price: number, specs: Record<string, string> = {}, category: HardwareCategory = 'procesadores'): Product {
@@ -70,7 +71,7 @@ describe('compareProducts', () => {
 
   it('no declara un ganador por precio con una oferta antigua', () => {
     const left = product('GPU A', 100_000, {}, 'tarjetas-graficas');
-    left.prices[0].lastUpdated = new Date('2026-09-01T00:00:00.000Z');
+    left.prices[0].lastUpdated = new Date(Date.now() - CATALOG_OFFER_FRESH_MS - 1);
     const result = compareProducts(left, product('GPU B', 120_000, {}, 'tarjetas-graficas'));
 
     expect(result.leftPrice).toBeNull();

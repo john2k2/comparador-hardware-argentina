@@ -113,3 +113,49 @@ test.describe('Tablet Responsiveness', () => {
     await expect(gridSection).toBeVisible();
   });
 });
+
+const homeMobileViewports = [
+  { name: '360x800', width: 360, height: 800 },
+  { name: '384x832', width: 384, height: 832 },
+  { name: '412x915', width: 412, height: 915 },
+  { name: '432x960', width: 432, height: 960 },
+];
+
+for (const viewport of homeMobileViewports) {
+  test.describe(`Home mobile ${viewport.name}`, () => {
+    test.use({ viewport: { width: viewport.width, height: viewport.height } });
+
+    test('mantiene buscador y boton BUSCAR dentro del viewport y navega con query', async ({ page }) => {
+      await page.goto('/');
+
+      const searchInput = page.getByPlaceholder(/\[ BUSCAR PRODUCTO/i);
+      const searchButton = page.getByRole('button', { name: 'BUSCAR' });
+      await expect(searchInput).toBeVisible();
+      await expect(searchButton).toBeVisible();
+
+      const dimensions = await page.evaluate(() => ({
+        scrollX: window.scrollX,
+        scrollY: window.scrollY,
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+      }));
+      expect(dimensions.scrollX).toBe(0);
+      expect(dimensions.scrollY).toBe(0);
+      expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 5);
+
+      for (const control of [searchInput, searchButton]) {
+        const box = await control.boundingBox();
+        expect(box).not.toBeNull();
+        if (!box) continue;
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        expect(box.y).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+        expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+      }
+
+      await searchInput.fill('rtx 5060');
+      await searchButton.click();
+      await page.waitForURL((url) => url.pathname === '/search' && url.searchParams.get('q') === 'rtx 5060');
+    });
+  });
+}

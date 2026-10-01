@@ -9,7 +9,7 @@ import { getOutboundStoreLinkType, getOutboundStoreRel } from '@/lib/commercial'
 import type { ProductPrice, Product } from '@/lib/types';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
 import { getComparableStorePrices } from '@/lib/price-utils';
-import { isOfferFresh } from '@/lib/price-freshness';
+import { isCatalogOfferFresh } from '@/lib/price-freshness';
 
 type StoresListProps = {
   product: Product;
@@ -18,7 +18,7 @@ type StoresListProps = {
 
 export function StoresList({ product, merchantPrices }: StoresListProps) {
   const bestOffer = getComparableStorePrices(
-    merchantPrices.filter((price) => !needsIdentityReview(price, product) && (price.stock === 'in-stock' || price.stock === 'low-stock') && isOfferFresh(price.lastUpdated)),
+    merchantPrices.filter((price) => !needsIdentityReview(price, product) && (price.stock === 'in-stock' || price.stock === 'low-stock') && isCatalogOfferFresh(price.lastUpdated)),
   )[0];
   return (
     <div className="bg-card border-4 border-border p-4 md:p-6 pixel-shadow min-w-0">
@@ -32,7 +32,7 @@ export function StoresList({ product, merchantPrices }: StoresListProps) {
           const pendingIdentity = needsIdentityReview(price, product);
           const isBest = price === bestOffer;
           const observedAt = new Date(price.lastUpdated);
-          const fresh = isOfferFresh(price.lastUpdated);
+          const fresh = isCatalogOfferFresh(price.lastUpdated);
 
           return (
             <div
@@ -109,7 +109,7 @@ export function StoresList({ product, merchantPrices }: StoresListProps) {
                 <span className="hidden sm:inline truncate">
                   {`VER EN ${normalizeDisplayText(price.storeName || price.storeId)}`}
                 </span>
-                <ExternalLink className="w-3 h-3 shrink-0" />
+                <ExternalLink className="w-24 h-3 shrink-0" />
               </a>
             </div>
             </div>

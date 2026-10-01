@@ -3,7 +3,7 @@
 // ============================================
 
 import type { InstallmentInfo, PriceHistoryPoint, ProductPrice } from './types';
-import type { OfferIdentityReview } from './quality/offer-identity';
+import { needsIdentityReview, type OfferIdentityReview } from './quality/offer-identity';
 
 type PriceLike = { price: number };
 type StorePriceLike = PriceLike & {
@@ -32,6 +32,16 @@ const PAIR_OUTLIER_MIN_DELTA_ARS = 150_000;
 
 function isFinitePositivePrice(value: number): boolean {
   return Number.isFinite(value) && value > 0;
+}
+
+/** Oferta mostrable; la frescura se evalúa aparte para conservar precios anteriores. */
+export function isComparableStoreOffer(
+  offer: StorePriceLike,
+  product: { name: string; category?: string },
+): boolean {
+  return isFinitePositivePrice(offer.price)
+    && (offer.stock === 'in-stock' || offer.stock === 'low-stock')
+    && !needsIdentityReview(offer, product);
 }
 
 function toTimestamp(value: Date | string | number | undefined): number {

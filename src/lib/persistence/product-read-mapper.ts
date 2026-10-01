@@ -49,6 +49,8 @@ function mapProductRow(row: DbProductRow, preserveOffers: boolean): Product {
       price: toNumber(price.price, 0),
       originalPrice: price.original_price === null ? undefined : toNumber(price.original_price, 0),
       stock: toStockStatus(price.stock),
+      sourceIdentity: price.source_identity ?? storedReview?.sourceIdentity,
+      priceCondition: price.price_condition ?? undefined,
       installment: installmentCount && installmentCount > 0
         ? {
             count: installmentCount,

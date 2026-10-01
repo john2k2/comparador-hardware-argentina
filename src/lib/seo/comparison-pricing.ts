@@ -1,7 +1,7 @@
 import { getComparableStorePrices } from '@/lib/price-utils';
 import type { ProductPrice } from '@/lib/types';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
-import { isOfferFresh } from '@/lib/price-freshness';
+import { isCatalogOfferFresh } from '@/lib/price-freshness';
 
 export type ComparisonSidePricing = {
   prices: ProductPrice[];
@@ -21,7 +21,7 @@ export type ComparisonPricing = {
 
 function inStockComparable(prices: ProductPrice[] | undefined): ProductPrice[] {
   // Filtrar antes de deduplicar: una oferta pendiente más barata no debe ocultar otra válida.
-  return getComparableStorePrices((prices ?? []).filter((price) => !needsIdentityReview(price) && isOfferFresh(price.lastUpdated)))
+  return getComparableStorePrices((prices ?? []).filter((price) => !needsIdentityReview(price) && isCatalogOfferFresh(price.lastUpdated)))
     .filter((price) => price.price > 0 && (price.stock === 'in-stock' || price.stock === 'low-stock'))
     .sort((a, b) => a.price - b.price);
 }
@@ -40,12 +40,12 @@ function uniqueStoreCount(left: ProductPrice[], right: ProductPrice[]): number {
 
 function buildStoreCoverageCopy(storeCount: number): string {
   if (storeCount === 0) {
-    return 'No hay precios con stock informado observados en las últimas 3 horas para comparar estos modelos. Consultá las fichas para ver referencias anteriores.';
+    return 'No hay precios con stock informado observados en las últimas 24 horas para comparar estos modelos. Consultá las fichas para ver referencias anteriores.';
   }
   if (storeCount === 1) {
-    return 'Los precios de esta comparativa son observaciones de 1 tienda que informó stock en las últimas 3 horas; pueden haber cambiado.';
+    return 'Los precios de esta comparativa son observaciones de 1 tienda que informó stock en las últimas 24 horas; pueden haber cambiado.';
   }
-  return `Los precios de esta comparativa son observaciones de ${storeCount} tiendas que informaron stock en las últimas 3 horas; pueden haber cambiado.`;
+  return `Los precios de esta comparativa son observaciones de ${storeCount} tiendas que informaron stock en las últimas 24 horas; pueden haber cambiado.`;
 }
 
 export function resolveComparisonPricing(input: {

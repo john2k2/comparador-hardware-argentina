@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProductPrice } from '@/lib/types';
+import { CATALOG_OFFER_FRESH_MS } from '@/lib/price-freshness';
 import { resolveComparisonPricing } from './comparison-pricing';
 
 function offer(overrides: Partial<ProductPrice> & Pick<ProductPrice, 'storeId' | 'price'>): ProductPrice {
@@ -17,7 +18,7 @@ describe('resolveComparisonPricing', () => {
   it('no declara ganador con precios antiguos o sin una fecha de observación válida', () => {
     const pricing = resolveComparisonPricing({
       product1Name: 'RTX 4060', product2Name: 'RX 7600',
-      product1Prices: [offer({ storeId: 'old', price: 1, lastUpdated: new Date(Date.now() - 4 * 60 * 60 * 1000) }), offer({ storeId: 'invalid', price: 2, lastUpdated: new Date(NaN) })],
+      product1Prices: [offer({ storeId: 'old', price: 1, lastUpdated: new Date(Date.now() - CATALOG_OFFER_FRESH_MS - 1) }), offer({ storeId: 'invalid', price: 2, lastUpdated: new Date(NaN) })],
       product2Prices: [offer({ storeId: 'current', price: 10 })],
     });
     expect(pricing.side1.offerCount).toBe(0);

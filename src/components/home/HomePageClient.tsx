@@ -125,7 +125,7 @@ export function HomePageClient({
 
   return (
     <>
-      <section className="mb-6 min-w-0 max-w-full bg-card/95 border-[3px] border-border pixel-shadow p-4 md:p-6 flex flex-col lg:flex-row gap-5 lg:items-center lg:justify-between backdrop-blur-[1px]">
+      <section className="mb-6 min-w-0 max-w-full bg-card/95 border-[3px] border-border pixel-shadow p-4 md:p-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_480px] backdrop-blur-[1px]">
         <div className="min-w-0">
           <h1 className="font-mono! text-base sm:text-lg md:text-3xl md:font-pixel! font-bold uppercase text-foreground tracking-normal md:tracking-tight break-words max-w-full">
             [ COMPARA PRECIOS DE HARDWARE EN ARGENTINA ]
@@ -136,7 +136,17 @@ export function HomePageClient({
           <p className="text-[10px] md:text-[9px] uppercase text-foreground/80 mt-2 tracking-normal break-words">
             COMPARADOR INDEPENDIENTE: NO VENDEMOS, SOLO MOSTRAMOS PRECIOS, DISPONIBILIDAD Y ENLACES A TIENDAS
           </p>
-          <p className="mt-3 max-w-3xl text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
+        </div>
+
+        <div className="w-full min-w-0 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:self-center">
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="[ BUSCAR PRODUCTO... ]"
+          />
+        </div>
+
+        <div className="min-w-0 lg:col-start-1 lg:row-start-2">
+          <p className="max-w-3xl text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
             {HOME_CITATION_BLOCK}
           </p>
           <nav aria-label="Comparar por categoría" className="mt-4 flex flex-wrap gap-3">
@@ -150,13 +160,6 @@ export function HomePageClient({
               </Link>
             ))}
           </nav>
-        </div>
-
-        <div className="w-full min-w-0 lg:w-[480px]">
-          <SearchBar
-            onSearch={handleSearch}
-            placeholder="[ BUSCAR PRODUCTO... ]"
-          />
         </div>
       </section>
 

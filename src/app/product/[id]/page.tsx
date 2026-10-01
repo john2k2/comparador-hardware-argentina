@@ -170,7 +170,7 @@ function ProductSeoSupport({ product }: { product: Product }) {
           <p>
             Esta ficha reúne registros de {displayName} {displayBrand ? `de ${displayBrand}` : ''} de {storeCount} comercios.
             {recentOffer
-              ? ` El menor precio relevado en las últimas 3 horas es ${formatPriceARS(recentOffer.price)}.`
+              ? ` El menor precio relevado en las últimas 24 horas es ${formatPriceARS(recentOffer.price)}.`
               : ' Los precios registrados son anteriores y sirven sólo como referencia hasta una nueva comprobación.'}
             {' '}El importe final puede cambiar por stock, promociones, cuotas, envío o condiciones propias de cada local.
           </p>

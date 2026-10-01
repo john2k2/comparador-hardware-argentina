@@ -5,6 +5,8 @@ import {
   type ChipSignature,
 } from '@/lib/product-identity';
 import type { HardwareCategory, Product } from '@/lib/types';
+import { isComparableStoreOffer } from '@/lib/price-utils';
+import { isCatalogOfferFresh } from '@/lib/price-freshness';
 
 const PORTABLE_RAM_PATTERN = /\b(sodimm|so\s*dimm|notebook|laptop)\b/;
 const RAM_HINT_PATTERN = /\b(ddr[45]|ram|memoria|sodimm|dimm)\b/;
@@ -13,7 +15,7 @@ const MEANINGFUL_SINGLE_QUERY_TOKENS = new Set(['x', 'g', 'f', 'k']);
 const STRICT_VARIANT_QUERY_TOKENS = new Set([
   'aorus', 'strix', 'tuf', 'dual', 'prime', 'proart', 'eagle', 'windforce',
   'gaming', 'ventus', 'shadow', 'suprim', 'trinity', 'phoenix', 'pulse',
-  'nitro', 'challenger', 'hellhound', 'tomahawk', 'mortar', 'ds3h',
+  'nitro', 'challenger', 'hellhound', 'tomahawk', 'mortar', 'ds24h',
   'hero', 'lightspeed',
 ]);
 
@@ -194,9 +196,10 @@ export function matchesSearchQueryIntent(
   return queryAgreesWithProductModel(rawQuery, name, extraTexts);
 }
 
-function hasAvailableOffer(product: Product): boolean {
-  if (product.prices.length === 0) return product.lowestPrice > 0;
-  return product.prices.some((price) => price.stock !== 'out-of-stock');
+function offerAvailabilityTier(product: Product, nowMs: number): number {
+  const comparable = product.prices.filter((price) => isComparableStoreOffer(price, product));
+  if (comparable.some((price) => isCatalogOfferFresh(price.lastUpdated, nowMs))) return 2;
+  return comparable.length > 0 ? 1 : 0;
 }
 
 function freshnessScore(product: Product, nowMs: number): number {
@@ -213,7 +216,7 @@ function freshnessScore(product: Product, nowMs: number): number {
 }
 
 function availableOfferScore(product: Product): number {
-  const availableCount = product.prices.filter((price) => price.stock !== 'out-of-stock').length;
+  const availableCount = product.prices.filter((price) => isComparableStoreOffer(price, product)).length;
   if (availableCount <= 1) return 0;
   return Math.min(15, (availableCount - 1) * 5);
 }
@@ -259,18 +262,19 @@ export function sortProductsBySearchRelevance(
     .split(/\s+/)
     .filter((word) => word.length > 1);
   const queryLooksBundle = isBundleLikeTitle(query);
+  const nowMs = Date.now();
 
   // P2: Schwartzian transform — computar score una vez por producto,
   // luego ordenar por score. Evita O(n log n) llamadas a scoreProductRelevance.
   const scored = products.map((product) => ({
     product,
-    score: scoreProductRelevance(product, queryWords, query, requestedCategory),
+    score: scoreProductRelevance(product, queryWords, query, requestedCategory, nowMs),
     isBundle: !queryLooksBundle && isBundleLikeTitle(product.name),
-    hasStock: hasAvailableOffer(product),
+    availabilityTier: offerAvailabilityTier(product, nowMs),
   }));
 
   scored.sort((a, b) => {
-    if (a.hasStock !== b.hasStock) return a.hasStock ? -1 : 1;
+    if (a.availabilityTier !== b.availabilityTier) return b.availabilityTier - a.availabilityTier;
     if (a.isBundle !== b.isBundle) return a.isBundle ? 1 : -1;
     const scoreDiff = b.score - a.score;
     if (scoreDiff !== 0) return scoreDiff;
