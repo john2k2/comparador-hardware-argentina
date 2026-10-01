@@ -96,3 +96,17 @@ describe('hardware-categories', () => {
     expect(hardwareCategoryToSearchTerm('perifericos')).toBe('perifericos');
   });
 });
+
+it.each([
+  ['Micro AMD Ryzen 5 5600GT - 6 Núcleos / 12 Threads + Radeon AM4', 'procesadores'],
+  ['Procesador AMD Ryzen 3 3200G + Radeon Vega 8 + Cooler', 'procesadores'],
+  ['CPU Cooler Intel Performance S1700 (solo para PC armada)', 'refrigeracion'],
+  ['Memoria RAM para notebook DDR5 16GB', 'memoria-ram'],
+  ['Mouse Ryzen Edition', 'perifericos'],
+  ['Micro SD Kingston 128GB', 'almacenamiento'],
+  ['Procesadores Core i5 10400 (PARA PC ARMADA)', 'procesadores'],
+] as const)('conserva el tipo real aunque %s mencione otros componentes', (name, category) => {
+  expect(inferHardwareCategoryFromName(name)).toBe(category);
+  expect(inferDetailHardwareCategory(name)).toBe(category);
+  if (category) expect(resolveHardwareCategoryForProduct(name, 'computadoras')).toBe(category);
+});

@@ -9,7 +9,8 @@ import { reviewProductOffers } from '@/lib/ai/review-product-offers';
 import { isComparableStoreOffer } from '@/lib/price-utils';
 import { isCatalogOfferFresh } from '@/lib/price-freshness';
 import { withConcurrencyLimit } from '@/lib/async/concurrency';
-import { createKnownOfferContext, fetchKnownOffer } from './on-demand/worker';
+import { WOO_BATCH_STORES } from '@/lib/scrapers/woocommerce-known-batch';
+import { createKnownOfferContext, fetchKnownOffer, prepareKnownOfferBatch } from './on-demand/worker';
 
 type Target = { offer_id: string; product_id: string; store_id: string; url: string; interval_hours: number; reason: string };
 type Outcome = 'observed' | 'no-observation' | 'source-failed' | 'persist-failed' | 'unsupported';
@@ -39,6 +40,10 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   const counts = emptyCounts(), groups: Record<string, Counts> = {}, context = createKnownOfferContext(true);
   const storeReady = new Map<string, Promise<void>>();
   let taskFailed = false;
+  let failureCode: string | undefined;
+  let feedClaimed = 0, feedPhase = true;
+  // Al menos la mitad del presupuesto queda para la rotación de otras tiendas.
+  const feedLimit = Math.min(1200, Math.floor(maxOffers / 2));
   let status: 'completed' | 'deadline' | 'failed' = 'completed';
   async function finish(target: Target, outcome: Outcome, comparable = false) {
     const finished = await client!.rpc('finish_catalog_refresh', { p_offer_id: target.offer_id, p_token: token, p_result: outcome });
@@ -53,14 +58,18 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   }
   try {
     while (counts.attempted < maxOffers && Date.now() - started < deadline) {
-      const claimed = await client.rpc('claim_catalog_refresh', { p_token: token, p_limit: Math.min(24, maxOffers - counts.attempted) });
+      if (feedClaimed >= feedLimit) feedPhase = false;
+      const claimed = await client.rpc(feedPhase ? 'claim_catalog_feed_refresh' : 'claim_catalog_refresh', { p_token: token,
+        p_limit: Math.min(24, maxOffers - counts.attempted, feedPhase ? feedLimit-feedClaimed : 24) });
       if (claimed.error) throw new Error('REFRESH_CLAIM_FAILED');
       const targets = claimed.data as Target[];
-      if (!targets?.length) break;
+      if (!targets?.length) { if (feedPhase) { feedPhase=false; continue; } break; }
+      if (feedPhase) feedClaimed += targets.length;
       const ids = [...new Set(targets.map(target => target.product_id))];
       const read = await client.from('products').select(PRODUCT_SELECT_FIELDS).in('id', ids).limit(ids.length);
       if (read.error) throw new Error('REFRESH_READ_FAILED');
       const products = new Map((read.data as unknown as DbProductRow[]).map(row => { const product = mapDbProduct(row); return [product.id, product]; }));
+      await prepareKnownOfferBatch(products,targets.map(target=>({productId:target.product_id,storeId:target.store_id,url:target.url})),context);
       const observations = await withConcurrencyLimit(targets.map(target => async () => {
         // Se serializa cada tienda incluso para adaptadores antiguos que aún
         // no usan sourceFetch. Otras tiendas pueden avanzar en paralelo.
@@ -79,7 +88,7 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
           taskFailed = true; return null;
         } finally {
           // CompraGamer comparte la lectura de catálogo; no se duerme por fila.
-          if (target.store_id !== 'compragamer') await new Promise(resolve => setTimeout(resolve, 2000));
+          if (target.store_id !== 'compragamer' && !WOO_BATCH_STORES.has(target.store_id)) await new Promise(resolve => setTimeout(resolve, 2000));
           release();
         }
       }), 3);
@@ -112,7 +121,8 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
     }
     if (Date.now() - started >= deadline) status = 'deadline';
     if (counts.attempted > 0 && counts.observed === 0) status = 'failed';
-  } catch {
+  } catch (error) {
+    failureCode = error instanceof Error && /^REFRESH_[A-Z_]+$/.test(error.message) ? error.message : 'REFRESH_UNEXPECTED_ERROR';
     status = 'failed';
   } finally {
     const released = await client.from('catalog_offer_refresh_state').update({ lease_token: null, leased_until: null }).eq('lease_token', token);
@@ -120,8 +130,10 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   }
   const coverage = await client.rpc('catalog_refresh_coverage');
   if (coverage.error) status = 'failed';
+  const sourceFailureReasons: Record<string,number> = {};
+  for (const reason of context.failures.values()) sourceFailureReasons[reason]=(sourceFailureReasons[reason] ?? 0)+1;
   const summary = { source: 'adaptive-catalog', runId: run.data.id, startedAt, finishedAt: new Date().toISOString(),
-    status, limitReached: counts.attempted >= maxOffers, ...counts, groups, seeded: seeded.data, sharedReads: context.sharedReads, coverage: coverage.data ?? [] };
+    status, failureCode, feedClaimed, sourceFailureReasons, limitReached: counts.attempted >= maxOffers, ...counts, groups, seeded: seeded.data, sharedReads: context.sharedReads, coverage: coverage.data ?? [] };
   const completed = await client.from('catalog_refresh_runs').update({ status, finished_at: summary.finishedAt, summary }).eq('id', run.data.id);
   if (completed.error) throw new Error('REFRESH_PROGRESS_FAILED');
   return summary;

@@ -183,8 +183,11 @@ export function isBundleLikeTitle(value: string): boolean {
 export function isCompleteComputerTitle(value: string): boolean {
   const normalized = normalizeIdentityText(value);
   if (!normalized) return false;
+  // Un accesorio para una PC/notebook no es la computadora que menciona.
+  if (/^(?:cpu\s+cooler|cooler|water\s*cooler|disipador|ventilador|memoria|ram|mouse|mousepad|teclado|auriculares?|headset|monitor|fuente|gabinete)\b/.test(normalized)) return false;
+  const standaloneCpu = /^(?:micro(?!\s+sd\b)|procesador(?:es)?|cpu)\b/.test(normalized);
   const wrapped = ` ${normalized} `;
-  if (COMPLETE_COMPUTER_TERMS.some((term) => wrapped.includes(` ${term} `))) return true;
+  if (!standaloneCpu && COMPLETE_COMPUTER_TERMS.some((term) => wrapped.includes(` ${term} `))) return true;
 
   const componentFamilies = [
     /\b(ryzen|core\s*i[3579]|procesador|cpu)\b/,
@@ -193,7 +196,11 @@ export function isCompleteComputerTitle(value: string): boolean {
     /\b(ddr4|ddr5|ram|memoria)\b/,
     /\b(ssd|nvme|hdd|disco)\b/,
   ];
-  const familyCount = componentFamilies.filter((pattern) => pattern.test(normalized)).length;
+  // Radeon/Vega integrada y el cooler incluido pertenecen al mismo CPU.
+  const integratedGraphics = /^(?:micro|procesador|cpu|amd\s+(?:ryzen|athlon))\b/.test(normalized)
+    && /\b(?:radeon|vega)\b/.test(normalized)
+    && !/\b(?:rtx|gtx|geforce|rx\s*\d{3,4}|placa\s+de\s+video|tarjeta\s+grafica)\b/.test(normalized);
+  const familyCount = componentFamilies.filter((pattern, index) => !(index === 1 && integratedGraphics) && pattern.test(normalized)).length;
   const hasCpuOrGpu = componentFamilies[0].test(normalized) || componentFamilies[1].test(normalized);
   const pcHints = [
     /\b\d{1,2}\s*gb\b/,
@@ -201,7 +208,7 @@ export function isCompleteComputerTitle(value: string): boolean {
     /\b[abhx]\d{3}[a-z]?\b/,
     /\b(?:arc|b580)\b/,
   ].filter((pattern) => pattern.test(normalized)).length;
-  if (/\bpc\b/.test(normalized) && hasCpuOrGpu && familyCount + pcHints >= 2) return true;
+  if (!standaloneCpu && /\bpc\b/.test(normalized) && hasCpuOrGpu && familyCount + pcHints >= 2) return true;
 
   const hasBundleMarker = normalized.includes('+') || /\b(combo|kit|bundle|paquete)\b/.test(normalized);
   if (!hasBundleMarker) return false;

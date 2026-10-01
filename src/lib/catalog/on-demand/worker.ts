@@ -1,5 +1,6 @@
 import 'server-only';
 import { SourceHttpError, type SourceFailure } from '@/lib/scrapers/source-http';
+import { fetchWooStoreKnownBatch, WOO_BATCH_STORES } from '@/lib/scrapers/woocommerce-known-batch';
 import { isUnresolvedSourceTitle } from '@/lib/scrapers/source-title';
 import { fetchKnownProductDetail } from '@/lib/scrapers/known-product-detail';
 import { stores as configuredStores } from '@/lib/scrapers/static-data';
@@ -22,6 +23,23 @@ import type { RefreshItemResult, RefreshJob, RefreshTarget } from './contracts';
 type ClaimedJob = RefreshJob & { lease_token: string };
 export type KnownOfferContext = { sources: Map<string, Promise<Product[][]>>; failures: Map<string, SourceFailure | 'no-observation'>; sharedReads: number; batchCatalog?: boolean };
 export function createKnownOfferContext(batchCatalog = false): KnownOfferContext { return { batchCatalog, sources: new Map(), failures: new Map(), sharedReads: 0 }; }
+/** Agrupa destinos ya conocidos; no descubre productos ni cambia sus URLs. */
+export async function prepareKnownOfferBatch(products: Map<string, Product>, targets: RefreshTarget[], context: KnownOfferContext): Promise<void> {
+  for (const storeId of WOO_BATCH_STORES) {
+    const selected=targets.filter(target=>target.storeId===storeId && products.has(target.productId));
+    if (!selected.length) continue;
+    const request=withAbortTimeout(signal=>fetchWooStoreKnownBatch(storeId,selected.map(target=>({url:target.url,category:products.get(target.productId)!.category})),signal),25000,'known-woo-batch');
+    for (const target of selected) {
+      const key=`${listingReference(storeId,target.url)}:${products.get(target.productId)!.category}`;
+      context.sources.set(key,request.then(found=>[found]).catch((error: unknown)=>{
+        context.failures.set(target.url,error instanceof SourceHttpError ? error.reason : 'invalid-response');
+        return [];
+      }));
+    }
+    // Cada fila consume la misma promesa; observar el rechazo evita uno sin dueño.
+    await request.catch(()=>undefined);
+  }
+}
 export async function fetchKnownOffer(product: Product, target: RefreshTarget, startedAt: number, context = createKnownOfferContext()): Promise<{ product: Product; price: ProductPrice; sourceTitle: string } | null> {
   const direct = getStoreScraper(target.storeId);
   const scrapers = direct ? [direct] : FRAMEWORK_SCRAPERS;

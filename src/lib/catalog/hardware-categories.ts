@@ -143,13 +143,17 @@ export function inferDetailHardwareCategory(value: string): HardwareCategory {
 // Cooler Master también fabrica fuentes y gabinetes: la marca sola no basta.
 function isCoolingProductTitle(value: string): boolean {
   const title = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
-  return /^(?:water\s*cooler|refrigeracion|ventilador|disipador)\b/.test(title)
+  return /^(?:cpu\s+cooler|water\s*cooler|refrigeracion|ventilador|disipador)\b/.test(title)
     || /^cooler\s+(?!master\b)/.test(title)
     || /^cooler\s+master\s+(?:masterliquid|ml\d+\w*|hyper|liquid)\b/.test(title);
 }
 
 function inferPrimaryComponentCategory(value: string): HardwareCategory | undefined {
   const title = value.trim().toLowerCase();
+  if (/^micro\s+sd\b/.test(title)) return 'almacenamiento';
+  if (/^(?:micro(?!\s+sd\b)|procesador(?:es)?|cpu)\b/.test(title)) return 'procesadores';
+  if (/^(?:placa de video|tarjeta grafica|gpu)\b/.test(title)) return 'tarjetas-graficas';
+  if (/^(?:mouse|mousepad|teclado|auriculares?|headset|joystick|gamepad|webcam|monitor|parlante|escritorio|tabla para standing desk|silla)\b/.test(title)) return 'perifericos';
   if (/^(?:motherboard|mother|placa madre)\b/.test(title)) return 'motherboards';
   if (/^(?:gabinete|case)\b/.test(title)) return 'gabinetes';
   if (/^(?:fuente|psu)\b/.test(title)) return 'fuentes-alimentacion';

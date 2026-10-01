@@ -125,3 +125,10 @@ it('mantiene separadas ediciones de GPU aunque coincidan chip, marca y memoria',
   expect(key('ASUS Dual RTX 5060 8GB OC White')).not.toBe(key('ASUS Dual RTX 5060 8GB OC Black'));
   expect(key('ASRock AMD RX 7600 Challenger 8GB OC')).toBe(key('AMD Radeon RX 7600 ASRock Challenger OC 8GB'));
 });
+
+it.each(['Procesador AMD Ryzen 5 5600GT + Radeon Vega + Cooler', 'CPU Cooler Intel Performance (solo para PC armada)', 'Memoria RAM para notebook DDR5'])('no presenta %s como una computadora', name => {
+  expect(isCompleteComputerTitle(name)).toBe(false);
+});
+it('conserva como paquete un CPU con memoria adicional', () => {
+  expect(isCompleteComputerTitle('Procesador AMD Ryzen 5 5600G + Radeon Vega + memoria 16GB DDR4')).toBe(true);
+});
