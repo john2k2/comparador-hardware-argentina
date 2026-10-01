@@ -1,6 +1,6 @@
 # Reparación de fuentes y categorías — 01/10/2026
 
-Se repararon lectores de fichas y se corrigieron 922 periféricos mal clasificados. El catálogo completo todavía contiene publicaciones antiguas, fuentes bloqueadas y ofertas sin identidad comparable. La meta de observar el 95% del catálogo prioritario en 24 horas no está alcanzada.
+Se repararon lectores de fichas y se corrigieron 2.158 productos mal clasificados: 922 periféricos y 1.236 PCs/notebooks. El catálogo completo todavía contiene publicaciones antiguas, fuentes bloqueadas y ofertas sin identidad comparable. La meta de observar el 95% del catálogo prioritario en 24 horas no está alcanzada.
 
 ## Cambios constatados
 
@@ -23,6 +23,7 @@ Los lectores específicos no vuelven al JSON-LD genérico si falla la corroborac
 - Antes: 922 productos cuyo nombre empezaba con un periférico inequívoco estaban en otras categorías; 372 figuraban como procesadores, 107 como GPU y 60 como RAM.
 - Después: cero coincidencias de ese conjunto siguen fuera de periféricos. Se corrigieron los prefijos de identidad cuando correspondían (919 claves), preservando IDs, precios, stock, fechas de ofertas y referencias de usuarios.
 - La base rechaza nuevos periféricos como CPU/GPU/RAM mediante `catalog_primary_category` y `catalog_standalone`. El refresh también marca contradicciones de categoría como revisión de identidad.
+- La verificación pública detectó otro grupo inequívoco: 1.236 títulos que empezaban con PC, notebook, laptop o computadora estaban en otras categorías. Se reclasificaron como computadoras, conservando IDs y ofertas y ajustando prefijos de claves cuando correspondía. La base también impide presentarlos como CPU/GPU/RAM; PCIe no coincide con el prefijo PC. Cero productos de este conjunto quedan fuera de computadoras.
 - Se incrementó la versión de caché de búsqueda para invalidar respuestas anteriores.
 - La primera ejecución detectó una restricción de persistencia que solo permitía «precio especial» a CompraGamer. La corrección permite esa condición a Mexx, XT-PC, Gaming City, Compugarden, MaxTecno y Gezatek, exclusivamente desde el rol de servicio y adaptadores contrastados. Mantiene validación de reserva, fecha, precio, stock, evidencia e historial.
 
@@ -41,6 +42,8 @@ La validación posterior al guardado detectó `§ITEMTIT§` y $1 como valores de
 La base rechaza títulos de plantilla incluso si un runner anterior sigue ejecutándose. El constructor de productos y el refresh rechazan los mismos tokens, también en un fallback de búsqueda. La comprobación pública de las cinco URLs confirma que ya no producen una observación válida. Los resúmenes persistidos conservan las cifras originales y registran `excludedTemplateObservations` y `validObserved`, para no presentar los registros retirados como cobertura.
 
 La comprobación positiva posterior guardó una lectura real de Compugarden del Ryzen 7600: $382.289, stock para envío informado e identidad comparable, a las 21:04:20 UTC. Usa el mismo protocolo de reserva y persistencia; no cuenta como muestra representativa de cobertura. La suite local final pasó 1.042 pruebas de unidades y 19 contratos operativos, además de las regresiones SQL. La retirada del registro inválido se probó por separado conservando un precio histórico válido anterior.
+
+La ejecución final de GitHub `36926366778`, con la validación de plantillas ya activa, terminó correctamente: 24 intentos, 8 observaciones guardadas y 3 comparables; 11 sin observación, 5 fallos de fuente y cero fallos de persistencia. La CI `36926259536` pasó incluyendo migraciones y 40 verificaciones de navegador. Estos resultados corresponden al corte previo a la última corrección de categorías de computadoras.
 
 ## Pendiente operativo
 
