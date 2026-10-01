@@ -347,4 +347,15 @@ describe('adaptive known offers', () => {
     expect(observation?.price.identityReview?.reason).toBe('explicit-conflict');
   });
 
+  it.each([
+    ['Memoria RAM Kingston 16GB DDR4 para notebook', 'memoria-ram'],
+    ['CPU Cooler Deepcool AG400 (solo para PC armada)', 'refrigeracion'],
+  ] as const)('no rechaza %s por mencionar el equipo compatible', async (name, category) => {
+    configureClaimedJob([{ ...sourceProduct({ name, offer: { price: 100000 } }), category }]);
+    const observation = await fetchKnownOffer({ ...catalogProduct(), name, category }, target,
+      Date.parse('2026-09-21T12:00:00Z'), createKnownOfferContext(true));
+    expect(observation).not.toBeNull();
+    expect(observation?.price.identityReview).toBeUndefined();
+  });
+
 });
