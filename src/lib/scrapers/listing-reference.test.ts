@@ -2,6 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { listingReference, sameListing } from './listing-reference';
 
 describe('listing-reference', () => {
+  it('valida los hosts de todas las tiendas registradas y conserva variantes', () => {
+    expect(listingReference('katech', 'https://other.example/producto/ryzen')).toBeNull();
+    expect(listingReference('katech', 'https://katech.com.ar/producto/ryzen?utm_source=linkedin&fbclid=123'))
+      .toBe('katech:url:https://katech.com.ar/producto/ryzen');
+    expect(sameListing('katech', 'https://katech.com.ar/producto/ram?attribute_capacity=16', 'https://katech.com.ar/producto/ram?attribute_capacity=32')).toBe(false);
+    expect(listingReference('katech', 'https://katech.com.ar/')).toBeNull();
+    expect(listingReference('katech', 'https://katech.com.ar/producto/ram?token=private')).toBeNull();
+    expect(listingReference('compragamer', 'https://compragamer.com/producto/123?variant=456')).toBeNull();
+    expect(listingReference('maximus', 'https://maximus.com.ar/ITEM=123/maximus.aspx?variation_id=4')).toBeNull();
+  });
   it('XTPC conserva el ID al cambiar el slug sin mezclar hosts, IDs ni opciones', () => {
     const url = 'https://www.xt-pc.com.ar/prod/32420/old-slug';
     expect(sameListing('xtpc', url, 'https://xt-pc.com.ar/prod/32420/new-slug')).toBe(true);

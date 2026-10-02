@@ -7,6 +7,9 @@ vi.mock('@/lib/server/supabase-server', () => ({
 }));
 
 import { STORE_SCRAPERS, FRAMEWORK_SCRAPERS } from './scraper-registry';
+import { sourceContract, WOO_PUBLIC_STORE_IDS } from './source-contracts';
+import { WOOCOMMERCE_STORES } from './woocommerce-shared';
+import { stores } from './static-data';
 
 describe('scraper-registry', () => {
   describe('STORE_SCRAPERS', () => {
@@ -71,6 +74,15 @@ describe('scraper-registry', () => {
   });
 
   describe('consistencia global', () => {
+    it('cada tienda directa usa el host declarado y Woo conserva sus once fuentes públicas', () => {
+      for (const scraper of STORE_SCRAPERS) {
+        expect(new URL(scraper.baseUrl).hostname.replace(/^www\./, '')).toBe(sourceContract(scraper.id)?.host);
+      }
+      expect(stores).toHaveLength(36);
+      expect(new Set(stores.map(store => store.id)).size).toBe(36);
+      expect([...WOO_PUBLIC_STORE_IDS].sort()).toEqual(WOOCOMMERCE_STORES.map(store => store.id).sort());
+      for (const store of WOOCOMMERCE_STORES) expect(new URL(store.baseUrl).hostname.replace(/^www\./, '')).toBe(sourceContract(store.id)?.host);
+    });
     it('no hay IDs duplicados entre store y framework scrapers', () => {
       const storeIds = new Set(STORE_SCRAPERS.map((s) => s.id));
       const frameworkIds = new Set(FRAMEWORK_SCRAPERS.map((s) => s.id));

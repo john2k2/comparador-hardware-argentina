@@ -109,7 +109,7 @@ export const STORE_SCRAPERS: StoreScraper[] = [
   {
     id: 'portaltech',
     displayName: 'Portal Tech',
-    baseUrl: 'https://www.portaltech.com.ar',
+    baseUrl: 'https://portalstore.com.ar',
     buildSearchUrl: (query) => query,
     fn: ({ query, category, signal }) => fetchPortalTechProducts(query, category ?? DEFAULT_CATEGORY, signal),
   },
@@ -123,7 +123,7 @@ export const STORE_SCRAPERS: StoreScraper[] = [
   {
     id: 'xtpc',
     displayName: 'Xt-PC',
-    baseUrl: 'https://www.xt-pc.com',
+    baseUrl: 'https://www.xt-pc.com.ar',
     buildSearchUrl: (query) => query,
     fn: ({ query, category, signal }) => fetchXtpcProducts(query, category ?? DEFAULT_CATEGORY, signal),
   },

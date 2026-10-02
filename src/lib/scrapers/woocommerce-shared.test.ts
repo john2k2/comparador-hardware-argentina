@@ -30,6 +30,12 @@ afterEach(() => {
 });
 
 describe('woocommerce-shared', () => {
+  it('toma el ID de la publicación principal y rechaza IDs contradictorios', () => {
+    const html = scpDetailHtml.replace('<main class="product">', '<main id="product-123" class="product instock"><button name="add-to-cart" value="123">Comprar</button>')
+      .replace('<section class="related products">', '<section class="related products"><button name="add-to-cart" value="987">Comprar otro</button>');
+    expect(parseWooProductDetail(html, scpProductUrl, scpStore, 'motherboards', 'mother')?.specs.SourceListingId).toBe('123');
+    expect(parseWooProductDetail(html.replace('value="123"', 'value="456"'), scpProductUrl, scpStore, 'motherboards', 'mother')).toBeNull();
+  });
   it('MaxTecno usa el efectivo/transferencia visible y excluye lista, cuotas e impuestos', () => {
     const product = parseWooProductDetail(`<body class="single-product"><main class="product instock"><h1 class="product-title">Memoria Corsair 16GB</h1><div class="price-showcase-box"><span class="price-old">$120.000</span><span class="price-main">$100.000</span></div><div class="cuotas">12 x $10.000</div></main><section class="related products"><p class="price"><bdi>$1.000</bdi></p><div class="product outofstock"></div></section></body>`, 'https://maxtecno.com.ar/producto/ram/', { id:'maxtecno', name:'MaxTecno', baseUrl:'https://maxtecno.com.ar' }, 'memoria-ram', 'ram');
     expect(product?.prices[0]).toMatchObject({ price:100000, stock:'in-stock', priceCondition:'special' });

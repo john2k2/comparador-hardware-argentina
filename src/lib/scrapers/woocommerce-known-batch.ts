@@ -2,13 +2,14 @@ import { sourceFetch, SourceHttpError } from './source-http';
 import { normalizeIdentityText } from '@/lib/product-identity';
 import { WOOCOMMERCE_STORES, fetchWooCommerceKnownOffer } from './woocommerce-shared';
 import { sameListing } from './listing-reference';
+import { WOO_SHARED_PRICE_STORE_IDS } from './source-contracts';
 import { buildSinglePriceProduct } from './scraper-helpers';
 import { resolveHardwareCategoryForProduct } from '@/lib/catalog/hardware-categories';
 import type { HardwareCategory, Product, StockStatus } from '@/lib/types';
 
 // Sólo fuentes contrastadas contra precio/stock principales de su página.
 // SCP queda fuera: se constató un precio de API distinto del visible.
-export const WOO_BATCH_STORES = new Set(['maxtecno','dinobyte','goldentechstore']);
+export const WOO_BATCH_STORES = new Set<string>(WOO_SHARED_PRICE_STORE_IDS);
 export type WooKnownTarget = { url: string; category: HardwareCategory };
 const object = (value: unknown): value is Record<string,unknown> => !!value && typeof value==='object' && !Array.isArray(value);
 export function parseWooStoreKnownProducts(data: unknown,storeId: string,targets: WooKnownTarget[],observedAt: Date): Product[] {

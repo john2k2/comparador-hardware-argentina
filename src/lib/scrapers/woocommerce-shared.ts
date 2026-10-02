@@ -304,6 +304,18 @@ export function parseWooProductDetail(
     description: detailDescription || name,
     brand: extractKnownHardwareBrand(name),
   });
+  const sourceIds = new Set<string>();
+  primary('input[name="product_id"], input[name="add-to-cart"], button[name="add-to-cart"]').each((_, element) => {
+    const value = $(element).attr('value') ?? '';
+    if (/^[1-9]\d{0,14}$/.test(value)) sourceIds.add(value);
+  });
+  primaryProduct.each((_, element) => {
+    const value = ($(element).attr('id') ?? '').match(/^product-([1-9]\d{0,14})$/)?.[1];
+    if (value) sourceIds.add(value);
+  });
+  // Un ID contradictorio no se resuelve eligiendo el primer botón del HTML.
+  if (sourceIds.size > 1) return null;
+  if (product && sourceIds.size === 1) product.specs.SourceListingId = [...sourceIds][0];
   const sku = primary('.sku').first().text().replace(/^sku\s*:\s*/i, '').trim();
   if (product && sku && sku !== 'N/A') product.specs.SKU = sku;
   if (product && store.id === 'maxtecno' && storePrice) product.prices[0].priceCondition = 'special';
