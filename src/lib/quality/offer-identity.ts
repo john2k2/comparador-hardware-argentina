@@ -1,6 +1,6 @@
 import { extractGpuBoardAttributes, normalizeIdentityText, parseCpuModelSignature, parseGpuChipSignature } from '@/lib/product-identity';
 import type { HardwareCategory, OfferSourceIdentity } from '@/lib/types';
-import { attributeProofMatches, type OfferAttributeProof } from './offer-attribute-proof';
+import { attributeProofMatches, cpuVariantAttributes, type OfferAttributeProof } from './offer-attribute-proof';
 
 export const IDENTITY_REVIEW_MIN_CONFIDENCE = 0.8;
 
@@ -112,6 +112,11 @@ export function buildIdentityEvidence(name: string, category: HardwareCategory, 
 export function hasExplicitIdentityConflict(evidence: IdentityEvidence): boolean {
   if (/\b(outlet|reacondicionado|usado|refurbished)\b/i.test(evidence.offerText) && !/\b(outlet|reacondicionado|usado|refurbished)\b/i.test(evidence.name)) return true;
   if (evidence.sourceTitle && hasExplicitIdentityConflict({ name: evidence.name, category: evidence.category, offerText: evidence.sourceTitle })) return true;
+  if (evidence.category==='procesadores') {
+    const left=cpuVariantAttributes(evidence.name),right=cpuVariantAttributes(evidence.offerText);
+    if(left.cooler==='conflict'||right.cooler==='conflict'
+      ||Object.keys(left).some(key=>left[key]&&right[key]&&left[key]!==right[key])) return true;
+  }
   if (evidence.category === 'tarjetas-graficas') {
     const target = extractGpuBoardAttributes(evidence.name);
     const source = extractGpuBoardAttributes(evidence.offerText);

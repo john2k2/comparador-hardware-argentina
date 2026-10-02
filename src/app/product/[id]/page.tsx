@@ -61,7 +61,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const title = buildShortProductTitle(product);
   const description = buildProductDescription(product);
   const canonicalProductId = product.canonicalProductKey
-    ? await readCanonicalProductIdByKey(product.canonicalProductKey)
+    ? await readCanonicalProductIdByKey(product.canonicalProductKey,product)
     : null;
   const resolvedCanonicalId = canonicalProductId ?? id;
   const comparableStoreCount = getAvailableComparableStorePrices(product.prices).length;
@@ -116,10 +116,10 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  // Si el producto tiene canonicalProductKey, redirigir al producto agrupado
-  // para evitar mostrar precios del producto individual vs el agrupado
+  // Una clave heredada puede unir OEM, outlet y modelos con cooler.
+  // Redirigir únicamente cuando la variante del agrupado coincide.
   if (product.canonicalProductKey) {
-    const canonicalProductId = await readCanonicalProductIdByKey(product.canonicalProductKey);
+    const canonicalProductId = await readCanonicalProductIdByKey(product.canonicalProductKey,product);
     if (canonicalProductId && canonicalProductId !== id) {
       permanentRedirect(`/product/${encodeURIComponent(canonicalProductId)}`);
     }

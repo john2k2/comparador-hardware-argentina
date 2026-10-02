@@ -129,3 +129,7 @@ it('detecta contradicciones de ensamblador y edición sin inventar detalles omit
   expect(conflict('ASUS Dual RTX 5060 8GB EVO OC', 'ASUS Dual RTX 5060 8GB')).toBe(false);
   expect(conflict('ASUS Dual RTX 5060 8GB White', 'ASUS Dual RTX 5060 8GB Black')).toBe(true);
 });
+it('no acepta presentación ni refrigeración CPU contradictorias aunque coincida el chip',()=>{
+ expect(hasExplicitIdentityConflict({name:'AMD Ryzen 3 4100 con cooler',category:'procesadores',offerText:'AMD Ryzen 3 4100 sin cooler'})).toBe(true);
+ expect(hasExplicitIdentityConflict({name:'AMD Ryzen 3 4100 BOX',category:'procesadores',offerText:'AMD Ryzen 3 4100 TRAY'})).toBe(true);
+});

@@ -1,8 +1,17 @@
 import {afterEach,expect,it,vi} from 'vitest';
 import type {Product} from '@/lib/types';
-import {mergeCanonicalDetailOffers} from './product-detail-offers';
+import {mergeCanonicalDetailOffers,shareExactProductVariant} from './product-detail-offers';
 const make=(id:string,name='Extensor Tp-Link WA850RE',storeId='dinobyte',date='2026-07-28T12:00:00Z',price=47612):Product=>({id,name,category:'perifericos',canonicalProductKey:'perifericos::wa850re',prices:[{storeId,storeName:storeId,url:`https://${storeId}.example/producto/wa850re`,price,stock:'in-stock',lastUpdated:new Date(date)}],createdAt:new Date(date),updatedAt:new Date(date)} as Product);
 afterEach(()=>vi.useRealTimers());
+it('no intercambia OEM/outlet, refrigeración ni presentación por una clave CPU heredada',()=>{
+ const cpu=(name:string)=>({...make(name,name),category:'procesadores' as const,canonicalProductKey:'legacy-4100'});
+ const normal=cpu('AMD Ryzen 3 4100 con cooler'),outlet=cpu('AMD Ryzen 3 4100 sin cooler OEM OUTLET');
+ expect(shareExactProductVariant(outlet,normal)).toBe(false);
+ expect(shareExactProductVariant(normal,cpu('AMD Ryzen 3 4100 sin cooler'))).toBe(false);
+ expect(shareExactProductVariant(cpu('AMD Ryzen 3 4100 BOX'),cpu('AMD Ryzen 3 4100 TRAY'))).toBe(false);
+ expect(shareExactProductVariant(normal,cpu('Procesador Ryzen 3 4100 Wraith Stealth'))).toBe(true);
+ expect(mergeCanonicalDetailOffers(outlet,[normal]).prices).toEqual(outlet.prices);
+});
 it('la ficha canónica antigua incorpora la publicación nueva conservando ID y fechas reales',()=>{
  vi.useFakeTimers();vi.setSystemTime(new Date('2026-10-02T02:00:00Z'));
  const canonical=make('agrupado-router'),fresh=make('cg-router',undefined,'compragamer','2026-10-02T01:33:24Z',28550);

@@ -6,7 +6,7 @@ import { hydrateProduct } from '@/lib/product-serialization';
 import type { Product } from '@/lib/types';
 
 const CLIENT_DETAIL_CACHE_TTL_MS = 5 * 60 * 1000;
-const PRODUCT_DETAIL_STORAGE_PREFIX = 'product-detail:v4:';
+const PRODUCT_DETAIL_STORAGE_PREFIX = 'product-detail:v5:';
 
 export type ProductDetailCacheEntry = {
   expiresAt: number;

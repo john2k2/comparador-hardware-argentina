@@ -9,7 +9,7 @@ vi.mock('@/lib/server/supabase-server', () => ({
   getServerSupabaseReadClient: getServerSupabaseReadClientMock,
 }));
 
-import { readCategoryLandingPageFromDatabase, readProductsPageFromDatabase, readGuideCatalogCandidatesFromDatabase,readProductDetailByIdFromDatabase } from './product-read';
+import { readCategoryLandingPageFromDatabase, readProductsPageFromDatabase, readGuideCatalogCandidatesFromDatabase,readProductDetailByIdFromDatabase, readCanonicalProductIdByKey } from './product-read';
 import { mapDbProduct } from './product-read-mapper';
 import { resolveGuideComponent } from '@/lib/seo/budget-guide-pricing';
 import { loadGuideCatalogProducts, loadGuidePriorityProducts } from '@/lib/seo/guide-catalog';
@@ -58,6 +58,18 @@ describe('detalle canónico con nuevas publicaciones',()=>{
  it('no busca relaciones cuando no existe el producto',async()=>{
   const {from,chain}=mockDetail([],null,null);expect(await readProductDetailByIdFromDatabase('missing')).toBeNull();expect(from).toHaveBeenCalledTimes(1);expect(chain.limit).not.toHaveBeenCalled();
  });
+});
+
+it('no elige una redirección outlet por la clave de un CPU normal y busca una candidata compatible',async()=>{
+ const chain={select:vi.fn(()=>chain),eq:vi.fn(()=>chain),like:vi.fn(()=>chain),order:vi.fn(()=>chain),limit:vi.fn(async()=>({data:[
+  {id:'agrupado-normal',name:'AMD Ryzen 3 4100 con cooler',category:'procesadores'},
+  {id:'agrupado-outlet',name:'AMD Ryzen 3 4100 OEM sin cooler OUTLET',category:'procesadores'},
+ ],error:null}))};
+ getServerSupabaseReadClientMock.mockReturnValue({from:()=>chain});
+ const target={name:'AMD Ryzen 3 4100 sin cooler OEM OUTLET',category:'procesadores' as const,canonicalProductKey:'legacy-4100'};
+ expect(await readCanonicalProductIdByKey('legacy-4100',target)).toBe('agrupado-outlet');
+ chain.limit.mockResolvedValueOnce({data:[{id:'agrupado-normal',name:'AMD Ryzen 3 4100 con cooler',category:'procesadores'}],error:null});
+ expect(await readCanonicalProductIdByKey('legacy-4100',target)).toBeNull();
 });
 
 describe('readCategoryLandingPageFromDatabase', () => {

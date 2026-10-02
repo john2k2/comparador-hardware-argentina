@@ -18,7 +18,7 @@ import { inferHardwareCategoryFromName } from '@/lib/catalog/hardware-categories
 import type { DbCatalogPage } from './product-read-types';
 import { toNumber } from './product-read-helpers';
 import type { Product } from '@/lib/types';
-import { mergeCanonicalDetailOffers } from './product-detail-offers';
+import { mergeCanonicalDetailOffers, shareExactProductVariant } from './product-detail-offers';
 
 export type { ProductSort } from '@/lib/persistence/product-read-types';
 
@@ -41,26 +41,26 @@ export async function readProductByIdFromDatabase(id: string) {
   return mapDbProduct(data as DbProductRow);
 }
 
-export async function readCanonicalProductIdByKey(canonicalProductKey: string) {
+export async function readCanonicalProductIdByKey(canonicalProductKey: string, product?: Pick<Product,'name'|'category'|'canonicalProductKey'>) {
   const supabase = getServerSupabaseReadClient();
-  if (!supabase || !canonicalProductKey) return null;
+  if (!supabase || !canonicalProductKey || !product) return null;
 
   const { data, error } = await supabase
     .from('products')
-    .select('id')
+    .select('id,name,category')
     .eq('canonical_product_key', canonicalProductKey)
     .like('id', 'agrupado-%')
     .order('updated_at', { ascending: false })
     .order('id', { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .limit(20);
 
   if (error) {
     if (EMPTY_RESULT_ERROR_CODES.has(error.code ?? '')) return null;
     throw new Error(`readCanonicalProductIdByKey: ${error.message}`);
   }
 
-  return data?.id ?? null;
+  if(!Array.isArray(data)) throw new Error('Invalid canonical product candidates');
+  return data.find(candidate=>shareExactProductVariant(product,{...candidate,canonicalProductKey}))?.id??null;
 }
 
 /** La ficha canónica incorpora altas recientes con la misma identidad exacta. */

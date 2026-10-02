@@ -2,6 +2,17 @@ import { extractGpuBoardAttributes, extractRamModelKey, normalizeIdentityText, p
 
 export type OfferAttributeProof = { version: 1; method: 'exact-attributes'; attributes: Record<string, string> };
 
+export function cpuVariantAttributes(name: string): Record<string, string> {
+  const text=normalizeIdentityText(name);
+  const excluded=/\b(?:sin|no|s) (?:cooler|disipador)\b|\bno incluye (?:cooler|disipador)\b/.test(text);
+  const included=/\b(?:con|c) (?:cooler|disipador)\b|\b(?:cooler|disipador) incluid[oa]\b|\bwraith (?:stealth|spire|prism)\b/.test(text);
+  return {
+    packaging:[...new Set(text.match(/\b(box|tray|oem)\b/g)??[])].sort().join('-'),
+    cooler:excluded&&included?'conflict':excluded?'excluded':included?'included':'',
+    condition:/\boutlet\b/.test(text)?'outlet':/\b(usado|used)\b/.test(text)?'used':/\b(reacondicionado|refurbished)\b/.test(text)?'refurbished':'',
+  };
+}
+
 /** Omisiones y coincidencias aproximadas requieren revisión; nunca se inventa un score. */
 export function exactOfferAttributes(name: string, category: string): Record<string, string> | null {
   const text = normalizeIdentityText(name);
@@ -9,8 +20,9 @@ export function exactOfferAttributes(name: string, category: string): Record<str
   if (category === 'procesadores') {
     const chip = parseCpuModelSignature(name);
     if (!chip || chip.family === 'unknown' || chip.family === 'ryzen') return null;
-    const packaging = [...new Set(text.match(/\b(box|tray|oem)\b/g) ?? [])].sort().join('-');
-    return { family: chip.family, model: chip.number, suffixes: chip.suffixes.join('-'), packaging };
+    const variant=cpuVariantAttributes(name);
+    if(variant.cooler==='conflict') return null;
+    return { family: chip.family, model: chip.number, suffixes: chip.suffixes.join('-'), ...variant };
   }
   if (category === 'tarjetas-graficas') {
     const chip = parseGpuChipSignature(name), board = extractGpuBoardAttributes(name);

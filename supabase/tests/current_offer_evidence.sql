@@ -36,6 +36,9 @@ begin
  assert public.catalog_explicit_offer_conflict('Kingston Fury Beast RGB 16GB DDR4 3200MHz','memoria-ram','Kingston Fury Beast RGB 16GB DDR4 3600MHz');
  assert public.catalog_exact_offer_attributes('Gigabyte RTX 5060 Eagle OC 8GB','tarjetas-graficas')<>public.catalog_exact_offer_attributes('Gigabyte RTX 5060 Eagle OC ICE 8GB','tarjetas-graficas'), 'ICE no es una equivalencia exacta';
  assert public.catalog_explicit_offer_conflict('RTX 5060 8GB','tarjetas-graficas','RTX 5060 16GB');
+ assert public.catalog_explicit_offer_conflict('AMD Ryzen 3 4100 con cooler','procesadores','AMD Ryzen 3 4100 sin cooler');
+ assert public.catalog_explicit_offer_conflict('AMD Ryzen 3 4100 BOX','procesadores','AMD Ryzen 3 4100 TRAY');
+ assert public.catalog_exact_offer_attributes('AMD Ryzen 3 4100','procesadores')<>public.catalog_exact_offer_attributes('AMD Ryzen 3 4100 OUTLET','procesadores');
  select last_updated into old_date from public.product_prices where product_id='audit-current-evidence' and url=review#>>'{subject,url}';
  assert not public.persist_verified_priority_offer('audit-current-evidence','mexx',review#>>'{subject,url}',1,null,'in-stock',null,null,now(),now(),review,'bad',source||'{"title":"AMD Ryzen 5 5600G"}','unspecified');
  assert (select last_updated from public.product_prices where product_id='audit-current-evidence' and url=review#>>'{subject,url}')=old_date;

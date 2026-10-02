@@ -8,6 +8,9 @@ describe('prueba de atributos exactos independiente de Jev', () => {
     expect(proof).toMatchObject({ method: 'exact-attributes', attributes: { family: 'ryzen5', model: '5600' } });
     expect(proveOfferAttributes('AMD Ryzen 5 5600', 'procesadores', 'AMD Ryzen 5 5600G')).toBeNull();
     expect(proveOfferAttributes('AMD Ryzen 5 5600 BOX', 'procesadores', 'AMD Ryzen 5 5600 TRAY')).toBeNull();
+    expect(proveOfferAttributes('AMD Ryzen 3 4100 sin cooler OEM OUTLET','procesadores','AMD Ryzen 3 4100 c/ Cooler')).toBeNull();
+    expect(proveOfferAttributes('AMD Ryzen 3 4100 con cooler','procesadores','AMD Ryzen 3 4100 sin cooler')).toBeNull();
+    expect(proveOfferAttributes('AMD Ryzen 3 4100','procesadores','AMD Ryzen 3 4100 OUTLET')).toBeNull();
   });
   it('exige fabricante, serie y todas las variantes GPU, no sólo el chip', () => {
     expect(proveOfferAttributes('ASUS Dual RTX 5060 8GB OC EVO', 'tarjetas-graficas', 'GeForce RTX 5060 8GB ASUS DUAL OC EVO')).not.toBeNull();
