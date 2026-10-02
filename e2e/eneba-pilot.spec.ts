@@ -85,8 +85,9 @@ test('el enlace abre la ficha y emite un único clic propio sin ventas', async (
   const opened = page.waitForEvent('popup');
   await page.getByRole('link', { name: `Ver ${snapshot.offers[0].name} en Eneba ↗`, exact: true }).click();
   const popup = await opened;
+  // El evento popup puede llegar antes de que la navegación deje about:blank.
+  await expect(popup).toHaveURL(snapshot.offers[0].url);
   await popup.waitForLoadState('domcontentloaded');
-  expect(popup.url()).toBe(snapshot.offers[0].url);
   expect(await page.evaluate(() => window.dataLayer)).toEqual([['event', 'affiliate_outbound_click', expect.objectContaining({
     affiliate_product_id: snapshot.offers[0].id, affiliate_partner: 'eneba', affiliate_campaign: 'eneba_pc_ar_20261002',
   })]]);

@@ -8,7 +8,7 @@ import {
 } from './pilot';
 
 const CACHE_SCOPE = 'eneba-affiliate-pilot';
-const CACHE_KEY = `${ENEBA_REVIEW_VERSION}:ar:ars:game:6`;
+const CACHE_KEY = `${ENEBA_REVIEW_VERSION}:snapshot-v2:ar:ars:game:6`;
 const ERROR_TTL_MS = 60 * 60 * 1000;
 export const ENEBA_MAX_FEED_BYTES = 256 * 1024;
 let pending: Promise<EnebaSnapshot> | undefined;
@@ -39,11 +39,14 @@ async function readBoundedFeed(response: Response): Promise<string> {
 
 export async function fetchEnebaSnapshot(): Promise<EnebaSnapshot> {
   const fetchedAt = new Date().toISOString();
+  const diagnostic: Record<string, string | number | null> = {};
   try {
     const response = await fetch(buildEnebaFeedUrl(), {
       cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(8_000),
       headers: { Accept: 'application/xml, text/xml' },
     });
+    diagnostic.httpStatus = response.status;
+    diagnostic.contentType = (response.headers.get('content-type') ?? '').split(';')[0].slice(0, 80);
     if (!response.ok || !/^(application|text)\/xml\b/i.test(response.headers.get('content-type') ?? '')) {
       await response.body?.cancel();
       throw new Error('feed-unavailable');
@@ -52,6 +55,8 @@ export async function fetchEnebaSnapshot(): Promise<EnebaSnapshot> {
     // nunca la hora de lectura de una caché como una nueva actualización.
     const modified = Date.parse(response.headers.get('last-modified') ?? '');
     const age = Date.now() - modified;
+    diagnostic.feedUpdatedAt = Number.isFinite(modified) ? new Date(modified).toISOString() : null;
+    diagnostic.feedAgeMs = Number.isFinite(age) ? age : null;
     if (!Number.isFinite(modified) || age < 0 || age >= ENEBA_PRICE_MAX_AGE_MS) {
       await response.body?.cancel();
       throw new Error('feed-date-unverified');
@@ -59,8 +64,13 @@ export async function fetchEnebaSnapshot(): Promise<EnebaSnapshot> {
     const feedUpdatedAt = new Date(modified).toISOString();
     const offers = parseEnebaFeed(await readBoundedFeed(response), feedUpdatedAt);
     return { status: offers.length ? 'ready' : 'empty', offers, fetchedAt, feedUpdatedAt };
-  } catch {
-    logger.warn('No se pudo verificar la muestra de Eneba');
+  } catch (error) {
+    const known = ['oversized-feed', 'feed-unavailable', 'feed-date-unverified'];
+    const reason = error instanceof Error && known.includes(error.message) ? error.message
+      : error instanceof Error && error.name === 'TimeoutError' ? 'timeout'
+      : 'feed-read-or-parse-error';
+    // Sólo metadatos operativos: nunca cuerpo, cookies, cabeceras privadas ni credenciales.
+    logger.warn('No se pudo verificar la muestra de Eneba', { reason, ...diagnostic });
     return { status: 'error', offers: [], fetchedAt, feedUpdatedAt: null };
   }
 }
