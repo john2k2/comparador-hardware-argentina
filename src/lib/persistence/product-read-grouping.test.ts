@@ -35,6 +35,21 @@ function createProduct(input: Partial<Product> & Pick<Product, 'id' | 'name'>): 
 }
 
 describe('product-read-grouping', () => {
+  it('muestra RAM para notebook y CPU vendido para PC armada, conservando la exclusión de paquetes', () => {
+    const priced = (id: string, name: string, category: Product['category']) => createProduct({
+      id, name, category, prices: [{ storeId: 'test', storeName: 'Test', url: `https://example.com/${id}`,
+        price: 100, stock: 'in-stock', installment: null, lastUpdated: new Date('2026-03-26T12:00:00Z') }],
+      lowestPrice: 100, highestPrice: 100, averagePrice: 100,
+    });
+    const products = [
+      priced('notebook-memory', 'Memoria RAM Kingston 16GB DDR4 para notebook', 'memoria-ram'),
+      priced('assembly-cpu', 'Procesador AMD Ryzen 5 5600 (solo para PC armada)', 'procesadores'),
+      priced('memory-bundle', 'Memoria DDR4 16GB + Procesador AMD Ryzen 5 5600', 'memoria-ram'),
+      priced('complete-pc', 'PC Intel i7 12700 con SSD 240GB', 'procesadores'),
+    ];
+    expect(applyDatabaseReadTransforms(products, { sortBy: 'price-asc' }).map(product => product.id).sort())
+      .toEqual(['assembly-cpu', 'notebook-memory']);
+  });
   it('rescata la foto de un candidato en el segundo merge de modelos equivalentes', () => {
     const first = createProduct({ id: 'first', name: 'AMD Ryzen 5 7600', canonicalProductKey: 'legacy:first' });
     const second = createProduct({

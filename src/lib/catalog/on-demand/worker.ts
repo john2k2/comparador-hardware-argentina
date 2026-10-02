@@ -118,8 +118,7 @@ export async function fetchKnownOffer(product: Product, target: RefreshTarget, s
       // La URL o el ID estable de la tienda identifican la oferta. Un título contradictorio requiere revisión.
       const inferredCategory = inferHardwareCategoryFromName(source.name);
       const categoryConflict = context.batchCatalog && (source.category !== product.category
-        || (inferredCategory !== undefined && inferredCategory !== product.category)
-        || (product.category !== 'computadoras' && /^(?:pc|notebook|laptop|computadora)\b/i.test(source.name)));
+        || (inferredCategory !== undefined && inferredCategory !== product.category));
       const conflict = categoryConflict || hasExplicitIdentityConflict({ name: product.name, category: product.category, offerText: source.name });
       const previousReview = product.prices.find(offer => offer.storeId === target.storeId && sameListing(target.storeId, offer.url, target.url))?.identityReview;
       const sku = source.specs.SKU?.trim();

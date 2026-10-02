@@ -12,6 +12,7 @@ import {
 import { matchesSearchQueryIntent, normalizeSearchText, sortProductsBySearchRelevance } from '@/lib/search/search-ranking';
 import type { Product } from '@/lib/types';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
+import { resolveHardwareCategoryForProduct } from '@/lib/catalog/hardware-categories';
 import type { ProductSort } from '@/lib/persistence/product-read-types';
 
 const DEDUPE_STOPWORDS = new Set([
@@ -40,9 +41,12 @@ const COMPONENT_BUNDLE_TERMS = [
 
 function isStandaloneComponentProduct(product: Product): boolean {
   if (!['procesadores', 'tarjetas-graficas', 'memoria-ram'].includes(product.category)) return true;
-  const normalizedName = normalizeGroupName(product.name);
-  return !isCompleteComputerTitle(product.name)
-    && !COMPONENT_BUNDLE_TERMS.some((term) => normalizedName.includes(term));
+  if (isCompleteComputerTitle(product.name)
+    || resolveHardwareCategoryForProduct(product.name, product.category) !== product.category) return false;
+  // Un módulo explícito para notebook no es la notebook ni un kit de PC.
+  if (product.category === 'memoria-ram' && /^(?:memoria|ram)\b/i.test(product.name.trim())) return true;
+  const normalizedName = normalizeGroupName(product.name).replace(/\b(?:solo\s+)?para\s+(?:una\s+)?pc\s+armada\b/g, '');
+  return !COMPONENT_BUNDLE_TERMS.some((term) => normalizedName.includes(term));
 }
 
 function matchesQueryToken(searchable: string, word: string): boolean {

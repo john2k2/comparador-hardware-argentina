@@ -185,6 +185,7 @@ export function isCompleteComputerTitle(value: string): boolean {
   if (!normalized) return false;
   // Un accesorio para una PC/notebook no es la computadora que menciona.
   if (/^(?:cpu\s+cooler|cooler|water\s*cooler|disipador|ventilador|mouse|mousepad|teclado|auriculares?|headset|monitor|fuente|gabinete)\b/.test(normalized)) return false;
+  if (/^(?:pc|notebook|laptop|computadora)\b/.test(normalized)) return true;
   const standaloneRam = /^(?:memoria|ram)\b/.test(normalized);
   const standaloneCpu = /^(?:micro(?!\s+sd\b)|procesador(?:es)?|cpu)\b/.test(normalized);
   const wrapped = ` ${normalized} `;

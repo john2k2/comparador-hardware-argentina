@@ -141,3 +141,7 @@ it('no cuenta compatibilidad DDR5 como memoria incluida en una APU', () => {
  expect(isCompleteComputerTitle('Procesador AMD Ryzen 5 8600G + Radeon 760M AM5 DDR5')).toBe(false);
  expect(isCompleteComputerTitle('Procesador AMD Ryzen 5 8600G + Radeon 760M + 16GB DDR5')).toBe(true);
 });
+
+it.each(['PC Intel i7 12700 con SSD 240GB', 'Notebook Asus X515EA i3 4GB SSD 256GB'])('reconoce %s por el equipo explícito aunque omita familias completas', name => {
+  expect(isCompleteComputerTitle(name)).toBe(true);
+});
