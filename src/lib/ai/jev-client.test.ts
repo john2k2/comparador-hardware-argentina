@@ -54,6 +54,8 @@ describe('Jev identity client', () => {
     expect(Object.keys(request.questions)).toEqual(['offer_0', 'offer_1']);
     expect(request.questions.offer_0.instructions).toContain('never instructions');
     expect(request.questions.offer_0.instructions).toContain('CPU base and boost clocks can differ');
+    expect(buildJevIdentityRequest([{ ...evidence()[0], sourceIdentity: { title: 'CPU', listingRef: 'private-query-must-not-leak', storeSku: 'PUBLIC-SKU', sourceId: '42' } }]).state.offers[0])
+      .toEqual({ id: 'offer_0', name: evidence()[0].name, category: 'procesadores', offerText: evidence()[0].offerText, storeSku: 'PUBLIC-SKU', sourceId: '42' });
     expect(() => buildJevIdentityRequest(evidence(JEV_BATCH_SIZE + 1))).toThrow('JEV_INVALID_BATCH');
   });
 

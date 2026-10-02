@@ -5,6 +5,8 @@ import { buildIdentityEvidence, hasExplicitIdentityConflict, IDENTITY_REVIEW_MIN
 import { evaluateOfferIdentity, JEV_BATCH_SIZE, JEV_MODEL, JEV_PROMPT_VERSION, parseJevEvaluation, type JevEvaluation } from '@/lib/ai/jev-client';
 import { getSharedCache, setSharedCache } from '@/lib/server/shared-cache';
 import { logger } from '@/lib/logger';
+import { proveOfferAttributes } from '@/lib/quality/offer-attribute-proof';
+import { needsIdentityReview } from '@/lib/quality/offer-identity';
 import type { Product, ProductPrice } from '@/lib/types';
 import { withConcurrencyLimit } from '@/lib/async/concurrency';
 import { withPromiseTimeout } from '@/lib/async/with-abort-timeout';
@@ -40,7 +42,7 @@ export function collectOfferSourceTitles(products: Product[]): Record<string, st
 function reviewFor(candidate: Pick<Candidate, 'product' | 'price'>, reason: OfferIdentityReview['reason'], now: string): OfferIdentityReview {
   return {
     ...(candidate.price.sourceIdentity ? { sourceIdentity: candidate.price.sourceIdentity } : {}),
-    version: 1, status: reason === 'consistent-text' ? 'consistent' : 'needs-review', reason,
+    version: 1, status: ['consistent-text', 'exact-attributes'].includes(reason) ? 'consistent' : 'needs-review', reason,
     reviewedAt: now, model: null, confidence: null,
     subject: { name: normalizeIdentityText(candidate.product.name), category: candidate.product.category, url: candidate.price.url },
   };
@@ -67,28 +69,42 @@ async function writeEvidenceCache(evidence: IdentityEvidence, evaluation: JevEva
 
 export async function reviewProductOffers(products: Product[], options: { authorizedRefresh: boolean; sourceTitles?: Record<string, string> }): Promise<Product[]> {
   const apiKey = process.env.TYPESAFE_API_KEY?.trim();
-  if (!options.authorizedRefresh || process.env.ENABLE_JEV_OFFER_REVIEW !== '1' || !apiKey || products.length === 0) return products;
+  if (!options.authorizedRefresh || products.length === 0) return products;
+  const providerEnabled = process.env.ENABLE_JEV_OFFER_REVIEW === '1' && Boolean(apiKey);
   const now = new Date().toISOString();
   const candidates: Candidate[] = [];
   let explicitConflicts = 0;
+  let attributeMatches = 0;
+  let reusedReviews = 0;
   const result = products.map((product) => {
     if (!CATEGORIES.has(product.category)) return product;
     const copy = { ...product, prices: product.prices.map((price) => ({ ...price })) };
     for (const price of copy.prices) {
-      const evidence = buildIdentityEvidence(copy.name, copy.category, price.url, options.sourceTitles?.[price.url]);
+      const evidence = buildIdentityEvidence(copy.name, copy.category, price.url, price.sourceIdentity?.title ?? options.sourceTitles?.[price.url]);
       if (evidence && price.sourceIdentity) evidence.sourceIdentity = price.sourceIdentity;
       if (!evidence || hasExplicitIdentityConflict(evidence)) {
         const reason = evidence ? 'explicit-conflict' : 'insufficient-evidence';
         price.identityReview = reviewFor({ product: copy, price }, reason, now);
         if (evidence) explicitConflicts++;
-      } else if (candidates.length < MAX_OFFERS_PER_REFRESH) {
-        candidates.push({ product: copy, price, evidence });
+      } else {
+        const proof = price.sourceIdentity && proveOfferAttributes(copy.name, copy.category, price.sourceIdentity.title);
+        if (proof) {
+          price.identityReview = { ...reviewFor({ product: copy, price }, 'exact-attributes', now), proof };
+          attributeMatches++;
+        } else if (price.identityReview?.reviewedAt && !needsIdentityReview(price, copy)
+          && Date.now() >= Date.parse(price.identityReview.reviewedAt)
+          && Date.now() - Date.parse(price.identityReview.reviewedAt) < CACHE_TTL_MS) {
+          reusedReviews++;
+        } else {
+          // Un límite de lote o falta de proveedor no debe dejar una aprobación implícita.
+          price.identityReview = reviewFor({ product: copy, price }, providerEnabled ? 'insufficient-evidence' : 'provider-unavailable', now);
+          if (providerEnabled && candidates.length < MAX_OFFERS_PER_REFRESH) candidates.push({ product: copy, price, evidence });
+        }
       }
     }
     return copy;
   });
   let evaluated = 0;
-  let pending = 0;
   let cacheHits = 0;
   let providerCalls = 0;
   // Una evidencia puede repetirse entre productos o guías. El precio y el stock
@@ -108,7 +124,6 @@ export async function reviewProductOffers(products: Product[], options: { author
     for (const candidate of group) {
       candidate.price.identityReview = { ...reviewFor(candidate, reason, reviewed.reviewedAt), model: reviewed.evaluation.model, confidence: answer.confidence };
       evaluated++;
-      if (reason !== 'consistent-text') pending++;
     }
   };
   const missing: Candidate[][] = [];
@@ -123,7 +138,7 @@ export async function reviewProductOffers(products: Product[], options: { author
     try {
       if (unavailable) throw new Error('JEV_UNAVAILABLE');
       providerCalls++;
-      const evaluation = await evaluateOfferIdentity(batch.map(group => group[0].evidence), apiKey);
+      const evaluation = await evaluateOfferIdentity(batch.map(group => group[0].evidence), apiKey!);
       const savedAt = Date.now();
       await withConcurrencyLimit(batch.map((group, index) => async () => {
         const single = { ...evaluation, answers: [evaluation.answers[index]] };
@@ -135,7 +150,6 @@ export async function reviewProductOffers(products: Product[], options: { author
       const invalid = error instanceof Error && error.message === 'JEV_INVALID_RESPONSE';
       for (const candidate of batch.flat()) {
         candidate.price.identityReview = reviewFor(candidate, invalid ? 'invalid-response' : 'provider-unavailable', now);
-        pending++;
       }
       logger.warn('Offer identity review unavailable', {
         reason: invalid ? 'invalid-response' : 'provider-unavailable',
@@ -144,6 +158,8 @@ export async function reviewProductOffers(products: Product[], options: { author
       });
     }
   }
-  logger.info('Offer identity review completed', { evaluated, pending, explicitConflicts, cacheHits, providerCalls, model: JEV_MODEL, maxOffers: MAX_OFFERS_PER_REFRESH });
+  const pending = result.filter(product => CATEGORIES.has(product.category)).reduce((total, product) =>
+    total + product.prices.filter(price => needsIdentityReview(price, product)).length, 0);
+  logger.info('Offer identity review completed', { evaluated, pending, explicitConflicts, attributeMatches, reusedReviews, cacheHits, providerCalls, model: JEV_MODEL, maxOffers: MAX_OFFERS_PER_REFRESH });
   return result;
 }

@@ -95,18 +95,28 @@ describe('reviewProductOffers', () => {
     delete process.env.TYPESAFE_API_KEY;
   });
 
-  it('requires authorized refresh, the feature flag, and a provider key', async () => {
+  it('requires authorization; missing provider keeps ambiguous offers pending', async () => {
     const input = [product(1)];
 
     await expect(reviewProductOffers(input, { authorizedRefresh: false })).resolves.toBe(input);
     expect(mocks.evaluateOfferIdentity).not.toHaveBeenCalled();
 
     delete process.env.ENABLE_JEV_OFFER_REVIEW;
-    await expect(reviewProductOffers(input, { authorizedRefresh: true })).resolves.toBe(input);
+    expect((await reviewProductOffers(input, { authorizedRefresh: true }))[0].prices[0].identityReview?.reason).toBe('provider-unavailable');
 
     process.env.ENABLE_JEV_OFFER_REVIEW = '1';
     delete process.env.TYPESAFE_API_KEY;
-    await expect(reviewProductOffers(input, { authorizedRefresh: true })).resolves.toBe(input);
+    expect((await reviewProductOffers(input, { authorizedRefresh: true }))[0].prices[0].identityReview?.reason).toBe('provider-unavailable');
+    expect(mocks.evaluateOfferIdentity).not.toHaveBeenCalled();
+  });
+
+  it('prueba atributos completos sin llamadas a Jev y conserva fecha, precio y stock', async () => {
+    delete process.env.TYPESAFE_API_KEY;
+    const input = product(1);
+    input.prices[0].sourceIdentity = { listingRef: 'store-1:url:https://store.example/amd-ryzen-7-7800x3d-1', title: 'Procesador AMD Ryzen 7 7800X3D' };
+    const result = await reviewProductOffers([input], { authorizedRefresh: true });
+    expect(result[0].prices[0]).toMatchObject({ lastUpdated: input.prices[0].lastUpdated, price: input.prices[0].price, stock: 'in-stock',
+      identityReview: { reason: 'exact-attributes', model: null, confidence: null, proof: { method: 'exact-attributes' } } });
     expect(mocks.evaluateOfferIdentity).not.toHaveBeenCalled();
   });
 
@@ -145,7 +155,7 @@ describe('reviewProductOffers', () => {
     }]);
   });
 
-  it('reviews at most 16 offers in batches of eight and leaves overflow untouched', async () => {
+  it('reviews at most 16 offers in batches of eight and leaves overflow pending', async () => {
     const input = Array.from({ length: 17 }, (_, index) => product(index));
 
     const result = await reviewProductOffers(input, { authorizedRefresh: true });
@@ -153,7 +163,7 @@ describe('reviewProductOffers', () => {
     expect(mocks.evaluateOfferIdentity).toHaveBeenCalledTimes(2);
     expect(mocks.evaluateOfferIdentity.mock.calls.map(([items]) => (items as unknown[]).length)).toEqual([8, 8]);
     expect(result.slice(0, 16).every(({ prices }) => prices[0].identityReview?.status === 'consistent')).toBe(true);
-    expect(result[16].prices[0].identityReview).toBeUndefined();
+    expect(result[16].prices[0].identityReview).toMatchObject({ status: 'needs-review', reason: 'insufficient-evidence' });
     expect(mocks.getSharedCache).toHaveBeenCalledTimes(16);
     expect(mocks.setSharedCache).toHaveBeenCalledTimes(16);
   });
@@ -271,7 +281,7 @@ describe('reviewProductOffers', () => {
 
   it('invalida identidad si cambia el SKU de la publicación y conserva evidencia por oferta', async () => {
     const first = product(1);
-    first.prices[0].sourceIdentity = { listingRef: 'test:id:1', title: first.name, storeSku: 'sku-a' };
+    first.prices[0].sourceIdentity = { listingRef: 'test:id:1', title: `${first.name} BOX`, storeSku: 'sku-a' };
     const reviewed = await reviewProductOffers([first], { authorizedRefresh: true });
     expect(reviewed[0].prices[0].identityReview?.sourceIdentity?.storeSku).toBe('sku-a');
     const next = product(1);
