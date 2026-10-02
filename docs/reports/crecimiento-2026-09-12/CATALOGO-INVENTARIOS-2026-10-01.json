@@ -1,0 +1,52 @@
+{
+  "results": [
+    {
+      "storeId": "maxtecno",
+      "startedAt": "2026-10-01T23:31:58.906Z",
+      "finishedAt": "2026-10-01T23:34:50.037Z",
+      "apiTotal": 6058,
+      "pages": 61,
+      "simpleProducts": 6058,
+      "savedOffers": 6856,
+      "offersMatchingCurrentPermalink": 3341,
+      "distinctListingsMatching": 1928,
+      "offersAbsentFromCurrentApi": 3515,
+      "currentListingsMissingFromSavedOffers": 4130,
+      "availableMatchingOffers": 3341
+    },
+    {
+      "storeId": "katech",
+      "startedAt": "2026-10-01T23:31:58.418Z",
+      "finishedAt": "2026-10-01T23:34:17.342Z",
+      "apiTotal": 3929,
+      "pages": 40,
+      "simpleProducts": 3929,
+      "savedOffers": 4524,
+      "offersMatchingCurrentPermalink": 4006,
+      "distinctListingsMatching": 2030,
+      "offersAbsentFromCurrentApi": 518,
+      "currentListingsMissingFromSavedOffers": 1899,
+      "availableMatchingOffers": 513
+    }
+  ],
+  "sourceHttp": {
+    "katech": {
+      "requests": 40,
+      "bytes": 2703374,
+      "durationMs": 138869,
+      "conditionalHits": 0,
+      "backoffSkips": 0,
+      "failures": 0,
+      "failureReasons": {}
+    },
+    "maxtecno": {
+      "requests": 61,
+      "bytes": 3876923,
+      "durationMs": 171043,
+      "conditionalHits": 0,
+      "backoffSkips": 0,
+      "failures": 0,
+      "failureReasons": {}
+    }
+  }
+}

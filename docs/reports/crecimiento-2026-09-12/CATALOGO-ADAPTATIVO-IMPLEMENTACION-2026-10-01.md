@@ -1,5 +1,7 @@
 # Catálogo adaptativo — implementación del 01/10/2026
 
+Este documento conserva el corte inicial. Para inventarios completos, correcciones posteriores, ejecuciones automáticas y cobertura actual de esta sesión, leer [Continuidad del catálogo](CATALOGO-CONTINUIDAD-2026-10-01.md). Sus límites de cobertura y cierre siguen abiertos hasta evidencia real.
+
 El catálogo existente entra completo en una cola persistente: 60.781 ofertas de 34 tiendas. Este alta no significa que estén actualizadas, que sean 60.781 productos distintos ni que cada publicación siga existiendo. El descubrimiento de productos nuevos continúa por los adaptadores existentes; no se declara cobertura completa de los catálogos originales de cada comercio.
 
 ## Política inicial

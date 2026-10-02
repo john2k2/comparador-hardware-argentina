@@ -1,0 +1,266 @@
+{
+  "version": 2,
+  "scope": "Continuación del catálogo, corte local 01/10/2026; horas UTC explícitas",
+  "at": "2026-10-02T01:58:45.328809+00:00",
+  "total": 71290,
+  "sources": [
+    {
+      "storeId": "maxtecno",
+      "summary": {
+        "pages": 61,
+        "status": "completed",
+        "storeId": "maxtecno",
+        "imported": 4129,
+        "startedAt": "2026-10-02T00:34:13.754Z",
+        "finishedAt": "2026-10-02T00:39:05.020Z",
+        "migratedUrls": 0,
+        "rejectedProducts": 0,
+        "publishedListings": 6057,
+        "historicalOffersAbsent": 3514
+      },
+      "lastSuccessAt": "2026-10-02T00:39:05.11653+00:00"
+    },
+    {
+      "storeId": "compragamer",
+      "summary": {
+        "pages": 1,
+        "status": "completed",
+        "storeId": "compragamer",
+        "imported": 12,
+        "startedAt": "2026-10-02T00:48:41.576Z",
+        "finishedAt": "2026-10-02T00:48:56.786Z",
+        "migratedUrls": 0,
+        "rejectedProducts": 92,
+        "publishedListings": 1478,
+        "historicalOffersAbsent": 2691
+      },
+      "lastSuccessAt": "2026-10-02T00:48:56.908296+00:00"
+    },
+    {
+      "storeId": "goldentechstore",
+      "summary": {
+        "pages": 17,
+        "status": "completed",
+        "storeId": "goldentechstore",
+        "imported": 981,
+        "startedAt": "2026-10-02T00:48:41.576Z",
+        "finishedAt": "2026-10-02T00:50:11.418Z",
+        "migratedUrls": 0,
+        "rejectedProducts": 0,
+        "publishedListings": 1604,
+        "historicalOffersAbsent": 1299
+      },
+      "lastSuccessAt": "2026-10-02T00:50:11.551709+00:00"
+    },
+    {
+      "storeId": "katech",
+      "summary": {
+        "pages": 40,
+        "status": "completed",
+        "storeId": "katech",
+        "imported": 0,
+        "startedAt": "2026-10-02T00:48:41.576Z",
+        "finishedAt": "2026-10-02T00:51:03.947Z",
+        "migratedUrls": 0,
+        "rejectedProducts": 3929,
+        "publishedListings": 3929,
+        "historicalOffersAbsent": 518
+      },
+      "lastSuccessAt": "2026-10-02T00:51:04.083427+00:00"
+    },
+    {
+      "storeId": "dinobyte",
+      "summary": {
+        "pages": 56,
+        "status": "completed",
+        "storeId": "dinobyte",
+        "imported": 4851,
+        "startedAt": "2026-10-02T00:48:41.576Z",
+        "finishedAt": "2026-10-02T00:55:01.291Z",
+        "migratedUrls": 0,
+        "rejectedProducts": 0,
+        "publishedListings": 5549,
+        "historicalOffersAbsent": 860
+      },
+      "lastSuccessAt": "2026-10-02T00:55:01.443881+00:00"
+    }
+  ],
+  "pending_katech": 1659,
+  "priority_total": 34037,
+  "all_observed_24h": 14085,
+  "category_mismatches": 0,
+  "katech_html_imports": 240,
+  "priority_observed_24h": 5736,
+  "queue_never_attempted": 62232,
+  "notes": [
+    "Ofertas guardadas y publicaciones únicas no son intercambiables.",
+    "queue_never_attempted cuenta la cola adaptativa; los inventarios pueden haber observado una oferta sin marcar intento de esa cola.",
+    "Observado incluye publicaciones no comprables; comparable conserva reglas de identidad, stock y tres horas.",
+    "Los denominadores cambiaron por altas y categorías; no es una cohorte fija."
+  ],
+  "inventoryImports": {
+    "compragamerDaily": 254,
+    "maxtecno": 4129,
+    "dinobyte": 4851,
+    "goldentechstore": 981,
+    "katechHtml": 240,
+    "compragamerManualClassification": 54,
+    "totalNewOffers": 10509
+  },
+  "manualCompraGamerCut": {
+    "startedAt": "2026-10-02T01:33:17.599Z",
+    "finishedAt": "2026-10-02T01:33:39.962Z",
+    "published": 1482,
+    "mapped": 1458,
+    "unmapped": 24,
+    "imported": 54
+  },
+  "verifiedRuns": [
+    {
+      "githubRunId": 36944434298,
+      "event": "schedule",
+      "head": "81f6bc7512e6aedcc0fea8ea68df087b34917d88",
+      "status": "deadline",
+      "attempted": 1687,
+      "observed": 593,
+      "comparable": 161
+    },
+    {
+      "githubRunId": 36947809841,
+      "event": "workflow_dispatch",
+      "status": "failed",
+      "failureCode": "REFRESH_SEED_FAILED",
+      "ordinaryRunCreated": false,
+      "inventoryWorkPersisted": true
+    },
+    {
+      "githubRunId": 36949573013,
+      "event": "workflow_dispatch",
+      "status": "failed",
+      "failureCode": "REFRESH_SEED_FAILED",
+      "ordinaryRunCreated": false,
+      "inventoryWorkPersisted": true
+    },
+    {
+      "githubRunId": 36950549773,
+      "event": "workflow_dispatch",
+      "head": "3d83c1b2a1290931c361d199832e3e9a99ce4b9a",
+      "status": "completed",
+      "attempted": 120,
+      "observed": 32,
+      "comparable": 13,
+      "inventoryHtmlImports": 48
+    },
+    {
+      "githubRunId": 36950993035,
+      "event": "workflow_dispatch",
+      "head": "230a4cb464c74fac28de5fdff8e65e21b685d547",
+      "status": "completed",
+      "attempted": 120,
+      "observed": 37,
+      "comparable": 19,
+      "inventoryHtmlImports": 48
+    },
+    {
+      "githubRunId": 36952042156,
+      "event": "workflow_dispatch",
+      "head": "312ba56becba58d61ccc3ae49c25178f630b375c",
+      "runId": "5b6a2dc6-6f4d-436a-868b-00b970f203bc",
+      "status": "deadline",
+      "startedAt": "2026-10-02T01:40:40.612Z",
+      "finishedAt": "2026-10-02T01:57:55.602Z",
+      "attempted": 1590,
+      "observed": 435,
+      "comparable": 165,
+      "inventoryHtmlImports": 48,
+      "noObservation": 1078,
+      "sourceFailed": 77,
+      "persistFailed": 0
+    }
+  ],
+  "validation": {
+    "localUnitPassed": 1147,
+    "existingSkipped": 2,
+    "operationalPassed": 19,
+    "lint": true,
+    "types": true,
+    "ciRun": 36952957142,
+    "ciStatus": "success",
+    "cloudflareCronStatus": "actual scheduled outcome ok, busy, no exception",
+    "publicStatus": "8/8 HTTP 200 without 1102",
+    "codeCommit": "db9ecb4f28d48bf93563f3a58df40f8270627a4a",
+    "browserCriticalPassed": 40,
+    "publicMeasuredAt": "2026-10-02T01:59:16.947Z",
+    "publicSearchMs": {
+      "apu": 1923,
+      "notebookRam": 2180,
+      "pcI7": 2535
+    },
+    "ciUnitPassed": 1148,
+    "cloudflareCronAt": "2026-10-02T01:43:41.461Z",
+    "cloudflareCronVersion": "2150d5cc-90c4-49bb-84ff-844b52383914",
+    "cloudflareDispatchEndToEndProven": false,
+    "cloudflareDeployment": {
+      "at": "2026-10-02T01:53:41.202363Z",
+      "version": "7fcba70b-17c0-4e5c-aafd-09af3b8fb391",
+      "percentage": 100,
+      "build": "55a3de17-3ef8-4c9a-a7a8-e2c3995492b2"
+    },
+    "remainingCron": "11 * * * *",
+    "canonicalDetailDomVerifiedAt": "2026-10-02T01:57:40Z",
+    "canonicalDetailPrices": {
+      "compragamer": 28550,
+      "maxtecno": 34909,
+      "dinobyte": 37300
+    },
+    "metadataCorrection": {
+      "store": "compragamer",
+      "rows": 308,
+      "priceCondition": "special",
+      "observationDatesChanged": 0
+    }
+  },
+  "baselineCut": {
+    "at": "2026-10-02T01:34:30.680206+00:00",
+    "total": 71242,
+    "priority_total": 33994,
+    "priority_observed_24h": 5341,
+    "all_observed_24h": 13602,
+    "pending_katech": 1707,
+    "katech_html_imports": 192,
+    "queue_never_attempted": 63574
+  },
+  "offer_leases": 0,
+  "detail_leases": 0,
+  "inventory_leases": 0,
+  "canonicalDetailProof": {
+    "at": "2026-10-02T01:57:38.236Z",
+    "status": 200,
+    "id": "agrupado-perifericos-300mbps-extensor-link-rango-tp-wa850re-nt1mzv",
+    "name": "Extensor de Rango Tp-Link WA850RE 300Mbps",
+    "category": "perifericos",
+    "prices": [
+      {
+        "storeId": "compragamer",
+        "price": 28550,
+        "url": "https://compragamer.com/producto/Extensor_de_Red_TP_Link_TL_WA850RE_WIFI_300Mbps_White_300Mbps_Universal_300Mbps_300Mbps_Universal_5870",
+        "lastUpdated": "2026-10-02T01:33:24.214Z",
+        "priceCondition": "special"
+      },
+      {
+        "storeId": "maxtecno",
+        "price": 34909,
+        "url": "https://maxtecno.com.ar/producto/extensor-wifi-tp-link-tl-wa850re-300mbps/",
+        "lastUpdated": "2026-10-02T00:34:44.760Z",
+        "priceCondition": "special"
+      },
+      {
+        "storeId": "dinobyte",
+        "price": 37300,
+        "url": "https://dinobyte.ar/producto/extensor-de-rango-tp-link-wa850re-300mbps/",
+        "lastUpdated": "2026-10-02T00:49:57.680Z",
+        "priceCondition": "unspecified"
+      }
+    ]
+  }
+}
