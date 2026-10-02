@@ -70,3 +70,16 @@ El monitor conserva estos controles, el G02 independiente y las reglas semanales
 ## Tablero
 
 Se creó el corte **outputs/project-tracker-2026-10-02-fuentes/Comparador-Hardware-Project-Tracker.xlsx** desde el tablero existente de 27/09. Sólo cambian C13, E13, C15, B50 y la altura de la nota. Conserva las **865 fórmulas**, Gantt, formato condicional, validaciones, paneles, hoja y nombres. La matriz de implementación queda en **MEJORAS-CODIGO-JEV-GA4-2026-10-02.csv**, con pendientes explícitos y fuentes, sin marcar G02 completo.
+
+
+## Primera ejecución automática posterior — 02/10, 17:29 UTC
+
+[Run 37039020510](https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37039020510), HEAD 5f230b0, origen registrado cloudflare-fallback, sin despacho desde esta revisión. GitHub terminó success; el resultado interno fue deadline tras 17:11:54–17:29:07 UTC. Guardó **460 observaciones**, **238 comparables** de **1.499 intentos**, con **994 sin observación** y **45 fallos de fuente**. Los conteos cierran sin fallo de persistencia registrado. No se suman como productos únicos ni como otro día priority de G02.
+
+Las fases medidas fueron: inventario 142.910 ms, preparación 12.030 ms, compartida 365.056 ms y rotación 499.748 ms. La reserva temporal dejó más de ocho minutos a la rotación. Se registraron **495 peticiones y 79.795.979 bytes decodificados** en 27 fuentes instrumentadas; no son bytes facturados ni prueba de ahorro porcentual. Katech completó **48/48** altas HTML, separadas de las 460 observaciones del barrido; los inventarios diarios quedaron deferred conforme a su agenda.
+
+Cobertura al final: **9.245/34.240 (27,00%)** prioritarias observadas <=24 h; general **18.922/71.722**; **53.111** sin intento de cola. El denominador general aumentó en 48 altas. No alcanza la meta del 95% ni acredita identidad de todas esas observaciones. FullH4rd y Hardcore registraron bloqueos/backoff; se suspendieron intentos sin insistir a la tienda. Los 31 backoff skips no prueban 31 respuestas HTTP 429. El lote de componentes de CompraGamer y Dinobyte dejó muchas referencias sin lectura: hace falta corroborar IDs/URLs/presencia vigente, sin marcar agotamiento ni reasociar por similitud.
+
+Nueva comprobación de los nueve IDs fijos, **17:36:01 UTC**: conserva **37/56** disponibles observadas <=24 h y **0/56** <=3 h, **0/9** fichas con oferta aceptada dentro de tres horas. El vencimiento continúa; este resultado no declara falta de stock. G02 sigue con seis fechas útiles y sus controles independientes.
+
+El pendiente de primera medición del corte anterior queda cubierto por este artefacto, **FUENTES-E-IDENTIDAD-AUTOMATICO-2026-10-02.json**. M05 pasa a piloto medido, con continuidad/cobertura pendientes. El siguiente trabajo debe concentrarse en referencias sin lectura y asociaciones ambiguas, y en confirmar recepción GA4. El runner mantiene nuevas consultas Jev deshabilitadas; no hubo una consulta al MCP de decisiones.

@@ -1,0 +1,686 @@
+{
+  "workflowRunId": 37039020510,
+  "workflowEvent": "workflow_dispatch",
+  "codeCommit": "5f230b057c0644faafff9303df7e8c9e93f33fef",
+  "source": "Artefacto catalog-adaptive-37039020510",
+  "automatic": {
+    "source": "adaptive-catalog",
+    "trigger": "cloudflare-fallback",
+    "runId": "3159c1aa-5d42-475d-95c5-051d311be19e",
+    "startedAt": "2026-10-02T17:11:54.720Z",
+    "finishedAt": "2026-10-02T17:29:07.053Z",
+    "status": "deadline",
+    "inventory": [
+      {
+        "storeId": "compragamer",
+        "status": "deferred"
+      },
+      {
+        "storeId": "maxtecno",
+        "status": "deferred"
+      },
+      {
+        "storeId": "dinobyte",
+        "status": "deferred"
+      },
+      {
+        "storeId": "goldentechstore",
+        "status": "deferred"
+      },
+      {
+        "storeId": "katech",
+        "status": "deferred"
+      }
+    ],
+    "inventoryDetails": {
+      "status": "completed",
+      "attempted": 48,
+      "imported": 48,
+      "failures": 0
+    },
+    "feedClaimed": 1200,
+    "sourceFailureReasons": {
+      "no-observation": 814,
+      "blocked": 6,
+      "not-found": 7,
+      "rate-limited": 31
+    },
+    "limitReached": false,
+    "attempted": 1499,
+    "observed": 460,
+    "comparable": 238,
+    "failures": {
+      "no-observation": 994,
+      "source-failed": 45
+    },
+    "phaseMs": {
+      "inventory": 142910,
+      "preparation": 12030,
+      "shared": 365056,
+      "rotation": 499748
+    },
+    "sharedReads": 1226,
+    "aggregateCoverage": {
+      "at": "2026-10-02T17:29:07.053Z",
+      "total": 71722,
+      "priorityTotal": 34240,
+      "priorityObserved24h": 9245,
+      "observed24h": 18922,
+      "neverAttempted": 53111
+    },
+    "byStore": {
+      "maxtecno": {
+        "attempted": 362,
+        "observed": 233,
+        "comparable": 114,
+        "failures": {
+          "no-observation": 129
+        }
+      },
+      "goldentechstore": {
+        "attempted": 250,
+        "observed": 31,
+        "comparable": 29,
+        "failures": {
+          "no-observation": 219
+        }
+      },
+      "dinobyte": {
+        "attempted": 250,
+        "observed": 33,
+        "comparable": 1,
+        "failures": {
+          "no-observation": 217
+        }
+      },
+      "compragamer": {
+        "attempted": 350,
+        "observed": 37,
+        "comparable": 36,
+        "failures": {
+          "no-observation": 313
+        }
+      },
+      "hardcore": {
+        "attempted": 11,
+        "observed": 0,
+        "comparable": 0,
+        "failures": {
+          "source-failed": 11
+        }
+      },
+      "portaltech": {
+        "attempted": 13,
+        "observed": 0,
+        "comparable": 0,
+        "failures": {
+          "no-observation": 13
+        }
+      },
+      "gamerspoint": {
+        "attempted": 12,
+        "observed": 8,
+        "comparable": 5,
+        "failures": {
+          "source-failed": 4
+        }
+      },
+      "fullh4rd": {
+        "attempted": 26,
+        "observed": 0,
+        "comparable": 0,
+        "failures": {
+          "source-failed": 26
+        }
+      },
+      "scphardstore": {
+        "attempted": 13,
+        "observed": 9,
+        "comparable": 7,
+        "failures": {
+          "source-failed": 4
+        }
+      },
+      "armytech": {
+        "attempted": 13,
+        "observed": 1,
+        "comparable": 1,
+        "failures": {
+          "no-observation": 12
+        }
+      },
+      "venex": {
+        "attempted": 14,
+        "observed": 3,
+        "comparable": 2,
+        "failures": {
+          "no-observation": 11
+        }
+      },
+      "logg": {
+        "attempted": 14,
+        "observed": 3,
+        "comparable": 0,
+        "failures": {
+          "no-observation": 11
+        }
+      },
+      "noxie": {
+        "attempted": 12,
+        "observed": 9,
+        "comparable": 1,
+        "failures": {
+          "no-observation": 3
+        }
+      },
+      "wiztech": {
+        "attempted": 13,
+        "observed": 10,
+        "comparable": 9,
+        "failures": {
+          "no-observation": 3
+        }
+      },
+      "gamingcity": {
+        "attempted": 12,
+        "observed": 4,
+        "comparable": 4,
+        "failures": {
+          "no-observation": 8
+        }
+      },
+      "clickgaming": {
+        "attempted": 15,
+        "observed": 0,
+        "comparable": 0,
+        "failures": {
+          "no-observation": 15
+        }
+      },
+      "hftecnologia": {
+        "attempted": 14,
+        "observed": 11,
+        "comparable": 4,
+        "failures": {
+          "no-observation": 3
+        }
+      },
+      "maximus": {
+        "attempted": 14,
+        "observed": 3,
+        "comparable": 0,
+        "failures": {
+          "no-observation": 11
+        }
+      },
+      "integradosargentinos": {
+        "attempted": 18,
+        "observed": 7,
+        "comparable": 5,
+        "failures": {
+          "no-observation": 11
+        }
+      },
+      "katech": {
+        "attempted": 12,
+        "observed": 12,
+        "comparable": 3,
+        "failures": {}
+      },
+      "compugarden": {
+        "attempted": 13,
+        "observed": 2,
+        "comparable": 1,
+        "failures": {
+          "no-observation": 11
+        }
+      },
+      "spacevideojuegos": {
+        "attempted": 12,
+        "observed": 12,
+        "comparable": 0,
+        "failures": {}
+      },
+      "xtpc": {
+        "attempted": 16,
+        "observed": 14,
+        "comparable": 7,
+        "failures": {
+          "no-observation": 2
+        }
+      },
+      "rockethard": {
+        "attempted": 13,
+        "observed": 12,
+        "comparable": 9,
+        "failures": {
+          "no-observation": 1
+        }
+      },
+      "hypergaming": {
+        "attempted": 2,
+        "observed": 2,
+        "comparable": 0,
+        "failures": {}
+      },
+      "megasoft": {
+        "attempted": 3,
+        "observed": 2,
+        "comparable": 0,
+        "failures": {
+          "no-observation": 1
+        }
+      },
+      "shopgamer": {
+        "attempted": 2,
+        "observed": 2,
+        "comparable": 0,
+        "failures": {}
+      }
+    },
+    "sourceHttp": {
+      "katech": {
+        "requests": 60,
+        "bytes": 24845019,
+        "durationMs": 70404,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0,
+        "failureReasons": {}
+      },
+      "maxtecno": {
+        "requests": 64,
+        "bytes": 1539358,
+        "durationMs": 51482,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0,
+        "failureReasons": {}
+      },
+      "dinobyte": {
+        "requests": 51,
+        "bytes": 733208,
+        "durationMs": 45423,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0,
+        "failureReasons": {}
+      },
+      "goldentechstore": {
+        "requests": 51,
+        "bytes": 549439,
+        "durationMs": 35966,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0,
+        "failureReasons": {}
+      },
+      "compragamer": {
+        "requests": 3,
+        "bytes": 2254416,
+        "durationMs": 4163,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0,
+        "failureReasons": {}
+      },
+      "hftecnologia": {
+        "requests": 14,
+        "bytes": 2726751,
+        "durationMs": 18278,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0,
+        "failureReasons": {}
+      },
+      "hardcore": {
+        "requests": 3,
+        "bytes": 0,
+        "durationMs": 261,
+        "conditionalHits": 0,
+        "backoffSkips": 8,
+        "failures": 11,
+        "failureReasons": {
+          "blocked": 3,
+          "rate-limited": 8
+        }
+      },
+      "portaltech": {
+        "requests": 10,
+        "bytes": 1513142,
+        "durationMs": 28797,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0,
+        "failureReasons": {}
+      },
+      "maximus": {
+        "requests": 30,
+        "bytes": 8134663,
+        "durationMs": 55622,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0,
+        "failureReasons": {}
+      },
+      "gamerspoint": {
+        "requests": 11,
+        "bytes": 3004948,
+        "durationMs": 13437,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 3,
+        "failureReasons": {
+          "not-found": 3
+        }
+      },
+      "integradosargentinos": {
+        "requests": 18,
+        "bytes": 3716978,
+        "durationMs": 2901,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 11,
+        "failureReasons": {
+          "not-found": 11
+        }
+      },
+      "fullh4rd": {
+        "requests": 3,
+        "bytes": 0,
+        "durationMs": 235,
+        "conditionalHits": 0,
+        "backoffSkips": 23,
+        "failures": 26,
+        "failureReasons": {
+          "blocked": 3,
+          "rate-limited": 23
+        }
+      },
+      "compugarden": {
+        "requests": 13,
+        "bytes": 2695056,
+        "durationMs": 16360,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0,
+        "failureReasons": {}
+      },
+      "spacevideojuegos": {
+        "requests": 12,
+        "bytes": 3110893,
+        "durationMs": 7683,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0,
+        "failureReasons": {}
+      },
+      "xtpc": {
+        "requests": 19,
+        "bytes": 1465754,
+        "durationMs": 11255,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0,
+        "failureReasons": {}
+      },
+      "scphardstore": {
+        "requests": 13,
+        "bytes": 2536214,
+        "durationMs": 11896,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 4,
+        "failureReasons": {
+          "not-found": 4
+        }
+      },
+      "armytech": {
+        "requests": 13,
+        "bytes": 391514,
+        "durationMs": 4494,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 12,
+        "failureReasons": {
+          "not-found": 12
+        }
+      },
+      "venex": {
+        "requests": 14,
+        "bytes": 7301492,
+        "durationMs": 3488,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0,
+        "failureReasons": {}
+      },
+      "logg": {
+        "requests": 14,
+        "bytes": 1168985,
+        "durationMs": 60275,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 2,
+        "failureReasons": {
+          "network": 2
+        }
+      },
+      "rockethard": {
+        "requests": 16,
+        "bytes": 4647099,
+        "durationMs": 5356,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0,
+        "failureReasons": {}
+      },
+      "noxie": {
+        "requests": 15,
+        "bytes": 3550976,
+        "durationMs": 7950,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0,
+        "failureReasons": {}
+      },
+      "wiztech": {
+        "requests": 13,
+        "bytes": 38194,
+        "durationMs": 3920,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0,
+        "failureReasons": {}
+      },
+      "clickgaming": {
+        "requests": 15,
+        "bytes": 0,
+        "durationMs": 13841,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 15,
+        "failureReasons": {
+          "not-found": 15
+        }
+      },
+      "gamingcity": {
+        "requests": 12,
+        "bytes": 969988,
+        "durationMs": 2240,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 8,
+        "failureReasons": {
+          "not-found": 8
+        }
+      },
+      "hypergaming": {
+        "requests": 2,
+        "bytes": 551267,
+        "durationMs": 1244,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0,
+        "failureReasons": {}
+      },
+      "megasoft": {
+        "requests": 4,
+        "bytes": 757130,
+        "durationMs": 1461,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0,
+        "failureReasons": {}
+      },
+      "shopgamer": {
+        "requests": 2,
+        "bytes": 1593495,
+        "durationMs": 716,
+        "conditionalHits": 0,
+        "backoffSkips": 0,
+        "failures": 0,
+        "failureReasons": {}
+      }
+    },
+    "instrumentedHttpTotals": {
+      "stores": 27,
+      "requests": 495,
+      "decodedBytes": 79795979,
+      "backoffSkips": 31
+    }
+  },
+  "fixedSampleAfterRun": {
+    "measuredAt": "2026-10-02 17:36:01.010227+00",
+    "denominator": 56,
+    "fresh24h": 37,
+    "fresh3h": 0,
+    "identityPending3h": 0,
+    "candidateComparable3h": 0,
+    "identityAccepted3h": 0,
+    "identityUnverified3h": 0,
+    "explicitConflicts3h": 0,
+    "productsWithAcceptedOffer3h": 0,
+    "productsWithoutAcceptedOffer3h": [
+      "agrupado-memoria-ram-corsair-16gb-x4icqy",
+      "agrupado-memoria-ram-kingston-16gb-11mqs9y",
+      "agrupado-procesadores-amd-ryzen-5-5600-1ru8te5",
+      "agrupado-procesadores-amd-ryzen-5-7600x-am5-12rxuv9",
+      "agrupado-procesadores-intel-core-i5-12400-gfjrbb",
+      "agrupado-tarjetas-graficas-asus-rtx-5060-dual-8gb-1lrxth",
+      "agrupado-tarjetas-graficas-gigabyte-rtx-5060-eagle-8gb-1i1rdb",
+      "agrupado-tarjetas-graficas-msi-rtx-5060-shadow-8gb-csxx7o",
+      "maximus-15359-memoria-ram-corsair-vengeance-lpx-black-16gb-3200-mhz-ddr4"
+    ],
+    "byProduct": [
+      {
+        "productId": "agrupado-memoria-ram-corsair-16gb-x4icqy",
+        "category": "memoria-ram",
+        "available": 2,
+        "fresh24h": 2,
+        "fresh3h": 0,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 0,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-memoria-ram-kingston-16gb-11mqs9y",
+        "category": "memoria-ram",
+        "available": 6,
+        "fresh24h": 5,
+        "fresh3h": 0,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 0,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-procesadores-amd-ryzen-5-5600-1ru8te5",
+        "category": "procesadores",
+        "available": 8,
+        "fresh24h": 5,
+        "fresh3h": 0,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 0,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-procesadores-amd-ryzen-5-7600x-am5-12rxuv9",
+        "category": "procesadores",
+        "available": 2,
+        "fresh24h": 1,
+        "fresh3h": 0,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 0,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-procesadores-intel-core-i5-12400-gfjrbb",
+        "category": "procesadores",
+        "available": 11,
+        "fresh24h": 7,
+        "fresh3h": 0,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 0,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-tarjetas-graficas-asus-rtx-5060-dual-8gb-1lrxth",
+        "category": "tarjetas-graficas",
+        "available": 9,
+        "fresh24h": 7,
+        "fresh3h": 0,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 0,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-tarjetas-graficas-gigabyte-rtx-5060-eagle-8gb-1i1rdb",
+        "category": "tarjetas-graficas",
+        "available": 7,
+        "fresh24h": 4,
+        "fresh3h": 0,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 0,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-tarjetas-graficas-msi-rtx-5060-shadow-8gb-csxx7o",
+        "category": "tarjetas-graficas",
+        "available": 10,
+        "fresh24h": 6,
+        "fresh3h": 0,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 0,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "maximus-15359-memoria-ram-corsair-vengeance-lpx-black-16gb-3200-mhz-ddr4",
+        "category": "memoria-ram",
+        "available": 1,
+        "fresh24h": 0,
+        "fresh3h": 0,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 0,
+        "explicitConflicts3h": 0
+      }
+    ]
+  },
+  "interpretation": [
+    "Origen registrado cloudflare-fallback; no despachado desde esta revisión. No sustituye logs del evento Cloudflare para acreditar todo el camino.",
+    "deadline es límite operativo de este lote; no cubre todo el catálogo. Fallos de fuente y ausencia de observación se conservan separados de errores de persistencia.",
+    "Los conteos observados no equivalen a productos únicos ni a ofertas comprables. Inventario HTML 48/48 queda separado de las 460 observaciones del barrido.",
+    "27 fuentes instrumentadas y 495 peticiones contabilizadas; bytes decodificados, no tráfico comprimido facturado. Backoff skips no equivalen a 31 respuestas HTTP 429.",
+    "No hay comparación experimental equivalente antes/después, porcentaje de ahorro ni G02 cerrado. Este flujo adaptativo no suma una fecha diaria útil priority.",
+    "Workflow mantiene nuevas consultas Jev deshabilitadas; utiliza reglas y revisiones aplicables existentes. No se infiere recuperación, cuota o costo del proveedor.",
+    "Muestra fija 17:36:01 UTC: cero ofertas dentro de tres horas por vencimiento; no implica agotamiento. Los IDs y denominadores se preservan."
+  ]
+}
