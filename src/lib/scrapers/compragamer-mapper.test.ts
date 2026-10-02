@@ -24,9 +24,14 @@ describe('compragamer-mapper', () => {
     ['Notebook HP Core i7 16GB DDR4', 'computadoras'],
     ['Memoria notebook DDR4 16GB', 'memoria-ram'],
     ['CPU Cooler compatible con Ryzen 7600', 'refrigeracion'],
+    ['Router Tp-Link Archer AX3000', 'perifericos'],
+    ['Pasta Termica ID-Cooling Frost X25 4g', 'refrigeracion'],
   ])('clasifica la función principal del producto: %s', (nombre, category) => {
     const mapped = mapCompraGamerProduct({ item: buildRawProduct({ nombre }), subcategoryMap: new Map(), brandMap: new Map() });
     expect(mapped?.category).toBe(category);
+  });
+  it.each([['ARMADO DE PC ASUS',1750],['Usar Cooler CPU incluido en el procesador Intel',0]])('no fabrica un producto comprable para %s', (nombre,precioEspecial)=>{
+    expect(mapCompraGamerProduct({item:buildRawProduct({nombre,precioEspecial}),subcategoryMap:new Map(),brandMap:new Map()})).toBeNull();
   });
   it('conserva la hora de observación del catálogo al mapear una respuesta cacheada', () => {
     const observedAt = new Date('2026-09-29T12:00:00Z');

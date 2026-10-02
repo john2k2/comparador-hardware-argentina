@@ -104,6 +104,12 @@ it.each([
   ['Memoria RAM para notebook DDR5 16GB', 'memoria-ram'],
   ['Mouse Ryzen Edition', 'perifericos'],
   ['Micro SD Kingston 128GB', 'almacenamiento'],
+  ['Placa de Red Tp-Link Archer TX55E WIFI 6', 'perifericos'],
+  ['Router Tp-Link AX3000 DDR4 compatible', 'perifericos'],
+  ['Cable Adaptador DisplayPort para RTX 5070', 'perifericos'],
+  ['UPS con Estabilizador Lyonn 800VA', 'perifericos'],
+  ['Pasta Térmica ID-Cooling Frost X25 4g', 'refrigeracion'],
+  ['Thermal Pad Carbice Ice Pad para CPU AM4/AM5', 'refrigeracion'],
   ['Procesadores Core i5 10400 (PARA PC ARMADA)', 'procesadores'],
 ] as const)('conserva el tipo real aunque %s mencione otros componentes', (name, category) => {
   expect(inferHardwareCategoryFromName(name)).toBe(category);

@@ -143,7 +143,7 @@ export function inferDetailHardwareCategory(value: string): HardwareCategory {
 // Cooler Master también fabrica fuentes y gabinetes: la marca sola no basta.
 function isCoolingProductTitle(value: string): boolean {
   const title = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
-  return /^(?:cpu\s+cooler|water\s*cooler|refrigeracion|ventilador|disipador)\b/.test(title)
+  return /^(?:cpu\s+cooler|water\s*cooler|refrigeracion|ventilador|disipador|pasta\s+termica|thermal\s+pad)\b/.test(title)
     || /^cooler\s+(?!master\b)/.test(title)
     || /^cooler\s+master\s+(?:masterliquid|ml\d+\w*|hyper|liquid)\b/.test(title);
 }
@@ -154,6 +154,7 @@ function inferPrimaryComponentCategory(value: string): HardwareCategory | undefi
   if (/^(?:micro(?!\s+sd\b)|procesador(?:es)?|cpu)\b/.test(title)) return 'procesadores';
   if (/^(?:placa de video|tarjeta grafica|gpu)\b/.test(title)) return 'tarjetas-graficas';
   if (/^(?:mouse|mousepad|teclado|auriculares?|headset|joystick|gamepad|webcam|monitor|parlante|escritorio|tabla para standing desk|silla)\b/.test(title)) return 'perifericos';
+  if (/^(?:router|extensor de red|placa de red|placa wifi|adaptador(?: de red| wifi| bluetooth)|cable|ups|impresora|toner|powered usb hub|usb hub|elgato stream deck)\b/.test(title)) return 'perifericos';
   if (/^(?:motherboard|mother|placa madre)\b/.test(title)) return 'motherboards';
   if (/^(?:gabinete|case)\b/.test(title)) return 'gabinetes';
   if (/^(?:fuente|psu)\b/.test(title)) return 'fuentes-alimentacion';
