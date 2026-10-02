@@ -39,7 +39,7 @@ test('dos escritores de ofertas mantienen precio, historial y resumen coherentes
   const id = `test-concurrent-${process.pid}`;
   const nameA = `${id}-a`, nameB = `${id}-b`;
   const offer = (store, price, observedAt) => ({ product_id: id, store_id: store,
-    url: `https://example.invalid/${store}`, price, stock: 'in-stock',
+    url: `https://www.${store}.com.ar/producto/concurrency`, price, stock: 'in-stock',
     last_updated: observedAt, state_signature: `${store}:${price}` });
   const persist = offers => `select public.persist_catalog_offers(${literal(JSON.stringify(offers))}::jsonb);`;
   const before = new Date(Date.now() - 60000).toISOString();
@@ -56,6 +56,9 @@ test('dos escritores de ofertas mantienen precio, historial y resumen coherentes
     await Promise.all([a.result, b.result]);
     const summary = JSON.parse(await query(`select json_build_object('lowest',lowest,'highest',highest,'offers',cardinality(offer_ids)) from catalog_price_summaries where product_id=${literal(id)};`));
     assert.deepEqual(summary, { lowest: 110000, highest: 190000, offers: 2 });
+    const current = JSON.parse(await query(`select comparable_stats from catalog_price_summaries where product_id=${literal(id)};`));
+    assert.equal(current.lowest, 110000, 'El resumen corroborado no pierde la primera escritura');
+    assert.equal(current.highest, 190000, 'El resumen corroborado conserva la segunda escritura');
     assert.equal(await query(`select count(*) from price_history where product_id=${literal(id)};`), '5');
     await query(persist([offer('venex', 190000, second)]));
     assert.equal(await query(`select count(*) from price_history where product_id=${literal(id)};`), '5', 'Reintentar no duplica eventos');

@@ -41,6 +41,11 @@ begin
  assert (select last_updated from public.product_prices where product_id='audit-current-evidence' and url=review#>>'{subject,url}')=old_date;
  assert public.persist_verified_priority_offer('audit-current-evidence','mexx',review#>>'{subject,url}',210000,null,'in-stock',null,null,now(),now(),review,'good',source,'unspecified');
  assert (select source_identity from public.product_prices where product_id='audit-current-evidence' and url=review#>>'{subject,url}')=source;
+ update public.catalog_price_summaries set comparable_initialized=false where product_id='audit-current-evidence';
+ assert (public.initialize_catalog_comparable_summaries(10)->>'processed')::int>=1;
+ assert (select comparable_initialized from public.catalog_price_summaries where product_id='audit-current-evidence');
+ assert (select last_updated from public.product_prices where product_id='audit-current-evidence' and url=review#>>'{subject,url}')=now(), 'Inicializar no vuelve a observar una oferta';
+ assert not has_function_privilege('anon','public.initialize_catalog_comparable_summaries(integer)','EXECUTE');
  assert not has_function_privilege('anon','public.persist_verified_priority_offer(text,text,text,numeric,numeric,text,integer,numeric,timestamptz,timestamptz,jsonb,text,jsonb,text)','EXECUTE');
  assert not has_function_privilege('authenticated','public.sync_catalog_comparable_summary(text)','EXECUTE');
 end $$;
