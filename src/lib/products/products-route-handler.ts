@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import type { HardwareCategory } from '@/lib/types';
 import { reviewProductOffers } from '@/lib/ai/review-product-offers';
 import { isHardwareCategory } from '@/lib/catalog/hardware-categories';
-import { readProductByIdFromDatabase, readProductsPageFromDatabase } from '@/lib/persistence/product-read';
+import { readProductDetailByIdFromDatabase, readProductsPageFromDatabase } from '@/lib/persistence/product-read';
 import { hasStaleProducts } from '@/lib/persistence/product-staleness';
 import { normalizeId } from '@/lib/products/product-detail-helpers';
 import { resolveLiveProductDetail } from '@/lib/products/products-detail-service';
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        const databaseProduct = await readProductByIdFromDatabase(id).catch((databaseError) => {
+        const databaseProduct = await readProductDetailByIdFromDatabase(id).catch((databaseError) => {
           logger.warn('DB-first product detail read skipped', {
             endpoint: '/api/products',
             id,

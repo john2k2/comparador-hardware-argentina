@@ -4,6 +4,7 @@
 
 import type { InstallmentInfo, PriceHistoryPoint, ProductPrice } from './types';
 import { needsIdentityReview, type OfferIdentityReview } from './quality/offer-identity';
+import { isCatalogOfferFresh } from './price-freshness';
 
 type PriceLike = { price: number };
 type StorePriceLike = PriceLike & {
@@ -145,6 +146,9 @@ export function parseLocalizedArsPrice(value: string): number {
 }
 
 export function preferStorePrice<T extends StorePriceLike>(existing: T, candidate: T): T {
+  // Una oferta histórica barata no debe tapar otra realmente observada de la tienda.
+  const existingFresh=isCatalogOfferFresh(existing.lastUpdated),candidateFresh=isCatalogOfferFresh(candidate.lastUpdated);
+  if (existingFresh!==candidateFresh) return candidateFresh?candidate:existing;
   const existingUnavailable = existing.stock === 'out-of-stock';
   const candidateUnavailable = candidate.stock === 'out-of-stock';
 

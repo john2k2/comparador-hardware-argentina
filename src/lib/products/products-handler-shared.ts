@@ -22,13 +22,13 @@ export const inFlightDetailRequests = new Map<string, Promise<Product | null>>()
 export const inFlightBackgroundProductsRefreshes = new Map<string, Promise<void>>();
 
 export async function getCachedDetail(normalizedId: string): Promise<Product | null | undefined> {
-  const cached = await getSharedCache<Product | null>('product-detail-v2', normalizedId);
+  const cached = await getSharedCache<Product | null>('product-detail-v3', normalizedId);
   if (cached === undefined || cached === null) return cached;
   return hydrateProduct(cached);
 }
 
 export async function setCachedDetail(normalizedId: string, product: Product | null): Promise<void> {
-  await setSharedCache('product-detail-v2', normalizedId, product, DETAIL_CACHE_TTL_MS);
+  await setSharedCache('product-detail-v3', normalizedId, product, DETAIL_CACHE_TTL_MS);
 }
 
 export function scheduleBackgroundProductsRefresh(

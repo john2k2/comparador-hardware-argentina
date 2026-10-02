@@ -18,6 +18,7 @@ import { inferHardwareCategoryFromName } from '@/lib/catalog/hardware-categories
 import type { DbCatalogPage } from './product-read-types';
 import { toNumber } from './product-read-helpers';
 import type { Product } from '@/lib/types';
+import { mergeCanonicalDetailOffers } from './product-detail-offers';
 
 export type { ProductSort } from '@/lib/persistence/product-read-types';
 
@@ -60,6 +61,21 @@ export async function readCanonicalProductIdByKey(canonicalProductKey: string) {
   }
 
   return data?.id ?? null;
+}
+
+/** La ficha canónica incorpora altas recientes con la misma identidad exacta. */
+export async function readProductDetailByIdFromDatabase(id: string): Promise<Product | null> {
+  const product=await readProductByIdFromDatabase(id);
+  if (!product?.canonicalProductKey) return product;
+  const supabase=getServerSupabaseReadClient();
+  if (!supabase) throw new Error('Product detail database unavailable');
+  const {data,error}=await supabase.from('products').select(PRODUCT_SELECT_FIELDS)
+    .eq('canonical_product_key',product.canonicalProductKey).eq('category',product.category)
+    .order('id').limit(201);
+  if (error || !Array.isArray(data)) throw new Error('Product detail related offers unavailable');
+  // No presentar una agrupación truncada como completa ni hacer lecturas sin límite.
+  if (data.length>200) throw new Error('Product detail related offers limit exceeded');
+  return mergeCanonicalDetailOffers(product,(data as DbProductRow[]).map(mapDbGuideProduct));
 }
 
 export async function readProductsFromDatabase(params: ReadProductsParams) {

@@ -22,6 +22,11 @@ function buildPrice(overrides: Partial<ProductPrice>): ProductPrice {
 }
 
 describe('price-utils', () => {
+  it('prioriza observación reciente sobre precio histórico barato de la misma tienda',()=>{
+    const old=buildPrice({price:1,lastUpdated:new Date(Date.now()-25*3600000)}),fresh=buildPrice({price:50000,lastUpdated:new Date()});
+    expect(preferStorePrice(old,fresh)).toBe(fresh);expect(preferStorePrice(fresh,old)).toBe(fresh);
+    expect(preferStorePrice(old,{...fresh,stock:'out-of-stock'})).toMatchObject({stock:'out-of-stock',lastUpdated:fresh.lastUpdated});
+  });
   it('parseLocalizedArsPrice respeta separadores locales de ARS', () => {
     expect(parseLocalizedArsPrice('$ 248.496,11')).toBe(248_496);
     expect(parseLocalizedArsPrice('248.496')).toBe(248_496);

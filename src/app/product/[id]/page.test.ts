@@ -27,7 +27,7 @@ vi.mock('@/components/product/ProductDetailClient', () => ({
 
 vi.mock('@/lib/persistence/product-read', () => ({
   readCanonicalProductIdByKey: readCanonicalProductIdByKeyMock,
-  readProductByIdFromDatabase: readProductByIdFromDatabaseMock,
+  readProductDetailByIdFromDatabase: readProductByIdFromDatabaseMock,
 }));
 
 import ProductDetailPage from './page';

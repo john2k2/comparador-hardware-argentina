@@ -9,7 +9,7 @@ vi.mock('@/lib/server/supabase-server', () => ({
   getServerSupabaseReadClient: getServerSupabaseReadClientMock,
 }));
 
-import { readCategoryLandingPageFromDatabase, readProductsPageFromDatabase, readGuideCatalogCandidatesFromDatabase } from './product-read';
+import { readCategoryLandingPageFromDatabase, readProductsPageFromDatabase, readGuideCatalogCandidatesFromDatabase,readProductDetailByIdFromDatabase } from './product-read';
 import { mapDbProduct } from './product-read-mapper';
 import { resolveGuideComponent } from '@/lib/seo/budget-guide-pricing';
 import { loadGuideCatalogProducts, loadGuidePriorityProducts } from '@/lib/seo/guide-catalog';
@@ -39,6 +39,26 @@ const row = {
     { store_id: 'mexx', url: 'https://example.com/mexx', price: 200_000, original_price: null, stock: 'in-stock', installment_count: null, installment_amount: null, last_updated: '2026-09-12T00:00:00.000Z' },
   ],
 };
+
+describe('detalle canónico con nuevas publicaciones',()=>{
+ function mockDetail(data:unknown,error:unknown=null,base:unknown=row){
+  const chain={select:vi.fn(()=>chain),eq:vi.fn(()=>chain),order:vi.fn(()=>chain),limit:vi.fn(async()=>({data,error})),maybeSingle:vi.fn(async()=>({data:base,error:null}))};
+  const from=vi.fn(()=>chain);getServerSupabaseReadClientMock.mockReturnValue({from});return {chain,from};
+ }
+ it('consulta sólo categoría/clave exacta con límite y conserva el ID canónico',async()=>{
+  const fresh={...row,id:'new-store-offer',product_prices:[{...row.product_prices[0],price:230000,last_updated:new Date().toISOString()}]};
+  const {chain}=mockDetail([row,fresh]);const detail=await readProductDetailByIdFromDatabase(row.id);
+  expect(chain.eq).toHaveBeenCalledWith('canonical_product_key',row.canonical_product_key);expect(chain.eq).toHaveBeenCalledWith('category','procesadores');expect(chain.limit).toHaveBeenCalledWith(201);
+  expect(detail?.id).toBe(row.id);expect(detail?.prices).toEqual([expect.objectContaining({price:230000,lastUpdated:new Date(fresh.product_prices[0].last_updated)})]);
+ });
+ it('no presenta un fallo o una lectura truncada como detalle completo',async()=>{
+  mockDetail(null,{code:'57014'});await expect(readProductDetailByIdFromDatabase(row.id)).rejects.toThrow('related offers unavailable');
+  mockDetail(Array.from({length:201},()=>row));await expect(readProductDetailByIdFromDatabase(row.id)).rejects.toThrow('limit exceeded');
+ });
+ it('no busca relaciones cuando no existe el producto',async()=>{
+  const {from,chain}=mockDetail([],null,null);expect(await readProductDetailByIdFromDatabase('missing')).toBeNull();expect(from).toHaveBeenCalledTimes(1);expect(chain.limit).not.toHaveBeenCalled();
+ });
+});
 
 describe('readCategoryLandingPageFromDatabase', () => {
   beforeEach(() => {

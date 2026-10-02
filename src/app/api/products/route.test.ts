@@ -34,7 +34,7 @@ vi.mock('@/lib/server/shared-cache', () => ({
 }));
 
 vi.mock('@/lib/persistence/product-read', () => ({
-  readProductByIdFromDatabase: mockReadProductByIdFromDatabase,
+  readProductDetailByIdFromDatabase: mockReadProductByIdFromDatabase,
   readProductsFromDatabase: mockReadProductsFromDatabase,
   readProductsPageFromDatabase: async (params: { page: number; pageSize: number }) => {
     const value = await mockReadProductsFromDatabase(params);
@@ -251,7 +251,7 @@ describe('/api/products route', () => {
     const request = () => new NextRequest(`http://localhost/api/products?id=${sampleProduct.id}`);
 
     expect((await GET(request())).headers.get('X-Product-Cache')).toBe(`DB${suffix}`);
-    expect(mockSetSharedCache).toHaveBeenCalledWith('product-detail-v2', sampleProduct.id, expect.any(Object), DETAIL_CACHE_TTL_MS);
+    expect(mockSetSharedCache).toHaveBeenCalledWith('product-detail-v3', sampleProduct.id, expect.any(Object), DETAIL_CACHE_TTL_MS);
     vi.setSystemTime(startedAt + DETAIL_CACHE_TTL_MS / 2);
     expect((await GET(request())).headers.get('X-Product-Cache')).toBe(`HIT${suffix}`);
 
@@ -262,7 +262,7 @@ describe('/api/products route', () => {
     expect((await replicaGET(request())).headers.get('X-Product-Cache')).toBe(`HIT${suffix}`);
     expect(mockReadProductByIdFromDatabase).toHaveBeenCalledTimes(1);
     expect(mockSetSharedCache).toHaveBeenCalledTimes(1);
-    expect(mockGetSharedCache).toHaveBeenCalledWith('product-detail-v2', sampleProduct.id);
+    expect(mockGetSharedCache).toHaveBeenCalledWith('product-detail-v3', sampleProduct.id);
 
     const refreshed = { ...sampleProduct, prices: [{ ...sampleProduct.prices[0], price: 1_100_000 }] };
     mockReadProductByIdFromDatabase.mockResolvedValue(refreshed);
@@ -302,7 +302,7 @@ describe('/api/products route', () => {
     expect(mockReadProductByIdFromDatabase).toHaveBeenCalledWith(sampleProduct.id);
     expect(mockFetchWooCommerceProductById).toHaveBeenCalled();
     expect(mockPersistProductsSnapshot).not.toHaveBeenCalled();
-    expect(mockSetSharedCache).toHaveBeenCalledWith('product-detail-v2', sampleProduct.id, null, expect.any(Number));
+    expect(mockSetSharedCache).toHaveBeenCalledWith('product-detail-v3', sampleProduct.id, null, expect.any(Number));
   });
 
   it('falls back to DB even when a negative detail cache entry exists', async () => {

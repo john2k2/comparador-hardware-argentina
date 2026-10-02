@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { ProductDetailClient } from '@/components/product/ProductDetailClient';
-import { readCanonicalProductIdByKey, readProductByIdFromDatabase } from '@/lib/persistence/product-read';
+import { readCanonicalProductIdByKey, readProductDetailByIdFromDatabase } from '@/lib/persistence/product-read';
 import { formatPriceARS, getAvailableComparableStorePrices } from '@/lib/price-utils';
 import { decideProductPageIndexing } from '@/lib/seo/product-indexing';
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
@@ -33,7 +33,7 @@ const getProductForPage = cache(async (id: string): Promise<Product | null> => {
     return getStableFixtureProducts({}).find((product) => product.id === id) ?? null;
   }
   try {
-    return await readProductByIdFromDatabase(id);
+    return await readProductDetailByIdFromDatabase(id);
   } catch (error) {
     console.warn('[Product Page] DB-first detail unavailable for metadata/render:', error);
     return null;
