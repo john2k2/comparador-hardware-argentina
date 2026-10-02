@@ -5,6 +5,7 @@ import {
   hasExplicitIdentityConflict,
   needsIdentityReview,
   readIdentityReview,
+  bindReviewToSource,
 } from './offer-identity';
 
 function identityReview(overrides: Partial<OfferIdentityReview> = {}): OfferIdentityReview {
@@ -76,6 +77,19 @@ describe('offer identity evidence', () => {
 });
 
 describe('stored offer identity reviews', () => {
+  it('invalida una aprobación al cambiar título, SKU, publicación o ID de la fuente', () => {
+    const product = { name: 'AMD Ryzen 7 7800X3D', category: 'procesadores' };
+    const sourceIdentity = { title: product.name, listingRef: 'store:123', storeSku: 'A', sourceId: '123' };
+    const review = identityReview({ sourceIdentity });
+    const offer = { url: review.subject.url, identityReview: review, sourceIdentity };
+    expect(needsIdentityReview(offer, product)).toBe(false);
+    for (const changed of [{ ...sourceIdentity, title: 'AMD Ryzen 9 7950X3D' }, { ...sourceIdentity, storeSku: 'B' },
+      { ...sourceIdentity, listingRef: 'store:124' }, { ...sourceIdentity, sourceId: '124' }]) {
+      expect(needsIdentityReview({ ...offer, sourceIdentity: changed }, product)).toBe(true);
+      expect(bindReviewToSource(review, changed, product, offer.url)).toMatchObject({ status: 'needs-review', reason: 'insufficient-evidence', sourceIdentity: changed });
+    }
+    expect(bindReviewToSource(review, { ...sourceIdentity, title: ' AMD RYZEN 7 7800X3D ' }, product, offer.url)).toBe(review);
+  });
   it('accepts a matching review, keeps missing legacy reviews valid, and leaves mismatches pending', () => {
     const product = { name: 'AMD Ryzen 7 7800X3D', category: 'procesadores' };
     const offer = { url: 'https://store.example/amd-ryzen-7-7800x3d', identityReview: identityReview() };

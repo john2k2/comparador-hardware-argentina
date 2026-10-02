@@ -65,7 +65,7 @@ export interface Product {
   updatedAt: Date;
 }
 
-export type OfferSourceIdentity = { listingRef: string; title: string; storeSku?: string };
+export type OfferSourceIdentity = { listingRef: string; title: string; storeSku?: string; sourceId?: string };
 
 export interface ProductPrice {
   storeId: string;

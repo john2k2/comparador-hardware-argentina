@@ -1,8 +1,9 @@
-import { buildIdentityEvidence, hasExplicitIdentityConflict, needsIdentityReview, readIdentityReview } from '@/lib/quality/offer-identity';
+import { buildIdentityEvidence, hasExplicitIdentityConflict, needsIdentityReview, readIdentityReview, readSourceIdentity } from '@/lib/quality/offer-identity';
+import { listingReference } from '@/lib/scrapers/listing-reference';
 import type { HardwareCategory } from '@/lib/types';
 
 type SampleProduct = { id: string; category: HardwareCategory; name: string };
-type SamplePrice = { product_id: string; url: string; stock: string; price: unknown; last_updated: string | null; identity_review?: unknown };
+type SamplePrice = { product_id: string; store_id?: string; url: string; stock: string; price: unknown; last_updated: string | null; identity_review?: unknown; source_identity?: unknown };
 
 // Evidencia adicional para G02, no una aprobación comercial o garantía de stock.
 // Usa el mismo contrato de identidad que la aplicación; no basta status=consistent.
@@ -26,11 +27,14 @@ export function measureG02Sample(products: SampleProduct[], prices: SamplePrice[
     const review = readIdentityReview(price.identity_review);
     // Conservar el contador histórico de status persistido sin reescribir su significado.
     if ((price.identity_review as { status?: string } | null)?.status === 'needs-review') row.identityPending3h++;
-    const evidence = buildIdentityEvidence(product.name, product.category, price.url, review?.sourceIdentity?.title);
+    const invalidSource = price.source_identity != null && !readSourceIdentity(price.source_identity);
+    const sourceIdentity = readSourceIdentity(price.source_identity) ?? (invalidSource ? undefined : review?.sourceIdentity);
+    const evidence = buildIdentityEvidence(product.name, product.category, price.url, sourceIdentity?.title);
     const conflict = evidence ? hasExplicitIdentityConflict(evidence) : false;
     if (conflict) row.explicitConflicts3h++;
-    const accepted = evidence && !conflict && review?.sourceIdentity && review.status === 'consistent'
-      && !needsIdentityReview({ url: price.url, identityReview: review }, product);
+    const validUrl = !price.store_id || listingReference(price.store_id, price.url) !== null;
+    const accepted = !invalidSource && validUrl && evidence && !conflict && review?.sourceIdentity && review.status === 'consistent'
+      && !needsIdentityReview({ url: price.url, identityReview: review, sourceIdentity }, product);
     if (accepted) row.identityAccepted3h++;
     else row.identityUnverified3h++;
   }

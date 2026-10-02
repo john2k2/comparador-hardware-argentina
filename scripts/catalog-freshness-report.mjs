@@ -79,7 +79,7 @@ if (samplePath) {
   const prices = [];
   for (let offset = 0; ; offset += 1000) {
     const { data, error } = await supabase.from('product_prices')
-      .select('id,product_id,url,price,stock,last_updated,identity_review').in('product_id', ids)
+      .select('id,product_id,store_id,url,price,stock,last_updated,identity_review,source_identity').in('product_id', ids)
       .order('id', { ascending: true }).range(offset, offset + 999);
     if (error) throw error;
     prices.push(...(data ?? []));

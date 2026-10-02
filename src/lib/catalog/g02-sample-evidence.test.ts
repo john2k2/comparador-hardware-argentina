@@ -40,4 +40,14 @@ describe('evidencia de identidad de la muestra fija G02', () => {
     expect(measureG02Sample([product], [{ ...price, identity_review: { ...review, sourceIdentity: { title: 42 } } }], now))
       .toMatchObject({ identityAccepted3h: 0, identityUnverified3h: 1 });
   });
+  it('usa el título actual y no permite que un dictamen viejo acredite otra variante', () => {
+    expect(measureG02Sample([product], [{ ...price, source_identity: { title: 'ASUS Dual RTX 5060 Ti 16GB OC', listingRef: 'store:123' } }], now))
+      .toMatchObject({ identityAccepted3h: 0, identityUnverified3h: 1, explicitConflicts3h: 1 });
+  });
+  it('un título observado inválido o un host ajeno no acreditan identidad', () => {
+    expect(measureG02Sample([product], [{ ...price, source_identity: { title: 42, listingRef: 'store:123' } }], now))
+      .toMatchObject({ identityAccepted3h: 0, identityUnverified3h: 1 });
+    expect(measureG02Sample([product], [{ ...price, store_id: 'mexx' }], now))
+      .toMatchObject({ identityAccepted3h: 0, identityUnverified3h: 1 });
+  });
 });
