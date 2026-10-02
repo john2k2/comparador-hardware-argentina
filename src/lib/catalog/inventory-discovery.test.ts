@@ -3,7 +3,7 @@ import type { Product } from '@/lib/types';
 vi.mock('server-only', () => ({}));
 const mocks = vi.hoisted(() => ({ client: vi.fn(), fetch: vi.fn(), persist: vi.fn(), rpc: vi.fn() }));
 vi.mock('@/lib/server/supabase-server', () => ({ getServerSupabaseServiceClient: mocks.client }));
-vi.mock('@/lib/scrapers/source-inventory', () => ({ fetchSourceInventory: mocks.fetch }));
+vi.mock('@/lib/scrapers/source-inventory', () => ({ fetchSourceInventory: mocks.fetch, WOO_INVENTORY_STORES: new Set(['maxtecno', 'katech']) }));
 vi.mock('@/lib/persistence/product-catalog', () => ({ persistProductsSnapshot: mocks.persist }));
 import { planInventoryDiscovery, runInventoryDiscovery } from './inventory-discovery';
 const product = (id: string, url = `https://maxtecno.com.ar/producto/${id}/`) => ({

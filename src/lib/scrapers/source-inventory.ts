@@ -2,16 +2,19 @@ import { sourceFetch, SourceHttpError } from './source-http';
 import { WOOCOMMERCE_STORES } from './woocommerce-shared';
 import { parseWooStoreKnownProducts, verifyWooStoreProducts, WOO_BATCH_STORES } from './woocommerce-known-batch';
 import { fetchCompraGamerCatalogProducts } from './compragamer';
+import { getCompraGamerCatalog } from './compragamer-catalog';
+import { buildCompraGamerProductUrl } from './compragamer-mapper';
 import { listingReference } from './listing-reference';
 import { resolveHardwareCategoryForProduct } from '@/lib/catalog/hardware-categories';
 import type { Product } from '@/lib/types';
 
 export type InventoryListing = { sourceId: string; url: string; title: string; product?: Product };
 export type SourceInventory = { listings: InventoryListing[]; pages: number; rejectedProducts: number };
+export const WOO_INVENTORY_STORES = new Set([...WOO_BATCH_STORES, 'katech']);
 
 export function parseInventoryPage(data: unknown, storeId: string, observedAt: Date): InventoryListing[] {
   const store = WOOCOMMERCE_STORES.find(item => item.id === storeId);
-  if (!store || !WOO_BATCH_STORES.has(storeId) || !Array.isArray(data) || data.length > 100) throw new SourceHttpError('invalid-response');
+  if (!store || !WOO_INVENTORY_STORES.has(storeId) || !Array.isArray(data) || data.length > 100) throw new SourceHttpError('invalid-response');
   const host = new URL(store.baseUrl).hostname.replace(/^www\./, '');
   const listings: InventoryListing[] = [];
   for (const item of data) {
@@ -31,18 +34,20 @@ export function parseInventoryPage(data: unknown, storeId: string, observedAt: D
 /** La presencia se guarda sólo después de recorrer todas las páginas coherentes. */
 export async function fetchSourceInventory(storeId: string, signal: AbortSignal): Promise<SourceInventory> {
   if (storeId === 'compragamer') {
-    const products = await fetchCompraGamerCatalogProducts(signal);
-    if (!products.length || products.length > 10000) throw new SourceHttpError('invalid-response');
-    const listings = products.map(product => {
-      const url = product.prices[0].url, sourceId = listingReference(storeId, url)?.split(':').pop();
-      if (!sourceId || !/^\d+$/.test(sourceId)) throw new SourceHttpError('invalid-response');
-      return { sourceId, url, title: product.name, product };
+    const [raw, products] = await Promise.all([getCompraGamerCatalog(signal), fetchCompraGamerCatalogProducts(signal)]);
+    if (!raw.length || raw.length > 10000) throw new SourceHttpError('invalid-response');
+    const mapped = new Map(products.map(product => [listingReference(storeId, product.prices[0].url)?.split(':').pop(), product]));
+    const listings = raw.map(item => {
+      const id = Number(item.id_producto), title = item.nombre?.trim();
+      if (!Number.isSafeInteger(id) || id <= 0 || !title || title.length > 400) throw new SourceHttpError('invalid-response');
+      const sourceId = String(id), product = mapped.get(sourceId);
+      return { sourceId, url: buildCompraGamerProductUrl(id, title), title, product };
     });
     if (new Set(listings.map(item => item.sourceId)).size !== listings.length) throw new SourceHttpError('invalid-response');
-    return { listings, pages: 1, rejectedProducts: 0 };
+    return { listings, pages: 1, rejectedProducts: raw.length - products.length };
   }
   const store = WOOCOMMERCE_STORES.find(item => item.id === storeId);
-  if (!store || !WOO_BATCH_STORES.has(storeId)) throw new SourceHttpError('inconsistent-source');
+  if (!store || !WOO_INVENTORY_STORES.has(storeId)) throw new SourceHttpError('inconsistent-source');
   const host = new URL(store.baseUrl).hostname.replace(/^www\./, '');
   const listings: InventoryListing[] = [];
   let total: number | undefined, pages = 1;
@@ -65,7 +70,9 @@ export async function fetchSourceInventory(storeId: string, signal: AbortSignal)
   if (listings.length !== total || new Set(listings.map(item => item.sourceId)).size !== total
     || new Set(listings.map(item => listingReference(storeId, item.url))).size !== total) throw new SourceHttpError('invalid-response');
   const products = listings.flatMap(item => item.product ? [item.product] : []);
-  if (!products.length) throw new SourceHttpError('invalid-response');
-  await verifyWooStoreProducts(storeId, products, signal);
+  if (WOO_BATCH_STORES.has(storeId)) {
+    if (!products.length) throw new SourceHttpError('invalid-response');
+    await verifyWooStoreProducts(storeId, products, signal);
+  }
   return { listings, pages, rejectedProducts: listings.length - products.length };
 }

@@ -24,6 +24,9 @@ it('un pedido pendiente o un stock contradictorio no se transforma en disponibil
 it('excluye SCP aunque responda un JSON válido: no pasó la corroboración de precio',()=>{
  expect(parseWooStoreKnownProducts([item],'scphardstore',targets,at)).toEqual([]);
 });
+it('excluye precios de API de Katech después de constatar una discrepancia visible',()=>{
+ expect(parseWooStoreKnownProducts([{...item,permalink:'https://katech.com.ar/producto/ram/'}],'katech',[{url:'https://katech.com.ar/producto/ram/',category:'memoria-ram'}],at)).toEqual([]);
+});
 it('agrupa slugs en una lectura y no inventa observaciones para publicaciones ausentes',async()=>{
  mocks.fetch.mockResolvedValueOnce(new Response(JSON.stringify([item]),{headers:{'content-type':'application/json'}})).mockResolvedValueOnce(new Response('<body class="single-product"><main class="product instock"><h1 class="product-title">Memoria RAM Kingston DDR4 16GB</h1><div class="price-showcase-box"><span class="price-main">$403.489,31</span></div></main></body>'));
  const products=await fetchWooStoreKnownBatch('maxtecno',[...targets,{url:'https://maxtecno.com.ar/producto/otra/',category:'memoria-ram'}]);

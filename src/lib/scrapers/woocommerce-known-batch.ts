@@ -8,7 +8,7 @@ import type { HardwareCategory, Product, StockStatus } from '@/lib/types';
 
 // Sólo fuentes contrastadas contra precio/stock principales de su página.
 // SCP queda fuera: se constató un precio de API distinto del visible.
-export const WOO_BATCH_STORES = new Set(['maxtecno','katech']);
+export const WOO_BATCH_STORES = new Set(['maxtecno','dinobyte','goldentechstore']);
 export type WooKnownTarget = { url: string; category: HardwareCategory };
 const object = (value: unknown): value is Record<string,unknown> => !!value && typeof value==='object' && !Array.isArray(value);
 export function parseWooStoreKnownProducts(data: unknown,storeId: string,targets: WooKnownTarget[],observedAt: Date): Product[] {
@@ -57,7 +57,7 @@ export async function fetchWooStoreKnownBatch(storeId:string,targets:WooKnownTar
  const slugs=targets.map(target=>{
   const url=new URL(target.url);
   if(url.protocol!=='https:' || url.username || url.password || url.port || url.hostname.replace(/^www\./,'')!==host || url.search || url.hash) throw new SourceHttpError('invalid-response');
-  const slug=url.pathname.match(/^\/producto\/([^/]+)\/?$/)?.[1];
+  const slug=url.pathname.match(/^\/(?:producto|product)\/([^/]+)\/?$/)?.[1];
   if(!slug || slug.includes(',')) throw new SourceHttpError('invalid-response');
   return slug;
  });

@@ -20,6 +20,14 @@ function buildRawProduct(overrides: Partial<CompraGamerProductResponse> = {}): C
 }
 
 describe('compragamer-mapper', () => {
+  it.each([
+    ['Notebook HP Core i7 16GB DDR4', 'computadoras'],
+    ['Memoria notebook DDR4 16GB', 'memoria-ram'],
+    ['CPU Cooler compatible con Ryzen 7600', 'refrigeracion'],
+  ])('clasifica la función principal del producto: %s', (nombre, category) => {
+    const mapped = mapCompraGamerProduct({ item: buildRawProduct({ nombre }), subcategoryMap: new Map(), brandMap: new Map() });
+    expect(mapped?.category).toBe(category);
+  });
   it('conserva la hora de observación del catálogo al mapear una respuesta cacheada', () => {
     const observedAt = new Date('2026-09-29T12:00:00Z');
     const mapped = mapCompraGamerProduct({ item: buildRawProduct({ observedAt }),

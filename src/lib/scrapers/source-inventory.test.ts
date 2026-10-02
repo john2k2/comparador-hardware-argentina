@@ -1,5 +1,7 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ fetch: vi.fn(), verify: vi.fn() }));
+const mocks = vi.hoisted(() => ({ fetch: vi.fn(), verify: vi.fn(), rawCG: vi.fn(), mappedCG: vi.fn() }));
+vi.mock('./compragamer-catalog', () => ({ getCompraGamerCatalog: mocks.rawCG }));
+vi.mock('./compragamer', () => ({ fetchCompraGamerCatalogProducts: mocks.mappedCG }));
 vi.mock('./source-http', async () => ({ ...await vi.importActual('./source-http'), sourceFetch: mocks.fetch }));
 vi.mock('./woocommerce-known-batch', async () => ({ ...await vi.importActual('./woocommerce-known-batch'), verifyWooStoreProducts: mocks.verify }));
 import { fetchSourceInventory, parseInventoryPage } from './source-inventory';
@@ -33,4 +35,17 @@ it('rechaza dominios ajenos y títulos ausentes antes de registrar la página', 
 it('una discrepancia de precio visible impide usar todo el catálogo', async () => {
   mocks.fetch.mockResolvedValueOnce(response([item(1)])); mocks.verify.mockRejectedValueOnce(new Error('inconsistent-source'));
   await expect(fetchSourceInventory('maxtecno', new AbortController().signal)).rejects.toThrow('inconsistent-source');
+});
+it('Katech aporta presencia completa sin usar los precios contradictorios de su API', async () => {
+  mocks.fetch.mockResolvedValueOnce(response([{ ...item(1), permalink: 'https://katech.com.ar/producto/ram-1/' }]));
+  const result = await fetchSourceInventory('katech', new AbortController().signal);
+  expect(result.listings).toHaveLength(1); expect(result.listings[0].product).toBeUndefined();
+  expect(result.rejectedProducts).toBe(1); expect(mocks.verify).not.toHaveBeenCalled();
+});
+it('CompraGamer conserva también los registros que no producen una oferta clasificable', async () => {
+  mocks.rawCG.mockResolvedValue([{ id_producto: 1, nombre: 'Memoria RAM DDR4 16GB' }, { id_producto: 2, nombre: 'Servicio sin precio comprable' }]);
+  mocks.mappedCG.mockResolvedValue([{ name: 'Memoria RAM DDR4 16GB', prices: [{ url: 'https://compragamer.com/producto/Memoria_RAM_DDR4_16GB_1' }] }]);
+  const result = await fetchSourceInventory('compragamer', new AbortController().signal);
+  expect(result.listings).toHaveLength(2); expect(result.rejectedProducts).toBe(1);
+  expect(result.listings[1]).toMatchObject({ sourceId: '2', title: 'Servicio sin precio comprable', product: undefined });
 });

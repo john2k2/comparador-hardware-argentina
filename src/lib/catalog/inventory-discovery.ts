@@ -1,7 +1,7 @@
 import 'server-only';
 import { randomUUID } from 'node:crypto';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
-import { fetchSourceInventory } from '@/lib/scrapers/source-inventory';
+import { fetchSourceInventory, WOO_INVENTORY_STORES } from '@/lib/scrapers/source-inventory';
 import { listingReference } from '@/lib/scrapers/listing-reference';
 import { SourceHttpError } from '@/lib/scrapers/source-http';
 import { persistProductsSnapshot } from '@/lib/persistence/product-catalog';
@@ -37,7 +37,7 @@ export async function runInventoryDiscovery() {
   const client = getServerSupabaseServiceClient();
   if (!client) throw new Error('REFRESH_DATABASE_UNAVAILABLE');
   const signal = AbortSignal.timeout(7 * 60_000);
-  return Promise.all(['compragamer', 'maxtecno', 'katech'].map(async storeId => {
+  return Promise.all(['compragamer', ...WOO_INVENTORY_STORES].map(async storeId => {
     const token = randomUUID(), startedAt = new Date().toISOString();
     const claimed = await client.rpc('claim_catalog_inventory', { p_store_id: storeId, p_token: token });
     if (claimed.error) return { storeId, status: 'failed', code: 'REFRESH_INVENTORY_CLAIM_FAILED' };

@@ -2,6 +2,7 @@ import type { HardwareCategory, Product, StockStatus } from '../types';
 import { extractKnownHardwareBrand, normalizeScrapedAbsoluteUrl, parseScrapedArsPrice } from './scraper-helpers';
 import { extractBrandFromName as extractBrandFromNameShared } from './brand-utils';
 import type { CompraGamerProductResponse } from './compragamer-catalog';
+import { inferHardwareCategoryFromName } from '@/lib/catalog/hardware-categories';
 
 const COMPRAGAMER_IMAGE_BASE_URL = 'https://imagenes.compragamer.com/productos/';
 
@@ -158,7 +159,7 @@ function buildProductSlug(name: string): string {
   return normalized || 'producto';
 }
 
-function buildProductUrl(productId: number, name: string): string {
+export function buildCompraGamerProductUrl(productId: number, name: string): string {
   const slug = buildProductSlug(name);
   return `https://compragamer.com/producto/${slug}_${productId}`;
 }
@@ -264,7 +265,7 @@ export function mapCompraGamerProduct(input: {
   const subcategoryId = toPositiveInteger(input.item.id_subcategoria);
   const inferredBySubcategory = subcategoryId !== null ? input.subcategoryMap.get(subcategoryId) : undefined;
   const inferredByName = inferCategoryFromName(name);
-  const category = inferredBySubcategory ?? inferredByName ?? input.categoryHint;
+  const category = inferHardwareCategoryFromName(name) ?? inferredBySubcategory ?? inferredByName ?? input.categoryHint;
   if (!category) return null;
 
   const brandId = toPositiveInteger(input.item.id_marca);
@@ -290,7 +291,7 @@ export function mapCompraGamerProduct(input: {
       {
         storeId: 'compragamer',
         storeName: 'CompraGamer',
-        url: buildProductUrl(productId, name),
+        url: buildCompraGamerProductUrl(productId, name),
         price: specialPrice,
         installment: null,
         stock: stockStatus,
