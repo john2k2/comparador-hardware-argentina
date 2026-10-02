@@ -58,6 +58,7 @@ describe('compragamer-mapper', () => {
     expect(mapped?.category).toBe('tarjetas-graficas');
     expect(mapped?.brand).toBe('ASUS');
     expect(mapped?.prices[0].price).toBe(1_249_999);
+    expect(mapped?.prices[0].priceCondition).toBe('special');
     expect(mapped?.prices[0].stock).toBe('low-stock');
     expect(mapped?.image).toBe('https://imagenes.compragamer.com/productos/compragamer_Imganen_general_rtx5070ti-med.jpg');
     expect(mapped?.specs).toMatchObject({

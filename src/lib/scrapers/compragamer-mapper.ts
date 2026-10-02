@@ -293,6 +293,7 @@ export function mapCompraGamerProduct(input: {
         storeName: 'CompraGamer',
         url: buildCompraGamerProductUrl(productId, name),
         price: specialPrice,
+        priceCondition: 'special',
         installment: null,
         stock: stockStatus,
         lastUpdated: input.item.observedAt ?? new Date(),
