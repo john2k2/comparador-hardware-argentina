@@ -1,13 +1,21 @@
 import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
-import { ANALYTICS_CONSENT_MAX_AGE_MS, buildAnalyticsBootstrap, parseAnalyticsChoice } from './consent';
+import { ANALYTICS_CONSENT_MAX_AGE_MS, ANALYTICS_READY_EVENT, buildAnalyticsBootstrap, parseAnalyticsChoice } from './consent';
 
 function executeBootstrap(raw: string | null, blockedStorage = false) {
   const appended: { src: string; nonce: string }[] = [];
-  const window: Record<string, unknown> = { localStorage: { getItem: () => { if (blockedStorage) throw new Error('blocked'); return raw; } } };
+  const ready: string[] = [];
+  const window: Record<string, unknown> = {
+    localStorage: { getItem: () => { if (blockedStorage) throw new Error('blocked'); return raw; } },
+    dispatchEvent: (event: Event) => {
+      const commands = (window.dataLayer as IArguments[]).map(item => Array.from(item));
+      expect(commands.some(command => command[0] === 'config')).toBe(true);
+      ready.push(event.type);
+    },
+  };
   const document = { currentScript: { nonce: 'nonce-test' }, createElement: () => ({}), head: { appendChild: (node: { src: string; nonce: string }) => appended.push(node) } };
-  runInNewContext(buildAnalyticsBootstrap('G-TEST123'), { window, document, Date });
-  return { window, appended, apply: window.__chaApplyAnalyticsChoice as (allowed: boolean) => void };
+  runInNewContext(buildAnalyticsBootstrap('G-TEST123'), { window, document, Date, Event });
+  return { window, appended, ready, apply: window.__chaApplyAnalyticsChoice as (allowed: boolean) => void };
 }
 
 describe('Consentimiento básico de analítica', () => {
@@ -26,6 +34,7 @@ describe('Consentimiento básico de analítica', () => {
     result.apply(true);
     result.apply(true);
     expect(result.appended).toEqual([{ async: true, nonce: 'nonce-test', src: 'https://www.googletagmanager.com/gtag/js?id=G-TEST123' }]);
+    expect(result.ready).toEqual([ANALYTICS_READY_EVENT]);
     result.apply(false);
     expect(result.window.__chaAnalyticsAllowed).toBe(false);
     expect(result.window['ga-disable-G-TEST123']).toBe(true);

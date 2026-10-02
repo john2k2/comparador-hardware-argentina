@@ -9,6 +9,7 @@ import { getCategorySeoCopy, isCategoryCanonicalLanding, isIndexableCategoryLand
 import { stores as defaultStores } from '@/lib/scrapers/static-data';
 import type { Product, SearchFilters } from '@/lib/types';
 import { trackFilterChange, trackSearch } from '@/lib/analytics';
+import { ANALYTICS_READY_EVENT } from '@/lib/analytics/consent';
 import { SearchCacheProvider, useProductLoader, useSearchCache, useScrollRestoration, useSearchMetadata } from '@/lib/search/search-hooks';
 import { SearchPageView } from './SearchPageView';
 
@@ -50,7 +51,6 @@ function SearchPageClientInner({
   const [resolvedRequestKey, setResolvedRequestKey] = useState<string | null>(initialResolvedRequestKey);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isNavigating, startNavigation] = useTransition();
-  const pendingSearchTrackRef = useRef<{ query: string; category?: string } | null>(null);
   const filterDebounceRef = useRef<number | null>(null);
   const initialRouteRef = useRef(buildSearchRoute(initialState));
 
@@ -108,15 +108,12 @@ function SearchPageClientInner({
   });
 
   useEffect(() => {
-    if (pendingSearchTrackRef.current && totalResults >= 0 && !isBusy) {
-      trackSearch({
-        searchTerm: pendingSearchTrackRef.current.query,
-        category: pendingSearchTrackRef.current.category,
-        resultCount: totalResults,
-      });
-      pendingSearchTrackRef.current = null;
-    }
-  }, [totalResults, isBusy]);
+    if (!searchQuery.trim() || isBusy || searchError || resolvedRequestKey !== requestKey) return;
+    const track = () => trackSearch({ searchTerm: searchQuery, category: currentState.category, resultCount: totalResults });
+    track();
+    window.addEventListener(ANALYTICS_READY_EVENT, track);
+    return () => window.removeEventListener(ANALYTICS_READY_EVENT, track);
+  }, [searchQuery, currentState.category, totalResults, isBusy, searchError, resolvedRequestKey, requestKey]);
 
   const buildStateFromFilters = useCallback((nextFilters: SearchFilters, page = 1): SearchPageState => ({
     query: nextFilters.query.trim(),
@@ -159,7 +156,6 @@ function SearchPageClientInner({
       // Next conserva la navegación de documentos y de landings de categorías.
       if (window.location.pathname !== '/search') return;
       const nextState = parseSearchState(Object.fromEntries(new URLSearchParams(window.location.search)));
-      pendingSearchTrackRef.current = null;
       setDraftFilters(toSearchFilters(nextState));
       setCurrentState(nextState);
     };
@@ -175,7 +171,6 @@ function SearchPageClientInner({
 
   const handleSearch = useCallback((query: string) => {
     const nextQuery = query.trim();
-    pendingSearchTrackRef.current = { query: nextQuery, category: filters.category };
     commitState(buildStateFromFilters({ ...filters, query: nextQuery }, 1));
   }, [filters, buildStateFromFilters, commitState]);
 

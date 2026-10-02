@@ -9,6 +9,7 @@ import { saveRecentlyViewedProduct } from '@/lib/client/recently-viewed';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
 import { trackProductView } from '@/lib/analytics';
+import { ANALYTICS_READY_EVENT } from '@/lib/analytics/consent';
 import { resolveBackHref } from '@/lib/product/product-cache-utils';
 import { useProductDetailState } from '@/lib/product/product-detail-hooks';
 import { ProductImage } from './ProductImage';
@@ -52,7 +53,7 @@ function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientPro
   useEffect(() => {
     if (!product) return;
     saveRecentlyViewedProduct(product);
-    trackProductView({
+    const track = () => trackProductView({
       productId: product.id,
       productName: product.name,
       category: product.category,
@@ -60,6 +61,9 @@ function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientPro
       price: product.lowestPrice,
       storeCount: merchantPrices.length,
     });
+    track();
+    window.addEventListener(ANALYTICS_READY_EVENT, track);
+    return () => window.removeEventListener(ANALYTICS_READY_EVENT, track);
   }, [product, merchantPrices.length]);
 
   if (isLoading) {

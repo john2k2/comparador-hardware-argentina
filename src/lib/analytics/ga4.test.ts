@@ -6,7 +6,7 @@ describe('ga4 analytics helpers', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.stubEnv('NEXT_PUBLIC_GA4_MEASUREMENT_ID', 'G-TEST123');
-    vi.stubGlobal('window', { gtag, __chaAnalyticsAllowed: true });
+    vi.stubGlobal('window', { gtag, __chaAnalyticsAllowed: true, location: { href: 'https://test.local/search' } });
     gtag.mockReset();
   });
 
@@ -122,7 +122,7 @@ describe('ga4 analytics helpers', () => {
       surface: 'contact_page',
     });
 
-    expect(gtag).toHaveBeenCalledWith('event', 'generate_lead', expect.objectContaining({
+    expect(gtag).toHaveBeenCalledWith('event', 'contact_intent', expect.objectContaining({
       lead_type: 'commercial',
       contact_channel: 'email',
       contact_surface: 'contact_page',
@@ -150,10 +150,28 @@ describe('ga4 analytics helpers', () => {
       service_type: 'pc_advisory',
       cta_surface: 'budget_builder',
     }));
-    expect(gtag).toHaveBeenNthCalledWith(3, 'event', 'generate_lead', expect.objectContaining({
+    expect(gtag).toHaveBeenNthCalledWith(3, 'event', 'contact_intent', expect.objectContaining({
       lead_type: 'pc_advisory',
       cta_id: 'contact_pc_advisory_email',
     }));
+  });
+
+  it('deduplica vistas y búsquedas al resolver o rerenderizar y permite otra navegación', async () => {
+    const { trackProductView, trackSearch } = await import('./ga4');
+    const product = { productId: 'real-id', productName: 'CPU', category: 'procesadores', storeCount: 1 };
+    window.__chaAnalyticsAllowed = false;
+    trackProductView(product);
+    expect(gtag).not.toHaveBeenCalled();
+    window.__chaAnalyticsAllowed = true;
+    trackProductView(product);
+    trackProductView({ ...product, storeCount: 2 });
+    trackSearch({ searchTerm: 'ryzen', resultCount: 1 });
+    trackSearch({ searchTerm: 'ryzen', resultCount: 2 });
+    expect(gtag.mock.calls.filter(call => call[1] === 'view_item')).toHaveLength(1);
+    expect(gtag.mock.calls.filter(call => call[1] === 'search')).toHaveLength(1);
+    window.location.href = 'https://test.local/product/another-id';
+    trackProductView(product);
+    expect(gtag.mock.calls.filter(call => call[1] === 'view_item')).toHaveLength(2);
   });
 
   it('tracks a PC builder action with bounded fields and no free-form payload', async () => {

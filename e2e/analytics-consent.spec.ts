@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures/deterministic.fixture';
+import { expect, test, installSearchCatalog, searchFromIdle } from './fixtures/deterministic.fixture';
 import type { Page } from '@playwright/test';
 import { ANALYTICS_CONSENT_KEY, ANALYTICS_CONSENT_MAX_AGE_MS } from '../src/lib/analytics/consent';
 
@@ -37,7 +37,48 @@ async function readConsentCommands(page: Page) {
   });
 }
 
+async function analyticsEvents(page: Page, name: string) {
+  return page.evaluate((eventName) => (window.dataLayer ?? []).map(entry => Array.from(entry as ArrayLike<unknown>))
+    .filter(entry => entry[0] === 'event' && entry[1] === eventName), name);
+}
+
 test.describe('Consentimiento de analítica', () => {
+  test('una entrada directa en búsqueda espera consentimiento y emite un solo search', async ({ page }) => {
+    await installSearchCatalog(page);
+    await page.route(gtagScriptPattern, route => route.fulfill({ contentType: 'application/javascript', body: '' }));
+    await page.goto('/search?q=Ryzen');
+    await expect(page.getByPlaceholder('NUEVA BUSQUEDA...')).toHaveValue('Ryzen');
+    expect(await analyticsEvents(page, 'search')).toHaveLength(0);
+    await page.getByRole('button', { name: 'Aceptar analítica' }).click();
+    await expect.poll(() => analyticsEvents(page, 'search')).toHaveLength(1);
+    await page.evaluate(() => window.dispatchEvent(new Event('cha-analytics-ready')));
+    expect(await analyticsEvents(page, 'search')).toHaveLength(1);
+  });
+
+  test('una ficha emite view_item tras aceptar y no lo duplica al volver a abrir privacidad', async ({ page }) => {
+    await page.route(gtagScriptPattern, route => route.fulfill({ contentType: 'application/javascript', body: '' }));
+    await page.goto('/product/fixture-ryzen-5600');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Ryzen 5 5600');
+    expect(await analyticsEvents(page, 'view_item')).toHaveLength(0);
+    await page.getByRole('button', { name: 'Aceptar analítica' }).click();
+    await expect.poll(() => analyticsEvents(page, 'view_item')).toHaveLength(1);
+    await page.getByRole('contentinfo').getByRole('button', { name: 'Preferencias de privacidad' }).click();
+    await page.getByRole('button', { name: 'Aceptar analítica' }).click();
+    expect(await analyticsEvents(page, 'view_item')).toHaveLength(1);
+    await page.reload();
+    await expect.poll(() => analyticsEvents(page, 'view_item')).toHaveLength(1);
+  });
+
+  test('una respuesta de búsqueda fallida no se registra como búsqueda resuelta', async ({ page }) => {
+    await installSearchCatalog(page);
+    await page.route(gtagScriptPattern, route => route.fulfill({ contentType: 'application/javascript', body: '' }));
+    await page.route('**/api/search**', route => route.fulfill({ status: 503, json: { error: 'fixture-unavailable' } }));
+    await page.goto('/search');
+    await page.getByRole('button', { name: 'Aceptar analítica' }).click();
+    await searchFromIdle(page);
+    await expect(page.getByRole('alert').filter({ hasText: '[ ERROR EN LA BUSQUEDA ]' })).toBeVisible();
+    expect(await analyticsEvents(page, 'search')).toHaveLength(0);
+  });
   test('inicio sin elección no solicita Google Analytics y rechazar persiste tras recargar', async ({ page }) => {
     const gtagRequests = collectGtagRequests(page);
 

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { pageview } from '@/lib/analytics';
+import { beginAnalyticsNavigation } from '@/lib/analytics/navigation-events';
 
 export function Analytics() {
   const pathname = usePathname();
@@ -12,6 +13,7 @@ export function Analytics() {
 
   useEffect(() => {
     if (!pathname) return;
+    beginAnalyticsNavigation();
 
     if (!firstPageViewHandledByBootstrap.current) {
       firstPageViewHandledByBootstrap.current = true;

@@ -1,5 +1,6 @@
 export const ANALYTICS_CONSENT_KEY = 'cha-analytics-consent:v1';
 export const ANALYTICS_CONSENT_EVENT = 'cha-open-privacy-preferences';
+export const ANALYTICS_READY_EVENT = 'cha-analytics-ready';
 export const ANALYTICS_CONSENT_MAX_AGE_MS = 180 * 24 * 60 * 60 * 1000;
 
 export type AnalyticsChoice = { allowed: boolean; savedAt: number };
@@ -46,6 +47,7 @@ export function buildAnalyticsBootstrap(measurementId: string): string {
       if(nonce) script.nonce=nonce;
       script.src='https://www.googletagmanager.com/gtag/js?id='+id;
       document.head.appendChild(script);
+      window.dispatchEvent(new Event(${JSON.stringify(ANALYTICS_READY_EVENT)}));
     };
     try {
       var value=JSON.parse(window.localStorage.getItem(key));

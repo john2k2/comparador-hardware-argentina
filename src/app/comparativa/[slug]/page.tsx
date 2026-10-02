@@ -24,6 +24,7 @@ import { DEFAULT_OG_IMAGE } from '@/lib/seo/metadata';
 import { getEditorialMethodology } from '@/lib/seo/editorial-methodology';
 import { EditorialMethodology } from '@/components/seo/EditorialMethodology';
 import { EditorialAdPreview } from '@/components/adsense/EditorialAdPreview';
+import { StoreOutboundLink } from '@/components/functional/StoreOutboundLink';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -234,7 +235,7 @@ export default async function ComparisonPage({ params }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {Array.from(new Set([...p1Prices, ...p2Prices].map(p => p.storeId))).map(storeId => {
+                {Array.from(new Set([...p1Prices, ...p2Prices].map(p => p.storeId))).map((storeId, index) => {
                   const p1Offer = p1Prices.find(p => p.storeId === storeId);
                   const p2Offer = p2Prices.find(p => p.storeId === storeId);
                   const p1Price = p1Offer?.price ?? 0;
@@ -246,10 +247,10 @@ export default async function ComparisonPage({ params }: Props) {
                     <tr key={storeId} className="border-b border-border/50">
                       <td className="py-2 px-3">{store}</td>
                       <td className="text-right py-2 px-3">
-                        {p1Offer ? <ObservedStorePrice offer={p1Offer} store={store} /> : '-'}
+                        {p1Offer ? <ObservedStorePrice offer={p1Offer} store={store} product={product1} definition={comparison.product1} position={index + 1} /> : '-'}
                       </td>
                       <td className="text-right py-2 px-3">
-                        {p2Offer ? <ObservedStorePrice offer={p2Offer} store={store} /> : '-'}
+                        {p2Offer ? <ObservedStorePrice offer={p2Offer} store={store} product={product2} definition={comparison.product2} position={index + 1} /> : '-'}
                       </td>
                       <td className={`text-right py-2 px-3 ${diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : ''}`}>
                         {diff !== 0 ? formatPriceARS(Math.abs(diff)) : '-'}
@@ -374,7 +375,11 @@ function ProductCard({
             : `${prices.length} tiendas informaron stock en las últimas 24 h`}
       </p>
       {bestOffer && <p className="mt-1 text-[10px] text-muted-foreground font-mono">Menor precio observado en {bestOffer.storeName || bestOffer.storeId} el {formatObservationDate(bestOffer.lastUpdated)}. Puede haber cambiado.</p>}
-      {bestStoreUrl && <a href={bestStoreUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-[10px] text-secondary hover:underline">Comprobar en tienda →</a>}
+      {bestStoreUrl && bestOffer && <StoreOutboundLink className="inline-flex min-h-11 items-center text-[10px] text-secondary hover:underline"
+        tracking={{ productId: realProduct?.id, productName: realProduct?.name ?? product.name, category: product.category,
+          storeId: bestOffer.storeId, storeName: bestOffer.storeName || bestOffer.storeId, price: bestOffer.price,
+          position: 1, ctaId: 'comparison_best_offer', destinationUrl: bestStoreUrl, surface: 'comparison', linkType: 'organic' }}>
+        Comprobar en tienda →</StoreOutboundLink>}
       {realProduct && (
         <Link 
           href={`/product/${realProduct.id}`}
@@ -400,11 +405,17 @@ function safeStoreUrl(rawUrl: string): string | null {
   }
 }
 
-function ObservedStorePrice({ offer, store }: { offer: Product['prices'][number]; store: string }) {
+function ObservedStorePrice({ offer, store, product, definition, position }: {
+  offer: Product['prices'][number]; store: string; product?: Product;
+  definition: ComparisonDefinition['product1']; position: number;
+}) {
   const url = safeStoreUrl(offer.url);
   return (
     <div>
-      {url ? <a href={url} target="_blank" rel="noopener noreferrer" className="text-secondary hover:underline" aria-label={`Comprobar precio de ${store} en la tienda`}>{formatPriceARS(offer.price)} ↗</a> : formatPriceARS(offer.price)}
+      {url ? <StoreOutboundLink className="text-secondary hover:underline" ariaLabel={`Comprobar precio de ${store} en la tienda`}
+        tracking={{ productId: product?.id, productName: product?.name ?? definition.name, category: definition.category,
+          storeId: offer.storeId, storeName: store, price: offer.price, position, ctaId: 'comparison_store_price',
+          destinationUrl: url, surface: 'comparison', linkType: 'organic' }}>{formatPriceARS(offer.price)} ↗</StoreOutboundLink> : formatPriceARS(offer.price)}
       <span className="block text-[9px] text-muted-foreground">Obs. {formatObservationDate(offer.lastUpdated)}</span>
     </div>
   );

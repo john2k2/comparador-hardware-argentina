@@ -1,3 +1,5 @@
+import { firstEventInNavigation } from './navigation-events';
+
 const GA4_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID;
 
 function getMeasurementId(): string | undefined {
@@ -59,6 +61,7 @@ export function trackSearch(params: {
   resultCount: number;
 }): void {
   if (!isGA4Available()) return;
+  if (!firstEventInNavigation(`search:${params.searchTerm ?? ''}:${params.category ?? ''}`)) return;
 
   window.gtag('event', 'search', {
     search_term: params.searchTerm || '',
@@ -79,7 +82,7 @@ export function trackProductView(params: {
   price?: number;
   storeCount: number;
 }): void {
-  if (!isGA4Available()) return;
+  if (!isGA4Available() || !firstEventInNavigation(`view_item:${params.productId}`)) return;
 
   window.gtag('event', 'view_item', {
     currency: 'ARS',
@@ -170,7 +173,7 @@ export function trackContactIntent(params: {
 }): void {
   if (!isGA4Available()) return;
 
-  window.gtag('event', 'generate_lead', {
+  window.gtag('event', 'contact_intent', {
     lead_type: params.purpose,
     contact_channel: params.channel,
     contact_surface: params.surface,
@@ -238,7 +241,7 @@ export function trackPcBuilderAction(params: {
  * Track a click to external store
  */
 export function trackStoreClick(params: {
-  productId: string;
+  productId?: string;
   productName: string;
   storeName: string;
   storeId: string;
@@ -247,7 +250,7 @@ export function trackStoreClick(params: {
   category: string;
   ctaId: string;
   destinationUrl: string;
-  surface: 'product_detail' | 'search_results' | 'home_section' | 'budget_guide' | 'budget_builder';
+  surface: 'product_detail' | 'search_results' | 'home_section' | 'budget_guide' | 'budget_builder' | 'comparison';
   linkType: 'organic' | 'sponsored';
 }): void {
   if (!isGA4Available()) return;
@@ -255,7 +258,7 @@ export function trackStoreClick(params: {
   window.gtag('event', 'outbound_store_click', {
     currency: 'ARS',
     value: params.price,
-    product_id: params.productId,
+    ...(params.productId ? { product_id: params.productId } : {}),
     product_name: params.productName,
     store_id: params.storeId,
     store_name: params.storeName,
