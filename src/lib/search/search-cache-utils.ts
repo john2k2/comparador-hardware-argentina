@@ -6,7 +6,7 @@
 import type { SearchApiResponse } from './search-api';
 
 const CLIENT_SEARCH_CACHE_TTL_MS = 90 * 1000;
-const CLIENT_SEARCH_STORAGE_PREFIX = 'search-cache:v3:';
+const CLIENT_SEARCH_STORAGE_PREFIX = 'search-cache:v4:';
 const SEARCH_SCROLL_STORAGE_PREFIX = 'search-scroll:v1:';
 const SEARCH_SCROLL_TTL_MS = 10 * 60 * 1000;
 

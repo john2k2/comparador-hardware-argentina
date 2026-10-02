@@ -139,7 +139,7 @@ export function buildSearchCacheKey(input: {
 }) {
   const stores = Array.from(input.stores).sort().join(',');
   return [
-    'catalog-v10',
+    'catalog-v11',
     `q=${input.query.toLowerCase()}`,
     `cat=${input.category ?? ''}`,
     `sort=${input.sortBy}`,
