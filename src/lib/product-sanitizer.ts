@@ -1,4 +1,4 @@
-import { computeComparableStorePriceStats } from '@/lib/price-utils';
+import { computeComparableStorePriceStats, computeCurrentStorePriceStats } from '@/lib/price-utils';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import { normalizeProductImageUrl } from '@/lib/product-images';
 import type { Product, ProductPrice } from '@/lib/types';
@@ -53,6 +53,8 @@ function sanitizeProductOffers(product: Product, preserveOffers: boolean): Produ
   const comparableStats = sanitizedPrices.length > 0
     ? computeComparableStorePriceStats(sanitizedPrices)
     : null;
+  const currentStats = computeCurrentStorePriceStats(sanitizedPrices, { name: fallbackName, category: product.category });
+  const effectiveStats = currentStats.comparablePrices.length ? currentStats : comparableStats;
 
   return {
     ...product,
@@ -62,10 +64,11 @@ function sanitizeProductOffers(product: Product, preserveOffers: boolean): Produ
     description: sanitizeText(product.description, fallbackName),
     image: normalizeProductImageUrl(product.image),
     specs: sanitizeSpecs(product.specs),
-    prices: preserveOffers ? sanitizedPrices : comparableStats?.comparablePrices ?? sanitizedPrices,
-    lowestPrice: comparableStats?.lowest ?? product.lowestPrice,
-    highestPrice: comparableStats?.highest ?? product.highestPrice,
-    averagePrice: comparableStats?.average ?? product.averagePrice,
+    // Una alternativa actual puede quedar detrás del mínimo histórico de la tienda.
+    prices: preserveOffers || currentStats.comparablePrices.length ? sanitizedPrices : comparableStats?.comparablePrices ?? sanitizedPrices,
+    lowestPrice: effectiveStats?.lowest ?? product.lowestPrice,
+    highestPrice: effectiveStats?.highest ?? product.highestPrice,
+    averagePrice: effectiveStats?.average ?? product.averagePrice,
   };
 }
 

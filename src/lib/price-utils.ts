@@ -3,7 +3,9 @@
 // ============================================
 
 import type { InstallmentInfo, PriceHistoryPoint, ProductPrice } from './types';
-import { needsIdentityReview, type OfferIdentityReview } from './quality/offer-identity';
+import { buildIdentityEvidence, hasExplicitIdentityConflict, needsIdentityReview, type OfferIdentityReview } from './quality/offer-identity';
+import type { HardwareCategory, OfferSourceIdentity } from './types';
+import { listingReference } from './scrapers/listing-reference';
 import { isCatalogOfferFresh } from './price-freshness';
 
 type PriceLike = { price: number };
@@ -13,6 +15,7 @@ type StorePriceLike = PriceLike & {
   stock?: string | null;
   url?: string;
   identityReview?: OfferIdentityReview;
+  sourceIdentity?: OfferSourceIdentity;
 };
 
 // Umbrales para deteccion de outliers en precios
@@ -40,8 +43,12 @@ export function isComparableStoreOffer(
   offer: StorePriceLike,
   product: { name: string; category?: string },
 ): boolean {
+  const evidence = offer.url && product.category ? buildIdentityEvidence(product.name, product.category as HardwareCategory,
+    offer.url, offer.sourceIdentity?.title ?? offer.identityReview?.sourceIdentity?.title) : null;
   return isFinitePositivePrice(offer.price)
     && (offer.stock === 'in-stock' || offer.stock === 'low-stock')
+    && (!offer.url || listingReference(offer.storeId, offer.url) !== null)
+    && (!evidence || !hasExplicitIdentityConflict(evidence))
     && !needsIdentityReview(offer, product);
 }
 
@@ -296,6 +303,12 @@ export function computeComparableStorePriceStats(prices: ProductPrice[]) {
     ...availableStats,
     comparablePrices: [...availableStats.comparablePrices, ...unavailable],
   };
+}
+
+/** Base única para mínimos vigentes. El histórico permanece separado y completo. */
+export function computeCurrentStorePriceStats(prices: ProductPrice[], product: { name: string; category?: string }, now = Date.now()) {
+  return computeComparablePriceStats(pickBestStorePrices(prices.filter(price =>
+    isComparableStoreOffer(price, product) && isCatalogOfferFresh(price.lastUpdated, now))));
 }
 
 export function getComparableStorePrices(prices: ProductPrice[]): ProductPrice[] {

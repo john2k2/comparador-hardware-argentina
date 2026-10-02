@@ -139,9 +139,9 @@ describe('guide listing preservation from database rows to resolution', () => {
       priceSource: 'catalog', price: 210_000, bestStoreUrl: urlB, storeCount: 1,
       offers: [expect.objectContaining({ url: urlB, lastUpdated: fresh })],
     });
-    // El catálogo general conserva la reducción existente por tienda.
-    expect(mapDbProduct(candidate).prices.map((offer) => offer.url)).toEqual([urlA]);
-    expect(resolveGuideComponent(spec, [mapDbProduct(candidate)]).priceSource).toBe('estimate');
+    // El mínimo histórico conserva su URL y deja visible la alternativa vigente.
+    expect(mapDbProduct(candidate).prices.map((offer) => offer.url)).toEqual([urlA, urlB]);
+    expect(resolveGuideComponent(spec, [mapDbProduct(candidate)]).priceSource).toBe('catalog');
     const priorityProducts = await loadGuidePriorityProducts('procesadores', spec.searchTerms);
     expect(priorityProducts[0].prices.map((offer) => offer.url)).toEqual([urlA, urlB]);
     expect(resolveGuideComponent(spec, priorityProducts).bestStoreUrl).toBe(urlB);

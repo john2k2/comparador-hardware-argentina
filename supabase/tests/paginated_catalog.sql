@@ -6,7 +6,7 @@ select 'agrupado-audit-' || i, 'Auditcatalog item ' || lpad(i::text,4,'0'),
   'perifericos','Auditcatalog','item ' || i, now()-i*interval '1 minute'
 from generate_series(1,1501) i;
 insert into public.product_prices(product_id,store_id,url,price,stock,last_updated)
-select 'agrupado-audit-' || i,'mexx','https://example.invalid/audit/' || i,
+select 'agrupado-audit-' || i,'mexx','https://www.mexx.com.ar/audit/' || i,
   case when i=1501 then 100 else 100000+i end,'in-stock',now()
 from generate_series(1,1501) i;
 
@@ -43,7 +43,7 @@ end $$;
 
 -- Los filtros se calculan sobre el precio de las tiendas seleccionadas.
 insert into public.product_prices(product_id,store_id,url,price,stock,last_updated)
-values ('agrupado-audit-50','venex','https://example.invalid/venex/50',300000,'in-stock',now());
+values ('agrupado-audit-50','venex','https://www.venex.com.ar/audit/50',300000,'in-stock',now());
 do $$
 declare result jsonb;
 begin
@@ -58,8 +58,8 @@ insert into public.products(id,name,category,model)
 values ('audit-original','Auditcatalog item 0050','perifericos','0050'),
   ('audit-only-original','Auditcatalog standalone','perifericos','standalone');
 insert into public.product_prices(product_id,store_id,url,price,stock)
-values ('audit-original','mexx','https://example.invalid/original',1,'in-stock'),
-  ('audit-only-original','mexx','https://example.invalid/standalone',500,'in-stock');
+values ('audit-original','mexx','https://www.mexx.com.ar/original',1,'in-stock'),
+  ('audit-only-original','mexx','https://www.mexx.com.ar/standalone',500,'in-stock');
 do $$
 declare result jsonb;
 begin
@@ -90,17 +90,17 @@ end $$;
 insert into public.products(id,name,category,model)
 values ('audit-outlier','Auditoutlier mouse','perifericos','mouse');
 insert into public.product_prices(product_id,store_id,url,price,stock)
-values ('audit-outlier','mexx','https://example.invalid/m1',100000,'in-stock'),
-  ('audit-outlier','mexx','https://example.invalid/m2',50000,'out-of-stock'),
-  ('audit-outlier','venex','https://example.invalid/v1',500000,'in-stock'),
-  ('audit-outlier','fullh4rd','https://example.invalid/f1',1000,'out-of-stock');
+values ('audit-outlier','mexx','https://www.mexx.com.ar/m1',100000,'in-stock'),
+  ('audit-outlier','mexx','https://www.mexx.com.ar/m2',50000,'out-of-stock'),
+  ('audit-outlier','venex','https://www.venex.com.ar/v1',500000,'in-stock'),
+  ('audit-outlier','fullh4rd','https://www.fullh4rd.com.ar/f1',1000,'out-of-stock');
 do $$
 declare result jsonb;
 begin
   result := public.search_catalog_page(p_query=>'auditoutlier');
   assert (result#>>'{products,0,lowest_price}')::numeric=100000;
   assert (result#>>'{products,0,highest_price}')::numeric=100000;
-  assert jsonb_array_length(result#>'{products,0,product_prices}')=2;
+  assert jsonb_array_length(result#>'{products,0,product_prices}')=4, 'Conservar alternativas e histórico; no convertirlas en precio vigente';
   assert not public.catalog_matches_query('MSI RTX 5060 Ventus','msi rtx 5060 ventus shadow','msi shadow 5060','');
 end $$;
 
