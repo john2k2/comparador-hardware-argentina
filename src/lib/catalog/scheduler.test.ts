@@ -10,6 +10,11 @@ const runs = (status = 'completed', ageMinutes = 90) => new Response(JSON.string
 afterEach(() => vi.unstubAllGlobals());
 
 describe('catalog scheduler recovery', () => {
+  it('identifica la etapa fallida sin exponer mensajes de transporte ni credenciales', async () => {
+    const native = vi.fn().mockRejectedValue(new TypeError('Illegal invocation'));
+    await expect(runCatalogScheduler(env, now, native)).rejects.toThrow('CATALOG_SCHEDULER_READ_INVOCATION_FAILED');
+    expect(native).toHaveBeenCalledTimes(1);
+  });
   it('requiere habilitación explícita y credenciales privadas', async () => {
     const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher);
     expect(await runCatalogScheduler({}, now)).toBe('disabled');
