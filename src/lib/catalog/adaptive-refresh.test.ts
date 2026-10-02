@@ -15,12 +15,12 @@ beforeEach(()=>{
  vi.resetAllMocks();vi.useFakeTimers();vi.setSystemTime(new Date('2026-10-01T22:00:00Z'));vi.stubEnv('CATALOG_REQUESTED_RUNNER','1');
  const chain={delete:()=>chain,lt:async()=>({error:null}),update:()=>chain,eq:()=>chain,then:(resolve:(value:{error:null})=>void)=>resolve({error:null}),insert:()=>chain,select:()=>chain,single:async()=>({data:{id:'run'},error:null}),in:()=>chain,limit:async()=>({data:[{}],error:null})};
  mocks.from.mockReturnValue(chain);mocks.map.mockReturnValue(product);mocks.fetch.mockResolvedValue({product,price,sourceTitle:product.name});
- mocks.rpc.mockImplementation(async(name:string)=>({error:null,data:name==='catalog_refresh_coverage'?[]:name==='claim_catalog_feed_refresh'||name==='claim_catalog_refresh'?[]:true}));
+ mocks.rpc.mockImplementation(async(name:string)=>({error:null,data:name==='seed_catalog_refresh_queue'?0:name==='catalog_refresh_coverage'?[]:name==='claim_catalog_feed_refresh'||name==='claim_catalog_refresh'?[]:true}));
 });
 afterEach(()=>{vi.useRealTimers();vi.unstubAllEnvs();});
 it('actualiza la fuente compartida sin consumir el presupuesto de las demás tiendas',async()=>{
  const claims:string[]=[];
- mocks.rpc.mockImplementation(async(name:string)=>{if(name.startsWith('claim_')){claims.push(name);return {data:claims.length<=2?[target]:[],error:null};}return {data:name==='catalog_refresh_coverage'?[]:true,error:null};});
+ mocks.rpc.mockImplementation(async(name:string)=>{if(name.startsWith('claim_')){claims.push(name);return {data:claims.length<=2?[target]:[],error:null};}return {data:name==='seed_catalog_refresh_queue'?0:name==='catalog_refresh_coverage'?[]:true,error:null};});
  const result=await runAdaptiveRefresh({maxOffers:2});
  expect(claims).toEqual(['claim_catalog_feed_refresh','claim_catalog_refresh']);
  expect(result).toMatchObject({attempted:2,observed:2,feedClaimed:1,status:'completed'});
@@ -32,11 +32,11 @@ it('continúa con las demás tiendas cuando la fuente compartida no tiene oferta
 });
 it('no renueva la oferta ni cuenta observaciones cuando el guardado es rechazado',async()=>{
  let claimed=false;
- mocks.rpc.mockImplementation(async(name:string)=>{if(name==='claim_catalog_feed_refresh')return {data:claimed?[]:(claimed=true,[target]),error:null};return {data:name==='persist_adaptive_offer'?false:name==='catalog_refresh_coverage'?[]:name==='claim_catalog_refresh'?[]:true,error:null};});
+ mocks.rpc.mockImplementation(async(name:string)=>{if(name==='claim_catalog_feed_refresh')return {data:claimed?[]:(claimed=true,[target]),error:null};return {data:name==='persist_adaptive_offer'?false:name==='seed_catalog_refresh_queue'?0:name==='catalog_refresh_coverage'?[]:name==='claim_catalog_refresh'?[]:true,error:null};});
  expect(await runAdaptiveRefresh({maxOffers:2})).toMatchObject({observed:0,failures:{'persist-failed':1},status:'failed'});
 });
 it('registra el motivo operativo y libera leases ante una falla de lectura',async()=>{
- mocks.rpc.mockImplementation(async(name:string)=>({data:name==='catalog_refresh_coverage'?[]:true,error:name==='claim_catalog_feed_refresh'?{code:'db'}:null}));
+ mocks.rpc.mockImplementation(async(name:string)=>({data:name==='seed_catalog_refresh_queue'?0:name==='catalog_refresh_coverage'?[]:true,error:name==='claim_catalog_feed_refresh'?{code:'db'}:null}));
  expect(await runAdaptiveRefresh({maxOffers:24})).toMatchObject({status:'failed',failureCode:'REFRESH_CLAIM_FAILED'});
  expect(mocks.from).toHaveBeenCalledWith('catalog_offer_refresh_state');
 });
@@ -45,7 +45,7 @@ it('reintenta una confirmación de respuesta perdida sin contar la oferta dos ve
  mocks.rpc.mockImplementation(async(name:string)=>{
   if(name==='claim_catalog_feed_refresh')return {data:claimed?[]:(claimed=true,[target]),error:null};
   if(name==='finish_catalog_refresh' && ++finishes===1)return {data:null,error:{code:'NETWORK'}};
-  return {data:name==='catalog_refresh_coverage'?[]:name==='claim_catalog_refresh'?[]:true,error:null};
+  return {data:name==='seed_catalog_refresh_queue'?0:name==='catalog_refresh_coverage'?[]:name==='claim_catalog_refresh'?[]:true,error:null};
  });
  const promise=runAdaptiveRefresh({maxOffers:2});await vi.runAllTimersAsync();
  expect(await promise).toMatchObject({attempted:1,observed:1,status:'completed'});expect(finishes).toBe(2);
@@ -55,9 +55,20 @@ it('reintenta la misma observación ante un fallo temporal de guardado',async()=
  mocks.rpc.mockImplementation(async(name:string)=>{
   if(name==='claim_catalog_feed_refresh')return {data:claimed?[]:(claimed=true,[target]),error:null};
   if(name==='persist_adaptive_offer' && ++persists===1)return {data:null,error:{code:'NETWORK'}};
-  return {data:name==='catalog_refresh_coverage'?[]:name==='claim_catalog_refresh'?[]:true,error:null};
+  return {data:name==='seed_catalog_refresh_queue'?0:name==='catalog_refresh_coverage'?[]:name==='claim_catalog_refresh'?[]:true,error:null};
  });
  const promise=runAdaptiveRefresh({maxOffers:2});await vi.runAllTimersAsync();
  expect(await promise).toMatchObject({attempted:1,observed:1,status:'completed'});
  const calls=mocks.rpc.mock.calls.filter(([name])=>name==='persist_adaptive_offer');expect(calls).toHaveLength(2);expect(calls[0][1]).toEqual(calls[1][1]);
+});
+it('prepara todas las altas en lotes antes de reclamar ofertas',async()=>{
+ let seeded=0;
+ mocks.rpc.mockImplementation(async(name:string)=>({data:name==='seed_catalog_refresh_queue'?[500,12,0][seeded++]:name==='catalog_refresh_coverage'?[]:name.startsWith('claim_')?[]:true,error:null}));
+ expect(await runAdaptiveRefresh({maxOffers:24})).toMatchObject({seeded:512,status:'completed'});
+ expect(mocks.rpc.mock.calls.filter(([name])=>name==='seed_catalog_refresh_queue')).toHaveLength(3);
+});
+it('rechaza una respuesta de preparación ilegible antes de reservar destinos',async()=>{
+ mocks.rpc.mockResolvedValue({data:'500',error:null});
+ await expect(runAdaptiveRefresh({maxOffers:24})).rejects.toThrow('REFRESH_INVALID_SEED_RESULT');
+ expect(mocks.rpc.mock.calls.some(([name])=>name.startsWith('claim_'))).toBe(false);
 });

@@ -89,6 +89,8 @@ test('preparar una cola sin cambios no bloquea una oferta en observación', { ti
     lock?.child.kill(); await Promise.allSettled([lock?.result]);
     lock = undefined;
     await query(`update products set category='almacenamiento' where id=${literal(id)};`);
+    assert.equal(await query('select seed_catalog_refresh_queue();'), '0', 'El trigger ya sincronizó la categoría');
+    await query(`update catalog_offer_refresh_state q set category='perifericos' from product_prices p where p.id=q.offer_id and p.product_id=${literal(id)};`);
     assert.equal(await query('select seed_catalog_refresh_queue();'), '1');
     assert.equal(await query(`select q.category from catalog_offer_refresh_state q join product_prices p on p.id=q.offer_id where p.product_id=${literal(id)};`), 'almacenamiento');
     assert.equal(await query("select has_function_privilege('anon','seed_catalog_refresh_queue()','execute');"), 'f');

@@ -37,8 +37,15 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   if (interrupted.error) throw new Error('REFRESH_PROGRESS_FAILED');
   const inventory = process.env.CATALOG_INVENTORY_DISCOVERY === '1' ? await runInventoryDiscovery() : [];
   const inventoryDetails = process.env.CATALOG_INVENTORY_DISCOVERY === '1' ? await runInventoryDetailDiscovery() : undefined;
-  const seeded = await client.rpc('seed_catalog_refresh_queue');
-  if (seeded.error) throw new Error('REFRESH_SEED_FAILED');
+  let seeded = 0;
+  for (let batch = 0; ; batch++) {
+    if (batch >= 200 || Date.now() - started >= deadline) throw new Error('REFRESH_SEED_DEADLINE');
+    const result = await client.rpc('seed_catalog_refresh_queue');
+    if (result.error) throw new Error('REFRESH_SEED_FAILED');
+    if (!Number.isSafeInteger(result.data) || result.data < 0 || result.data > 500) throw new Error('REFRESH_INVALID_SEED_RESULT');
+    seeded += result.data;
+    if (result.data === 0) break;
+  }
   const run = await client.from('catalog_refresh_runs').insert({ started_at: startedAt }).select('id').single();
   if (run.error || !run.data) throw new Error('REFRESH_RUN_CREATE_FAILED');
   const counts = emptyCounts(), groups: Record<string, Counts> = {}, context = createKnownOfferContext(true);
@@ -151,7 +158,7 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   const sourceFailureReasons: Record<string,number> = {};
   for (const reason of context.failures.values()) sourceFailureReasons[reason]=(sourceFailureReasons[reason] ?? 0)+1;
   const summary = { source: 'adaptive-catalog', trigger: ['github-schedule','cloudflare-fallback'].includes(process.env.CATALOG_RUN_TRIGGER ?? '') ? process.env.CATALOG_RUN_TRIGGER : 'manual', runId: run.data.id, startedAt, finishedAt: new Date().toISOString(),
-    status, failureCode, inventory, inventoryDetails, feedClaimed, sourceFailureReasons, limitReached: counts.attempted >= maxOffers, ...counts, groups, seeded: seeded.data, sharedReads: context.sharedReads, coverage: coverage.data ?? [] };
+    status, failureCode, inventory, inventoryDetails, feedClaimed, sourceFailureReasons, limitReached: counts.attempted >= maxOffers, ...counts, groups, seeded, sharedReads: context.sharedReads, coverage: coverage.data ?? [] };
   const completed = await client.from('catalog_refresh_runs').update({ status, finished_at: summary.finishedAt, summary }).eq('id', run.data.id);
   if (completed.error) throw new Error('REFRESH_PROGRESS_FAILED');
   return summary;
