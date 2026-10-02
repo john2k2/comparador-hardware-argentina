@@ -1,0 +1,20 @@
+{
+  "source": "/Users/johnortiz/Documents/Proyectos/comparador-hardware-argentina/outputs/project-tracker-2026-10-02-fuentes/Comparador-Hardware-Project-Tracker.xlsx",
+  "output": "/Users/johnortiz/Documents/Proyectos/comparador-hardware-argentina/outputs/project-tracker-2026-10-02-eneba/Comparador-Hardware-Project-Tracker.xlsx",
+  "formulaCountBefore": 865,
+  "formulaCountAfter": 865,
+  "formulasIdentical": true,
+  "changedValues": [
+    "B50",
+    "C16",
+    "E16",
+    "H16"
+  ],
+  "mergesIdentical": true,
+  "cfIdentical": true,
+  "validationsIdentical": true,
+  "panesIdentical": true,
+  "namesIdentical": true,
+  "sheetsIdentical": true,
+  "filesIdentical": true
+}

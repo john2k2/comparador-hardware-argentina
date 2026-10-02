@@ -432,3 +432,14 @@ Publicación del presupuesto máximo comprobada: Workers Build `5b179268-a4bf-42
 Diagnóstico Jev conserva códigos propios seguros sin cuerpos/mensajes/secretos. 18 pruebas aprobadas; ante error la oferta sigue needs-review. Sin llamadas o reintentos adicionales. Causa real y recuperación pendientes de ejecución posterior. Ver GUIA-ALTERNATIVAS-2026-09-28.md.
 
 ESLint y TypeScript aprobados, build de 51 páginas finalizó; hubo seis lecturas de categoría con fetch failed y fallback durante generación. Build correcto no prueba conectividad DB ni disponibilidad pública sostenida. Cambios AGENTS ajenos preservados.
+
+
+## Piloto Eneba publicado — 02/10/2026, 19:45 UTC
+
+Ver [integración y prioridades](ENEBA-INTEGRACION-Y-PRIORIDADES-2026-10-02.md). Cuenta habilitada y comisión del 5%, sin leer datos de cobro. Commit fe09010 y CI 37055794266 aprobados: 1.235 unitarias, dos omitidas, 19 operativas, SQL/concurrencia y 55 de navegador.
+
+Productor manual 37055791619: dos ofertas, feed fechado 19:42:17 UTC, persistencia y caducidad comprobadas. Worker publicado; escritorio 1280 px y móvil 390 px aprobados, con Google y destinos interceptados. No acredita atribución comercial. Dos dimensiones GA4 registradas y confirmadas por MCP; recepción real pendiente. Cron dedicado nominal cada cuatro horas; ejecución nativa todavía no verificada y nunca suma G02.
+
+G27 en observación P2, evaluación propuesta 30/10. G07 tiene control 05/10 para eventos nuevos pendientes. G02 conserva seis fechas útiles y 0/9 fichas con oferta aceptada <=3 h al corte de 18:27 UTC. Adaptativo nativo 37048933125: 475 observadas / 241 comparables, 9.562/34.242 prioritarias observadas <=24 h, denominador móvil; no meta del 95%. Se conservaron cambios ajenos y datos históricos.
+
+Tablero actualizado en outputs/project-tracker-2026-10-02-eneba: 865 fórmulas idénticas, mismas combinaciones, formato condicional, validaciones, paneles, nombres y Gantt. Sólo C16/E16/H16 y B50 cambiaron; altura de la nota ajustada para mostrar el corte. G27 figura en BACKLOG y nota de fuentes; la plantilla tiene sus 40 filas de tareas ocupadas.

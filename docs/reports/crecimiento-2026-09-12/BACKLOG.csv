@@ -5,7 +5,7 @@ G03,P1,Tráfico hacia tiendas,Configurar y verificar pageviews GA4,Codex,complet
 G04,P1,Piloto comercial,Definir y probar canal de contacto,Jonathan,pendiente,2026-09-18,Consulta de prueba recibida y CTA público operativo
 G05,P1,Sitio confiable,Separar ofertas disponibles de agotadas,Codex,en_validacion_local,2026-09-25,Conteos y agregado coherentes con stock y prueba de regresión
 G06,P1,Sitio confiable,Reducir costo de sitemap con snapshot y paginación,Codex,en_validacion_produccion,2026-09-25,Sitemap correcto y paginado; falta confirmar lecturas posteriores y conservación ante fallo transitorio
-G07,P0,Tráfico hacia tiendas,Instrumentar clic externo CTA de asesoría y embudo completo,Codex,en_implementacion,2026-09-25,Producción emite presupuesto CTA lead_intent y salida con dimensiones; falta verificar recepción GA4 y una intención real
+G07,P0,Tráfico hacia tiendas,Instrumentar clic externo CTA de asesoría y embudo completo,Codex,en_implementacion,2026-10-05,"Producción emite presupuesto CTA lead_intent y salida con dimensiones; registro GA4 del piloto Eneba comprobado 02/10; falta recepción real de eventos nuevos y una intención real, control 05/10"
 G08,P2,Sitio confiable,Actualizar E2E desalineados y controles móviles,Codex,en_validacion_local,2026-09-25,Los cinco fallos están explicados y sus flujos pasan
 G09,P2,Sitio confiable,Revisar dependencias y persistencia de telemetría,Codex,pendiente,2026-09-25,Exposición evaluada y actualización validada con OpenNext
 G10,P2,Tráfico hacia tiendas,Mejorar CPU GPU y guía de dos millones,Codex,pendiente,2026-10-09,Tres páginas verificadas y experimento GSC de 28 días definido
@@ -25,3 +25,4 @@ G23,P2,Monetización AdSense,Preparar espacios de anuncios y validar experiencia
 G24,P2,Monetización AdSense,Completar revisión final y solicitar AdSense,Jonathan + Codex,pendiente,2026-10-12,G18 a G23 verificadas; confiabilidad resuelta; fecha y estado real de solicitud registrados
 G25,P2,Monetización AdSense,Medir piloto publicitario tras aprobación,Jonathan + Codex,pendiente,2026-11-09,Sitio apto en Google; 14 y 28 días completos de ingresos uso y consultas observados
 G26,P2,Monetización AdSense,Decidir continuidad de anuncios y monetización,Jonathan + Codex,pendiente,2026-11-12,Decisión con ingresos y embudo reales; si muestra insuficiente reprogramar sin declarar éxito
+G27,P2,Monetización medida,Piloto Eneba PC AR con dos juegos y atribución verificada,Jonathan + Codex,en_observacion,2026-10-30,"Cuenta y runtime comprobados 02/10; medir continuidad automática, recepción GA4, usuarios/clics y ventas/comisiones reales. Revisión semanal 05/10 y decisión 28 días, sin ampliar por falta de datos."

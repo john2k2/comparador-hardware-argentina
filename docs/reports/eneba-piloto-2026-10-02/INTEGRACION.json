@@ -1,6 +1,6 @@
 {
   "date": "2026-10-02",
-  "state": "validated-local-publication-pending",
+  "state": "published-runtime-verified-monitoring",
   "account": {
     "source": "Chrome independent tab /affiliates/overview",
     "inactiveNoticeInitiallySeen": true,
@@ -60,7 +60,20 @@
     "lint": true,
     "typeScript": true,
     "build": true,
-    "liveGA4ReceiptVerified": false
+    "liveGA4ReceiptVerified": false,
+    "producerUnitFocusedPassed": 59,
+    "producerLint": true,
+    "producerTypeScript": true,
+    "producerDisabledCli": "disabled without credentials/source",
+    "ciForProducer": {
+      "runId": "37055794266",
+      "state": "success",
+      "allUnitsPassed": 1235,
+      "allUnitsSkipped": 2,
+      "criticalBrowserPassed": 55,
+      "operationalTestsPassed": 19,
+      "sqlAndConcurrency": "passed"
+    }
   },
   "g02": {
     "sourceRunId": "37047419206",
@@ -130,5 +143,285 @@
     "proposedReview": "2026-10-30",
     "nextEditorialReview": "2026-10-05",
     "currentEditorialReviewExpiresAt": "2026-10-09T17:48:55Z"
+  },
+  "runtime": {
+    "implementationCommit": "fe09010",
+    "workerVersion": "96fd116a-ec63-47dc-94fe-45805b5a97a3",
+    "deployedAt": "2026-10-02T19:43:01.141975Z",
+    "manualProducer": {
+      "githubRunId": "37055791619",
+      "event": "workflow_dispatch",
+      "headSha": "fe09010893a2b57cdfe7dd0ec5788e0f2be539eb",
+      "startedAt": "2026-10-02T19:41:54Z",
+      "completedAt": "2026-10-02T19:42:21Z",
+      "conclusion": "success",
+      "status": "ready",
+      "offers": 2,
+      "fetchedAt": "2026-10-02T19:42:16.948Z",
+      "feedUpdatedAt": "2026-10-02T19:42:17.000Z",
+      "expiresAt": "2026-10-03T01:42:17.000Z"
+    },
+    "databaseReadback": {
+      "verified": true,
+      "source": "Supabase MCP; exact api_cache_entries pilot key only",
+      "updatedAt": "2026-10-02T19:42:17.438Z",
+      "expiresAt": "2026-10-03T01:42:17.000Z"
+    },
+    "publicValidation": {
+      "at": "2026-10-02T19:45:08.875Z",
+      "scope": "Producción real. Google y destinos Eneba interceptados: verifica dataLayer, no recepción GA4 ni clic real en Eneba.",
+      "results": [
+        {
+          "at": "2026-10-02T19:45:06.237Z",
+          "width": 1280,
+          "passed": true,
+          "assertions": {
+            "page200": true,
+            "apiReady": true,
+            "noindex": true,
+            "footer": true,
+            "correctLinks": true,
+            "noGoogleBeforeConsent": true,
+            "noneAfterReject": true,
+            "oneAffiliateView": true,
+            "oneAffiliateClick": true,
+            "noFakeSalesOrHardwareClick": true,
+            "noAdScript": true,
+            "noOverflow": true,
+            "noJsErrors": true,
+            "noCspErrors": true
+          },
+          "snapshot": {
+            "status": "ready",
+            "offers": [
+              {
+                "id": "epic-games-chivalry-ii-epic-games-key-latam",
+                "sku": "CHVLRY2/LA",
+                "feedTitle": "Chivalry II Epic Games Key LATAM",
+                "name": "Chivalry II",
+                "region": "latam",
+                "platform": "Epic Games",
+                "edition": "Juego base · clave digital LATAM",
+                "restrictions": "PC Windows. Se activa en Epic Games, no en Steam. La ficha anuncia inglés. Revisá los requisitos y la región de tu cuenta antes de comprar.",
+                "reviewedAt": "2026-10-02T17:48:55.000Z",
+                "activationCountry": "AR",
+                "price": 8971.18,
+                "currency": "ARS",
+                "url": "https://www.eneba.com/latam/epic-games-chivalry-ii-epic-games-key-latam?af_id=Comparador_Hardware_Argentina&currency=ARS",
+                "observedAt": "2026-10-02T19:42:17.000Z"
+              },
+              {
+                "id": "steam-knights-of-pen-paper-steam-key-global",
+                "sku": "KOPP",
+                "feedTitle": "Knights of Pen & Paper Steam Key GLOBAL",
+                "name": "Knights of Pen & Paper",
+                "region": "global",
+                "platform": "Steam",
+                "edition": "Juego base · clave digital GLOBAL",
+                "restrictions": "Se activa en Steam. La ficha incluye español y lista Windows, Mac y Linux; revisá los requisitos actuales de tu sistema. No anuncia extras ni una edición Deluxe.",
+                "reviewedAt": "2026-10-02T17:48:55.000Z",
+                "activationCountry": "AR",
+                "price": 4288.33,
+                "currency": "ARS",
+                "url": "https://www.eneba.com/latam/steam-knights-of-pen-paper-steam-key-global?af_id=Comparador_Hardware_Argentina&currency=ARS",
+                "observedAt": "2026-10-02T19:42:17.000Z"
+              }
+            ],
+            "fetchedAt": "2026-10-02T19:42:16.948Z",
+            "feedUpdatedAt": "2026-10-02T19:42:17.000Z"
+          },
+          "destinations": [
+            {
+              "href": "https://www.eneba.com/latam/epic-games-chivalry-ii-epic-games-key-latam?af_id=Comparador_Hardware_Argentina&currency=ARS",
+              "rel": "sponsored nofollow noopener noreferrer",
+              "target": "_blank",
+              "height": 56
+            },
+            {
+              "href": "https://www.eneba.com/latam/steam-knights-of-pen-paper-steam-key-global?af_id=Comparador_Hardware_Argentina&currency=ARS",
+              "rel": "sponsored nofollow noopener noreferrer",
+              "target": "_blank",
+              "height": 56
+            }
+          ],
+          "affiliateEvents": [
+            [
+              "event",
+              "affiliate_pilot_view",
+              {
+                "affiliate_partner": "eneba",
+                "affiliate_campaign": "eneba_pc_ar_20261002",
+                "pilot_status": "ready",
+                "offer_count": 2,
+                "affiliate_surface": "digital_games",
+                "send_to": "G-7BHXTCQFTP"
+              }
+            ],
+            [
+              "event",
+              "affiliate_outbound_click",
+              {
+                "affiliate_partner": "eneba",
+                "affiliate_campaign": "eneba_pc_ar_20261002",
+                "affiliate_product_id": "epic-games-chivalry-ii-epic-games-key-latam",
+                "affiliate_platform": "Epic Games",
+                "affiliate_surface": "digital_games",
+                "cta_id": "eneba-game-epic-games-chivalry-ii-epic-games-key-latam",
+                "destination_host": "www.eneba.com",
+                "offer_position": 1,
+                "currency": "ARS",
+                "observed_price": 8971.18,
+                "send_to": "G-7BHXTCQFTP"
+              }
+            ]
+          ],
+          "errors": [],
+          "consoleErrors": [
+            "Failed to load resource: the server responded with a status of 503 ()"
+          ],
+          "blockedGoogle": 1
+        },
+        {
+          "at": "2026-10-02T19:45:08.724Z",
+          "width": 390,
+          "passed": true,
+          "assertions": {
+            "page200": true,
+            "apiReady": true,
+            "noindex": true,
+            "footer": true,
+            "correctLinks": true,
+            "noGoogleBeforeConsent": true,
+            "noneAfterReject": true,
+            "oneAffiliateView": true,
+            "oneAffiliateClick": true,
+            "noFakeSalesOrHardwareClick": true,
+            "noAdScript": true,
+            "noOverflow": true,
+            "noJsErrors": true,
+            "noCspErrors": true
+          },
+          "snapshot": {
+            "status": "ready",
+            "offers": [
+              {
+                "id": "epic-games-chivalry-ii-epic-games-key-latam",
+                "sku": "CHVLRY2/LA",
+                "feedTitle": "Chivalry II Epic Games Key LATAM",
+                "name": "Chivalry II",
+                "region": "latam",
+                "platform": "Epic Games",
+                "edition": "Juego base · clave digital LATAM",
+                "restrictions": "PC Windows. Se activa en Epic Games, no en Steam. La ficha anuncia inglés. Revisá los requisitos y la región de tu cuenta antes de comprar.",
+                "reviewedAt": "2026-10-02T17:48:55.000Z",
+                "activationCountry": "AR",
+                "price": 8971.18,
+                "currency": "ARS",
+                "url": "https://www.eneba.com/latam/epic-games-chivalry-ii-epic-games-key-latam?af_id=Comparador_Hardware_Argentina&currency=ARS",
+                "observedAt": "2026-10-02T19:42:17.000Z"
+              },
+              {
+                "id": "steam-knights-of-pen-paper-steam-key-global",
+                "sku": "KOPP",
+                "feedTitle": "Knights of Pen & Paper Steam Key GLOBAL",
+                "name": "Knights of Pen & Paper",
+                "region": "global",
+                "platform": "Steam",
+                "edition": "Juego base · clave digital GLOBAL",
+                "restrictions": "Se activa en Steam. La ficha incluye español y lista Windows, Mac y Linux; revisá los requisitos actuales de tu sistema. No anuncia extras ni una edición Deluxe.",
+                "reviewedAt": "2026-10-02T17:48:55.000Z",
+                "activationCountry": "AR",
+                "price": 4288.33,
+                "currency": "ARS",
+                "url": "https://www.eneba.com/latam/steam-knights-of-pen-paper-steam-key-global?af_id=Comparador_Hardware_Argentina&currency=ARS",
+                "observedAt": "2026-10-02T19:42:17.000Z"
+              }
+            ],
+            "fetchedAt": "2026-10-02T19:42:16.948Z",
+            "feedUpdatedAt": "2026-10-02T19:42:17.000Z"
+          },
+          "destinations": [
+            {
+              "href": "https://www.eneba.com/latam/epic-games-chivalry-ii-epic-games-key-latam?af_id=Comparador_Hardware_Argentina&currency=ARS",
+              "rel": "sponsored nofollow noopener noreferrer",
+              "target": "_blank",
+              "height": 56
+            },
+            {
+              "href": "https://www.eneba.com/latam/steam-knights-of-pen-paper-steam-key-global?af_id=Comparador_Hardware_Argentina&currency=ARS",
+              "rel": "sponsored nofollow noopener noreferrer",
+              "target": "_blank",
+              "height": 84
+            }
+          ],
+          "affiliateEvents": [
+            [
+              "event",
+              "affiliate_pilot_view",
+              {
+                "affiliate_partner": "eneba",
+                "affiliate_campaign": "eneba_pc_ar_20261002",
+                "pilot_status": "ready",
+                "offer_count": 2,
+                "affiliate_surface": "digital_games",
+                "send_to": "G-7BHXTCQFTP"
+              }
+            ],
+            [
+              "event",
+              "affiliate_outbound_click",
+              {
+                "affiliate_partner": "eneba",
+                "affiliate_campaign": "eneba_pc_ar_20261002",
+                "affiliate_product_id": "epic-games-chivalry-ii-epic-games-key-latam",
+                "affiliate_platform": "Epic Games",
+                "affiliate_surface": "digital_games",
+                "cta_id": "eneba-game-epic-games-chivalry-ii-epic-games-key-latam",
+                "destination_host": "www.eneba.com",
+                "offer_position": 1,
+                "currency": "ARS",
+                "observed_price": 8971.18,
+                "send_to": "G-7BHXTCQFTP"
+              }
+            ]
+          ],
+          "errors": [],
+          "consoleErrors": [
+            "Failed to load resource: the server responded with a status of 503 ()"
+          ],
+          "blockedGoogle": 1
+        }
+      ]
+    },
+    "earlierFailures": [
+      {
+        "commit": "a5252c4",
+        "cause": "Workers rejects redirect:error before network",
+        "reproducedInWorkerd": true,
+        "fixedIn": "a403b13"
+      },
+      {
+        "commit": "a403b13",
+        "checkedAt": "2026-10-02T19:24:33Z",
+        "cause": "HTTP 403 HTML from Eneba to Worker; no cause inferred for blocking",
+        "solution": "dedicated Node producer and read-only Worker"
+      }
+    ],
+    "nativeScheduledProducerVerified": false,
+    "nominalSchedule": "Every four hours; six starts per UTC day, GitHub may delay; one page of six XML rows",
+    "noExternalFeedReadsPerVisit": true,
+    "noPublicDatabaseWritesOrDeletes": true,
+    "preservesPreviousSnapshotOnFeedFailure": true
+  },
+  "analytics": {
+    "customDimensionsCreated": [
+      "customEvent:affiliate_product_id",
+      "customEvent:affiliate_campaign"
+    ],
+    "source": "Chrome administrator plus official GA4 MCP get_custom_dimensions_and_metrics, property 553934279",
+    "confirmedAt": "2026-10-02T19:45:08.875Z",
+    "liveGA4ReceiptVerified": false,
+    "syntheticEventsSentToGoogleOrEneba": false,
+    "salesOrCommissionsVerified": false
   }
 }
