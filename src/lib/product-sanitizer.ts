@@ -31,7 +31,8 @@ function sanitizePrice(price: ProductPrice): ProductPrice | null {
     ...price,
     storeName: sanitizeText(price.storeName, price.storeId),
     url: (price.url ?? '').trim(),
-    price: Math.round(price.price),
+    // Conservar el importe observado; el formato visual decide los decimales.
+    price: price.price,
   };
 }
 

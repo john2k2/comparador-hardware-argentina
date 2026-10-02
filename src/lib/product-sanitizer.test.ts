@@ -42,6 +42,14 @@ function buildProduct(overrides: Partial<Product> = {}): Product {
 }
 
 describe('product-sanitizer', () => {
+  it('conserva centavos observados para que la oferta y el mínimo representen el mismo importe', () => {
+    const product = buildProduct();
+    product.prices = [{ ...product.prices[0], price: 90_670.21 }];
+    const sanitized = sanitizeProduct(product);
+    expect(sanitized.prices[0].price).toBe(90_670.21);
+    expect(sanitized.lowestPrice).toBe(90_670.21);
+  });
+
   it('normaliza texto y recalcula stats comparables sin outliers absurdos', () => {
     const sanitized = sanitizeProduct(buildProduct());
 
