@@ -37,6 +37,7 @@ jobs:
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           CATALOG_REQUESTED_RUNNER: '1'
+          CATALOG_INVENTORY_DISCOVERY: '1'
           CATALOG_ADAPTIVE_MAX_OFFERS: ${{ github.event.inputs.max_offers || '2500' }}
           CATALOG_RUN_TRIGGER: ${{ github.event_name == 'schedule' && 'github-schedule' || github.event.inputs.trigger || 'manual' }}
           # Mantener revisiones existentes; este barrido no contrata nuevas consultas de IA.

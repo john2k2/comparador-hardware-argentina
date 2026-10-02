@@ -70,6 +70,7 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f supabase/tests/apu_accessory_categories.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/shared_feed_claims.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/idempotent_catalog_completion.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/catalog_inventory_discovery.sql
           node --test supabase/tests/catalog-concurrency.test.mjs
       - name: Verify browser behavior with isolated data
         run: npm run test:e2e:critical

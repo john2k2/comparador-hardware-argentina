@@ -88,6 +88,16 @@ describe('persistencia de revisión de ofertas', () => {
     expect(mocks.historyInsert).not.toHaveBeenCalled();
   });
 
+  it('conserva la evidencia de publicación y condición de pago sin inventar frescura', async () => {
+    const source = product();
+    source.prices[0].sourceIdentity = { listingRef: 'mexx:url:https://www.mexx.com.ar/amd-ryzen-5-5600', title: source.name, storeSku: 'local-sku' };
+    source.prices[0].priceCondition = 'unspecified';
+    await persistProductsSnapshot([source]);
+    expect(mocks.rpc.mock.calls[0][1].p_offers[0]).toMatchObject({
+      source_identity: source.prices[0].sourceIdentity, price_condition: 'unspecified', last_updated: '2026-09-21T12:00:00.000Z',
+    });
+  });
+
   it.each([
     { code: '42501', message: 'permission denied' },
     { code: 'PGRST202', message: 'Could not find the function public.persist_catalog_offers in the schema cache' },

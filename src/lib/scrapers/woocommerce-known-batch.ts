@@ -41,6 +41,10 @@ export function parseWooStoreKnownProducts(data: unknown,storeId: string,targets
   product.lowestPrice=price;product.highestPrice=price;product.averagePrice=price;
   product.prices[0].lastUpdated=observedAt;
   product.prices[0].priceCondition=storeId==='maxtecno'?'special':'unspecified';
+  product.specs.SourceListingId=String(item.id);
+  if(Array.isArray(item.images) && object(item.images[0]) && typeof item.images[0].src==='string') {
+   try { const image=new URL(item.images[0].src); if(image.protocol==='https:' && !image.username && !image.password) product.image=image.href; } catch { /* Una imagen inválida no invalida la oferta. */ }
+  }
   if(typeof item.sku==='string' && item.sku.length<=160 && !/[\x00-\x1f]/.test(item.sku)) product.specs.SKU=item.sku;
   seen.add(Number(item.id));result.push(product);
  }
@@ -65,6 +69,11 @@ export async function fetchWooStoreKnownBatch(storeId:string,targets:WooKnownTar
  const products=parseWooStoreKnownProducts(data,storeId,targets,new Date());
  // Una lectura visible por fuente y ejecución detecta cambios de moneda, pago o caché.
  // La oferta conserva la hora original de la API, nunca la del control posterior.
+ await verifyWooStoreProducts(storeId,products,signal,verifiedStores);
+ return products;
+}
+export async function verifyWooStoreProducts(storeId:string,products:Product[],signal?:AbortSignal,verifiedStores=new Set<string>()):Promise<void> {
+ if(!WOO_BATCH_STORES.has(storeId)) throw new SourceHttpError('inconsistent-source');
  if(products.length && !verifiedStores.has(storeId)){
   const probe=products[0],price=probe.prices[0];
   const visible=await fetchWooCommerceKnownOffer(storeId,price.url,probe.category,signal);
@@ -76,5 +85,4 @@ export async function fetchWooStoreKnownBatch(storeId:string,targets:WooKnownTar
    || (visible.specs.SKU && probe.specs.SKU && visible.specs.SKU!==probe.specs.SKU)) throw new SourceHttpError('inconsistent-source');
   verifiedStores.add(storeId);
  }
- return products;
 }

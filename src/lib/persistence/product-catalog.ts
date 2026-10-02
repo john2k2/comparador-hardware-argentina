@@ -53,6 +53,8 @@ type ProductPriceRow = {
   updated_at: string;
   state_signature: string;
   identity_review?: NonNullable<Product['prices'][number]['identityReview']> | null;
+  source_identity?: NonNullable<Product['prices'][number]['sourceIdentity']>;
+  price_condition?: NonNullable<Product['prices'][number]['priceCondition']>;
 };
 
 type PersistedProductStateRow = {
@@ -306,6 +308,8 @@ export async function persistProductsSnapshot(
         installment_count: installmentCount,
         installment_amount: installmentAmount,
         ...(price.identityReview ? { identity_review: price.identityReview } : {}),
+        ...(price.sourceIdentity ? { source_identity: price.sourceIdentity } : {}),
+        ...(price.priceCondition ? { price_condition: price.priceCondition } : {}),
       } as const;
       const pricePlan = planPriceRowPersistence(priceRowBase, undefined, now);
       const key = buildProductPriceRowKey({
