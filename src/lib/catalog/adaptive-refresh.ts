@@ -40,8 +40,13 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   let seeded = 0;
   for (let batch = 0; ; batch++) {
     if (batch >= 200 || Date.now() - started >= deadline) throw new Error('REFRESH_SEED_DEADLINE');
-    const result = await client.rpc('seed_catalog_refresh_queue');
-    if (result.error) throw new Error('REFRESH_SEED_FAILED');
+    let result = await client.rpc('seed_catalog_refresh_queue');
+    // La preparación es idempotente: una respuesta perdida no duplica ofertas.
+    for (let retry=0; result.error && retry<2 && Date.now()-started<deadline; retry++) {
+      await new Promise(resolve=>setTimeout(resolve,500 * (retry+1)));
+      result=await client.rpc('seed_catalog_refresh_queue');
+    }
+    if (result.error) throw new Error(result.error.code==='57014' ? 'REFRESH_SEED_TIMEOUT' : 'REFRESH_SEED_FAILED');
     if (!Number.isSafeInteger(result.data) || result.data < 0 || result.data > 500) throw new Error('REFRESH_INVALID_SEED_RESULT');
     seeded += result.data;
     if (result.data === 0) break;

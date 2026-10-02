@@ -72,3 +72,14 @@ it('rechaza una respuesta de preparación ilegible antes de reservar destinos',a
  await expect(runAdaptiveRefresh({maxOffers:24})).rejects.toThrow('REFRESH_INVALID_SEED_RESULT');
  expect(mocks.rpc.mock.calls.some(([name])=>name.startsWith('claim_'))).toBe(false);
 });
+it('recupera una preparación temporalmente interrumpida antes de reclamar destinos',async()=>{
+ let seeds=0;
+ mocks.rpc.mockImplementation(async(name:string)=>({data:name==='seed_catalog_refresh_queue'?0:name==='catalog_refresh_coverage'?[]:[],error:name==='seed_catalog_refresh_queue' && ++seeds===1?{code:'57014'}:null}));
+ const promise=runAdaptiveRefresh({maxOffers:24});await vi.runAllTimersAsync();
+ expect(await promise).toMatchObject({status:'completed',seeded:0});expect(seeds).toBe(2);
+});
+it('identifica el timeout persistente sin reservar destinos ni revelar la respuesta externa',async()=>{
+ mocks.rpc.mockResolvedValue({data:null,error:{code:'57014',message:'respuesta privada'}});
+ const promise=runAdaptiveRefresh({maxOffers:24});const rejected=expect(promise).rejects.toThrow('REFRESH_SEED_TIMEOUT');await vi.runAllTimersAsync();await rejected;
+ expect(mocks.rpc).toHaveBeenCalledTimes(3);expect(mocks.rpc.mock.calls.some(([name])=>name.startsWith('claim_'))).toBe(false);
+});
