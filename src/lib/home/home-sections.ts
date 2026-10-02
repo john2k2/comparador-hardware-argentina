@@ -4,6 +4,8 @@ import { getSharedCache, setSharedCache } from '@/lib/server/shared-cache';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 import type { Product } from '@/lib/types';
 import { buildOfferIdentity, resolveBaselineFromHistory, type HistoryPoint } from '@/lib/home/price-drop-baseline';
+import { isComparableStoreOffer } from '@/lib/price-utils';
+import { isCatalogOfferFresh } from '@/lib/price-freshness';
 
 type HistoryRow = {
   product_id: string;
@@ -75,12 +77,12 @@ function isInStockProduct(product: Product): boolean {
 }
 
 function isFreshProduct(product: Product, maxAgeMs: number): boolean {
-  const updatedAtMs = product.updatedAt?.getTime?.();
-  if (typeof updatedAtMs !== 'number' || !Number.isFinite(updatedAtMs)) return false;
-  return Date.now() - updatedAtMs <= maxAgeMs;
+  const now = Date.now();
+  return product.prices.some(price => isComparableStoreOffer(price, product)
+    && isCatalogOfferFresh(price.lastUpdated, now) && now - new Date(price.lastUpdated).getTime() <= maxAgeMs);
 }
 
-function pickFeaturedProducts(products: Product[], limit: number): Product[] {
+export function pickFeaturedProducts(products: Product[], limit: number): Product[] {
   const eligible = products.filter((product) => isInStockProduct(product) && isFreshProduct(product, FEATURED_MAX_AGE_MS));
   if (eligible.length === 0) return [];
 
@@ -156,19 +158,19 @@ function rankDropCandidates(candidates: DropCandidate[], limit: number): Product
     .map((entry) => entry.product);
 }
 
-function selectCurrentPricePoints(products: Product[], minUpdatedAtMs: number): CurrentPricePoint[] {
+export function selectCurrentPricePoints(products: Product[], minUpdatedAtMs: number): CurrentPricePoint[] {
   const byPair = new Map<string, CurrentPricePoint>();
 
   for (const product of products) {
     for (const price of product.prices) {
       const currentPrice = price.price;
-      if (!Number.isFinite(currentPrice) || currentPrice <= 0) continue;
+      if (!isComparableStoreOffer(price, product) || !isCatalogOfferFresh(price.lastUpdated)) continue;
       if (!price.storeId) continue;
 
       const currentUpdatedAtMs = price.lastUpdated?.getTime?.();
       const normalizedUpdatedAtMs = typeof currentUpdatedAtMs === 'number' && Number.isFinite(currentUpdatedAtMs)
         ? currentUpdatedAtMs
-        : product.updatedAt.getTime();
+        : NaN;
       if (!Number.isFinite(normalizedUpdatedAtMs) || normalizedUpdatedAtMs < minUpdatedAtMs) continue;
 
       const key = buildOfferIdentity(product.id, price.storeId, price.url);
@@ -307,13 +309,14 @@ async function readRecentHistoryRows(sinceIso: string): Promise<HistoryRow[]> {
 }
 
 export async function getHomeSectionsData(): Promise<HomeSectionsData> {
-  const cached = await getSharedCache<HomeSectionsData>('home-sections', 'homepage-v1');
+  const cached = await getSharedCache<HomeSectionsData>('home-sections', 'homepage-v2');
   if (cached) {
-    return {
-      ...cached,
-      featuredProducts: hydrateProducts(cached.featuredProducts ?? []),
-      priceDropProducts: hydrateProducts(cached.priceDropProducts ?? []),
-    };
+    const featuredProducts = hydrateProducts(cached.featuredProducts ?? []);
+    const priceDropProducts = hydrateProducts(cached.priceDropProducts ?? []);
+    // La vigencia del caché no prolonga la ventana de las ofertas destacadas.
+    if ((cached.featuredFallbackUsed || featuredProducts.every(product => isFreshProduct(product, FEATURED_MAX_AGE_MS)))
+      && (cached.priceDropFallbackUsed || priceDropProducts.every(product => isFreshProduct(product, PRICE_DROP_WINDOW_MS))))
+      return { ...cached, featuredProducts, priceDropProducts };
   }
 
   const dropWindowStartMs = Date.now() - PRICE_DROP_WINDOW_MS;
@@ -381,6 +384,6 @@ export async function getHomeSectionsData(): Promise<HomeSectionsData> {
     },
   };
 
-  await setSharedCache('home-sections', 'homepage-v1', payload, HOME_SECTIONS_CACHE_TTL_MS);
+  await setSharedCache('home-sections', 'homepage-v2', payload, HOME_SECTIONS_CACHE_TTL_MS);
   return payload;
 }

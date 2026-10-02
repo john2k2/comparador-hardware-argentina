@@ -1,8 +1,29 @@
 import { describe, expect, it, vi } from 'vitest';
 import { buildOfferIdentity, resolveBaselineFromHistory } from './price-drop-baseline';
-import { resolveOfferHistory } from './home-sections';
+import { pickFeaturedProducts, resolveOfferHistory, selectCurrentPricePoints } from './home-sections';
+import type { Product } from '@/lib/types';
 
 vi.mock('server-only', () => ({}), { virtual: true });
+
+describe('evidencia actual de portada', () => {
+  const makeProduct = (observedAt: Date, stock = 'in-stock') => ({
+    id: 'fixture-current', name: 'AMD Ryzen 5 5600', category: 'procesadores',
+    updatedAt: new Date(), lowestPrice: 200000,
+    prices: [{ storeId: 'mexx', url: 'https://www.mexx.com.ar/producto/ryzen-5600', price: 200000, stock, lastUpdated: observedAt }],
+  } as Product);
+  it('modificar la ficha no convierte una oferta vieja o de stock desconocido en destacada', () => {
+    const stale = makeProduct(new Date(Date.now() - 25 * 3600000));
+    const unknown = makeProduct(new Date(), 'unknown');
+    const fresh = makeProduct(new Date());
+    expect(pickFeaturedProducts([stale, unknown], 8)).toEqual([]);
+    expect(pickFeaturedProducts([fresh], 8)).toEqual([fresh]);
+  });
+  it('una bajada no usa el timestamp de la ficha para reemplazar evidencia ausente', () => {
+    const invalid = makeProduct(new Date(NaN));
+    const unknown = makeProduct(new Date(), 'unknown');
+    expect(selectCurrentPricePoints([invalid, unknown], Date.now() - 24 * 3600000)).toEqual([]);
+  });
+});
 
 describe('resolveBaselineFromHistory', () => {
   it('ignora precios posteriores al precio actual', () => {
