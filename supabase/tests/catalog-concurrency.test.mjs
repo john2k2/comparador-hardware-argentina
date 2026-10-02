@@ -69,3 +69,31 @@ test('dos escritores de ofertas mantienen precio, historial y resumen coherentes
     assert.equal(await query(`select count(*) from catalog_price_summaries where product_id=${literal(id)};`), '0');
   }
 });
+
+test('preparar una cola sin cambios no bloquea una oferta en observación', { timeout: 20000 }, async () => {
+  assert.ok(['127.0.0.1', 'localhost'].includes(env.PGHOST), 'Sólo base LOCAL');
+  assert.match(env.PGDATABASE ?? '', /^catalog[_-]/);
+  const id = `test-seed-${process.pid}`, holder = `${id}-holder`;
+  let lock;
+  await query(`insert into products(id,name,model,category) values(${literal(id)},'Seed synchronization','Seed','perifericos');
+    insert into product_prices(product_id,store_id,url,price,stock,last_updated) values(${literal(id)},'mexx','https://example.invalid/seed',100,'in-stock',now());
+    select seed_catalog_refresh_queue();`);
+  try {
+    lock = transaction(`begin; select q.offer_id from catalog_offer_refresh_state q join product_prices p on p.id=q.offer_id
+      where p.product_id=${literal(id)} for update of q; select pg_sleep(4); commit;`, holder);
+    await waitFor(`select exists(select 1 from pg_stat_activity where application_name=${literal(holder)} and wait_event='PgSleep');`);
+    // La implementación anterior esperaba ese bloqueo aunque no hubiese cambios.
+    const seeded = await query('begin; set local lock_timeout=\'200ms\'; select seed_catalog_refresh_queue(); commit;');
+    assert.ok(seeded.split('\n').includes('0'));
+    assert.equal(await query(`select exists(select 1 from pg_stat_activity where application_name=${literal(holder)} and wait_event='PgSleep');`), 't');
+    lock?.child.kill(); await Promise.allSettled([lock?.result]);
+    lock = undefined;
+    await query(`update products set category='almacenamiento' where id=${literal(id)};`);
+    assert.equal(await query('select seed_catalog_refresh_queue();'), '1');
+    assert.equal(await query(`select q.category from catalog_offer_refresh_state q join product_prices p on p.id=q.offer_id where p.product_id=${literal(id)};`), 'almacenamiento');
+    assert.equal(await query("select has_function_privilege('anon','seed_catalog_refresh_queue()','execute');"), 'f');
+  } finally {
+    lock?.child.kill(); await Promise.allSettled([lock?.result]);
+    await query(`delete from products where id=${literal(id)};`);
+  }
+});
