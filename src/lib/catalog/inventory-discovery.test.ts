@@ -16,7 +16,7 @@ it('importa sólo publicaciones nuevas por URL exacta; conserva hora y SKU de ti
   const current = product('2');
   const planned = planInventoryDiscovery('maxtecno', [product('1'), current], [{ url: product('1').prices[0].url, product_id: 'existing-group' }], []);
   expect(planned.newProducts).toEqual([current]);
-  expect(current.prices[0].sourceIdentity).toEqual({ listingRef: 'maxtecno:url:https://maxtecno.com.ar/producto/2', title: current.name, storeSku: 'store-sku' });
+  expect(current.prices[0].sourceIdentity).toEqual({ sourceId: '2', listingRef: 'maxtecno:url:https://maxtecno.com.ar/producto/2', title: current.name, storeSku: 'store-sku' });
   expect(current.prices[0].lastUpdated).toEqual(new Date('2026-10-02T00:30:00Z'));
 });
 it('un ID estable con URL migrada no crea otro producto ni reasigna el anterior por título', () => {

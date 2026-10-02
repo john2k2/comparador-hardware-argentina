@@ -18,7 +18,7 @@ export function acceptInventoryDetail(target: DetailTarget, product: Product | n
   const reference = listingReference(target.store_id, target.url);
   if (!reference) return null;
   return { ...product, id: `${target.store_id}-api-${target.source_id}`, specs: { ...product.specs, SourceListingId: target.source_id },
-    prices: [{ ...price, url: target.url, priceCondition: 'unspecified', sourceIdentity: { listingRef: reference, title: product.name.slice(0, 400),
+    prices: [{ ...price, url: target.url, priceCondition: 'unspecified', sourceIdentity: { listingRef: reference, sourceId: target.source_id, title: product.name.slice(0, 400),
       ...(product.specs.SKU ? { storeSku: product.specs.SKU } : {}) } }] };
 }
 

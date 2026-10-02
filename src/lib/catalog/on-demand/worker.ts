@@ -13,7 +13,7 @@ import { getStoreScraper, FRAMEWORK_SCRAPERS } from '@/lib/scrapers/scraper-regi
 import { withAbortTimeout, withPromiseTimeout } from '@/lib/async/with-abort-timeout';
 import { reviewProductOffers } from '@/lib/ai/review-product-offers';
 import { buildPriceStateSignature } from '@/lib/persistence/product-write-dedupe';
-import { hasExplicitIdentityConflict, needsIdentityReview } from '@/lib/quality/offer-identity';
+import { bindReviewToSource, hasExplicitIdentityConflict, needsIdentityReview } from '@/lib/quality/offer-identity';
 import { isOfferFresh } from '@/lib/price-freshness';
 import { normalizeIdentityText, parseCpuModelSignature, parseGpuChipSignature } from '@/lib/product-identity';
 import { inferHardwareCategoryFromName } from '@/lib/catalog/hardware-categories';
@@ -41,6 +41,7 @@ export async function prepareKnownOfferBatch(products: Map<string, Product>, tar
   }
 }
 export async function fetchKnownOffer(product: Product, target: RefreshTarget, startedAt: number, context = createKnownOfferContext()): Promise<{ product: Product; price: ProductPrice; sourceTitle: string } | null> {
+  if (!listingReference(target.storeId, target.url)) { context.failures.set(target.url, 'invalid-response'); return null; }
   const direct = getStoreScraper(target.storeId);
   const scrapers = direct ? [direct] : FRAMEWORK_SCRAPERS;
   const chip = product.category === 'procesadores' ? parseCpuModelSignature(product.name)
@@ -124,9 +125,12 @@ export async function fetchKnownOffer(product: Product, target: RefreshTarget, s
       const sku = source.specs.SKU?.trim();
       const reference = listingReference(target.storeId, price.url);
       const sourceIdentity = reference ? { listingRef: reference, title: source.name.slice(0, 400),
+        ...(source.specs.SourceListingId && /^[1-9]\d{0,14}$/.test(source.specs.SourceListingId) ? { sourceId: source.specs.SourceListingId } : {}),
         ...(sku && sku.length <= 160 && !/[\x00-\x1f]/.test(sku) ? { storeSku: sku } : {}) } : undefined;
-      const refreshed: ProductPrice = { ...price, url: target.url, identityReview: price.identityReview ?? previousReview, sourceIdentity };
+      const refreshed: ProductPrice = { ...price, url: target.url,
+        identityReview: bindReviewToSource(price.identityReview ?? previousReview, sourceIdentity, product, target.url), sourceIdentity };
       if (conflict) refreshed.identityReview = { version: 1, status: 'needs-review', reason: 'explicit-conflict', reviewedAt: new Date().toISOString(), model: null, confidence: null,
+        sourceIdentity,
         subject: { name: normalizeIdentityText(product.name), category: product.category, url: target.url } };
       return { product: { ...product, prices: [refreshed] }, price: refreshed, sourceTitle: source.name };
     }
@@ -159,10 +163,11 @@ export async function runRequestedRefresh(context = createKnownOfferContext()): 
       const price = reviewIndex < 0 ? item.price : reviewed[reviewIndex].prices[0];
       const state = { price: price.price, original_price: price.originalPrice ?? null, stock: price.stock,
         installment_count: price.installment?.count ?? null, installment_amount: price.installment?.amount ?? null };
-      const { data, error } = await supabase.rpc('persist_requested_offer', {
+      const { data, error } = await supabase.rpc('persist_verified_requested_offer', {
         p_job_id: job.id, p_lease_token: job.lease_token, p_product_id: item.target.productId, p_store_id: item.target.storeId, p_url: item.target.url,
         p_price: state.price, p_original_price: state.original_price, p_stock: state.stock, p_installment_count: state.installment_count, p_installment_amount: state.installment_amount,
         p_observed_at: new Date(price.lastUpdated).toISOString(), p_review: price.identityReview ?? null, p_signature: buildPriceStateSignature(state),
+        p_source_identity: price.sourceIdentity ?? null, p_price_condition: price.priceCondition ?? (price.storeId === 'compragamer' ? 'special' : 'unspecified'),
       });
       const persisted = !error && data === true;
       const comparable = persisted && (price.stock === 'in-stock' || price.stock === 'low-stock')

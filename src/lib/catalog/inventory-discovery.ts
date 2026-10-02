@@ -26,6 +26,7 @@ export function planInventoryDiscovery(storeId: string, products: Product[], sav
     const reference = listingReference(storeId, price.url);
     if (!reference) continue;
     product.prices[0] = { ...price, sourceIdentity: { listingRef: reference, title: product.name.slice(0, 400),
+      sourceId,
       ...(product.specs.SKU ? { storeSku: product.specs.SKU } : {}) } };
     newProducts.push(product);
   }

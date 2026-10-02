@@ -18,9 +18,6 @@ const MAX_RUN_MS = 18 * 60_000;
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export async function runPriorityRefresh(includeSample: boolean) {
-  if (process.env.ENABLE_JEV_OFFER_REVIEW !== '1' || !process.env.TYPESAFE_API_KEY?.trim()) {
-    throw new Error('PRIORITY_REVIEW_UNAVAILABLE');
-  }
   const client = getServerSupabaseServiceClient();
   if (!client) throw new Error('PRIORITY_DATABASE_UNAVAILABLE');
   const supabase = client;
@@ -63,12 +60,13 @@ export async function runPriorityRefresh(includeSample: boolean) {
       const price = index < 0 ? item.price : reviewed[index].prices[0];
       const state = { price: price.price, original_price: price.originalPrice ?? null, stock: price.stock,
         installment_count: price.installment?.count ?? null, installment_amount: price.installment?.amount ?? null };
-      const { data, error } = await supabase.rpc('persist_priority_offer', {
+      const { data, error } = await supabase.rpc('persist_verified_priority_offer', {
         p_product_id: item.target.productId, p_store_id: item.target.storeId, p_url: item.target.url,
         p_price: state.price, p_original_price: state.original_price, p_stock: state.stock,
         p_installment_count: state.installment_count, p_installment_amount: state.installment_amount,
         p_run_started_at: startedAt, p_observed_at: new Date(price.lastUpdated).toISOString(),
         p_review: price.identityReview ?? null, p_signature: buildPriceStateSignature(state),
+        p_source_identity: price.sourceIdentity ?? null, p_price_condition: price.priceCondition ?? (price.storeId === 'compragamer' ? 'special' : 'unspecified'),
       });
       const persisted = !error && data === true;
       results.push({ ...item.target, state: !persisted ? 'failed' : price.stock === 'out-of-stock' ? 'unavailable' : 'updated',

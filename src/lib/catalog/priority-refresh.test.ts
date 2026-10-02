@@ -29,11 +29,8 @@ beforeEach(() => {
 });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
 
-it('no inicia consultas si falta revisión de identidad o se agotó el límite', async () => {
+it('la falta de Jev no impide observar; el límite de ejecución sigue activo', async () => {
   vi.stubEnv('TYPESAFE_API_KEY', '');
-  await expect(runPriorityRefresh(false)).rejects.toThrow('PRIORITY_REVIEW_UNAVAILABLE');
-  expect(mocks.rpc).not.toHaveBeenCalled();
-  vi.stubEnv('TYPESAFE_API_KEY', 'test-only');
   mocks.rpc.mockResolvedValue({ error: null, data: { allowed: false } });
   await expect(runPriorityRefresh(false)).rejects.toThrow('PRIORITY_REFRESH_DEFERRED');
   expect(mocks.fetch).not.toHaveBeenCalled();
@@ -44,8 +41,8 @@ it('cuenta solamente observaciones persistidas y nunca consume la cola pública'
   await vi.runAllTimersAsync();
   const result = await promise;
   expect(result).toMatchObject({ attempted: 1, observed: 1, comparable: 1, missingGuideSlots: [] });
-  expect(mocks.rpc.mock.calls.map(([name]) => name)).toEqual(['check_api_rate_limit', 'persist_priority_offer']);
-  expect(mocks.rpc).toHaveBeenLastCalledWith('persist_priority_offer', expect.objectContaining({
+  expect(mocks.rpc.mock.calls.map(([name]) => name)).toEqual(['check_api_rate_limit', 'persist_verified_priority_offer']);
+  expect(mocks.rpc).toHaveBeenLastCalledWith('persist_verified_priority_offer', expect.objectContaining({
     p_run_started_at: '2026-09-29T12:00:00.000Z', p_observed_at: '2026-09-29T12:00:00.000Z', p_price: 100,
   }));
 });

@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/scrapers/compragamer', () => ({ fetchCompraGamerCatalogProducts: mocks.compraGamerCatalog }));
+vi.mock('@/lib/scrapers/known-product-detail', () => ({ fetchKnownProductDetail: vi.fn(async () => null) }));
 vi.mock('@/lib/server/supabase-server', () => ({
   getServerSupabaseServiceClient: mocks.getServerSupabaseServiceClient,
 }));
@@ -38,7 +39,7 @@ import type { RefreshJob, RefreshTarget } from './contracts';
 const target: RefreshTarget = {
   productId: 'gpu-4060',
   storeId: 'mexx',
-  url: 'https://store.example/gigabyte-rtx-4060',
+  url: 'https://mexx.com.ar/gigabyte-rtx-4060',
 };
 const job: RefreshJob & { lease_token: string } = {
   id: '123e4567-e89b-12d3-a456-426614174000',
@@ -144,16 +145,16 @@ describe('runRequestedRefresh', () => {
     const sourceTitle = 'Gigabyte GeForce RTX 4060 Eagle OC 8GB';
     configureClaimedJob([sourceProduct({
       name: sourceTitle,
-      offer: { url: 'https://store.example/wrong-offer', price: 1 },
+      offer: { url: 'https://mexx.com.ar/wrong-offer', price: 1 },
     }), sourceProduct({
       name: sourceTitle,
       offer: { url: target.url, price: 420_000, lastUpdated: new Date('2026-09-21T12:00:01.000Z') },
     })]);
     // The source helper above intentionally returns two products; only the exact URL is eligible.
-    mocks.scrape.mockResolvedValueOnce([sourceProduct({ name: sourceTitle, offer: { url: 'https://store.example/wrong-offer', price: 1 } }), sourceProduct({ name: sourceTitle, offer: { url: target.url, price: 420_000 } })]);
+    mocks.scrape.mockResolvedValueOnce([sourceProduct({ name: sourceTitle, offer: { url: 'https://mexx.com.ar/wrong-offer', price: 1 } }), sourceProduct({ name: sourceTitle, offer: { url: target.url, price: 420_000 } })]);
 
     const result = await runRequestedRefresh();
-    const persistCall = mocks.rpc.mock.calls.find(([name]) => name === 'persist_requested_offer');
+    const persistCall = mocks.rpc.mock.calls.find(([name]) => name === 'persist_verified_requested_offer');
 
     expect(result).toEqual({ processed: true, jobId: job.id, status: 'completed' });
     expect(mocks.reviewProductOffers).toHaveBeenCalledWith(
@@ -180,13 +181,13 @@ describe('runRequestedRefresh', () => {
     mocks.readBuilderCatalog.mockResolvedValue([grouped]);
     expect((await runRequestedRefresh()).status).toBe('completed');
     expect(mocks.scrape).toHaveBeenCalledWith(expect.objectContaining({ query: '18056', selectedStoreIds: new Set(['compragamer']) }));
-    expect(mocks.rpc).toHaveBeenCalledWith('persist_requested_offer', expect.objectContaining({ p_price: 146_200, p_url: currentTarget.url }));
+    expect(mocks.rpc).toHaveBeenCalledWith('persist_verified_requested_offer', expect.objectContaining({ p_price: 146_200, p_url: currentTarget.url }));
   });
 
   it('does not persist or report success when the result is empty, mismatched, or stale', async () => {
     const scenarios: Product[][] = [
       [],
-      [sourceProduct({ offer: { url: 'https://store.example/other-offer' } })],
+      [sourceProduct({ offer: { url: 'https://mexx.com.ar/other-offer' } })],
       [sourceProduct({ offer: { lastUpdated: new Date('2026-09-21T11:59:59.000Z') } })],
     ];
 
@@ -198,12 +199,12 @@ describe('runRequestedRefresh', () => {
       const result = await runRequestedRefresh();
 
       expect(result).toEqual({ processed: true, jobId: job.id, status: 'failed' });
-      expect(mocks.rpc.mock.calls.some(([name]) => name === 'persist_requested_offer')).toBe(false);
+      expect(mocks.rpc.mock.calls.some(([name]) => name === 'persist_verified_requested_offer')).toBe(false);
     }
   });
 
   it('busca RAM por atributos comunes pero bloquea el conflicto real de serie en la URL exacta', async () => {
-    const ramTarget = { productId: 'ram', storeId: 'mexx', url: 'https://store.example/corsair-vengeance-lpx-16gb-ddr4' };
+    const ramTarget = { productId: 'ram', storeId: 'mexx', url: 'https://mexx.com.ar/corsair-vengeance-lpx-16gb-ddr4' };
     const grouped = product({ id: 'ram', name: 'CORSAIR VENGEANCE RS 16GB DDR4 3200 RGB', category: 'memoria-ram' });
     const observed = product({ id: 'source-ram', name: 'Corsair Vengeance LPX 16GB DDR4', category: 'memoria-ram',
       prices: [price({ storeId: 'mexx', storeName: 'Mexx', price: 100_000, url: ramTarget.url })] });
@@ -213,7 +214,7 @@ describe('runRequestedRefresh', () => {
     mocks.readBuilderCatalog.mockResolvedValue([grouped]);
     await runRequestedRefresh();
     expect(mocks.scrape).toHaveBeenCalledWith(expect.objectContaining({ query: 'CORSAIR 16gb ddr4' }));
-    expect(mocks.rpc).toHaveBeenCalledWith('persist_requested_offer', expect.objectContaining({
+    expect(mocks.rpc).toHaveBeenCalledWith('persist_verified_requested_offer', expect.objectContaining({
       p_review: expect.objectContaining({ status: 'needs-review', reason: 'explicit-conflict' }),
     }));
     expect(mocks.from.mock.results[0].value.update).toHaveBeenCalledWith(expect.objectContaining({
@@ -225,7 +226,7 @@ describe('runRequestedRefresh', () => {
     configureClaimedJob([sourceProduct({ offer: { stock: 'out-of-stock', price: 420_000 } })]);
 
     const result = await runRequestedRefresh();
-    const persistCall = mocks.rpc.mock.calls.find(([name]) => name === 'persist_requested_offer');
+    const persistCall = mocks.rpc.mock.calls.find(([name]) => name === 'persist_verified_requested_offer');
 
     expect(result.status).toBe('completed');
     expect(persistCall?.[1]).toMatchObject({ p_stock: 'out-of-stock' });
@@ -236,7 +237,7 @@ describe('runRequestedRefresh', () => {
     configureClaimedJob([sourceProduct({ name: 'Gigabyte GeForce RTX 4070 Eagle 12GB', offer: { price: 700_000 } })]);
 
     await runRequestedRefresh();
-    const persistCall = mocks.rpc.mock.calls.find(([name]) => name === 'persist_requested_offer');
+    const persistCall = mocks.rpc.mock.calls.find(([name]) => name === 'persist_verified_requested_offer');
 
     expect(mocks.reviewProductOffers).toHaveBeenCalledWith([], { authorizedRefresh: true, sourceTitles: {} });
     expect(persistCall?.[1].p_review).toMatchObject({ status: 'needs-review', reason: 'explicit-conflict' });
@@ -266,8 +267,8 @@ describe('runRequestedRefresh', () => {
         model: null, confidence: null, subject: { name: 'gpu', category: 'tarjetas-graficas', url: target.url } } });
     mocks.readBuilderCatalog.mockResolvedValue([{ ...catalogProduct(), prices: [previous] }]);
     await runRequestedRefresh();
-    const persistCall = mocks.rpc.mock.calls.find(([name]) => name === 'persist_requested_offer');
-    expect(persistCall?.[1].p_review).toMatchObject({ status: 'needs-review', reason: 'provider-unavailable' });
+    const persistCall = mocks.rpc.mock.calls.find(([name]) => name === 'persist_verified_requested_offer');
+    expect(persistCall?.[1].p_review).toMatchObject({ status: 'needs-review', reason: 'insufficient-evidence' });
     expect(mocks.from.mock.results[0].value.update).toHaveBeenCalledWith(expect.objectContaining({
       results: [expect.objectContaining({ comparable: false })],
     }));
