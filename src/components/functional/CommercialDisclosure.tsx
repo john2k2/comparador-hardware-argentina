@@ -14,8 +14,8 @@ export function CommercialDisclosure({ className, compact = false }: CommercialD
       </p>
       <p className="mt-2 text-[10px] md:text-[11px] leading-relaxed normal-case tracking-normal text-muted-foreground font-mono">
         {compact
-          ? 'Si activamos acuerdos comerciales o enlaces patrocinados, se van a etiquetar como PATROCINADO. La comparacion organica sigue mostrando valores de locales comparables.'
-          : `${SITE_NAME} no vende productos ni decide compras por vos. Si activamos acuerdos comerciales o enlaces patrocinados, se van a etiquetar como PATROCINADO. La comparacion organica sigue priorizando costos comparables, disponibilidad y contexto antes del clic final.`}
+          ? 'Los enlaces con comisión se identifican como ENLACE AFILIADO y los espacios pagos como PATROCINADO. La comparación orgánica muestra valores de locales comparables.'
+          : `${SITE_NAME} no vende productos ni decide compras por vos. Los enlaces con comisión se identifican como ENLACE AFILIADO y los espacios pagos como PATROCINADO. La comparación orgánica prioriza costos comparables, disponibilidad y contexto antes del clic final.`}
       </p>
     </div>
   );

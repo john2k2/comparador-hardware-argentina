@@ -89,6 +89,7 @@ export default async function PrivacidadPage() {
           <h2 id="privacy-storage" className="text-secondary font-bold uppercase">Almacenamiento funcional y terceros</h2>
           <p>El navegador guarda preferencias visuales, armados, productos vistos y caché de fichas mediante almacenamiento local o de sesión. Podés borrarlos desde el navegador; perderás los datos guardados en ese dispositivo. Las cuentas, favoritos y alertas asociados requieren gestionar los datos de la cuenta.</p>
           <p>Algunas imágenes provienen de fabricantes o comercios y pueden solicitarse a sus servidores. Al abrir una oferta salís hacia una tienda con políticas propias. Si escribís por correo, el proveedor procesa tu dirección y mensaje para permitirnos responder; no publicamos esas consultas como métricas personales.</p>
+          <p>La selección de juegos digitales utiliza enlaces afiliados de Eneba. No cargamos sus etiquetas ni cookies dentro del comparador: el enlace transmite nuestro identificador público al abrir la tienda, que gestiona su propia privacidad y atribución. Con tu consentimiento de analítica medimos la vista de esta selección y el juego cuyo enlace abrís; esos clics no se registran como ventas.</p>
           <p>La preferencia de analítica caduca a los 180 días. Los registros operativos, datos de cuenta, correos y eventos ya enviados tienen finalidades y configuraciones propias de cada proveedor. No afirmamos un plazo único que no hayamos verificado ni un borrado instantáneo en servicios externos.</p>
         </section>
 

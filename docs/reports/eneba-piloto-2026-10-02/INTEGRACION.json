@@ -1,0 +1,134 @@
+{
+  "date": "2026-10-02",
+  "state": "validated-local-publication-pending",
+  "account": {
+    "source": "Chrome independent tab /affiliates/overview",
+    "inactiveNoticeInitiallySeen": true,
+    "afterUserActivationReload": {
+      "inactiveNoticePresent": false,
+      "affiliateId": "Comparador_Hardware_Argentina",
+      "commissionPercent": 5
+    },
+    "financialDetailsReadOrStored": false,
+    "salesAttributionConfirmed": false
+  },
+  "feedBeforePublication": {
+    "checkedAt": "2026-10-02T19:03:28.832Z",
+    "status": 200,
+    "bytes": 11757,
+    "feedUpdatedAt": "2026-10-02T19:03:28.000Z",
+    "offers": [
+      {
+        "id": "epic-games-chivalry-ii-epic-games-key-latam",
+        "sku": "CHVLRY2/LA",
+        "feedTitle": "Chivalry II Epic Games Key LATAM",
+        "name": "Chivalry II",
+        "region": "latam",
+        "platform": "Epic Games",
+        "edition": "Juego base · clave digital LATAM",
+        "restrictions": "PC Windows. Se activa en Epic Games, no en Steam. La ficha anuncia inglés. Revisá los requisitos y la región de tu cuenta antes de comprar.",
+        "reviewedAt": "2026-10-02T17:48:55.000Z",
+        "activationCountry": "AR",
+        "price": 8971.18,
+        "currency": "ARS",
+        "url": "https://www.eneba.com/latam/epic-games-chivalry-ii-epic-games-key-latam?af_id=Comparador_Hardware_Argentina&currency=ARS",
+        "observedAt": "2026-10-02T19:03:28.000Z"
+      },
+      {
+        "id": "steam-knights-of-pen-paper-steam-key-global",
+        "sku": "KOPP",
+        "feedTitle": "Knights of Pen & Paper Steam Key GLOBAL",
+        "name": "Knights of Pen & Paper",
+        "region": "global",
+        "platform": "Steam",
+        "edition": "Juego base · clave digital GLOBAL",
+        "restrictions": "Se activa en Steam. La ficha incluye español y lista Windows, Mac y Linux; revisá los requisitos actuales de tu sistema. No anuncia extras ni una edición Deluxe.",
+        "reviewedAt": "2026-10-02T17:48:55.000Z",
+        "activationCountry": "AR",
+        "price": 4288.33,
+        "currency": "ARS",
+        "url": "https://www.eneba.com/latam/steam-knights-of-pen-paper-steam-key-global?af_id=Comparador_Hardware_Argentina&currency=ARS",
+        "observedAt": "2026-10-02T19:03:28.000Z"
+      }
+    ]
+  },
+  "validation": {
+    "unitFocusedPassed": 62,
+    "allUnitsPassed": 1218,
+    "allUnitsSkipped": 2,
+    "pilotConsentBrowserPassed": 19,
+    "lint": true,
+    "typeScript": true,
+    "build": true,
+    "liveGA4ReceiptVerified": false
+  },
+  "g02": {
+    "sourceRunId": "37047419206",
+    "mode": "guides",
+    "dailyCycleAdded": false,
+    "usefulDailyCycles": 6,
+    "readiness": "not-ready",
+    "sampleFresh24h": 37,
+    "sampleDenominator": 56,
+    "sampleFresh3h": 0,
+    "productsWithAcceptedOffer3h": 0,
+    "sampleProducts": 9,
+    "sampleMeasuredAt": "2026-10-02T18:27:33.157Z"
+  },
+  "adaptive": {
+    "githubRunId": "37048933125",
+    "runId": "2cbc2469-7a0a-4ba4-af29-2415121768d5",
+    "trigger": "github-schedule",
+    "startedAt": "2026-10-02T18:40:11.467Z",
+    "finishedAt": "2026-10-02T18:57:18.575Z",
+    "status": "deadline",
+    "attempted": 1488,
+    "observed": 475,
+    "comparable": 241,
+    "failures": {
+      "no-observation": 964,
+      "source-failed": 49
+    },
+    "inventoryDetails": {
+      "status": "completed",
+      "attempted": 48,
+      "imported": 48,
+      "failures": 0
+    },
+    "phaseMs": {
+      "inventory": 142318,
+      "preparation": 7556,
+      "shared": 424895,
+      "rotation": 438502
+    },
+    "coverage": {
+      "definition": "Cola adaptativa al terminar el run; prioridad corresponde a interval_hours <=24, sin acreditar identidad",
+      "total": 71770,
+      "observed24h": 19445,
+      "neverAttempted": 52288,
+      "priorityObserved24h": 9562,
+      "priorityTotal": 34242
+    },
+    "transport": {
+      "requests": 486,
+      "decodedBytes": 74642589,
+      "backoffSkips": 30
+    }
+  },
+  "pilot": {
+    "campaign": "eneba_pc_ar_20261002",
+    "entry": "footer",
+    "routes": [
+      "/juegos-digitales",
+      "/api/juegos-digitales"
+    ],
+    "products": 2,
+    "catalogHardwareChanged": false,
+    "discountCodeConfirmed": false,
+    "fixedSponsorFeeConfirmed": false,
+    "activeAdsEnabled": false,
+    "proposedReview": "2026-10-30",
+    "nextEditorialReview": "2026-10-05",
+    "currentEditorialReviewExpiresAt": "2026-10-09T17:48:55Z"
+  }
+}

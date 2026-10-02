@@ -44,6 +44,9 @@ export function SiteFooter() {
               <li><AnalyticsPreferencesButton enabled={Boolean(process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID)} /></li>
               <li><Link href="/terminos" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Terminos de Uso</Link></li>
               <li><Link href="/contacto" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Contacto</Link></li>
+              {process.env.ENEBA_AFFILIATE_PILOT_ENABLED === '1' && (
+                <li><Link href="/juegos-digitales" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Juegos digitales · enlaces afiliados</Link></li>
+              )}
               <li><Link href="/indice-precios-hardware" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Índice de precios</Link></li>
             </ul>
           </div>

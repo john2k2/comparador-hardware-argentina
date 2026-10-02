@@ -10,7 +10,8 @@
 		"DISABLE_LIVE_SCRAPING": "1",
 		"ENABLE_ON_DEMAND_REFRESH": "1",
 		"CATALOG_REQUESTED_RUNNER": "0",
-		"CATALOG_SCHEDULER_ENABLED": "1"
+		"CATALOG_SCHEDULER_ENABLED": "1",
+		"ENEBA_AFFILIATE_PILOT_ENABLED": "1"
 	},
 	"triggers": { "crons": ["11 * * * *"] },
 	"compatibility_date": "2026-09-05",

@@ -1,0 +1,312 @@
+{
+  "purpose": "Corte de evidencia, no precios actuales ni garantía de activación futura",
+  "sources": {
+    "xml": {
+      "url": "https://www.eneba.com/rss/products.xml?version=3&currency=ARS&country=ar&type=game&link_locale=latam&af_id=Comparador_Hardware_Argentina&size=6&from=0",
+      "fetchedAt": "2026-10-02T17:37:51.089Z",
+      "status": 200,
+      "bytes": 11757,
+      "lastModified": "Fri, 02 Oct 2026 17:37:51 GMT",
+      "contentType": "text/xml; charset=UTF-8",
+      "nextPageFollowed": false
+    },
+    "csv": {
+      "url": "https://www.eneba.com/rss/products.csv?version=3&currency=ARS&country=ar&type=game&link_locale=latam&af_id=Comparador_Hardware_Argentina&size=6&from=0",
+      "fetchedAt": "2026-10-02T17:37:51.870Z",
+      "status": 200,
+      "bytes": 5959,
+      "lastModified": "Fri, 02 Oct 2026 17:37:51 GMT",
+      "contentType": "text/csv; charset=utf-8",
+      "nextPageFollowed": false
+    }
+  },
+  "xmlCsvParity": {
+    "rows": 6,
+    "fields": [
+      "id",
+      "title",
+      "price",
+      "link",
+      "region",
+      "availability"
+    ],
+    "equal": true
+  },
+  "giftcardCountryUsed": false,
+  "rows": [
+    {
+      "id": "xbox-yakuza-like-a-dragon-pc-xbox-live-key-argentina",
+      "title": "Yakuza: Like a Dragon PC/XBOX LIVE Key ARGENTINA",
+      "price": "22278.67 ARS",
+      "link": "https://www.eneba.com/latam/xbox-yakuza-like-a-dragon-pc-xbox-live-key-argentina?af_id=Comparador_Hardware_Argentina&currency=ARS",
+      "region": "argentina",
+      "availability": "in stock",
+      "sku": "YAKUZALIKEADRAGONXLAR",
+      "platform": "Xbox Live",
+      "edition": "Yakuza: Like a Dragon, clave digital; no declara Deluxe",
+      "systems": [
+        "Windows",
+        "Xbox One",
+        "Xbox Series X"
+      ],
+      "restrictions": "Sólo región Argentina; cuenta e IP ubicadas en un país con servicio Xbox Live. La ficha anuncia español entre otros idiomas.",
+      "selected": false,
+      "reason": "Xbox Live queda fuera de la selección inicial de Steam/Epic, aunque esta ficha también liste Windows.",
+      "activationCountry": "AR",
+      "countryEvidence": "Argentina aparece explícitamente en la lista de países permitidos de la ficha, no inferido de ARS ni del rótulo GLOBAL/LATAM.",
+      "reviewedAt": "2026-10-02T18:04:10.000Z",
+      "affiliateIdInSampleLink": true
+    },
+    {
+      "id": "xbox-fishing-sim-world-pro-tour-xbox-live-key-argentina",
+      "title": "Fishing Sim World: Pro Tour XBOX LIVE Key ARGENTINA",
+      "price": "6517.24 ARS",
+      "link": "https://www.eneba.com/latam/xbox-fishing-sim-world-pro-tour-xbox-live-key-argentina?af_id=Comparador_Hardware_Argentina&currency=ARS",
+      "region": "argentina",
+      "availability": "in stock",
+      "sku": "FSWPTSEXLAR",
+      "platform": "Xbox Live",
+      "edition": "Fishing Sim World: Pro Tour, clave digital; la ficha no confirma extras de una Special Edition",
+      "systems": [
+        "Xbox One",
+        "Xbox Series X"
+      ],
+      "restrictions": "Sólo región Argentina; cuenta e IP ubicadas en un país con servicio Xbox Live. La ficha anuncia inglés.",
+      "selected": false,
+      "reason": "Versión de consola y edición adicional no confirmada; no se integra al piloto de PC.",
+      "activationCountry": "AR",
+      "countryEvidence": "Argentina aparece explícitamente en la lista de países permitidos de la ficha, no inferido de ARS ni del rótulo GLOBAL/LATAM.",
+      "reviewedAt": "2026-10-02T18:04:10.000Z",
+      "affiliateIdInSampleLink": true
+    },
+    {
+      "id": "xbox-the-banner-saga-2-xbox-live-key-argentina",
+      "title": "The Banner Saga 2 XBOX LIVE Key ARGENTINA",
+      "price": "8386.66 ARS",
+      "link": "https://www.eneba.com/latam/xbox-the-banner-saga-2-xbox-live-key-argentina?af_id=Comparador_Hardware_Argentina&currency=ARS",
+      "region": "argentina",
+      "availability": "in stock",
+      "sku": "TBS2XLAR",
+      "platform": "Xbox Live",
+      "edition": "The Banner Saga 2, clave digital; no declara edición especial",
+      "systems": [
+        "Xbox One",
+        "Xbox Series X"
+      ],
+      "restrictions": "Sólo región Argentina; cuenta e IP ubicadas en un país con servicio Xbox Live. La ficha anuncia inglés.",
+      "selected": false,
+      "reason": "Versión de consola fuera del piloto de PC.",
+      "activationCountry": "AR",
+      "countryEvidence": "Argentina aparece explícitamente en la lista de países permitidos de la ficha, no inferido de ARS ni del rótulo GLOBAL/LATAM.",
+      "reviewedAt": "2026-10-02T18:04:10.000Z",
+      "affiliateIdInSampleLink": true
+    },
+    {
+      "id": "epic-games-chivalry-ii-epic-games-key-latam",
+      "title": "Chivalry II Epic Games Key LATAM",
+      "price": "8969.78 ARS",
+      "link": "https://www.eneba.com/latam/epic-games-chivalry-ii-epic-games-key-latam?af_id=Comparador_Hardware_Argentina&currency=ARS",
+      "region": "latam",
+      "availability": "in stock",
+      "sku": "CHVLRY2/LA",
+      "platform": "Epic Games",
+      "edition": "Juego base, clave digital LATAM; no declara Deluxe",
+      "systems": [
+        "Windows"
+      ],
+      "restrictions": "Argentina figura en la lista permitida LATAM. Se activa en Epic Games. La ficha anuncia inglés. Revisar región de cuenta y requisitos.",
+      "selected": true,
+      "reason": "Plataforma, identidad, región y restricciones revisadas para la selección de PC.",
+      "activationCountry": "AR",
+      "countryEvidence": "Argentina aparece explícitamente en la lista de países permitidos de la ficha, no inferido de ARS ni del rótulo GLOBAL/LATAM.",
+      "reviewedAt": "2026-10-02T17:48:55.000Z",
+      "affiliateIdInSampleLink": true,
+      "affiliateIdPreservedOnVerifiedLanding": true
+    },
+    {
+      "id": "steam-afterlife-work-pc-steam-key-global",
+      "title": "Afterlife Work (PC) Steam Key GLOBAL",
+      "price": "17133.48 ARS",
+      "link": "https://www.eneba.com/latam/steam-afterlife-work-pc-steam-key-global?af_id=Comparador_Hardware_Argentina&currency=ARS",
+      "region": "global",
+      "availability": "in stock",
+      "sku": "AfterlifeWork",
+      "platform": "Steam",
+      "edition": "Afterlife Work (PC), clave digital GLOBAL; no declara edición especial",
+      "systems": [
+        "Windows"
+      ],
+      "restrictions": "Argentina figura en la lista permitida GLOBAL. La ficha anuncia solamente ruso.",
+      "selected": false,
+      "reason": "Idioma ruso como único idioma anunciado; no se recomienda para este piloto.",
+      "activationCountry": "AR",
+      "countryEvidence": "Argentina aparece explícitamente en la lista de países permitidos de la ficha, no inferido de ARS ni del rótulo GLOBAL/LATAM.",
+      "reviewedAt": "2026-10-02T18:04:10.000Z",
+      "affiliateIdInSampleLink": true
+    },
+    {
+      "id": "steam-knights-of-pen-paper-steam-key-global",
+      "title": "Knights of Pen & Paper Steam Key GLOBAL",
+      "price": "4287.66 ARS",
+      "link": "https://www.eneba.com/latam/steam-knights-of-pen-paper-steam-key-global?af_id=Comparador_Hardware_Argentina&currency=ARS",
+      "region": "global",
+      "availability": "in stock",
+      "sku": "KOPP",
+      "platform": "Steam",
+      "edition": "Knights of Pen & Paper, juego base, clave digital GLOBAL; no anuncia extras Deluxe",
+      "systems": [
+        "Windows",
+        "Mac",
+        "Linux"
+      ],
+      "restrictions": "Argentina figura en la lista permitida GLOBAL. La ficha anuncia español entre otros idiomas. Revisar requisitos actuales: la lista de sistemas no prueba compatibilidad con versiones modernas.",
+      "selected": true,
+      "reason": "Plataforma, identidad, región y restricciones revisadas para la selección de PC.",
+      "activationCountry": "AR",
+      "countryEvidence": "Argentina aparece explícitamente en la lista de países permitidos de la ficha, no inferido de ARS ni del rótulo GLOBAL/LATAM.",
+      "reviewedAt": "2026-10-02T17:48:55.000Z",
+      "affiliateIdInSampleLink": true,
+      "affiliateIdPreservedOnVerifiedLanding": true
+    }
+  ],
+  "localRuntime": {
+    "checkedAt": "2026-10-02T18:02:41.881Z",
+    "results": [
+      {
+        "status": 200,
+        "cacheControl": "no-store",
+        "robots": "noindex, nofollow",
+        "data": {
+          "status": "ready",
+          "offers": [
+            {
+              "id": "epic-games-chivalry-ii-epic-games-key-latam",
+              "sku": "CHVLRY2/LA",
+              "feedTitle": "Chivalry II Epic Games Key LATAM",
+              "name": "Chivalry II",
+              "region": "latam",
+              "platform": "Epic Games",
+              "edition": "Juego base · clave digital LATAM",
+              "restrictions": "PC Windows. Se activa en Epic Games, no en Steam. La ficha anuncia inglés. Revisá los requisitos y la región de tu cuenta antes de comprar.",
+              "reviewedAt": "2026-10-02T17:48:55.000Z",
+              "activationCountry": "AR",
+              "price": 8970.45,
+              "currency": "ARS",
+              "url": "https://www.eneba.com/latam/epic-games-chivalry-ii-epic-games-key-latam?af_id=Comparador_Hardware_Argentina&currency=ARS",
+              "observedAt": "2026-10-02T18:02:41.000Z"
+            },
+            {
+              "id": "steam-knights-of-pen-paper-steam-key-global",
+              "sku": "KOPP",
+              "feedTitle": "Knights of Pen & Paper Steam Key GLOBAL",
+              "name": "Knights of Pen & Paper",
+              "region": "global",
+              "platform": "Steam",
+              "edition": "Juego base · clave digital GLOBAL",
+              "restrictions": "Se activa en Steam. La ficha incluye español y lista Windows, Mac y Linux; revisá los requisitos actuales de tu sistema. No anuncia extras ni una edición Deluxe.",
+              "reviewedAt": "2026-10-02T17:48:55.000Z",
+              "activationCountry": "AR",
+              "price": 4287.98,
+              "currency": "ARS",
+              "url": "https://www.eneba.com/latam/steam-knights-of-pen-paper-steam-key-global?af_id=Comparador_Hardware_Argentina&currency=ARS",
+              "observedAt": "2026-10-02T18:02:41.000Z"
+            }
+          ],
+          "fetchedAt": "2026-10-02T18:02:40.611Z",
+          "feedUpdatedAt": "2026-10-02T18:02:41.000Z"
+        }
+      },
+      {
+        "status": 200,
+        "cacheControl": "no-store",
+        "robots": "noindex, nofollow",
+        "data": {
+          "status": "ready",
+          "offers": [
+            {
+              "id": "epic-games-chivalry-ii-epic-games-key-latam",
+              "sku": "CHVLRY2/LA",
+              "feedTitle": "Chivalry II Epic Games Key LATAM",
+              "name": "Chivalry II",
+              "region": "latam",
+              "platform": "Epic Games",
+              "edition": "Juego base · clave digital LATAM",
+              "restrictions": "PC Windows. Se activa en Epic Games, no en Steam. La ficha anuncia inglés. Revisá los requisitos y la región de tu cuenta antes de comprar.",
+              "reviewedAt": "2026-10-02T17:48:55.000Z",
+              "activationCountry": "AR",
+              "price": 8970.45,
+              "currency": "ARS",
+              "url": "https://www.eneba.com/latam/epic-games-chivalry-ii-epic-games-key-latam?af_id=Comparador_Hardware_Argentina&currency=ARS",
+              "observedAt": "2026-10-02T18:02:41.000Z"
+            },
+            {
+              "id": "steam-knights-of-pen-paper-steam-key-global",
+              "sku": "KOPP",
+              "feedTitle": "Knights of Pen & Paper Steam Key GLOBAL",
+              "name": "Knights of Pen & Paper",
+              "region": "global",
+              "platform": "Steam",
+              "edition": "Juego base · clave digital GLOBAL",
+              "restrictions": "Se activa en Steam. La ficha incluye español y lista Windows, Mac y Linux; revisá los requisitos actuales de tu sistema. No anuncia extras ni una edición Deluxe.",
+              "reviewedAt": "2026-10-02T17:48:55.000Z",
+              "activationCountry": "AR",
+              "price": 4287.98,
+              "currency": "ARS",
+              "url": "https://www.eneba.com/latam/steam-knights-of-pen-paper-steam-key-global?af_id=Comparador_Hardware_Argentina&currency=ARS",
+              "observedAt": "2026-10-02T18:02:41.000Z"
+            }
+          ],
+          "fetchedAt": "2026-10-02T18:02:40.611Z",
+          "feedUpdatedAt": "2026-10-02T18:02:41.000Z"
+        }
+      }
+    ]
+  },
+  "disabledRuntime": [
+    {
+      "path": "/api/juegos-digitales",
+      "status": 404,
+      "hasPilotLink": false
+    },
+    {
+      "path": "/juegos-digitales",
+      "status": 404,
+      "hasPilotLink": false
+    },
+    {
+      "path": "/acerca",
+      "status": 200,
+      "hasPilotLink": false
+    }
+  ],
+  "designHookReview": {
+    "rule": "side-tab",
+    "disposition": "fixed",
+    "suppressed": [],
+    "standing": [],
+    "headerBorderLeft": "0px",
+    "headerPaddingLeft": "0px",
+    "detectorFindings": 0,
+    "viewportTestsPassed": [
+      1440,
+      360,
+      390
+    ],
+    "checkedAt": "2026-10-02T18:19:20.956Z",
+    "feedUpdatedAt": "2026-10-02T18:18:16.000Z",
+    "offers": [
+      {
+        "id": "epic-games-chivalry-ii-epic-games-key-latam",
+        "price": 8970.45,
+        "currency": "ARS",
+        "observedAt": "2026-10-02T18:18:16.000Z"
+      },
+      {
+        "id": "steam-knights-of-pen-paper-steam-key-global",
+        "price": 4287.98,
+        "currency": "ARS",
+        "observedAt": "2026-10-02T18:18:16.000Z"
+      }
+    ]
+  }
+}
