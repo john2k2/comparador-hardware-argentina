@@ -1,0 +1,37 @@
+name: Eneba affiliate pilot snapshot
+on:
+  schedule:
+    # Una muestra de seis filas, sin paginación. GitHub puede retrasar el inicio.
+    - cron: '29 1,5,9,13,17,21 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: eneba-affiliate-pilot
+  cancel-in-progress: false
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Persist the dated official feed selection
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          ENEBA_AFFILIATE_PILOT_ENABLED: ${{ vars.ENEBA_AFFILIATE_PILOT_ENABLED || '1' }}
+          LOG_LEVEL: warn
+        run: node scripts/run-catalog-refresh.mjs eneba-pilot "$RUNNER_TEMP/eneba-pilot-snapshot.json"
+      - name: Preserve the result without private account data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eneba-pilot-${{ github.run_id }}
+          path: ${{ runner.temp }}/eneba-pilot-snapshot.json
+          if-no-files-found: warn
+          retention-days: 30

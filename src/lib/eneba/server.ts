@@ -1,98 +1,39 @@
 import 'server-only';
 import { logger } from '@/lib/logger';
-import { getSharedCache, setSharedCache } from '@/lib/server/shared-cache';
-import { parseEnebaFeed } from './feed';
+import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
+import { ENEBA_CACHE_SCOPE, ENEBA_CACHE_KEY } from './snapshot-cache';
 import {
-  buildEnebaFeedUrl, ENEBA_PRICE_MAX_AGE_MS, ENEBA_REVIEW_VERSION,
   isEnebaOfferFresh, readEnebaSnapshot, type EnebaSnapshot,
 } from './pilot';
 
-const CACHE_SCOPE = 'eneba-affiliate-pilot';
-const CACHE_KEY = `${ENEBA_REVIEW_VERSION}:worker-fetch-v1:ar:ars:game:6`;
-const ERROR_TTL_MS = 60 * 60 * 1000;
-export const ENEBA_MAX_FEED_BYTES = 256 * 1024;
 let pending: Promise<EnebaSnapshot> | undefined;
+let local: { snapshot: EnebaSnapshot; expiresAt: number } | undefined;
 
 export function isEnebaPilotEnabled(): boolean {
   return process.env.ENEBA_AFFILIATE_PILOT_ENABLED === '1';
 }
 
-async function readBoundedFeed(response: Response): Promise<string> {
-  if (Number(response.headers.get('content-length')) > ENEBA_MAX_FEED_BYTES || !response.body) {
-    await response.body?.cancel();
-    throw new Error('oversized-feed');
-  }
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder('utf-8', { fatal: true });
-  let bytes = 0;
-  let text = '';
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) return text + decoder.decode();
-      bytes += value.byteLength;
-      if (bytes > ENEBA_MAX_FEED_BYTES) throw new Error('oversized-feed');
-      text += decoder.decode(value, { stream: true });
-    }
-  } finally { await reader.cancel(); }
-}
-
-export async function fetchEnebaSnapshot(): Promise<EnebaSnapshot> {
-  const fetchedAt = new Date().toISOString();
-  const diagnostic: Record<string, string | number | null> = {};
-  try {
-    const response = await fetch(buildEnebaFeedUrl(), {
-      // Workers no admite redirect:error. manual conserva el destino fijo;
-      // la comprobación de status rechaza 3xx sin seguir la redirección.
-      cache: 'no-store', redirect: 'manual', signal: AbortSignal.timeout(8_000),
-      headers: { Accept: 'application/xml, text/xml' },
-    });
-    diagnostic.httpStatus = response.status;
-    diagnostic.contentType = (response.headers.get('content-type') ?? '').split(';')[0].slice(0, 80);
-    if (!response.ok || !/^(application|text)\/xml\b/i.test(response.headers.get('content-type') ?? '')) {
-      await response.body?.cancel();
-      throw new Error('feed-unavailable');
-    }
-    // El feed no fecha cada precio. Conservamos Last-Modified del origen,
-    // nunca la hora de lectura de una caché como una nueva actualización.
-    const modified = Date.parse(response.headers.get('last-modified') ?? '');
-    const age = Date.now() - modified;
-    diagnostic.feedUpdatedAt = Number.isFinite(modified) ? new Date(modified).toISOString() : null;
-    diagnostic.feedAgeMs = Number.isFinite(age) ? age : null;
-    if (!Number.isFinite(modified) || age < 0 || age >= ENEBA_PRICE_MAX_AGE_MS) {
-      await response.body?.cancel();
-      throw new Error('feed-date-unverified');
-    }
-    const feedUpdatedAt = new Date(modified).toISOString();
-    const offers = parseEnebaFeed(await readBoundedFeed(response), feedUpdatedAt);
-    return { status: offers.length ? 'ready' : 'empty', offers, fetchedAt, feedUpdatedAt };
-  } catch (error) {
-    const known = ['oversized-feed', 'feed-unavailable', 'feed-date-unverified'];
-    const reason = error instanceof Error && known.includes(error.message) ? error.message
-      : error instanceof Error && error.name === 'TimeoutError' ? 'timeout'
-      : 'feed-read-or-parse-error';
-    // Sólo metadatos operativos: nunca cuerpo, cookies, cabeceras privadas ni credenciales.
-    logger.warn('No se pudo verificar la muestra de Eneba', { reason, ...diagnostic });
-    return { status: 'error', offers: [], fetchedAt, feedUpdatedAt: null };
-  }
-}
-
 async function readCachedSnapshot(): Promise<EnebaSnapshot> {
-  let cached: EnebaSnapshot | undefined;
-  try { cached = await getSharedCache<EnebaSnapshot>(CACHE_SCOPE, CACHE_KEY, { allowStale: false }); }
-  catch { logger.warn('No se pudo leer la caché del piloto Eneba'); }
-  if (cached) {
-    const verified = readEnebaSnapshot(cached);
-    if (verified) return verified;
-  }
-  const snapshot = await fetchEnebaSnapshot();
-  const ttl = snapshot.feedUpdatedAt
-    ? Math.max(1_000, ENEBA_PRICE_MAX_AGE_MS - (Date.now() - Date.parse(snapshot.feedUpdatedAt)))
-    : ERROR_TTL_MS;
+  const unavailable: EnebaSnapshot = { status: 'error', offers: [], fetchedAt: null, feedUpdatedAt: null };
+  const now = Date.now();
+  if (local && local.expiresAt > now) return readEnebaSnapshot(local.snapshot, now) ?? unavailable;
   try {
-    await setSharedCache(CACHE_SCOPE, CACHE_KEY, snapshot, ttl);
-  } catch { logger.warn('No se pudo guardar la caché del piloto Eneba'); }
-  return snapshot;
+    const client = getServerSupabaseServiceClient();
+    if (client) {
+      const { data, error } = await client.from('api_cache_entries').select('payload,expires_at')
+        .eq('cache_key', `${ENEBA_CACHE_SCOPE}:${ENEBA_CACHE_KEY}`).maybeSingle();
+      const expires = Date.parse(String(data?.expires_at));
+      const verified = !error && expires > now ? readEnebaSnapshot(data?.payload, now) : null;
+      if (verified) {
+        // Ver las nuevas muestras en un minuto sin borrar filas vencidas ni escribir desde una visita.
+        local = { snapshot: verified, expiresAt: Math.min(expires, now + 60_000) };
+        return verified;
+      }
+    }
+  } catch { logger.warn("No se pudo leer la caché del piloto Eneba"); }
+  // Sólo el productor Node consulta Eneba. Una visita no renueva precios o fechas.
+  local = { snapshot: unavailable, expiresAt: now + 60_000 };
+  return unavailable;
 }
 
 export async function getEnebaSnapshot(): Promise<EnebaSnapshot> {
