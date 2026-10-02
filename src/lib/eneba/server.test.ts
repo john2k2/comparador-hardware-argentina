@@ -52,7 +52,7 @@ describe('muestra Eneba en servidor', () => {
     expect(cache.set).toHaveBeenCalledWith('eneba-affiliate-pilot', expect.any(String), snapshots[0], ENEBA_PRICE_MAX_AGE_MS - (now.getTime() - modified.getTime()));
     const [url, options] = fetchMock.mock.calls[0];
     expect(new URL(url).searchParams.get('size')).toBe('6');
-    expect(options).toMatchObject({ redirect: 'error', cache: 'no-store' });
+    expect(options).toMatchObject({ redirect: 'manual', cache: 'no-store' });
   });
 
   it('una caché vencida no entrega precios ni cambia la fecha ni dispara un refresh forzado', async () => {
@@ -68,6 +68,7 @@ describe('muestra Eneba en servidor', () => {
   });
 
   it.each([
+    ['redirección 302', () => new Response(null, { status: 302, headers: { Location: 'https://example.com/' } })],
     ['HTTP 503', () => new Response('unavailable', { status: 503 })],
     ['HTML', () => response('<html>error</html>', { 'Content-Type': 'text/html' })],
     ['XML truncado', () => response('<rss><channel>')],

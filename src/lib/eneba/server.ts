@@ -8,7 +8,7 @@ import {
 } from './pilot';
 
 const CACHE_SCOPE = 'eneba-affiliate-pilot';
-const CACHE_KEY = `${ENEBA_REVIEW_VERSION}:snapshot-v2:ar:ars:game:6`;
+const CACHE_KEY = `${ENEBA_REVIEW_VERSION}:worker-fetch-v1:ar:ars:game:6`;
 const ERROR_TTL_MS = 60 * 60 * 1000;
 export const ENEBA_MAX_FEED_BYTES = 256 * 1024;
 let pending: Promise<EnebaSnapshot> | undefined;
@@ -42,7 +42,9 @@ export async function fetchEnebaSnapshot(): Promise<EnebaSnapshot> {
   const diagnostic: Record<string, string | number | null> = {};
   try {
     const response = await fetch(buildEnebaFeedUrl(), {
-      cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(8_000),
+      // Workers no admite redirect:error. manual conserva el destino fijo;
+      // la comprobación de status rechaza 3xx sin seguir la redirección.
+      cache: 'no-store', redirect: 'manual', signal: AbortSignal.timeout(8_000),
       headers: { Accept: 'application/xml, text/xml' },
     });
     diagnostic.httpStatus = response.status;
