@@ -23,6 +23,11 @@ async function request(stage: 'READ' | 'GATE' | 'DISPATCH', fetcher: typeof fetc
   }
 }
 
+async function readJson(stage: 'READ' | 'GATE', response: Response): Promise<unknown> {
+  try { return await response.json(); }
+  catch { throw new Error(`CATALOG_SCHEDULER_${stage}_JSON_FAILED`); }
+}
+
 // Respaldo del cron de GitHub. Sólo despacha: nunca consulta tiendas ni precios.
 export async function runCatalogScheduler(env: CatalogSchedulerEnv, now = Date.now(), fetcher: typeof fetch = globalThis.fetch): Promise<SchedulerResult> {
   if (env.CATALOG_SCHEDULER_ENABLED !== '1') return 'disabled';
@@ -35,10 +40,10 @@ export async function runCatalogScheduler(env: CatalogSchedulerEnv, now = Date.n
     'X-GitHub-Api-Version': '2026-03-10', 'User-Agent': 'comparador-catalog-scheduler',
   };
   const listed = await request('READ', fetcher, `${WORKFLOW_URL}/runs?branch=main&per_page=10`, {
-    headers, redirect: 'error',
+    headers, redirect: 'manual',
   });
   if (!listed.ok) throw new Error('CATALOG_SCHEDULER_READ_FAILED');
-  const data: unknown = await listed.json();
+  const data = await readJson('READ', listed);
   if (!data || typeof data !== 'object' || !('workflow_runs' in data) || !Array.isArray(data.workflow_runs))
     throw new Error('CATALOG_SCHEDULER_INVALID_RESPONSE');
   for (const run of data.workflow_runs) {
@@ -51,18 +56,18 @@ export async function runCatalogScheduler(env: CatalogSchedulerEnv, now = Date.n
   }
   // El límite distribuido también cubre reentregas del mismo evento de Cloudflare.
   const gate = await request('GATE', fetcher, new URL('/rest/v1/rpc/check_api_rate_limit', database), {
-    method: 'POST', redirect: 'error',
+    method: 'POST', redirect: 'manual',
     headers: { apikey: secret, Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ p_bucket_key: 'catalog-scheduler-dispatch-hour', p_limit: 1, p_window_seconds: 3600 }),
   });
   if (!gate.ok) throw new Error('CATALOG_SCHEDULER_GATE_FAILED');
-  const limit: unknown = await gate.json();
+  const limit = await readJson('GATE', gate);
   if (!limit || typeof limit !== 'object' || !('allowed' in limit) || typeof limit.allowed !== 'boolean')
     throw new Error('CATALOG_SCHEDULER_INVALID_GATE');
   if (!limit.allowed) return 'deferred';
   const sent = await request('DISPATCH', fetcher, `${WORKFLOW_URL}/dispatches`, {
     method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
-    redirect: 'error',
+    redirect: 'manual',
     body: JSON.stringify({ ref: 'main', inputs: { max_offers: '2500', trigger: 'cloudflare-fallback' } }),
   });
   if (sent.status !== 200 && sent.status !== 204) throw new Error('CATALOG_SCHEDULER_DISPATCH_FAILED');

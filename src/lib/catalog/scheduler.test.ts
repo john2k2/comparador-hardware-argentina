@@ -45,7 +45,7 @@ describe('catalog scheduler recovery', () => {
     const [url, request] = fetcher.mock.calls[2];
     expect(url).toBe('https://api.github.com/repos/john2k2/comparador-hardware-argentina/actions/workflows/catalog-adaptive-refresh.yml/dispatches');
     expect(JSON.parse(request.body)).toEqual({ ref: 'main', inputs: { max_offers: '2500', trigger: 'cloudflare-fallback' } });
-    expect(request.redirect).toBe('error');
+    expect(request.redirect).toBe('manual');
     expect(JSON.parse(fetcher.mock.calls[1][1].body)).toEqual({ p_bucket_key: 'catalog-scheduler-dispatch-hour', p_limit: 1, p_window_seconds: 3600 });
   });
   it.each([new Response(null, { status: 403 }), new Response('{}'), new Response('{"workflow_runs":[{"status":"completed","created_at":"invalid"}]}')])('no despacha si no puede comprobar el estado previo', async response => {
@@ -57,6 +57,17 @@ describe('catalog scheduler recovery', () => {
     const fetcher = vi.fn().mockResolvedValueOnce(runs()).mockResolvedValueOnce(new Response('{"allowed":true}'))
       .mockResolvedValueOnce(new Response(null, { status: 403 })); vi.stubGlobal('fetch', fetcher);
     await expect(runCatalogScheduler(env, now)).rejects.toThrow('CATALOG_SCHEDULER_DISPATCH_FAILED');
+  });
+  it('rechaza una redirección sin reenviar credenciales a otro destino', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 302, headers: { Location: 'https://other.example' } }));
+    vi.stubGlobal('fetch', fetcher);
+    await expect(runCatalogScheduler(env, now)).rejects.toThrow('CATALOG_SCHEDULER_READ_FAILED');
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher.mock.calls[0][1].redirect).toBe('manual');
+  });
+  it('identifica JSON ilegible sin copiar el contenido externo al log', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response('external-sensitive-content')); vi.stubGlobal('fetch', fetcher);
+    await expect(runCatalogScheduler(env, now)).rejects.toThrow('CATALOG_SCHEDULER_READ_JSON_FAILED');
   });
   it.each([new Response(null, { status: 500 }), new Response('{"allowed":"true"}')])('falla cerrado si la base no confirma el límite', async response => {
     const fetcher = vi.fn().mockResolvedValueOnce(runs()).mockResolvedValueOnce(response); vi.stubGlobal('fetch', fetcher);
