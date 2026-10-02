@@ -14,7 +14,7 @@ G12,P2,Piloto comercial,Preparar media kit y página para anunciantes,Codex,en_v
 G13,P2,Piloto comercial,Investigar diez prospectos y aprobar cinco contactos,Jonathan,pendiente,2026-10-09,Negocios calificados y destinatarios aprobados antes de enviar
 G14,P2,Piloto comercial,Ejecutar piloto de 30 días,Jonathan,pendiente,2026-11-08,Reporte medido y decisión documentada de continuidad
 G15,P3,Futuro servicio PCs,Definir zona y validar demanda de armado reparación,Jonathan,pendiente,2026-12-10,Consultas locales y hasta tres trabajos pagados comprobados
-G16,P2,Seguimiento,Completar matriz de todos los scrapers y permisos efectivos,Codex,pendiente,2026-10-09,Cobertura por tienda y roles con evidencia sin secretos
+G16,P2,Seguimiento,Completar matriz de todos los scrapers y permisos efectivos,Codex,en_progreso,2026-10-09,"Cobertura por tienda y roles con evidencia sin secretos; corte 02/10: 36 fuentes mapeadas y 9/11 APIs Woo legibles, faltan permisos efectivos y salud de todas las fuentes"
 G17,P1,Tráfico hacia tiendas,Auditar enlaces internos legacy y cobertura de resultados enriquecidos,Codex,pendiente,2026-10-09,Destinos canónicos revisados y oportunidades de Product y Merchant schema clasificadas sin inventar reseñas políticas ni audiencia
 G18,P1,Monetización AdSense,Comprobar cuenta AdSense y país de pagos,Jonathan + Codex,en_revision,2026-10-01,Cuenta y dominio observados; residencia y titular confirmados sin datos sensibles en repo
 G19,P1,Monetización AdSense,Auditar contenido original y derechos de uso,Codex,en_revision,2026-10-02,Muestra editorial y plantillas evaluadas con fuentes y rutas elegibles de anuncios

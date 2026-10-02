@@ -1,0 +1,525 @@
+{
+  "reviewedAt": "2026-10-02T17:11:56.422Z",
+  "codeCommit": "5f230b0",
+  "ci": {
+    "runId": 37038077196,
+    "completedAt": "2026-10-02T17:07:00Z",
+    "conclusion": "success",
+    "unitPassed": 1175,
+    "unitSkipped": 2,
+    "operationalPassed": 19,
+    "sqlScenarios": 13,
+    "concurrencyPassed": 2,
+    "browserCriticalPassed": 43
+  },
+  "deployment": {
+    "buildId": "a6465a35-65eb-4bcc-b754-18268dbd8b64",
+    "completedAt": "2026-10-02T17:04:34Z",
+    "conclusion": "success"
+  },
+  "database": {
+    "initialization": {
+      "summaries": 55395,
+      "pending": 0,
+      "offers": 71674,
+      "anon_initializer": false,
+      "authenticated_initializer": false,
+      "service_initializer": true,
+      "applied_migrations": 6
+    },
+    "postCpuVariantCheck": {
+      "checked_at": "2026-10-02 17:03:17.476724+00",
+      "cpu_remaining_after_cursor": 0,
+      "cpu_products": 3969,
+      "summaries_pending": 0,
+      "new_migrations": 7,
+      "cpu_conflict_rejected": true
+    },
+    "cpuSummariesRevalidated": 3965,
+    "offerTimestampsRenewedByInitialization": false
+  },
+  "sourceDiscovery": {
+    "mappedStores": 36,
+    "wooProbed": 11,
+    "wooReadable": 9,
+    "unknownAfterHttpFailure": [
+      "gamerspoint",
+      "hardcore"
+    ],
+    "ramCandidatesRead": 4,
+    "ramCandidatesImported": 0
+  },
+  "public": {
+    "at": "2026-10-02T17:06:00.257Z",
+    "total": 11,
+    "passed": 11,
+    "routes": [
+      {
+        "path": "/",
+        "at": "2026-10-02T17:05:29.133Z",
+        "status": 200,
+        "assertions": {
+          "status": true,
+          "heading": true,
+          "title": true,
+          "noAdScript": true
+        },
+        "passed": true
+      },
+      {
+        "path": "/comparar/procesadores",
+        "at": "2026-10-02T17:05:35.781Z",
+        "status": 200,
+        "assertions": {
+          "status": true,
+          "heading": true,
+          "title": true,
+          "noAdScript": true
+        },
+        "passed": true
+      },
+      {
+        "path": "/comparar/placas-de-video",
+        "at": "2026-10-02T17:05:38.851Z",
+        "status": 200,
+        "assertions": {
+          "status": true,
+          "heading": true,
+          "title": true,
+          "noAdScript": true
+        },
+        "passed": true
+      },
+      {
+        "path": "/product/cg-18761",
+        "at": "2026-10-02T17:05:42.137Z",
+        "status": 200,
+        "assertions": {
+          "status": true,
+          "heading": true,
+          "title": true,
+          "noAdScript": true
+        },
+        "passed": true
+      },
+      {
+        "path": "/product/agrupado-procesadores-intel-core-i5-12400-gfjrbb",
+        "at": "2026-10-02T17:05:44.331Z",
+        "status": 200,
+        "assertions": {
+          "status": true,
+          "heading": true,
+          "title": true,
+          "noAdScript": true
+        },
+        "passed": true
+      },
+      {
+        "path": "/product/agrupado-memoria-ram-corsair-16gb-x4icqy",
+        "at": "2026-10-02T17:05:46.607Z",
+        "status": 200,
+        "assertions": {
+          "status": true,
+          "heading": true,
+          "title": true,
+          "noAdScript": true
+        },
+        "passed": true
+      },
+      {
+        "path": "/comparativa/ryzen-5-7600x-vs-ryzen-7-5700x",
+        "at": "2026-10-02T17:05:48.702Z",
+        "status": 200,
+        "assertions": {
+          "status": true,
+          "heading": true,
+          "title": true,
+          "noAdScript": true
+        },
+        "passed": true
+      },
+      {
+        "path": "/api/search?q=ryzen&category=procesadores&maxPrice=200000&sortBy=price-asc",
+        "at": "2026-10-02T17:05:51.457Z",
+        "status": 200,
+        "assertions": {
+          "status": true,
+          "shape": true,
+          "unique": true,
+          "currentPriceParity": true,
+          "range": true,
+          "category": true,
+          "order": true
+        },
+        "passed": true
+      },
+      {
+        "path": "/api/search?q=ryzen&category=procesadores&maxPrice=200000&sortBy=price-asc&page=2",
+        "at": "2026-10-02T17:05:54.758Z",
+        "status": 200,
+        "assertions": {
+          "status": true,
+          "shape": true,
+          "unique": true,
+          "currentPriceParity": true,
+          "range": true,
+          "category": true,
+          "order": true
+        },
+        "passed": true
+      },
+      {
+        "path": "/api/search?q=ryzen&stores=mexx&sortBy=price-asc",
+        "at": "2026-10-02T17:05:57.148Z",
+        "status": 200,
+        "assertions": {
+          "status": true,
+          "shape": true,
+          "unique": true,
+          "currentPriceParity": true,
+          "storeScope": true,
+          "order": true
+        },
+        "passed": true
+      },
+      {
+        "path": "/api/products?id=agrupado-procesadores-intel-core-i5-12400-gfjrbb",
+        "at": "2026-10-02T17:05:59.875Z",
+        "status": 200,
+        "assertions": {
+          "status": true,
+          "shape": true,
+          "unique": true,
+          "currentPriceParity": true
+        },
+        "passed": true
+      }
+    ]
+  },
+  "apiPriceParity": {
+    "at": "2026-10-02T17:07:58.401Z",
+    "passed": 4,
+    "total": 4,
+    "contract": "Stock conocido, identidad corroborada y observación de oferta <=24 h para catálogo; guías/armador <=3 h sin cambios."
+  },
+  "browser": {
+    "at": "2026-10-02T17:06:23.559Z",
+    "scope": "dataLayer observable; no demuestra recepción GA4. Peticiones de Google interceptadas y salidas sin navegación a tiendas.",
+    "results": [
+      {
+        "width": 1280,
+        "at": "2026-10-02T17:06:17.845Z",
+        "passed": true,
+        "assertions": {
+          "status": true,
+          "noGoogleBeforeConsent": true,
+          "searchOnce": true,
+          "apiCardParity": true,
+          "viewOnce": true,
+          "outgoing": true,
+          "noOverflow": true,
+          "noErrors": true,
+          "cpuVariantRetained": true,
+          "cpuViewRetained": true
+        },
+        "searchCount": 1,
+        "viewCount": 1,
+        "outgoing": [
+          {
+            "currency": "ARS",
+            "value": 84550,
+            "product_id": "cg-18761",
+            "product_name": "Procesador AMD Ryzen 3 4100 Sin cooler OEM AM4 - OUTLET",
+            "store_id": "compragamer",
+            "store_name": "CompraGamer",
+            "store_position": 1,
+            "product_category": "procesadores",
+            "cta_id": "product_store_offer",
+            "destination_host": "compragamer.com",
+            "outbound_surface": "product_detail",
+            "outbound_link_type": "organic",
+            "send_to": "G-7BHXTCQFTP"
+          }
+        ],
+        "errors": [],
+        "blockedGoogle": 2,
+        "productId": "cg-18761",
+        "cpuRegression": {
+          "url": "https://www.comparador-hardware.com.ar/product/cg-18761",
+          "title": "PROCESADOR AMD RYZEN 3 4100 SIN COOLER OEM AM4 - OUTLET",
+          "status": 200,
+          "viewCount": 1,
+          "itemId": "cg-18761"
+        }
+      },
+      {
+        "width": 390,
+        "at": "2026-10-02T17:06:21.539Z",
+        "passed": true,
+        "assertions": {
+          "status": true,
+          "noGoogleBeforeConsent": true,
+          "searchOnce": true,
+          "apiCardParity": true,
+          "viewOnce": true,
+          "outgoing": true,
+          "noOverflow": true,
+          "noErrors": true,
+          "cpuVariantRetained": true,
+          "cpuViewRetained": true
+        },
+        "searchCount": 1,
+        "viewCount": 1,
+        "outgoing": [
+          {
+            "currency": "ARS",
+            "value": 84550,
+            "product_id": "cg-18761",
+            "product_name": "Procesador AMD Ryzen 3 4100 Sin cooler OEM AM4 - OUTLET",
+            "store_id": "compragamer",
+            "store_name": "CompraGamer",
+            "store_position": 1,
+            "product_category": "procesadores",
+            "cta_id": "product_store_offer",
+            "destination_host": "compragamer.com",
+            "outbound_surface": "product_detail",
+            "outbound_link_type": "organic",
+            "send_to": "G-7BHXTCQFTP"
+          }
+        ],
+        "errors": [],
+        "blockedGoogle": 2,
+        "productId": "cg-18761",
+        "cpuRegression": {
+          "url": "https://www.comparador-hardware.com.ar/product/cg-18761",
+          "title": "PROCESADOR AMD RYZEN 3 4100 SIN COOLER OEM AM4 - OUTLET",
+          "status": 200,
+          "viewCount": 1,
+          "itemId": "cg-18761"
+        }
+      }
+    ]
+  },
+  "g02": {
+    "usefulDates": 6,
+    "usefulDateEvidenceSource": "G02-CICLOS.csv del checkout principal; cortes verificados previamente, no revalidados automáticamente por esta entrega",
+    "usefulDateEvidence": [
+      {
+        "date": "2026-09-26",
+        "runId": "36233869658",
+        "event": "schedule",
+        "cut": "2026-09-26T09:49:02.941Z",
+        "source": "cortes/2026-09-26/catalog-freshness-36233869658.json",
+        "recordedAsUseful": "si"
+      },
+      {
+        "date": "2026-09-27",
+        "runId": "36312694788",
+        "event": "schedule",
+        "cut": "2026-09-27T10:30:23.638Z",
+        "source": "cortes/2026-09-27/catalog-freshness-36312694788.json",
+        "recordedAsUseful": "si"
+      },
+      {
+        "date": "2026-09-29",
+        "runId": "36560676167",
+        "event": "schedule",
+        "cut": "2026-09-29T11:17:00.420Z",
+        "source": "cortes/2026-09-29/catalog-freshness-36560676167.json",
+        "recordedAsUseful": "si"
+      },
+      {
+        "date": "2026-09-30",
+        "runId": "36706279639",
+        "event": "schedule",
+        "cut": "2026-09-30T11:12:46.707Z",
+        "source": "cortes/2026-09-30/run-36706279639/catalog-freshness-36706279639/catalog-freshness.json",
+        "recordedAsUseful": "si"
+      },
+      {
+        "date": "2026-10-01",
+        "runId": "36855886672",
+        "event": "schedule",
+        "cut": "2026-10-01T11:38:33.643Z",
+        "source": "cortes/2026-10-01/run-36855886672/catalog-freshness-36855886672/catalog-freshness.json",
+        "recordedAsUseful": "si"
+      },
+      {
+        "date": "2026-10-02",
+        "runId": "36998632268",
+        "event": "schedule",
+        "cut": "2026-10-02T11:06:08.111Z",
+        "source": "cortes/2026-10-02/run-36998632268/catalog-freshness-36998632268/catalog-freshness.json",
+        "recordedAsUseful": "si"
+      }
+    ],
+    "status": "open",
+    "coverageCut": {
+      "measured_at": "2026-10-02 16:24:13.743302+00",
+      "total": 71674,
+      "priority_total": 34240,
+      "priority_observed_24h": 8946,
+      "observed_24h": 18414,
+      "never_attempted": 53912
+    },
+    "sampleCut": {
+      "measuredAt": "2026-10-02T16:24:07.660Z",
+      "denominator": 56,
+      "fresh24h": 37,
+      "fresh3h": 0,
+      "identityPending3h": 0,
+      "candidateComparable3h": 0,
+      "identityAccepted3h": 0,
+      "identityUnverified3h": 0,
+      "explicitConflicts3h": 0,
+      "productsWithAcceptedOffer3h": 0,
+      "productsWithoutAcceptedOffer3h": [
+        "agrupado-memoria-ram-corsair-16gb-x4icqy",
+        "agrupado-memoria-ram-kingston-16gb-11mqs9y",
+        "agrupado-procesadores-amd-ryzen-5-5600-1ru8te5",
+        "agrupado-procesadores-amd-ryzen-5-7600x-am5-12rxuv9",
+        "agrupado-procesadores-intel-core-i5-12400-gfjrbb",
+        "agrupado-tarjetas-graficas-asus-rtx-5060-dual-8gb-1lrxth",
+        "agrupado-tarjetas-graficas-gigabyte-rtx-5060-eagle-8gb-1i1rdb",
+        "agrupado-tarjetas-graficas-msi-rtx-5060-shadow-8gb-csxx7o",
+        "maximus-15359-memoria-ram-corsair-vengeance-lpx-black-16gb-3200-mhz-ddr4"
+      ],
+      "byProduct": [
+        {
+          "productId": "agrupado-memoria-ram-corsair-16gb-x4icqy",
+          "category": "memoria-ram",
+          "available": 2,
+          "fresh24h": 2,
+          "fresh3h": 0,
+          "identityPending3h": 0,
+          "identityAccepted3h": 0,
+          "identityUnverified3h": 0,
+          "explicitConflicts3h": 0
+        },
+        {
+          "productId": "agrupado-memoria-ram-kingston-16gb-11mqs9y",
+          "category": "memoria-ram",
+          "available": 6,
+          "fresh24h": 5,
+          "fresh3h": 0,
+          "identityPending3h": 0,
+          "identityAccepted3h": 0,
+          "identityUnverified3h": 0,
+          "explicitConflicts3h": 0
+        },
+        {
+          "productId": "agrupado-procesadores-amd-ryzen-5-5600-1ru8te5",
+          "category": "procesadores",
+          "available": 8,
+          "fresh24h": 5,
+          "fresh3h": 0,
+          "identityPending3h": 0,
+          "identityAccepted3h": 0,
+          "identityUnverified3h": 0,
+          "explicitConflicts3h": 0
+        },
+        {
+          "productId": "agrupado-procesadores-amd-ryzen-5-7600x-am5-12rxuv9",
+          "category": "procesadores",
+          "available": 2,
+          "fresh24h": 1,
+          "fresh3h": 0,
+          "identityPending3h": 0,
+          "identityAccepted3h": 0,
+          "identityUnverified3h": 0,
+          "explicitConflicts3h": 0
+        },
+        {
+          "productId": "agrupado-procesadores-intel-core-i5-12400-gfjrbb",
+          "category": "procesadores",
+          "available": 11,
+          "fresh24h": 7,
+          "fresh3h": 0,
+          "identityPending3h": 0,
+          "identityAccepted3h": 0,
+          "identityUnverified3h": 0,
+          "explicitConflicts3h": 0
+        },
+        {
+          "productId": "agrupado-tarjetas-graficas-asus-rtx-5060-dual-8gb-1lrxth",
+          "category": "tarjetas-graficas",
+          "available": 9,
+          "fresh24h": 7,
+          "fresh3h": 0,
+          "identityPending3h": 0,
+          "identityAccepted3h": 0,
+          "identityUnverified3h": 0,
+          "explicitConflicts3h": 0
+        },
+        {
+          "productId": "agrupado-tarjetas-graficas-gigabyte-rtx-5060-eagle-8gb-1i1rdb",
+          "category": "tarjetas-graficas",
+          "available": 7,
+          "fresh24h": 4,
+          "fresh3h": 0,
+          "identityPending3h": 0,
+          "identityAccepted3h": 0,
+          "identityUnverified3h": 0,
+          "explicitConflicts3h": 0
+        },
+        {
+          "productId": "agrupado-tarjetas-graficas-msi-rtx-5060-shadow-8gb-csxx7o",
+          "category": "tarjetas-graficas",
+          "available": 10,
+          "fresh24h": 6,
+          "fresh3h": 0,
+          "identityPending3h": 0,
+          "identityAccepted3h": 0,
+          "identityUnverified3h": 0,
+          "explicitConflicts3h": 0
+        },
+        {
+          "productId": "maximus-15359-memoria-ram-corsair-vengeance-lpx-black-16gb-3200-mhz-ddr4",
+          "category": "memoria-ram",
+          "available": 1,
+          "fresh24h": 0,
+          "fresh3h": 0,
+          "identityPending3h": 0,
+          "identityAccepted3h": 0,
+          "identityUnverified3h": 0,
+          "explicitConflicts3h": 0
+        }
+      ]
+    },
+    "interpretation": "El corte de muestra de 16:24 venció la ventana de 3 h. No demuestra agotamiento ni suma una fecha útil; el corte del priority diario de 11:06 sigue histórico."
+  },
+  "tracker": {
+    "source": "/Users/johnortiz/Documents/Proyectos/comparador-hardware-argentina/outputs/project-tracker-2026-09-27-adsense/Comparador-Hardware-Project-Tracker.xlsx",
+    "output": "/Users/johnortiz/Documents/Proyectos/comparador-hardware-argentina/outputs/project-tracker-2026-10-02-fuentes/Comparador-Hardware-Project-Tracker.xlsx",
+    "formulaCountBefore": 865,
+    "formulaCountAfter": 865,
+    "formulasIdentical": true,
+    "changedValues": [
+      "B50",
+      "C13",
+      "C15",
+      "E13"
+    ],
+    "mergesIdentical": true,
+    "cfIdentical": true,
+    "validationsIdentical": true,
+    "panesIdentical": true,
+    "namesIdentical": true,
+    "sheetsIdentical": true,
+    "filesIdentical": true,
+    "formulaErrorMatches": 0,
+    "visualReview": "Cambios y nota de fuentes revisados en render nativo; Gantt y 865 fórmulas conservados."
+  },
+  "analytics": {
+    "newEventsReceivedByGoogle": "no verificado en esta entrega",
+    "interestImported": false,
+    "firstAuthorizedExtraction": "2026-10-12",
+    "previousDataExclusion": "No datos anteriores al 03/10/2026."
+  },
+  "jev": {
+    "decisionMcpAvailable": false,
+    "decisionMcpConsulted": false,
+    "minConfidence": 0.8,
+    "usage": "Revisión semántica de ambigüedades, con caché de evidencia; nunca fuente de stock/precio ni autorización."
+  }
+}

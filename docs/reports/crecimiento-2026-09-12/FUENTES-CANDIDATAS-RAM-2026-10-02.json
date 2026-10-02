@@ -1,0 +1,119 @@
+{
+  "checkedAt": "2026-10-02T15:17:19.676Z",
+  "readOnly": true,
+  "pricesImported": false,
+  "results": [
+    {
+      "storeId": "dinobyte",
+      "sourceId": "29885",
+      "expectedName": "Memoria Ram UDIMM CORSAIR VENGEANCE RS 16GB DDR4 3200Mhz C16 1.35V (1x16GB) RGB",
+      "listing": {
+        "storeId": "dinobyte",
+        "sourceId": "29885",
+        "url": "https://dinobyte.ar/producto/memoria-corsair-vengeance-rs-16gb-3200mhz-c16-rgb/",
+        "title": "Memoria Corsair Vengeance Rs 16GB 3200Mhz C16 RGB",
+        "storeSku": "RAM361"
+      },
+      "checkedAt": "2026-10-02T15:17:04.178Z",
+      "status": "detail-observed",
+      "observedTitle": "Memoria Corsair Vengeance Rs 16GB 3200Mhz C16 RGB",
+      "observedSku": "RAM361",
+      "url": "https://dinobyte.ar/producto/memoria-corsair-vengeance-rs-16gb-3200mhz-c16-rgb/",
+      "price": 324700,
+      "stock": "in-stock",
+      "observedAt": "2026-10-02T15:17:04.176Z",
+      "priceCondition": "unspecified",
+      "explicitConflict": false,
+      "proof": null
+    },
+    {
+      "storeId": "goldentechstore",
+      "sourceId": "575",
+      "expectedName": "MEMORIA RAM 16GB DDR4 3200 KINGSTON FURY BEAST RGB",
+      "listing": {
+        "storeId": "goldentechstore",
+        "sourceId": "575",
+        "url": "https://goldentechstore.com.ar/producto/memoria-ddr4-kingston-16gb-fury-rgb-beast-3200mhz/",
+        "title": "MEMORIA DDR4 KINGSTON 16GB FURY BEAST RGB 3200MHZ",
+        "storeSku": "MEM029"
+      },
+      "checkedAt": "2026-10-02T15:17:10.133Z",
+      "status": "detail-observed",
+      "observedTitle": "MEMORIA DDR4 KINGSTON 16GB FURY BEAST RGB 3200MHZ",
+      "observedSku": "MEM029",
+      "url": "https://goldentechstore.com.ar/producto/memoria-ddr4-kingston-16gb-fury-rgb-beast-3200mhz/",
+      "price": 396651,
+      "stock": "in-stock",
+      "observedAt": "2026-10-02T15:17:10.132Z",
+      "priceCondition": "unspecified",
+      "explicitConflict": false,
+      "proof": null
+    },
+    {
+      "storeId": "goldentechstore",
+      "sourceId": "185264",
+      "expectedName": "MEMORIA RAM 16GB DDR4 3200 KINGSTON FURY BEAST RGB",
+      "listing": {
+        "storeId": "goldentechstore",
+        "sourceId": "185264",
+        "url": "https://goldentechstore.com.ar/producto/memoria-ram-udimm-kingston-fury-beast-16gb-ddr4-3200-mhz-cl16-1-35v-single-negro-rgb/",
+        "title": "Memoria Ram UDIMM KINGSTON Fury Beast 16GB DDR4 3200 Mhz CL16 1.35V Single Negro RGB",
+        "storeSku": "EL_KFUMEM432C16RGB"
+      },
+      "checkedAt": "2026-10-02T15:17:15.653Z",
+      "status": "detail-observed",
+      "observedTitle": "Memoria Ram UDIMM KINGSTON Fury Beast 16GB DDR4 3200 Mhz CL16 1.35V Single Negro RGB",
+      "observedSku": "EL_KFUMEM432C16RGB",
+      "url": "https://goldentechstore.com.ar/producto/memoria-ram-udimm-kingston-fury-beast-16gb-ddr4-3200-mhz-cl16-1-35v-single-negro-rgb/",
+      "price": 371757,
+      "stock": "in-stock",
+      "observedAt": "2026-10-02T15:17:15.652Z",
+      "priceCondition": "unspecified",
+      "explicitConflict": false,
+      "proof": null
+    },
+    {
+      "storeId": "dinobyte",
+      "sourceId": "3245480",
+      "expectedName": "MEMORIA RAM 16GB DDR4 3200 KINGSTON FURY BEAST RGB",
+      "listing": {
+        "storeId": "dinobyte",
+        "sourceId": "3245480",
+        "url": "https://dinobyte.ar/producto/memoria-kingston-fury-beast-16gb-3200mhz-c16-rgb/",
+        "title": "Memoria Kingston Fury Beast 16GB 3200Mhz C16 RGB",
+        "storeSku": "RAM234"
+      },
+      "checkedAt": "2026-10-02T15:17:19.676Z",
+      "status": "detail-observed",
+      "observedTitle": "Memoria Kingston Fury Beast 16GB 3200Mhz C16 RGB",
+      "observedSku": "RAM234",
+      "url": "https://dinobyte.ar/producto/memoria-kingston-fury-beast-16gb-3200mhz-c16-rgb/",
+      "price": 408900,
+      "stock": "in-stock",
+      "observedAt": "2026-10-02T15:17:19.675Z",
+      "priceCondition": "unspecified",
+      "explicitConflict": false,
+      "proof": null
+    }
+  ],
+  "http": {
+    "dinobyte": {
+      "requests": 4,
+      "bytes": 591089,
+      "durationMs": 10611,
+      "conditionalHits": 0,
+      "backoffSkips": 0,
+      "failures": 0,
+      "failureReasons": {}
+    },
+    "goldentechstore": {
+      "requests": 4,
+      "bytes": 745773,
+      "durationMs": 11403,
+      "conditionalHits": 0,
+      "backoffSkips": 0,
+      "failures": 0,
+      "failureReasons": {}
+    }
+  }
+}
