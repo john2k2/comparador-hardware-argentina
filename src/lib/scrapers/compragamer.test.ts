@@ -68,6 +68,7 @@ describe('compragamer scraper', () => {
         ...mockCatalogItem,
         id_producto: 99999,
         id_subcategoria: 2,
+        nombre: 'Placa de Video ASUS RTX 5070 Ti',
       };
       const diffSubcategoryMap = new Map<number, HardwareCategory>([[2, 'tarjetas-graficas']]);
       vi.spyOn(compragamerCatalog, 'getCompraGamerCatalog').mockResolvedValue([differentCategoryItem]);
@@ -77,6 +78,15 @@ describe('compragamer scraper', () => {
       const result = await fetchCompraGamerProducts(2, 'tarjetas-graficas');
       expect(result).toHaveLength(1);
       expect(result[0]?.category).toBe('tarjetas-graficas');
+      expect(await fetchCompraGamerProducts(1, 'procesadores')).toEqual([]);
+    });
+
+    it('un procesador mal etiquetado por la tienda no se convierte en placa de video', async () => {
+      vi.spyOn(compragamerCatalog, 'getCompraGamerCatalog').mockResolvedValue([mockCatalogItem]);
+      vi.spyOn(compragamerCatalog, 'getCompraGamerSubcategoryMap').mockResolvedValue(new Map([[1, 'tarjetas-graficas']]));
+      vi.spyOn(compragamerCatalog, 'getCompraGamerBrandMap').mockResolvedValue(mockBrandMap);
+      expect(await fetchCompraGamerProducts(2, 'tarjetas-graficas')).toEqual([]);
+      expect(await fetchCompraGamerProducts(1, 'procesadores')).toMatchObject([{ category: 'procesadores' }]);
     });
 
     it('returns empty array when lookup fails', async () => {
