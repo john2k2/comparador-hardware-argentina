@@ -10,6 +10,7 @@ import { isComparableStoreOffer } from '@/lib/price-utils';
 import { isCatalogOfferFresh } from '@/lib/price-freshness';
 import { withConcurrencyLimit } from '@/lib/async/concurrency';
 import { WOO_BATCH_STORES } from '@/lib/scrapers/woocommerce-known-batch';
+import { sourceHttpMetrics } from '@/lib/scrapers/source-http';
 import { runInventoryDiscovery } from './inventory-discovery';
 import { runInventoryDetailDiscovery } from './inventory-detail-discovery';
 import { createKnownOfferContext, fetchKnownOffer, prepareKnownOfferBatch } from './on-demand/worker';
@@ -46,6 +47,8 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   let taskFailed = false;
   let failureCode: string | undefined;
   let feedClaimed = 0, feedPhase = true;
+  let feedDeadline = started + deadline;
+  const phaseMs = { inventory: 0, preparation: 0, shared: 0, rotation: 0 };
   // Al menos la mitad del presupuesto queda para la rotación de otras tiendas.
   const feedLimit = Math.min(1200, Math.floor(maxOffers / 2));
   let status: 'completed' | 'deadline' | 'failed' = 'completed';
@@ -67,8 +70,11 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
     }
   }
   try {
+    const inventoryStarted = Date.now();
     inventory = process.env.CATALOG_INVENTORY_DISCOVERY === '1' ? await runInventoryDiscovery() : [];
     inventoryDetails = process.env.CATALOG_INVENTORY_DISCOVERY === '1' ? await runInventoryDetailDiscovery() : undefined;
+    phaseMs.inventory = Date.now() - inventoryStarted;
+    const preparationStarted = Date.now();
     for (let batch = 0; ; batch++) {
       if (batch >= 200 || Date.now() - started >= deadline) throw new Error('REFRESH_SEED_DEADLINE');
       let result = await client.rpc('seed_catalog_refresh_queue');
@@ -82,8 +88,12 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
       seeded += result.data;
       if (result.data === 0) break;
     }
+    phaseMs.preparation = Date.now() - preparationStarted;
+    // La cuota de filas sola no protege el tiempo de las fuentes no compartidas.
+    feedDeadline = Date.now() + Math.max(0, started + deadline - Date.now()) / 2;
     while (counts.attempted < maxOffers && Date.now() - started < deadline) {
-      if (feedClaimed >= feedLimit) feedPhase = false;
+      if (feedClaimed >= feedLimit || Date.now() >= feedDeadline) feedPhase = false;
+      const batchStarted = Date.now(), sharedBatch = feedPhase;
       const claimed = await client.rpc(feedPhase ? 'claim_catalog_feed_refresh' : 'claim_catalog_refresh', { p_token: token,
         p_limit: Math.min(24, maxOffers - counts.attempted, feedPhase ? feedLimit-feedClaimed : 24) });
       if (claimed.error) throw new Error('REFRESH_CLAIM_FAILED');
@@ -146,8 +156,9 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
           await finish(item.target, saved ? 'observed' : 'persist-failed', saved && isCatalogOfferFresh(price.lastUpdated) && isComparableStoreOffer(price, item.product));
         }
       }
+      phaseMs[sharedBatch ? 'shared' : 'rotation'] += Date.now() - batchStarted;
       // El avance persiste por lote aunque el runner se interrumpa luego.
-      const progress = await client.from('catalog_refresh_runs').update({ summary: { ...counts, groups, sharedReads: context.sharedReads } }).eq('id', run.data.id);
+      const progress = await client.from('catalog_refresh_runs').update({ summary: { ...counts, groups, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads } }).eq('id', run.data.id);
       if (progress.error) throw new Error('REFRESH_PROGRESS_FAILED');
     }
     if (Date.now() - started >= deadline) status = 'deadline';
@@ -166,7 +177,7 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   const sourceFailureReasons: Record<string,number> = {};
   for (const reason of context.failures.values()) sourceFailureReasons[reason]=(sourceFailureReasons[reason] ?? 0)+1;
   const summary = { source: 'adaptive-catalog', trigger: ['github-schedule','cloudflare-fallback'].includes(process.env.CATALOG_RUN_TRIGGER ?? '') ? process.env.CATALOG_RUN_TRIGGER : 'manual', runId: run.data.id, startedAt, finishedAt: new Date().toISOString(),
-    status, failureCode, inventory, inventoryDetails, feedClaimed, sourceFailureReasons, limitReached: counts.attempted >= maxOffers, ...counts, groups, seeded, sharedReads: context.sharedReads, coverage: coverage.data ?? [] };
+    status, failureCode, inventory, inventoryDetails, feedClaimed, sourceFailureReasons, limitReached: counts.attempted >= maxOffers, ...counts, groups, seeded, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads, coverage: coverage.data ?? [] };
   const completed = await client.from('catalog_refresh_runs').update({ status, finished_at: summary.finishedAt, summary }).eq('id', run.data.id);
   if (completed.error) throw new Error('REFRESH_PROGRESS_FAILED');
   return summary;

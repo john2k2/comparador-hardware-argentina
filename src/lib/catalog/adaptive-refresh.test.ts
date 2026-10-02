@@ -32,6 +32,17 @@ it('continúa con las demás tiendas cuando la fuente compartida no tiene oferta
  expect(result).toMatchObject({attempted:0,feedClaimed:0,status:'completed'});
  expect(mocks.rpc.mock.calls.filter(([name])=>name.startsWith('claim_')).map(([name])=>name)).toEqual(['claim_catalog_feed_refresh','claim_catalog_refresh']);
 });
+it('reserva tiempo de rotación aunque las lecturas compartidas consuman pocas filas',async()=>{
+ const claims:string[]=[];
+ mocks.rpc.mockImplementation(async(name:string)=>{
+  if(name.startsWith('claim_')){claims.push(name);return {data:claims.length===1?[target]:[],error:null};}
+  return {data:name==='seed_catalog_refresh_queue'?0:name==='catalog_refresh_coverage'?[]:true,error:null};
+ });
+ mocks.fetch.mockImplementation(async()=>{vi.setSystemTime(new Date(Date.now()+60_000));return {product,price,sourceTitle:product.name};});
+ const result=await runAdaptiveRefresh({maxOffers:200,maxRunMs:100_000});
+ expect(claims).toEqual(['claim_catalog_feed_refresh','claim_catalog_refresh']);
+ expect(result).toMatchObject({feedClaimed:1,phaseMs:{shared:60_000},sourceHttp:{}});
+});
 it('no renueva la oferta ni cuenta observaciones cuando el guardado es rechazado',async()=>{
  let claimed=false;
  mocks.rpc.mockImplementation(async(name:string)=>{if(name==='claim_catalog_feed_refresh')return {data:claimed?[]:(claimed=true,[target]),error:null};return {data:name==='persist_adaptive_offer'?false:name==='seed_catalog_refresh_queue'?0:name==='catalog_refresh_coverage'?[]:name==='claim_catalog_refresh'?[]:true,error:null};});
