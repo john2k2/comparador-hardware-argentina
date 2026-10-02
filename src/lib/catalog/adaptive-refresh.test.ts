@@ -1,18 +1,20 @@
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
 import type { Product } from '@/lib/types';
-const mocks=vi.hoisted(()=>({rpc:vi.fn(),from:vi.fn(),fetch:vi.fn(),map:vi.fn()}));
+const mocks=vi.hoisted(()=>({rpc:vi.fn(),from:vi.fn(),fetch:vi.fn(),map:vi.fn(),inventory:vi.fn(),details:vi.fn()}));
 vi.mock('server-only',()=>({}));
 vi.mock('@/lib/server/supabase-server',()=>({getServerSupabaseServiceClient:()=>({rpc:mocks.rpc,from:mocks.from})}));
 vi.mock('@/lib/persistence/product-read-mapper',()=>({mapDbProduct:mocks.map}));
 vi.mock('@/lib/ai/review-product-offers',()=>({reviewProductOffers:async(products:Product[])=>products}));
 vi.mock('@/lib/persistence/product-write-dedupe',()=>({buildPriceStateSignature:()=> 'test'}));
 vi.mock('./on-demand/worker',()=>({prepareKnownOfferBatch:async()=>{},fetchKnownOffer:mocks.fetch,createKnownOfferContext:()=>({failures:new Map(),sources:new Map(),sharedReads:0})}));
+vi.mock('./inventory-discovery',()=>({runInventoryDiscovery:mocks.inventory}));
+vi.mock('./inventory-detail-discovery',()=>({runInventoryDetailDiscovery:mocks.details}));
 import {runAdaptiveRefresh} from './adaptive-refresh';
 const target={offer_id:'offer',product_id:'cpu',store_id:'compragamer',url:'https://compragamer.com/producto/123',interval_hours:24,reason:'components'};
 const price={storeId:'compragamer',storeName:'CompraGamer',url:target.url,price:100,stock:'in-stock',lastUpdated:new Date('2026-10-01T22:00:01Z')};
 const product={id:'cpu',name:'AMD Ryzen 5 5600',category:'procesadores',prices:[price]} as Product;
 beforeEach(()=>{
- vi.resetAllMocks();vi.useFakeTimers();vi.setSystemTime(new Date('2026-10-01T22:00:00Z'));vi.stubEnv('CATALOG_REQUESTED_RUNNER','1');
+ vi.resetAllMocks();vi.useFakeTimers();vi.setSystemTime(new Date('2026-10-01T22:00:00Z'));vi.stubEnv('CATALOG_REQUESTED_RUNNER','1');vi.stubEnv('CATALOG_INVENTORY_DISCOVERY','0');
  const chain={delete:()=>chain,lt:async()=>({error:null}),update:()=>chain,eq:()=>chain,then:(resolve:(value:{error:null})=>void)=>resolve({error:null}),insert:()=>chain,select:()=>chain,single:async()=>({data:{id:'run'},error:null}),in:()=>chain,limit:async()=>({data:[{}],error:null})};
  mocks.from.mockReturnValue(chain);mocks.map.mockReturnValue(product);mocks.fetch.mockResolvedValue({product,price,sourceTitle:product.name});
  mocks.rpc.mockImplementation(async(name:string)=>({error:null,data:name==='seed_catalog_refresh_queue'?0:name==='catalog_refresh_coverage'?[]:name==='claim_catalog_feed_refresh'||name==='claim_catalog_refresh'?[]:true}));
@@ -69,7 +71,7 @@ it('prepara todas las altas en lotes antes de reclamar ofertas',async()=>{
 });
 it('rechaza una respuesta de preparación ilegible antes de reservar destinos',async()=>{
  mocks.rpc.mockResolvedValue({data:'500',error:null});
- await expect(runAdaptiveRefresh({maxOffers:24})).rejects.toThrow('REFRESH_INVALID_SEED_RESULT');
+ expect(await runAdaptiveRefresh({maxOffers:24})).toMatchObject({status:'failed',failureCode:'REFRESH_INVALID_SEED_RESULT',attempted:0});
  expect(mocks.rpc.mock.calls.some(([name])=>name.startsWith('claim_'))).toBe(false);
 });
 it('recupera una preparación temporalmente interrumpida antes de reclamar destinos',async()=>{
@@ -80,6 +82,16 @@ it('recupera una preparación temporalmente interrumpida antes de reclamar desti
 });
 it('identifica el timeout persistente sin reservar destinos ni revelar la respuesta externa',async()=>{
  mocks.rpc.mockResolvedValue({data:null,error:{code:'57014',message:'respuesta privada'}});
- const promise=runAdaptiveRefresh({maxOffers:24});const rejected=expect(promise).rejects.toThrow('REFRESH_SEED_TIMEOUT');await vi.runAllTimersAsync();await rejected;
- expect(mocks.rpc).toHaveBeenCalledTimes(3);expect(mocks.rpc.mock.calls.some(([name])=>name.startsWith('claim_'))).toBe(false);
+ const promise=runAdaptiveRefresh({maxOffers:24});await vi.runAllTimersAsync();
+ expect(await promise).toMatchObject({status:'failed',failureCode:'REFRESH_SEED_TIMEOUT',attempted:0,observed:0});
+ expect(mocks.rpc.mock.calls.filter(([name])=>name==='seed_catalog_refresh_queue')).toHaveLength(3);expect(mocks.rpc.mock.calls.some(([name])=>name.startsWith('claim_'))).toBe(false);
+ expect(mocks.from).toHaveBeenCalledWith('catalog_refresh_runs');
+});
+it('conserva las altas del inventario y detalle aunque falle después la preparación',async()=>{
+ vi.stubEnv('CATALOG_INVENTORY_DISCOVERY','1');
+ const inventory=[{storeId:'maxtecno',status:'completed',imported:4}],details={status:'completed',attempted:2,imported:2,failures:0};
+ mocks.inventory.mockResolvedValue(inventory);mocks.details.mockResolvedValue(details);
+ mocks.rpc.mockImplementation(async(name:string)=>({data:name==='seed_catalog_refresh_queue'?'invalid':[],error:null}));
+ expect(await runAdaptiveRefresh({maxOffers:24})).toMatchObject({status:'failed',failureCode:'REFRESH_INVALID_SEED_RESULT',inventory,inventoryDetails:details,attempted:0});
+ expect(mocks.from.mock.invocationCallOrder[0]).toBeLessThan(mocks.inventory.mock.invocationCallOrder[0]);
 });
