@@ -63,6 +63,50 @@ test('registro pendiente de confirmación no concede una cuenta activa', async (
   expect(signups).toBe(1);
 });
 
+for (const scenario of [
+  { name: 'administrador por is_admin', app_metadata: { is_admin: true }, admin: true },
+  { name: 'administrador por role', app_metadata: { role: 'admin' }, admin: true },
+  { name: 'usuario con nombre y metadatos editables de admin', app_metadata: {}, admin: false },
+]) {
+  test(`acceso visible al panel: ${scenario.name}`, async ({ page }) => {
+    const sessionUser = { ...user, app_metadata: { ...user.app_metadata, ...scenario.app_metadata },
+      user_metadata: { full_name: 'Admin', is_admin: true, role: 'admin' } };
+    await page.route('**/auth/v1/**', async route => {
+      const path = new URL(route.request().url()).pathname;
+      if (path.endsWith('/token')) {
+        await route.fulfill({ json: { access_token: token, refresh_token: 'qa-refresh', token_type: 'bearer', expires_in: 3600, user: sessionUser } });
+      } else if (path.endsWith('/user')) await route.fulfill({ json: sessionUser });
+      else throw new Error(`Transporte Auth inesperado: ${path}`);
+    });
+    await page.route('**/api/auth/session', route => route.fulfill({ json: { ok: true } }));
+    await page.goto('/auth?next=%2Fauth');
+    await page.getByRole('textbox', { name: 'EMAIL' }).fill(user.email);
+    await page.getByLabel('PASSWORD').fill('qa-password');
+    await page.getByRole('button', { name: 'INGRESAR', exact: true }).click();
+    await expect(page.getByText('[ Cuenta activa ]', { exact: true })).toBeVisible();
+
+    const accountPanel = page.getByRole('main').getByRole('link', { name: 'PANEL ADMIN', exact: true });
+    const desktopPanel = page.getByRole('banner').getByRole('link', { name: 'Panel admin', exact: true });
+    if (scenario.admin) {
+      await expect(accountPanel).toHaveAttribute('href', '/admin/seguimiento');
+      await expect(desktopPanel).toBeVisible();
+      await expect(desktopPanel).toHaveAttribute('href', '/admin/seguimiento');
+    } else {
+      await expect(accountPanel).toHaveCount(0);
+      await expect(desktopPanel).toHaveCount(0);
+      await expect(page.getByRole('banner').getByRole('link', { name: 'Admin', exact: true })).toHaveAttribute('href', '/auth');
+    }
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole('button', { name: 'Abrir menú', exact: true }).click();
+    const mobilePanel = page.getByRole('navigation', { name: 'Navegación móvil', exact: true }).getByRole('link', { name: 'Panel admin', exact: true });
+    if (scenario.admin) {
+      await expect(mobilePanel).toBeVisible();
+      await expect(mobilePanel).toHaveAttribute('href', '/admin/seguimiento');
+    } else await expect(mobilePanel).toHaveCount(0);
+  });
+}
+
 test('cookie de sesión es HttpOnly y Secure, se elimina y no autoriza admin con token falso', async ({ request }) => {
   const invalid = await request.post('/api/auth/session', { data: {} });
   expect(invalid.status()).toBe(400);

@@ -8,6 +8,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getUserDisplayName } from '@/lib/client/auth';
 import { syncServerSession } from '@/lib/client/session-sync';
+import { hasAdminRole } from '@/lib/server/admin-role';
 import { getPrimaryNavLinks, isNavLinkActive, SECONDARY_NAV_LINKS } from '@/lib/seo/primary-nav-links';
 
 function subscribeToThemeChanges(callback: () => void) {
@@ -53,6 +54,7 @@ export function Navigation({ showGames = false }: { showGames?: boolean } = {}) 
   const moreNavigation = useRef<HTMLDetailsElement>(null);
   const mobileMenuButton = useRef<HTMLButtonElement>(null);
   const primaryLinks = getPrimaryNavLinks(showGames);
+  const isAdmin = hasAdminRole(authUser);
 
   useEffect(() => {
     if (!isMobileMenuOpen) return;
@@ -213,12 +215,12 @@ export function Navigation({ showGames = false }: { showGames?: boolean } = {}) 
               ) : authUser ? (
                 <>
                   <Link
-                    href="/auth"
+                    href={isAdmin ? '/admin/seguimiento' : '/auth'}
                     prefetch={false}
-                    className="min-h-11 max-w-[7rem] px-3 py-2 border-2 border-border bg-card font-mono! text-xs font-bold text-secondary hidden sm:inline-flex items-center gap-2"
+                    className="min-h-11 max-w-[9rem] px-3 py-2 border-2 border-border bg-card font-mono! text-xs font-bold text-secondary hidden sm:inline-flex items-center gap-2"
                   >
                     <UserRound className="w-3 h-3 shrink-0" aria-hidden="true" />
-                    <span className="truncate">{getUserDisplayName(authUser)}</span>
+                    <span className="truncate">{isAdmin ? 'Panel admin' : getUserDisplayName(authUser)}</span>
                   </Link>
                   <button
                     type="button"
@@ -272,6 +274,16 @@ export function Navigation({ showGames = false }: { showGames?: boolean } = {}) 
                     {link.label}
                   </Link>
                 ))}
+                {isAdmin ? (
+                  <Link
+                    href="/admin/seguimiento"
+                    prefetch={false}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="min-h-11 px-4 py-3 font-mono! text-base font-bold text-secondary hover:text-primary hover:bg-muted transition-colors border-b border-border"
+                  >
+                    Panel admin
+                  </Link>
+                ) : null}
                 <Link
                   href="/auth"
                   prefetch={false}

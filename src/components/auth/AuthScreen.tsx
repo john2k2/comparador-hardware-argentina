@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
-import { LogIn, LogOut, Mail, UserRound } from 'lucide-react';
+import { ChartNoAxesCombined, LogIn, LogOut, Mail, UserRound } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { getUserDisplayName, resolveSafeNextPath } from '@/lib/client/auth';
 import { syncServerSession } from '@/lib/client/session-sync';
+import { hasAdminRole } from '@/lib/server/admin-role';
 
 type AuthMode = 'sign-in' | 'sign-up';
 
@@ -189,6 +190,12 @@ export function AuthScreen() {
           <p className="text-[9px] uppercase text-muted-foreground mb-6">{user.email}</p>
 
           <div className="flex flex-wrap gap-3">
+            {hasAdminRole(user) ? (
+              <Link href="/admin/seguimiento" prefetch={false} className="pixel-button text-[10px] inline-flex items-center gap-2">
+                <ChartNoAxesCombined className="w-4 h-4" aria-hidden="true" />
+                PANEL ADMIN
+              </Link>
+            ) : null}
             <Link href={nextPath} className="pixel-button text-[10px] inline-flex items-center gap-2">
               <UserRound className="w-4 h-4" />
               IR A LA APP
@@ -205,7 +212,9 @@ export function AuthScreen() {
           </div>
 
           <p className="text-[9px] uppercase text-muted-foreground mt-6">
-            Proximo paso: favoritos y alertas de precio por usuario.
+            {hasAdminRole(user)
+              ? 'En el panel podés revisar las métricas, las conexiones y el estado del proyecto.'
+              : 'Tu sesión está activa. Podés guardar favoritos y crear alertas de precio.'}
           </p>
         </div>
       </section>
