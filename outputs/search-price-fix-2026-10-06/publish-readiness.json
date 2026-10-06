@@ -1,0 +1,52 @@
+{
+  "checkedAt": "2026-10-06T02:18:52.267131+00:00",
+  "recommendation": "publish tested candidate with immediate production validation and prepared Worker rollback",
+  "guarantee100Percent": false,
+  "candidateCommit": "bbb33411f8813ee8cc3506a64cf854a04cd4c0cc",
+  "applicationInputsChecked": 559,
+  "allApplicationInputsIdenticalToTestedBuild": true,
+  "remoteMainCommit": "8b7f58debbeea54fad07a072544ecb6148efc4bd",
+  "deploymentId": "acc6c77f-8996-4e92-ad83-678f36a6d218",
+  "activeVersions": [
+    {
+      "version_id": "b3a2ab26-1875-4219-b9bf-c827e066f023",
+      "percentage": 100
+    }
+  ],
+  "deploymentControlSource": "wrangler deployments status; first API call timed out, read-only retry succeeded",
+  "productionUiPublishedByThisReview": false,
+  "publicHttpProbes": [
+    {
+      "path": "/",
+      "status": 200,
+      "ms": 3630
+    },
+    {
+      "path": "/comparar/procesadores",
+      "status": 200,
+      "ms": 5564
+    },
+    {
+      "path": "/comparar/placas-de-video",
+      "status": 200,
+      "ms": 4275
+    },
+    {
+      "path": "/api/search?minPrice=100000.628319&sortBy=price-asc",
+      "status": 200,
+      "ms": 4928,
+      "cache": "DB-STALE",
+      "responseCacheHit": false,
+      "products": 12,
+      "totalAtCut": 1668,
+      "orderedWithinRange": true
+    }
+  ],
+  "knownReleaseBlockerResolved": "global price query 503",
+  "testEvidence": "summary.json and ../release-candidate-2026-10-05/release-summary.json (historical baseline supplemented by this fix)",
+  "limits": [
+    "QA is not post-deployment production validation",
+    "Catalog freshness/identity coverage G02 remains independent",
+    "Real traffic load and future catalog changes are not guaranteed by this cut"
+  ]
+}
