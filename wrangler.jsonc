@@ -15,6 +15,7 @@
 		"MEASUREMENT_COLLECTION_MODE": "external",
 		"MEASUREMENT_PUBLIC_URL": "https://www.comparador-hardware.com.ar",
 		"MEASUREMENT_GOOGLE_CLIENT_TYPE": "installed",
+		"PUBLIC_HOME_DOCUMENTS": "1",
 		"ENEBA_AFFILIATE_PILOT_ENABLED": "1"
 	},
 	"triggers": { "crons": ["11 * * * *"] },

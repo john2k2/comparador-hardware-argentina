@@ -29,8 +29,10 @@ El cliente actual de métricas es de escritorio. Sus autorizaciones existentes s
 
 ## Reducir el procesamiento de la web
 
-El build genera documentos de las páginas fijas y una interfaz administrativa sin datos privados. El Worker sirve esta última sólo después de validar al administrador. La API entrega después el resumen privado.
+El build genera la portada sin precios congelados, documentos de las páginas fijas y una interfaz administrativa sin datos privados. El Worker sirve esta última sólo después de validar al administrador. La API entrega después el resumen privado.
 
-Los documentos públicos elegibles tienen una caché interna de 60 segundos por versión publicada. Cada respuesta recibe un nonce nuevo en la política de seguridad, los scripts y los datos de hidratación. No se almacenan sesiones, respuestas con cookies, escrituras, consultas con parámetros ni fragmentos de navegación. Las fechas reales de precios y métricas permanecen intactas.
+La selección pública de portada se guarda fuera de Cloudflare cada hora, al minuto 7 UTC. Esta tarea sólo lee catálogo e historial: no hace scraping ni consulta las cuentas de métricas. El Worker entrega únicamente esa fila de catálogo público con destino y clave fijos. Si el corte tiene más de 75 minutos, informa que no pudo cargar la selección. Cada lectura vuelve a aplicar las tres horas de las últimas ofertas; no renueva `lastUpdated`. No se presenta el fallback como una baja de precio real. La interfaz conserva búsqueda, guías, juegos y acceso al catálogo aunque falte una selección reciente.
+
+Los documentos públicos elegibles tienen una caché interna de 60 segundos por versión publicada. Cada respuesta recibe un nonce nuevo en la política de seguridad, los scripts y los datos de hidratación. No se almacenan sesiones, respuestas con cookies, escrituras, consultas con parámetros ni fragmentos de navegación. Las páginas fijas se generan sin sesión y pueden servirse también a usuarios ingresados; su cuenta se carga luego en el navegador. Las fechas reales de precios y métricas permanecen intactas.
 
 Las páginas dinámicas que no están en caché todavía generan su documento en Next. La verificación de recursos debe medirlas en producción, tanto en el primer acceso como en accesos repetidos. Un build aprobado o una respuesta 200 no prueban que desaparecieron los errores 1102/503.

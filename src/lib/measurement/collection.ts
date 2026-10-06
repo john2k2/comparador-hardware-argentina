@@ -31,6 +31,8 @@ export async function requestMeasurementCollection(provider: ProviderId | 'all')
       body: JSON.stringify({ ref: 'main', inputs: { provider } }),
     });
   } catch { throw new CollectionRequestError('No se pudo solicitar la actualización. Se conserva la última lectura.'); }
-  if (response.status !== 204) throw new CollectionRequestError('GitHub no confirmó la solicitud de actualización. Se conserva la última lectura.');
+  // La versión 2026 devuelve 200 con el ID de la tarea; 204 sigue siendo
+  // válido en el contrato anterior. Ninguno acredita que terminó la lectura.
+  if (response.status !== 200 && response.status !== 204) throw new CollectionRequestError('GitHub no confirmó la solicitud de actualización. Se conserva la última lectura.');
   return 'Actualización solicitada. La tarea se ejecuta fuera del servidor y puede tardar unos minutos. Pulsá «Recargar datos guardados» para ver el resultado; las cifras anteriores conservan su fecha.';
 }

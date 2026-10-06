@@ -5,6 +5,7 @@ import { LatestOffersSection } from '@/components/home/LatestOffersSection';
 import { PriceDropSection } from '@/components/home/PriceDropSection';
 import { ProductGridSkeleton } from '@/components/ui/Skeleton';
 import { isEnebaPilotEnabled } from '@/lib/eneba/server';
+import { ObservedHomeProvider, ObservedLatestOffers, ObservedPriceDrops } from '@/components/home/ObservedHomeSections';
 import {
   HOME_PAGE_DESCRIPTION,
   HOME_PAGE_TITLE,
@@ -21,6 +22,11 @@ export const metadata: Metadata = buildPublicPageMetadata({
 export const revalidate = 300;
 
 export default function HomePage() {
+  if (process.env.PUBLIC_HOME_DOCUMENTS === '1') return (
+    <div className="w-full min-w-0 max-w-[1440px] mx-auto px-4 xl:px-8 py-6">
+      <ObservedHomeProvider><HomePageClient showGamesPromotion={isEnebaPilotEnabled()} latestOffersSection={<ObservedLatestOffers />} priceDropSection={<ObservedPriceDrops />} /></ObservedHomeProvider>
+    </div>
+  );
   return (
     <div className="w-full min-w-0 max-w-[1440px] mx-auto px-4 xl:px-8 py-6">
       <HomePageClient

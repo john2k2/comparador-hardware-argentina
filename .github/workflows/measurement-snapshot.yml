@@ -3,8 +3,15 @@ on:
   schedule:
     # Una vez al día; GitHub puede retrasar el comienzo. La fecha real se guarda.
     - cron: '43 6 * * *'
+    # Sólo catálogo de portada: no vuelve a consultar cuentas cada hora.
+    - cron: '7 * * * *'
   workflow_dispatch:
     inputs:
+      task:
+        description: Lectura para actualizar
+        type: choice
+        default: measurements
+        options: [measurements, home]
       provider:
         description: Fuente de lectura
         type: choice
@@ -26,7 +33,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - name: Consultar y guardar informes privados
+      - name: Guardar la lectura correspondiente fuera de la web
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
@@ -37,6 +44,7 @@ jobs:
           MEASUREMENT_PUBLIC_URL: http://localhost:3122
           MEASUREMENT_COLLECTION_MODE: inline
           MEASUREMENT_PROVIDER: ${{ inputs.provider || 'all' }}
+          MEASUREMENT_TASK: ${{ inputs.task || (github.event.schedule == '7 * * * *' && 'home' || 'measurements') }}
           DISABLE_LIVE_SCRAPING: '1'
           DISABLE_INTERNAL_BACKGROUND_REFRESH: '1'
           LOG_LEVEL: silent

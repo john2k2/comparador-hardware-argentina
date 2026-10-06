@@ -6,10 +6,10 @@ import { requestMeasurementCollection } from './collection';
 
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 describe('consulta externa con límite compartido', () => {
-  it('solicita sólo el workflow y la rama autorizados sin divulgar la credencial', async () => {
+  it.each([200, 204])('acepta la confirmación %s del workflow autorizado sin afirmar que terminó ni divulgar la credencial', async (status) => {
     vi.stubEnv('GITHUB_ACTIONS_DISPATCH_TOKEN', 'private-token');
     gate.mockResolvedValue({ data: { allowed: true }, error: null });
-    const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 204 })); vi.stubGlobal('fetch', fetcher);
+    const fetcher = vi.fn().mockResolvedValue(new Response(null, { status })); vi.stubGlobal('fetch', fetcher);
     const message = await requestMeasurementCollection('ga4');
     expect(fetcher.mock.calls[0][0]).toBe('https://api.github.com/repos/john2k2/comparador-hardware-argentina/actions/workflows/measurement-snapshot.yml/dispatches');
     expect(JSON.parse(fetcher.mock.calls[0][1].body)).toEqual({ ref: 'main', inputs: { provider: 'ga4' } });

@@ -7,12 +7,12 @@ type FetchHandler = (request: Request, env: DocumentCacheEnv, context: DocumentC
 type DocumentCacheEnv = { CF_VERSION_METADATA?: { id: string }; ASSETS?: { fetch(request: Request): Promise<Response> } };
 type DocumentCacheContext = { waitUntil(promise: Promise<unknown>): void };
 type CacheStore = Pick<Cache, 'match' | 'put'>;
-const STATIC_ROUTES = new Set(['/comparativa/comparar', '/guia/armar', '/acerca', '/contacto', '/privacidad', '/terminos']);
+const STATIC_ROUTES = new Set(['/', '/comparativa/comparar', '/guia/armar', '/acerca', '/contacto', '/privacidad', '/terminos']);
 
-function eligible(request: Request) {
+function eligible(request: Request, allowStaticSession = false) {
   const url = new URL(request.url);
   if (request.method !== 'GET' || request.headers.has('authorization') || request.headers.has('rsc') || request.headers.has('next-router-state-tree') || request.headers.has('next-action') || request.headers.has('range')) return false;
-  if (/\bsb-(?:access-token|refresh-token|[\w-]+-auth-token(?:\.\d+)?)=/.test(request.headers.get('cookie') ?? '')) return false;
+  if (!allowStaticSession && /\bsb-(?:access-token|refresh-token|[\w-]+-auth-token(?:\.\d+)?)=/.test(request.headers.get('cookie') ?? '')) return false;
   if (url.search || !['www.comparador-hardware.com.ar', 'comparador-hardware.com.ar'].includes(url.hostname)) return false;
   return /^(?:\/(?:acerca|about|privacidad|terminos|contacto|guia|comparativa)?|\/(?:product|comparar|guia|comparativa)\/[a-zA-Z0-9-]{1,160})$/.test(url.pathname);
 }
@@ -42,16 +42,17 @@ export function createPublicDocumentCache(next: FetchHandler, cacheFactory = def
     if (url.pathname.startsWith('/__public-documents/') || url.pathname.startsWith('/__public-document-cache/') || url.pathname.startsWith('/measurement-shell-build')) return new Response('Not Found', { status: 404, headers: { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' } });
     const cache = cacheFactory();
     const version = env.CF_VERSION_METADATA?.id;
-    if (!cache || !version || !eligible(request)) return next(request, env, context);
-    if (STATIC_ROUTES.has(url.pathname) && env.ASSETS) {
+    if (!cache || !version) return next(request, env, context);
+    if (STATIC_ROUTES.has(url.pathname) && env.ASSETS && eligible(request, true)) {
       try {
-        const asset = await env.ASSETS.fetch(new Request(`https://assets.local/__public-documents/${url.pathname.slice(1).replaceAll('/', '-')}.json`));
+        const asset = await env.ASSETS.fetch(new Request(`https://assets.local/__public-documents/${url.pathname === '/' ? 'home' : url.pathname.slice(1).replaceAll('/', '-')}.json`));
         if (asset.ok) {
           const document = await asset.json() as { version?: number; route?: string; html?: string; headers?: Record<string, string> };
           if (document.version === 1 && document.route === url.pathname && typeof document.html === 'string' && document.html.length <= MAXIMUM_BYTES && document.headers) return freshDocument(document.html, new Headers(document.headers), 'static-document');
         }
       } catch { /* Sin un documento verificado se conserva el transporte normal. */ }
     }
+    if (!eligible(request)) return next(request, env, context);
     const key = new Request(`${url.origin}/__public-document-cache/${encodeURIComponent(version)}${url.pathname}`);
     try {
       const cached = await cache.match(key);

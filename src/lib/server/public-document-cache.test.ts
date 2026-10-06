@@ -70,4 +70,18 @@ describe('documentos públicos en el Worker', () => {
     expect(await response.text()).not.toContain('COMPARADOR_DOCUMENT_NONCE');
     expect((await s.handler(new Request(`${root}/__public-documents/privacidad.json`), env, s.context)).status).toBe(404);
   });
+
+  it('la portada fija sin datos personales funciona con sesión, pero su fallback nunca comparte el documento de una cuenta', async () => {
+    const s = setup(); const source = document();
+    const html = (await source.text()).replaceAll(nonce, 'COMPARADOR_DOCUMENT_NONCE');
+    const headers = Object.fromEntries([...source.headers].map(([key, value]) => [key, value.replaceAll(nonce, 'COMPARADOR_DOCUMENT_NONCE')]));
+    const assets = vi.fn<(request: Request) => Promise<Response>>(async () => Response.json({ version: 1, route: '/', html, headers }));
+    const req = new Request(`${root}/`, { headers: { Cookie: 'sb-access-token=private' } });
+    const response = await s.handler(req, { ...s.env, ASSETS: { fetch: assets } }, s.context);
+    expect(response.headers.get('x-comparador-render')).toBe('static-document');
+    expect(assets.mock.calls[0][0].url).toBe('https://assets.local/__public-documents/home.json');
+    expect(s.next).not.toHaveBeenCalled(); expect(s.cache.put).not.toHaveBeenCalled();
+    await s.handler(req, { ...s.env, ASSETS: { fetch: async () => new Response('Not found', { status: 404 }) } }, s.context);
+    expect(s.next).toHaveBeenCalledOnce(); expect(s.cache.match).not.toHaveBeenCalled(); expect(s.cache.put).not.toHaveBeenCalled();
+  });
 });
