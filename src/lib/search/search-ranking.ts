@@ -15,7 +15,7 @@ const MEANINGFUL_SINGLE_QUERY_TOKENS = new Set(['x', 'g', 'f', 'k']);
 const STRICT_VARIANT_QUERY_TOKENS = new Set([
   'aorus', 'strix', 'tuf', 'dual', 'prime', 'proart', 'eagle', 'windforce',
   'gaming', 'ventus', 'shadow', 'suprim', 'trinity', 'phoenix', 'pulse',
-  'nitro', 'challenger', 'hellhound', 'tomahawk', 'mortar', 'ds24h',
+  'nitro', 'challenger', 'hellhound', 'tomahawk', 'mortar', 'ds3h',
   'hero', 'lightspeed',
 ]);
 

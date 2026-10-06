@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   hasRequiredSingleCharVariants,
+  matchesSearchQueryIntent,
   parseSingleCharQueryVariants,
   parseStrictVariantQueryTokens,
   queryAgreesWithProductModel,
@@ -75,6 +76,19 @@ describe('search ranking', () => {
 
     expect(shouldKeepByQueryIntent('MSI RTX 5060 Shadow 2X OC 8GB', ['msi', 'shadow', '5060'], [], ['shadow'])).toBe(true);
     expect(shouldKeepByQueryIntent('MSI RTX 5060 Ventus 2X OC 8GB', ['msi', 'shadow', '5060'], [], ['shadow'])).toBe(false);
+  });
+
+  it.each([
+    ['Motherboard Gigabyte B550M DS3H', true],
+    ['Motherboard Gigabyte B550M DS3H rev 1.7', true],
+    ['Motherboard Gigabyte B550M AORUS Elite', false],
+    ['Motherboard Gigabyte B550M S2H', false],
+  ])('respeta el modelo DS3H en una búsqueda con marca y chipset: %s', (name, expected) => {
+    expect(matchesSearchQueryIntent(name, 'Motherboard Gigabyte B550M DS3H')).toBe(expected);
+  });
+
+  it('permite otros modelos cuando la búsqueda no pide DS3H', () => {
+    expect(matchesSearchQueryIntent('Motherboard Gigabyte B550M AORUS Elite', 'Motherboard Gigabyte B550M')).toBe(true);
   });
 
   it('penalizes bundles when the query is for a single product', () => {
