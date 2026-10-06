@@ -1,0 +1,91 @@
+{
+  "base": "f899ced036eccc785915f0e6635a0fa4fc7920cc",
+  "branch": "codex/confianza-precios-identidad",
+  "state": "verified-local-unpublished",
+  "verify": {
+    "command": "npm run verify",
+    "lint": "passed",
+    "typecheck": "passed",
+    "unitPassed": 1631,
+    "unitSkippedPreexisting": 2,
+    "opsPassed": 20
+  },
+  "focused": {
+    "command": "npx vitest run src/lib/product-identity.test.ts src/lib/pc-builder/model.test.ts src/lib/product/product-cache-utils.test.ts src/lib/comparison/selection-recovery.test.ts src/app/product/[id]/page.test.ts src/lib/product/offer-presentation.test.ts src/components/product/OfferIdentityDisplay.test.ts src/lib/product/unavailable-offer-summary.test.ts --reporter=json --outputFile=tmp/confianza/unit-focused.json",
+    "passed": 122,
+    "failed": 0,
+    "files": [
+      {
+        "file": "src/lib/product-identity.test.ts",
+        "passed": 22,
+        "status": "passed"
+      },
+      {
+        "file": "src/lib/comparison/selection-recovery.test.ts",
+        "passed": 24,
+        "status": "passed"
+      },
+      {
+        "file": "src/lib/pc-builder/model.test.ts",
+        "passed": 24,
+        "status": "passed"
+      },
+      {
+        "file": "src/lib/product/offer-presentation.test.ts",
+        "passed": 16,
+        "status": "passed"
+      },
+      {
+        "file": "src/lib/product/product-cache-utils.test.ts",
+        "passed": 10,
+        "status": "passed"
+      },
+      {
+        "file": "src/lib/product/unavailable-offer-summary.test.ts",
+        "passed": 4,
+        "status": "passed"
+      },
+      {
+        "file": "src/components/product/OfferIdentityDisplay.test.ts",
+        "passed": 17,
+        "status": "passed"
+      },
+      {
+        "file": "src/app/product/[id]/page.test.ts",
+        "passed": 5,
+        "status": "passed"
+      }
+    ]
+  },
+  "build": {
+    "opennext": "passed",
+    "preparedPublicDocuments": 8,
+    "wranglerDryRun": "passed",
+    "published": false
+  },
+  "e2eComplete": {
+    "startTime": "2026-10-06T18:43:53.519Z",
+    "duration": 53668.426999999996,
+    "expected": 24,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "e2eVisualFinal": {
+    "startTime": "2026-10-06T18:53:38.325Z",
+    "duration": 16279.847000000002,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "realRuntimeReport": "catalogo-real.json",
+  "sourceBranchesPreserved": true,
+  "catalogCoverageGateClosed": false,
+  "commercialPcBuildVerified": false,
+  "businessWorkUnitCommits": [
+    "c6d45e5 fix(identity): exclude abbreviated notebooks from component selection",
+    "e848055 fix(comparison): preserve selections and detail return context",
+    "f6e4074 fix(product): keep recent offer summaries and references coherent"
+  ]
+}

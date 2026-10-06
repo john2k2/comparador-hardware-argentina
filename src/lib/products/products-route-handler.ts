@@ -27,7 +27,7 @@ import { recordEndpointRequestEvent, runObservedStoreScrape } from '@/lib/teleme
 import { logger } from '@/lib/logger';
 import { recordCatalogRefreshDemand } from '@/lib/catalog/refresh-demand';
 import { isStableRuntimeMode, shouldSkipLiveScraping } from '@/lib/server/runtime-flags';
-import { getStableFixtureProducts } from '@/lib/server/stable-search-fixtures';
+import { getStableFixtureProductById, getStableFixtureProducts } from '@/lib/server/stable-search-fixtures';
 import { catalogPageResponse, parseNonNegativeNumber, parsePositiveInteger, parseStoreIds, VALID_SORTS, type SortBy } from '@/lib/search/search-handler-shared';
 import { paginateProducts } from '@/lib/search/search-pagination';
 import { applyDatabaseReadTransforms } from '@/lib/persistence/product-read-grouping';
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
 
       if (catalogOnlyMode) {
         if (stableRuntimeMode) {
-          const fixtureProduct = getStableFixtureProducts({}).find((product) => product.id === id) ?? null;
+          const fixtureProduct = getStableFixtureProductById(id);
           if (fixtureProduct) {
             return respond(
               fixtureProduct,

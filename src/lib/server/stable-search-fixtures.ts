@@ -160,6 +160,25 @@ const STABLE_PRODUCTS: Product[] = [
   }),
 ];
 
+// Casos de detalle aislados: no alteran los totales ni las páginas de búsqueda.
+export function getStableFixtureProductById(id: string): Product | null {
+  if (id !== 'fixture-offer-presentation' && id !== 'fixture-offer-expiry') {
+    return STABLE_PRODUCTS.find((product) => product.id === id) ?? null;
+  }
+  const now = Date.now();
+  const old = createPrice('mexx', 'Referencia anterior', 50_000, '/product/fixture-ryzen-5600');
+  old.lastUpdated = new Date(now - 25 * 60 * 60_000);
+  const recent = createPrice('venex', 'Reciente', 100_000, '/product/fixture-ryzen-5600');
+  recent.lastUpdated = new Date(now - (id === 'fixture-offer-expiry' ? 24 * 60 * 60_000 - 10_000 : 4 * 60 * 60_000));
+  const expensive = createPrice('fullh4rd', 'Reciente mayor', 110_000, '/product/fixture-ryzen-5600');
+  const unknown = createPrice('gezatek', 'Stock pendiente', 60_000, '/product/fixture-ryzen-5600');
+  unknown.stock = 'unknown';
+  const pending = createPrice('compragamer', 'Otra variante', 70_000, '/producto/fixture_ryzen_7_5700x_9990001');
+  pending.sourceIdentity = { listingRef: '9990001', title: 'AMD Ryzen 7 5700X' };
+  const prices = id === 'fixture-offer-expiry' ? [old, recent] : [old, expensive, unknown, pending, recent];
+  return { ...STABLE_PRODUCTS[0], id, prices, lowestPrice: 50_000, highestPrice: 110_000 };
+}
+
 function normalizeText(value: string): string {
   return value
     .normalize('NFD')

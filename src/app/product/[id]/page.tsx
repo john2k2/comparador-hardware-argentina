@@ -12,7 +12,7 @@ import { SITE_NAME } from '@/lib/site-config';
 import type { Product } from '@/lib/types';
 import { getProductContent } from '@/lib/product/product-seo-content';
 import { isStableRuntimeMode } from '@/lib/server/runtime-flags';
-import { getStableFixtureProducts } from '@/lib/server/stable-search-fixtures';
+import { getStableFixtureProductById } from '@/lib/server/stable-search-fixtures';
 import {
   PRODUCT_TITLE_SUFFIX,
   buildCanonicalUrl,
@@ -32,7 +32,7 @@ const getPresentationNow = cache(() => Date.now());
 const getProductForPage = cache(async (id: string): Promise<Product | null> => {
   // El detalle E2E debe resolver el mismo catálogo sintético que la búsqueda.
   if (isStableRuntimeMode()) {
-    return getStableFixtureProducts({}).find((product) => product.id === id) ?? null;
+    return getStableFixtureProductById(id);
   }
   try {
     return await readProductDetailByIdFromDatabase(id);
