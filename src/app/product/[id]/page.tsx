@@ -27,6 +27,8 @@ type ProductPageProps = {
   searchParams?: Promise<{ from?: string | string[] }>;
 };
 
+const getPresentationNow = cache(() => Date.now());
+
 const getProductForPage = cache(async (id: string): Promise<Product | null> => {
   // El detalle E2E debe resolver el mismo catálogo sintético que la búsqueda.
   if (isStableRuntimeMode()) {
@@ -149,7 +151,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
         />
       )}
-      <ProductDetailClient id={id} initialProduct={product} />
+      <ProductDetailClient id={id} initialProduct={product} initialNow={getPresentationNow()} />
       {product && <ProductSeoSupport product={product} />}
     </>
   );

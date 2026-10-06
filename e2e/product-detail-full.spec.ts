@@ -36,7 +36,7 @@ test.describe('Product Detail Page', () => {
     await page.waitForURL(/\/product\//);
 
     // Sección RESUMEN COMPARADOR
-    await expect(page.getByText('MEJOR PRECIO REGISTRADO', { exact: true })).toBeVisible();
+    await expect(page.getByText('MENOR PRECIO RECIENTE (24 H)', { exact: true })).toBeVisible();
 
     // Métricas del comparador (usar .first() para evitar strict mode)
     await expect(page.getByText('2 tiendas con oferta comparable en las últimas 24 h.', { exact: true })).toBeVisible();
@@ -64,7 +64,7 @@ test.describe('Product Detail Page', () => {
     await expect(storeItems.first()).toBeVisible();
 
     // Mejor precio destacado
-    await expect(page.getByText('[ MEJOR PRECIO ]')).toBeVisible();
+    await expect(page.getByText('[ MENOR PRECIO RECIENTE ]', { exact: true })).toBeVisible();
   });
 
   test('links a tiendas externas funcionan', async ({ page }) => {
@@ -144,7 +144,7 @@ test.describe('Product Detail Page', () => {
     await page.waitForURL(/\/product\//);
 
     // Mejor precio
-    await expect(page.getByText('MEJOR PRECIO REGISTRADO', { exact: true })).toBeVisible();
+    await expect(page.getByText('MENOR PRECIO RECIENTE (24 H)', { exact: true })).toBeVisible();
 
     // Precio en ARS (usar .first() para evitar strict mode)
     await expect(page.getByText(/\$\s?[\d.,]+/).first()).toBeVisible();

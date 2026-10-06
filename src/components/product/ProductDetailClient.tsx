@@ -25,17 +25,17 @@ import { OfferReportLink } from '@/components/commercial/OfferReportLink';
 import { RefreshOffersButton } from '@/components/pc-builder/RefreshOffersButton';
 import { buildProductRefreshTargets } from '@/lib/product/product-refresh-targets';
 
-type ProductDetailClientProps = { id: string; initialProduct: Product | null };
+type ProductDetailClientProps = { id: string; initialProduct: Product | null; initialNow?: number };
 
-export function ProductDetailClient({ id, initialProduct }: ProductDetailClientProps) {
-  return <ProductDetailClientInner key={id} id={id} initialProduct={initialProduct} />;
+export function ProductDetailClient({ id, initialProduct, initialNow }: ProductDetailClientProps) {
+  return <ProductDetailClientInner key={id} id={id} initialProduct={initialProduct} initialNow={initialNow} />;
 }
 
-function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientProps) {
+function ProductDetailClientInner({ id, initialProduct, initialNow }: ProductDetailClientProps) {
   const searchParams = useSearchParams();
   const backHref = resolveBackHref(searchParams.get('from'));
   const [selectedInstallment, setSelectedInstallment] = useState<InstallmentInfo | null>(null);
-  const { product, isLoading, merchantPrices, lowestComparablePrice, highestComparablePrice, reloadProduct } = useProductDetailState(id, initialProduct);
+  const { product, isLoading, merchantPrices, lowestComparablePrice, highestComparablePrice, now, reloadProduct } = useProductDetailState(id, initialProduct, initialNow);
 
   useEffect(() => {
     if (!product) return;
@@ -90,14 +90,14 @@ function ProductDetailClientInner({ id, initialProduct }: ProductDetailClientPro
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] items-start mb-8">
         <ProductImage image={getProductImageSource(displayProduct)} productName={displayName} priority />
-        <PriceSummary product={displayProduct} merchantPrices={merchantPrices}
+        <PriceSummary product={displayProduct} merchantPrices={merchantPrices} now={now}
           lowestComparablePrice={lowestComparablePrice} highestComparablePrice={highestComparablePrice}
           selectedInstallment={selectedInstallment} onSelectInstallment={setSelectedInstallment} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] items-start">
         <div className="min-w-0 space-y-6">
-          <StoresList product={displayProduct} merchantPrices={merchantPrices} />
+          <StoresList product={displayProduct} merchantPrices={merchantPrices} now={now} />
           {refreshTargets.length > 0 && (
             <details className="bg-card border-[3px] border-border p-4 md:p-6 pixel-shadow">
               <summary className="min-h-11 cursor-pointer font-mono text-sm font-bold text-accent">¿El precio cambió? Solicitar una comprobación</summary>

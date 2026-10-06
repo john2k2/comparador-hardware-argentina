@@ -62,6 +62,36 @@ function pendingReview(url: string) {
 }
 
 describe('offer identity display', () => {
+  it('keeps summary and list coherent when now moves an offer into references', () => {
+    const now = Date.parse('2026-10-06T15:00:00Z');
+    const expiring = offer({ storeId: 'expiring', storeName: 'Vence primero', price: 80_000,
+      lastUpdated: new Date(now - CATALOG_OFFER_FRESH_MS) });
+    const remaining = offer({ storeId: 'remaining', storeName: 'Permanece', price: 120_000, lastUpdated: new Date(now) });
+    function render(clock: number) {
+      return {
+        summary: renderToStaticMarkup(createElement(PriceSummary, { product: product(), merchantPrices: [remaining, expiring],
+          now: clock, lowestComparablePrice: 80_000, highestComparablePrice: 120_000, selectedInstallment: null, onSelectInstallment: vi.fn() })),
+        list: renderToStaticMarkup(createElement(StoresList, { product: product(), merchantPrices: [remaining, expiring], now: clock })),
+      };
+    }
+    const before = render(now);
+    expect(before.summary).toContain('Ver en Vence primero');
+    expect(before.list.indexOf('@Vence primero')).toBeLessThan(before.list.indexOf('@Permanece'));
+    const after = render(now + 1);
+    expect(after.summary).toContain('Ver en Permanece');
+    expect(after.summary).toContain('Una tienda con oferta comparable');
+    expect(after.list.indexOf('@Permanece')).toBeLessThan(after.list.indexOf('@Vence primero'));
+    expect(after.list).toContain('Precios por confirmar (1)');
+    expect(after.list).toContain('PENDIENTE DE ACTUALIZAR');
+  });
+
+  it.each([0, NaN, Infinity])('does not display an unusable price as a store quotation: %s', (price) => {
+    const list = renderToStaticMarkup(createElement(StoresList, { product: product(), merchantPrices: [offer({ price })] }));
+    expect(list).toContain('Precio por corroborar');
+    expect(list).not.toMatch(/\$\s*0|NaN|∞/);
+    expect(list).not.toContain('[ MENOR PRECIO RECIENTE ]');
+  });
+
   it('keeps a black PSU publication out of the best price for a white variant even without a prior review', () => {
     const item = { ...product(), name: 'Fuente RAPTOR VOLT 1000W Full Modular Blanca', category: 'fuentes-alimentacion' as const };
     const prices = [offer({ url: 'https://store.example/fuente-raptor-volt-1000w-full-modular-negra' })];
@@ -70,10 +100,10 @@ describe('offer identity display', () => {
       highestComparablePrice: 80_000, selectedInstallment: null, onSelectInstallment: vi.fn(),
     }));
     expect(summary).toContain('SIN OFERTAS APTAS PARA COMPARAR');
-    expect(summary).not.toContain('MEJOR PRECIO REGISTRADO');
+    expect(summary).not.toContain('MENOR PRECIO RECIENTE (24 H)');
     const stores = renderToStaticMarkup(createElement(StoresList, { product: item, merchantPrices: prices }));
     expect(stores).toContain('Identidad por corroborar');
-    expect(stores).not.toContain('[ MEJOR PRECIO ]');
+    expect(stores).not.toContain('[ MENOR PRECIO RECIENTE ]');
   });
   it.each(['', 'javascript:alert(1)', 'https://user:password@store.example/item'])('does not highlight or link to an invalid destination %s', (url) => {
     const prices = [offer({ url })];
@@ -106,7 +136,7 @@ describe('offer identity display', () => {
       selectedInstallment: installment, onSelectInstallment: vi.fn(),
     }));
     expect(markup).toContain('TOTAL EN 3 CUOTAS');
-    expect(markup).not.toContain('MEJOR PRECIO DETECTADO');
+    expect(markup).not.toContain('MENOR PRECIO RECIENTE (24 H)');
   });
 
   it('chooses the lowest eligible offer regardless of order and ignores a stale selected installment', () => {
@@ -129,7 +159,7 @@ describe('offer identity display', () => {
       onSelectInstallment: vi.fn(),
     }));
 
-    const detectedPriceSection = markup.slice(markup.indexOf('MEJOR PRECIO REGISTRADO'), markup.indexOf('tiendas con oferta comparable'));
+    const detectedPriceSection = markup.slice(markup.indexOf('MENOR PRECIO RECIENTE (24 H)'), markup.indexOf('tiendas con oferta comparable'));
     expect(detectedPriceSection).toContain('80.000');
     expect(detectedPriceSection).not.toContain('120.000');
     expect(detectedPriceSection).not.toContain('999.999');
@@ -152,7 +182,7 @@ describe('offer identity display', () => {
     }));
 
     expect(markup).toContain('SIN OFERTAS APTAS PARA COMPARAR');
-    expect(markup).not.toContain('MEJOR PRECIO DETECTADO');
+    expect(markup).not.toContain('MENOR PRECIO RECIENTE (24 H)');
     expect(markup).not.toMatch(/\$\s*0/);
   });
 
@@ -174,16 +204,16 @@ describe('offer identity display', () => {
     }));
     const pendingPosition = markup.indexOf('@Tienda Pendiente');
     const validPosition = markup.indexOf('@Tienda Válida');
-    const bestPosition = markup.indexOf('[ MEJOR PRECIO ]');
+    const bestPosition = markup.indexOf('[ MENOR PRECIO RECIENTE ]');
 
     expect(markup).toContain('Identidad por corroborar');
     expect(markup).toContain('Precio relevado:');
     expect(markup.match(/Precio relevado:/g)).toHaveLength(2);
     expect(pendingPosition).toBeGreaterThanOrEqual(0);
-    expect(validPosition).toBeGreaterThan(pendingPosition);
-    expect(bestPosition).toBeGreaterThan(pendingPosition);
+    expect(pendingPosition).toBeGreaterThan(validPosition);
+    expect(bestPosition).toBeLessThan(pendingPosition);
     expect(bestPosition).toBeLessThan(validPosition);
-    expect(markup.match(/\[ MEJOR PRECIO \]/g)).toHaveLength(1);
+    expect(markup.match(/\[ MENOR PRECIO RECIENTE \]/g)).toHaveLength(1);
   });
 
   it('shows the eligible offer in a product card even when a cheaper offer is pending', () => {
@@ -238,10 +268,10 @@ describe('offer identity display', () => {
     expect(card).toContain('ÚLTIMO PRECIO RELEVADO');
     expect(card).not.toContain('MEJOR PRECIO');
     expect(stores).toContain('PENDIENTE DE ACTUALIZAR');
-    expect(stores).not.toContain('[ MEJOR PRECIO ]');
+    expect(stores).not.toContain('[ MENOR PRECIO RECIENTE ]');
     expect(summary).toContain('referencias anteriores');
     expect(summary).toContain('PRECIOS PENDIENTES DE ACTUALIZAR');
-    expect(summary).not.toContain('MEJOR PRECIO DETECTADO');
+    expect(summary).not.toContain('MENOR PRECIO RECIENTE (24 H)');
   });
 
   it('compares a recent offer without letting an old cheaper price win', () => {
@@ -257,8 +287,8 @@ describe('offer identity display', () => {
     expect(card).not.toContain('MEJOR PRECIO RELEVADO EN 3 H');
     expect(card).toContain('90.000');
     expect(card).not.toContain('50.000');
-    expect(stores.match(/\[ MEJOR PRECIO \]/g)).toHaveLength(1);
-    expect(stores.indexOf('[ MEJOR PRECIO ]')).toBeGreaterThan(stores.indexOf('@Anterior'));
-    expect(stores.indexOf('[ MEJOR PRECIO ]')).toBeLessThan(stores.indexOf('@Reciente'));
+    expect(stores.match(/\[ MENOR PRECIO RECIENTE \]/g)).toHaveLength(1);
+    expect(stores.indexOf('@Anterior')).toBeGreaterThan(stores.indexOf('@Reciente'));
+    expect(stores.indexOf('[ MENOR PRECIO RECIENTE ]')).toBeLessThan(stores.indexOf('@Reciente'));
   });
 });

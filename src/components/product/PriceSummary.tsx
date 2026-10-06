@@ -2,8 +2,8 @@
 
 import { ExternalLink } from 'lucide-react';
 import { PriceDisplay, InstallmentPicker } from '@/components/functional';
-import { computeComparableStorePriceStats, formatPriceARS } from '@/lib/price-utils';
-import { getRecentProductOffers } from '@/lib/product/product-page-metadata';
+import { formatPriceARS } from '@/lib/price-utils';
+import { buildOfferPresentation } from '@/lib/product/offer-presentation';
 import { describeUnavailableOffers } from '@/lib/product/unavailable-offer-summary';
 import { trackStoreClick } from '@/lib/analytics';
 import { getOutboundStoreLinkType, getOutboundStoreRel } from '@/lib/commercial';
@@ -15,15 +15,15 @@ type PriceSummaryProps = {
   merchantPrices: ProductPrice[];
   lowestComparablePrice: number;
   highestComparablePrice: number;
+  now?: number;
   selectedInstallment: InstallmentInfo | null;
   onSelectInstallment: (installment: InstallmentInfo | null) => void;
 };
 
-export function PriceSummary({ product, merchantPrices, selectedInstallment, onSelectInstallment }: PriceSummaryProps) {
-  const eligiblePrices = getRecentProductOffers({ ...product, prices: merchantPrices });
-  const stats = computeComparableStorePriceStats(eligiblePrices);
-  if (!eligiblePrices.length) {
-    const unavailable = describeUnavailableOffers(product, merchantPrices);
+export function PriceSummary({ product, merchantPrices, selectedInstallment, onSelectInstallment, now }: PriceSummaryProps) {
+  const { recentPrices: eligiblePrices, referencePrices, bestOffer: bestPrice, lowest, highest } = buildOfferPresentation(product, merchantPrices, now);
+  if (!bestPrice) {
+    const unavailable = describeUnavailableOffers(product, merchantPrices, now);
     return (
       <section className="min-w-0 bg-card border-[3px] border-border p-4 md:p-6 pixel-shadow">
         <h2 className="text-base text-accent mb-3">{unavailable.heading}</h2>
@@ -35,7 +35,6 @@ export function PriceSummary({ product, merchantPrices, selectedInstallment, onS
       </section>
     );
   }
-  const bestPrice = eligiblePrices[0];
   const installments = bestPrice.installment ? [bestPrice.installment] : [];
   // Las cuotas deben seguir perteneciendo a la oferta que se está mostrando.
   const currentInstallment = selectedInstallment && installments.some((item) =>
@@ -49,7 +48,7 @@ export function PriceSummary({ product, merchantPrices, selectedInstallment, onS
       <div>
         <p className="font-mono text-sm font-bold text-secondary mb-2">
           {currentInstallment ? `TOTAL EN ${currentInstallment.count} CUOTAS`
-            : bestPrice.priceCondition === 'special' ? 'PRECIO ESPECIAL INFORMADO POR LA TIENDA' : 'MEJOR PRECIO REGISTRADO'}
+            : bestPrice.priceCondition === 'special' ? 'PRECIO ESPECIAL INFORMADO POR LA TIENDA' : 'MENOR PRECIO RECIENTE (24 H)'}
         </p>
         <PriceDisplay price={currentInstallment?.totalAmount ?? bestPrice.price}
           originalPrice={currentInstallment ? undefined : bestPrice.originalPrice} size="lg" />
@@ -57,6 +56,8 @@ export function PriceSummary({ product, merchantPrices, selectedInstallment, onS
         <p className="font-body text-sm text-muted-foreground mt-1">
           Precio relevado: {new Date(bestPrice.lastUpdated).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', dateStyle: 'short', timeStyle: 'short' })}
         </p>
+        {referencePrices.some((price) => Number.isFinite(price.price) && price.price > 0 && price.price < bestPrice.price)
+          && <p className="font-body text-sm text-muted-foreground mt-2">Hay valores más bajos por confirmar. Se muestran debajo como referencia y no participan del menor precio reciente.</p>}
       </div>
       <p className="font-body text-sm leading-relaxed text-muted-foreground">
         {bestPrice.priceCondition === 'special' ? 'Precio especial sujeto al medio de pago que indique la tienda. ' : ''}
@@ -73,7 +74,7 @@ export function PriceSummary({ product, merchantPrices, selectedInstallment, onS
       {storeCount > 1 ? (
         <div className="border-t border-border/50 pt-3 font-body text-sm leading-relaxed">
           <p>{storeCount} tiendas con oferta comparable en las últimas 24 h.</p>
-          <p className="text-muted-foreground">Rango: {formatPriceARS(stats.lowest)} – {formatPriceARS(stats.highest)} · diferencia {formatPriceARS(stats.highest - stats.lowest)}.</p>
+          <p className="text-muted-foreground">Rango: {formatPriceARS(lowest)} – {formatPriceARS(highest)} · diferencia {formatPriceARS(highest - lowest)}.</p>
         </div>
       ) : <p className="font-body text-sm text-muted-foreground">Una tienda con oferta comparable en las últimas 24 h. Todavía no hay precios de otras tiendas para medir una diferencia.</p>}
       {installments.length > 0 && (
