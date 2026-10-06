@@ -25,7 +25,7 @@ export default async function PrivacidadPage() {
       />
     <RetroPageShell
       title="POLITICA DE PRIVACIDAD"
-      subtitle="Actualizada el 27 de septiembre de 2026. Analítica opcional y controles para tu navegador."
+      subtitle="Actualizada el 5 de octubre de 2026. Cuentas, analítica opcional y controles para tu navegador."
     >
       <div className="space-y-4 text-[12px] uppercase text-foreground">
         <div className="border-2 border-border p-4 bg-muted/30">
@@ -76,6 +76,13 @@ export default async function PrivacidadPage() {
             Hoy no cargamos anuncios de AdSense. Antes de activarlos actualizaremos la política y los controles aplicables. La elección de analítica no autoriza publicidad personalizada ni sustituye una plataforma de consentimiento certificada para los territorios donde Google la exige.
           </p>
         </div>
+
+        <section className="border-2 border-border p-4 bg-muted/30 space-y-3 font-mono text-[12px] leading-relaxed normal-case tracking-normal" aria-labelledby="privacy-google-login">
+          <h2 id="privacy-google-login" className="text-secondary font-bold uppercase">Ingresar con Google</h2>
+          <p>Si elegís «Continuar con Google», Google comparte con el comparador tu correo electrónico y datos básicos de perfil, como nombre y foto. Supabase gestiona la identificación de tu cuenta y la sesión. Usamos estos datos para permitirte ingresar y asociar tus favoritos y alertas a tu cuenta.</p>
+          <p>Ingresar y aceptar analítica son elecciones separadas. El permiso de Google para identificar tu cuenta no autoriza el seguimiento de Analytics. Cada cuenta tiene sus propios permisos dentro del sitio; el ingreso con Google no concede acceso al panel de administración.</p>
+          <p>Podés cerrar sesión desde el sitio y retirar el permiso desde tu cuenta de Google. Estas acciones no eliminan por sí solas los datos de cuenta, favoritos o alertas guardados en Supabase. Para consultar, rectificar o solicitar su eliminación, usá el <a href="/contacto" className="underline underline-offset-4">canal de contacto del sitio</a>.</p>
+        </section>
 
         <section className="border-2 border-border p-4 bg-muted/30 space-y-3 font-mono text-[12px] leading-relaxed normal-case tracking-normal" aria-labelledby="privacy-analytics">
           <h2 id="privacy-analytics" className="text-secondary font-bold uppercase">Google Analytics, solo si aceptás</h2>
