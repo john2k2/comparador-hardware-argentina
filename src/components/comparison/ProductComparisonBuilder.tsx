@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { HardwareCategory, Product } from '@/lib/types';
 import { COMPARABLE_CATEGORIES, COMPARISON_USE_CASES, compareProducts, type ComparisonUseCase } from '@/lib/comparison/dynamic-comparison';
 import { formatPriceARS } from '@/lib/price-utils';
+import { isCompleteComputerTitle } from '@/lib/product-identity';
 import { AdvisoryCta } from '@/components/commercial/AdvisoryCta';
 import { OfferReportLink } from '@/components/commercial/OfferReportLink';
 import { CATALOG_OFFER_FRESH_MS, OFFER_FRESH_MS } from '@/lib/price-freshness';
@@ -42,7 +43,8 @@ function ProductFinder({ category, side, selected, onSelect }: {
       if (!response.ok) throw new Error(`Product request failed: ${response.status}`);
       const payload = await response.json() as { products?: Product[] };
       if (!controller.signal.aborted) {
-        setProducts((payload.products ?? []).filter((product) => product.category === category).slice(0, 5));
+        setProducts((payload.products ?? []).filter((product) => product.category === category
+          && (category === 'computadoras' || !isCompleteComputerTitle(product.name))).slice(0, 5));
       }
     } catch {
       if (!controller.signal.aborted) setProducts([]);

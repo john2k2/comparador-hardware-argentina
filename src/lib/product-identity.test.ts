@@ -9,6 +9,19 @@ import {
 } from './product-identity';
 
 describe('product identity', () => {
+  it.each([
+    'NB HP 15.6 VICTUS I5-12450 8G 512G W11H RTX3050 CD',
+    'NB ASUS 15.6 R7-170 16GB 512GB RTX3050',
+    'Not Lenovo Loq 15.6fhd I5 8gb Ssd512gb Rtx3050 W11',
+  ])('reconoce una notebook abreviada aunque figure como GPU: %s', (name) => {
+    expect(isCompleteComputerTitle(name)).toBe(true);
+  });
+
+  it('conserva las placas sueltas y los accesorios para notebook', () => {
+    expect(isCompleteComputerTitle('Placa de video ASUS DUAL RTX 3050 6GB')).toBe(false);
+    expect(isCompleteComputerTitle('Soporte notebook Lenovo')).toBe(false);
+  });
+
   it('preserves GPU variant from fallback context', () => {
     expect(
       buildProductIdentityKey(

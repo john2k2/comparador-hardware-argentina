@@ -36,6 +36,13 @@ function draftWithSelections(selections: BuildDraft['selections'], payment: Buil
 }
 
 describe('checkBuildCompatibility', () => {
+  it('excluye una notebook abreviada del slot de GPU aunque la categoría histórica sea incorrecta', () => {
+    const notebook = product({ id: 'notebook-gpu', category: 'tarjetas-graficas',
+      name: 'NB ASUS 15.6 R7-170 16GB 512GB RTX3050',
+      prices: [price({ storeId: 'store', storeName: 'Store', price: 900_000 })] });
+    expect(candidatesForSlot([notebook], 'gpu')).toEqual([]);
+  });
+
   it('mantiene QVL pendiente aunque DDR y cantidad de módulos coincidan', () => {
     const issues = checkBuildCompatibility({
       motherboard: product({ id: 'board', name: 'Motherboard AM5 DDR5', category: 'motherboards', specs: { 'slots de memoria': '4' } }),
