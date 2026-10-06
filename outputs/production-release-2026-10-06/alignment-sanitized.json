@@ -1,0 +1,39 @@
+{
+  "recordedAt": "2026-10-06T03:09:35.673012+00:00",
+  "failedBuild": {
+    "sourceCommit": "0ded6f18ee81940e97c8c54c1c8607d4bdc3b5ba",
+    "buildId": "64e0cdda-7d5d-44ae-ae4d-5f46c484b0ca",
+    "ciRunId": 37407106450,
+    "cause": "TS2740, tipos Page de @playwright/test 1.58.2 frente a playwright-core 1.59.1"
+  },
+  "repair": {
+    "playwrightTest": "1.59.1",
+    "playwright": "1.59.1",
+    "playwrightCore": "1.59.1",
+    "fullTypecheck": "passed",
+    "newTestsLint": "passed",
+    "noTestExcluded": true
+  },
+  "publicRepeat": {
+    "at": "2026-10-06T03:06:43.081Z",
+    "passed": 39,
+    "failed": 1,
+    "skipped": 0,
+    "flaky": 0,
+    "priceTestsPassed": 4,
+    "menuTestsPassed": 4,
+    "viewsPassed": 31,
+    "failedView": {
+      "path": "/comparativa/comparar",
+      "theme": "dark",
+      "viewport": "mobile",
+      "status": 503,
+      "error": 1102,
+      "at": "2026-10-06T03:07:49.226Z",
+      "responseTimeMs": 114.601,
+      "ray": "a4617540f9564b4e",
+      "exactResourceOutcomeVerified": false
+    }
+  },
+  "productionStable": false
+}

@@ -65,3 +65,13 @@ PUBLIC_QA_ORIGIN=https://www.comparador-hardware.com.ar \
 ```
 
 Estas pruebas son de lectura. No ejecutar la suite sintética interactiva contra producción. Los controles de cobertura G02, identidad de todo el catálogo, recepción GA4, consultas recibidas, AdSense y ventas Eneba conservan su estado independiente.
+
+## Corte posterior · compilación y repetición con Playwright unificado
+
+El commit de seguimiento `0ded6f1` conservó el ajuste SQL aplicado, pero CI `37407106450` y Workers Build `64e0cdda-7d5d-44ae-ae4d-5f46c484b0ca` fallaron al verificar los tipos del nuevo control de accesibilidad. Había dos versiones de Playwright: `@playwright/test` 1.58.2 y `playwright`/Axe 1.59.1. El chequeo nuevo entregaba el objeto `Page` de la primera a los tipos de la segunda. La interfaz pública conservó la versión anterior del release; este fallo de build no se contabiliza como despliegue.
+
+Se fijó `@playwright/test` en **1.59.1**, la misma versión de `playwright` y `playwright-core` ya presente; se retiraron las copias duplicadas del lockfile. TypeScript completo y lint de las dos pruebas nuevas aprobaron. No se excluyó el archivo ni se usó un cast para silenciar el error.
+
+La repetición pública completa a las 03:06:43 UTC terminó **39/40**, cero omisiones/reintentos: cuatro búsquedas por precio, cuatro menús y 31 vistas aprobaron. La vista móvil oscura de `/comparativa/comparar` respondió **HTTP 503/Cloudflare 1102** a las **03:07:49 UTC**, ray `a4617540f9564b4e`, tras unos 115 ms. El trace conserva la respuesta. Es otro fallo real de recursos y amplía el incidente abierto: no se modifica la expectativa de 200 ni se reintenta hasta fabricar un resultado verde.
+
+Este corte reemplaza cualquier lectura de 36/36 como garantía de estabilidad continua; conserva las aprobaciones iniciales como muestras fechadas. La evidencia posterior está en `outputs/production-release-2026-10-06/alignment-sanitized.json` y los reportes originales locales `public-appearance-final.json`/`.log`. La próxima compilación debe confirmar el commit con la dependencia unificada; una aprobación de build tampoco cerrará el incidente 1102.
