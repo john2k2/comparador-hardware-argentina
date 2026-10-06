@@ -57,10 +57,10 @@ describe('lectura ligera con autorización vigente', () => {
     expect(fetcher.mock.calls[1][1].redirect).toBe('manual');
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
-  it('las escrituras y fragmentos conservan las validaciones de Next', async () => {
+  it('las escrituras conservan las validaciones de Next; una navegación RSC sin sesión no recibe el panel', async () => {
     const fetcher = vi.fn();
     expect(await handleMeasurementEdgeRead(new Request(`${root}/api/admin/measurement`, { method: 'POST' }), env, fetcher)).toBeNull();
-    expect(await handleMeasurementEdgeRead(request('/admin/seguimiento', { RSC: '1' }), env, fetcher)).toBeNull();
+    expect((await handleMeasurementEdgeRead(request('/admin/seguimiento', { RSC: '1' }), env, fetcher))?.status).toBe(307);
     expect(fetcher).not.toHaveBeenCalled();
   });
   it('sirve el documento vacío sólo después de validar admin, con nonce nuevo y sin caché pública', async () => {
@@ -76,5 +76,7 @@ describe('lectura ligera con autorización vigente', () => {
     expect(nonce).not.toBe(second?.headers.get('x-content-security-policy-nonce'));
     expect(first?.headers.get('content-security-policy')).toContain(`nonce-${nonce}`);
     expect(await first?.text()).toContain(`nonce="${nonce}"`);
+    const navigation = await handleMeasurementEdgeRead(request('/admin/seguimiento?_rsc=navigation', { RSC: '1', Cookie: 'sb-access-token=admin-fixture' }), { ...env, ASSETS: assets }, fetcher);
+    expect(navigation?.status).toBe(200); expect(navigation?.headers.get('content-type')).toBe('text/html');
   });
 });

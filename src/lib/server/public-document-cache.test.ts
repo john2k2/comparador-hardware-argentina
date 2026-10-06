@@ -84,4 +84,17 @@ describe('documentos públicos en el Worker', () => {
     await s.handler(req, { ...s.env, ASSETS: { fetch: async () => new Response('Not found', { status: 404 }) } }, s.context);
     expect(s.next).toHaveBeenCalledOnce(); expect(s.cache.match).not.toHaveBeenCalled(); expect(s.cache.put).not.toHaveBeenCalled();
   });
+  it('seguir un enlace a una página fija entrega HTML completo sin SSR ni caché de fragmentos', async () => {
+    const s = setup(); const source = document();
+    const html = (await source.text()).replaceAll(nonce, 'COMPARADOR_DOCUMENT_NONCE');
+    const headers = Object.fromEntries([...source.headers].map(([key, value]) => [key, value.replaceAll(nonce, 'COMPARADOR_DOCUMENT_NONCE')]));
+    const env = { ...s.env, ASSETS: { fetch: async () => Response.json({ version: 1, route: '/', html, headers }) } };
+    const request = new Request(`${root}/?_rsc=navigation`, { headers: { RSC: '1', 'Next-Router-State-Tree': 'state', Cookie: 'sb-access-token=private' } });
+    const response = await s.handler(request, env, s.context);
+    expect(response.status).toBe(200); expect(response.headers.get('content-type')).toBe('text/html');
+    expect(response.headers.get('x-comparador-render')).toBe('static-document');
+    expect(s.next).not.toHaveBeenCalled(); expect(s.cache.match).not.toHaveBeenCalled(); expect(s.cache.put).not.toHaveBeenCalled();
+    await s.handler(new Request(`${root}/?q=user-input&_rsc=navigation`, { headers: request.headers }), env, s.context);
+    expect(s.next).toHaveBeenCalledOnce();
+  });
 });

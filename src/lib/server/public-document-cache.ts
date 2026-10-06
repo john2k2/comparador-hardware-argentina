@@ -11,9 +11,10 @@ const STATIC_ROUTES = new Set(['/', '/comparativa/comparar', '/guia/armar', '/ac
 
 function eligible(request: Request, allowStaticSession = false) {
   const url = new URL(request.url);
-  if (request.method !== 'GET' || request.headers.has('authorization') || request.headers.has('rsc') || request.headers.has('next-router-state-tree') || request.headers.has('next-action') || request.headers.has('range')) return false;
+  if (request.method !== 'GET' || request.headers.has('authorization') || (!allowStaticSession && (request.headers.has('rsc') || request.headers.has('next-router-state-tree'))) || request.headers.has('next-action') || request.headers.has('range')) return false;
   if (!allowStaticSession && /\bsb-(?:access-token|refresh-token|[\w-]+-auth-token(?:\.\d+)?)=/.test(request.headers.get('cookie') ?? '')) return false;
-  if (url.search || !['www.comparador-hardware.com.ar', 'comparador-hardware.com.ar'].includes(url.hostname)) return false;
+  const onlyFlightMarker = request.headers.get('rsc') === '1' && [...url.searchParams.keys()].every((key) => key === '_rsc');
+  if ((url.search && !(allowStaticSession && onlyFlightMarker)) || !['www.comparador-hardware.com.ar', 'comparador-hardware.com.ar'].includes(url.hostname)) return false;
   return /^(?:\/(?:acerca|about|privacidad|terminos|contacto|guia|comparativa)?|\/(?:product|comparar|guia|comparativa)\/[a-zA-Z0-9-]{1,160})$/.test(url.pathname);
 }
 
@@ -44,6 +45,9 @@ export function createPublicDocumentCache(next: FetchHandler, cacheFactory = def
     const version = env.CF_VERSION_METADATA?.id;
     if (!cache || !version) return next(request, env, context);
     if (STATIC_ROUTES.has(url.pathname) && env.ASSETS && eligible(request, true)) {
+      // Next 16 convierte una respuesta HTML a navegación de documento completo
+      // (fetch-server-response.js). También evita SSR al seguir enlaces internos;
+      // no reutiliza HTML como si fuera un fragmento de React.
       try {
         const asset = await env.ASSETS.fetch(new Request(`https://assets.local/__public-documents/${url.pathname === '/' ? 'home' : url.pathname.slice(1).replaceAll('/', '-')}.json`));
         if (asset.ok) {

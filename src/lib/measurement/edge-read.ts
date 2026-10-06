@@ -107,8 +107,8 @@ export async function handleMeasurementEdgeRead(request: Request, env: EdgeEnv, 
   const path = new URL(request.url).pathname;
   const page = path === '/admin/seguimiento';
   if (!page && path !== '/api/admin/measurement') return null;
-  // Los fragmentos siguen la ruta de Next, que también valida administrador.
-  if (page && request.headers.has('rsc')) return null;
+  // HTML también al seguir un enlace interno: Next carga el documento completo.
+  // Validar administrador antes del documento, incluso con cabeceras RSC.
   const auth = await authorize(request, env, fetcher, page);
   if (auth === 'unavailable') return page ? new Response('No se pudo validar tu sesión. Volvé a cargar la página.', { status: 503, headers: PRIVATE_HEADERS }) : json({ error: 'No se pudo validar tu sesión. Volvé a intentar.' }, 503);
   if (auth !== 'authorized') return page ? new Response(null, { status: 307, headers: { ...PRIVATE_HEADERS, Location: '/auth?next=%2Fadmin%2Fseguimiento' } }) : json({ error: 'No autorizado' }, 401);
