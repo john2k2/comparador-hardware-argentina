@@ -41,6 +41,8 @@ Las páginas dinámicas que no están en caché todavía generan su documento en
 
 La navegación global, las categorías de portada, las tarjetas de guías y comparativas y los enlaces a tiendas patrocinadas no precargan páginas. El usuario conserva la navegación al elegir un enlace, sin generar consultas de otras categorías antes de hacerlo. Se eliminó también la precarga del archivo SVG que ningún componente consume; los elementos del fondo mantienen su marcado.
 
+El panel tampoco precarga el dashboard anterior. La sincronización de sesión usa el transporte nativo: exige el mismo origen, cuerpos acotados y un token validado por Supabase antes de guardar la cookie `HttpOnly`, `Secure` y `SameSite=Lax`. Esto no concede un rol; el panel vuelve a validar el permiso de administrador. Cerrar sesión elimina la cookie sin arrancar Next. Las fallas de Auth no guardan una cookie nueva y nunca devuelven el token.
+
 ### Corte público del 6 de octubre de 2026
 
 La tarea solicitada desde el panel a las 05:13 UTC terminó a las 05:14:20 UTC: nueve fuentes verificadas, Google Ads pendiente, sin consultas fallidas y con ambos resúmenes guardados. Esto acredita esa ejecución; no garantiza las autorizaciones futuras de Google ni que el scheduler nunca se retrase.

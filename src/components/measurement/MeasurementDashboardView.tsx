@@ -128,7 +128,7 @@ export function MeasurementDashboardView({ initialDashboard, googleResult }: { i
 
   return <div className={styles.root}>
     <div className={styles.container}>
-      <div className={styles.breadcrumb}><Link href="/admin">Administración</Link><ChevronRight size={14} aria-hidden="true" /><span>Seguimiento</span><span className={styles.private}><LockKeyhole size={13} aria-hidden="true" /> Sólo administradores</span></div>
+      <div className={styles.breadcrumb}><Link href="/admin" prefetch={false}>Administración</Link><ChevronRight size={14} aria-hidden="true" /><span>Seguimiento</span><span className={styles.private}><LockKeyhole size={13} aria-hidden="true" /> Sólo administradores</span></div>
       {dashboard.demo && <p className={styles.demo}>Vista local de prueba: las actualizaciones usan fuentes simuladas y el guardado es temporal. {dashboard.demoBaselineReal ? 'Las lecturas marcadas «Auditoría» provienen de la revisión del 5/10.' : 'Todos los datos de esta vista son simulados.'}</p>}
       <header className={styles.header}>
         <div><p className={styles.eyebrow}>COMPARADOR · CENTRO DE DECISIONES</p><h1>Tu proyecto, en claro.</h1><p className={styles.intro}>Qué pasa en la página, qué falta comprobar y qué conviene hacer después.</p></div>
@@ -209,7 +209,7 @@ export function MeasurementDashboardView({ initialDashboard, googleResult }: { i
         <section className={styles.panel}><h2>Cómo leer los avisos</h2><dl className={styles.glossary}><div><dt>Consulta de la cuenta</dt><dd>La fuente respondió y el panel guardó la lectura. Comprobá su período: no siempre incluye hoy.</dd></div><div><dt>Lectura anterior</dt><dd>Es el último dato válido que guardamos. Si la fuente falla, conserva su fecha original; pulsar Actualizar no lo vuelve reciente.</dd></div><div><dt>Falta autorización</dt><dd>El servicio puede estar funcionando, pero la página no tiene acceso de lectura. Autorizar no significa contratar ni cambiar campañas.</dd></div><div><dt>Sin dato</dt><dd>No sabemos ese valor. Es diferente de cero, que indica una consulta válida sin resultados para esa métrica.</dd></div><div><dt>Período y porcentaje</dt><dd>Un porcentaje necesita un total y una ventana. Compará períodos equivalentes: siete días de Analytics y 28 de Google responden a preguntas diferentes.</dd></div></dl></section>
         <section className={styles.rule}><BookOpen size={22} aria-hidden="true" /><div><h3>La rutina simple</h3><p>Actualizá las lecturas, comprobá fallas y ofertas, elegí un siguiente paso y guardá su estado. Una vez por semana, compará cortes equivalentes. No saques conclusiones fuertes de pocos usuarios.</p></div></section>
       </section>}
-      <footer className={styles.footer}><span>Privado · lecturas con fecha · decisiones verificables</span><Link href="/admin">Volver a administración <ArrowRight size={14} aria-hidden="true" /></Link></footer>
+      <footer className={styles.footer}><span>Privado · lecturas con fecha · decisiones verificables</span><Link href="/admin" prefetch={false}>Volver a administración <ArrowRight size={14} aria-hidden="true" /></Link></footer>
     </div>
     <dialog ref={dialog} className={styles.dialog} aria-labelledby="connection-title" onClose={() => { setCredentials({}); setError(''); }}>
       <h2 id="connection-title">Conectar {PROVIDERS[credentialProvider].name}</h2>

@@ -4,6 +4,7 @@ import { createScanGuard } from './src/lib/server/scan-guard.ts';
 import { createPublicDocumentCache } from './src/lib/server/public-document-cache.ts';
 import { handleMeasurementEdgeRead } from './src/lib/measurement/edge-read.ts';
 import { handleObservedHomeRead } from './src/lib/home/edge-read.ts';
+import { handleAuthSessionEdge } from './src/lib/server/auth-session-edge.ts';
 
 // Conservar el transporte nativo: Next adapta el global durante peticiones HTTP.
 const scheduledFetch = globalThis.fetch.bind(globalThis);
@@ -12,6 +13,8 @@ const publicFetch = createPublicDocumentCache((request, env, context) => handler
 const worker = {
   ...handler,
   fetch: createScanGuard(async (request, env, context) => {
+    const session = await handleAuthSessionEdge(request, env, scheduledFetch);
+    if (session) return session;
     const home = await handleObservedHomeRead(request, env, scheduledFetch);
     if (home) return home;
     const measurement = await handleMeasurementEdgeRead(request, env, scheduledFetch);
