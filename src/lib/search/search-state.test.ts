@@ -9,6 +9,16 @@ import {
 } from './search-state';
 
 describe('search state', () => {
+  it('preserves opt-in references through URLs, keys and pagination', () => {
+    const current = parseSearchState({ q: 'rtx 5090', page: '2' });
+    const references = parseSearchState({ q: 'rtx 5090', page: '2', includeUnavailable: '1' });
+    expect(current.includeUnavailable).toBe(false);
+    expect(parseSearchState({ q: 'rtx 5090', includeUnavailable: 'true' }).includeUnavailable).toBe(false);
+    expect(buildApiSearchKey(references)).not.toBe(buildApiSearchKey(current));
+    expect(toSearchFilters(references).includeUnavailable).toBe(true);
+    expect(buildSearchPaginationHref(buildSearchRoute(references), 3)).toContain('includeUnavailable=1&page=3');
+    expect(hasSearchIntent(parseSearchState({ includeUnavailable: '1' }))).toBe(false);
+  });
   it('normalizes invalid params and swaps min/max ranges', () => {
     const state = parseSearchState({
       q: '  ryzen 5600  ',
@@ -26,6 +36,7 @@ describe('search state', () => {
       minPrice: 200000,
       maxPrice: 300000,
       stores: ['mexx', 'venex'],
+      includeUnavailable: false,
       sortBy: 'relevance',
       page: 1,
     });
@@ -68,6 +79,7 @@ describe('search state', () => {
       maxPrice: undefined,
       stores: [],
       brands: [],
+      includeUnavailable: false,
       sortBy: 'price-desc',
       sortOrder: 'desc',
     });

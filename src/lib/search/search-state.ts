@@ -28,6 +28,7 @@ export type SearchPageState = {
   minPrice?: number;
   maxPrice?: number;
   stores: string[];
+  includeUnavailable?: boolean;
   sortBy: SearchFilters['sortBy'];
   page: number;
 };
@@ -83,6 +84,7 @@ export function parseSearchState(params: Record<string, string | string[] | unde
     minPrice,
     maxPrice,
     stores: parseStores(getSingleParam(params.stores)),
+    includeUnavailable: getSingleParam(params.includeUnavailable) === '1',
     sortBy,
     page: parsePositiveInteger(getSingleParam(params.page)),
   };
@@ -108,6 +110,7 @@ export function buildApiSearchKey(state: SearchPageState): string | null {
   if (state.maxPrice !== undefined) params.set('maxPrice', String(state.maxPrice));
   if (state.stores.length > 0) params.set('stores', state.stores.join(','));
   if (state.sortBy !== 'relevance') params.set('sortBy', state.sortBy);
+  if (state.includeUnavailable) params.set('includeUnavailable', '1');
 
   return params.toString() || '__empty__';
 }
@@ -121,6 +124,7 @@ export function buildSearchPageParams(state: SearchPageState): URLSearchParams {
   if (state.maxPrice !== undefined) params.set('maxPrice', String(state.maxPrice));
   if (state.stores.length > 0) params.set('stores', state.stores.join(','));
   if (state.sortBy !== 'relevance') params.set('sortBy', state.sortBy);
+  if (state.includeUnavailable) params.set('includeUnavailable', '1');
   if (state.page > 1) params.set('page', String(state.page));
 
   return params;
@@ -154,6 +158,7 @@ export function toSearchFilters(state: SearchPageState): SearchFilters {
     maxPrice: state.maxPrice,
     stores: state.stores,
     brands: [],
+    includeUnavailable: state.includeUnavailable,
     sortBy: state.sortBy,
     sortOrder: state.sortBy === 'price-desc' ? 'desc' : 'asc',
   };

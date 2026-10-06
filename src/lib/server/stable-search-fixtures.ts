@@ -1,5 +1,6 @@
 import type { HardwareCategory, Product, ProductPrice } from '@/lib/types';
 import type { SortBy } from '@/lib/search/search-handler-shared';
+import { sourceContract } from '@/lib/scrapers/source-contracts';
 
 function createPrice(
   storeId: string,
@@ -9,10 +10,17 @@ function createPrice(
 ): ProductPrice {
   // La oferta sintética está recién observada al iniciar el servidor de prueba.
   const now = new Date();
+  // Los controles reales de destino también se aplican a las pruebas. Usamos
+  // hosts y formatos válidos, sin visitar estas publicaciones ficticias.
+  const listingPath = storeId === 'compragamer'
+    ? '/producto/fixture_ryzen_7_5700x_9990001'
+    : storeId === 'maximus'
+      ? '/Producto/fixture-rtx-4060/ITEM=9990002/maximus.aspx'
+      : path;
   return {
     storeId,
     storeName,
-    url: `https://www.comparador-hardware.com.ar${path}`,
+    url: new URL(listingPath, sourceContract(storeId)!.baseUrl).href,
     price,
     stock: 'in-stock',
     installment: null,

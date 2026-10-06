@@ -3,6 +3,21 @@ import type {Product} from '@/lib/types';
 import {mergeCanonicalDetailOffers,shareExactProductVariant} from './product-detail-offers';
 const make=(id:string,name='Extensor Tp-Link WA850RE',storeId='dinobyte',date='2026-07-28T12:00:00Z',price=47612):Product=>({id,name,category:'perifericos',canonicalProductKey:'perifericos::wa850re',prices:[{storeId,storeName:storeId,url:`https://${storeId}.example/producto/wa850re`,price,stock:'in-stock',lastUpdated:new Date(date)}],createdAt:new Date(date),updatedAt:new Date(date)} as Product);
 afterEach(()=>vi.useRealTimers());
+it.each([
+ ['MOUSE GAMER CORSAIR M75 WIRELESS RGB BLANCO', 'Mouse Corsair M75 Wireless Lightweight RGB Call of Duty Black OPS6 Edition', 'perifericos'],
+ ['Disco SSD WD Green 1TB SATA', 'Disco SSD Sandisk Plus 1TB SATA III', 'almacenamiento'],
+ ['Fuente Raptor 1000W Volt Gold White', 'Fuente XYZ 1000W Hypervolt Gold White', 'fuentes-alimentacion'],
+] as const)('no redirige ni fusiona %s con otra variante por una clave antigua', (name, other, category) => {
+ const root={...make('root',name),category,canonicalProductKey:'legacy-collision'};
+ const candidate={...make('other',other,'mexx'),category,canonicalProductKey:'legacy-collision'};
+ expect(shareExactProductVariant(root,candidate)).toBe(false);
+ expect(mergeCanonicalDetailOffers(root,[candidate]).prices).toEqual(root.prices);
+});
+it('permite títulos completos equivalentes reordenados conservando color y edición', () => {
+ const root=make('root','Mouse Corsair M75 Wireless RGB Blanco');
+ expect(shareExactProductVariant(root,make('other','Corsair Mouse M75 Blanco Wireless RGB'))).toBe(true);
+ expect(shareExactProductVariant(root,make('other','Mouse Corsair M75 Wireless RGB Negro'))).toBe(false);
+});
 it('no intercambia OEM/outlet, refrigeración ni presentación por una clave CPU heredada',()=>{
  const cpu=(name:string)=>({...make(name,name),category:'procesadores' as const,canonicalProductKey:'legacy-4100'});
  const normal=cpu('AMD Ryzen 3 4100 con cooler'),outlet=cpu('AMD Ryzen 3 4100 sin cooler OEM OUTLET');

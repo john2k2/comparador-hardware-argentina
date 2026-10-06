@@ -1,7 +1,7 @@
 import type { HardwareCategory, Product } from '@/lib/types';
 import { getComparableStorePrices } from '@/lib/price-utils';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
-import { isCatalogOfferFresh } from '@/lib/price-freshness';
+import { isCatalogOfferFresh, isOfferFresh } from '@/lib/price-freshness';
 import { findPerformanceBenchmark, type PerformanceBenchmark } from './performance-benchmarks';
 
 export const COMPARABLE_CATEGORIES: Array<{ id: HardwareCategory; label: string }> = [
@@ -29,6 +29,8 @@ export type ComparisonUseCase = typeof COMPARISON_USE_CASES[number]['id'];
 export type DynamicComparison = {
   leftPrice: number | null;
   rightPrice: number | null;
+  leftPriceFresh: boolean;
+  rightPriceFresh: boolean;
   difference: number | null;
   differencePercent: number | null;
   cheaperProductId: string | null;
@@ -47,9 +49,9 @@ export type DynamicComparison = {
   specificationRows: Array<{ label: string; left: string; right: string }>;
 };
 
-function comparableOffers(product: Product) {
+function comparableOffers(product: Product, now: number) {
   return getComparableStorePrices(
-    product.prices.filter((offer) => !needsIdentityReview(offer) && isCatalogOfferFresh(offer.lastUpdated)),
+    product.prices.filter((offer) => !needsIdentityReview(offer) && isCatalogOfferFresh(offer.lastUpdated, now)),
   )
     .filter((offer) => offer.price > 0 && (offer.stock === 'in-stock' || offer.stock === 'low-stock'))
     .sort((a, b) => a.price - b.price);
@@ -131,23 +133,26 @@ function buildUseCaseCaveat(category: HardwareCategory, useCase: ComparisonUseCa
   return null;
 }
 
-export function compareProducts(left: Product, right: Product, useCase: ComparisonUseCase = 'equilibrado'): DynamicComparison {
-  const leftComparableOffers = comparableOffers(left);
-  const rightComparableOffers = comparableOffers(right);
+export function compareProducts(left: Product, right: Product, useCase: ComparisonUseCase = 'equilibrado', now = Date.now()): DynamicComparison {
+  const leftComparableOffers = comparableOffers(left, now);
+  const rightComparableOffers = comparableOffers(right, now);
   const leftPrice = leftComparableOffers[0]?.price ?? null;
   const rightPrice = rightComparableOffers[0]?.price ?? null;
   const bothPriced = leftPrice != null && rightPrice != null;
+  const leftPriceFresh = isOfferFresh(leftComparableOffers[0]?.lastUpdated, now);
+  const rightPriceFresh = isOfferFresh(rightComparableOffers[0]?.lastUpdated, now);
+  const bothFreshlyPriced = bothPriced && leftPriceFresh && rightPriceFresh;
   const difference = bothPriced ? Math.abs(leftPrice - rightPrice) : null;
   const baseline = bothPriced ? Math.min(leftPrice, rightPrice) : null;
   const differencePercent = difference != null && baseline ? Math.round((difference / baseline) * 100) : null;
-  const cheaperProductId = bothPriced && leftPrice !== rightPrice
+  const cheaperProductId = bothFreshlyPriced && leftPrice !== rightPrice
     ? (leftPrice < rightPrice ? left.id : right.id)
     : null;
   const leftBenchmark = findPerformanceBenchmark(left);
   const rightBenchmark = findPerformanceBenchmark(right);
   const leftMetric = leftBenchmark ? scoreForUseCase(leftBenchmark, left.category, useCase) : null;
   const rightMetric = rightBenchmark ? scoreForUseCase(rightBenchmark, right.category, useCase) : null;
-  const bothBenchmarked = leftMetric && rightMetric && leftPrice && rightPrice;
+  const bothBenchmarked = bothFreshlyPriced && leftMetric && rightMetric && leftPrice && rightPrice;
   const leftValue = bothBenchmarked ? leftMetric.score / leftPrice : null;
   const rightValue = bothBenchmarked ? rightMetric.score / rightPrice : null;
   const valueWinnerProductId = leftValue && rightValue && leftValue !== rightValue
@@ -157,21 +162,23 @@ export function compareProducts(left: Product, right: Product, useCase: Comparis
     ? Math.round((Math.abs(leftValue - rightValue) / Math.min(leftValue, rightValue)) * 100)
     : null;
 
-  let recommendation = 'No hay dos precios recientes comparables en stock para declarar cuál conviene por precio. Los valores anteriores necesitan una nueva comprobación.';
-  if (bothPriced && leftPrice === rightPrice) {
-    recommendation = 'Los precios relevados en las últimas 24 horas coinciden. Elegí por prestaciones, compatibilidad y garantía.';
+  let recommendation = 'No hay dos precios recientes comparables en stock, relevados en las últimas tres horas, para declarar cuál conviene por precio. Los valores anteriores necesitan una nueva comprobación.';
+  if (bothFreshlyPriced && leftPrice === rightPrice) {
+    recommendation = 'Los precios relevados en las últimas tres horas coinciden. Elegí por prestaciones, compatibilidad y garantía.';
   } else if (cheaperProductId) {
     const cheaper = cheaperProductId === left.id ? left : right;
-    recommendation = `${cheaper.name} es la opción de menor precio entre ofertas relevadas en las últimas 24 horas. La diferencia por sí sola no prueba mejor rendimiento por peso.`;
+    recommendation = `${cheaper.name} es la opción de menor precio entre ofertas relevadas en las últimas tres horas. La diferencia por sí sola no prueba mejor rendimiento por peso.`;
   }
   if (valueWinnerProductId && valueDifferencePercent != null) {
     const winner = valueWinnerProductId === left.id ? left : right;
-    recommendation = `${winner.name} conviene más para ${COMPARISON_USE_CASES.find((entry) => entry.id === useCase)?.label.toLowerCase()}: entrega aproximadamente ${valueDifferencePercent}% más ${leftMetric?.label ?? 'puntaje de referencia'} por peso con precios relevados en las últimas 24 horas.`;
+    recommendation = `${winner.name} conviene más para ${COMPARISON_USE_CASES.find((entry) => entry.id === useCase)?.label.toLowerCase()}: entrega aproximadamente ${valueDifferencePercent}% más ${leftMetric?.label ?? 'puntaje de referencia'} por peso con precios relevados en las últimas tres horas.`;
   }
 
   return {
     leftPrice,
     rightPrice,
+    leftPriceFresh,
+    rightPriceFresh,
     difference,
     differencePercent,
     cheaperProductId,
@@ -179,7 +186,9 @@ export function compareProducts(left: Product, right: Product, useCase: Comparis
     evidence: [
       ...compatibilityEvidence(left.category, left, right),
       ...(buildUseCaseCaveat(left.category, useCase) ? [buildUseCaseCaveat(left.category, useCase)!] : []),
-      bothBenchmarked
+      !bothFreshlyPriced
+        ? 'La recomendación por precio exige dos observaciones de hasta tres horas; las referencias del catálogo se conservan hasta 24 horas.'
+        : bothBenchmarked
         ? `El valor usa ${leftMetric.label} y ofertas recientes en stock cuya identidad fue validada.`
         : 'No hay benchmarks compatibles para ambos modelos; la recomendación no inventa rendimiento faltante.',
     ],

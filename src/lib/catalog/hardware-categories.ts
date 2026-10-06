@@ -143,13 +143,17 @@ export function inferDetailHardwareCategory(value: string): HardwareCategory {
 // Cooler Master también fabrica fuentes y gabinetes: la marca sola no basta.
 function isCoolingProductTitle(value: string): boolean {
   const title = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
-  return /^(?:cpu\s+cooler|water\s*cooler|refrigeracion|ventilador|disipador|pasta\s+termica|thermal\s+pad)\b/.test(title)
+  return /^(?:cpu\s+cooler(?:\s*master)?|water\s*cooler|refrigeracion|ventilador|disipador|pasta\s+termica|thermal\s+pad)\b/.test(title)
     || /^cooler\s+(?!master\b)/.test(title)
     || /^cooler\s+master\s+(?:masterliquid|ml\d+\w*|hyper|liquid)\b/.test(title);
 }
 
 function inferPrimaryComponentCategory(value: string): HardwareCategory | undefined {
   const title = value.trim().toLowerCase();
+  if (/^(?:mini\s*pc|minipc|barebone)\b/.test(title)) return 'computadoras';
+  if (/^(?:pen\s*drive|pendrive|flash drive|memoria usb|memoria flash|tarjeta de memoria|sd\s+card)\b/.test(title)) return 'almacenamiento';
+  if (/^(?:switch|hub|soporte|bracket|caddy|bandeja|adaptador)\b/.test(title)) return 'perifericos';
+  if (/^(?:dell|hp|lenovo)\s+(?:soporte|bracket|caddy|bandeja|adaptador)\b/.test(title)) return 'perifericos';
   if (/^micro\s+sd\b/.test(title)) return 'almacenamiento';
   if (/^(?:micro(?!\s+sd\b)|procesador(?:es)?|cpu)\b/.test(title)) return 'procesadores';
   if (/^(?:placa de video|tarjeta grafica|gpu)\b/.test(title)) return 'tarjetas-graficas';

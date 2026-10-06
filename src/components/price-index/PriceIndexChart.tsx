@@ -92,7 +92,7 @@ export function PriceIndexChart({ series }: PriceIndexChartProps) {
           ))}
         </svg>
       </div>
-      <figcaption id="price-index-chart-caption" className="mt-5 flex flex-wrap gap-x-6 gap-y-3 text-[10px] font-mono text-foreground">
+      <figcaption id="price-index-chart-caption" className="mt-5 flex flex-wrap gap-x-6 gap-y-3 text-[12px] font-mono text-foreground">
         {series.map((item, index) => (
           <span key={item.id} className="inline-flex items-center gap-2">
             <span className="h-1 w-7" style={{ backgroundColor: SERIES_COLORS[index % SERIES_COLORS.length] }} aria-hidden="true" />

@@ -11,6 +11,7 @@ import { persistProductsSnapshot, REFRESH_PERSISTENCE_TIMEOUT_MS } from '@/lib/p
 import { normalizeProductContent } from '@/lib/products/normalize-product-content';
 import { sanitizeProducts } from '@/lib/product-sanitizer';
 import type { SearchApiResponse } from '@/lib/search/search-api';
+import { filterCurrentCatalogProducts } from './search-availability';
 import { filterProductStores, groupSearchProducts } from '@/lib/search/search-dedupe';
 import { SEARCH_PAGE_SIZE, paginateProducts } from '@/lib/search/search-pagination';
 import {
@@ -41,6 +42,7 @@ type RunLiveSearchInput = {
   cacheKey: string;
   bypassDb: boolean;
   authorizedRefresh?: boolean;
+  includeUnavailable?: boolean;
 };
 
 export async function runLiveSearch({
@@ -54,6 +56,7 @@ export async function runLiveSearch({
   cacheKey,
   bypassDb,
   authorizedRefresh = false,
+  includeUnavailable = false,
 }: RunLiveSearchInput): Promise<{ payload: SearchApiResponse; normalizationSummaryNote: string | null }> {
   logger.info('Running live global search', {
     endpoint: '/api/search',
@@ -233,6 +236,9 @@ export async function runLiveSearch({
     liveProducts = sortProductsBySearchRelevance(liveProducts, query, category);
   }
 
+  // Persist source observations independently of what is eligible to display.
+  const catalogProducts = liveProducts;
+  liveProducts = filterCurrentCatalogProducts(liveProducts, includeUnavailable);
   const total = liveProducts.length;
   const pageSlice = paginateProducts(liveProducts, page, SEARCH_PAGE_SIZE);
   logger.info('Live search completed', {
@@ -261,7 +267,7 @@ export async function runLiveSearch({
   };
 
   await withPromiseTimeout(
-    persistProductsSnapshot(liveProducts, { requirePersistence: authorizedRefresh }),
+    persistProductsSnapshot(catalogProducts, { requirePersistence: authorizedRefresh }),
     authorizedRefresh ? REFRESH_PERSISTENCE_TIMEOUT_MS : PERSISTENCE_TIMEOUT_MS,
     'supabase-persist',
   )

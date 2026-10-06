@@ -1,11 +1,11 @@
-import { formatPriceARS, getAvailableComparableStorePrices } from '@/lib/price-utils';
+import { formatPriceARS, getAvailableComparableStorePrices, isComparableStoreOffer } from '@/lib/price-utils';
 import { isCatalogOfferFresh } from '@/lib/price-freshness';
-import { needsIdentityReview } from '@/lib/quality/offer-identity';
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
 import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
 import { DEFAULT_OG_IMAGE as DEFAULT_SITE_OG_IMAGE } from '@/lib/seo/metadata';
+import { getProductImageSource } from '@/lib/product-images';
 
 export const DEFAULT_OG_IMAGE = DEFAULT_SITE_OG_IMAGE;
 export const PRODUCT_TITLE_SUFFIX = ` | ${SITE_NAME}`;
@@ -59,7 +59,7 @@ export function buildShortProductTitle(product: Product): string {
 }
 
 export function resolveProductImage(product: Product | null): string {
-  const rawImage = (product?.image ?? '').trim();
+  const rawImage = product ? getProductImageSource(product) ?? '' : '';
   if (!rawImage) return DEFAULT_OG_IMAGE;
 
   if (/^https?:\/\//i.test(rawImage)) {
@@ -93,8 +93,8 @@ export function buildProductDescription(product: Product): string {
 export function getRecentProductOffers(product: Product) {
   return getAvailableComparableStorePrices(product.prices.filter((price) => (
     isCatalogOfferFresh(price.lastUpdated)
-    && !needsIdentityReview(price, product)
-    && (price.stock === 'in-stock' || price.stock === 'low-stock')
+    && Boolean(price.url)
+    && isComparableStoreOffer(price, product)
   )));
 }
 

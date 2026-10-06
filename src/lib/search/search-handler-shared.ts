@@ -6,6 +6,7 @@ import { getSharedCache, setSharedCache } from '@/lib/server/shared-cache';
 import type { SearchApiResponse } from '@/lib/search/search-api';
 import { SEARCH_PAGE_SIZE } from '@/lib/search/search-pagination';
 import type { ProductPageResult } from '@/lib/persistence/product-read-types';
+import { filterCurrentCatalogProducts } from './search-availability';
 
 export function catalogPageResponse(result: ProductPageResult): SearchApiResponse {
   return {
@@ -13,6 +14,7 @@ export function catalogPageResponse(result: ProductPageResult): SearchApiRespons
     pagination: {
       limit: result.products.length, offset: (result.page - 1) * result.pageSize,
       total: result.total, totalPages: result.totalPages, page: result.page, pageSize: result.pageSize,
+      ...(result.categoryExcludedOnPage ? { categoryExcludedOnPage: result.categoryExcludedOnPage } : {}),
     },
     facets: { categories: [], brands: [], stores: [] },
   };
@@ -136,10 +138,12 @@ export function buildSearchCacheKey(input: {
   minPrice?: number;
   maxPrice?: number;
   stores: Set<string>;
+  includeUnavailable?: boolean;
 }) {
   const stores = Array.from(input.stores).sort().join(',');
   return [
-    'catalog-v13',
+    'catalog-v14',
+    `references=${input.includeUnavailable ? 1 : 0}`,
     `q=${input.query.toLowerCase()}`,
     `cat=${input.category ?? ''}`,
     `sort=${input.sortBy}`,
@@ -150,13 +154,16 @@ export function buildSearchCacheKey(input: {
   ].join('|');
 }
 
-export async function getCachedSearchResponse(cacheKey: string): Promise<SearchApiResponse | null> {
+export async function getCachedSearchResponse(cacheKey: string, includeUnavailable = false): Promise<SearchApiResponse | null> {
   const cached = await getSharedCache<SearchApiResponse>('search-response-v2', cacheKey);
   if (!cached) return null;
+  const products = hydrateProducts(cached.products ?? []);
+  // Reread totals and pages if a displayed offer expired while cached.
+  if (!includeUnavailable && filterCurrentCatalogProducts(products).length !== products.length) return null;
 
   return {
     ...cached,
-    products: hydrateProducts(cached.products ?? []),
+    products,
   };
 }
 

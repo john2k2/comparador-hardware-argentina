@@ -4,7 +4,7 @@ test('pagination preserves category and query and replaces the result set in bot
   await installSearchCatalog(page);
   await searchFromIdle(page);
   await expect(page.locator('#product-grid-start article')).toHaveCount(12);
-  await page.getByRole('button', { name: 'Filtrar por categoría: Procesadores', exact: true }).click();
+  await page.getByRole('combobox', { name: 'CATEGORÍA', exact: true }).selectOption('procesadores');
   await expect(page).toHaveURL((url) => url.pathname === '/search' && url.searchParams.get('q') === 'Ryzen' &&
     url.searchParams.get('category') === 'procesadores');
   const headings = page.locator('#product-grid-start h3');

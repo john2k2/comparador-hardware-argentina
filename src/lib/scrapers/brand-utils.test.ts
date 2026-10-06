@@ -3,9 +3,20 @@ import {
   BRANDS,
   extractBrandFromName,
   isKnownBrand,
+  resolveProductBrand,
 } from '../scrapers/brand-utils';
 
 describe('brand-utils', () => {
+  it('recovers AORUS as Gigabyte without overwriting an explicit manufacturer', () => {
+    const title = 'VIDEO GEFORCE RTX 5090 32GB AORUS MASTER';
+    expect(extractBrandFromName(title)).toBe('Gigabyte');
+    expect(resolveProductBrand('Genérica', title)).toBe('Gigabyte');
+    expect(resolveProductBrand('', title)).toBe('Gigabyte');
+    expect(resolveProductBrand('ASUS', title)).toBe('ASUS');
+    expect(resolveProductBrand('Generica', 'Soporte para AORUS MASTER')).toBe('Generica');
+    expect(resolveProductBrand('Generica', 'Producto FAORUSMASTER')).toBe('Generica');
+    expect(resolveProductBrand('Generica', 'VIDEO GEFORCE RTX 5090 32GB')).toBe('Generica');
+  });
   describe('BRANDS', () => {
     it('contiene las marcas principales', () => {
       expect(BRANDS).toContain('AMD');

@@ -17,8 +17,11 @@ type SearchExperienceProps = {
  */
 export async function SearchExperience({ state }: SearchExperienceProps) {
   const initialPage = await readInitialSearchPage(state);
-  const initialResolvedRequestKey = initialPage.pagination.total > 0
-    ? `${buildApiSearchKey(state) ?? '__empty__'}|page=${initialPage.pagination.page}`
+  const initialResolvedRequestKey = hasSearchIntent(state)
+    // The RPC may clamp page 2 to page 1 after availability filtering. Cache
+    // its answer, including an empty result, under the requested page so
+    // hydration does not fetch the same result again. Read failures throw.
+    ? `${buildApiSearchKey(state) ?? '__empty__'}|page=${state.page}`
     : null;
 
   const isCategoryLanding = isIndexableCategoryLanding(state);

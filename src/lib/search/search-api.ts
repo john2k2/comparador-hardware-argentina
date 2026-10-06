@@ -7,6 +7,7 @@ export type SearchResponsePagination = {
   totalPages: number;
   page: number;
   pageSize: number;
+  categoryExcludedOnPage?: number;
 };
 
 export type SearchApiResponse = {
@@ -18,4 +19,3 @@ export type SearchApiResponse = {
     stores: unknown[];
   };
 };
-

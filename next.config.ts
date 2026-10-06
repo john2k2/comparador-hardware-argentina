@@ -10,6 +10,8 @@ const withAnalyzer = withBundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
+  // Keep production-mode QA assets separate from the user's development preview.
+  distDir: process.env.COMPARADOR_QA_ISOLATED_BUILD === '1' ? '.next-qa' : '.next',
   allowedDevOrigins: [
     '127.0.0.1',
   ],

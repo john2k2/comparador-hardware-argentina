@@ -62,6 +62,42 @@ function pendingReview(url: string) {
 }
 
 describe('offer identity display', () => {
+  it('keeps a black PSU publication out of the best price for a white variant even without a prior review', () => {
+    const item = { ...product(), name: 'Fuente RAPTOR VOLT 1000W Full Modular Blanca', category: 'fuentes-alimentacion' as const };
+    const prices = [offer({ url: 'https://store.example/fuente-raptor-volt-1000w-full-modular-negra' })];
+    const summary = renderToStaticMarkup(createElement(PriceSummary, {
+      product: item, merchantPrices: prices, lowestComparablePrice: 80_000,
+      highestComparablePrice: 80_000, selectedInstallment: null, onSelectInstallment: vi.fn(),
+    }));
+    expect(summary).toContain('SIN OFERTAS APTAS PARA COMPARAR');
+    expect(summary).not.toContain('MEJOR PRECIO REGISTRADO');
+    const stores = renderToStaticMarkup(createElement(StoresList, { product: item, merchantPrices: prices }));
+    expect(stores).toContain('Identidad por corroborar');
+    expect(stores).not.toContain('[ MEJOR PRECIO ]');
+  });
+  it.each(['', 'javascript:alert(1)', 'https://user:password@store.example/item'])('does not highlight or link to an invalid destination %s', (url) => {
+    const prices = [offer({ url })];
+    const summary = renderToStaticMarkup(createElement(PriceSummary, {
+      product: product(), merchantPrices: prices, lowestComparablePrice: 80_000,
+      highestComparablePrice: 80_000, selectedInstallment: null, onSelectInstallment: vi.fn(),
+    }));
+    expect(summary).toContain('SIN OFERTAS APTAS PARA COMPARAR');
+    expect(summary).not.toContain('Ver en Tienda Principal');
+    const list = renderToStaticMarkup(createElement(StoresList, { product: product(), merchantPrices: prices }));
+    expect(list).toContain('Enlace por corroborar');
+    expect(list).not.toContain('VER EN TIENDA');
+  });
+  it('does not invent a zero saving for one store and links to the observed offer', () => {
+    const markup = renderToStaticMarkup(createElement(PriceSummary, {
+      product: product(), merchantPrices: [offer()], lowestComparablePrice: 80_000,
+      highestComparablePrice: 80_000, selectedInstallment: null, onSelectInstallment: vi.fn(),
+    }));
+    expect(markup).toContain('Una tienda con oferta comparable');
+    expect(markup).not.toContain('Ahorro');
+    expect(markup).not.toContain('0%');
+    expect(markup).toContain('href="https://store.example/amd-ryzen-7-7800x3d"');
+    expect(markup).toContain('Precio relevado:');
+  });
   it('identifica el total financiado sin presentarlo como precio de contado', () => {
     const installment = { count: 3, amount: 30_000, totalAmount: 90_000, interest: true };
     const markup = renderToStaticMarkup(createElement(PriceSummary, {
@@ -93,11 +129,11 @@ describe('offer identity display', () => {
       onSelectInstallment: vi.fn(),
     }));
 
-    const detectedPriceSection = markup.slice(markup.indexOf('MEJOR PRECIO DETECTADO'));
+    const detectedPriceSection = markup.slice(markup.indexOf('MEJOR PRECIO REGISTRADO'), markup.indexOf('tiendas con oferta comparable'));
     expect(detectedPriceSection).toContain('80.000');
     expect(detectedPriceSection).not.toContain('120.000');
     expect(detectedPriceSection).not.toContain('999.999');
-    expect(detectedPriceSection).toContain('3 cuotas de');
+    expect(markup).toContain('3 cuotas de');
   });
 
   it('does not show a detected price or a zero price when every offer is pending', () => {
@@ -115,7 +151,7 @@ describe('offer identity display', () => {
       onSelectInstallment: vi.fn(),
     }));
 
-    expect(markup).toContain('OFERTAS POR CORROBORAR');
+    expect(markup).toContain('SIN OFERTAS APTAS PARA COMPARAR');
     expect(markup).not.toContain('MEJOR PRECIO DETECTADO');
     expect(markup).not.toMatch(/\$\s*0/);
   });
@@ -203,7 +239,8 @@ describe('offer identity display', () => {
     expect(card).not.toContain('MEJOR PRECIO');
     expect(stores).toContain('PENDIENTE DE ACTUALIZAR');
     expect(stores).not.toContain('[ MEJOR PRECIO ]');
-    expect(summary).toContain('precios anteriores');
+    expect(summary).toContain('referencias anteriores');
+    expect(summary).toContain('PRECIOS PENDIENTES DE ACTUALIZAR');
     expect(summary).not.toContain('MEJOR PRECIO DETECTADO');
   });
 
@@ -216,7 +253,8 @@ describe('offer identity display', () => {
     const card = renderToStaticMarkup(createElement(ProductCard, { product: currentProduct }));
     const stores = renderToStaticMarkup(createElement(StoresList, { product: currentProduct, merchantPrices: [old, recent] }));
 
-    expect(card).toContain('MEJOR PRECIO RELEVADO EN 3 H');
+    expect(card).toContain('MEJOR PRECIO REGISTRADO');
+    expect(card).not.toContain('MEJOR PRECIO RELEVADO EN 3 H');
     expect(card).toContain('90.000');
     expect(card).not.toContain('50.000');
     expect(stores.match(/\[ MEJOR PRECIO \]/g)).toHaveLength(1);

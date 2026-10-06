@@ -144,9 +144,16 @@ test.describe('SEO & Metadata', () => {
     const response = await page.goto('/robots.txt');
     expect(response?.status()).toBe(200);
     const content = await page.textContent('body');
-    expect(content).toContain('Sitemap');
-    expect(content).toContain('/admin');
-    expect(content).toContain('/api');
+    if (response?.headers()['x-qa-environment'] === 'synthetic-only') {
+      // La muestra remota debe impedir que se indexen sus productos de prueba.
+      expect(content?.trim()).toBe('User-agent: *\nDisallow: /');
+      expect(response.headers()['x-robots-tag']).toContain('noindex');
+      expect(response.headers()['x-robots-tag']).toContain('nofollow');
+    } else {
+      expect(content).toContain('Sitemap');
+      expect(content).toContain('/admin');
+      expect(content).toContain('/api');
+    }
   });
 
   test('sitemap.xml accesible', async ({ page }) => {

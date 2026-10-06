@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProductPrice } from '@/lib/types';
-import { CATALOG_OFFER_FRESH_MS } from '@/lib/price-freshness';
+import { CATALOG_OFFER_FRESH_MS, OFFER_FRESH_MS } from '@/lib/price-freshness';
 import { resolveComparisonPricing } from './comparison-pricing';
 
 function offer(overrides: Partial<ProductPrice> & Pick<ProductPrice, 'storeId' | 'price'>): ProductPrice {
@@ -15,6 +15,18 @@ function offer(overrides: Partial<ProductPrice> & Pick<ProductPrice, 'storeId' |
 }
 
 describe('resolveComparisonPricing', () => {
+  it('conserva una referencia de catálogo de 4 h sin elegirla como ganadora de compra', () => {
+    const pricing = resolveComparisonPricing({
+      product1Name: 'RTX 4060', product2Name: 'RX 7600',
+      product1Prices: [offer({storeId:'old',price:100_000,lastUpdated:new Date(Date.now()-OFFER_FRESH_MS-60*60*1000)})],
+      product2Prices: [offer({storeId:'current',price:120_000})],
+    });
+    expect(pricing.side1.bestPrice).toBe(100_000);
+    expect(pricing.storeCount).toBe(2);
+    expect(pricing.priceDiff).toBe(20_000);
+    expect(pricing.canDeclareWinner).toBe(false);
+    expect(pricing.cheaperName).toBeNull();
+  });
   it('no declara ganador con precios antiguos o sin una fecha de observación válida', () => {
     const pricing = resolveComparisonPricing({
       product1Name: 'RTX 4060', product2Name: 'RX 7600',

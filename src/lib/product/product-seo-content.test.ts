@@ -20,6 +20,12 @@ function cpu(name: string): Product {
 }
 
 describe('getProductContent procesadores', () => {
+  it('does not give CPU/socket advice to a misclassified pendrive', () => {
+    const content = getProductContent(cpu('PEN DRIVE ULTRA SHIFT 64GB SANDISK'));
+    expect(content.tips.join(' ')).toMatch(/conector USB/);
+    expect(content.tips.join(' ')).not.toMatch(/socket|CPU|motherboard/i);
+    expect(content.intro).not.toMatch(/experiencia.*fluida|equilibrio.*rendimiento|garantiza/i);
+  });
   it('no habla de iGPU ni de cooler genérico en un 5500X3D S/VIDEO C/COOLER', () => {
     const content = getProductContent(cpu('AMD RYZEN 5 5500X3D S/VIDEO C/COOLER'));
     const blob = [content.intro, ...content.tips, ...content.faqs.map((faq) => `${faq.question} ${faq.answer}`)].join(' ');

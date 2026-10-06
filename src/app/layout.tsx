@@ -13,6 +13,7 @@ import { Analytics } from "@/components/functional/Analytics";
 import { buildSiteJsonLd } from "@/lib/seo/site-jsonld";
 import { serializeJsonLd } from "@/lib/seo/serialize-jsonld";
 import { DEFAULT_OG_IMAGE, DEFAULT_SITE_DESCRIPTION } from "@/lib/seo/metadata";
+import { isEnebaPilotEnabled } from "@/lib/eneba/server";
 
 
 const pixelFont = Press_Start_2P({
@@ -204,7 +205,7 @@ export default async function RootLayout({
           >
             Saltar al contenido principal
           </a>
-          <Navigation />
+          <Navigation showGames={isEnebaPilotEnabled()} />
           <main id="main-content" className="flex-1 min-w-0" tabIndex={-1}>
             {children}
           </main>

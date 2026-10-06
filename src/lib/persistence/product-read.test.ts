@@ -94,6 +94,15 @@ describe('readCategoryLandingPageFromDatabase', () => {
     expect(result.products[0].prices).toHaveLength(1);
   });
 
+  it('filters current offers inside the RPC before totals and pages without an artificial price floor', async () => {
+    await readProductsPageFromDatabase({ query: 'rtx 5090', onlyCurrentOffers: true, page: 2, pageSize: 12 });
+    expect(rangeMock).toHaveBeenLastCalledWith('search_catalog_page', expect.objectContaining({ p_min_price: 0, p_page: 2 }));
+    await readProductsPageFromDatabase({ query: 'rtx 5090', onlyCurrentOffers: true, minPrice: 100, page: 1, pageSize: 12 });
+    expect(rangeMock).toHaveBeenLastCalledWith('search_catalog_page', expect.objectContaining({ p_min_price: 100 }));
+    await readProductsPageFromDatabase({ query: 'rtx 5090', onlyCurrentOffers: false, page: 1, pageSize: 12 });
+    expect(rangeMock).toHaveBeenLastCalledWith('search_catalog_page', expect.objectContaining({ p_min_price: null }));
+  });
+
   it('accepts genuine empty pages but throws for unavailable, failed and malformed RPC responses', async () => {
     const params = { page: 99, pageSize: 12 };
     rangeMock.mockResolvedValue({ data: { products: [], total: 0, totalPages: 0, page: 1, pageSize: 12 }, error: null });

@@ -242,6 +242,7 @@ export function isCategoryCanonicalLanding(state: SearchPageState): boolean {
     && state.stores.length === 0
     && state.minPrice === undefined
     && state.maxPrice === undefined
+    && !state.includeUnavailable
     && state.sortBy === 'relevance',
   );
 }

@@ -18,6 +18,7 @@ describe('lector público de la muestra Eneba', () => {
   beforeEach(() => {
     vi.resetModules(); vi.useFakeTimers(); vi.setSystemTime(now);
     vi.stubEnv('ENEBA_AFFILIATE_PILOT_ENABLED', '1'); vi.stubGlobal('fetch', vi.fn());
+    vi.stubEnv('E2E_STABLE_MODE', ''); vi.stubEnv('CI_E2E', '');
     db.client.mockReset().mockReturnValue({ from: db.from });
     db.from.mockReset().mockReturnValue({ select: db.select });
     db.select.mockReset().mockReturnValue({ eq: db.eq });
@@ -32,6 +33,26 @@ describe('lector público de la muestra Eneba', () => {
     const result = await handleEnebaGamesGet();
     expect(result.status).toBe(404); expect((await result.json()).status).toBe('disabled');
     expect(db.client).not.toHaveBeenCalled(); expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('el servidor estable devuelve datos sintéticos sin acceso a la caché privada o la tienda', async () => {
+    vi.stubEnv('E2E_STABLE_MODE', '1');
+    const { handleEnebaGamesGet } = await import('./server');
+    const result = await handleEnebaGamesGet();
+    const data = await result.json();
+    expect(result.headers.get('x-qa-fixture')).toBe('eneba-synthetic');
+    expect(data.status).toBe('ready'); expect(data.offers).toHaveLength(2);
+    expect(data.offers[0]).toMatchObject({ price: 1000, reviewedAt: game.reviewedAt });
+    expect(db.client).not.toHaveBeenCalled(); expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('el fixture no renueva precios ni la revisión editorial cuando vencen', async () => {
+    vi.stubEnv('CI_E2E', '1');
+    const { getEnebaSnapshot } = await import('./server');
+    const first = await getEnebaSnapshot();
+    vi.advanceTimersByTime(ENEBA_PRICE_MAX_AGE_MS);
+    expect(await getEnebaSnapshot()).toMatchObject({ status: 'empty', offers: [], feedUpdatedAt: first.feedUpdatedAt });
+    expect(db.client).not.toHaveBeenCalled();
   });
 
   it('agrupa visitas concurrentes, conserva las fechas y sólo lee la fila privada del piloto', async () => {

@@ -1,6 +1,7 @@
 import { parseLocalizedArsPrice } from '../price-utils';
 import { sanitizeProduct } from '../product-sanitizer';
 import { isUnresolvedSourceTitle } from './source-title';
+import { resolveProductBrand } from './brand-utils';
 import type { HardwareCategory, Product, StockStatus } from '../types';
 
 export const KNOWN_HARDWARE_BRANDS = [
@@ -70,6 +71,8 @@ export function parseScrapedArsPrice(value: unknown): number {
 export function extractKnownHardwareBrand(name: string, fallback = 'Generica'): string {
   const normalizedName = cleanScrapedText(name).toUpperCase();
   if (!normalizedName) return fallback;
+  const resolvedBrand = resolveProductBrand(fallback, name);
+  if (resolvedBrand === 'Gigabyte') return resolvedBrand;
 
   for (const brand of KNOWN_HARDWARE_BRANDS) {
     if (normalizedName.includes(brand.toUpperCase())) {

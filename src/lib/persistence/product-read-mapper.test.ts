@@ -1,8 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import { mapDbProduct } from '@/lib/persistence/product-read-mapper';
+import { mapDbProduct, mapDbGuideProduct } from '@/lib/persistence/product-read-mapper';
 import type { DbProductRow } from '@/lib/persistence/product-read-types';
 
 describe('product-read-mapper', () => {
+  it('recovers the AORUS manufacturer without changing the product ID or observed offer', () => {
+    const name = 'VIDEO GEFORCE RTX 5090 32GB AORUS MASTER';
+    const observedAt = '2026-10-03T23:20:00Z';
+    const item: DbProductRow = {
+      id: 'legacy-aorus', name, category: 'tarjetas-graficas', brand: 'Generica', model: name,
+      description: null, image: null, normalized_title: null, canonical_product_key: null,
+      family_key: null, variant_key: null, refresh_priority: null, last_scraped_at: null,
+      last_normalized_at: null, specs: {}, lowest_price: 100, highest_price: 100, average_price: 100,
+      created_at: observedAt, updated_at: observedAt,
+      product_prices: [{ store_id: 'test-store', url: 'https://store.example/rtx-5090-32gb-aorus-master',
+        price: 100, original_price: null, stock: 'in-stock', installment_count: null,
+        installment_amount: null, last_updated: observedAt }],
+    };
+    const mapped = mapDbGuideProduct(item);
+    expect(mapped.id).toBe('legacy-aorus');
+    expect(mapped.brand).toBe('Gigabyte');
+    expect(mapped.prices[0]).toMatchObject({ price: 100, stock: 'in-stock', url: item.product_prices![0].url });
+    expect(mapped.prices[0].lastUpdated.toISOString()).toBe('2026-10-03T23:20:00.000Z');
+    expect(item.brand).toBe('Generica');
+  });
   it('maps DB rows into sanitized domain products with comparable prices', () => {
     const row: DbProductRow = {
       id: 'db-product-1',

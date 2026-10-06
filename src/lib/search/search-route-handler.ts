@@ -38,6 +38,7 @@ import { logger } from '@/lib/logger';
 import { recordCatalogRefreshDemand } from '@/lib/catalog/refresh-demand';
 import { isStableRuntimeMode, shouldSkipLiveScraping } from '@/lib/server/runtime-flags';
 import { getStableFixtureProducts } from '@/lib/server/stable-search-fixtures';
+import { filterCurrentCatalogProducts } from './search-availability';
 
 function buildPayloadFromProducts(products: Product[], page: number): SearchApiResponse {
   const pageSlice = paginateProducts(products, page, SEARCH_PAGE_SIZE);
@@ -64,6 +65,7 @@ function filterFallbackCategoryProducts(
     maxPrice?: number;
     selectedStoreIds: Set<string>;
     sortBy: SortBy;
+    includeUnavailable?: boolean;
   },
 ): Product[] {
   let next = dedupeNearDuplicates(products);
@@ -76,6 +78,7 @@ function filterFallbackCategoryProducts(
       .map((product) => filterProductStores(product, input.selectedStoreIds))
       .filter((product): product is Product => Boolean(product));
   }
+  next = filterCurrentCatalogProducts(next, input.includeUnavailable);
 
   if (input.sortBy === 'relevance' && input.query) {
     return sortProductsBySearchRelevance(next, input.query);
@@ -92,6 +95,7 @@ async function buildStableSearchFallback(input: {
   selectedStoreIds: Set<string>;
   sortBy: SortBy;
   page: number;
+  includeUnavailable?: boolean;
 }): Promise<SearchApiResponse> {
   const fallbackCategory = input.category ?? inferHardwareCategoryFromName(input.query);
   const fixtureProducts = getStableFixtureProducts({
@@ -102,7 +106,7 @@ async function buildStableSearchFallback(input: {
     maxPrice: input.maxPrice,
     sortBy: input.sortBy,
   });
-  return buildPayloadFromProducts(fixtureProducts, input.page);
+  return buildPayloadFromProducts(filterCurrentCatalogProducts(fixtureProducts, input.includeUnavailable), input.page);
 }
 
 export async function GET(request: NextRequest) {
@@ -118,12 +122,13 @@ export async function GET(request: NextRequest) {
   const rawSortBy = searchParams.get('sortBy');
   const sortBy: SortBy = rawSortBy && VALID_SORTS.has(rawSortBy as SortBy) ? (rawSortBy as SortBy) : 'relevance';
   const page = parsePositiveInteger(searchParams.get('page'));
+  const includeUnavailable = searchParams.get('includeUnavailable') === '1';
   const selectedStoreIds = parseStoreIds(searchParams.get('stores'));
   const rawMinPrice = parseNonNegativeNumber(searchParams.get('minPrice'));
   const rawMaxPrice = parseNonNegativeNumber(searchParams.get('maxPrice'));
   const minPrice = rawMinPrice !== undefined && rawMaxPrice !== undefined ? Math.min(rawMinPrice, rawMaxPrice) : rawMinPrice;
   const maxPrice = rawMinPrice !== undefined && rawMaxPrice !== undefined ? Math.max(rawMinPrice, rawMaxPrice) : rawMaxPrice;
-  const cacheKey = buildSearchCacheKey({ query, category: effectiveCategory, sortBy, page, minPrice, maxPrice, stores: selectedStoreIds });
+  const cacheKey = buildSearchCacheKey({ query, category: effectiveCategory, sortBy, page, minPrice, maxPrice, stores: selectedStoreIds, includeUnavailable });
   let defaultRateLimitHeaders: Record<string, string> | null = null;
   let privilegedBypass = false;
 
@@ -181,11 +186,11 @@ export async function GET(request: NextRequest) {
 
   if (stableRuntimeMode) {
     return respond(await buildStableSearchFallback({ query, category: effectiveCategory, minPrice, maxPrice,
-      selectedStoreIds, sortBy, page }), { headers: { 'X-Search-Cache': 'STABLE-FIXTURE' } });
+      selectedStoreIds, sortBy, page, includeUnavailable }), { headers: { 'X-Search-Cache': 'STABLE-FIXTURE' } });
   }
 
   if (!bypassDb && !isRefreshRequest) {
-    const cached = await getCachedSearchResponse(cacheKey);
+    const cached = await getCachedSearchResponse(cacheKey, includeUnavailable);
     if (cached) {
       const staleCache = hasStaleProducts(cached.products, DB_STALE_AFTER_MS);
       if (staleCache && !isRefreshRequest) {
@@ -208,6 +213,7 @@ export async function GET(request: NextRequest) {
         storeIds: selectedStoreIds,
         sortBy,
         page, pageSize: SEARCH_PAGE_SIZE,
+        onlyCurrentOffers: !includeUnavailable,
       }).catch((databaseError) => {
         logger.warn('DB-first search read skipped', {
           endpoint: '/api/search',
@@ -219,7 +225,7 @@ export async function GET(request: NextRequest) {
         return null;
       });
 
-      if (databasePage && (databasePage.total > 0 || catalogOnlyMode)) {
+      if (databasePage) {
         const staleDatabase = hasStaleProducts(databasePage.products, DB_STALE_AFTER_MS);
         if (staleDatabase && !isRefreshRequest) {
           await recordCatalogRefreshDemand({ query: query || undefined, category: effectiveCategory });
@@ -245,6 +251,7 @@ export async function GET(request: NextRequest) {
         storeIds: selectedStoreIds,
         sortBy,
         page, pageSize: SEARCH_PAGE_SIZE,
+        onlyCurrentOffers: !includeUnavailable,
       }).catch((databaseError) => {
         logger.warn('DB category reread after live refresh skipped', {
           endpoint: '/api/search',
@@ -266,6 +273,7 @@ export async function GET(request: NextRequest) {
         maxPrice,
         selectedStoreIds,
         sortBy,
+        includeUnavailable,
       });
       const payload = buildPayloadFromProducts(fallbackProducts, page);
 
@@ -295,12 +303,14 @@ export async function GET(request: NextRequest) {
       cacheKey,
       bypassDb,
       authorizedRefresh: internalRefreshRequest || privilegedBypass,
+      includeUnavailable,
     }).then(async (result) => {
       const refreshedPage = await readProductsPageFromDatabase({
         query, category: effectiveCategory, storeIds: selectedStoreIds, minPrice, maxPrice,
         sortBy, page, pageSize: SEARCH_PAGE_SIZE,
+        onlyCurrentOffers: !includeUnavailable,
       }).catch(() => null);
-      if (!refreshedPage || refreshedPage.total === 0) return result;
+      if (!refreshedPage) return result;
       const payload = catalogPageResponse(refreshedPage);
       await setCachedSearchResponse(cacheKey, payload);
       return { ...result, payload };

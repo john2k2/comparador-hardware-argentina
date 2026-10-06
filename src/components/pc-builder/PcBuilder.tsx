@@ -15,6 +15,7 @@ import { isOfferFresh } from '@/lib/price-freshness';
 import { AdvisoryCta } from '@/components/commercial/AdvisoryCta';
 import { MotherboardMemorySupport } from '@/components/product/MotherboardMemorySupport';
 import { RefreshOffersButton } from './RefreshOffersButton';
+import { OfferReportLink } from '@/components/commercial/OfferReportLink';
 
 const control = 'min-h-11 w-full min-w-0 border-2 border-border bg-background px-3 py-2 font-body text-sm focus:outline-2 focus:outline-secondary';
 const button = 'min-h-11 border-2 border-border bg-card px-3 py-2 font-body text-sm font-bold hover:border-secondary disabled:opacity-50';
@@ -183,6 +184,8 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
                   position: offers.indexOf(selectedOffer) + 1, ctaId: 'builder_store_offer', destinationUrl: selectedOffer.url,
                   surface: 'budget_builder', linkType: 'organic',
                 })}>Ir a la tienda ↗</a>}
+                {selected && <OfferReportLink context={{ productId: selected.id, productName: selected.name,
+                  storeId: recordedOffer?.storeId, storeName: recordedOffer?.storeName, offerUrl: recordedOffer?.url }} />}
                 <p>Precio relevado: {observedLabel(selected, selection.storeId, selection.url)}</p>
               </div>
             </>}

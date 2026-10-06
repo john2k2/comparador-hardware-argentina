@@ -110,7 +110,7 @@ export function trackProductSelection(params: {
   brand?: string;
   price?: number;
   position: number;
-  surface: 'search_results' | 'home_featured' | 'home_recent' | 'home_price_drop' | 'home_popular' | 'related_products' | 'store_landing';
+  surface: 'search_results' | 'home_featured' | 'home_latest_offers' | 'home_recent' | 'home_price_drop' | 'home_popular' | 'related_products' | 'store_landing';
 }): void {
   if (!isGA4Available()) return;
 
@@ -276,7 +276,7 @@ export function trackStoreClick(params: {
  * Track filter changes
  */
 export function trackFilterChange(params: {
-  filterType: 'category' | 'price_range' | 'store' | 'sort';
+  filterType: 'category' | 'price_range' | 'store' | 'sort' | 'availability';
   filterValue: string;
 }): void {
   if (!isGA4Available()) return;

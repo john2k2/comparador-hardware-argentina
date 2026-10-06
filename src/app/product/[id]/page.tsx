@@ -4,11 +4,10 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { ProductDetailClient } from '@/components/product/ProductDetailClient';
 import { readCanonicalProductIdByKey, readProductDetailByIdFromDatabase } from '@/lib/persistence/product-read';
-import { formatPriceARS, getAvailableComparableStorePrices } from '@/lib/price-utils';
+import { getAvailableComparableStorePrices } from '@/lib/price-utils';
 import { decideProductPageIndexing } from '@/lib/seo/product-indexing';
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import { SITE_NAME } from '@/lib/site-config';
-import { normalizeDisplayText } from '@/lib/text-utils';
 import type { Product } from '@/lib/types';
 import { getProductContent } from '@/lib/product/product-seo-content';
 import { isStableRuntimeMode } from '@/lib/server/runtime-flags';
@@ -19,7 +18,6 @@ import {
   buildProductDescription,
   buildProductJsonLd,
   buildShortProductTitle,
-  getRecentProductOffers,
   resolveProductImage,
 } from '@/lib/product/product-page-metadata';
 
@@ -153,90 +151,20 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 }
 
 function ProductSeoSupport({ product }: { product: Product }) {
-  const displayName = normalizeDisplayText(product.name);
-  const displayBrand = normalizeDisplayText(product.brand);
-  const storeCount = getAvailableComparableStorePrices(product.prices).length;
-  const recentOffer = getRecentProductOffers(product)[0];
   const content = getProductContent(product);
-
   return (
-    <section className="container mx-auto px-4 pb-10 space-y-6">
-      {/* Guía rápida original */}
-      <div className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow">
-        <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-3">
-          [ GUIA RAPIDA DE COMPARACION ]
-        </h2>
-        <div className="grid md:grid-cols-2 gap-4 text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
-          <p>
-            Esta ficha reúne registros de {displayName} {displayBrand ? `de ${displayBrand}` : ''} de {storeCount} comercios.
-            {recentOffer
-              ? ` El menor precio relevado en las últimas 24 horas es ${formatPriceARS(recentOffer.price)}.`
-              : ' Los precios registrados son anteriores y sirven sólo como referencia hasta una nueva comprobación.'}
-            {' '}El importe final puede cambiar por stock, promociones, cuotas, envío o condiciones propias de cada local.
-          </p>
-          <p>
-            Antes de comprar, verificá que la variante coincida exactamente con lo que necesitás: modelo, capacidad,
-            compatibilidad, garantía y accesorios incluidos. El comparador ayuda a encontrar diferencias rápido, pero la
-            confirmación final siempre debe hacerse en el sitio de destino.
-          </p>
-          <p>
-            También conviene revisar si la publicación incluye fotos reales, número de parte, versión del fabricante y
-            disponibilidad inmediata. Si dos ofertas parecen iguales pero tienen mucha diferencia de valor, abrí ambas
-            tiendas y confirmá que no cambien condiciones clave como cuotas, envío, garantía o retiro en sucursal.
-          </p>
-        </div>
-      </div>
-
-      {/* Contenido enriquecido por categoría */}
-      <div className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow">
-        <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-3">
-          [ DESCRIPCION Y CONTEXTO ]
-        </h2>
-        <div className="text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono space-y-4">
+    <section className="container mx-auto px-4 pb-10">
+      <details className="bg-card border-[3px] border-border p-4 md:p-6 pixel-shadow">
+        <summary className="min-h-11 cursor-pointer font-mono text-base font-bold text-secondary">Antes de comprar: compatibilidad y condiciones</summary>
+        <div className="max-w-[75ch] font-body text-base leading-relaxed text-foreground/85 mt-4 space-y-5">
           <p>{content.intro}</p>
-          <div>
-            <h3 className="text-[11px] uppercase font-bold text-primary mb-2">Consejos de compra</h3>
-            <ul className="list-disc pl-5 space-y-1">
-              {content.tips.map((tip, i) => (
-                <li key={i}>{tip}</li>
-              ))}
-            </ul>
-          </div>
-          {content.relatedTerms.length > 0 && (
-            <div>
-              <h3 className="text-[11px] uppercase font-bold text-primary mb-2">Componentes relacionados</h3>
-              <p>
-                Al comprar {displayName}, también necesitás considerar:{' '}
-                {content.relatedTerms.join(', ')}.
-              </p>
-            </div>
-          )}
+          <ul className="list-disc pl-5 space-y-2">{content.tips.map((tip) => <li key={tip}>{tip}</li>)}</ul>
+          {content.faqs.map((faq) => <div key={faq.question}><h2 className="font-body! normal-case text-base font-bold text-primary mb-2">{faq.question}</h2><p>{faq.answer}</p></div>)}
         </div>
-      </div>
-
-      {/* FAQs */}
-      <div className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow">
-        <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-3">
-          [ PREGUNTAS FRECUENTES ]
-        </h2>
-        <div className="space-y-4">
-          {content.faqs.map((faq, i) => (
-            <div key={i} className="text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
-              <h3 className="font-bold text-primary mb-1">{faq.question}</h3>
-              <p>{faq.answer}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Disclaimer final */}
-      <div className="bg-muted border-2 border-border p-4">
-        <p className="text-[10px] text-muted-foreground font-mono leading-relaxed">
-          {SITE_NAME} es un comparador independiente. No vendemos productos ni recibimos comisiones por las compras.
-          Los valores mostrados son referenciales y pueden variar. Siempre confirmá el importe final, disponibilidad
-          y condiciones en el comercio antes de comprar.
-        </p>
-      </div>
+      </details>
+      <p className="font-body text-sm leading-relaxed text-muted-foreground mt-5 max-w-[90ch]">
+        {SITE_NAME} compara publicaciones de tiendas. La compra y sus condiciones se acuerdan con el comercio. Los enlaces patrocinados o afiliados se identifican cuando corresponde. Consultá <a href="/acerca" className="text-secondary underline underline-offset-4">cómo comparamos</a>.
+      </p>
     </section>
   );
 }

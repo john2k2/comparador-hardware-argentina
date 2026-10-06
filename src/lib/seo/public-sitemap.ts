@@ -58,12 +58,6 @@ export function buildPublicSitemapEntries(): MetadataRoute.Sitemap {
       changeFrequency: 'daily',
       priority: 0.85,
     },
-    {
-      url: toAbsoluteUrl('/indice-precios-hardware'),
-      lastModified: EDITORIAL_LAST_MODIFIED,
-      changeFrequency: 'daily',
-      priority: 0.9,
-    },
   ];
 
   const categoryEntries: MetadataRoute.Sitemap = categories.map((category) => ({

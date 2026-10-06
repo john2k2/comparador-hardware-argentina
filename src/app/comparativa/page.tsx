@@ -3,6 +3,7 @@ import { COMPARISONS } from '@/lib/seo/comparisons-data';
 import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
 import { resolveComparativasHubMetadata } from '@/lib/seo/landing-metadata';
 import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
+import { EditorialLinkCard } from '@/components/seo/EditorialLinkCard';
 import Link from 'next/link';
 
 export const metadata: Metadata = resolveComparativasHubMetadata();
@@ -16,7 +17,7 @@ export default function ComparativasIndexPage() {
         <h1 className="text-[16px] md:text-[20px] font-pixel text-primary mb-3 leading-tight">
           Comparaciones de Hardware
         </h1>
-        <p className="text-[11px] md:text-[12px] text-muted-foreground font-mono leading-relaxed">
+        <p className="text-[12px] md:text-[12px] text-muted-foreground font-mono leading-relaxed">
           Contrastá costos y rendimiento de los componentes más buscados en Argentina.
           Encontrá la mejor opción para tu presupuesto.
         </p>
@@ -26,33 +27,26 @@ export default function ComparativasIndexPage() {
       </header>
 
       <section className="mb-8 border-4 border-primary bg-primary/10 p-5 pixel-shadow md:p-6">
-        <p className="text-[10px] font-bold text-muted-foreground">NUEVO COMPARADOR ABIERTO</p>
+        <p className="text-[12px] font-bold text-muted-foreground">NUEVO COMPARADOR ABIERTO</p>
         <h2 className="mt-2 text-[13px] font-bold text-primary">Elegí cualquier producto del catálogo</h2>
-        <p className="mt-3 text-[11px] font-mono leading-relaxed">
+        <p className="mt-3 text-[12px] font-mono leading-relaxed">
           Compará dos componentes del mismo tipo por precio actual, ofertas, especificaciones y compatibilidad informada.
         </p>
-        <Link href="/comparativa/comparar" className="mt-4 inline-flex min-h-11 items-center border-2 border-primary bg-primary px-4 text-[10px] font-bold text-primary-foreground hover:bg-primary/90">
+        <Link href="/comparativa/comparar" className="mt-4 inline-flex min-h-11 items-center border-2 border-primary bg-primary px-4 text-[12px] font-bold text-primary-foreground hover:bg-primary/90">
           ARMAR COMPARACIÓN →
         </Link>
       </section>
 
       <div className="grid md:grid-cols-2 gap-6">
         {COMPARISONS.map((comparison) => (
-          <Link
+          <EditorialLinkCard
             key={comparison.slug}
             href={`/comparativa/${comparison.slug}`}
-            className="bg-card border-4 border-border p-5 pixel-shadow hover:border-primary transition-colors group"
-          >
-            <h2 className="text-[12px] md:text-[14px] font-bold text-primary mb-2 group-hover:text-foreground transition-colors">
-              {comparison.product1.name} vs {comparison.product2.name}
-            </h2>
-            <p className="text-[10px] md:text-[11px] text-muted-foreground font-mono mb-3">
-              {comparison.description}
-            </p>
-            <div className="mt-3 text-[10px] text-primary font-mono">
-              VER →
-            </div>
-          </Link>
+            title={`${comparison.product1.name} vs ${comparison.product2.name}`}
+            description={comparison.description}
+            actionLabel="Ver comparativa"
+            headingLevel={2}
+          />
         ))}
       </div>
     </div>

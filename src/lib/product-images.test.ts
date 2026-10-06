@@ -1,10 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeProductImageUrl, pickProductImage } from './product-images';
+import { getProductImageSource, normalizeProductImageUrl, pickProductImage } from './product-images';
 
 const filename = 'compragamer_Imganen_general_54048_i5_12600KF_b1480822-med.jpg';
 const corrected = `https://imagenes.compragamer.com/productos/${filename}`;
 
 describe('product-images', () => {
+  it('apart a confirmed notebook image from a pendrive without altering or inventing a URL', () => {
+    const image = 'https://katech.com.ar/wp-content/uploads/NOT063-5-jpg-webp.webp';
+    expect(getProductImageSource({ name: 'PEN DRIVE ULTRA SHIFT 64GB SANDISK', category: 'procesadores', image })).toBeUndefined();
+    expect(getProductImageSource({ name: 'Notebook HP', category: 'computadoras', image })).toBe(image);
+    expect(getProductImageSource({ name: 'PEN DRIVE ULTRA SHIFT', category: 'almacenamiento', image: corrected })).toBe(corrected);
+  });
+  it('does not present the reviewed store placeholder as a product photo', () => {
+    expect(getProductImageSource({ name: 'DISCO SSD 1TB WD GREEN SATA 2.5', category: 'almacenamiento',
+      image: 'https://katech.com.ar/wp-content/uploads/placeholder-jpg.webp' })).toBeUndefined();
+  });
   it('recupera la carpeta perdida de una foto persistida de CompraGamer', () => {
     expect(normalizeProductImageUrl(`https://imagenes.compragamer.com/${filename}`)).toBe(corrected);
     expect(normalizeProductImageUrl(corrected)).toBe(corrected);

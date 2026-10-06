@@ -51,7 +51,7 @@ Skeleton.displayName = 'Skeleton';
 // Skeleton para ProductGrid
 export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-5 lg:gap-6">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="rounded-none border-4 border-border bg-card p-4 space-y-3 pixel-shadow">
           <Skeleton variant="rectangular" height={160} />

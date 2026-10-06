@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { DigitalGames } from '@/components/digital-games/DigitalGames';
 import { isEnebaPilotEnabled } from '@/lib/eneba/server';
 import { SITE_URL } from '@/lib/site-config';
+import { isStableRuntimeMode } from '@/lib/server/runtime-flags';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
@@ -14,5 +15,5 @@ export const metadata: Metadata = {
 
 export default function DigitalGamesPage() {
   if (!isEnebaPilotEnabled()) notFound();
-  return <DigitalGames />;
+  return <DigitalGames testData={isStableRuntimeMode()} />;
 }

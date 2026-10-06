@@ -1,9 +1,15 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildOfferIdentity, resolveBaselineFromHistory } from './price-drop-baseline';
-import { pickFeaturedProducts, resolveOfferHistory, selectCurrentPricePoints } from './home-sections';
+import { getHomeSectionsData, pickFeaturedProducts, resolveOfferHistory, selectCurrentPricePoints } from './home-sections';
+import { getSharedCache } from '@/lib/server/shared-cache';
+import { readProductsFromDatabase } from '@/lib/persistence/product-read';
 import type { Product } from '@/lib/types';
 
 vi.mock('server-only', () => ({}), { virtual: true });
+vi.mock('@/lib/server/shared-cache', () => ({ getSharedCache: vi.fn(), setSharedCache: vi.fn() }));
+vi.mock('@/lib/persistence/product-read', () => ({ readProductsFromDatabase: vi.fn() }));
+
+afterEach(() => vi.useRealTimers());
 
 describe('evidencia actual de portada', () => {
   const makeProduct = (observedAt: Date, stock = 'in-stock') => ({
@@ -22,6 +28,24 @@ describe('evidencia actual de portada', () => {
     const invalid = makeProduct(new Date(NaN));
     const unknown = makeProduct(new Date(), 'unknown');
     expect(selectCurrentPricePoints([invalid, unknown], Date.now() - 24 * 3600000)).toEqual([]);
+  });
+  it('rehidrata la fecha almacenada y retira una última oferta que vence dentro del caché', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-03T01:00:00Z'));
+    const source = makeProduct(new Date(Date.now() - 2.99 * 3600000));
+    const cached = JSON.parse(JSON.stringify({
+      latestOfferProducts: [source], featuredProducts: [], priceDropProducts: [],
+      featuredFallbackUsed: false, priceDropFallbackUsed: false,
+    }));
+    vi.mocked(getSharedCache).mockResolvedValue(cached);
+
+    const first = await getHomeSectionsData();
+    expect(first.latestOfferProducts).toHaveLength(1);
+    expect(first.latestOfferProducts[0].prices[0].lastUpdated).toBeInstanceOf(Date);
+    vi.setSystemTime(new Date(Date.now() + 2 * 60000));
+    expect((await getHomeSectionsData()).latestOfferProducts).toEqual([]);
+    expect(readProductsFromDatabase).not.toHaveBeenCalled();
+    expect(cached.latestOfferProducts).toHaveLength(1);
   });
 });
 

@@ -11,8 +11,9 @@ export interface ProductGridProps {
   isLoading?: boolean;
   emptyMessage?: string;
   className?: string;
+  compact?: boolean;
   returnTo?: string | null;
-  surface?: 'search_results' | 'home_featured' | 'home_recent' | 'home_price_drop' | 'home_popular' | 'related_products';
+  surface?: 'search_results' | 'home_featured' | 'home_latest_offers' | 'home_recent' | 'home_price_drop' | 'home_popular' | 'related_products';
 }
 
 export function ProductGrid({
@@ -20,6 +21,7 @@ export function ProductGrid({
   isLoading = false,
   emptyMessage = 'No se encontraron productos',
   className,
+  compact = false,
   returnTo,
   surface,
 }: ProductGridProps) {
@@ -30,14 +32,14 @@ export function ProductGrid({
   if (products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4 text-center border-2 border-dashed border-border bg-card/70">
-        <p className="text-[10px] uppercase text-muted-foreground leading-relaxed">{emptyMessage}</p>
+        <p className="text-[12px] uppercase text-muted-foreground leading-relaxed">{emptyMessage}</p>
       </div>
     );
   }
 
   return (
     <div
-      className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 lg:gap-6 ${className || ''}`}
+      className={`grid auto-rows-fr ${compact ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))]'} gap-5 lg:gap-6 ${className || ''}`}
     >
       {products.map((product, index) => (
         <ProductCard
@@ -45,6 +47,7 @@ export function ProductGrid({
           product={product}
           returnTo={returnTo}
           surface={surface}
+          compact={compact}
           position={index + 1}
         />
       ))}

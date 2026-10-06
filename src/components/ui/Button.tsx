@@ -20,7 +20,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       secondary: 'bg-secondary text-secondary-foreground pixel-shadow hover:brightness-95',
       outline: 'bg-card text-foreground hover:bg-muted',
       ghost: 'border-transparent bg-transparent text-foreground hover:border-border hover:bg-muted',
-      danger: 'bg-destructive text-white pixel-shadow hover:brightness-95',
+      danger: 'bg-destructive text-destructive-foreground pixel-shadow hover:brightness-95',
     };
     
     const sizes = {

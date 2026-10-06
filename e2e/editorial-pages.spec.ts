@@ -38,29 +38,17 @@ for (const { name, viewport } of viewports) {
       await expect(page.getByRole('heading', { level: 1 }).filter({ hasText: /RTX 4060.*RX 7600/i })).toBeVisible();
     });
 
-    test('índice de precios expone metodología y descarga CSV', async ({ page }) => {
-      const response = await page.goto('/indice-precios-hardware');
-      expect(response).not.toBeNull();
-      expect(response!.status()).toBe(200);
-
-      await expect(page.getByRole('heading', { level: 1 }).filter({
-        hasText: /Qué pasó con el precio del hardware esta semana|Cómo medimos el precio del hardware en Argentina/i,
-      })).toBeVisible();
-      await expect(page.locator('a[href="/indice-precios-hardware/datos.csv"]')).toBeVisible();
+    test('el índice retirado no aparece en navegación y sus URLs responden 404', async ({ page, request }) => {
+      await page.goto('/guia');
+      await expect(page.locator('a[href^="/indice-precios-hardware"]')).toHaveCount(0);
+      for (const path of ['/indice-precios-hardware', '/indice-precios-hardware/datos.csv']) {
+        const response = await request.get(path);
+        expect(response.status()).toBe(404);
+        expect(await response.text()).toContain('noindex');
+      }
+      const sitemap = await request.get('/sitemap.xml');
+      expect(await sitemap.text()).not.toContain('/indice-precios-hardware');
     });
 
-    test('descarga CSV del índice con contrato HTTP y encabezado', async ({ request }) => {
-      const response = await request.get('/indice-precios-hardware/datos.csv');
-
-      expect(response.status()).toBe(200);
-      expect(response.headers()['content-type']).toMatch(/text\/csv/);
-      expect(response.headers()['content-disposition']).toMatch(
-        /attachment;\s*filename="indice-precios-hardware-argentina\.csv"/i,
-      );
-
-      // El contenido puede no tener filas: este caso acredita navegación y contrato, no disponibilidad de datos.
-      const firstLine = (await response.text()).split(/\r?\n/, 1)[0].trim();
-      expect(firstLine).toBe('fecha,categoria,indice,precio_mediano_ars,productos,ofertas');
-    });
   });
 }

@@ -13,6 +13,7 @@ export interface ReadProductsParams {
 }
 
 export interface ReadProductsPageParams extends Omit<ReadProductsParams, 'limit'> {
+  onlyCurrentOffers?: boolean;
   page: number;
   pageSize: number;
 }
@@ -21,6 +22,7 @@ export type DbCatalogPage = Omit<ProductPageResult, 'products'> & { products: Db
 
 export type ProductPageResult = {
   products: import('@/lib/types').Product[];
+  categoryExcludedOnPage?: number;
   total: number;
   totalPages: number;
   page: number;

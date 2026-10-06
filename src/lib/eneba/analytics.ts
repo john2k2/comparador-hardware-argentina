@@ -7,6 +7,20 @@ function canMeasure(): boolean {
   return /^G-[A-Z0-9]+$/.test(window.__chaAnalyticsMeasurementId ?? process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ?? '');
 }
 
+/** Exposición geométrica de al menos la mitad del bloque, con consentimiento vigente. */
+export function trackEnebaPromotionView(): void {
+  if (!canMeasure() || !firstEventInNavigation('eneba-home-promotion')) return;
+  trackEvent('affiliate_promo_view', { affiliate_partner: 'eneba', affiliate_campaign: ENEBA_PILOT_CAMPAIGN,
+    affiliate_surface: 'home', cta_id: 'home-eneba-games' });
+}
+
+/** Navegación interna hacia la selección; no es un clic saliente a Eneba. */
+export function trackEnebaPromotionClick(): void {
+  if (!canMeasure()) return;
+  trackEvent('affiliate_promo_click', { affiliate_partner: 'eneba', affiliate_campaign: ENEBA_PILOT_CAMPAIGN,
+    affiliate_surface: 'home', cta_id: 'home-eneba-games' });
+}
+
 /** Vista consentida de la selección resuelta, nunca una impresión publicitaria. */
 export function trackEnebaPilotView(status: 'ready' | 'empty' | 'error', offerCount: number): void {
   if (!canMeasure() || !firstEventInNavigation('eneba-pilot-view')) return;

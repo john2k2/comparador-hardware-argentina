@@ -3,7 +3,10 @@ import { ProductGrid } from '@/components/functional/ProductGrid';
 import { SectionTitle } from '@/components/home/SectionTitle';
 
 export async function PopularProductsSection() {
-  const popularProducts = await readPopularProductsFromDatabase(8);
+  const popularProducts = await readPopularProductsFromDatabase(8).catch((error) => {
+    console.warn('[Home] No se pudo cargar el bloque de productos populares:', error);
+    return [];
+  });
   
   if (popularProducts.length === 0) return null;
   

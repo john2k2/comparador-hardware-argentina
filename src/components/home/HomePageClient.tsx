@@ -1,114 +1,40 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ProductGrid, SearchBar } from '@/components/functional';
 import { resolveSponsoredStores } from '@/lib/commercial';
-import { HOME_BUDGET_GUIDE_LINKS, HOME_CITATION_BLOCK } from '@/lib/seo/home-copy';
-import { HOME_INTENT_LINKS, HOME_PROCESSOR_PROMO } from '@/lib/seo/home-intent-links';
+import { HOME_BUDGET_GUIDE_LINKS } from '@/lib/seo/home-copy';
+import { EditorialLinkCard } from '@/components/seo/EditorialLinkCard';
 import { categories, stores as defaultStores } from '@/lib/scrapers/static-data';
 import { readRecentlyViewedProducts } from '@/lib/client/recently-viewed';
 import type { Product } from '@/lib/types';
 import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
-import type { HardwareCategory } from '@/lib/types';
-import { SponsoredStoresSection } from '@/components/home/SponsoredStoresSection';
+import { SponsoredStoresSection } from './SponsoredStoresSection';
 import { hydrateProducts } from '@/lib/product-serialization';
+import { SectionTitle } from './SectionTitle';
+import { EnebaPromotion } from './EnebaPromotion';
 
+const PRIMARY_CATEGORIES = ['procesadores', 'tarjetas-graficas', 'memoria-ram', 'motherboards'];
 const RECENT_PRODUCTS_LIMIT = 4;
 
-function SectionTitle({
-  title,
-  subtitle,
-  actionHref,
-  actionLabel,
-}: {
-  title: string;
-  subtitle: string;
-  actionHref?: string;
-  actionLabel?: string;
-}) {
-  return (
-    <header className="mb-4 bg-card border-[3px] border-border pixel-shadow p-4 md:p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0">
-        <h2 className="text-[12px] md:text-[14px] font-bold uppercase text-primary tracking-wide break-words">
-          {`[ ${title} ]`}
-        </h2>
-        <p className="text-[9px] uppercase text-foreground/80 mt-1 tracking-wide break-words">{subtitle}</p>
-      </div>
-
-      {actionHref && actionLabel && (
-        <Link
-          href={actionHref}
-          className="inline-flex min-h-11 items-center justify-center border-2 border-secondary text-secondary text-[9px] font-bold uppercase px-3 py-2 hover:bg-secondary hover:text-secondary-foreground transition-colors min-w-[110px]"
-        >
-          {actionLabel}
-        </Link>
-      )}
-    </header>
-  );
-}
-
-function PromoBanner({
-  label,
-  title,
-  cta,
-  href,
-}: {
-  label: string;
-  title: string;
-  cta: string;
-  href: string;
-}) {
-  return (
-    <section className="my-8 border-[3px] border-dashed border-muted bg-card p-2">
-      <div className="text-[8px] uppercase tracking-[0.2em] text-foreground/80 font-bold mb-2 text-center">
-        {label}
-      </div>
-      <div className="border-[3px] border-border bg-gradient-to-r from-background via-muted/60 to-background min-h-[120px] md:min-h-[140px] px-4 py-5 flex flex-col md:flex-row items-center justify-between gap-4 pixel-shadow">
-        <p className="text-[11px] md:text-sm uppercase font-bold text-primary text-center md:text-left leading-relaxed">
-          {title}
-        </p>
-        <Link href={href} className="pixel-button text-[9px] px-4 py-3 min-h-11 min-w-[120px] text-center">{cta}</Link>
-      </div>
-    </section>
-  );
-}
-
 type HomePageClientProps = {
-  initialFeaturedProducts: Product[];
-  initialPriceDropProducts: Product[];
-  initialFeaturedFallbackUsed: boolean;
-  initialPriceDropFallbackUsed: boolean;
-  initialPopularProducts: Product[];
-  staticMode?: boolean;
+  latestOffersSection: ReactNode;
+  priceDropSection: ReactNode;
+  showGamesPromotion?: boolean;
 };
 
-export function HomePageClient({
-  initialFeaturedProducts,
-  initialPriceDropProducts,
-  initialFeaturedFallbackUsed,
-  initialPriceDropFallbackUsed,
-  initialPopularProducts,
-  staticMode = false,
-}: HomePageClientProps) {
+export function HomePageClient({ latestOffersSection, priceDropSection, showGamesPromotion = false }: HomePageClientProps) {
   const router = useRouter();
-  const stores = useMemo(() => defaultStores, []);
   const sponsoredStores = useMemo(() => resolveSponsoredStores(defaultStores), []);
-
+  const hasSponsoredStores = sponsoredStores.length > 0;
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
-  const [featuredProducts] = useState<Product[]>(hydrateProducts(initialFeaturedProducts));
-  const [priceDropProducts] = useState<Product[]>(hydrateProducts(initialPriceDropProducts));
-  const [popularProducts] = useState<Product[]>(hydrateProducts(initialPopularProducts));
-  const [featuredFallbackUsed] = useState(initialFeaturedFallbackUsed);
-  const [priceDropFallbackUsed] = useState(initialPriceDropFallbackUsed);
-  const [isSectionsLoading] = useState(false);
 
   useEffect(() => {
     const loadRecent = () => {
       setRecentProducts(hydrateProducts(readRecentlyViewedProducts(RECENT_PRODUCTS_LIMIT)));
     };
-
     loadRecent();
     window.addEventListener('focus', loadRecent);
     return () => window.removeEventListener('focus', loadRecent);
@@ -116,333 +42,92 @@ export function HomePageClient({
 
   const handleSearch = (query: string) => {
     const nextQuery = query.trim();
-    if (nextQuery) {
-      router.push(`/search?q=${encodeURIComponent(nextQuery)}`);
-    } else {
-      router.push('/search');
-    }
+    router.push(nextQuery ? `/search?q=${encodeURIComponent(nextQuery)}` : '/search');
   };
+
+  const categoryLink = (category: (typeof categories)[number]) => (
+    <Link key={category.id} href={buildCategoryLandingPath(category.id)}
+      className="flex min-h-14 items-center justify-center border-2 border-border bg-background px-3 py-3 text-center font-mono text-sm font-bold text-foreground transition-colors hover:border-secondary hover:text-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-secondary">
+      {category.id === 'tarjetas-graficas' ? 'Placas de video' : category.name}
+    </Link>
+  );
 
   return (
     <>
-      <section className="mb-6 min-w-0 max-w-full bg-card/95 border-[3px] border-border pixel-shadow p-4 md:p-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_480px] backdrop-blur-[1px]">
+      <section aria-labelledby="home-search-title" className="mb-6 min-w-0 max-w-full">
+        <h1 id="home-search-title" className="mb-3 font-mono! text-base font-bold text-foreground">
+          Compará precios de hardware
+        </h1>
+        <SearchBar onSearch={handleSearch} placeholder="[ BUSCAR PRODUCTO... ]" />
+      </section>
+
+      <div className={hasSponsoredStores ? 'grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_320px]' : ''}>
         <div className="min-w-0">
-          <h1 className="font-mono! text-base sm:text-lg md:text-3xl md:font-pixel! font-bold uppercase text-foreground tracking-normal md:tracking-tight break-words max-w-full">
-            [ COMPARA PRECIOS DE HARDWARE EN ARGENTINA ]
-          </h1>
-          <p className="text-[10px] md:text-xs uppercase text-secondary font-bold mt-2 tracking-normal md:tracking-[0.14em] break-words">
-            PROCESADORES, GPUS, RAM, SSD Y MAS EN MULTIPLES TIENDAS
-          </p>
-          <p className="text-[10px] md:text-[9px] uppercase text-foreground/80 mt-2 tracking-normal break-words">
-            COMPARADOR INDEPENDIENTE: NO VENDEMOS, SOLO MOSTRAMOS PRECIOS, DISPONIBILIDAD Y ENLACES A TIENDAS
-          </p>
-        </div>
-
-        <div className="w-full min-w-0 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:self-center">
-          <SearchBar
-            onSearch={handleSearch}
-            placeholder="[ BUSCAR PRODUCTO... ]"
-          />
-        </div>
-
-        <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-          <p className="max-w-3xl text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
-            {HOME_CITATION_BLOCK}
-          </p>
-          <nav aria-label="Comparar por categoría" className="mt-4 flex flex-wrap gap-3">
-            {HOME_INTENT_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="min-h-11 w-full sm:w-auto inline-flex items-center justify-center border-2 border-border bg-background px-3 py-2 text-[10px] font-bold uppercase text-foreground hover:border-primary hover:text-primary transition-colors"
-              >
-                {link.label} →
-              </Link>
-            ))}
+          <nav aria-label="Categorías de hardware" className="mb-8">
+            <h2 className="mb-3 text-[12px] font-bold uppercase text-primary">[ Elegí un componente ]</h2>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              {categories.filter((category) => PRIMARY_CATEGORIES.includes(category.id)).map(categoryLink)}
+            </div>
+            <details className="mt-3">
+              <summary className="min-h-11 cursor-pointer py-3 font-mono text-sm font-bold text-secondary marker:text-secondary">
+                Más categorías: SSD, fuentes, gabinetes y periféricos
+              </summary>
+              <div className="mt-2 grid grid-cols-2 gap-3 md:grid-cols-3">
+                {categories.filter((category) => !PRIMARY_CATEGORIES.includes(category.id)).map(categoryLink)}
+              </div>
+            </details>
           </nav>
-        </div>
-      </section>
 
-      <section className="mb-8 border-y-[3px] border-muted py-2 overflow-hidden bg-transparent -mx-4 xl:-mx-8">
-        <div className="relative flex overflow-hidden marquee-fade">
-          <div className="flex w-max animate-marquee">
-            <div className="flex items-center gap-6 pr-6 shrink-0">
-              {stores.map((store) => (
-                <div key={`store-1-${store.id}`} className="px-6 py-2 bg-card border-2 border-border text-foreground shrink-0">
-                  <span className="text-[10px] sm:text-xs font-bold uppercase text-accent">{`@ ${store.name}`}</span>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-6 pr-6 shrink-0" aria-hidden="true">
-              {stores.map((store) => (
-                <div key={`store-2-${store.id}`} className="px-6 py-2 bg-card border-2 border-border text-foreground shrink-0">
-                  <span className="text-[10px] sm:text-xs font-bold uppercase text-accent">{`@ ${store.name}`}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <SectionTitle
-        title="VISTOS RECIENTEMENTE"
-        subtitle="ULTIMOS PRODUCTOS QUE ABRISTE"
-        actionHref="/search"
-        actionLabel="IR A BUSQUEDA"
-      />
-      {recentProducts.length > 0 ? (
-        <ProductGrid
-          products={recentProducts}
-          emptyMessage="Todavia no viste productos."
-          surface="home_recent"
-        />
-      ) : (
-        <div className="border-[3px] border-border bg-card p-8 text-center pixel-shadow">
-          <p className="text-[10px] uppercase text-foreground/80 mb-4">
-            Todavia no hay productos vistos.
-          </p>
-          <Link href="/search" className="pixel-button inline-flex text-[9px] px-4 py-3 min-h-11">
-            VER PRODUCTOS
-          </Link>
-        </div>
-      )}
-
-      <PromoBanner
-        label="-- INFO COMPARADOR --"
-        title={HOME_PROCESSOR_PROMO.title}
-        cta={HOME_PROCESSOR_PROMO.cta}
-        href={HOME_PROCESSOR_PROMO.href}
-      />
-
-      <SectionTitle
-        title="CATEGORIAS POPULARES"
-        subtitle="EXPLORA POR TIPO DE COMPONENTE"
-        actionHref="/search"
-        actionLabel="VER TODO"
-      />
-      <section className="mb-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        {([
-          { id: 'tarjetas-graficas', name: 'Placas de Video', icon: 'GPU' },
-          { id: 'procesadores', name: 'Procesadores', icon: 'CPU' },
-          { id: 'memoria-ram', name: 'Memoria RAM', icon: 'RAM' },
-          { id: 'almacenamiento', name: 'SSD / Discos', icon: 'SSD' },
-          { id: 'motherboards', name: 'Motherboards', icon: 'MB' },
-          { id: 'fuentes-alimentacion', name: 'Fuentes', icon: 'PSU' },
-          { id: 'gabinetes', name: 'Gabinetes', icon: 'CASE' },
-          { id: 'refrigeracion', name: 'Coolers', icon: 'FAN' },
-        ] satisfies Array<{ id: HardwareCategory; name: string; icon: string }>).map((cat) => (
-          <Link
-            key={cat.id}
-            href={buildCategoryLandingPath(cat.id)}
-            className="block group"
-          >
-            <article className="bg-card border-4 border-border p-3 pixel-shadow transition-transform group-hover:-translate-y-1 group-hover:translate-x-1 text-center">
-              <div className="text-[8px] uppercase tracking-widest text-secondary font-bold mb-1">
-                {cat.icon}
-              </div>
-              <h3 className="text-[11px] font-bold uppercase text-foreground leading-tight">
-                {cat.name}
-              </h3>
-              <div className="mt-1 text-[8px] uppercase font-bold text-primary">
-                EXPLORAR →
-              </div>
-            </article>
-          </Link>
-        ))}
-      </section>
-
-      {!staticMode && (
-        <>
-          <SectionTitle
-            title="PRODUCTOS DESTACADOS"
-            subtitle={featuredFallbackUsed
-              ? 'SELECCION ACTIVA DEL CATALOGO MIENTRAS SE RECONSTRUYE LA CURACION AUTOMATICA'
-              : 'EN STOCK + ACTUALIZADOS < 24H + MEJOR PRECIO POR CATEGORIA'}
-            actionHref="/search?q=rtx"
-            actionLabel="VER TODO"
-          />
-          {featuredProducts.length > 0 || isSectionsLoading ? (
-            <ProductGrid
-              products={featuredProducts}
-              isLoading={isSectionsLoading}
-              emptyMessage="No se pudieron cargar destacados en este momento."
-              surface="home_featured"
-            />
-          ) : (
-            <HomeEmptyCatalogState
-              message="Todavia no hay destacados cargados en esta instancia."
-              href={buildCategoryLandingPath('tarjetas-graficas')}
-              cta="EXPLORAR GPUS"
-            />
-          )}
-
-          <PromoBanner
-            label="-- ACTUALIZACION --"
-            title={HOME_PROCESSOR_PROMO.title}
-            cta={HOME_PROCESSOR_PROMO.cta}
-            href={HOME_PROCESSOR_PROMO.href}
-          />
-
-          <SectionTitle
-            title={priceDropFallbackUsed ? 'RECIEN ACTUALIZADOS' : 'BAJARON DE PRECIO'}
-            subtitle={priceDropFallbackUsed
-              ? 'FALLBACK HONESTO: MOSTRAMOS PRODUCTOS ACTIVOS HASTA TENER HISTORIAL SUFICIENTE'
-              : 'PRODUCTOS CON BAJA REAL EN HISTORIAL DE 24H'}
-            actionHref="/search?sortBy=price-asc"
-            actionLabel={priceDropFallbackUsed ? 'VER CATALOGO' : 'MAS BARATOS'}
-          />
-          {priceDropProducts.length > 0 || isSectionsLoading ? (
-            <ProductGrid
-              products={priceDropProducts}
-              isLoading={isSectionsLoading}
-              emptyMessage={priceDropFallbackUsed
-                ? 'No se pudieron cargar productos activos para esta seccion.'
-                : 'No hay productos con baja de precio detectada por ahora.'}
-              surface="home_price_drop"
-            />
-          ) : (
-            <HomeEmptyCatalogState
-              message={priceDropFallbackUsed
-                ? 'No se pudieron cargar productos activos para esta seccion.'
-                : 'No hay bajas detectadas por ahora; podes buscar los mas baratos por categoria.'}
-              href="/search?sortBy=price-asc"
-              cta="VER MAS BARATOS"
-            />
-          )}
-
-          {popularProducts.length > 0 && (
+          {recentProducts.length > 0 && (
             <>
-              <SectionTitle
-                title="PRODUCTOS POPULARES"
-                subtitle="LOS MAS BUSCADOS Y COMPARADOS"
-                actionHref="/search"
-                actionLabel="VER CATALOGO"
-              />
-              <ProductGrid
-                products={popularProducts}
-                emptyMessage="No hay productos populares para mostrar."
-                surface="home_popular"
-              />
+              <SectionTitle title="VISTOS RECIENTEMENTE" subtitle="ULTIMOS PRODUCTOS QUE ABRISTE" />
+              <ProductGrid products={recentProducts} surface="home_recent" />
             </>
           )}
-        </>
-      )}
 
-      <SectionTitle
-        title="COMPARATIVAS POPULARES"
-        subtitle="ANALISIS DETALLADO DE PRECIOS Y RENDIMIENTO"
-        actionHref="/comparativa"
-        actionLabel="VER TODAS"
-      />
-      <section className="mb-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[
-          { slug: 'rtx-4060-vs-rx-7600', title: 'RTX 4060 vs RX 7600', category: 'GPUs' },
-          { slug: 'ryzen-5-7600x-vs-ryzen-7-5700x', title: 'Ryzen 5 7600X vs 7 5700X', category: 'CPUs' },
-          { slug: 'rtx-5070-vs-rtx-4070', title: 'RTX 5070 vs RTX 4070', category: 'GPUs' },
-          { slug: 'i5-14600k-vs-ryzen-5-7600x', title: 'Intel i5-14600K vs Ryzen 5 7600X', category: 'CPUs' },
-          { slug: 'ddr5-vs-ddr4', title: 'DDR5 vs DDR4', category: 'RAM' },
-          { slug: 'ryzen-7-9800x3d-vs-i9-14900k', title: 'Ryzen 7 9800X3D vs i9-14900K', category: 'CPUs' },
-          { slug: 'rtx-5090-vs-rx-9070-xt', title: 'RTX 5090 vs RX 9070 XT', category: 'GPUs' },
-        ].map((comparison) => (
-          <Link
-            key={comparison.slug}
-            href={`/comparativa/${comparison.slug}`}
-            className="block group"
-          >
-            <article className="bg-card border-4 border-border p-4 pixel-shadow transition-transform group-hover:-translate-y-1 group-hover:translate-x-1">
-              <div className="text-[7px] uppercase tracking-widest text-secondary font-bold mb-2">
-                {comparison.category}
-              </div>
-              <h3 className="text-[11px] font-bold uppercase text-foreground leading-tight">
-                {comparison.title}
-              </h3>
-              <div className="mt-2 text-[8px] uppercase font-bold text-primary">
-                VER COMPARATIVA →
-              </div>
-            </article>
-          </Link>
-        ))}
-      </section>
+          {latestOffersSection}
 
-      <SectionTitle
-        title="GUIAS PC GAMER"
-        subtitle="BUILDS RECOMENDADAS POR PRESUPUESTO"
-        actionHref="/guia"
-        actionLabel="VER TODAS"
-      />
-      <section className="mb-8 grid md:grid-cols-3 gap-4">
-        {HOME_BUDGET_GUIDE_LINKS.map((guide) => (
-          <Link
-            key={guide.slug}
-            href={`/guia/${guide.slug}`}
-            className="block group"
-          >
-            <article className="bg-card border-4 border-border p-4 pixel-shadow transition-transform group-hover:-translate-y-1 group-hover:translate-x-1 text-center">
-              <h3 className="text-[14px] font-bold uppercase text-primary mb-1">
-                {guide.title}
-              </h3>
-              <p className="text-[9px] uppercase text-foreground/80 mb-2">
-                {guide.target}
-              </p>
-              <div className="text-[8px] uppercase font-bold text-secondary">
-                VER BUILD →
-              </div>
-            </article>
-          </Link>
-        ))}
-      </section>
+          <SectionTitle title="GUIAS PC GAMER" subtitle="Elegí una configuración por presupuesto." actionHref="/guia" actionLabel="VER TODAS" />
+          <section className="mb-8 grid md:grid-cols-3 gap-4">
+            {HOME_BUDGET_GUIDE_LINKS.map((guide) => (
+              <EditorialLinkCard
+                key={guide.slug}
+                href={`/guia/${guide.slug}`}
+                title={guide.title}
+                description={guide.target}
+                actionLabel="Ver guía"
+              />
+            ))}
+          </section>
 
-      {sponsoredStores.length > 0 && <SponsoredStoresSection stores={sponsoredStores} />}
+          {showGamesPromotion && <EnebaPromotion />}
 
-      <PromoBanner
-        label="-- AVISO IMPORTANTE --"
-        title="LA COMPRA FINAL Y LAS CONDICIONES SE REALIZAN SIEMPRE EN LA TIENDA DE DESTINO"
-        cta="VER TIENDAS"
-        href="/search"
-      />
+          <SectionTitle title="COMPARATIVAS" subtitle="Conocé las diferencias antes de elegir." actionHref="/comparativa" actionLabel="VER TODAS" />
+          <section className="mb-8 grid md:grid-cols-3 gap-4">
+            {[
+              { slug: 'rtx-4060-vs-rx-7600', title: 'RTX 4060 vs RX 7600', category: 'GPUs' },
+              { slug: 'ryzen-5-7600x-vs-ryzen-7-5700x', title: 'Ryzen 5 7600X vs 7 5700X', category: 'CPUs' },
+              { slug: 'ddr5-vs-ddr4', title: 'DDR5 vs DDR4', category: 'RAM' },
+            ].map((comparison) => (
+              <EditorialLinkCard
+                key={comparison.slug}
+                href={`/comparativa/${comparison.slug}`}
+                title={comparison.title}
+                description={comparison.category}
+                actionLabel="Ver comparativa"
+              />
+            ))}
+          </section>
 
-      <section className="mt-10 bg-card border-[3px] border-border pixel-shadow p-4">
-        <h2 className="text-[11px] uppercase text-primary font-bold mb-3">[ CATEGORIAS RAPIDAS ]</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {categories.map((category) => (
-            <Link
-              key={category.id}
-              href={buildCategoryLandingPath(category.id)}
-              className="min-h-11 border-2 border-border p-3 text-[9px] uppercase font-bold text-center bg-muted/40 hover:border-secondary hover:text-secondary transition-colors flex items-center justify-center"
-            >
-              {category.name}
-            </Link>
-          ))}
+          {priceDropSection}
         </div>
-      </section>
+        {hasSponsoredStores && (
+          <div className="min-w-0 xl:sticky xl:top-28 xl:self-start">
+            <SponsoredStoresSection stores={sponsoredStores} compact />
+          </div>
+        )}
+      </div>
+
     </>
   );
 }
-
-function HomeEmptyCatalogState({
-  message,
-  href,
-  cta,
-}: {
-  message: string;
-  href: string;
-  cta: string;
-}) {
-  return (
-    <div className="border-[3px] border-border bg-card p-6 text-center pixel-shadow">
-      <p className="text-[10px] uppercase text-foreground/80 leading-relaxed mb-4">
-        {message}
-      </p>
-      <div className="flex flex-wrap justify-center gap-3">
-        <Link href={href} className="pixel-button inline-flex items-center justify-center text-[9px] px-4 py-3 min-h-11">
-          {cta}
-        </Link>
-        <Link href="/search" className="inline-flex min-h-11 items-center justify-center border-2 border-secondary px-4 py-3 text-[9px] uppercase font-bold text-secondary hover:bg-secondary hover:text-secondary-foreground transition-colors">
-          BUSCAR MANUALMENTE
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-export default HomePageClient;

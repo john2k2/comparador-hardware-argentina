@@ -26,7 +26,12 @@ function cleanupTypographicArtifacts(value: string): string {
 export function normalizeDisplayText(value: string | null | undefined): string {
   if (!value) return '';
 
-  let current = value.replace(/\s+/g, ' ').trim();
+  let current = value.replace(/&#(x[0-9a-f]+|\d+);/gi, (entity, number: string) => {
+    const code = number[0].toLowerCase() === 'x' ? parseInt(number.slice(1), 16) : parseInt(number, 10);
+    return code > 0 && code <= 0x10ffff && !(code >= 0xd800 && code <= 0xdfff) ? String.fromCodePoint(code) : entity;
+  }).replace(/&(?:nbsp|amp|quot|apos);/gi, (entity) => ({
+    '&nbsp;': ' ', '&amp;': '&', '&quot;': '"', '&apos;': "'",
+  })[entity.toLowerCase()] ?? entity).replace(/\s+/g, ' ').trim();
   if (!current) return '';
 
   for (let pass = 0; pass < 2; pass += 1) {

@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { readProductsFromDatabase } from '@/lib/persistence/product-read';
 import { hydrateProducts } from '@/lib/product-serialization';
 import { getSharedCache, setSharedCache } from '@/lib/server/shared-cache';
@@ -6,6 +7,7 @@ import type { Product } from '@/lib/types';
 import { buildOfferIdentity, resolveBaselineFromHistory, type HistoryPoint } from '@/lib/home/price-drop-baseline';
 import { isComparableStoreOffer } from '@/lib/price-utils';
 import { isCatalogOfferFresh } from '@/lib/price-freshness';
+import { LATEST_OFFERS_LIMIT, pickLatestOfferProducts } from './latest-offers';
 
 type HistoryRow = {
   product_id: string;
@@ -30,6 +32,7 @@ type DropCandidate = {
 };
 
 export type HomeSectionsData = {
+  latestOfferProducts: Product[];
   featuredProducts: Product[];
   priceDropProducts: Product[];
   featuredFallbackUsed: boolean;
@@ -308,15 +311,16 @@ async function readRecentHistoryRows(sinceIso: string): Promise<HistoryRow[]> {
   return (data ?? []) as HistoryRow[];
 }
 
-export async function getHomeSectionsData(): Promise<HomeSectionsData> {
-  const cached = await getSharedCache<HomeSectionsData>('home-sections', 'homepage-v2');
+async function readHomeSectionsData(): Promise<HomeSectionsData> {
+  const cached = await getSharedCache<HomeSectionsData>('home-sections', 'homepage-v4');
   if (cached) {
     const featuredProducts = hydrateProducts(cached.featuredProducts ?? []);
     const priceDropProducts = hydrateProducts(cached.priceDropProducts ?? []);
     // La vigencia del caché no prolonga la ventana de las ofertas destacadas.
     if ((cached.featuredFallbackUsed || featuredProducts.every(product => isFreshProduct(product, FEATURED_MAX_AGE_MS)))
       && (cached.priceDropFallbackUsed || priceDropProducts.every(product => isFreshProduct(product, PRICE_DROP_WINDOW_MS))))
-      return { ...cached, featuredProducts, priceDropProducts };
+      return { ...cached, featuredProducts, priceDropProducts,
+        latestOfferProducts: pickLatestOfferProducts(hydrateProducts(cached.latestOfferProducts ?? [])) };
   }
 
   const dropWindowStartMs = Date.now() - PRICE_DROP_WINDOW_MS;
@@ -362,6 +366,7 @@ export async function getHomeSectionsData(): Promise<HomeSectionsData> {
   }
 
   const payload: HomeSectionsData = {
+    latestOfferProducts: pickLatestOfferProducts(products, LATEST_OFFERS_LIMIT),
     featuredProducts,
     priceDropProducts,
     featuredFallbackUsed,
@@ -384,6 +389,10 @@ export async function getHomeSectionsData(): Promise<HomeSectionsData> {
     },
   };
 
-  await setSharedCache('home-sections', 'homepage-v2', payload, HOME_SECTIONS_CACHE_TTL_MS);
+  await setSharedCache('home-sections', 'homepage-v4', payload, HOME_SECTIONS_CACHE_TTL_MS);
   return payload;
 }
+
+// Compartir una lectura entre los bloques de este render, sin alargar la
+// ventana del caché persistente ni las fechas de observación de las ofertas.
+export const getHomeSectionsData = cache(readHomeSectionsData);

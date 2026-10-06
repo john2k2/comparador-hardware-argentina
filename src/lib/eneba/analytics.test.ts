@@ -44,4 +44,19 @@ describe('medición consentida del piloto Eneba', () => {
     trackEnebaClick({ ...offer, observedAt: '2026-10-01T18:00:00Z' }, 1);
     expect(gtag).not.toHaveBeenCalled();
   });
+
+  it('separa exposición y navegación interna, y conserva el consentimiento tardío sin duplicar vistas', async () => {
+    const { trackEnebaPromotionView, trackEnebaPromotionClick } = await import('./analytics');
+    window.__chaAnalyticsAllowed = false;
+    trackEnebaPromotionView(); trackEnebaPromotionClick();
+    expect(gtag).not.toHaveBeenCalled();
+    window.__chaAnalyticsAllowed = true;
+    trackEnebaPromotionView(); trackEnebaPromotionView(); trackEnebaPromotionClick();
+    expect(gtag).toHaveBeenCalledTimes(2);
+    expect(gtag).toHaveBeenNthCalledWith(1, 'event', 'affiliate_promo_view', expect.objectContaining({ affiliate_surface: 'home' }));
+    expect(gtag).toHaveBeenNthCalledWith(2, 'event', 'affiliate_promo_click', expect.objectContaining({ cta_id: 'home-eneba-games' }));
+    window.__chaAnalyticsAllowed = false;
+    trackEnebaPromotionClick();
+    expect(gtag).toHaveBeenCalledTimes(2);
+  });
 });

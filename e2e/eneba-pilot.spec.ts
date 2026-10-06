@@ -12,6 +12,24 @@ const snapshot: EnebaSnapshot = {
 for (const viewport of [{ width: 1440, height: 1000 }, { width: 360, height: 800 }, { width: 390, height: 844 }]) {
   test.describe(`Eneba ${viewport.width}px`, () => {
     test.use({ viewport });
+    test('el acceso de portada es visible, identificado y no descarga precios por una visita', async ({ page }) => {
+      let reads = 0;
+      await page.route('**/api/juegos-digitales', (route) => { reads += 1; return route.fulfill({ json: snapshot }); });
+      await page.goto('/');
+      const promotion = page.getByRole('complementary', { name: 'Juegos para PC en Eneba' });
+      await expect(promotion).toBeVisible();
+      await expect(promotion).toContainText('Enlaces afiliados');
+      await expect(promotion).toContainText('Podemos recibir una comisión');
+      const link = promotion.getByRole('link', { name: 'Ver juegos y condiciones →' });
+      await expect(link).toHaveAttribute('href', '/juegos-digitales');
+      const box = await link.boundingBox();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+      expect(reads).toBe(0);
+      await link.click();
+      await expect(page).toHaveURL(/\/juegos-digitales$/);
+    });
     test('separa juegos, informa precio y restricciones y conserva el enlace profundo', async ({ page }) => {
       await page.clock.install({ time: now });
       let reads = 0;
@@ -27,7 +45,7 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 360, height: 800
         await expect(card).toContainText(game.edition);
         await expect(card).toContainText('Feed actualizado:');
         await expect(card).toContainText('Activación en Argentina revisada');
-        const link = card.getByRole('link');
+        const link = card.getByRole('link', { name: `Ver ${game.name} en Eneba ↗`, exact: true });
         await expect(link).toHaveAttribute('href', game.url);
         await expect(link).toHaveAttribute('target', '_blank');
         await expect(link).toHaveAttribute('rel', /sponsored.*noopener/);
@@ -54,6 +72,28 @@ test('un precio que vence con la pestaña abierta desaparece sin volver a consul
   await expect(page.locator('article')).toHaveCount(0);
   await expect(page.getByText('Precios sin verificar', { exact: true })).toBeVisible();
   expect(reads).toBe(1);
+});
+
+test('mide el bloque sólo cuando entra en pantalla y separa el clic interno de las salidas', async ({ page }) => {
+  await page.route('https://www.googletagmanager.com/**', (route) => route.fulfill({ contentType: 'application/javascript', body: '' }));
+  await page.goto('/');
+  const promotion = page.getByRole('complementary', { name: 'Juegos para PC en Eneba' });
+  const events = () => page.evaluate(() => (window.dataLayer ?? []).map((entry) => Array.from(entry as ArrayLike<unknown>))
+    .filter((entry) => entry[0] === 'event' && String(entry[1]).startsWith('affiliate_')));
+  await promotion.scrollIntoViewIfNeeded();
+  expect(await events()).toEqual([]);
+  await page.getByRole('button', { name: 'Rechazar analítica', exact: true }).click();
+  expect(await events()).toEqual([]);
+  await page.getByRole('contentinfo').getByRole('button', { name: 'Preferencias de privacidad' }).click();
+  await page.getByRole('button', { name: 'Aceptar analítica', exact: true }).click();
+  expect(await events()).toEqual([]);
+  await promotion.scrollIntoViewIfNeeded();
+  await expect.poll(events).toHaveLength(1);
+  await page.evaluate(() => window.dispatchEvent(new Event('cha-analytics-ready')));
+  expect(await events()).toEqual([['event', 'affiliate_promo_view', expect.objectContaining({ affiliate_surface: 'home' })]]);
+  await promotion.getByRole('link').click({ modifiers: ['ControlOrMeta'] });
+  await expect.poll(events).toHaveLength(2);
+  expect((await events())[1]).toEqual(['event', 'affiliate_promo_click', expect.objectContaining({ cta_id: 'home-eneba-games' })]);
 });
 
 for (const scenario of ['feed-error', 'old', 'network', 'malformed', 'invalid-offer', 'empty']) {

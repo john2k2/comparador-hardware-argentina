@@ -11,9 +11,9 @@ export default function DynamicComparisonPage() {
   return (
     <main className="container mx-auto px-4 py-8">
       <header className="mb-7 max-w-4xl">
-        <p className="mb-2 text-[10px] font-bold text-muted-foreground">COMPARADOR ABIERTO</p>
+        <p className="mb-2 text-[12px] font-bold text-muted-foreground">COMPARADOR ABIERTO</p>
         <h1 className="font-pixel text-[16px] leading-relaxed text-primary md:text-[20px]">Compará dos componentes</h1>
-        <p className="mt-4 text-[11px] font-mono leading-relaxed text-muted-foreground md:text-[12px]">
+        <p className="mt-4 text-[12px] font-mono leading-relaxed text-muted-foreground md:text-[12px]">
           Buscá cualquier producto del catálogo. Contrastamos ofertas válidas, diferencia de precio, especificaciones y compatibilidad informada. Si faltan benchmarks, lo decimos en vez de inventar un ganador de rendimiento.
         </p>
       </header>

@@ -33,5 +33,9 @@ describe('text-utils', () => {
     it('preserva texto limpio', () => {
       expect(normalizeDisplayText('AMD Ryzen 5 5600X')).toBe('AMD Ryzen 5 5600X');
     });
+    it('renders published size entities as text and keeps invalid code points unchanged', () => {
+      expect(normalizeDisplayText('SSD SATA 2.5&#8243; &amp; 1TB')).toBe('SSD SATA 2.5″ & 1TB');
+      expect(normalizeDisplayText('A&#xD800; B&#999999999;')).toBe('A&#xD800; B&#999999999;');
+    });
   });
 });

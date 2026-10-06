@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { isEnebaOfferFresh, readEnebaSnapshot, type EnebaSnapshot } from '@/lib/eneba/pilot';
 import { trackEnebaClick, trackEnebaPilotView } from '@/lib/eneba/analytics';
 import { ANALYTICS_READY_EVENT } from '@/lib/analytics/consent';
+import { OfferReportLink } from '@/components/commercial/OfferReportLink';
 
 const formatDate = (value: string) => new Intl.DateTimeFormat('es-AR', {
   dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Argentina/Buenos_Aires',
@@ -13,7 +14,7 @@ const formatPrice = (price: number) => new Intl.NumberFormat('es-AR', {
   style: 'currency', currency: 'ARS', currencyDisplay: 'code',
 }).format(price);
 
-export function DigitalGames() {
+export function DigitalGames({ testData = false }: { testData?: boolean } = {}) {
   const [snapshot, setSnapshot] = useState<EnebaSnapshot | null>(null);
   const [now, setNow] = useState(0);
   useEffect(() => {
@@ -52,6 +53,7 @@ export function DigitalGames() {
     <main className="mx-auto w-full max-w-5xl px-4 py-10 md:px-8 md:py-14">
       <header>
         <h1 className="font-pixel text-xl leading-loose md:text-3xl">Juegos digitales para Argentina</h1>
+        {testData && <p className="mt-4 border-2 border-border bg-card p-3 font-body text-sm font-bold">Muestra sintética para pruebas · no son precios reales</p>}
         <p className="mt-4 font-mono text-sm normal-case text-secondary">Juegos para PC · selección inicial</p>
         <p className="mt-4 max-w-3xl font-mono text-sm normal-case leading-7 text-muted-foreground">
           Claves digitales de Eneba con plataforma y región revisadas. Esta selección tiene sus propias condiciones de activación.
@@ -94,6 +96,8 @@ export function DigitalGames() {
                   Ver {offer.name} en Eneba ↗
                 </a>
                 <p className="mt-2 text-center text-xs font-bold text-secondary">ENLACE AFILIADO · abre otra pestaña</p>
+                <OfferReportLink className="mt-1 self-start" context={{ productName: `${offer.name} · ${offer.edition}`,
+                  storeName: 'Eneba', offerUrl: offer.url }} />
               </article>
             ))}
           </div>

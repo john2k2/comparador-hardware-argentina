@@ -19,6 +19,7 @@ import type { DbCatalogPage } from './product-read-types';
 import { toNumber } from './product-read-helpers';
 import type { Product } from '@/lib/types';
 import { mergeCanonicalDetailOffers, shareExactProductVariant } from './product-detail-offers';
+import { guardCategoryPage } from '@/lib/search/category-page-guard';
 
 export type { ProductSort } from '@/lib/persistence/product-read-types';
 
@@ -123,11 +124,14 @@ export async function readProductsPageFromDatabase(params: ReadProductsPageParam
   const supabase = getServerSupabaseReadClient();
   if (!supabase) throw new Error('Catalog database unavailable');
   const query = params.query?.trim() ?? '';
+  const requestedCategory = params.category ?? inferHardwareCategoryFromName(query);
   const { data, error } = await supabase.rpc('search_catalog_page', {
     p_query: query,
-    p_category: params.category ?? inferHardwareCategoryFromName(query) ?? null,
+    p_category: requestedCategory ?? null,
     p_stores: [...new Set([...params.storeIds ?? []].map((id) => id.trim().toLowerCase()).filter(Boolean))].sort(),
-    p_min_price: params.minPrice ?? null,
+    // A non-null floor activates the RPC's current comparable-offer filter
+    // before totals and pagination. Zero adds no artificial price minimum.
+    p_min_price: params.minPrice ?? (params.onlyCurrentOffers ? 0 : null),
     p_max_price: params.maxPrice ?? null,
     p_sort: params.sortBy ?? 'relevance',
     p_page: requestedPage,
@@ -138,7 +142,8 @@ export async function readProductsPageFromDatabase(params: ReadProductsPageParam
     || !Number.isInteger(data.totalPages) || !Number.isInteger(data.page)
     || !Number.isInteger(data.pageSize)) throw new Error('Invalid catalog page response');
   const result = data as DbCatalogPage;
-  return { ...result, products: result.products.map(mapCatalogProduct) };
+  const guarded = guardCategoryPage(result.products.map(mapCatalogProduct), requestedCategory);
+  return { ...result, products: guarded.products, categoryExcludedOnPage: guarded.excluded };
 }
 
 // SQL decide selección, estadísticas y orden. El mapper conserva sanitización y
@@ -157,7 +162,7 @@ export async function readCategoryLandingPageFromDatabase(
   page: number,
   pageSize: number,
 ): Promise<ProductPageResult> {
-  return readProductsPageFromDatabase({ category, page, pageSize });
+  return readProductsPageFromDatabase({ category, page, pageSize, onlyCurrentOffers: true });
 }
 
 /**

@@ -68,10 +68,10 @@ export default async function BudgetGuidePage({ params }: Props) {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
-      <nav className="text-[10px] md:text-[11px] text-muted-foreground mb-6 font-mono flex flex-wrap gap-x-1 break-words">
-        <Link href="/" className="hover:text-primary transition-colors">Inicio</Link>
+      <nav className="text-[12px] md:text-[12px] text-muted-foreground mb-6 font-mono flex flex-wrap gap-x-1 break-words">
+        <Link href="/" className="inline-flex min-h-11 items-center hover:text-primary transition-colors">Inicio</Link>
         <span className="mx-2">/</span>
-        <Link href="/guia" className="hover:text-primary transition-colors">Guías</Link>
+        <Link href="/guia" className="inline-flex min-h-11 items-center hover:text-primary transition-colors">Guías</Link>
         <span className="mx-2">/</span>
         <span className="text-foreground">PC Gamer de ${(guide.budget / 1000000).toFixed(0)}M</span>
       </nav>
@@ -81,7 +81,7 @@ export default async function BudgetGuidePage({ params }: Props) {
         <h1 className="font-mono! text-base md:text-[20px] md:font-pixel! text-primary mb-3 leading-snug tracking-normal break-words max-w-full">
           PC Gamer de {formatPriceARS(guide.budget)}
         </h1>
-        <p className="text-[11px] md:text-[12px] text-muted-foreground font-mono leading-relaxed">
+        <p className="text-[12px] md:text-[12px] text-muted-foreground font-mono leading-relaxed">
           {guide.description} Las piezas salen del catálogo con disponibilidad informada por las tiendas. Revisá las fechas, los envíos y las comprobaciones pendientes antes de comprar.
         </p>
         <div className="mt-3">
@@ -97,22 +97,22 @@ export default async function BudgetGuidePage({ params }: Props) {
         
         <div className="grid md:grid-cols-2 gap-4">
           <div className="border-2 border-border p-4 text-center">
-            <div className="text-[10px] text-muted-foreground mb-1">PRESUPUESTO DE REFERENCIA</div>
+            <div className="text-[12px] text-muted-foreground mb-1">PRESUPUESTO DE REFERENCIA</div>
             <div className="text-[16px] md:text-[24px] font-pixel text-primary break-words">{formatPriceARS(guide.budget)}</div>
-            <p className="mt-2 text-[10px] text-muted-foreground">Margen de precios: hasta {formatPriceARS(publishedGuideBudgetLimit(guide.budget))} (+10%). Revisamos la selección una vez por semana o a pedido.</p>
+            <p className="mt-2 text-[12px] text-muted-foreground">Margen de precios: hasta {formatPriceARS(publishedGuideBudgetLimit(guide.budget))} (+10%). Revisamos la selección una vez por semana o a pedido.</p>
           </div>
           
           <div className="border-2 border-border p-4 text-center">
-            <div className="text-[10px] text-muted-foreground mb-1">{!resolved.fitsBudget ? 'BUSCANDO UNA SELECCIÓN DENTRO DEL MÁXIMO' : resolved.hasEstimates ? 'SUBTOTAL OBSERVADO — ARMADO INCOMPLETO' : 'TOTAL OBSERVADO — NO GARANTIZADO'}</div>
+            <div className="text-[12px] text-muted-foreground mb-1">{!resolved.fitsBudget ? 'BUSCANDO UNA SELECCIÓN DENTRO DEL MÁXIMO' : resolved.hasEstimates ? 'SUBTOTAL OBSERVADO — ARMADO INCOMPLETO' : 'TOTAL OBSERVADO — NO GARANTIZADO'}</div>
             <div className="text-[16px] md:text-[24px] font-pixel text-primary break-words">{resolved.fitsBudget && resolved.inStockSlots > 0 ? formatPriceARS(resolved.catalogTotal) : 'En preparación'}</div>
-            <p className="mt-2 text-[10px] uppercase text-muted-foreground">
+            <p className="mt-2 text-[12px] uppercase text-muted-foreground">
               {resolved.fitsBudget ? `${resolved.inStockSlots} de ${slotCount} partes con oferta observada en las últimas 3 h` : 'Las ofertas de la selección actual exceden el límite.'}
             </p>
           </div>
           
         </div>
         {resolved.hasEstimates && resolved.fitsBudget && (
-          <p className="mt-4 text-[10px] md:text-[11px] uppercase text-muted-foreground font-mono leading-relaxed">
+          <p className="mt-4 text-[12px] md:text-[12px] uppercase text-muted-foreground font-mono leading-relaxed">
             {slotCount - resolved.inStockSlots === 1
               ? 'Estamos buscando una oferta disponible para la pieza que falta.'
               : `Estamos buscando ofertas disponibles para las ${slotCount - resolved.inStockSlots} piezas que faltan.`}
@@ -120,7 +120,7 @@ export default async function BudgetGuidePage({ params }: Props) {
           </p>
         )}
         {!resolved.fitsBudget && (
-          <p className="mt-4 text-[10px] md:text-[11px] uppercase text-accent font-mono leading-relaxed">
+          <p className="mt-4 text-[12px] md:text-[12px] uppercase text-accent font-mono leading-relaxed">
             Las ofertas superan el presupuesto de referencia más el margen del 10%. Revisaremos alternativas compatibles; también podés pedir una revisión de la selección.
           </p>
         )}
@@ -143,7 +143,7 @@ export default async function BudgetGuidePage({ params }: Props) {
             o pedirnos ayuda para elegir las piezas.
           </p>
         )}
-        <p className="mt-4 text-[10px] uppercase text-muted-foreground font-mono leading-relaxed">
+        <p className="mt-4 text-[12px] uppercase text-muted-foreground font-mono leading-relaxed">
           No es necesario gastar todo el presupuesto.{' '}
           Elegimos la oferta válida de menor precio entre las comprobadas en las últimas 3 horas. Si la más barata no tiene stock o no se pudo confirmar, usamos la siguiente disponible. Confirmá el precio final, el envío y la compatibilidad antes de comprar.
         </p>
@@ -165,15 +165,15 @@ export default async function BudgetGuidePage({ params }: Props) {
         
         <div className="grid md:grid-cols-2 gap-4">
           <div className="border-2 border-border p-4">
-            <h3 className="text-[11px] font-bold mb-3">Gaming</h3>
+            <h3 className="text-[12px] font-bold mb-3">Gaming</h3>
             <GuideFpsPanel />
           </div>
           
           <div className="border-2 border-border p-4">
-            <h3 className="text-[11px] font-bold mb-3">Productividad</h3>
+            <h3 className="text-[12px] font-bold mb-3">Productividad</h3>
             <div className="space-y-2">
               {guide.productivity.map((task, i) => (
-                <div key={i} className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-[10px] font-mono">
+                <div key={i} className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-[12px] font-mono">
                   <span className="min-w-0 break-words">{task.task}</span>
                   <span className="min-w-0 max-w-full break-words">{task.performance}</span>
                 </div>
@@ -191,7 +191,7 @@ export default async function BudgetGuidePage({ params }: Props) {
         
         <div className="space-y-3">
           {guide.tips.map((tip, i) => (
-            <p key={i} className="text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
+            <p key={i} className="text-[12px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
               <strong>{i + 1}. {tip.split(':')[0]}:</strong>
               {tip.split(':').slice(1).join(':')}
             </p>
@@ -207,10 +207,10 @@ export default async function BudgetGuidePage({ params }: Props) {
           <div className="space-y-4">
             {faqs.map((faq) => (
               <div key={faq.question}>
-                <h3 className="text-[11px] md:text-[12px] font-bold normal-case tracking-normal text-foreground font-mono">
+                <h3 className="text-[12px] md:text-[12px] font-bold normal-case tracking-normal text-foreground font-mono">
                   {faq.question}
                 </h3>
-                <p className="mt-1 text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
+                <p className="mt-1 text-[12px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
                   {faq.answer}
                 </p>
               </div>

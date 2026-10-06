@@ -12,10 +12,10 @@ test.describe('Mobile Responsiveness', () => {
       await page.goto('/');
 
       // Título visible
-      await expect(page.getByText('COMPARA PRECIOS DE HARDWARE')).toBeVisible();
+      await expect(page.getByRole('heading', { level: 1, name: 'Compará precios de hardware' })).toBeVisible();
 
       // Search input accesible
-      const searchInput = page.getByPlaceholder(/BUSCAR|NUEVA/i);
+      const searchInput = page.getByRole('combobox', { name: 'Buscar productos', exact: true });
       await expect(searchInput).toBeVisible();
 
       // No debería haber scroll horizontal
@@ -25,14 +25,14 @@ test.describe('Mobile Responsiveness', () => {
       expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 5); // 5px tolerance
     });
 
-    test('categorías rápidas accesibles en mobile', async ({ page }) => {
+    test('categorías de hardware accesibles en mobile', async ({ page }) => {
       await page.goto('/');
 
-      const categoriesSection = page.getByText('CATEGORIAS RAPIDAS');
+      const categoriesSection = page.getByRole('navigation', { name: 'Categorías de hardware' });
       await expect(categoriesSection).toBeVisible();
 
       // Links de categorías deberían ser cliqueables
-      const categoryLinks = page.locator('a[href^="/comparar/"]');
+      const categoryLinks = categoriesSection.getByRole('link');
       const count = await categoryLinks.count();
       expect(count).toBeGreaterThan(0);
     });
@@ -74,7 +74,7 @@ test.describe('Mobile Responsiveness', () => {
       // El producto sintético tiene dos ofertas conocidas.
       await expect(page.locator('h1')).toBeVisible();
       await expect(page.getByText(/\$/).first()).toBeVisible();
-      await expect(page.getByRole('link', { name: /VER EN TIENDA/i }).first()).toBeVisible();
+      await expect(page.getByRole('link', { name: /VER EN (MEXX|VENEX)/i }).first()).toBeVisible();
       const dimensions = await page.locator('html').evaluate((el) => ({
         scroll: el.scrollWidth, viewport: el.clientWidth,
       }));
@@ -106,10 +106,10 @@ test.describe('Tablet Responsiveness', () => {
   test('home se adapta a tablet', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page.getByText('COMPARA PRECIOS DE HARDWARE')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Compará precios de hardware' })).toBeVisible();
 
     // Layout debería ser más ancho que en mobile
-    const gridSection = page.locator('section').filter({ hasText: /CATEGORIAS RAPIDAS/i });
+    const gridSection = page.getByRole('navigation', { name: 'Categorías de hardware' });
     await expect(gridSection).toBeVisible();
   });
 });
@@ -128,7 +128,7 @@ for (const viewport of homeMobileViewports) {
     test('mantiene buscador y boton BUSCAR dentro del viewport y navega con query', async ({ page }) => {
       await page.goto('/');
 
-      const searchInput = page.getByPlaceholder(/\[ BUSCAR PRODUCTO/i);
+      const searchInput = page.getByRole('combobox', { name: 'Buscar productos', exact: true });
       const searchButton = page.getByRole('button', { name: 'BUSCAR' });
       await expect(searchInput).toBeVisible();
       await expect(searchButton).toBeVisible();

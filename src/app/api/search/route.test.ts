@@ -233,46 +233,22 @@ describe('/api/search route', () => {
     expect(mockReadProductsFromDatabase).toHaveBeenCalled();
   });
 
-  it('falls back to live category products when filter-only DB-first search is empty', async () => {
-    const liveProduct = {
-      id: 'live-cpu',
-      name: 'Ryzen 9600X',
-      category: 'procesadores',
-      brand: 'AMD',
-      model: '9600X',
-      description: 'CPU',
-      image: '/pixel-box.svg',
-      specs: {},
-      prices: [{
-        storeId: 'mexx',
-        storeName: 'Mexx',
-        url: 'https://example.com/cpu',
-        price: 1000,
-        stock: 'in-stock',
-        installment: null,
-        lastUpdated: new Date('2026-03-08T12:00:00.000Z'),
-      }],
-      lowestPrice: 1000,
-      highestPrice: 1000,
-      averagePrice: 1000,
-      createdAt: new Date('2026-03-08T12:00:00.000Z'),
-      updatedAt: new Date('2026-03-08T12:00:00.000Z'),
-    };
-
-    mockReadProductsFromDatabase
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([liveProduct]);
-    mockResolveLiveProductsList.mockResolvedValue([liveProduct]);
-
+  it('keeps empty current results honest without scraping on a public visit', async () => {
     const { GET } = await import('./route');
     const response = await GET(new NextRequest('http://localhost/api/search?category=procesadores'));
     const payload = await response.json();
-
     expect(response.status).toBe(200);
-    expect(payload.pagination.total).toBe(1);
-    expect(payload.products[0]?.id).toBe('live-cpu');
-    expect(response.headers.get('X-Search-Cache')).toBe('CATEGORY-MISS-DB');
-    expect(mockResolveLiveProductsList).toHaveBeenCalledWith('procesadores', undefined, expect.any(Function), false, new Set());
+    expect(payload.pagination).toMatchObject({ total: 0, page: 1, totalPages: 0 });
+    expect(mockReadProductsFromDatabase).toHaveBeenCalledWith(expect.objectContaining({ onlyCurrentOffers: true }));
+    expect(mockResolveLiveProductsList).not.toHaveBeenCalled();
+    expect(mockPersistProductsSnapshot).not.toHaveBeenCalled();
+  });
+
+  it('passes opt-in historical references separately from current search', async () => {
+    const { GET } = await import('./route');
+    await GET(new NextRequest('http://localhost/api/search?q=rtx+5090&includeUnavailable=1'));
+    expect(mockReadProductsFromDatabase).toHaveBeenCalledWith(expect.objectContaining({ onlyCurrentOffers: false }));
+    expect(mockGetSharedCache).toHaveBeenCalledWith('search-response-v2', expect.stringContaining('references=1'));
   });
 
   it('habilita revisión de ofertas sólo al propagar un refresh autenticado', async () => {

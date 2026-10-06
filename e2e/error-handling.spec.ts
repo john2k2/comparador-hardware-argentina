@@ -12,11 +12,15 @@ test.describe('HTTP not-found responses', () => {
       const response = await page.goto(path);
       expect(response).not.toBeNull();
       expect(response!.status()).toBe(404);
-      await expect(page.getByRole('heading', { name: '[ ERROR 404: PAGINA NO ENCONTRADA ]', exact: true })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Página no encontrada', exact: true })).toBeVisible();
       const robots = await page.locator('meta[name="robots"]').evaluateAll((tags) => tags.map((tag) => tag.getAttribute('content')));
       expect(robots.length).toBeGreaterThan(0);
       for (const content of robots) expect(content).toContain('noindex');
-      await expect(page.getByRole('link', { name: '< BUSCAR PRODUCTOS' })).toHaveAttribute('href', '/search');
+      const searchLink = page.getByRole('link', { name: 'Buscar productos', exact: true });
+      await expect(searchLink).toHaveAttribute('href', '/search');
+      await searchLink.click();
+      await expect(page).toHaveURL(/\/search$/);
+      await expect(page.getByText('[ LISTO PARA BUSCAR ]', { exact: true })).toBeVisible();
     });
   }
 });

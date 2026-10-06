@@ -8,11 +8,11 @@ test('opens product detail from search and preserves the way back', async ({ pag
   await productLinks.first().click();
   await page.waitForURL(/\/product\//);
 
-  // El link tiene texto "[ VOLVER AL INVENTARIO ]"
-  const backLink = page.locator('a:has-text("VOLVER AL INVENTARIO")');
+  // El retorno conserva la categoría inicial, que resuelve a su landing canónica.
+  const backLink = page.getByRole('link', { name: 'Volver al catálogo', exact:true });
   await expect(backLink).toHaveAttribute('href', '/search?category=procesadores');
-  await expect(page.getByText('RESUMEN COMPARADOR')).toBeVisible();
-  await expect(page.getByText('TIENDAS DISPONIBLES')).toBeVisible();
+  await expect(page.getByText('MEJOR PRECIO REGISTRADO', { exact:true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ofertas por tienda', exact:true })).toBeVisible();
 
   await backLink.click();
   await page.waitForURL(/\/comparar\/procesadores$/);

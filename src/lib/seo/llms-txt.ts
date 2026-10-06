@@ -14,7 +14,7 @@ export function buildLlmsTxt(): string {
 
 ${HOME_CITATION_BLOCK}
 
-Metodología del índice: ${SITE_URL}/indice-precios-hardware
+Metodología del comparador: ${SITE_URL}/acerca
 No declaramos un ganador si no hay ofertas en stock.
 
 ## Páginas
@@ -24,11 +24,9 @@ No declaramos un ganador si no hay ofertas en stock.
 - [Guías PC gamer](${SITE_URL}/guia)
 - [Armá tu PC](${SITE_URL}/guia/armar)
 - [Comparativas](${SITE_URL}/comparativa)
-- [Índice de precios](${SITE_URL}/indice-precios-hardware)
 
 ## Categorías
 
 ${categoryLines}
 `;
 }
-

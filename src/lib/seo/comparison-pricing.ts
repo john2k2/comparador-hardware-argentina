@@ -1,7 +1,7 @@
 import { getComparableStorePrices } from '@/lib/price-utils';
 import type { ProductPrice } from '@/lib/types';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
-import { isCatalogOfferFresh } from '@/lib/price-freshness';
+import { isCatalogOfferFresh, isOfferFresh } from '@/lib/price-freshness';
 
 export type ComparisonSidePricing = {
   prices: ProductPrice[];
@@ -63,7 +63,11 @@ export function resolveComparisonPricing(input: {
   const right = side2.bestPrice;
   const bothHaveOffers = left != null && right != null;
   const priceDiff = bothHaveOffers ? Math.abs(left - right) : null;
-  const canDeclareWinner = Boolean(bothHaveOffers && priceDiff && priceDiff > 0);
+  // Las referencias del catálogo pueden durar 24 h. Un ganador de compra
+  // requiere que ambos precios mostrados conserven la ventana estricta de 3 h.
+  const canDeclareWinner = Boolean(bothHaveOffers && priceDiff && priceDiff > 0
+    && isOfferFresh(side1Prices[0]?.lastUpdated)
+    && isOfferFresh(side2Prices[0]?.lastUpdated));
   const cheaperName = canDeclareWinner && left != null && right != null
     ? (left < right ? input.product1Name : input.product2Name)
     : null;

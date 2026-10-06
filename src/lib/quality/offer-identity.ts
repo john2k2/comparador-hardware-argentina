@@ -71,6 +71,13 @@ export function needsIdentityReview(
   offer: { url?: string; identityReview?: OfferIdentityReview; sourceIdentity?: OfferSourceIdentity },
   product?: { name: string; category?: string },
 ): boolean {
+  // Una contradicción pública prevalece sobre la ausencia de un dictamen o
+  // sobre una aprobación antigua. No modifica el precio ni su fecha real.
+  if (product?.category && offer.url) {
+    const evidence = buildIdentityEvidence(product.name, product.category as HardwareCategory,
+      offer.url, offer.sourceIdentity?.title ?? offer.identityReview?.sourceIdentity?.title);
+    if (evidence && hasExplicitIdentityConflict(evidence)) return true;
+  }
   const review = readIdentityReview(offer.identityReview);
   if (!review) return false; // Ausencia conserva el contrato de ofertas todavía no evaluadas.
   if (review.status === 'needs-review' || review.subject.url !== offer.url) return true;
@@ -112,6 +119,18 @@ export function buildIdentityEvidence(name: string, category: HardwareCategory, 
 export function hasExplicitIdentityConflict(evidence: IdentityEvidence): boolean {
   if (/\b(outlet|reacondicionado|usado|refurbished)\b/i.test(evidence.offerText) && !/\b(outlet|reacondicionado|usado|refurbished)\b/i.test(evidence.name)) return true;
   if (evidence.sourceTitle && hasExplicitIdentityConflict({ name: evidence.name, category: evidence.category, offerText: evidence.sourceTitle })) return true;
+  if (['fuentes-alimentacion', 'gabinetes', 'perifericos', 'almacenamiento', 'motherboards', 'memoria-ram'].includes(evidence.category)) {
+    const explicitColor = (value: string) => {
+      const colors = new Set([...value.matchAll(/\b(white|blanc[oa]|black|negr[oa]|blue|azul|red|roj[oa])\b/gi)]
+        .map(match => /^(white|blanc[oa])$/i.test(match[1]) ? 'white'
+          : /^(black|negr[oa])$/i.test(match[1]) ? 'black'
+          : /^(blue|azul)$/i.test(match[1]) ? 'blue' : 'red'));
+      // Títulos multicolor o un color omitido no permiten afirmar conflicto.
+      return colors.size === 1 ? [...colors][0] : undefined;
+    };
+    const left = explicitColor(evidence.name), right = explicitColor(evidence.offerText);
+    if (left && right && left !== right) return true;
+  }
   if (evidence.category==='procesadores') {
     const left=cpuVariantAttributes(evidence.name),right=cpuVariantAttributes(evidence.offerText);
     if(left.cooler==='conflict'||right.cooler==='conflict'

@@ -4,8 +4,17 @@ import { PRODUCT_SELECT_FIELDS, sanitizeSearchTerm } from '@/lib/persistence/pro
 import { mapDbProduct } from '@/lib/persistence/product-read-mapper';
 import type { DbProductRow } from '@/lib/persistence/product-read-types';
 import { SLOT_CATEGORIES, type BuildSlot } from './types';
+import { isStableRuntimeMode } from '@/lib/server/runtime-flags';
+import { getStableFixtureProducts } from '@/lib/server/stable-search-fixtures';
 
 export async function readBuilderCatalog(input: { slot?: BuildSlot; ids?: string[]; query?: string }) {
+  if (isStableRuntimeMode()) {
+    // La misma fuente sintética de búsqueda y detalle evita mezclar precios
+    // públicos variables con los recorridos locales de guardado/restauración.
+    if (input.ids) return getStableFixtureProducts({}).filter(product => input.ids!.includes(product.id));
+    if (!input.slot) return [];
+    return getStableFixtureProducts({ category:SLOT_CATEGORIES[input.slot], query:input.query });
+  }
   const supabase = getServerSupabaseReadClient();
   if (!supabase) throw new Error('CATALOG_UNAVAILABLE');
   let query = supabase.from('products').select(PRODUCT_SELECT_FIELDS);

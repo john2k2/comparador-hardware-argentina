@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { HomePageClient } from '@/components/home/HomePageClient';
-import { FeaturedProductsSection } from '@/components/home/FeaturedProductsSection';
+import { LatestOffersSection } from '@/components/home/LatestOffersSection';
 import { PriceDropSection } from '@/components/home/PriceDropSection';
-import { PopularProductsSection } from '@/components/home/PopularProductsSection';
 import { ProductGridSkeleton } from '@/components/ui/Skeleton';
+import { isEnebaPilotEnabled } from '@/lib/eneba/server';
 import {
   HOME_PAGE_DESCRIPTION,
   HOME_PAGE_TITLE,
@@ -22,29 +22,20 @@ export const revalidate = 300;
 
 export default function HomePage() {
   return (
-    <div className="w-full min-w-0 max-w-[1760px] mx-auto px-4 xl:px-8 py-8">
-      {/* Static content - loads immediately */}
-      <HomePageClient 
-        initialFeaturedProducts={[]}
-        initialPriceDropProducts={[]}
-        initialFeaturedFallbackUsed={false}
-        initialPriceDropFallbackUsed={false}
-        initialPopularProducts={[]}
-        staticMode={true}
+    <div className="w-full min-w-0 max-w-[1440px] mx-auto px-4 xl:px-8 py-6">
+      <HomePageClient
+        showGamesPromotion={isEnebaPilotEnabled()}
+        latestOffersSection={
+          <Suspense fallback={<ProductGridSkeleton count={4} />}>
+            <LatestOffersSection />
+          </Suspense>
+        }
+        priceDropSection={
+          <Suspense fallback={<ProductGridSkeleton count={4} />}>
+            <PriceDropSection />
+          </Suspense>
+        }
       />
-
-      {/* Async sections with Suspense - load independently */}
-      <Suspense fallback={<ProductGridSkeleton count={8} />}>
-        <FeaturedProductsSection />
-      </Suspense>
-
-      <Suspense fallback={<ProductGridSkeleton count={8} />}>
-        <PriceDropSection />
-      </Suspense>
-
-      <Suspense fallback={<ProductGridSkeleton count={8} />}>
-        <PopularProductsSection />
-      </Suspense>
     </div>
   );
 }

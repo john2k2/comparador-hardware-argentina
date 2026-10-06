@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { HardwareCategory, Product } from '@/lib/types';
-import { CATALOG_OFFER_FRESH_MS } from '@/lib/price-freshness';
+import { CATALOG_OFFER_FRESH_MS, OFFER_FRESH_MS } from '@/lib/price-freshness';
 import { compareProducts } from './dynamic-comparison';
 
 function product(id: string, price: number, specs: Record<string, string> = {}, category: HardwareCategory = 'procesadores'): Product {
@@ -13,6 +13,19 @@ function product(id: string, price: number, specs: Record<string, string> = {}, 
 }
 
 describe('compareProducts', () => {
+  it('no recomienda por precio ni rendimiento por peso con una referencia de más de 3 h', () => {
+    const left = { ...product('RTX 4060',400_000,{},'tarjetas-graficas'),model:'RTX 4060' };
+    const right = { ...product('RX 7600',300_000,{},'tarjetas-graficas'),model:'RX 7600' };
+    right.prices[0].lastUpdated = new Date(Date.now()-OFFER_FRESH_MS-60_000);
+    const result = compareProducts(left,right);
+    expect(result.rightPrice).toBe(300_000);
+    expect(result.difference).toBe(100_000);
+    expect(result.rightOffers).toHaveLength(1);
+    expect(result.cheaperProductId).toBeNull();
+    expect(result.valueWinnerProductId).toBeNull();
+    expect(result.recommendation).toContain('últimas tres horas');
+    expect(result.evidence.join(' ')).toContain('referencias del catálogo');
+  });
   it('calcula diferencia de precio sin convertirla en benchmark', () => {
     const result = compareProducts(product('Ryzen A', 100_000), product('Ryzen B', 125_000));
     expect(result.cheaperProductId).toBe('Ryzen A');

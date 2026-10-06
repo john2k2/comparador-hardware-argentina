@@ -68,6 +68,7 @@ export function Filters({
       minPrice: undefined,
       maxPrice: undefined,
       stores: [],
+      includeUnavailable: false,
       sortBy: 'relevance',
     });
   };
@@ -77,6 +78,7 @@ export function Filters({
     filters.minPrice,
     filters.maxPrice,
     filters.stores && filters.stores.length > 0,
+    filters.includeUnavailable,
   ].filter(Boolean).length;
 
   const categoryOptions = [
@@ -95,32 +97,32 @@ export function Filters({
   return (
     <div className={cn('space-y-4', className)}>
       {/* Header de filtros */}
-      <div className="flex items-center justify-between border-b-4 border-muted pb-4">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b-4 border-muted pb-3">
+        <div className="flex shrink-0 items-center gap-2">
           <Filter className="h-4 w-4 text-foreground" />
-          <h2 className="font-bold text-[10px] uppercase text-foreground">
+          <h2 className="font-mono! text-sm font-bold uppercase text-foreground whitespace-nowrap">
             FILTROS
           </h2>
           {activeFiltersCount > 0 && (
-            <span className="bg-primary text-primary-foreground px-2 py-0.5 text-[8px] font-bold">
+            <span className="bg-primary text-primary-foreground px-2 py-0.5 text-[12px] font-bold">
               {activeFiltersCount}
             </span>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-1">
           {activeFiltersCount > 0 && (
           <button
             type="button"
             onClick={handleClearFilters}
-              className="min-h-11 px-2 text-[8px] uppercase text-foreground/80 hover:text-primary transition-colors"
+              className="min-h-11 px-1 text-[12px] uppercase text-foreground/80 hover:text-primary transition-colors whitespace-nowrap"
             >
-              [ LIMPIAR ]
+              LIMPIAR
             </button>
           )}
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden min-h-11 text-[8px] uppercase bg-card border-2 border-border px-3 py-2 pixel-shadow"
+            className="lg:hidden min-h-11 text-[12px] uppercase bg-card border-2 border-border px-2 py-2 pixel-shadow whitespace-nowrap"
             aria-expanded={isOpen}
             aria-controls="filters-content"
           >
@@ -143,7 +145,7 @@ export function Filters({
             type="button"
             id="sort-filter-label"
             onClick={() => toggleSection('sort')}
-            className="min-h-11 flex items-center justify-between w-full text-[10px] font-bold text-foreground uppercase tracking-wider"
+            className="min-h-11 flex items-center justify-between w-full text-[12px] font-bold text-foreground uppercase tracking-wider"
             aria-expanded={expandedSections.includes('sort')}
             aria-controls="sort-filter-panel"
           >
@@ -160,7 +162,7 @@ export function Filters({
                 value={filters.sortBy}
                 onChange={(e) => handleSortChange(e.target.value)}
                 aria-labelledby="sort-filter-label"
-                className="w-full min-h-11 px-2 border-4 border-border bg-background text-foreground text-[8px] uppercase outline-none focus:border-primary appearance-none rounded-none"
+                className="w-full min-h-11 px-2 border-4 border-border bg-background text-foreground text-[12px] uppercase outline-none focus:border-primary appearance-none rounded-none"
               >
                 {sortOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -178,7 +180,7 @@ export function Filters({
             type="button"
             id="category-filter-label"
             onClick={() => toggleSection('category')}
-            className="min-h-11 flex items-center justify-between w-full text-[10px] font-bold text-foreground uppercase tracking-wider"
+            className="min-h-11 flex items-center justify-between w-full text-[12px] font-bold text-foreground uppercase tracking-wider"
             aria-expanded={expandedSections.includes('category')}
             aria-controls="category-filter-panel"
           >
@@ -195,7 +197,7 @@ export function Filters({
                 value={filters.category || ''}
                 onChange={(e) => handleCategoryChange(e.target.value)}
                 aria-labelledby="category-filter-label"
-                className="w-full min-h-11 px-2 border-4 border-border bg-background text-foreground text-[8px] uppercase outline-none focus:border-primary appearance-none rounded-none"
+                className="w-full min-h-11 px-2 border-4 border-border bg-background text-foreground text-[12px] uppercase outline-none focus:border-primary appearance-none rounded-none"
               >
                 {categoryOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -213,7 +215,7 @@ export function Filters({
             type="button"
             id="price-filter-label"
             onClick={() => toggleSection('price')}
-            className="min-h-11 flex items-center justify-between w-full text-[10px] font-bold text-foreground uppercase tracking-wider"
+            className="min-h-11 flex items-center justify-between w-full text-[12px] font-bold text-foreground uppercase tracking-wider"
             aria-expanded={expandedSections.includes('price')}
             aria-controls="price-filter-panel"
           >
@@ -234,7 +236,7 @@ export function Filters({
                 value={filters.minPrice || ''}
                 onChange={(e) => handlePriceChange('min', e.target.value)}
                 aria-label="Precio mínimo"
-                className="w-full min-h-11 px-2 border-4 border-border bg-background text-foreground text-[10px] outline-none focus:border-primary placeholder:text-foreground/80 rounded-none"
+                className="w-full min-h-11 px-2 border-4 border-border bg-background text-foreground text-[12px] outline-none focus:border-primary placeholder:text-foreground/80 rounded-none"
               />
               <label className="sr-only">Precio máximo</label>
               <input
@@ -243,7 +245,7 @@ export function Filters({
                 value={filters.maxPrice || ''}
                 onChange={(e) => handlePriceChange('max', e.target.value)}
                 aria-label="Precio máximo"
-                className="w-full min-h-11 px-2 border-4 border-border bg-background text-foreground text-[10px] outline-none focus:border-primary placeholder:text-foreground/80 rounded-none"
+                className="w-full min-h-11 px-2 border-4 border-border bg-background text-foreground text-[12px] outline-none focus:border-primary placeholder:text-foreground/80 rounded-none"
               />
               </>
             )}
@@ -257,7 +259,7 @@ export function Filters({
               type="button"
               id="stores-filter-label"
               onClick={() => toggleSection('stores')}
-              className="min-h-11 flex items-center justify-between w-full text-[10px] font-bold text-foreground uppercase tracking-wider"
+              className="min-h-11 flex items-center justify-between w-full text-[12px] font-bold text-foreground uppercase tracking-wider"
               aria-expanded={expandedSections.includes('stores')}
               aria-controls="stores-filter-panel"
             >
@@ -278,7 +280,7 @@ export function Filters({
                     onClick={() => handleStoreToggle(store.id)}
                     aria-pressed={Boolean(filters.stores?.includes(store.id))}
                     className={cn(
-                      'text-left px-2 py-1 text-[8px] uppercase transition-colors border-2 shrink-0',
+                      'text-left px-2 py-1 text-[12px] uppercase transition-colors border-2 shrink-0',
                       'min-h-11',
                       filters.stores?.includes(store.id)
                         ? 'bg-secondary text-secondary-foreground border-secondary font-bold'

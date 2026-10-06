@@ -92,6 +92,7 @@ export interface SearchFilters {
   maxPrice?: number;
   stores?: string[];
   brands?: string[];
+  includeUnavailable?: boolean;
   sortBy: SortOption;
   sortOrder: 'asc' | 'desc';
 }

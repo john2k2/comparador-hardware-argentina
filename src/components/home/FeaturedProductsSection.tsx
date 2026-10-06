@@ -10,13 +10,14 @@ export async function FeaturedProductsSection() {
       <SectionTitle
         title="PRODUCTOS DESTACADOS"
         subtitle={featuredFallbackUsed
-          ? 'SELECCION ACTIVA DEL CATALOGO MIENTRAS SE RECONSTRUYE LA CURACION AUTOMATICA'
-          : 'EN STOCK + ACTUALIZADOS < 24H + MEJOR PRECIO POR CATEGORIA'}
-        actionHref="/search?q=rtx"
-        actionLabel="VER TODO"
+          ? 'Explorá el catálogo y verificá las ofertas en cada ficha.'
+          : 'Ofertas recientes para comparar entre tiendas.'}
+        actionHref="/search"
+        actionLabel="VER CATÁLOGO"
       />
       <ProductGrid
-        products={featuredProducts}
+        products={featuredProducts.slice(0, 4)}
+        compact
         emptyMessage="No se pudieron cargar destacados en este momento."
         surface="home_featured"
       />

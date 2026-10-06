@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { LogIn, LogOut, Menu, Moon, Sun, UserRound, X } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { ChevronDown, LogIn, LogOut, Moon, Sun, UserRound } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getUserDisplayName } from '@/lib/client/auth';
 import { syncServerSession } from '@/lib/client/session-sync';
-import { PRIMARY_NAV_LINKS } from '@/lib/seo/primary-nav-links';
+import { getPrimaryNavLinks, isNavLinkActive, SECONDARY_NAV_LINKS } from '@/lib/seo/primary-nav-links';
 
 function subscribeToThemeChanges(callback: () => void) {
   if (typeof window === 'undefined') {
@@ -39,16 +40,30 @@ function getServerThemeSnapshot() {
   return false;
 }
 
-export function Navigation() {
+export function Navigation({ showGames = false }: { showGames?: boolean } = {}) {
+  const pathname = usePathname();
   const isDark = useSyncExternalStore(
     subscribeToThemeChanges,
     getThemeSnapshot,
     getServerThemeSnapshot,
   );
-  const [isWiping, setIsWiping] = useState(false);
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(Boolean(supabase));
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const moreNavigation = useRef<HTMLDetailsElement>(null);
+  const mobileMenuButton = useRef<HTMLButtonElement>(null);
+  const primaryLinks = getPrimaryNavLinks(showGames);
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setIsMobileMenuOpen(false);
+      mobileMenuButton.current?.focus();
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [isMobileMenuOpen]);
 
   useEffect(() => {
     let mounted = true;
@@ -75,28 +90,9 @@ export function Navigation() {
   }, []);
 
   const toggleTheme = () => {
-    if (isWiping) return;
-
     const newTheme = !isDark;
-    const applyTheme = () => {
-      localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-      document.documentElement.classList.toggle('dark', newTheme);
-    };
-
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      applyTheme();
-      return;
-    }
-
-    setIsWiping(true);
-
-    setTimeout(() => {
-      applyTheme();
-    }, 600);
-
-    setTimeout(() => {
-      setIsWiping(false);
-    }, 1300);
+    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark', newTheme);
   };
 
   const handleSignOut = async () => {
@@ -107,25 +103,17 @@ export function Navigation() {
   };
 
   return (
-    <>
-      {isWiping && (
-        <div
-          className="pixel-wipe-overlay"
-          style={{
-            backgroundColor: isDark ? '#ffffff' : '#ff0055',
-          }}
-        />
-      )}
-
       <header
-        className="sticky top-0 z-50 bg-background border-b-4 border-border"
+        className="sticky top-0 z-50 border-b-4 border-border bg-background"
         role="banner"
       >
-        <div className="w-full max-w-[1800px] mx-auto px-4 xl:px-8">
-          <div className="flex h-20 items-center justify-between">
+        <div className="w-full px-4 xl:px-8">
+          <div className="flex min-h-16 items-center justify-between gap-4">
             <Link
               href="/"
-              className="flex min-w-0 items-center gap-3 hover:-translate-y-1 transition-transform group"
+              aria-label="Hardware AR · Inicio"
+              aria-current={pathname === '/' ? 'page' : undefined}
+              className="group flex shrink-0 items-center gap-3 transition-transform motion-safe:hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-secondary"
             >
               {/* Logo Icon Box */}
               <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0" style={{ boxShadow: '4px 4px 0px 0px #1a1a1a' }}>
@@ -160,53 +148,72 @@ export function Navigation() {
                 <span
                   className="font-bold text-[14px] md:text-[18px] text-foreground uppercase tracking-wider truncate md:[text-shadow:4px_4px_0_#88c0d0]"
                 >
-                  HARDWARE<span className="text-primary group-hover:animate-blink-pink transition-colors ml-[1px]">AR</span>
+                  HARDWARE<span className="text-primary group-hover:text-secondary transition-colors ml-[1px]">AR</span>
                 </span>
-                <span className="text-[6px] md:text-[8px] text-secondary font-bold uppercase animate-pixel-blink ml-1">
+                <span className="text-[10px] font-mono! text-muted-foreground font-bold uppercase ml-1">
                   V1.0_READY
                 </span>
               </div>
             </Link>
 
-            {/* Navegación central */}
-            <nav className="hidden xl:flex items-center gap-1">
-              {PRIMARY_NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="px-3 py-2 text-[10px] uppercase font-bold text-secondary hover:text-primary hover:bg-muted border-2 border-transparent hover:border-border transition-colors"
-                >
+            <nav aria-label="Navegación principal" className="hidden min-w-0 flex-1 items-center justify-center gap-1 xl:flex">
+              {primaryLinks.map((link) => (
+                <Link key={link.href} href={link.href}
+                  aria-current={isNavLinkActive(link.href, pathname) ? 'location' : undefined}
+                  className={`inline-flex min-h-11 items-center justify-center whitespace-nowrap border-b-2 px-2 py-2 font-mono! text-sm font-bold transition-colors hover:bg-muted hover:text-primary 2xl:px-3 2xl:text-base focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary ${isNavLinkActive(link.href, pathname) ? 'border-primary text-primary' : 'border-transparent text-secondary'}`}>
                   {link.label}
                 </Link>
               ))}
+              <details ref={moreNavigation} className="nav-more relative shrink-0" onKeyDown={(event) => {
+                if (event.key === 'Escape' && moreNavigation.current) {
+                  moreNavigation.current.open = false;
+                  moreNavigation.current.querySelector('summary')?.focus();
+                }
+              }}>
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 px-2 py-2 font-mono! text-sm font-bold text-secondary hover:bg-muted hover:text-primary 2xl:px-3 2xl:text-base focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary [&::-webkit-details-marker]:hidden">
+                  Más <ChevronDown className="nav-more-chevron h-4 w-4" aria-hidden="true" />
+                </summary>
+                <div className="nav-panel absolute right-0 top-full z-10 min-w-64 border-2 border-border bg-card p-2 pixel-shadow">
+                  {SECONDARY_NAV_LINKS.map((link) => (
+                    <Link key={link.href} href={link.href}
+                      aria-current={isNavLinkActive(link.href, pathname) ? 'location' : undefined}
+                      onClick={() => { if (moreNavigation.current) moreNavigation.current.open = false; }}
+                      className="flex min-h-11 items-center px-3 py-3 font-mono! text-sm font-bold text-secondary hover:bg-muted hover:text-primary focus-visible:outline-2 focus-visible:outline-secondary">
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              </details>
             </nav>
 
             <div className="flex items-center gap-2">
               {/* Botón menú móvil */}
               <button
                 type="button"
+                ref={mobileMenuButton}
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="xl:hidden min-h-11 min-w-11 px-3 py-2 border-2 border-border bg-card text-[8px] uppercase font-bold text-secondary inline-flex items-center justify-center gap-2 hover:bg-muted transition-colors"
+                className="nav-toggle xl:hidden min-h-11 min-w-11 px-3 py-2 border-2 border-border bg-card text-secondary inline-flex items-center justify-center gap-2 hover:bg-muted transition-colors"
+                data-open={isMobileMenuOpen}
                 aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
                 aria-expanded={isMobileMenuOpen}
                 aria-controls="mobile-primary-navigation"
               >
-                {isMobileMenuOpen ? (
-                  <X className="w-4 h-4" aria-hidden="true" />
-                ) : (
-                  <Menu className="w-4 h-4" aria-hidden="true" />
-                )}
+                <span className="nav-toggle-lines" aria-hidden="true">
+                  <span className="nav-toggle-line" />
+                  <span className="nav-toggle-line" />
+                  <span className="nav-toggle-line" />
+                </span>
               </button>
 
               {isAuthLoading ? (
-                <div className="hidden sm:block px-3 py-2 border-2 border-border text-[8px] uppercase text-foreground/80">
-                  AUTH...
+                <div className="hidden sm:block px-3 py-2 border-2 border-border font-mono! text-xs font-bold text-secondary">
+                  Cargando…
                 </div>
               ) : authUser ? (
                 <>
                   <Link
                     href="/auth"
-                    className="min-h-11 max-w-[7rem] px-3 py-2 border-2 border-border bg-card text-[8px] uppercase font-bold text-secondary hidden sm:inline-flex items-center gap-2"
+                    className="min-h-11 max-w-[7rem] px-3 py-2 border-2 border-border bg-card font-mono! text-xs font-bold text-secondary hidden sm:inline-flex items-center gap-2"
                   >
                     <UserRound className="w-3 h-3 shrink-0" aria-hidden="true" />
                     <span className="truncate">{getUserDisplayName(authUser)}</span>
@@ -214,28 +221,28 @@ export function Navigation() {
                   <button
                     type="button"
                     onClick={handleSignOut}
-                    className="min-h-11 px-3 py-2 border-2 border-border bg-card text-[8px] uppercase font-bold text-primary inline-flex items-center gap-2 hover:bg-muted transition-colors"
-                    aria-label="SALIR - Cerrar sesion"
+                    className="min-h-11 px-3 py-2 border-2 border-border bg-card font-mono! text-xs font-bold text-primary inline-flex items-center gap-2 hover:bg-muted transition-colors"
+                    aria-label="Cerrar sesión"
                   >
                     <LogOut className="w-3 h-3" aria-hidden="true" />
-                    <span className="hidden sm:inline">SALIR</span>
+                    <span className="hidden sm:inline">Salir</span>
                   </button>
                 </>
               ) : (
                 <Link
                   href="/auth"
-                  className="hidden md:inline-flex min-h-11 min-w-11 px-3 py-2 border-2 border-border bg-card text-[8px] uppercase font-bold text-secondary items-center gap-2 hover:bg-muted transition-colors"
-                  aria-label="LOGIN - Iniciar sesion"
+                  className="hidden md:inline-flex min-h-11 min-w-11 px-3 py-2 border-2 border-border bg-card font-mono! text-xs font-bold text-secondary items-center gap-2 hover:bg-muted transition-colors"
+                  aria-label="Iniciar sesión"
                 >
                   <LogIn className="w-3 h-3" aria-hidden="true" />
-                  <span className="hidden sm:inline">LOGIN</span>
+                  <span className="hidden sm:inline">Ingresar</span>
                 </Link>
               )}
 
               <button
                 onClick={toggleTheme}
-                className="group relative flex items-center justify-center w-11 h-11 min-h-11 bg-card border-4 border-border pixel-shadow-primary hover:bg-muted active:translate-x-1 active:translate-y-1 transition-all"
-                aria-label={isDark ? '[ TOGGLE_OS ] MODO CLARO' : '[ TOGGLE_OS ] MODO OSCURO'}
+                className="group relative flex items-center justify-center w-11 h-11 min-h-11 bg-card border-4 border-border pixel-shadow-primary hover:bg-muted motion-safe:active:translate-x-1 motion-safe:active:translate-y-1 transition-colors focus-visible:outline-2 focus-visible:outline-secondary"
+                aria-label={isDark ? 'Usar tema claro' : 'Usar tema oscuro'}
               >
                 {isDark ? (
                   <Sun className="w-6 h-6 text-accent" aria-hidden="true" />
@@ -243,22 +250,20 @@ export function Navigation() {
                   <Moon className="w-6 h-6 text-primary" aria-hidden="true" />
                 )}
 
-                <span aria-hidden="true" className="absolute -bottom-10 right-0 hidden group-hover:block bg-black text-white text-[8px] p-2 whitespace-nowrap border-2 border-white">
-                  [ TOGGLE_OS ]
-                </span>
               </button>
             </div>
           </div>
 
           {/* Menú móvil desplegable */}
-          <div className={`xl:hidden border-t-2 border-border bg-background ${isMobileMenuOpen ? '' : 'hidden'}`}>
-              <nav id="mobile-primary-navigation" className="flex flex-col py-2">
-                {PRIMARY_NAV_LINKS.map((link) => (
+          <div className={`nav-panel absolute left-0 right-0 top-full xl:hidden border-b-4 border-border bg-card pixel-shadow ${isMobileMenuOpen ? '' : 'hidden'}`}>
+              <nav id="mobile-primary-navigation" aria-label="Navegación móvil" className="max-h-[calc(100dvh-4rem)] overflow-y-auto flex flex-col py-2">
+                {[...primaryLinks, ...SECONDARY_NAV_LINKS].map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
+                    aria-current={isNavLinkActive(link.href, pathname) ? 'location' : undefined}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="px-4 py-3 text-[10px] uppercase font-bold text-secondary hover:text-primary hover:bg-muted transition-colors border-b border-border"
+                    className="min-h-11 px-4 py-3 font-mono! text-base font-bold text-secondary hover:text-primary hover:bg-muted transition-colors border-b border-border"
                   >
                     {link.label}
                   </Link>
@@ -266,7 +271,7 @@ export function Navigation() {
                 <Link
                   href="/auth"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="px-4 py-3 text-[10px] uppercase font-bold text-secondary hover:text-primary hover:bg-muted transition-colors"
+                  className="min-h-11 px-4 py-3 font-mono! text-base font-bold text-secondary hover:text-primary hover:bg-muted transition-colors"
                 >
                   {authUser ? 'Mi cuenta' : 'Iniciar sesion'}
                 </Link>
@@ -274,7 +279,6 @@ export function Navigation() {
           </div>
         </div>
       </header>
-    </>
   );
 }
 

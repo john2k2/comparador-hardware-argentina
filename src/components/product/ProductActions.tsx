@@ -14,7 +14,7 @@ export function ProductActions({ latestSyncAtMs }: ProductActionsProps) {
   }, [latestSyncAtMs]);
 
   return (
-    <div className="flex flex-wrap gap-4 text-[8px] uppercase font-bold text-foreground/80 p-4 bg-muted border-4 border-border">
+    <div className="flex flex-wrap gap-4 text-[12px] uppercase font-bold text-foreground/80 p-4 bg-muted border-4 border-border">
       <div className="flex items-center gap-2">
         <Shield className="w-4 h-4 text-primary" />
         <span>GARANTIA SEGUN TIENDA</span>

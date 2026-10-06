@@ -1,5 +1,5 @@
 import type { Product } from '@/lib/types';
-import { buildProductIdentityKey, normalizeIdentityText } from '@/lib/product-identity';
+import { normalizeIdentityText } from '@/lib/product-identity';
 import { proveOfferAttributes } from '@/lib/quality/offer-attribute-proof';
 import { hasExplicitIdentityConflict } from '@/lib/quality/offer-identity';
 import { computeComparableStorePriceStats } from '@/lib/price-utils';
@@ -14,7 +14,11 @@ export function shareExactProductVariant(product:ProductVariant,candidate:Produc
   if(['procesadores','memoria-ram','tarjetas-graficas'].includes(product.category)) {
     return proveOfferAttributes(product.name,product.category,candidate.name)!==null;
   }
-  return buildProductIdentityKey(product.category,candidate.name)===buildProductIdentityKey(product.category,product.name);
+  // Una clave heredada puede reducir WD Green y Sandisk Plus a "1TB", o
+  // descartar blanco/negro y una edición M75. Para categorías sin prueba de
+  // atributos no basta repetir esa misma clave: exigir los tokens completos.
+  const tokens = (name:string) => [...new Set(normalizeIdentityText(name).split(' '))].sort().join(' ');
+  return tokens(candidate.name) === tokens(product.name);
 }
 
 /** Lectura solamente: reunir publicaciones exactas sin renovar fechas ni reasignar IDs. */

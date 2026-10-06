@@ -47,7 +47,7 @@ function SearchPageClientInner({
   const [draftFilters, setDraftFilters] = useState(() => toSearchFilters(initialState));
   const [baseProducts, setBaseProducts] = useState<Product[]>(hydrateProducts(initialBaseProducts));
   const [pagination, setPagination] = useState(initialPagination);
-  const [isLoading, setIsLoading] = useState(initialHasSearchIntent && initialPagination.total === 0);
+  const [isLoading, setIsLoading] = useState(initialHasSearchIntent && !initialResolvedRequestKey);
   const [resolvedRequestKey, setResolvedRequestKey] = useState<string | null>(initialResolvedRequestKey);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isNavigating, startNavigation] = useTransition();
@@ -55,7 +55,7 @@ function SearchPageClientInner({
   const initialRouteRef = useRef(buildSearchRoute(initialState));
 
   useEffect(() => {
-    if (!initialResolvedRequestKey || initialPagination.total === 0) return;
+    if (!initialResolvedRequestKey) return;
     setCached(initialResolvedRequestKey, {
       products: initialBaseProducts,
       pagination: initialPagination,
@@ -71,7 +71,7 @@ function SearchPageClientInner({
 
   const hasStoreFilters = (filters.stores?.length ?? 0) > 0;
   const hasPriceFilters = filters.minPrice !== undefined || filters.maxPrice !== undefined;
-  const hasActiveFilters = Boolean(filters.category || hasStoreFilters || hasPriceFilters || filters.sortBy !== 'relevance');
+  const hasActiveFilters = Boolean(filters.category || hasStoreFilters || hasPriceFilters || filters.includeUnavailable || filters.sortBy !== 'relevance');
   const hasSearchIntent = apiSearchKey !== '__empty__';
   const isSearchSyncing = hasSearchIntent && resolvedRequestKey !== null && resolvedRequestKey !== requestKey;
   const isBusy = isLoading || isSearchSyncing || isNavigating;
@@ -120,6 +120,7 @@ function SearchPageClientInner({
     category: nextFilters.category,
     minPrice: nextFilters.minPrice,
     maxPrice: nextFilters.maxPrice,
+    includeUnavailable: nextFilters.includeUnavailable,
     stores: (nextFilters.stores ?? []).map((store) => store.trim()).filter(Boolean).sort(),
     sortBy: nextFilters.sortBy,
     page,
@@ -193,6 +194,9 @@ function SearchPageClientInner({
     if (newFilters.sortBy !== undefined && newFilters.sortBy !== filters.sortBy) {
       trackFilterChange({ filterType: 'sort', filterValue: newFilters.sortBy });
     }
+    if (newFilters.includeUnavailable !== undefined && newFilters.includeUnavailable !== filters.includeUnavailable) {
+      trackFilterChange({ filterType: 'availability', filterValue: newFilters.includeUnavailable ? 'include_references' : 'current_offers' });
+    }
 
     // Los campos se actualizan inmediatamente; solo se demora la búsqueda confirmada.
     if (filterDebounceRef.current !== null) {
@@ -225,6 +229,7 @@ function SearchPageClientInner({
       minPrice: undefined,
       maxPrice: undefined,
       stores: [],
+      includeUnavailable: false,
       sortBy: 'relevance',
       sortOrder: 'asc',
     }, 1));
@@ -233,6 +238,7 @@ function SearchPageClientInner({
   return (
     <SearchPageView
       products={baseProducts}
+      categoryExcludedOnPage={pagination.categoryExcludedOnPage}
       filters={filters}
       searchQuery={searchQuery}
       isBusy={isBusy}

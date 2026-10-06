@@ -6,6 +6,7 @@ import { buildProductIdentityKey, extractExactModelIdentity, normalizeIdentityTe
 import type { Product } from '@/lib/types';
 import { toDate, toNumber, toStockStatus } from '@/lib/persistence/product-read-helpers';
 import type { DbProductRow } from '@/lib/persistence/product-read-types';
+import { resolveProductBrand } from '@/lib/scrapers/brand-utils';
 
 const storeNameById = new Map<string, string>(staticStores.map((store) => [store.id, store.name]));
 
@@ -84,7 +85,7 @@ function mapProductRow(row: DbProductRow, preserveOffers: boolean): Product {
     // La categoria persistida es la fuente de verdad para que filtro, conteo y
     // paginacion operen sobre el mismo conjunto de filas.
     category,
-    brand: row.brand || 'Generica',
+    brand: resolveProductBrand(row.brand, row.name),
     model: row.model || row.name,
     description: row.description ?? row.name,
     image: row.image ?? '/pixel-box.svg',

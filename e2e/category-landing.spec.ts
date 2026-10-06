@@ -32,8 +32,10 @@ test.describe('Category Landing Pages', () => {
         // Panel de filtros visible (buscar el heading FILTROS)
         await expect(page.locator('h2:has-text("FILTROS")').first()).toBeVisible();
 
-        // Panel de categorías (buscar el heading CATEGORIAS)
-        await expect(page.locator('h3:has-text("CATEGORIAS")').first()).toBeVisible();
+        const category = page.getByRole('combobox', { name: 'CATEGORÍA', exact: true });
+        await expect(category).toHaveCount(1);
+        await expect(category).toHaveValue(cat.slug);
+        await expect(page.getByRole('button', { name: /Filtrar por categoría:/ })).toHaveCount(0);
       });
 
       test('puede navegar a otras categorías desde sidebar', async ({ page }) => {
@@ -42,8 +44,7 @@ test.describe('Category Landing Pages', () => {
         // Click en otra categoría usando el texto del botón
         const otherCategory = categories.find(c => c.slug !== cat.slug);
         if (otherCategory) {
-          // Usar texto exacto del botón en el sidebar
-          await page.locator(`button:has-text("${otherCategory.name}")`).first().click();
+          await page.getByRole('combobox', { name: 'CATEGORÍA', exact: true }).selectOption(otherCategory.slug);
           await page.waitForURL(new RegExp(`${otherCategory.landing}$`));
           await expect(page).toHaveURL(new RegExp(`${otherCategory.landing}$`));
         }

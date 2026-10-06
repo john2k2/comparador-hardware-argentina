@@ -31,7 +31,7 @@ export function InstallmentPicker({
 
   return (
     <div className={cn('space-y-3', className)}>
-      <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-foreground/80">
+      <div className="flex items-center gap-2 text-[12px] uppercase font-bold text-foreground/80">
         <CreditCard className="h-4 w-4 text-secondary" />
         <span>Medios de pago</span>
       </div>
@@ -46,8 +46,8 @@ export function InstallmentPicker({
               : 'border-border bg-card hover:border-secondary',
           )}
         >
-          <span className="text-[10px] uppercase font-bold">Precio de contado</span>
-          <span className="text-[10px] font-bold text-secondary break-words">
+          <span className="text-[12px] uppercase font-bold">Precio de contado</span>
+          <span className="text-[12px] font-bold text-secondary break-words">
             {formatPriceARS(currentPrice)}
           </span>
         </button>
@@ -68,26 +68,26 @@ export function InstallmentPicker({
               )}
             >
               <div className="flex flex-wrap items-center gap-2 min-w-0">
-                <span className="text-[10px] uppercase font-bold break-words">
+                <span className="text-[12px] uppercase font-bold break-words">
                   {installment.count} cuotas de {formatPriceARS(installment.amount)}
                 </span>
                 {installment.interest && (
-                  <span className="text-[8px] uppercase font-bold px-1.5 py-0.5 border-2 border-accent text-accent">
+                  <span className="text-[12px] uppercase font-bold px-1.5 py-0.5 border-2 border-accent text-accent">
                     con interés
                   </span>
                 )}
                 {isBest && (
-                  <span className="text-[8px] uppercase font-bold px-1.5 py-0.5 border-2 border-secondary text-secondary">
+                  <span className="text-[12px] uppercase font-bold px-1.5 py-0.5 border-2 border-secondary text-secondary">
                     mejor opción
                   </span>
                 )}
               </div>
               <div className="text-left sm:text-right min-w-0">
-                <span className="text-[10px] font-bold text-foreground break-words">
+                <span className="text-[12px] font-bold text-foreground break-words">
                   {formatPriceARS(installment.totalAmount)}
                 </span>
                 {installment.interest && (
-                  <p className="text-[8px] uppercase text-foreground/70">
+                  <p className="text-[12px] uppercase text-foreground/70">
                     +{formatPriceARS(installment.totalAmount - currentPrice)} de interés
                   </p>
                 )}
@@ -97,7 +97,7 @@ export function InstallmentPicker({
         })}
       </div>
 
-      <div className="flex items-start gap-2 text-[8px] uppercase text-foreground/70 pt-2">
+      <div className="flex items-start gap-2 text-[12px] uppercase text-foreground/70 pt-2">
         <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
         <p>Los valores pueden variar según el comercio. Las cuotas son aproximadas.</p>
       </div>

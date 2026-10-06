@@ -14,5 +14,8 @@ describe('SiteFooter', () => {
     expect(markup).toContain('/comparativa/comparar');
     expect(markup).not.toContain('/tiendas');
     expect(markup).toContain('Informacion');
+    expect(markup.match(/href="\/acerca"/g)).toHaveLength(1);
+    expect(markup).not.toContain('/indice-precios-hardware');
+    expect(markup).toContain('max-w-[1440px]');
   });
 });

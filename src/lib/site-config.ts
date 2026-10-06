@@ -28,9 +28,10 @@ export const GOOGLE_SITE_VERIFICATION = normalizeText(
 );
 export const SUPPORT_EMAIL = normalizeText(process.env.SUPPORT_EMAIL ?? process.env.NEXT_PUBLIC_SUPPORT_EMAIL);
 
-export function buildMailtoHref(subject?: string): string | null {
+export function buildMailtoHref(subject?: string, body?: string): string | null {
   if (!SUPPORT_EMAIL) return null;
-  if (!subject) return `mailto:${SUPPORT_EMAIL}`;
-
-  return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`;
+  const params: string[] = [];
+  if (subject) params.push(`subject=${encodeURIComponent(subject)}`);
+  if (body) params.push(`body=${encodeURIComponent(body)}`);
+  return `mailto:${SUPPORT_EMAIL}${params.length ? `?${params.join('&')}` : ''}`;
 }

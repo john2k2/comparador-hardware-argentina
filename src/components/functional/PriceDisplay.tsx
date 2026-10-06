@@ -11,6 +11,7 @@ export interface PriceDisplayProps {
   size?: 'sm' | 'md' | 'lg';
   showDiscount?: boolean;
   className?: string;
+  isReference?: boolean;
 }
 
 export function PriceDisplay({
@@ -19,24 +20,25 @@ export function PriceDisplay({
   size = 'md',
   showDiscount = true,
   className,
+  isReference = false,
 }: PriceDisplayProps) {
   const discount = originalPrice ? calculateDiscount(originalPrice, price) : 0;
 
   const sizes = {
-    sm: 'text-[12px]',
-    md: 'text-[14px]',
-    lg: 'text-[20px]',
+    sm: 'text-base',
+    md: 'text-lg',
+    lg: 'text-[clamp(1.5rem,2.5vw,2rem)]',
   };
 
   return (
     <div className={cn('flex flex-col gap-1', className)}>
       {/* Precio Original Retro */}
-      {showDiscount && originalPrice && originalPrice > price && (
+      {!isReference && showDiscount && originalPrice && originalPrice > price && (
         <div className="flex items-center gap-2">
-          <span className="text-[8px] text-foreground/80 line-through decoration-primary decoration-2">
+          <span className="text-[12px] text-foreground/80 line-through decoration-primary decoration-2">
             {formatPriceARS(originalPrice)}
           </span>
-          <span className="text-[8px] text-primary font-bold">
+          <span className="text-[12px] text-primary font-bold">
             -{discount}%
           </span>
         </div>
@@ -46,7 +48,8 @@ export function PriceDisplay({
       <div className="flex items-baseline min-w-0">
         <span
           className={cn(
-            'text-secondary font-bold tracking-tighter break-words',
+            'font-bold tracking-tighter break-words',
+            isReference ? 'text-muted-foreground' : 'text-secondary',
             sizes[size]
           )}
         >

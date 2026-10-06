@@ -31,6 +31,8 @@ describe('hardware-categories', () => {
     expect(inferHardwareCategoryFromName('Ventilador para gabinete 120mm')).toBe('refrigeracion');
     expect(inferHardwareCategoryFromName('Disipador CPU DeepCool AG400')).toBe('refrigeracion');
     expect(inferHardwareCategoryFromName('Cooler Master Hyper 212')).toBe('refrigeracion');
+    expect(inferHardwareCategoryFromName('CPU COOLERMASTER HYPER 212 3DHP BLACK ARGB')).toBe('refrigeracion');
+    expect(inferHardwareCategoryFromName('DELL SOPORTE PARA DISCO 2.5 SERVER T160')).toBe('perifericos');
     expect(inferHardwareCategoryFromName('Cooler Master MasterLiquid ML240')).toBe('refrigeracion');
     expect(inferHardwareCategoryFromName('Cooler Master ML240 ARGB')).toBe('refrigeracion');
     expect(inferHardwareCategoryFromName('Cooler Master')).toBeUndefined();

@@ -25,6 +25,7 @@ import { getEditorialMethodology } from '@/lib/seo/editorial-methodology';
 import { EditorialMethodology } from '@/components/seo/EditorialMethodology';
 import { EditorialAdPreview } from '@/components/adsense/EditorialAdPreview';
 import { StoreOutboundLink } from '@/components/functional/StoreOutboundLink';
+import { OfferReportLink } from '@/components/commercial/OfferReportLink';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -79,14 +80,14 @@ export default async function ComparisonPage({ params }: Props) {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
-      <nav className="text-[10px] md:text-[11px] text-muted-foreground mb-6 font-mono flex flex-wrap gap-x-1 break-words">
-        <Link href="/" className="hover:text-primary transition-colors">Inicio</Link>
+      <nav className="text-[12px] md:text-[12px] text-muted-foreground mb-6 font-mono flex flex-wrap gap-x-1 break-words">
+        <Link href="/" className="inline-flex min-h-11 items-center hover:text-primary transition-colors">Inicio</Link>
         <span className="mx-2">/</span>
-        <Link href="/comparativa" className="hover:text-primary transition-colors">Comparativas</Link>
+        <Link href="/comparativa" className="inline-flex min-h-11 items-center hover:text-primary transition-colors">Comparativas</Link>
         <span className="mx-2">/</span>
         <Link
           href={buildCategoryLandingPath(comparison.product1.category)}
-          className="hover:text-primary transition-colors"
+          className="inline-flex min-h-11 items-center hover:text-primary transition-colors"
         >
           {comparison.product1.category === 'procesadores' ? 'Comparar procesadores' : (getCategoryLabel(comparison.product1.category as HardwareCategory) ?? comparison.product1.category)}
         </Link>
@@ -99,7 +100,7 @@ export default async function ComparisonPage({ params }: Props) {
         <h1 className="font-mono! text-base md:text-[20px] md:font-pixel! text-primary mb-3 leading-snug tracking-normal break-words max-w-full">
           {comparison.product1.name} vs {comparison.product2.name}
         </h1>
-        <p className="text-[11px] md:text-[12px] text-muted-foreground font-mono leading-relaxed">
+        <p className="text-[12px] md:text-[12px] text-muted-foreground font-mono leading-relaxed">
           {comparison.description}
         </p>
         <div className="mt-3">
@@ -112,7 +113,7 @@ export default async function ComparisonPage({ params }: Props) {
         <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">
           [ INTRODUCCION ]
         </h2>
-        <div className="space-y-3 text-[11px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono">
+        <div className="space-y-3 text-[12px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono">
           <p>
             <strong>{comparison.product1.name}</strong> prioriza {comparison.product1.pros[0].toLowerCase()}, mientras que{' '}
             <strong>{comparison.product2.name}</strong> se destaca por {comparison.product2.pros[0].toLowerCase()}.
@@ -125,7 +126,8 @@ export default async function ComparisonPage({ params }: Props) {
           </p>
           <p>
             Compará la variante exacta, VRAM o socket, consumo, garantía y condiciones de envío. Si no hay una oferta
-            comparable observada recientemente, no mostramos un ganador de precio. Confirmá ambos valores en las tiendas antes de decidir.
+            comparable observada en las últimas tres horas para ambos modelos, no mostramos un ganador de precio.
+            Las referencias de hasta 24 horas se conservan por separado. Confirmá ambos valores en las tiendas antes de decidir.
           </p>
         </div>
       </section>
@@ -155,7 +157,7 @@ export default async function ComparisonPage({ params }: Props) {
         </div>
 
         {pricing.canDeclareWinner && pricing.cheaperName && pricing.priceDiff != null && (
-          <div className="mt-4 p-3 bg-primary/10 border-2 border-primary text-[11px] font-mono">
+          <div className="mt-4 p-3 bg-primary/10 border-2 border-primary text-[12px] font-mono">
             Según las últimas observaciones, <strong>{pricing.cheaperName}</strong> figuró ${formatPriceARS(pricing.priceDiff).replace('$', '')} más barato. La diferencia puede haber cambiado.
           </div>
         )}
@@ -170,11 +172,11 @@ export default async function ComparisonPage({ params }: Props) {
         <div className="grid md:grid-cols-2 gap-6">
           <div className="border-2 border-border p-4">
             <h3 className="text-[12px] font-bold text-primary mb-3">{comparison.product1.name}</h3>
-            <p className="text-[11px] font-mono mb-3">{comparison.product1.specs}</p>
+            <p className="text-[12px] font-mono mb-3">{comparison.product1.specs}</p>
             
             <div className="mb-3">
-              <div className="text-[10px] text-green-600 font-bold mb-1">✓ VENTAJAS</div>
-              <ul className="text-[10px] font-mono space-y-1">
+              <div className="text-[12px] text-secondary font-bold mb-1">✓ VENTAJAS</div>
+              <ul className="text-[12px] font-mono space-y-1">
                 {comparison.product1.pros.map((pro, i) => (
                   <li key={i}>• {pro}</li>
                 ))}
@@ -182,8 +184,8 @@ export default async function ComparisonPage({ params }: Props) {
             </div>
             
             <div>
-              <div className="text-[10px] text-red-600 font-bold mb-1">✗ DESVENTAJAS</div>
-              <ul className="text-[10px] font-mono space-y-1">
+              <div className="text-[12px] text-destructive font-bold mb-1">✗ DESVENTAJAS</div>
+              <ul className="text-[12px] font-mono space-y-1">
                 {comparison.product1.cons.map((con, i) => (
                   <li key={i}>• {con}</li>
                 ))}
@@ -193,11 +195,11 @@ export default async function ComparisonPage({ params }: Props) {
 
           <div className="border-2 border-border p-4">
             <h3 className="text-[12px] font-bold text-primary mb-3">{comparison.product2.name}</h3>
-            <p className="text-[11px] font-mono mb-3">{comparison.product2.specs}</p>
+            <p className="text-[12px] font-mono mb-3">{comparison.product2.specs}</p>
             
             <div className="mb-3">
-              <div className="text-[10px] text-green-600 font-bold mb-1">✓ VENTAJAS</div>
-              <ul className="text-[10px] font-mono space-y-1">
+              <div className="text-[12px] text-secondary font-bold mb-1">✓ VENTAJAS</div>
+              <ul className="text-[12px] font-mono space-y-1">
                 {comparison.product2.pros.map((pro, i) => (
                   <li key={i}>• {pro}</li>
                 ))}
@@ -205,8 +207,8 @@ export default async function ComparisonPage({ params }: Props) {
             </div>
             
             <div>
-              <div className="text-[10px] text-red-600 font-bold mb-1">✗ DESVENTAJAS</div>
-              <ul className="text-[10px] font-mono space-y-1">
+              <div className="text-[12px] text-destructive font-bold mb-1">✗ DESVENTAJAS</div>
+              <ul className="text-[12px] font-mono space-y-1">
                 {comparison.product2.cons.map((con, i) => (
                   <li key={i}>• {con}</li>
                 ))}
@@ -222,10 +224,10 @@ export default async function ComparisonPage({ params }: Props) {
           <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">
             [ COMPARATIVA DE PRECIOS POR TIENDA ]
           </h2>
-          <p className="mb-4 text-[10px] md:text-[11px] font-mono text-muted-foreground">Precios observados en las últimas 24 horas, no garantizados. Abrí cada publicación para comprobar precio, stock y variante antes de comprar.</p>
+          <p className="mb-4 text-[12px] md:text-[12px] font-mono text-muted-foreground">Precios observados en las últimas 24 horas, no garantizados. Abrí cada publicación para comprobar precio, stock y variante antes de comprar.</p>
           
           <div className="overflow-x-auto">
-            <table className="w-full text-[10px] md:text-[11px] font-mono">
+            <table className="w-full text-[12px] md:text-[12px] font-mono">
               <thead>
                 <tr className="border-b-2 border-border">
                   <th className="text-left py-2 px-3">Tienda</th>
@@ -252,7 +254,7 @@ export default async function ComparisonPage({ params }: Props) {
                       <td className="text-right py-2 px-3">
                         {p2Offer ? <ObservedStorePrice offer={p2Offer} store={store} product={product2} definition={comparison.product2} position={index + 1} /> : '-'}
                       </td>
-                      <td className={`text-right py-2 px-3 ${diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : ''}`}>
+                      <td className={`text-right py-2 px-3 ${diff > 0 ? 'text-secondary' : diff < 0 ? 'text-destructive' : ''}`}>
                         {diff !== 0 ? formatPriceARS(Math.abs(diff)) : '-'}
                       </td>
                     </tr>
@@ -275,7 +277,7 @@ export default async function ComparisonPage({ params }: Props) {
           [ CONCLUSION ]
         </h2>
         
-        <p className="text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
+        <p className="text-[12px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
           {comparison.conclusion}
         </p>
       </section>
@@ -288,10 +290,10 @@ export default async function ComparisonPage({ params }: Props) {
           <div className="space-y-4">
             {comparison.faqs.map((faq) => (
               <div key={faq.question}>
-                <h3 className="text-[11px] md:text-[12px] font-bold normal-case tracking-normal text-foreground font-mono">
+                <h3 className="text-[12px] md:text-[12px] font-bold normal-case tracking-normal text-foreground font-mono">
                   {faq.question}
                 </h3>
-                <p className="mt-1 text-[11px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
+                <p className="mt-1 text-[12px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/85 font-mono">
                   {faq.answer}
                 </p>
               </div>
@@ -300,7 +302,7 @@ export default async function ComparisonPage({ params }: Props) {
           <p className="mt-5">
             <Link
               href={buildCategoryLandingPath(comparison.product1.category)}
-              className="text-[10px] md:text-[11px] font-bold uppercase text-primary hover:underline"
+              className="text-[12px] md:text-[12px] font-bold uppercase text-primary hover:underline"
             >
               {comparison.product1.category === 'procesadores' ? 'Comparar procesadores →' : 'Ver precios de la categoría →'}
             </Link>
@@ -363,27 +365,30 @@ function ProductCard({
   return (
     <div className="border-2 border-border p-4">
       <h3 className="text-[12px] font-bold text-foreground mb-2">{product.name}</h3>
-      <div className="text-[10px] text-muted-foreground mb-2 font-mono">{product.specs}</div>
+      <div className="text-[12px] text-muted-foreground mb-2 font-mono">{product.specs}</div>
       <div className="text-[16px] sm:text-[24px] md:text-[28px] font-pixel text-primary mb-1 break-words">
         {bestPrice > 0 ? formatPriceARS(bestPrice) : 'Sin precio reciente'}
       </div>
-      <p className="text-[10px] text-muted-foreground font-mono">
+      <p className="text-[12px] text-muted-foreground font-mono">
         {prices.length === 0
           ? 'Sin observaciones recientes de precio y stock'
           : prices.length === 1
             ? '1 tienda informó stock en las últimas 24 h'
             : `${prices.length} tiendas informaron stock en las últimas 24 h`}
       </p>
-      {bestOffer && <p className="mt-1 text-[10px] text-muted-foreground font-mono">Menor precio observado en {bestOffer.storeName || bestOffer.storeId} el {formatObservationDate(bestOffer.lastUpdated)}. Puede haber cambiado.</p>}
-      {bestStoreUrl && bestOffer && <StoreOutboundLink className="inline-flex min-h-11 items-center text-[10px] text-secondary hover:underline"
+      {bestOffer && <p className="mt-1 text-[12px] text-muted-foreground font-mono">Menor precio observado en {bestOffer.storeName || bestOffer.storeId} el {formatObservationDate(bestOffer.lastUpdated)}. Puede haber cambiado.</p>}
+      {bestStoreUrl && bestOffer && <StoreOutboundLink className="inline-flex min-h-11 items-center text-[12px] text-secondary hover:underline"
         tracking={{ productId: realProduct?.id, productName: realProduct?.name ?? product.name, category: product.category,
           storeId: bestOffer.storeId, storeName: bestOffer.storeName || bestOffer.storeId, price: bestOffer.price,
           position: 1, ctaId: 'comparison_best_offer', destinationUrl: bestStoreUrl, surface: 'comparison', linkType: 'organic' }}>
         Comprobar en tienda →</StoreOutboundLink>}
+      <OfferReportLink className="block mt-2" context={{ productId: realProduct?.id,
+        productName: realProduct?.name ?? product.name, storeId: bestOffer?.storeId,
+        storeName: bestOffer?.storeName, offerUrl: bestStoreUrl ?? undefined }} />
       {realProduct && (
         <Link 
           href={`/product/${realProduct.id}`}
-          className="inline-flex min-h-11 items-center mt-3 text-[10px] bg-primary text-primary-foreground px-3 py-2 hover:bg-primary/90 transition-colors"
+          className="inline-flex min-h-11 items-center mt-3 text-[12px] bg-primary text-primary-foreground px-3 py-2 hover:bg-primary/90 transition-colors"
         >
           VER DETALLES →
         </Link>
@@ -416,7 +421,9 @@ function ObservedStorePrice({ offer, store, product, definition, position }: {
         tracking={{ productId: product?.id, productName: product?.name ?? definition.name, category: definition.category,
           storeId: offer.storeId, storeName: store, price: offer.price, position, ctaId: 'comparison_store_price',
           destinationUrl: url, surface: 'comparison', linkType: 'organic' }}>{formatPriceARS(offer.price)} ↗</StoreOutboundLink> : formatPriceARS(offer.price)}
-      <span className="block text-[9px] text-muted-foreground">Obs. {formatObservationDate(offer.lastUpdated)}</span>
+      <span className="block text-[12px] text-muted-foreground">Obs. {formatObservationDate(offer.lastUpdated)}</span>
+      <OfferReportLink context={{ productId: product?.id, productName: product?.name ?? definition.name,
+        storeId: offer.storeId, storeName: store, offerUrl: url ?? undefined }} />
     </div>
   );
 }

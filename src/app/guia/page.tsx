@@ -4,6 +4,7 @@ import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
 import { formatPriceARS } from '@/lib/price-utils';
 import { resolveGuiasHubMetadata } from '@/lib/seo/landing-metadata';
 import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
+import { EditorialLinkCard } from '@/components/seo/EditorialLinkCard';
 import Link from 'next/link';
 
 export const metadata: Metadata = resolveGuiasHubMetadata();
@@ -17,7 +18,7 @@ export default function GuiasIndexPage() {
         <h1 className="text-[16px] md:text-[20px] font-pixel text-primary mb-3 leading-tight">
           Guías de PC Gamer
         </h1>
-        <p className="text-[11px] md:text-[12px] text-muted-foreground font-mono leading-relaxed">
+        <p className="text-[12px] md:text-[12px] text-muted-foreground font-mono leading-relaxed">
           Elegí componentes según tu presupuesto y compará los precios registrados de tiendas argentinas.
         </p>
         <div className="mt-3">
@@ -29,7 +30,7 @@ export default function GuiasIndexPage() {
         <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">
           [ COMO USAR ESTAS GUIAS ]
         </h2>
-        <div className="space-y-3 text-[11px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono">
+        <div className="space-y-3 text-[12px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono">
           <p>
             Cada guía parte de un presupuesto en pesos argentinos. Las piezas se eligen del catálogo con
             disponibilidad informada. Revisá la fecha de cada oferta: el stock y el precio final se confirman
@@ -53,7 +54,7 @@ export default function GuiasIndexPage() {
         <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">
           [ CONSEJOS GENERALES ]
         </h2>
-        <ul className="space-y-2 text-[11px] leading-relaxed normal-case text-foreground/85 font-mono">
+        <ul className="space-y-2 text-[12px] leading-relaxed normal-case text-foreground/85 font-mono">
           <li className="flex items-start gap-2">
             <span className="text-primary font-bold shrink-0">01.</span>
             <span>Priorizá la GPU para gaming. Es el componente que más impacta en FPS.</span>
@@ -81,12 +82,12 @@ export default function GuiasIndexPage() {
         <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-3">
           [ ARMA CON TU PRESUPUESTO ]
         </h2>
-        <p className="text-[11px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono mb-4">
+        <p className="text-[12px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono mb-4">
           Ingresá tu monto, ajustá cada pieza y compará ofertas. Podés compartir el armado o descargar el presupuesto sin crear una cuenta.
         </p>
         <Link
           href="/guia/armar"
-          className="inline-flex min-h-11 items-center border-4 border-primary bg-primary px-4 text-[10px] uppercase font-bold text-primary-foreground"
+          className="inline-flex min-h-11 items-center border-4 border-primary bg-primary px-4 text-[12px] uppercase font-bold text-primary-foreground"
         >
           Armá tu PC →
         </Link>
@@ -94,24 +95,14 @@ export default function GuiasIndexPage() {
 
       <div className="grid md:grid-cols-3 gap-6">
         {BUDGET_GUIDES.map((guide) => (
-          <Link
+          <EditorialLinkCard
             key={guide.slug}
             href={`/guia/${guide.slug}`}
-            className="bg-card border-4 border-border p-5 pixel-shadow hover:border-primary transition-colors group"
-          >
-            <div className="text-[10px] text-muted-foreground mb-2">PRESUPUESTO</div>
-            <div className="text-[20px] md:text-[24px] font-pixel text-primary mb-3">
-              {formatPriceARS(guide.budget)}
-            </div>
-            
-            <p className="text-[10px] md:text-[11px] text-muted-foreground font-mono mb-3">
-              {guide.description}
-            </p>
-            
-            <div className="mt-3 text-[10px] text-primary font-mono">
-              VER GUÍA →
-            </div>
-          </Link>
+            title={formatPriceARS(guide.budget)}
+            description={guide.description}
+            actionLabel="Ver guía"
+            headingLevel={2}
+          />
         ))}
       </div>
 
@@ -119,11 +110,11 @@ export default function GuiasIndexPage() {
         <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-3">
           [ COMPARA ANTES DE ELEGIR ]
         </h2>
-        <p className="text-[11px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono mb-4">
+        <p className="text-[12px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono mb-4">
           Si ya tenés dos modelos en mente, compará sus ofertas y diferencias para gaming o productividad.
           También podés explorar procesadores y placas de video con precios de varias tiendas.
         </p>
-        <div className="flex flex-wrap gap-3 text-[10px] font-mono font-bold uppercase">
+        <div className="flex flex-wrap gap-3 text-[12px] font-mono font-bold uppercase">
           <Link href="/comparativa/comparar" className="inline-flex min-h-11 items-center border-2 border-primary px-3 text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
             Comparar productos →
           </Link>
@@ -140,7 +131,7 @@ export default function GuiasIndexPage() {
         <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">
           [ PREGUNTAS FRECUENTES ]
         </h2>
-        <div className="space-y-3 text-[11px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono">
+        <div className="space-y-3 text-[12px] md:text-[12px] leading-relaxed normal-case text-foreground/85 font-mono">
           <div>
             <p className="font-bold text-primary mb-1">¿Se pueden comprar las partes por separado?</p>
             <p>Sí. Las partes con ofertas observadas recientemente enlazan a la publicación de la tienda y a la ficha para comparar. Confirmá precio y stock antes de comprar.</p>

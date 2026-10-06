@@ -1,6 +1,8 @@
 import 'server-only';
 import { logger } from '@/lib/logger';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
+import { isStableRuntimeMode } from '@/lib/server/runtime-flags';
+import { getStableEnebaSnapshot } from '@/lib/server/stable-eneba-fixtures';
 import { ENEBA_CACHE_SCOPE, ENEBA_CACHE_KEY } from './snapshot-cache';
 import {
   isEnebaOfferFresh, readEnebaSnapshot, type EnebaSnapshot,
@@ -38,6 +40,7 @@ async function readCachedSnapshot(): Promise<EnebaSnapshot> {
 
 export async function getEnebaSnapshot(): Promise<EnebaSnapshot> {
   if (!isEnebaPilotEnabled()) return { status: 'disabled', offers: [], fetchedAt: null, feedUpdatedAt: null };
+  if (isStableRuntimeMode()) return getStableEnebaSnapshot();
   // Comparte la lectura en curso dentro del proceso; no hay refresh público forzado.
   pending ??= readCachedSnapshot().finally(() => { pending = undefined; });
   return pending;
@@ -48,6 +51,7 @@ export async function handleEnebaGamesGet(): Promise<Response> {
   const offers = snapshot.offers.filter((offer) => isEnebaOfferFresh(offer));
   return Response.json({ ...snapshot, offers, status: snapshot.status === 'ready' && offers.length === 0 ? 'empty' : snapshot.status }, {
     status: snapshot.status === 'disabled' ? 404 : 200,
-    headers: { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' },
+    headers: { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow',
+      ...(isStableRuntimeMode() ? { 'X-QA-Fixture': 'eneba-synthetic' } : {}) },
   });
 }

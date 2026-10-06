@@ -27,24 +27,24 @@ export default async function PrivacidadPage() {
       title="POLITICA DE PRIVACIDAD"
       subtitle="Actualizada el 27 de septiembre de 2026. Analítica opcional y controles para tu navegador."
     >
-      <div className="space-y-4 text-[10px] uppercase text-foreground">
+      <div className="space-y-4 text-[12px] uppercase text-foreground">
         <div className="border-2 border-border p-4 bg-muted/30">
           <h2 className="text-secondary font-bold mb-2">[ DATOS ]</h2>
-          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+          <p className="leading-relaxed normal-case text-[12px] tracking-normal font-mono">
             {SITE_NAME} puede procesar datos tecnicos basicos de navegacion, consultas de busqueda, URLs visitadas y registros operativos para mantener el servicio, detectar errores y mejorar resultados.
           </p>
         </div>
 
         <div className="border-2 border-border p-4 bg-muted/30">
           <h2 className="text-secondary font-bold mb-2">[ FINALIDAD ]</h2>
-          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+          <p className="leading-relaxed normal-case text-[12px] tracking-normal font-mono">
             La finalidad principal es operar el comparador, monitorear estabilidad, mejorar agrupacion de productos y analizar problemas de scraping o integridad de precios.
           </p>
         </div>
 
         <div className="border-2 border-border p-4 bg-muted/30">
           <h2 className="text-secondary font-bold mb-2">[ TERCEROS ]</h2>
-          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+          <p className="leading-relaxed normal-case text-[12px] tracking-normal font-mono">
             Cuando haces clic en una oferta, sales del comparador y pasas a una tienda externa. Cada comercio tiene sus propias politicas, condiciones y practicas de datos.
           </p>
         </div>
@@ -52,14 +52,14 @@ export default async function PrivacidadPage() {
         <div className="grid md:grid-cols-2 gap-4">
           <div className="border-2 border-border p-4 bg-muted/30">
             <h2 className="text-secondary font-bold mb-2">[ CONSERVACION ]</h2>
-            <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            <p className="leading-relaxed normal-case text-[12px] tracking-normal font-mono">
               Los registros operativos se conservan solo el tiempo necesario para diagnostico, seguridad, rendimiento o mejora del catalogo, salvo obligaciones tecnicas adicionales.
             </p>
           </div>
 
           <div className="border-2 border-border p-4 bg-muted/30">
             <h2 className="text-secondary font-bold mb-2">[ CONSULTAS ]</h2>
-            <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+            <p className="leading-relaxed normal-case text-[12px] tracking-normal font-mono">
               {SUPPORT_EMAIL
                 ? `Para privacidad o datos, puedes escribir a ${SUPPORT_EMAIL}.`
                 : 'Para consultas de privacidad, antes del lanzamiento conviene definir un canal de contacto publico y verificable.'}
@@ -69,10 +69,10 @@ export default async function PrivacidadPage() {
 
         <div className="border-2 border-border p-4 bg-muted/30 space-y-3">
           <h2 className="text-secondary font-bold">[ BASE OPERATIVA ]</h2>
-          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+          <p className="leading-relaxed normal-case text-[12px] tracking-normal font-mono">
             El sitio es un proyecto independiente de Jonathan Ortiz. Cloudflare sirve la web y procesa dirección IP y datos técnicos para seguridad y diagnóstico; Supabase almacena el catálogo y los datos de autenticación, favoritos y alertas si usás una cuenta. Estos proveedores pueden procesar datos fuera de tu país. No vendemos una base de datos de usuarios.
           </p>
-          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+          <p className="leading-relaxed normal-case text-[12px] tracking-normal font-mono">
             Hoy no cargamos anuncios de AdSense. Antes de activarlos actualizaremos la política y los controles aplicables. La elección de analítica no autoriza publicidad personalizada ni sustituye una plataforma de consentimiento certificada para los territorios donde Google la exige.
           </p>
         </div>
@@ -95,10 +95,10 @@ export default async function PrivacidadPage() {
 
         <div className="border-2 border-border p-4 bg-muted/30 space-y-3">
           <h2 className="text-secondary font-bold">[ DERECHOS Y CONTACTO ]</h2>
-          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+          <p className="leading-relaxed normal-case text-[12px] tracking-normal font-mono">
             Si necesitas hacer una consulta vinculada a privacidad, rectificación o eliminación de información asociada a una interacción concreta con el sitio, conviene incluir el máximo contexto posible: fecha aproximada, URL, acción realizada y un canal válido para responder. Eso facilita identificar registros técnicos sin sobredimensionar la retención de datos.
           </p>
-          <p className="leading-relaxed normal-case text-[11px] tracking-normal font-mono">
+          <p className="leading-relaxed normal-case text-[12px] tracking-normal font-mono">
             Nuestro enfoque es minimizar datos, conservar solo lo útil para operar y revisar periódicamente qué registros siguen siendo necesarios. La política real debe acompañar la evolución técnica del producto, no prometer más de lo que hoy existe ni ocultar limitaciones operativas actuales.
           </p>
         </div>
