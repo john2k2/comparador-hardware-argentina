@@ -1,0 +1,126 @@
+{
+  "recordedAt": "2026-10-06T03:01:04.821451+00:00",
+  "applicationCommit": "7be80883b1a2e49d929b7411ef319b01242e64bc",
+  "publicationAuthorized": true,
+  "initialDeployment": {
+    "workerVersion": "0d4b4946-8f5b-4f4c-a788-aff5d02e2b81",
+    "deploymentId": "1f1c01ce-5cf0-4ad4-adff-ff8c3c8f175b",
+    "createdAt": "2026-10-06T02:25:01.289383Z",
+    "percentage": 100,
+    "buildId": "10a012c3-32ce-4926-a036-91ef0c4364a1",
+    "buildStatus": "success"
+  },
+  "initialCI": {
+    "id": 37403860520,
+    "commit": "7be80883b1a2e49d929b7411ef319b01242e64bc",
+    "status": "success",
+    "scope": "Antes de las dos migraciones SQL posteriores"
+  },
+  "http": {
+    "at": "2026-10-06T02:26:45.894Z",
+    "passed": 32,
+    "cases": 32
+  },
+  "appearance": {
+    "at": "2026-10-06T02:27:12.338Z",
+    "passedViews": 32,
+    "originalMenuTestFailures": 4,
+    "finalMenuPassed": 4,
+    "finalMenuFailures": 0,
+    "scope": "8 rutas, 2 temas, escritorio y móvil; no todos los IDs de catálogo"
+  },
+  "publicPriceAfterFix": {
+    "at": "2026-10-06T02:48:32.080Z",
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "newRanges": 6,
+    "newRangesSource": "DB-STALE",
+    "newRangesApiMs": [
+      373,
+      893
+    ],
+    "rangeMeaning": "Mínimo y máximo medidos, no garantía futura ni caché de respuesta"
+  },
+  "directAnonRPCAfterFix": {
+    "at": "2026-10-06T02:47:58.683Z",
+    "passed": 15,
+    "cases": 15,
+    "maxMs": 2093,
+    "paginationPassed": true,
+    "responseCache": "direct RPC POST / no-store"
+  },
+  "sql": {
+    "localFiles": [
+      "20261006023536_current_catalog_bounded_candidates.sql",
+      "20261006024548_current_catalog_bounded_candidates_function.sql"
+    ],
+    "providerRecords": [
+      "20261006024602_current_catalog_bounded_candidates",
+      "20261006024735_current_catalog_bounded_candidates_function"
+    ],
+    "appliedChecksAt": [
+      "2026-10-06T02:46:03Z",
+      "2026-10-06T02:47:35Z"
+    ],
+    "exactJSONComparisons": 15,
+    "fixtureExpectedProducts": 271,
+    "securityInvoker": true,
+    "statementTimeout": "8s",
+    "offerWrites": false
+  },
+  "testsprite": {
+    "syntheticStrictPassed": 30,
+    "realTC031Passed": 1,
+    "realTC031RunId": "744c6f43-3480-4ec7-9f2a-557f6b5dd12d",
+    "realTC031FinishedAt": "2026-10-06T02:07:49.091Z",
+    "scope": "QA anterior a publicar y a las migraciones SQL posteriores",
+    "publicRemoteBlock": "403 Cloudflare challenge; no se debilitó protección"
+  },
+  "remainingIncident": {
+    "open": true,
+    "route": "/product/katech-api-973502",
+    "at": "2026-10-06T02:49:33Z",
+    "publicError": "1102 Worker exceeded resource limits",
+    "ray": "a4615a8328f14b4e",
+    "exactOutcomeVerified": false,
+    "homeErrorAlsoObserved": true,
+    "planReadVerified": "Workers Gratuito, 10 ms CPU nominal",
+    "successfulOwnReadCpuMs": {
+      "home": 17,
+      "product": 32,
+      "productAPI": 22
+    },
+    "later200DoesNotCloseIncident": true
+  },
+  "publicScreenshots": [
+    {
+      "startedAt": "2026-10-06T02:58:20.375Z",
+      "path": "/",
+      "theme": "dark",
+      "status": 200,
+      "ray": "a461675dd82e3ef2-SCL",
+      "heading": [
+        "Compará precios de hardware"
+      ],
+      "failed": false,
+      "errors": [],
+      "image": "outputs/production-release-2026-10-06/screenshots/portada-oscura-final.png"
+    },
+    {
+      "startedAt": "2026-10-06T02:58:24.500Z",
+      "path": "/product/katech-api-973502",
+      "theme": "dark",
+      "status": 200,
+      "ray": "a461677e0d4638b0-SCL",
+      "heading": [
+        "MOUSE GAMER CORSAIR M75 WIRELESS RGB BLANCO"
+      ],
+      "failed": false,
+      "errors": [],
+      "image": "outputs/production-release-2026-10-06/screenshots/ficha-oscura-final.png"
+    }
+  ],
+  "productionStable": false
+}

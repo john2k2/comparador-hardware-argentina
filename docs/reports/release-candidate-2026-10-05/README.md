@@ -1,5 +1,7 @@
 # Candidato de interfaz y catálogo · 05/10/2026
 
+> **Corte posterior de publicación, 06/10/2026:** Jonathan autorizó publicar; el candidato `7be8088` quedó activo y se comprobaron diseño y recorridos públicos. Un ajuste SQL adicional corrigió la cancelación observada al publicar. La estabilidad conserva un 1102 intermitente, sin cierre: [publicación y diagnóstico posteriores](../production-release-2026-10-06.md). Los estados anteriores de publicación pendiente se conservan como históricos.
+
 > **Actualización del 06/10 UTC (05/10 en Santiago): el impedimento de búsqueda por precio está resuelto.** La corrección de base ya está aplicada; 15 RPC sin caché de respuesta, la matriz HTTP 32/32, la equivalencia SQL y TestSprite TC031 con catálogo real aprobaron. [Informe posterior](../search-price-fix-2026-10-06.md) y `outputs/search-price-fix-2026-10-06/summary.json`. La interfaz sigue pendiente de publicación. Los resultados que siguen son el corte previo y se conservan como histórico.
 
 Estado del corte inicial: preparación completada, con publicación pendiente por la consulta general por precio; TestSprite sintético 30/30. Ese impedimento fue corregido en el informe posterior.

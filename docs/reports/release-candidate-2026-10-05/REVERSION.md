@@ -1,5 +1,7 @@
 # Reversión del Worker · candidato del 05/10/2026
 
+> **Publicación posterior autorizada:** el candidato `7be8088` fue publicado el 06/10 a las 02:25 UTC como versión `0d4b4946-8f5b-4f4c-a788-aff5d02e2b81`. Este documento conserva el punto anterior de retorno y no se ejecutó una reversión. Las dos migraciones posteriores de candidatos acotados también permanecen aplicadas al revertir sólo el Worker; sus nombres de registro y diagnóstico están en [el corte de publicación](../production-release-2026-10-06.md). La versión anterior tenía un error de portada registrado; no se presupone que revertirla resuelva el 1102 intermitente posterior.
+
 Preparado para una publicación posterior expresamente autorizada. Este procedimiento no se ejecutó: producción conservó su versión y no se efectuó una reversión de prueba.
 
 Actualización del 06/10 UTC: la comprobación previa a publicar confirmó otra vez el despliegue y versión indicados abajo al 100 %. Los 559 archivos de aplicación siguen idénticos a los builds probados y `main` continúa en `8b7f58d`. La búsqueda general está corregida; las dos migraciones de lectura ya aplicadas se documentan en [el informe posterior](../search-price-fix-2026-10-06.md). El registro actual está en `outputs/search-price-fix-2026-10-06/publish-readiness.json`.

@@ -1,5 +1,7 @@
 # Búsqueda general por precio · corrección y verificación
 
+> **Corte posterior de publicación:** el candidato fue publicado con autorización de Jonathan. El primer recorrido público detectó otra cancelación SQL; se acotó la lectura de resúmenes válidos y se repitieron RPC, fixtures y navegador con rangos nuevos. [Informe de publicación del 06/10](./production-release-2026-10-06.md). Los controles y estados que siguen describen el corte anterior y se conservan como históricos; no acreditan estabilidad después de esa fecha.
+
 Corte del 06/10/2026 UTC, 05/10 en Santiago. La cancelación de `search_catalog_page` en la búsqueda general por precio está corregida en la base pública. La interfaz candidata continúa sin publicarse en el dominio principal.
 
 ## Problema y cambio

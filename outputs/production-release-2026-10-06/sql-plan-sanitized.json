@@ -1,0 +1,41 @@
+{
+  "recordedAt": "2026-10-06T02:59:00Z",
+  "oldAndNewPairedPlans": [
+    {
+      "name": "release_old",
+      "ms": 3032.165,
+      "hits": 45975,
+      "reads": 0,
+      "candidates": 2878
+    },
+    {
+      "name": "release_new",
+      "ms": 165.878,
+      "hits": 21122,
+      "reads": 0,
+      "candidates": 1154
+    },
+    {
+      "name": "release_old",
+      "ms": 162.749,
+      "hits": 45975,
+      "reads": 0,
+      "candidates": 2878
+    },
+    {
+      "name": "release_new",
+      "ms": 117.597,
+      "hits": 21122,
+      "reads": 0,
+      "candidates": 1154
+    }
+  ],
+  "equalJSON": [
+    {
+      "equal_json": true,
+      "original_total": 839,
+      "proposed_total": 839
+    }
+  ],
+  "scope": "mismo rango y catálogo medido; no benchmark de todo el sitio"
+}
