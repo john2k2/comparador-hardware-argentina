@@ -1,5 +1,7 @@
 # Búsqueda general por precio · pendiente antes de publicar
 
+> **Corte posterior: corregido el 06/10 UTC (05/10 en Santiago).** Se aplicó y verificó la lectura SQL: 15/15 RPC anónimas sin caché HTTP, 32/32 controles HTTP, dos recorridos de navegador, 16 suites SQL y dos concurrencias; TestSprite TC031 pasó con catálogo real en QA estricto. [Corrección y evidencia](../search-price-fix-2026-10-06.md). El resto de este documento conserva el diagnóstico histórico; la interfaz todavía no se publicó.
+
 ## Problema observado
 
 Con el Worker construido en modo de producción, sin fixtures y con lectura anónima del catálogo real, `/api/search?minPrice=100000&sortBy=price-asc` devolvió 503 tras aproximadamente 8,9 segundos. El error registrado fue la cancelación por tiempo de la consulta `search_catalog_page`; no fue una validación de parámetros ni una respuesta inventada de stock.

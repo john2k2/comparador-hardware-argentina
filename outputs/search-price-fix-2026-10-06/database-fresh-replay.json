@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "localOnly": true,
+  "migrations": 72,
+  "sqlSuites": 16,
+  "concurrencyCases": 2,
+  "baselineComparisons": 15,
+  "eligibleFixtureProducts": 271,
+  "seconds": 13.155
+}

@@ -1,6 +1,8 @@
 # Candidato de interfaz y catálogo · 05/10/2026
 
-**Preparación del candidato completada; publicación pendiente por la búsqueda general por precio.** La ejecución estricta de TestSprite pasó 30/30 en Cloudflare. No se publicó el candidato en el dominio de producción ni se modificaron datos de ofertas.
+> **Actualización del 06/10 UTC (05/10 en Santiago): el impedimento de búsqueda por precio está resuelto.** La corrección de base ya está aplicada; 15 RPC sin caché de respuesta, la matriz HTTP 32/32, la equivalencia SQL y TestSprite TC031 con catálogo real aprobaron. [Informe posterior](../search-price-fix-2026-10-06.md) y `outputs/search-price-fix-2026-10-06/summary.json`. La interfaz sigue pendiente de publicación. Los resultados que siguen son el corte previo y se conservan como histórico.
+
+Estado del corte inicial: preparación completada, con publicación pendiente por la consulta general por precio; TestSprite sintético 30/30. Ese impedimento fue corregido en el informe posterior.
 
 Este corte usa la fecha local de Santiago; varias verificaciones concluyeron el 06/10 UTC. Versión fuente de aplicación: `d09a0749fa3d105264640a98467b967f7f7bd5fb`; protección del Worker: `d2b88d4`. La versión exacta y el manifiesto final se registran en `outputs/release-candidate-2026-10-05/release-summary.json`.
 

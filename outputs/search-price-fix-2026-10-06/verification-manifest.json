@@ -1,0 +1,26 @@
+{
+  "fixCommit": "a226b07d51348ffeedc1e20529b7f603fa4f777c",
+  "files": {
+    "docs/reports/release-candidate-2026-10-05/README.md": "767242971b8b57310ade17775a118c9c53eea62e139c94ac4e68049725d5ba62",
+    "docs/reports/release-candidate-2026-10-05/RENDIMIENTO-PENDIENTE.md": "7ec27bc2d15c76e7c4d29437049725d8cc722acdb06a26c643dd78a9ce9ca513",
+    "e2e-public/global-price-search.spec.ts": "9a488150c849dd2cf747fdebe3f457d39a00f594d31167890de5ccf24e37cc6d",
+    "outputs/search-price-fix-2026-10-06/browser.log": "5896da2b716992e0a43ab698bea3892b14450e609d6f2dd0095d2dc138cdb8f6",
+    "outputs/search-price-fix-2026-10-06/browser/global-price-search-rango--1f5ec-recio-tarjetas-y-paginaci\u00f3n-desktop/global-price-page-2.png": "15c99bd7d2567d20ceab92769a335ac5e464d7c653618780210ae4ace30658d3",
+    "outputs/search-price-fix-2026-10-06/browser/global-price-search-rango--1f5ec-recio-tarjetas-y-paginaci\u00f3n-mobile/global-price-page-2.png": "a005e740605edcfa7c239b553594033e077d199fc0ee92645c5d7f93f524bf17",
+    "outputs/search-price-fix-2026-10-06/database-fastpath-fixtures.log": "544efd7d5797550ecb72f3f41090df1a06081f81040506ebd74bfc65bfc77de4",
+    "outputs/search-price-fix-2026-10-06/database-fresh-replay.json": "ace7d69e81cd036e9779dbc4715c87c1673038865d6c665d12d50a99b3b74a39",
+    "outputs/search-price-fix-2026-10-06/database-fresh-replay.log": "61070b8903a680187114c76c5d7f751585a5ca2533a4de9bee4c2ec11b9eb970",
+    "outputs/search-price-fix-2026-10-06/diagnosis.json": "4a92e9a1fe0206538ef7fe35b66acbd506441a56b6d4acbd4a9aa0500d4c5982",
+    "outputs/search-price-fix-2026-10-06/direct-rpc-matrix.json": "b1a240dc17c33332ca6003cdd75554e2db7d31f2041eb5e1b210348352978014",
+    "outputs/search-price-fix-2026-10-06/lint-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "outputs/search-price-fix-2026-10-06/public-http-final/public-site.json": "42412a1814f32a6c72806c998093b17bd4cd0ad84c7457e89c1165cea817a379",
+    "outputs/search-price-fix-2026-10-06/qa-deployment-sanitized.json": "17ecdf646279b03db614e7019c3a12478f481bf783f9e9f7f493b4939c88be61",
+    "outputs/search-price-fix-2026-10-06/summary.json": "d13be5378b775accc8f2a0bb3f9078c7f0d994fc6369133a5d34161116bfeacf",
+    "outputs/search-price-fix-2026-10-06/testsprite-final-sanitized.json": "5f4da7cb34f5b345162b0700f8ae9a0df2bf701f37ce38eb0309686d13542876",
+    "outputs/search-price-fix-2026-10-06/typecheck-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "scripts/validate-global-price-search.mjs": "4784eb9b5e5584b945df552efda7cdd63441278d780763dfb299110bcded8921",
+    "testsprite_tests/workers-candidate-2026-10-05/TC031_global_price_real_catalog.py": "d4f531dd0ac7a9da6602078caee71953370cbfaa985d32e9fc74cc5fa7200e40",
+    "testsprite_tests/workers-candidate-2026-10-05/qa-price-worker.mjs": "821b63e95f43e6c09b9a2b402d7d808bda2167e4acef145f23f1569a6e71d56b"
+  },
+  "logNormalization": "Trailing spaces removed from psql table output; original retained locally in ignored evidence."
+}

@@ -1,0 +1,869 @@
+CREATE ROLE
+CREATE ROLE
+CREATE ROLE
+CREATE ROLE
+CREATE SCHEMA
+CREATE TABLE
+CREATE FUNCTION
+MIGRATION 20260120034347_initial_schema.sql
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+INSERT 0 5
+CREATE INDEX
+CREATE INDEX
+MIGRATION 20260304235643_initial_argen_prices_schema.sql
+BEGIN
+CREATE EXTENSION
+DROP TABLE
+DROP TABLE
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260304235643_initial_argen_prices_schema.sql:7: NOTICE:  table "product_prices" does not exist, skipping
+DROP TABLE
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260304235643_initial_argen_prices_schema.sql:8: NOTICE:  table "products" does not exist, skipping
+DROP TABLE
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260304235643_initial_argen_prices_schema.sql:9: NOTICE:  table "categories" does not exist, skipping
+DROP TABLE
+DROP TABLE
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260304235643_initial_argen_prices_schema.sql:12: NOTICE:  function public.set_updated_at() does not exist, skipping
+DROP FUNCTION
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+INSERT 0 13
+INSERT 0 8
+COMMIT
+MIGRATION 20260305015934_create_product_title_normalizations_cache.sql
+CREATE TABLE
+CREATE INDEX
+MIGRATION 20260305185523_catalog_rls_hardening.sql
+BEGIN
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260305185523_catalog_rls_hardening.sql:10: NOTICE:  policy "catalog_read_stores" for relation "public.stores" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260305185523_catalog_rls_hardening.sql:17: NOTICE:  policy "catalog_read_categories" for relation "public.categories" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260305185523_catalog_rls_hardening.sql:24: NOTICE:  policy "catalog_read_products" for relation "public.products" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260305185523_catalog_rls_hardening.sql:31: NOTICE:  policy "catalog_read_product_prices" for relation "public.product_prices" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260305185523_catalog_rls_hardening.sql:39: NOTICE:  policy "catalog_read_price_history" for relation "public.price_history" does not exist, skipping
+DROP POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260305185523_catalog_rls_hardening.sql:40: NOTICE:  policy "catalog_read_product_title_normalizations" for relation "public.product_title_normalizations" does not exist, skipping
+DROP POLICY
+COMMIT
+MIGRATION 20260305204550_add_perifericos_category.sql
+BEGIN
+INSERT 0 1
+UPDATE 0
+COMMIT
+MIGRATION 20260305205139_fix_set_updated_at_search_path.sql
+BEGIN
+CREATE FUNCTION
+COMMIT
+MIGRATION 20260305210426_catalog_preprocessing_fields.sql
+BEGIN
+CREATE EXTENSION
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+UPDATE 0
+COMMIT
+MIGRATION 20260306201947_price_history_retention_cleanup.sql
+BEGIN
+CREATE FUNCTION
+COMMENT
+COMMIT
+MIGRATION 20260306203742_shared_cache_and_rate_limits.sql
+BEGIN
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260306203742_shared_cache_and_rate_limits.sql:17: NOTICE:  policy "private_api_cache_entries" for relation "public.api_cache_entries" does not exist, skipping
+DROP POLICY
+CREATE TABLE
+CREATE INDEX
+ALTER TABLE
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260306203742_shared_cache_and_rate_limits.sql:31: NOTICE:  policy "private_api_rate_limits" for relation "public.api_rate_limits" does not exist, skipping
+DROP POLICY
+CREATE FUNCTION
+COMMENT
+COMMIT
+MIGRATION 20260307002840_catalog_write_signatures.sql
+BEGIN
+ALTER TABLE
+ALTER TABLE
+CREATE FUNCTION
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+COMMIT
+MIGRATION 20260331185853_user_auth_favorites_alerts.sql
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+INSERT 0 0
+CREATE FUNCTION
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260331185853_user_auth_favorites_alerts.sql:99: NOTICE:  trigger "on_auth_user_created" for relation "auth.users" does not exist, skipping
+DROP TRIGGER
+CREATE TRIGGER
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260331185853_user_auth_favorites_alerts.sql:104: NOTICE:  trigger "user_profiles_set_updated_at" for relation "public.user_profiles" does not exist, skipping
+DROP TRIGGER
+CREATE TRIGGER
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260331185853_user_auth_favorites_alerts.sql:109: NOTICE:  trigger "user_favorites_set_updated_at" for relation "public.user_favorites" does not exist, skipping
+DROP TRIGGER
+CREATE TRIGGER
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260331185853_user_auth_favorites_alerts.sql:114: NOTICE:  trigger "price_alerts_set_updated_at" for relation "public.price_alerts" does not exist, skipping
+DROP TRIGGER
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260331185853_user_auth_favorites_alerts.sql:123: NOTICE:  policy "profiles_select_own" for relation "public.user_profiles" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260331185853_user_auth_favorites_alerts.sql:130: NOTICE:  policy "profiles_insert_own" for relation "public.user_profiles" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260331185853_user_auth_favorites_alerts.sql:137: NOTICE:  policy "profiles_update_own" for relation "public.user_profiles" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260331185853_user_auth_favorites_alerts.sql:145: NOTICE:  policy "favorites_select_own" for relation "public.user_favorites" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260331185853_user_auth_favorites_alerts.sql:152: NOTICE:  policy "favorites_insert_own" for relation "public.user_favorites" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260331185853_user_auth_favorites_alerts.sql:159: NOTICE:  policy "favorites_update_own" for relation "public.user_favorites" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260331185853_user_auth_favorites_alerts.sql:167: NOTICE:  policy "favorites_delete_own" for relation "public.user_favorites" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260331185853_user_auth_favorites_alerts.sql:174: NOTICE:  policy "alerts_select_own" for relation "public.price_alerts" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260331185853_user_auth_favorites_alerts.sql:181: NOTICE:  policy "alerts_insert_own" for relation "public.price_alerts" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260331185853_user_auth_favorites_alerts.sql:188: NOTICE:  policy "alerts_update_own" for relation "public.price_alerts" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260331185853_user_auth_favorites_alerts.sql:196: NOTICE:  policy "alerts_delete_own" for relation "public.price_alerts" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+COMMIT
+MIGRATION 20260420120000_add_cache_rate_limit_rls_policies.sql
+BEGIN
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260420120000_add_cache_rate_limit_rls_policies.sql:8: NOTICE:  policy "service_api_cache_entries_select" for relation "public.api_cache_entries" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260420120000_add_cache_rate_limit_rls_policies.sql:15: NOTICE:  policy "service_api_cache_entries_insert" for relation "public.api_cache_entries" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260420120000_add_cache_rate_limit_rls_policies.sql:22: NOTICE:  policy "service_api_cache_entries_update" for relation "public.api_cache_entries" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260420120000_add_cache_rate_limit_rls_policies.sql:29: NOTICE:  policy "service_api_cache_entries_delete" for relation "public.api_cache_entries" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260420120000_add_cache_rate_limit_rls_policies.sql:37: NOTICE:  policy "service_api_rate_limits_select" for relation "public.api_rate_limits" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260420120000_add_cache_rate_limit_rls_policies.sql:44: NOTICE:  policy "service_api_rate_limits_insert" for relation "public.api_rate_limits" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260420120000_add_cache_rate_limit_rls_policies.sql:51: NOTICE:  policy "service_api_rate_limits_update" for relation "public.api_rate_limits" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260420120000_add_cache_rate_limit_rls_policies.sql:58: NOTICE:  policy "service_api_rate_limits_delete" for relation "public.api_rate_limits" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260420120000_add_cache_rate_limit_rls_policies.sql:66: NOTICE:  policy "service_api_rate_limits_cleanup" for relation "public.api_rate_limits" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+COMMENT
+COMMENT
+COMMIT
+MIGRATION 20260420120001_add_search_optimization_indexes.sql
+BEGIN
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+CREATE INDEX
+CREATE INDEX
+COMMIT
+MIGRATION 20260501172403_add_home_page_performance_indexes.sql
+BEGIN
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260501172403_add_home_page_performance_indexes.sql:24: NOTICE:  relation "product_prices_product_id_idx" already exists, skipping
+CREATE INDEX
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20260501172403_add_home_page_performance_indexes.sql:25: NOTICE:  relation "product_prices_store_id_idx" already exists, skipping
+CREATE INDEX
+COMMIT
+MIGRATION 20260824174500_catalog_integrity_and_offer_history.sql
+BEGIN
+INSERT 0 1
+UPDATE 0
+UPDATE 0
+UPDATE 0
+UPDATE 0
+UPDATE 0
+UPDATE 0
+UPDATE 0
+ALTER TABLE
+CREATE INDEX
+CREATE FUNCTION
+COMMENT
+COMMIT
+MIGRATION 20260902035244_hardware_price_index_rpc.sql
+BEGIN
+CREATE FUNCTION
+COMMENT
+REVOKE
+REVOKE
+REVOKE
+GRANT
+COMMIT
+MIGRATION 20260902040037_hardware_price_index_rpc_fast.sql
+CREATE FUNCTION
+COMMENT
+REVOKE
+REVOKE
+REVOKE
+GRANT
+MIGRATION 20260902040126_hardware_price_index_rpc_fast_plpgsql_fix.sql
+BEGIN
+CREATE FUNCTION
+COMMENT
+REVOKE
+REVOKE
+REVOKE
+GRANT
+COMMIT
+MIGRATION 20260912170000_indexable_sitemap_rpc.sql
+BEGIN
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+GRANT
+GRANT
+COMMENT
+COMMENT
+COMMIT
+MIGRATION 20260922000000_offer_identity_review.sql
+ALTER TABLE
+COMMENT
+MIGRATION 20260922010000_requested_offer_refresh.sql
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+REVOKE
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+MIGRATION 20260925153000_restrict_privileged_rpc_execution.sql
+BEGIN
+REVOKE
+GRANT
+REVOKE
+GRANT
+COMMIT
+MIGRATION 20260925154500_harden_auth_trigger_and_catalog_function.sql
+BEGIN
+REVOKE
+GRANT
+ALTER FUNCTION
+COMMIT
+MIGRATION 20260927234311_sync_requested_offer_product_order.sql
+CREATE FUNCTION
+REVOKE
+GRANT
+UPDATE 0
+MIGRATION 20260927234548_track_requested_offer_observation.sql
+CREATE FUNCTION
+REVOKE
+GRANT
+UPDATE 0
+MIGRATION 20260929161015_persist_priority_offer.sql
+CREATE FUNCTION
+REVOKE
+GRANT
+MIGRATION 20260930120000_atomic_catalog_offers.sql
+BEGIN
+CREATE FUNCTION
+REVOKE
+GRANT
+COMMIT
+MIGRATION 20260930130000_paginated_catalog.sql
+BEGIN
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+CREATE FUNCTION
+REVOKE
+GRANT
+COMMENT
+COMMIT
+MIGRATION 20260930131000_catalog_query_fastpaths.sql
+BEGIN
+ALTER TABLE
+ALTER TABLE
+CREATE FUNCTION
+COMMIT
+MIGRATION 20260930133000_catalog_price_read_model.sql
+BEGIN
+CREATE FUNCTION
+CREATE TABLE
+ALTER TABLE
+CREATE POLICY
+GRANT
+GRANT
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+CREATE TRIGGER
+INSERT 0 0
+CREATE FUNCTION
+REVOKE
+REVOKE
+GRANT
+GRANT
+ALTER FUNCTION
+REVOKE
+CREATE FUNCTION
+ALTER FUNCTION
+REVOKE
+CREATE FUNCTION
+ALTER FUNCTION
+REVOKE
+CREATE FUNCTION
+REVOKE
+GRANT
+COMMIT
+MIGRATION 20260930134000_catalog_read_plans.sql
+BEGIN
+ANALYZE
+ANALYZE
+ALTER FUNCTION
+ALTER FUNCTION
+COMMIT
+MIGRATION 20260930135000_catalog_offer_cleanup_lock_order.sql
+BEGIN
+CREATE FUNCTION
+REVOKE
+GRANT
+COMMIT
+MIGRATION 20260930140000_catalog_plan_specialization.sql
+BEGIN
+CREATE FUNCTION
+COMMIT
+MIGRATION 20260930141000_bounded_catalog_sort.sql
+BEGIN
+CREATE FUNCTION
+COMMIT
+MIGRATION 20260930142000_catalog_covering_indexes.sql
+BEGIN
+SET
+CREATE INDEX
+CREATE INDEX
+ANALYZE
+ANALYZE
+COMMIT
+MIGRATION 20260930212914_prepared_catalog_matching.sql
+BEGIN
+SET
+SET
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+UPDATE 0
+CREATE FUNCTION
+COMMIT
+MIGRATION 20260930213519_catalog_offer_format_hint.sql
+BEGIN
+SET
+SET
+ALTER TABLE
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+COMMIT
+MIGRATION 20260930214259_catalog_search_timeout.sql
+BEGIN
+ALTER FUNCTION
+NOTIFY
+COMMIT
+MIGRATION 20260930214746_catalog_primary_category.sql
+BEGIN
+SET
+SET
+CREATE FUNCTION
+UPDATE 0
+CREATE FUNCTION
+COMMIT
+MIGRATION 20261001165114_rank_search_by_usable_offers.sql
+BEGIN
+CREATE FUNCTION
+REVOKE
+GRANT
+CREATE FUNCTION
+COMMIT
+MIGRATION 20261001184805_adaptive_catalog_refresh.sql
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+REVOKE
+GRANT
+CREATE VIEW
+REVOKE
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+GRANT
+MIGRATION 20261001190514_optimize_adaptive_claims.sql
+CREATE FUNCTION
+ALTER FUNCTION
+MIGRATION 20261001191058_persist_adaptive_observations.sql
+ALTER TABLE
+UPDATE 0
+CREATE FUNCTION
+CREATE VIEW
+ANALYZE
+ALTER TABLE
+ALTER TABLE
+CREATE FUNCTION
+REVOKE
+GRANT
+MIGRATION 20261001193105_skip_unused_empty_search_quality.sql
+CREATE FUNCTION
+MIGRATION 20261001200310_bound_catalog_search_sort_memory.sql
+ALTER FUNCTION
+MIGRATION 20261001203932_reclassify_explicit_peripherals.sql
+SET
+SET
+UPDATE 0
+RESET
+RESET
+MIGRATION 20261001204233_guard_peripheral_component_identity.sql
+BEGIN
+SET
+SET
+CREATE FUNCTION
+COMMIT
+MIGRATION 20261001204930_observed_payment_conditions.sql
+BEGIN
+SET
+SET
+CREATE FUNCTION
+REVOKE
+GRANT
+COMMIT
+MIGRATION 20261001210001_reject_unresolved_offer_templates.sql
+BEGIN
+SET
+SET
+CREATE FUNCTION
+REVOKE
+GRANT
+COMMIT
+MIGRATION 20261001210122_quarantine_unresolved_observations.sql
+BEGIN
+SET
+SET
+UPDATE 0
+DELETE 0
+UPDATE 0
+COMMIT
+MIGRATION 20261001211207_reclassify_complete_computers.sql
+BEGIN
+SET
+SET
+CREATE FUNCTION
+UPDATE 0
+COMMIT
+MIGRATION 20261001222650_correct_apu_and_accessory_categories.sql
+BEGIN
+SET
+SET
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+UPDATE 0
+UPDATE 0
+COMMIT
+MIGRATION 20261001222729_claim_shared_feed_offers.sql
+CREATE FUNCTION
+REVOKE
+GRANT
+MIGRATION 20261001224357_idempotent_catalog_completion.sql
+ALTER TABLE
+CREATE FUNCTION
+REVOKE
+GRANT
+MIGRATION 20261001225520_retain_explicit_memory_bundles.sql
+BEGIN
+SET
+SET
+CREATE FUNCTION
+UPDATE 0
+UPDATE 0
+COMMIT
+MIGRATION 20261001225548_rotate_verified_shared_sources.sql
+CREATE FUNCTION
+REVOKE
+GRANT
+MIGRATION 20261001234359_filter_unchanged_refresh_seed.sql
+CREATE FUNCTION
+MIGRATION 20261001234734_avoid_catalog_seed_spills.sql
+ALTER FUNCTION
+ANALYZE
+ANALYZE
+ANALYZE
+MIGRATION 20261002003210_catalog_inventory_discovery.sql
+CREATE TABLE
+CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+REVOKE
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+GRANT
+CREATE FUNCTION
+REVOKE
+GRANT
+MIGRATION 20261002004619_inventory_detail_fallback.sql
+CREATE FUNCTION
+ALTER TABLE
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+GRANT
+CREATE FUNCTION
+REVOKE
+GRANT
+MIGRATION 20261002010838_bounded_catalog_queue_seed.sql
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+GRANT
+MIGRATION 20261002012048_catalog_seed_scan_plan.sql
+ALTER FUNCTION
+ALTER FUNCTION
+MIGRATION 20261002013204_reclassify_network_and_thermal_accessories.sql
+BEGIN
+SET
+SET
+CREATE FUNCTION
+CREATE FUNCTION
+UPDATE 0
+COMMIT
+MIGRATION 20261002141712_reconcile_shared_source_contracts.sql
+CREATE FUNCTION
+REVOKE
+GRANT
+MIGRATION 20261002143236_bind_observed_listing_identity.sql
+BEGIN
+SET
+SET
+CREATE FUNCTION
+REVOKE
+GRANT
+COMMIT
+MIGRATION 20261002144414_align_catalog_offer_evidence.sql
+BEGIN
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+GRANT
+COMMIT
+MIGRATION 20261002150827_select_current_catalog_prices.sql
+BEGIN
+ALTER TABLE
+CREATE FUNCTION
+REVOKE
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+REVOKE
+GRANT
+CREATE FUNCTION
+REVOKE
+GRANT
+COMMIT
+MIGRATION 20261002151329_persist_verified_listing_observations.sql
+BEGIN
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+GRANT
+COMMIT
+MIGRATION 20261002155711_activate_current_catalog_reads.sql
+BEGIN
+DO
+CREATE FUNCTION
+COMMIT
+MIGRATION 20261002164518_guard_cpu_offer_variants.sql
+BEGIN
+SET
+SET
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+GRANT
+COMMIT
+MIGRATION 20261006013845_current_catalog_price_read_indexes.sql
+BEGIN
+SET
+SET
+CREATE INDEX
+CREATE INDEX
+COMMIT
+MIGRATION 20261006014216_current_catalog_price_fastpath.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMIT
+TEST atomic_catalog_offers
+BEGIN
+INSERT 0 1
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TRIGGER
+DO
+ROLLBACK
+TEST paginated_catalog
+BEGIN
+INSERT 0 1501
+INSERT 0 1501
+DO
+INSERT 0 1
+DO
+INSERT 0 2
+INSERT 0 2
+DO
+DO
+INSERT 0 1
+INSERT 0 4
+DO
+GRANT
+SET
+ public_total
+--------------
+ 1502
+(1 row)
+
+RESET
+ROLLBACK
+TEST peripheral_reclassification
+BEGIN
+INSERT 0 4
+INSERT 0 1
+SET
+SET
+UPDATE 2
+RESET
+RESET
+DO
+ROLLBACK
+TEST adaptive_payment_conditions
+BEGIN
+INSERT 0 2
+INSERT 0 1
+DO
+ROLLBACK
+TEST complete_computer_categories
+BEGIN
+INSERT 0 1
+DO
+ROLLBACK
+TEST apu_accessory_categories
+BEGIN
+DO
+ROLLBACK
+TEST shared_feed_claims
+BEGIN
+INSERT 0 6
+INSERT 0 1
+INSERT 0 6
+ seed_catalog_refresh_queue
+----------------------------
+                          0
+(1 row)
+
+DO
+ROLLBACK
+TEST idempotent_catalog_completion
+BEGIN
+INSERT 0 1
+INSERT 0 1
+DO
+ROLLBACK
+TEST catalog_inventory_discovery
+BEGIN
+INSERT 0 1
+DO
+DO
+ROLLBACK
+TEST inventory_detail_fallback
+BEGIN
+INSERT 0 1
+DO
+ROLLBACK
+TEST bounded_catalog_queue
+BEGIN
+INSERT 0 1
+INSERT 0 501
+DO
+ROLLBACK
+TEST network_thermal_categories
+BEGIN
+INSERT 0 4
+INSERT 0 1
+psql:/Users/johnortiz/.codex/worktrees/catalog-adaptive-refresh/comparador-hardware-argentina/supabase/migrations/20261002013204_reclassify_network_and_thermal_accessories.sql:2: WARNING:  there is already a transaction in progress
+BEGIN
+SET
+SET
+CREATE FUNCTION
+CREATE FUNCTION
+UPDATE 3
+COMMIT
+DO
+DELETE 1
+DELETE 4
+TEST current_offer_evidence
+BEGIN
+INSERT 0 1
+INSERT 0 4
+DO
+GRANT
+SET
+ ?column?
+----------
+ 1
+(1 row)
+
+RESET
+ROLLBACK
+TEST prepared_catalog_matching
+BEGIN
+CREATE FUNCTION
+DO
+INSERT 0 3
+INSERT 0 3
+DO
+ROLLBACK
+TEST search_usable_offers
+BEGIN
+DO
+ROLLBACK
+TEST current_catalog_price_fastpath (isolated baseline helper)
+CREATE FUNCTION
+BEGIN
+INSERT 0 360
+INSERT 0 360
+INSERT 0 5
+INSERT 0 6
+UPDATE 1
+DO
+GRANT
+SET
+DO
+RESET
+ROLLBACK
+NOTICE:  15 comparaciones exactas aprobadas
+DROP FUNCTION
+✔ dos escritores de ofertas mantienen precio, historial y resumen coherentes (2278.523666ms)
+✔ preparar una cola sin cambios no bloquea una oferta en observación (4147.3ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6465.703833

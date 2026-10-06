@@ -1,0 +1,80 @@
+{
+  "at": "2026-10-06T02:07:49.091Z",
+  "blocker": "global current price search without response cache returned 503",
+  "status": "resolved",
+  "fixCommit": "a226b07d51348ffeedc1e20529b7f603fa4f777c",
+  "applicationSourceCommit": "d09a0749fa3d105264640a98467b967f7f7bd5fb",
+  "workerGuardCommit": "d2b88d4",
+  "productionUiDeployed": false,
+  "productionDatabaseMigrationsApplied": [
+    "20261006013845",
+    "20261006014216"
+  ],
+  "statementTimeoutMs": 8000,
+  "offerObservationsModified": false,
+  "guidesRenewed": false,
+  "directRpc": {
+    "cases": 15,
+    "passed": true,
+    "slowestMs": 3763,
+    "httpResponseCache": false,
+    "databaseBuffersMayBeWarm": true,
+    "crossPageChecks": true
+  },
+  "http": {
+    "cases": 32,
+    "passed": 32,
+    "allCold": false,
+    "origin": "http://127.0.0.1:3105"
+  },
+  "localSql": {
+    "passed": true,
+    "localOnly": true,
+    "migrations": 72,
+    "sqlSuites": 16,
+    "concurrencyCases": 2,
+    "baselineComparisons": 15,
+    "eligibleFixtureProducts": 271,
+    "seconds": 13.155
+  },
+  "browser": {
+    "passed": 2,
+    "widths": [
+      1280,
+      390
+    ],
+    "realCatalog": true,
+    "log": "browser.log"
+  },
+  "testSprite": {
+    "cases": 1,
+    "passed": 1,
+    "runId": "744c6f43-3480-4ec7-9f2a-557f6b5dd12d",
+    "strictReplay": true,
+    "realCatalog": true,
+    "target": "https://hardware-ar-price-qa-20261006.ortiz-jonathan.workers.dev",
+    "productionDomainChallenge403Preserved": true
+  },
+  "previousQaBatch": {
+    "passed": 30,
+    "synthetic": true,
+    "rerunThisCut": false
+  },
+  "checks": {
+    "typecheck": true,
+    "eslint": true,
+    "nodeSyntax": true,
+    "pythonSyntax": true
+  },
+  "sourceSha256": {
+    ".github/workflows/verify.yml": "745dd1c0f463942856ea87e1be2c142ab75d6fbe6652b7f57b6d2b3e7fac972e",
+    "scripts/test-current-catalog-prices.mjs": "c6f7b014a356c4484eaecdd44bc1e4c169b6c032d8fef013e3b39cb2d5d7be61",
+    "scripts/validate-global-price-search.mjs": "4784eb9b5e5584b945df552efda7cdd63441278d780763dfb299110bcded8921",
+    "supabase/migrations/20261006013845_current_catalog_price_read_indexes.sql": "025a23cd7b9c35c9e438c0003b34299fc80e828e8a8dbeb8a36365d7839fa601",
+    "supabase/migrations/20261006014216_current_catalog_price_fastpath.sql": "d174b98a8ddf337c19fd02fffca70311cd3c0c645d890c7db3711f0bf34b0ef0",
+    "supabase/tests/current_catalog_price_fastpath.sql": "05543f5a7e34753ec75ef961bddb03294f32f3926fc8b3f8eea0838c7eff6b1f",
+    "e2e-public/global-price-search.spec.ts": "9a488150c849dd2cf747fdebe3f457d39a00f594d31167890de5ccf24e37cc6d",
+    "testsprite_tests/workers-candidate-2026-10-05/TC031_global_price_real_catalog.py": "d4f531dd0ac7a9da6602078caee71953370cbfaa985d32e9fc74cc5fa7200e40",
+    "testsprite_tests/workers-candidate-2026-10-05/qa-price-worker.mjs": "821b63e95f43e6c09b9a2b402d7d808bda2167e4acef145f23f1569a6e71d56b"
+  }
+}

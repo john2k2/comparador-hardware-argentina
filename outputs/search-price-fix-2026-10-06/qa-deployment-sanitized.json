@@ -1,0 +1,25 @@
+{
+  "origin": "https://hardware-ar-price-qa-20261006.ortiz-jonathan.workers.dev",
+  "versionId": "0c520002-374c-4e14-ae8e-5076bd393316",
+  "sourceApplicationCommit": "d09a0749fa3d105264640a98467b967f7f7bd5fb",
+  "workerGuardCommit": "d2b88d4",
+  "synthetic": false,
+  "realCatalog": true,
+  "readRole": "anon",
+  "noindex": true,
+  "cronSchedules": [],
+  "liveScraping": false,
+  "onDemandRefresh": false,
+  "backgroundRefresh": false,
+  "incomingWritesBlocked": true,
+  "privateKeysEmpty": true,
+  "productionUiDeployed": false,
+  "probe": {
+    "robots": 200,
+    "postSearch": 405,
+    "searchRefresh": 405,
+    "realSearch": 200,
+    "cache": "DB-STALE",
+    "searchMs": 6693
+  }
+}

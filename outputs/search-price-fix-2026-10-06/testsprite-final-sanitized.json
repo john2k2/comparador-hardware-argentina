@@ -1,0 +1,54 @@
+{
+  "testId": "7eecadea-1db4-42ac-a945-047fa2a859ff",
+  "runId": "744c6f43-3480-4ec7-9f2a-557f6b5dd12d",
+  "status": "passed",
+  "finishedAt": "2026-10-06T02:07:49.091Z",
+  "target": "https://hardware-ar-price-qa-20261006.ortiz-jonathan.workers.dev",
+  "codeVersion": "v-4fa3cac1a48a",
+  "codeSha256": "d4f531dd0ac7a9da6602078caee71953370cbfaa985d32e9fc74cc5fa7200e40",
+  "localCodeMatchesStored": true,
+  "autoHealRequested": false,
+  "syntheticData": false,
+  "publicDatabaseRole": "anon",
+  "coldResponseRequired": true,
+  "assertedMaxMs": 8000,
+  "productionDomainRemoteRun": "blocked by Cloudflare challenge HTTP 403",
+  "priorFailures": [
+    {
+      "runId": "a3440f4a-87e9-4f95-84b7-f6d84307d551",
+      "status": "blocked",
+      "error": "[Tunnel] Deterministic replay cannot run through a tunnel. Drop --no-auto-heal so the agent can run through your tunnel."
+    },
+    {
+      "runId": "13db0614-4db4-4789-a714-bd346413ccff",
+      "status": "failed",
+      "error": "HTTP 403 en p\u00e1gina 1: Just a moment..."
+    },
+    {
+      "runId": "83f993ab-1d5e-4aa1-9e0b-452fe5e3d26f",
+      "status": "failed",
+      "error": "HTTP 403 en p\u00e1gina 1"
+    },
+    {
+      "runId": "fe35fa18-0c2b-4b4b-a69d-d03a0e426fa0",
+      "status": "failed",
+      "error": "assertion failed"
+    },
+    {
+      "runId": "41239ca9-c28b-458f-b75e-b417acb4ec34",
+      "status": "failed",
+      "error": "stale_code: the stored script was written for an earlier version of this test, so replaying it would run the previous definition. Update the test code to match, or re-run with auto-heal to let the agent re-author it."
+    }
+  ],
+  "replay": {
+    "path": "replay",
+    "reason": null,
+    "caveat": null
+  },
+  "reportedStepSummary": {
+    "total": 0,
+    "completed": 0,
+    "passedCount": 0,
+    "failedCount": 0
+  }
+}
