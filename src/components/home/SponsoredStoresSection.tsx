@@ -34,6 +34,7 @@ export function SponsoredStoresSection({ stores, compact = false }: SponsoredSto
           <Link
             key={store.id}
             href={`/search?stores=${encodeURIComponent(store.id)}`}
+            prefetch={false}
             onClick={() => {
               trackSponsoredStoreSelection({
                 storeId: store.id,

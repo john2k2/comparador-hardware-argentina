@@ -18,32 +18,32 @@ export function SiteFooter() {
           <div>
             <p className={columnTitleClass}>Categorias</p>
             <ul className="space-y-1 text-[12px] md:text-sm text-muted-foreground">
-              <li><Link href="/comparar/procesadores" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Procesadores</Link></li>
-              <li><Link href="/comparar/placas-de-video" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Tarjetas Graficas</Link></li>
-              <li><Link href="/comparar/motherboards" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Motherboards</Link></li>
-              <li><Link href="/comparar/memoria-ram" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Memoria RAM</Link></li>
-              <li><Link href="/comparar/perifericos" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Perifericos</Link></li>
+              <li><Link prefetch={false} href="/comparar/procesadores" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Procesadores</Link></li>
+              <li><Link prefetch={false} href="/comparar/placas-de-video" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Tarjetas Graficas</Link></li>
+              <li><Link prefetch={false} href="/comparar/motherboards" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Motherboards</Link></li>
+              <li><Link prefetch={false} href="/comparar/memoria-ram" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Memoria RAM</Link></li>
+              <li><Link prefetch={false} href="/comparar/perifericos" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Perifericos</Link></li>
             </ul>
           </div>
           <div>
             <p className={columnTitleClass}>Comparar</p>
             <ul className="space-y-1 text-[12px] md:text-sm text-muted-foreground">
-              <li><Link href="/comparativa/comparar" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Comparar dos productos</Link></li>
-              <li><Link href="/search" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Buscar precios</Link></li>
-              <li><Link href="/comparativa" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Comparativas verificadas</Link></li>
-              <li><Link href="/guia/armar" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Armar una PC</Link></li>
+              <li><Link prefetch={false} href="/comparativa/comparar" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Comparar dos productos</Link></li>
+              <li><Link prefetch={false} href="/search" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Buscar precios</Link></li>
+              <li><Link prefetch={false} href="/comparativa" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Comparativas verificadas</Link></li>
+              <li><Link prefetch={false} href="/guia/armar" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Armar una PC</Link></li>
             </ul>
           </div>
           <div>
             <p className={columnTitleClass}>Informacion</p>
             <ul className="space-y-1 text-[12px] md:text-sm text-muted-foreground">
-              <li><Link href="/acerca" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Acerca de y cómo funciona</Link></li>
-              <li><Link href="/privacidad" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Politica de Privacidad</Link></li>
+              <li><Link prefetch={false} href="/acerca" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Acerca de y cómo funciona</Link></li>
+              <li><Link prefetch={false} href="/privacidad" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Politica de Privacidad</Link></li>
               <li><AnalyticsPreferencesButton enabled={Boolean(process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID)} /></li>
-              <li><Link href="/terminos" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Terminos de Uso</Link></li>
-              <li><Link href="/contacto" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Contacto</Link></li>
+              <li><Link prefetch={false} href="/terminos" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Terminos de Uso</Link></li>
+              <li><Link prefetch={false} href="/contacto" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Contacto</Link></li>
               {process.env.ENEBA_AFFILIATE_PILOT_ENABLED === '1' && (
-                <li><Link href="/juegos-digitales" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Juegos digitales · enlaces afiliados</Link></li>
+                <li><Link prefetch={false} href="/juegos-digitales" className="min-h-11 md:min-h-0 flex items-center hover:text-primary transition-colors">Juegos digitales · enlaces afiliados</Link></li>
               )}
             </ul>
           </div>

@@ -111,6 +111,7 @@ export function Navigation({ showGames = false }: { showGames?: boolean } = {}) 
           <div className="flex min-h-16 items-center justify-between gap-4">
             <Link
               href="/"
+              prefetch={false}
               aria-label="Hardware AR · Inicio"
               aria-current={pathname === '/' ? 'page' : undefined}
               className="group flex shrink-0 items-center gap-3 transition-transform motion-safe:hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-secondary"
@@ -158,7 +159,7 @@ export function Navigation({ showGames = false }: { showGames?: boolean } = {}) 
 
             <nav aria-label="Navegación principal" className="hidden min-w-0 flex-1 items-center justify-center gap-1 xl:flex">
               {primaryLinks.map((link) => (
-                <Link key={link.href} href={link.href}
+                <Link key={link.href} href={link.href} prefetch={false}
                   aria-current={isNavLinkActive(link.href, pathname) ? 'location' : undefined}
                   className={`inline-flex min-h-11 items-center justify-center whitespace-nowrap border-b-2 px-2 py-2 font-mono! text-sm font-bold transition-colors hover:bg-muted hover:text-primary 2xl:px-3 2xl:text-base focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary ${isNavLinkActive(link.href, pathname) ? 'border-primary text-primary' : 'border-transparent text-secondary'}`}>
                   {link.label}
@@ -175,7 +176,7 @@ export function Navigation({ showGames = false }: { showGames?: boolean } = {}) 
                 </summary>
                 <div className="nav-panel absolute right-0 top-full z-10 min-w-64 border-2 border-border bg-card p-2 pixel-shadow">
                   {SECONDARY_NAV_LINKS.map((link) => (
-                    <Link key={link.href} href={link.href}
+                    <Link key={link.href} href={link.href} prefetch={false}
                       aria-current={isNavLinkActive(link.href, pathname) ? 'location' : undefined}
                       onClick={() => { if (moreNavigation.current) moreNavigation.current.open = false; }}
                       className="flex min-h-11 items-center px-3 py-3 font-mono! text-sm font-bold text-secondary hover:bg-muted hover:text-primary focus-visible:outline-2 focus-visible:outline-secondary">
@@ -213,6 +214,7 @@ export function Navigation({ showGames = false }: { showGames?: boolean } = {}) 
                 <>
                   <Link
                     href="/auth"
+                    prefetch={false}
                     className="min-h-11 max-w-[7rem] px-3 py-2 border-2 border-border bg-card font-mono! text-xs font-bold text-secondary hidden sm:inline-flex items-center gap-2"
                   >
                     <UserRound className="w-3 h-3 shrink-0" aria-hidden="true" />
@@ -231,6 +233,7 @@ export function Navigation({ showGames = false }: { showGames?: boolean } = {}) 
               ) : (
                 <Link
                   href="/auth"
+                  prefetch={false}
                   className="hidden md:inline-flex min-h-11 min-w-11 px-3 py-2 border-2 border-border bg-card font-mono! text-xs font-bold text-secondary items-center gap-2 hover:bg-muted transition-colors"
                   aria-label="Iniciar sesión"
                 >
@@ -261,6 +264,7 @@ export function Navigation({ showGames = false }: { showGames?: boolean } = {}) 
                   <Link
                     key={link.href}
                     href={link.href}
+                    prefetch={false}
                     aria-current={isNavLinkActive(link.href, pathname) ? 'location' : undefined}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="min-h-11 px-4 py-3 font-mono! text-base font-bold text-secondary hover:text-primary hover:bg-muted transition-colors border-b border-border"
@@ -270,6 +274,7 @@ export function Navigation({ showGames = false }: { showGames?: boolean } = {}) 
                 ))}
                 <Link
                   href="/auth"
+                  prefetch={false}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="min-h-11 px-4 py-3 font-mono! text-base font-bold text-secondary hover:text-primary hover:bg-muted transition-colors"
                 >

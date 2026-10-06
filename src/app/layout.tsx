@@ -142,9 +142,6 @@ export default async function RootLayout({
         <link rel="preconnect" href="https://compugarden.com.ar" />
         <link rel="dns-prefetch" href="https://i.imgur.com" />
 
-        {/* Prefetch SVG sprites for parallax background (not preload to avoid unused resource warning) */}
-        <link rel="prefetch" href="/sprites/pixel-art.svg" as="fetch" type="image/svg+xml" crossOrigin="anonymous" />
-
         {/* --- CAPA FONDO PARALLAX --- */}
         <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 0 }} className="sky-bg sky-layer">
           <div className="cloud-wrapper cloud-1"><div className="cloud-inner"><svg viewBox="0 0 34 22" style={{ width: '100%', height: 'auto', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))' }}><use href="#cloud-pixel-art"></use></svg></div></div>

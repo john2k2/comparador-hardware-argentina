@@ -38,3 +38,15 @@ La selección pública de portada se guarda fuera de Cloudflare cada hora, al mi
 Los documentos públicos elegibles tienen una caché interna de 60 segundos por versión publicada. Cada respuesta recibe un nonce nuevo en la política de seguridad, los scripts y los datos de hidratación. No se almacenan sesiones, respuestas con cookies, escrituras, consultas con parámetros ni fragmentos de navegación. Las páginas fijas se generan sin sesión y pueden servirse también a usuarios ingresados; su cuenta se carga luego en el navegador. Las fechas reales de precios y métricas permanecen intactas.
 
 Las páginas dinámicas que no están en caché todavía generan su documento en Next. La verificación de recursos debe medirlas en producción, tanto en el primer acceso como en accesos repetidos. Un build aprobado o una respuesta 200 no prueban que desaparecieron los errores 1102/503.
+
+La navegación global, las categorías de portada, las tarjetas de guías y comparativas y los enlaces a tiendas patrocinadas no precargan páginas. El usuario conserva la navegación al elegir un enlace, sin generar consultas de otras categorías antes de hacerlo. Se eliminó también la precarga del archivo SVG que ningún componente consume; los elementos del fondo mantienen su marcado.
+
+### Corte público del 6 de octubre de 2026
+
+La tarea solicitada desde el panel a las 05:13 UTC terminó a las 05:14:20 UTC: nueve fuentes verificadas, Google Ads pendiente, sin consultas fallidas y con ambos resúmenes guardados. Esto acredita esa ejecución; no garantiza las autorizaciones futuras de Google ni que el scheduler nunca se retrase.
+
+Las trazas de las peticiones identificadas en producción midieron 0–1 ms de CPU para portada y comparador preparado, 1–5 ms para la selección pública de ofertas, 2 ms para la página administrativa y 4 ms para la lectura privada. La espera de red forma parte del tiempo total y no del tiempo de CPU.
+
+El primer render de una ficha de producto consumió 217 ms, una categoría 47 ms y una consulta de `/api/products` 132 ms. Respondieron 200 en este corte, pero superan los 10 ms de CPU del plan gratuito. La tolerancia a ráfagas y la caché pueden ocultar el riesgo; la incidencia global queda abierta.
+
+Para sostener costo cero, el siguiente trabajo se concentra en estas tres rutas: consultas públicas acotadas fuera del render de Next; documentos de producto y categoría preparados fuera del Worker, con sus metadatos y contenido indexable; y actualización de ofertas que conserve identidad, stock y observaciones reales. Exigir paridad de filtros, orden, paginación, variantes y elegibilidad temporal antes de reemplazar el recorrido auditado. Probar accesos sin caché y navegación real; no cerrar la incidencia sólo porque una página responde 200. No alojar la web pública en una computadora personal para resolver este presupuesto de CPU.

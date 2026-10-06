@@ -21,6 +21,7 @@ export function EditorialLinkCard({
   return (
     <Link
       href={href}
+      prefetch={false}
       className="group block h-full min-w-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-secondary"
     >
       <article className="flex h-full min-w-0 flex-col gap-2 border-4 border-border bg-card p-4 pixel-shadow transition-transform group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:border-primary">

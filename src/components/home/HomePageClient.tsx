@@ -46,7 +46,7 @@ export function HomePageClient({ latestOffersSection, priceDropSection, showGame
   };
 
   const categoryLink = (category: (typeof categories)[number]) => (
-    <Link key={category.id} href={buildCategoryLandingPath(category.id)}
+    <Link key={category.id} href={buildCategoryLandingPath(category.id)} prefetch={false}
       className="flex min-h-14 items-center justify-center border-2 border-border bg-background px-3 py-3 text-center font-mono text-sm font-bold text-foreground transition-colors hover:border-secondary hover:text-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-secondary">
       {category.id === 'tarjetas-graficas' ? 'Placas de video' : category.name}
     </Link>
