@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { ProductDetailClient } from '@/components/product/ProductDetailClient';
+import { buildCanonicalProductHref, isComparisonProductOrigin } from '@/lib/product/product-cache-utils';
 import { readCanonicalProductIdByKey, readProductDetailByIdFromDatabase } from '@/lib/persistence/product-read';
 import { getAvailableComparableStorePrices } from '@/lib/price-utils';
 import { decideProductPageIndexing } from '@/lib/seo/product-indexing';
@@ -23,6 +24,7 @@ import {
 
 type ProductPageProps = {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ from?: string | string[] }>;
 };
 
 const getProductForPage = cache(async (id: string): Promise<Product | null> => {
@@ -107,19 +109,22 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   };
 }
 
-export default async function ProductDetailPage({ params }: ProductPageProps) {
+export default async function ProductDetailPage({ params, searchParams }: ProductPageProps) {
   const { id } = await params;
   const product = await getProductForPage(id);
   if (!product) {
     notFound();
   }
+  const from = (await searchParams)?.from;
 
   // Una clave heredada puede unir OEM, outlet y modelos con cooler.
   // Redirigir únicamente cuando la variante del agrupado coincide.
   if (product.canonicalProductKey) {
     const canonicalProductId = await readCanonicalProductIdByKey(product.canonicalProductKey,product);
-    if (canonicalProductId && canonicalProductId !== id) {
-      permanentRedirect(`/product/${encodeURIComponent(canonicalProductId)}`);
+    // El comparador conserva la publicación elegida. Metadata sigue indicando
+    // la variante canónica, sin transferir identidad ni sustituir el lector.
+    if (canonicalProductId && canonicalProductId !== id && !isComparisonProductOrigin(from)) {
+      permanentRedirect(buildCanonicalProductHref(canonicalProductId, from));
     }
   }
   

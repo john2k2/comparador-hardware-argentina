@@ -162,6 +162,19 @@ export function resolveBackHref(fromParam: string | null): string {
   // falls back to the search page so a crafted `from` cannot become an open
   // redirect. `/comparar/` keeps its trailing slash so lookalike paths such as
   // `/comparardor-falso` are not accepted.
-  const allowed = decoded.startsWith('/search') || decoded.startsWith('/comparar/') || decoded === '/comparativa/comparar';
+  const pathname = decoded.split(/[?#]/, 1)[0];
+  const allowed = !/[\\\u0000-\u001f]/.test(decoded)
+    && (pathname === '/search' || pathname.startsWith('/comparar/') || pathname === '/comparativa/comparar');
   return allowed ? decoded : '/search';
+}
+
+export function buildCanonicalProductHref(id: string, from: unknown): string {
+  const href = `/product/${encodeURIComponent(id)}`;
+  return typeof from === 'string' && from
+    ? `${href}?${new URLSearchParams({ from: resolveBackHref(from) })}`
+    : href;
+}
+
+export function isComparisonProductOrigin(from: unknown): boolean {
+  return typeof from === 'string' && resolveBackHref(from).split(/[?#]/, 1)[0] === '/comparativa/comparar';
 }

@@ -6,17 +6,19 @@ import type { HardwareCategory, Product } from '@/lib/types';
 import { COMPARABLE_CATEGORIES, COMPARISON_USE_CASES, compareProducts, type ComparisonUseCase } from '@/lib/comparison/dynamic-comparison';
 import { formatPriceARS } from '@/lib/price-utils';
 import { isCompleteComputerTitle } from '@/lib/product-identity';
+import { COMPARISON_SELECTION_KEY, decodeComparisonSelection, encodeComparisonSelection, recoverComparisonProduct } from '@/lib/comparison/selection-recovery';
 import { AdvisoryCta } from '@/components/commercial/AdvisoryCta';
 import { OfferReportLink } from '@/components/commercial/OfferReportLink';
 import { CATALOG_OFFER_FRESH_MS, OFFER_FRESH_MS } from '@/lib/price-freshness';
 
 type Side = 'left' | 'right';
 
-function ProductFinder({ category, side, selected, onSelect }: {
+function ProductFinder({ category, side, selected, onSelect, onInteract }: {
   category: HardwareCategory;
   side: Side;
   selected: Product | null;
   onSelect: (product: Product | null) => void;
+  onInteract: () => void;
 }) {
   const [query, setQuery] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
@@ -26,6 +28,7 @@ function ProductFinder({ category, side, selected, onSelect }: {
   useEffect(() => () => requestRef.current?.abort(), []);
 
   function changeQuery(value: string) {
+    onInteract();
     requestRef.current?.abort();
     setQuery(value);
     setProducts([]);
@@ -33,6 +36,7 @@ function ProductFinder({ category, side, selected, onSelect }: {
   }
 
   async function search() {
+    onInteract();
     requestRef.current?.abort();
     if (query.trim().length < 2) return;
     const controller = new AbortController();
@@ -103,6 +107,56 @@ export function ProductComparisonBuilder() {
   const [useCase, setUseCase] = useState<ComparisonUseCase>('gaming');
   const [left, setLeft] = useState<Product | null>(null);
   const [right, setRight] = useState<Product | null>(null);
+  const [selectionInitialized, setSelectionInitialized] = useState(false);
+  const [recoveryNotice, setRecoveryNotice] = useState<string | null>(null);
+  const recoveryRef = useRef<AbortController | null>(null);
+  function cancelRecovery() {
+    recoveryRef.current?.abort();
+    setSelectionInitialized(true);
+    setRecoveryNotice(null);
+  }
+
+  useEffect(() => {
+    const controller = new AbortController();
+    recoveryRef.current = controller;
+    async function restore() {
+      // Leer después de montar mantiene iguales SSR e hidratación inicial.
+      await Promise.resolve();
+      if (controller.signal.aborted) return;
+      let saved: ReturnType<typeof decodeComparisonSelection> = null;
+      try { saved = decodeComparisonSelection(window.sessionStorage.getItem(COMPARISON_SELECTION_KEY)); } catch { /* Almacenamiento no disponible. */ }
+      if (saved) {
+        const savedCategory = saved.category;
+        setCategory(saved.category);
+        setUseCase(saved.useCase);
+        setRecoveryNotice('Recuperando la selección anterior…');
+        async function load(id: string | null): Promise<Product | null> {
+          if (!id) return null;
+          try {
+            const response = await fetch(`/api/products?id=${encodeURIComponent(id)}&preferDb=1`, { signal: controller.signal, cache: 'no-store' });
+            if (!response.ok) return null;
+            const product = recoverComparisonProduct(await response.json(), id, savedCategory);
+            return product && (product.category === 'computadoras' || !isCompleteComputerTitle(product.name)) ? product : null;
+          } catch { return null; }
+        }
+        const [recoveredLeft, recoveredRight] = await Promise.all([load(saved.leftId), load(saved.rightId)]);
+        if (controller.signal.aborted) return;
+        setLeft(recoveredLeft);
+        setRight(recoveredRight);
+        setRecoveryNotice((saved.leftId && !recoveredLeft) || (saved.rightId && !recoveredRight)
+          ? 'No pudimos recuperar todos los productos. Conservamos la selección disponible; elegí el que falta.' : null);
+      }
+      if (!controller.signal.aborted) setSelectionInitialized(true);
+    }
+    void restore();
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!selectionInitialized) return;
+    const snapshot = encodeComparisonSelection({ category, useCase, leftId: left?.id ?? null, rightId: right?.id ?? null });
+    try { if (snapshot) window.sessionStorage.setItem(COMPARISON_SELECTION_KEY, snapshot); } catch { /* La selección sigue disponible en esta página. */ }
+  }, [category, useCase, left, right, selectionInitialized]);
   const [comparisonNow, setComparisonNow] = useState(0);
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
@@ -131,6 +185,7 @@ export function ProductComparisonBuilder() {
         <div>
           <label htmlFor="comparison-category" className="mb-2 block text-[12px] font-bold text-muted-foreground">TIPO DE COMPONENTE</label>
           <select id="comparison-category" value={category} onChange={(event) => {
+            cancelRecovery();
             setLeft(null);
             setRight(null);
             setCategory(event.target.value as HardwareCategory);
@@ -140,16 +195,17 @@ export function ProductComparisonBuilder() {
         </div>
         <div>
           <label htmlFor="comparison-use-case" className="mb-2 block text-[12px] font-bold text-muted-foreground">¿PARA QUÉ LO VAS A USAR?</label>
-          <select id="comparison-use-case" value={useCase} onChange={(event) => setUseCase(event.target.value as ComparisonUseCase)} className="w-full border-2 border-border bg-background px-3 py-3 text-[12px] font-bold focus:border-primary focus:outline-none">
+          <select id="comparison-use-case" value={useCase} onChange={(event) => { cancelRecovery(); setUseCase(event.target.value as ComparisonUseCase); }} className="w-full border-2 border-border bg-background px-3 py-3 text-[12px] font-bold focus:border-primary focus:outline-none">
             {COMPARISON_USE_CASES.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
           </select>
           <p className="mt-2 text-[12px] font-mono text-muted-foreground">{COMPARISON_USE_CASES.find((entry) => entry.id === useCase)?.description}</p>
         </div>
       </div>
 
+      {recoveryNotice && <p role="status" className="mb-4 font-body text-sm text-muted-foreground">{recoveryNotice}</p>}
       <div className="grid gap-4 md:grid-cols-2">
-        <ProductFinder key={`${category}-left`} category={category} side="left" selected={left} onSelect={(product) => setLeft(product?.category === category ? product : null)} />
-        <ProductFinder key={`${category}-right`} category={category} side="right" selected={right} onSelect={(product) => setRight(product?.category === category ? product : null)} />
+        <ProductFinder key={`${category}-left`} category={category} side="left" selected={left} onInteract={cancelRecovery} onSelect={(product) => { cancelRecovery(); setLeft(product?.category === category ? product : null); }} />
+        <ProductFinder key={`${category}-right`} category={category} side="right" selected={right} onInteract={cancelRecovery} onSelect={(product) => { cancelRecovery(); setRight(product?.category === category ? product : null); }} />
       </div>
 
       {!comparison && <p className="mt-5 border-2 border-dashed border-border p-4 text-[12px] text-muted-foreground">Elegí dos productos para generar la comparación completa.</p>}

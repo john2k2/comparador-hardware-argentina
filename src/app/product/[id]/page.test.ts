@@ -54,6 +54,24 @@ describe('product canonical redirects', () => {
     expect(permanentRedirectMock).toHaveBeenCalledWith('/product/group%3Acanonical-product');
   });
 
+  it('mantiene la publicación elegida desde el comparador y el lector canónico vigente', async () => {
+    await expect(ProductDetailPage({
+      params: Promise.resolve({ id: 'store-product' }),
+      searchParams: Promise.resolve({ from: '/comparativa/comparar?category=procesadores' }),
+    })).resolves.toBeTruthy();
+    expect(permanentRedirectMock).not.toHaveBeenCalled();
+    expect(readProductByIdFromDatabaseMock).toHaveBeenCalledWith('store-product');
+    expect(readCanonicalProductIdByKeyMock).toHaveBeenCalledWith('canonical-key', expect.objectContaining({ id: 'store-product' }));
+  });
+
+  it('conserva filtros y página al redirigir al agrupado desde una búsqueda', async () => {
+    const from = '/search?q=ryzen&page=2&category=procesadores';
+    await expect(ProductDetailPage({
+      params: Promise.resolve({ id: 'store-product' }),
+      searchParams: Promise.resolve({ from }),
+    })).rejects.toThrow(`PERMANENT_REDIRECT:/product/group%3Acanonical-product?${new URLSearchParams({ from })}`);
+  });
+
   it('resolves a search fixture detail locally in stable mode without consulting the database', async () => {
     vi.stubEnv('E2E_STABLE_MODE', '1');
     await expect(ProductDetailPage({
