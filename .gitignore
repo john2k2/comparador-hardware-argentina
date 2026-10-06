@@ -19,6 +19,8 @@
 /test-results
 /playwright-report/
 /testsprite_tests/
+/.testsprite/
+/.next-qa/
 
 # production
 /build
@@ -92,5 +94,8 @@ supabase/.temp/
 /docs/reports/crecimiento-2026-09-12/DIFUSION-GRUPOS-2026-09-27.csv
 /outputs/**/_work/
 /outputs/**/*.inspect.ndjson
+/outputs/**/*.private.json
 /outputs/**/project-tracker-preview.png
 /.codex/config.toml
+testsprite_tests/tmp/
+testsprite_tests/tmp/config.json

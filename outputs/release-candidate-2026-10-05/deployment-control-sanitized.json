@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-10-06T01:06:57.527891+00:00",
+  "source": "wrangler deployments status and versions view (read-only)",
+  "deploymentId": "acc6c77f-8996-4e92-ad83-678f36a6d218",
+  "versionId": "b3a2ab26-1875-4219-b9bf-c827e066f023",
+  "percentage": 100,
+  "deploymentCreatedAt": "2026-10-02T19:57:37.209529Z",
+  "versionCreatedAt": "2026-10-02T19:57:33.147422Z",
+  "versionAvailable": true,
+  "productionDeploymentPerformed": false,
+  "qaVersion": "9994d965-2a86-4476-9bb0-ceab75611865",
+  "qaData": "synthetic only",
+  "qaOnlyCorrection": "Add the same synthetic environment marker to the robots response; production code and policy unchanged",
+  "productionUnchangedAfterQaDeployment": true
+}

@@ -36,7 +36,8 @@ test('inicia, recupera tras recarga y cierra la sesión sin volver a pedir contr
   expect(logins).toBe(1);
   await expect.poll(() => sync.includes('POST')).toBe(true);
   await page.getByRole('button', { name: 'CERRAR SESION', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Entrar o crear cuenta' })).toBeVisible();
+  // Comprobar el formulario tras salir, no el h1 de página que existe siempre.
+  await expect(page.getByRole('heading', { name: 'Entrar o crear cuenta', level: 2, exact: true })).toBeVisible();
   await expect.poll(() => logouts).toBe(1);
   await expect.poll(() => sync.at(-1)).toBe('DELETE');
   await expect.poll(async () => (await context.cookies()).some(c => c.name === 'sb-access-token')).toBe(false);

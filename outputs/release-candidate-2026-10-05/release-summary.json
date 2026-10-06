@@ -1,0 +1,133 @@
+{
+  "recordedAt": "2026-10-06T01:10:10.785138+00:00",
+  "status": "prepared_production_gate_open",
+  "sourceCommit": "d09a0749fa3d105264640a98467b967f7f7bd5fb",
+  "baseCommit": "8b7f58debbeea54fad07a072544ecb6148efc4bd",
+  "workerGuardCommit": "d2b88d4",
+  "productionDeployed": false,
+  "productionControl": {
+    "checkedAt": "2026-10-06T01:06:57.527891+00:00",
+    "source": "wrangler deployments status and versions view (read-only)",
+    "deploymentId": "acc6c77f-8996-4e92-ad83-678f36a6d218",
+    "versionId": "b3a2ab26-1875-4219-b9bf-c827e066f023",
+    "percentage": 100,
+    "deploymentCreatedAt": "2026-10-02T19:57:37.209529Z",
+    "versionCreatedAt": "2026-10-02T19:57:33.147422Z",
+    "versionAvailable": true,
+    "productionDeploymentPerformed": false,
+    "qaVersion": "9994d965-2a86-4476-9bb0-ceab75611865",
+    "qaData": "synthetic only",
+    "qaOnlyCorrection": "Add the same synthetic environment marker to the robots response; production code and policy unchanged",
+    "productionUnchangedAfterQaDeployment": true
+  },
+  "sourceManifest": "source-manifest-final.json",
+  "testsprite": {
+    "strict": true,
+    "autoHeal": false,
+    "passed": 30,
+    "failed": 0,
+    "skipped": 0,
+    "workerVersion": "9994d965-2a86-4476-9bb0-ceab75611865",
+    "evidence": "testsprite-final-sanitized.json"
+  },
+  "workersE2E": {
+    "stats": {
+      "startTime": "2026-10-06T01:03:27.809Z",
+      "duration": 361029.266,
+      "expected": 414,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "evidence": "workers-full-browser-final.json",
+    "data": "synthetic",
+    "qaSourceOverlay": "robots Disallow:/ plus noindex/nofollow and synthetic environment header"
+  },
+  "realCatalogBrowser": {
+    "passed": 10,
+    "failed": 0,
+    "evidence": "public-browser-final.log",
+    "runtime": "Workers local production mode; no synthetic fixtures"
+  },
+  "realCatalogHttp": {
+    "total": 32,
+    "passed": 31,
+    "failed": 1,
+    "failures": [
+      {
+        "path": "/api/search?minPrice=100000&sortBy=price-asc",
+        "status": 503,
+        "ms": 8917
+      }
+    ],
+    "evidence": "public-workers-read/public-site.json"
+  },
+  "unit": {
+    "passed": 1429,
+    "skipped": 2,
+    "failed": 0,
+    "evidence": "verify-final.log"
+  },
+  "operational": {
+    "passed": 20,
+    "failed": 0,
+    "evidence": "verify-final.log"
+  },
+  "database": {
+    "regressionScenariosPassed": 13,
+    "concurrencyScenariosPassed": 2,
+    "migrationCount": 70,
+    "data": "synthetic local PostgreSQL 17",
+    "speculativeCardinalityMigrationIncluded": false,
+    "evidence": "database-final-regressions.log"
+  },
+  "build": {
+    "productionWorkers": "passed",
+    "syntheticWorkers": "passed",
+    "sourceInputsIdentical": 559
+  },
+  "accessibility": {
+    "routeCount": 40,
+    "pageCaptures": 160,
+    "menuCaptures": 8,
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "widths": [
+      1440,
+      390
+    ],
+    "menuWidths": [
+      390,
+      1068
+    ],
+    "axeViolationNodes": 0,
+    "jsErrors": 0,
+    "horizontalOverflowViews": 0,
+    "gradientNodeMeasurements": 1183,
+    "gradientManualUnresolved": 0,
+    "minimumMeasuredGradientContrast": 4.762355476608349,
+    "uniqueElementsClaimed": false,
+    "formalWcagCertification": false,
+    "paletteChecksPerTheme": {
+      "light": 46,
+      "dark": 46
+    },
+    "minimumPaletteContrast": {
+      "light": 4.912991646443945,
+      "dark": 4.66239730521287
+    },
+    "productCoverage": "six representative synthetic fixtures, not every real catalog ID"
+  },
+  "releaseGate": {
+    "status": "open",
+    "reason": "Cold global price query times out; stale cache 200 is not a cold-query success",
+    "requiredNextAction": "Measure and fix real-catalog read with identical IDs/totals/eligibility; repeat affected checks before requesting deployment approval"
+  },
+  "limits": [
+    "No live price/stock/identity/timestamp mutations, scraping refresh dispatch or production deployment",
+    "No real Google requests, affiliate clicks, purchases or mail submission",
+    "G02, real analytics receipt and commercial receipt gates remain independent"
+  ]
+}

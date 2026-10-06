@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 
 test.beforeEach(async ({ context }) => {
+  await context.route('**/*google-analytics.com/**', route => route.abort());
+  await context.route('**/*googletagmanager.com/**', route => route.abort());
   await context.addInitScript(() => {
     localStorage.setItem('cha-analytics-consent:v1', JSON.stringify({ allowed: false, savedAt: Date.now() }));
   });
@@ -62,8 +64,8 @@ test('armador recupera el ID elegido después de recargar', async ({ page }) => 
   await expect(page.locator('p[role="status"]')).toContainText('recuperado');
 });
 
-test('guía e índice presentan contenido real sin desbordar en móvil', async ({ page }, testInfo) => {
-  for (const path of ['/guia/pc-gamer-1-millon', '/indice-precios-hardware']) {
+test('guía presenta contenido real sin desbordar en móvil', async ({ page }, testInfo) => {
+  for (const path of ['/guia/pc-gamer-1-millon']) {
     const response = await page.goto(path);
     expect(response?.status()).toBe(200);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -72,8 +74,26 @@ test('guía e índice presentan contenido real sin desbordar en móvil', async (
       await expect(page.getByText(/Margen de precios: hasta.*\(\+10%\)/)).toBeVisible();
       await expect(page.getByText(/Revisamos la selección una vez por semana o a pedido/)).toBeVisible();
     }
-    if (path.includes('indice')) await expect(page.locator('a[href="/indice-precios-hardware/datos.csv"]')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath(`${path.split('/').at(-1)}-public.png`), fullPage: true });
+  }
+});
+
+test('el índice retirado y su CSV responden 404 sin enlaces ni indexación', async ({ page, request }, testInfo) => {
+  for (const path of ['/indice-precios-hardware', '/indice-precios-hardware/datos.csv']) {
+    const response = await page.goto(path);
+    expect(response?.status()).toBe(404);
+    const robots = await page.locator('meta[name="robots"]').evaluateAll(tags => tags.map(tag => tag.getAttribute('content') ?? ''));
+    expect(robots.length).toBeGreaterThan(0);
+    expect(robots.every(value => /noindex/i.test(value))).toBe(true);
+    await expect(page.getByRole('link', { name: /Volver al inicio/i })).toBeVisible();
+    await expect(page.locator('a[href*="indice-precios-hardware"]')).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await page.screenshot({ path: testInfo.outputPath('index-retired-public.png'), fullPage: true });
+  for (const path of ['/sitemap.xml', '/llms.txt']) {
+    const response = await request.get(path);
+    expect(response.status()).toBe(200);
+    expect(await response.text()).not.toContain('/indice-precios-hardware');
   }
 });

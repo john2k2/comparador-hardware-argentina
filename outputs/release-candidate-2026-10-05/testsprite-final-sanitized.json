@@ -1,0 +1,229 @@
+{
+  "checkedAt": "2026-10-06T01:05:45.761282+00:00",
+  "provider": "TestSprite CLI 0.13.0 strict code replay",
+  "target": "https://hardware-ar-qa-20261005.ortiz-jonathan.workers.dev",
+  "qaWorkerVersion": "9994d965-2a86-4476-9bb0-ceab75611865",
+  "syntheticData": true,
+  "autoHeal": false,
+  "total": 30,
+  "passed": 30,
+  "failed": 0,
+  "skipped": 0,
+  "cases": [
+    {
+      "case": "TC001",
+      "codeVersion": "v-2261e58bc1ae",
+      "sha256": "2f8db3ac93065b259fbd38d36f412e0c3f9efcb855c96621c6c0e6900cff8e7a",
+      "runId": "0340e008-5e43-4303-82ff-f1b4952165df",
+      "status": "passed"
+    },
+    {
+      "case": "TC002",
+      "codeVersion": "v-3e1e0abc2f08",
+      "sha256": "04255dc9d6ed7e4556534da6453aafb21f852cc360833c4be3788f6019986492",
+      "runId": "800a447b-4f47-4076-8ffa-8970cd48c466",
+      "status": "passed"
+    },
+    {
+      "case": "TC003",
+      "codeVersion": "v-d90ba54b357b",
+      "sha256": "11b6288c12e5cdfef021593905c9a42bb691b846ac85e85f098cd725c6b20cc3",
+      "runId": "fd60ee7d-da6c-4a96-acf2-08a602255ab7",
+      "status": "passed"
+    },
+    {
+      "case": "TC004",
+      "codeVersion": "v-296a7fec648e",
+      "sha256": "e050eedfef9703b350b720991a3d6cc99f3f5b8ac703312612279dd93c8b400a",
+      "runId": "b307ca68-d202-4eed-907f-153e3632f91f",
+      "status": "passed"
+    },
+    {
+      "case": "TC005",
+      "codeVersion": "v-223fb95f8bcc",
+      "sha256": "67be6a22be6b77b721bd31a8340c9a8ad25ac39289d9909c124273fabc9f2a02",
+      "runId": "07f33eb7-8b69-4ebb-afa0-5da2a775ad19",
+      "status": "passed"
+    },
+    {
+      "case": "TC006",
+      "codeVersion": "v-4c7467094df4",
+      "sha256": "79385eec5c1ed705ed4af4a6b24f6fdc3d692bd6acc8e7bd06783d0b33c5518b",
+      "runId": "82585de1-17f9-4293-80cd-5aa64e88dac1",
+      "status": "passed"
+    },
+    {
+      "case": "TC007",
+      "codeVersion": "v-d55e60f05299",
+      "sha256": "ce1b90b4a0ee7edd6fedbb309ccbf5abd6f96e9adcee2eb375af2ab8068f0da6",
+      "runId": "63820e9f-ef1d-47cc-ac3d-8dd21de1d7bd",
+      "status": "passed"
+    },
+    {
+      "case": "TC008",
+      "codeVersion": "v-4fe3623f9fd8",
+      "sha256": "662ebc99b3c24c2d9cad0f13bc62e1d33fc77134a015b2d618cd44a11df6e0b1",
+      "runId": "39134ead-62ba-4878-bced-6984ec7cfc7b",
+      "status": "passed"
+    },
+    {
+      "case": "TC009",
+      "codeVersion": "v-84f05c275cc2",
+      "sha256": "de25ebadef8817ce83d0b47aaad2eecd1a3061ee02b44480eb53e864420d4de5",
+      "runId": "12dd5850-ccd9-45f3-be99-f37adce29b2f",
+      "status": "passed"
+    },
+    {
+      "case": "TC010",
+      "codeVersion": "v-fd20c9cd1025",
+      "sha256": "3ea494145d15899254f12fe2586c197da342cfd8ed8709428c34f4d487c5255c",
+      "runId": "e0dc2f3d-a9d6-4564-a8b2-e593da99aad8",
+      "status": "passed"
+    },
+    {
+      "case": "TC011",
+      "codeVersion": "v-248d5c07da46",
+      "sha256": "b9138d6fc2649e35c0cc2594395b4ca3d29c1fa31d9f76e7ee2bff3d7fbf49f3",
+      "runId": "16bbcb84-a8cb-4851-b598-94c4c1968243",
+      "status": "passed"
+    },
+    {
+      "case": "TC012",
+      "codeVersion": "v-22c23a72ecda",
+      "sha256": "0e88731028572e4a5852dc03f6e49f82bfd0dcc5e3a273e0f1298ac4efb043b7",
+      "runId": "bbcb361d-714e-4c4f-9997-886babd1d222",
+      "status": "passed"
+    },
+    {
+      "case": "TC013",
+      "codeVersion": "v-61476caa69c4",
+      "sha256": "48fc471f0abb5d6cfeb4e742fc966d4ff83d0d0d3a7039394907f64c9b7e9b3f",
+      "runId": "871be34e-4796-4de9-8fe5-0c4baf756118",
+      "status": "passed"
+    },
+    {
+      "case": "TC014",
+      "codeVersion": "v-b1b471a02daf",
+      "sha256": "fdd99fe5c2e8a98d982429ba411e3cbed16568f067d504d8e87314a0d01ce911",
+      "runId": "83cf08c0-d3ca-4c85-b630-172e7f47c237",
+      "status": "passed"
+    },
+    {
+      "case": "TC015",
+      "codeVersion": "v-762f927dd1b0",
+      "sha256": "156faa7126f357b5450dc7b527719d85aaa3aaf72f7c2d8d0eed02d497179fd0",
+      "runId": "8410fe3b-e459-487c-86d3-abb3086ce723",
+      "status": "passed"
+    },
+    {
+      "case": "TC016",
+      "codeVersion": "v-997ebced5089",
+      "sha256": "b930e847b9045c3d6e45a8669720caa444168b5c1e9bf15f3d8ec0847c2fd353",
+      "runId": "ed266fbe-e441-4f39-9c5b-e8cc4b38f9e0",
+      "status": "passed"
+    },
+    {
+      "case": "TC017",
+      "codeVersion": "v-31099555139d",
+      "sha256": "394786fd93796367ed82bca49319543c17c906fd90f20eb6d896532346343d89",
+      "runId": "d51b12c8-e0f4-4294-be72-612027c25c7b",
+      "status": "passed"
+    },
+    {
+      "case": "TC018",
+      "codeVersion": "v-915a55d43594",
+      "sha256": "4c04a4b816f307afdb5e3b1a4a80b04eb859fd82a989398d035b29e2aa4e9db2",
+      "runId": "e28486ae-537e-4716-8d17-2a3b8994e473",
+      "status": "passed"
+    },
+    {
+      "case": "TC019",
+      "codeVersion": "v-8a7295d11dc7",
+      "sha256": "5770a5bd28d2472fcddc02bfdf27af24e1440a873460fdc237afeb54962e4bfe",
+      "runId": "ab63f1bc-a70b-4a92-a399-31360ff78ac4",
+      "status": "passed"
+    },
+    {
+      "case": "TC020",
+      "codeVersion": "v-d6c37726610c",
+      "sha256": "27c74363f328399f548891f58f6c53859c09f7daf9158f56ec7bca726154f54b",
+      "runId": "2a54a778-6dd4-47bb-ade3-62ec3146d773",
+      "status": "passed"
+    },
+    {
+      "case": "TC021",
+      "codeVersion": "v-595b28138782",
+      "sha256": "612cab568253140d1f03b827f5ba38fa130e91437e92f59bb0fce0f7761a031f",
+      "runId": "250fce05-67af-4362-90f4-debefe66e383",
+      "status": "passed"
+    },
+    {
+      "case": "TC022",
+      "codeVersion": "v-85c02d2ac8bd",
+      "sha256": "6565cc1f7dcea593ffd5fc18f564ddb4268f8aa08ef87b92a846b32cd9e03b62",
+      "runId": "71c2abc0-c212-4d75-babc-c3f3724044f4",
+      "status": "passed"
+    },
+    {
+      "case": "TC023",
+      "codeVersion": "v-cb688f7f5d04",
+      "sha256": "d56037ee50c6b3b3d60341fb020f831511864f3744d1309a6ff771a9a972612d",
+      "runId": "af20947f-9809-4d07-870e-ad3121ac5fe3",
+      "status": "passed"
+    },
+    {
+      "case": "TC024",
+      "codeVersion": "v-4de8d9ad08bf",
+      "sha256": "eca63ba6253c136dd88b2a6859fddeb8eaf5a4b0520863d9f2d800dcc6268dbf",
+      "runId": "ffaddbd2-9343-4e79-be5e-c2888d18dc05",
+      "status": "passed"
+    },
+    {
+      "case": "TC025",
+      "codeVersion": "v-e6600de935cb",
+      "sha256": "b8046df7847cdfa7a9ae39be70b2b8e584308130229fdbeb7044cd6dbdaf30f5",
+      "runId": "b404ad87-edb8-4cb4-8992-581a7fd2d685",
+      "status": "passed"
+    },
+    {
+      "case": "TC026",
+      "codeVersion": "v-df0511ce819a",
+      "sha256": "ea7429ba875bf5f0248afa82eaf627db91d88b5c6470adbee674b74e4af8fd60",
+      "runId": "a0edf34f-b6fa-4fdf-bd1c-5082871f0a45",
+      "status": "passed"
+    },
+    {
+      "case": "TC027",
+      "codeVersion": "v-fd91a7bc9534",
+      "sha256": "f209f471b5a215c37e1816a782c2934c57eaffb42d6b718b70140b1af413f0bb",
+      "runId": "98d4247d-0d9b-45c7-a113-aea2eabfcbb2",
+      "status": "passed"
+    },
+    {
+      "case": "TC028",
+      "codeVersion": "v-4d4a4dfc7866",
+      "sha256": "845aa5ae3ef4e371f437205060a33d2fed8daaf5c5b534669c2cde483823115b",
+      "runId": "f4acd7e6-f75a-4c70-a972-ae875b3495f8",
+      "status": "passed"
+    },
+    {
+      "case": "TC029",
+      "codeVersion": "v-0ba505c67dc9",
+      "sha256": "0bf006396c4116b25ad519056dd84d06288ff76f7423263a44a2c295bb227899",
+      "runId": "0d5e8ac7-9c40-424b-9bd6-f2e5d409cc5c",
+      "status": "passed"
+    },
+    {
+      "case": "TC030",
+      "codeVersion": "v-be935620cac9",
+      "sha256": "1c55721ed04f2062068566171a168c71822ec25dd73dfa9bd4faacb7ac25e98c",
+      "runId": "30a327fa-45f6-48e4-9215-07ea70a46add",
+      "status": "passed"
+    }
+  ],
+  "limitations": [
+    "No live price or stock certification",
+    "No real Google requests, store or affiliate clicks, mail submission or purchases",
+    "Passed result does not include a failure bundle or video"
+  ]
+}
