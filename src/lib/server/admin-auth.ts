@@ -2,13 +2,12 @@ import type { User } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getServerSupabaseReadClient } from '@/lib/server/supabase-server';
+import { hasAdminRole } from './admin-role';
 
 const ADMIN_AUTH_COOKIE_NAME = 'sb-access-token';
 
 export function isAdminUser(user: User | null): boolean {
-  if (!user) return false;
-  const appMetadata = user.app_metadata ?? {};
-  return appMetadata.is_admin === true || appMetadata.role === 'admin';
+  return hasAdminRole(user);
 }
 
 async function getUserByAccessToken(accessToken: string): Promise<User | null> {

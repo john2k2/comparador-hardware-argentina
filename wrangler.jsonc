@@ -5,12 +5,16 @@
 	"workers_dev": true,
 	"preview_urls": true,
 	"keep_vars": true,
+	"version_metadata": { "binding": "CF_VERSION_METADATA" },
 	"vars": {
 		"DISABLE_INTERNAL_BACKGROUND_REFRESH": "1",
 		"DISABLE_LIVE_SCRAPING": "1",
 		"ENABLE_ON_DEMAND_REFRESH": "1",
 		"CATALOG_REQUESTED_RUNNER": "0",
 		"CATALOG_SCHEDULER_ENABLED": "1",
+		"MEASUREMENT_COLLECTION_MODE": "external",
+		"MEASUREMENT_PUBLIC_URL": "https://www.comparador-hardware.com.ar",
+		"MEASUREMENT_GOOGLE_CLIENT_TYPE": "installed",
 		"ENEBA_AFFILIATE_PILOT_ENABLED": "1"
 	},
 	"triggers": { "crons": ["11 * * * *"] },
@@ -25,6 +29,7 @@
 	},
 	"assets": {
 		"directory": ".open-next/assets",
+		"run_worker_first": ["/__public-documents/*"],
 		"binding": "ASSETS"
 	},
 	"services": [

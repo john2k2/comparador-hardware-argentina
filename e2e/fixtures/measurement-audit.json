@@ -1,0 +1,7 @@
+[
+  { "version": 1, "provider": "ga4", "origin": "audit", "collectedAt": "2026-10-05", "period": { "start": "2026-09-28", "end": "2026-10-04", "timeZone": "America/Buenos_Aires" }, "metrics": { "users": 12, "sessions": 20, "views": 40, "outboundClicks": null }, "daily": [{"date":"2026-09-28","value":3},{"date":"2026-10-04","value":9}], "breakdown": [{"label":"google / organic","value":12}], "notes": ["Datos sintéticos para probar el panel. No describen el proyecto."] },
+  { "version": 1, "provider": "search-console", "origin": "audit", "collectedAt": "2026-10-05", "period": { "start": "2026-09-06", "end": "2026-10-03", "timeZone": "America/Los_Angeles" }, "metrics": { "clicks": 31 }, "notes": ["Datos sintéticos de prueba."] },
+  { "version": 1, "provider": "catalog", "origin": "audit", "collectedAt": "2026-10-05T22:47:00Z", "period": { "start": "2026-10-04", "end": "2026-10-05", "timeZone": "UTC" }, "metrics": { "total": 100, "observed24h": 19, "observed3h": 5 }, "notes": ["Datos sintéticos de prueba."] },
+  { "version": 1, "provider": "cloudflare", "origin": "audit", "collectedAt": "2026-10-05", "period": { "start": "2026-10-04", "end": "2026-10-04", "timeZone": "UTC" }, "metrics": { "requests": 100, "errors": 2, "resourceErrors": 2 }, "notes": ["Datos sintéticos de prueba."] },
+  { "version": 1, "provider": "adsense", "origin": "audit", "collectedAt": "2026-10-05", "period": { "start": "2026-10-05", "end": "2026-10-05", "timeZone": "UTC" }, "metrics": { "approved": null, "earningsARS": null }, "notes": ["Datos sintéticos de prueba."] }
+]

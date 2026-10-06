@@ -1,0 +1,44 @@
+name: Private measurement snapshots
+on:
+  schedule:
+    # Una vez al día; GitHub puede retrasar el comienzo. La fecha real se guarda.
+    - cron: '43 6 * * *'
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: Fuente de lectura
+        type: choice
+        default: all
+        options: [all, ga4, search-console, cloudflare, catalog, operations, github, eneba, database, adsense, google-ads]
+permissions:
+  contents: read
+concurrency:
+  group: measurement-snapshots
+  cancel-in-progress: false
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Consultar y guardar informes privados
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          MEASUREMENT_CREDENTIAL_ENCRYPTION_KEY: ${{ secrets.MEASUREMENT_CREDENTIAL_ENCRYPTION_KEY }}
+          MEASUREMENT_GOOGLE_CLIENT_ID: ${{ vars.MEASUREMENT_GOOGLE_CLIENT_ID }}
+          MEASUREMENT_GOOGLE_CLIENT_SECRET: ${{ secrets.MEASUREMENT_GOOGLE_CLIENT_SECRET }}
+          MEASUREMENT_GOOGLE_CLIENT_TYPE: installed
+          MEASUREMENT_PUBLIC_URL: http://localhost:3122
+          MEASUREMENT_COLLECTION_MODE: inline
+          MEASUREMENT_PROVIDER: ${{ inputs.provider || 'all' }}
+          DISABLE_LIVE_SCRAPING: '1'
+          DISABLE_INTERNAL_BACKGROUND_REFRESH: '1'
+          LOG_LEVEL: silent
+        run: node scripts/measurement-collect.mjs
+      # Los datos de cuentas y los tokens no se suben a artefactos ni a logs.

@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 const cards = [
+  { href: '/admin/seguimiento', title: 'SEGUIMIENTO', desc: 'Visitas, conexiones y decisiones explicadas de forma simple.' },
   { href: '/admin/stores', title: 'TIENDAS', desc: 'Estado actual por tienda, latencia y tasa de exito.' },
   { href: '/admin/scrapers', title: 'SCRAPERS', desc: 'Salud por endpoint y rendimiento de scraping.' },
   { href: '/admin/logs', title: 'LOGS', desc: 'Eventos recientes de /api/search y /api/products.' },

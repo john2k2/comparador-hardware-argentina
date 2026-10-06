@@ -15,6 +15,7 @@
 
 # next.js
 /.next/
+/public/__public-documents/
 /out/
 /test-results
 /playwright-report/
