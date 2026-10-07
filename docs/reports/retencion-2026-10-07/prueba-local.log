@@ -1,0 +1,45 @@
+{
+  "finishedAt": "2026-10-07T14:44:58.792Z",
+  "mode": "LOCAL SYNTHETIC ONLY",
+  "port": 55483,
+  "database": "retention_local",
+  "cases": [
+    "approval gate",
+    "default rollback",
+    "RLS anon denies reads",
+    "active preserved",
+    "expiry boundary preserved",
+    "renewed preserved",
+    "updated after cutoff preserved",
+    "other scopes preserved",
+    "concurrent renewal/lock preserved",
+    "four bounded250 commits"
+  ],
+  "beforeRows": 1121,
+  "deletedRows": 1000,
+  "afterRows": 121,
+  "preservedRows": 71,
+  "remainingEligible": 50,
+  "batches": [
+    {
+      "batch": 1,
+      "deletedRows": 250,
+      "clientElapsedMs": 30
+    },
+    {
+      "batch": 2,
+      "deletedRows": 250,
+      "clientElapsedMs": 27
+    },
+    {
+      "batch": 3,
+      "deletedRows": 250,
+      "clientElapsedMs": 24
+    },
+    {
+      "batch": 4,
+      "deletedRows": 250,
+      "clientElapsedMs": 19
+    }
+  ]
+}

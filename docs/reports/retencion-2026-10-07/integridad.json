@@ -1,0 +1,24 @@
+{
+  "mode": "propuesta local sin borrado remoto",
+  "cutoffUTC": "2026-10-07T14:30:00Z",
+  "approvalReceived": false,
+  "maxBatchRows": 250,
+  "maxCommittedBatches": 4,
+  "maxCommittedRows": 1000,
+  "totalLimitEnforcement": "procedimental con operador único y registro",
+  "independentReview": {
+    "profile": "comparador_reviewer",
+    "materialFindings": 0,
+    "readOnly": true,
+    "testsRepeated": false
+  },
+  "files": {
+    "PLAN.md": "54616f780dd8499bb82bad8b25f1b4323ee7e3dd046ebac772794cc1115b0194",
+    "cache-vencida-piloto.sql": "47979f0b9ea2fa9bc89a7cb14447693a9cde552d990e0779aed2036739de9db6",
+    "evidencia.json": "c292040da9ac7aa0a4892dabff97486eeeb1e13e5ebd0d5fc52d273e34630203",
+    "fixture-test.mjs": "b963b4d094d1fb1628ae96a9f519137127d79816e868a2e7b4ce89b0e383efae",
+    "preflight.sql": "df2f720f1a9575c549115fe1730f3cf1ad6b09d9433b9fd97e7ea6e2e2d19328",
+    "prueba-local.json": "7c156682b261f3dd9295dca03d008b2a8d41866344cd6c276a2ea43c8a47fc7c",
+    "prueba-local.log": "6d6015819f7ec406e29a6e4d52891a84da6fcf920a10466bfa1c91d346266142"
+  }
+}

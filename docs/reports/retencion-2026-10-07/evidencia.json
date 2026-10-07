@@ -1,0 +1,222 @@
+{
+  "mode": "Supabase MCP BEGIN READ ONLY, statement_timeout3s; metadata and aggregate counts only; no deletes/DDL/vacuum/analyze/payloads/keys/user data",
+  "projectId": "zyiyziubpcpgoqlkcrie",
+  "sourceRevision": "53d471e08812189fbc86297df2ec112bd4638aba",
+  "cutoffUTC": "2026-10-07T14:30:00Z",
+  "metadata": [
+    {
+      "jsonb_build_object": {
+        "read_at": "2026-10-07T14:39:02.006739+00:00",
+        "cache_indexes": [
+          {
+            "name": "api_cache_entries_pkey",
+            "definition": "CREATE UNIQUE INDEX api_cache_entries_pkey ON public.api_cache_entries USING btree (cache_key)"
+          },
+          {
+            "name": "api_cache_entries_scope_idx",
+            "definition": "CREATE INDEX api_cache_entries_scope_idx ON public.api_cache_entries USING btree (scope)"
+          },
+          {
+            "name": "api_cache_entries_expires_idx",
+            "definition": "CREATE INDEX api_cache_entries_expires_idx ON public.api_cache_entries USING btree (expires_at)"
+          }
+        ],
+        "history_calls": null,
+        "cache_security": {
+          "rls": true,
+          "anon_delete": true,
+          "service_delete": true,
+          "service_select": true,
+          "authenticated_delete": true
+        },
+        "database_bytes": 929205395,
+        "track_functions": "none",
+        "cache_heap_bytes": 158253056,
+        "history_function": {
+          "proconfig": [
+            "search_path=pg_catalog, public"
+          ],
+          "anon_execute": false,
+          "service_execute": true,
+          "security_definer": true,
+          "authenticated_execute": false
+        },
+        "statistics_reset": null,
+        "cache_total_bytes": 245424128,
+        "history_heap_bytes": 42860544,
+        "cache_indexes_bytes": 77922304,
+        "history_total_bytes": 176209920,
+        "default_transaction_read_only": "off"
+      }
+    }
+  ],
+  "scopeCounts": [
+    {
+      "cutoff": "2026-10-07 14:30:00+00",
+      "read_at": "2026-10-07 14:39:40.458164+00",
+      "scope_bucket": "operational-store-event",
+      "rows_total": 331716,
+      "expired_at_cutoff": 330295,
+      "eligible_at_cutoff": 330295,
+      "oldest_expiry": "2026-03-13 15:10:43.451+00",
+      "latest_update": "2026-10-07 13:29:10.393+00"
+    },
+    {
+      "cutoff": "2026-10-07 14:30:00+00",
+      "read_at": "2026-10-07 14:39:40.458179+00",
+      "scope_bucket": "operational-endpoint-event",
+      "rows_total": 14077,
+      "expired_at_cutoff": 14075,
+      "eligible_at_cutoff": 14075,
+      "oldest_expiry": "2026-03-13 15:10:49.275+00",
+      "latest_update": "2026-10-06 13:27:33.497+00"
+    },
+    {
+      "cutoff": "2026-10-07 14:30:00+00",
+      "read_at": "2026-10-07 14:39:40.45818+00",
+      "scope_bucket": "other-unreviewed",
+      "rows_total": 2029,
+      "expired_at_cutoff": 2029,
+      "eligible_at_cutoff": 2029,
+      "oldest_expiry": "2026-03-06 20:44:07.362+00",
+      "latest_update": "2026-09-29 16:23:06.632+00"
+    },
+    {
+      "cutoff": "2026-10-07 14:30:00+00",
+      "read_at": "2026-10-07 14:39:40.458181+00",
+      "scope_bucket": "catalog-refresh-demand",
+      "rows_total": 367,
+      "expired_at_cutoff": 115,
+      "eligible_at_cutoff": 115,
+      "oldest_expiry": "2026-09-26 19:51:40.098+00",
+      "latest_update": "2026-10-07 05:48:31.64+00"
+    },
+    {
+      "cutoff": "2026-10-07 14:30:00+00",
+      "read_at": "2026-10-07 14:39:40.458183+00",
+      "scope_bucket": "jev-identity-offer",
+      "rows_total": 144,
+      "expired_at_cutoff": 132,
+      "eligible_at_cutoff": 132,
+      "oldest_expiry": "2026-09-30 17:15:39.547+00",
+      "latest_update": "2026-10-07 11:47:05.963+00"
+    },
+    {
+      "cutoff": "2026-10-07 14:30:00+00",
+      "read_at": "2026-10-07 14:39:40.458184+00",
+      "scope_bucket": "home-sections",
+      "rows_total": 3,
+      "expired_at_cutoff": 3,
+      "eligible_at_cutoff": 3,
+      "oldest_expiry": "2026-10-02 16:33:06.675+00",
+      "latest_update": "2026-10-07 13:53:01.232+00"
+    },
+    {
+      "cutoff": "2026-10-07 14:30:00+00",
+      "read_at": "2026-10-07 14:39:40.458185+00",
+      "scope_bucket": "store-scrape-circuit",
+      "rows_total": 3,
+      "expired_at_cutoff": 1,
+      "eligible_at_cutoff": 1,
+      "oldest_expiry": "2026-10-02 11:37:57.987+00",
+      "latest_update": "2026-10-07 13:21:08.64+00"
+    },
+    {
+      "cutoff": "2026-10-07 14:30:00+00",
+      "read_at": "2026-10-07 14:39:40.458186+00",
+      "scope_bucket": "search-response-v2",
+      "rows_total": 2,
+      "expired_at_cutoff": 2,
+      "eligible_at_cutoff": 2,
+      "oldest_expiry": "2026-09-30 22:05:50.657+00",
+      "latest_update": "2026-10-06 13:27:33.497+00"
+    },
+    {
+      "cutoff": "2026-10-07 14:30:00+00",
+      "read_at": "2026-10-07 14:39:40.458209+00",
+      "scope_bucket": "eneba-affiliate-pilot",
+      "rows_total": 1,
+      "expired_at_cutoff": 1,
+      "eligible_at_cutoff": 1,
+      "oldest_expiry": "2026-10-07 13:20:17+00",
+      "latest_update": "2026-10-07 07:20:17.231+00"
+    }
+  ],
+  "retentionAndPolicies": [
+    {
+      "jsonb_build_object": {
+        "read_at": "2026-10-07T14:40:45.188367+00:00",
+        "history_age": {
+          "latest": "2026-10-07T13:29:10.376+00:00",
+          "oldest": "2026-03-05T01:51:12.263+00:00",
+          "raw_14d": 36292,
+          "rows_total": 248397,
+          "daily_90_to_365d": 150389,
+          "hourly_14_to_90d": 61716,
+          "purge_older_365d": 0
+        },
+        "cache_policies": [
+          {
+            "roles": [
+              "service_role"
+            ],
+            "policy": "service_api_cache_entries_delete",
+            "command": "DELETE",
+            "predicate": "true"
+          },
+          {
+            "roles": [
+              "service_role"
+            ],
+            "policy": "service_api_cache_entries_insert",
+            "command": "INSERT",
+            "predicate": null
+          },
+          {
+            "roles": [
+              "service_role"
+            ],
+            "policy": "service_api_cache_entries_select",
+            "command": "SELECT",
+            "predicate": "true"
+          },
+          {
+            "roles": [
+              "service_role"
+            ],
+            "policy": "service_api_cache_entries_update",
+            "command": "UPDATE",
+            "predicate": "true"
+          }
+        ],
+        "cache_statistics": {
+          "last_autovacuum": "2026-10-02T22:44:24.038738+00:00",
+          "last_autoanalyze": "2026-08-25T19:38:41.085604+00:00",
+          "estimated_dead_rows": 881,
+          "estimated_live_rows": 338600
+        },
+        "statement_stats_reset": "2026-03-04T23:47:47.907286+00:00",
+        "history_statement_stats": {
+          "calls": 27,
+          "total_exec_time_ms": 36074.145821,
+          "matching_statements": 2
+        }
+      }
+    }
+  ],
+  "historyStatementShape": [
+    {
+      "read_at": "2026-10-07 14:42:33.898198+00",
+      "statement_shape": "function_call_shape",
+      "statement_count": 2,
+      "calls": "27",
+      "returned_rows": "27",
+      "total_exec_time_ms": 36074.145821
+    }
+  ],
+  "limits": [
+    "statement statistics do not retain execution date or deleted row counts",
+    "physical bytes cannot be reclaimed by count ratios",
+    "unknown scopes grouped, no raw keys/payloads"
+  ]
+}
