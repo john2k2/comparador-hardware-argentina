@@ -34,7 +34,8 @@ type CloudflareContentResponse = {
   }>;
 };
 
-const renderedHtmlCache = new Map<string, { expiresAt: number; html: string }>();
+type RenderedPage = { html: string; observedAt: number };
+const renderedHtmlCache = new Map<string, RenderedPage & { expiresAt: number }>();
 let portalTechBackoffUntil = 0;
 
 function getCloudflareCredentials() {
@@ -122,19 +123,19 @@ function isRateLimitError(payload: CloudflareContentResponse | null, responseSta
   ));
 }
 
-async function renderPortalTechPage(path: string, signal?: AbortSignal): Promise<string> {
+async function renderPortalTechPage(path: string, signal?: AbortSignal): Promise<RenderedPage | null> {
   const now = Date.now();
   const cached = renderedHtmlCache.get(path);
   if (cached && cached.expiresAt > now) {
-    return cached.html;
+    return cached;
   }
 
   if (!isCloudflareBrowserRenderingConfigured()) {
-    return '';
+    return null;
   }
 
   if (portalTechBackoffUntil > now) {
-    return '';
+    return null;
   }
 
   const { accountId, apiToken } = getCloudflareCredentials();
@@ -165,12 +166,16 @@ async function renderPortalTechPage(path: string, signal?: AbortSignal): Promise
     throw new Error(`portaltech render failed: ${errorMessage}`);
   }
 
-  renderedHtmlCache.set(path, {
-    expiresAt: now + PORTALTECH_HTML_CACHE_TTL_MS,
+  // La hora pertenece a la lectura real, incluso cuando reutilizamos el HTML.
+  const observedAt = Date.now();
+  const page = {
+    expiresAt: observedAt + PORTALTECH_HTML_CACHE_TTL_MS,
     html: payload.result,
-  });
+    observedAt,
+  };
+  renderedHtmlCache.set(path, page);
 
-  return payload.result;
+  return page;
 }
 
 function matchesQuery(name: string, query: string): boolean {
@@ -188,7 +193,7 @@ function matchesRequestedCategory(name: string, category: HardwareCategory): boo
   return inferCategoryFromTitle(name) === category;
 }
 
-function parsePortalTechListing(html: string, category: HardwareCategory, query?: string): Product[] {
+function parsePortalTechListing(html: string, observedAt: number, category: HardwareCategory, query?: string): Product[] {
   if (!html) return [];
 
   const $ = cheerio.load(html);
@@ -254,7 +259,7 @@ function parsePortalTechListing(html: string, category: HardwareCategory, query?
           originalPrice: originalPrice > price ? originalPrice : undefined,
           installment: null,
           stock,
-          lastUpdated: new Date(),
+          lastUpdated: new Date(observedAt),
         },
       ],
       specs: {},
@@ -352,8 +357,8 @@ export async function fetchPortalTechProducts(query: string, category: HardwareC
   const trimmedQuery = query.trim();
   if (!trimmedQuery) return [];
 
-  const html = await renderPortalTechPage(buildSearchPath(trimmedQuery), signal);
-  return parsePortalTechListing(html, category, trimmedQuery);
+  const page = await renderPortalTechPage(buildSearchPath(trimmedQuery), signal);
+  return page ? parsePortalTechListing(page.html, page.observedAt, category, trimmedQuery) : [];
 }
 
 export async function fetchPortalTechCategory(category: HardwareCategory, signal?: AbortSignal): Promise<Product[]> {

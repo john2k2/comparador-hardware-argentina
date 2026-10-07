@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import * as portaltechModule from './portaltech';
+let portaltechModule: typeof import('./portaltech');
 
 vi.mock('../logger', () => ({
   logger: {
@@ -45,13 +45,18 @@ function createMockFetch(response: unknown) {
 }
 
 describe('portaltech scraper', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    vi.resetModules();
     vi.restoreAllMocks();
     vi.stubEnv('CLOUDFLARE_ACCOUNT_ID', 'test-account');
     vi.stubEnv('CLOUDFLARE_API_TOKEN', 'test-token');
+    portaltechModule = await import('./portaltech');
   });
 
   afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -88,6 +93,42 @@ describe('portaltech scraper', () => {
 
       expect(result.every(p => p.category === 'procesadores')).toBe(true);
     });
+
+    it('reutiliza HTML sin renovar la fecha de la oferta y relee al vencer el caché', async () => {
+      vi.useFakeTimers();
+      const readAt = new Date('2026-10-06T20:00:00Z');
+      vi.setSystemTime(readAt);
+      const source = createMockFetch(successResponse);
+      vi.stubGlobal('fetch', source);
+      const first = await portaltechModule.fetchPortalTechProducts('rtx', 'tarjetas-graficas');
+      expect(first).toHaveLength(1);
+      expect(first[0].prices[0].lastUpdated).toEqual(readAt);
+
+      vi.setSystemTime(new Date(readAt.getTime() + 5 * 60_000));
+      const cached = await portaltechModule.fetchPortalTechProducts('rtx', 'tarjetas-graficas');
+      expect(source).toHaveBeenCalledTimes(1);
+      expect(cached[0].prices[0].lastUpdated).toEqual(readAt);
+      expect(cached[0].prices[0].price).toBe(first[0].prices[0].price);
+
+      const secondReadAt = new Date(readAt.getTime() + 15 * 60_000);
+      vi.setSystemTime(secondReadAt);
+      source.mockResolvedValue({ ok: true, json: async () => ({ success: true, result: validProductHtml.replaceAll('1899999', '1799999') }) });
+      const reread = await portaltechModule.fetchPortalTechProducts('rtx', 'tarjetas-graficas');
+      expect(source).toHaveBeenCalledTimes(2);
+      expect(reread[0].prices[0]).toMatchObject({ price: 1799999, lastUpdated: secondReadAt });
+    });
+
+    it('no fabrica una lectura nueva después de vencer el caché si falla el render', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-10-06T20:00:00Z'));
+      const source = createMockFetch(successResponse);
+      vi.stubGlobal('fetch', source);
+      await portaltechModule.fetchPortalTechProducts('rtx', 'tarjetas-graficas');
+      vi.setSystemTime(new Date('2026-10-06T20:16:00Z'));
+      source.mockResolvedValue({ ok: false, status: 500, json: async () => ({ success: false }) });
+      await expect(portaltechModule.fetchPortalTechProducts('rtx', 'tarjetas-graficas')).rejects.toThrow();
+      expect(source).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('fetchPortalTechCategory', () => {
@@ -118,7 +159,9 @@ describe('portaltech scraper', () => {
 
     it('returns products even on some errors (graceful degradation)', async () => {
       const errorResponse = { success: false, errors: [{ code: 500, message: 'Server error' }] };
-      vi.stubGlobal('fetch', createMockFetch(errorResponse));
+      const source = createMockFetch(successResponse);
+      source.mockResolvedValueOnce({ ok: false, status: 500, json: async () => errorResponse });
+      vi.stubGlobal('fetch', source);
 
       const result = await portaltechModule.fetchPortalTechCategory('procesadores');
       expect(result.length).toBeGreaterThan(0);
