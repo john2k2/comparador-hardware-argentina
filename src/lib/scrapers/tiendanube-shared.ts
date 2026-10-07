@@ -1,6 +1,8 @@
 import * as cheerio from 'cheerio';
 import type { HardwareCategory, Product, StockStatus } from '../types';
 import { findNextPageUrl, normalizeAbsoluteUrl as normalizeAbsolutePaginationUrl } from './common-pagination';
+import { readProductDetailEvidence, schemaStock, selectedVariantStock } from './product-detail-evidence';
+import { SourceHttpError } from './source-http';
 import {
   buildSinglePriceProduct,
   cleanScrapedText,
@@ -25,19 +27,8 @@ type JsonLdOffer = {
   price?: string | number;
   availability?: string;
   inventoryLevel?: {
-    value?: string | number;
+    value?: string | number | null;
   };
-};
-
-type JsonLdProduct = {
-  '@type'?: string;
-  name?: string;
-  image?: string | string[];
-  description?: string;
-  brand?: {
-    name?: string;
-  } | string;
-  offers?: JsonLdOffer | JsonLdOffer[];
 };
 
 export const TIENDANUBE_STORES: TiendaNubeStore[] = [
@@ -87,71 +78,14 @@ function extractImageFromSrcSet(srcset: string | undefined): string {
   return extractFirstSrcSetUrl(srcset);
 }
 
-function decodeHtmlEntities(value: string): string {
-  return value
-    .replace(/&quot;/g, '"')
-    .replace(/&#34;/g, '"')
-    .replace(/&amp;/g, '&')
-    .replace(/&#38;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&#39;/g, '\'');
-}
-
-export function inferTiendaNubeStockFromVariants(rawVariants: string): StockStatus {
-  if (!rawVariants) return 'unknown';
-
-  try {
-    const decoded = decodeHtmlEntities(rawVariants);
-    const variants = JSON.parse(decoded) as Array<{
-      available?: boolean;
-      stock?: number | null;
-    }>;
-    const first = variants[0];
-    if (!first) return 'unknown';
-    if (first.available === false || first.stock === 0) return 'out-of-stock';
-    if (typeof first.stock === 'number' && first.stock > 0 && first.stock <= 3) return 'low-stock';
-    if (first.available === true || (typeof first.stock === 'number' && first.stock > 0)) return 'in-stock';
-  } catch {
-    return 'unknown';
-  }
-
-  return 'unknown';
+export function inferTiendaNubeStockFromVariants(rawVariants: string, selectedId?: string): StockStatus {
+  return selectedVariantStock(rawVariants, selectedId);
 }
 
 export function inferTiendaNubeStockFromOffer(offer: JsonLdOffer | undefined): StockStatus {
   if (!offer) return 'unknown';
-  const availability = String(offer.availability ?? '').toLowerCase();
-  const inventoryLevel = Number(offer.inventoryLevel?.value);
-
-  if (availability.includes('outofstock')) return 'out-of-stock';
-  if (Number.isFinite(inventoryLevel)) {
-    if (inventoryLevel <= 0) return 'out-of-stock';
-    if (inventoryLevel <= 3) return 'low-stock';
-    return 'in-stock';
-  }
-  if (availability.includes('instock')) return 'in-stock';
-  return 'unknown';
-}
-
-function parseJsonLdProduct($: cheerio.CheerioAPI): JsonLdProduct | null {
-  const scripts = $('script[type="application/ld+json"]').toArray();
-
-  for (const script of scripts) {
-    const raw = $(script).contents().text().trim();
-    if (!raw) continue;
-
-    try {
-      const parsed = JSON.parse(raw) as JsonLdProduct | JsonLdProduct[];
-      const candidates = Array.isArray(parsed) ? parsed : [parsed];
-      const match = candidates.find((item) => String(item?.['@type'] ?? '').toLowerCase() === 'product');
-      if (match) return match;
-    } catch {
-      continue;
-    }
-  }
-
-  return null;
+  const result = schemaStock({ ...offer });
+  return result.state === 'value' ? result.value : 'unknown';
 }
 
 async function scrapeTiendaNubePage(
@@ -270,42 +204,31 @@ export async function scrapeTiendaNubePages(
   return products;
 }
 
-export function parseTiendaNubeProductDetailHtml(
+function parseTiendaNubeDetailResult(
   html: string,
   pageUrl: string,
   productId: string,
   store: TiendaNubeStore,
   category: HardwareCategory,
-): Product | null {
+) {
   const $ = cheerio.load(html);
-  const jsonLd = parseJsonLdProduct($);
-  const offer = Array.isArray(jsonLd?.offers) ? jsonLd?.offers[0] : jsonLd?.offers;
-  const title =
-    cleanTiendaNubeName(jsonLd?.name) ||
-    cleanTiendaNubeName($('h1.js-product-name, h1[itemprop="name"], h1').first().text());
-  const priceText =
-    String(offer?.price ?? '') ||
-    cleanTiendaNubeName($('.js-price-display, .product-price, .price').first().text());
-  const price = parseScrapedArsPrice(priceText);
-  if (!title || price <= 0) return null;
+  const evidence = readProductDetailEvidence($, pageUrl, store.id);
+  if (evidence.state !== 'value') return { state: evidence.state, product: null };
+  const { name: title, price, stock, node: jsonLd } = evidence.value;
 
-  const imageRaw = Array.isArray(jsonLd?.image)
-    ? jsonLd?.image[0]
-    : jsonLd?.image
+  const schemaImage = Array.isArray(jsonLd.image) ? jsonLd.image[0] : jsonLd.image;
+  const imageRaw = (typeof schemaImage === 'string' ? schemaImage : '')
       || $('meta[property="og:image"]').attr('content')
       || $('.js-product-image img, .product-image img, img').first().attr('src')
       || '';
   const description =
-    cleanTiendaNubeName(jsonLd?.description) ||
+    cleanTiendaNubeName(typeof jsonLd.description === 'string' ? jsonLd.description : '') ||
     cleanTiendaNubeName($('meta[name="description"]').attr('content')) ||
     cleanTiendaNubeName($('.js-product-description, .product-description').first().text()) ||
     title;
-  const stockFromOffer = inferTiendaNubeStockFromOffer(offer);
-  const stockFromVariants = inferTiendaNubeStockFromVariants($('.js-product-container').attr('data-variants') ?? '');
-  const stock = stockFromOffer !== 'unknown' ? stockFromOffer : stockFromVariants;
   const normalizedImage = imageRaw ? normalizeScrapedAbsoluteUrl(store.baseUrl, imageRaw) : undefined;
 
-  return buildSinglePriceProduct({
+  const product = buildSinglePriceProduct({
     id: productId,
     name: title,
     category,
@@ -319,6 +242,25 @@ export function parseTiendaNubeProductDetailHtml(
     description,
     brand: extractKnownHardwareBrand(title),
   });
+  if (product) {
+    // El importe de esquema/DOM ya fue corroborado, incluidos sus centavos.
+    product.prices[0].price = price;
+    product.lowestPrice = price;
+    product.highestPrice = price;
+    product.averagePrice = price;
+    if (typeof jsonLd.sku === 'string' && jsonLd.sku.length <= 160) product.specs.SKU = jsonLd.sku;
+  }
+  return { state: 'value' as const, product };
+}
+
+export function parseTiendaNubeProductDetailHtml(
+  html: string,
+  pageUrl: string,
+  productId: string,
+  store: TiendaNubeStore,
+  category: HardwareCategory,
+): Product | null {
+  return parseTiendaNubeDetailResult(html, pageUrl, productId, store, category).product;
 }
 
 export async function fetchTiendaNubeProductFromStore(
@@ -352,15 +294,18 @@ export async function fetchTiendaNubeProductFromStore(
       if (!res.ok) continue;
 
       const html = await res.text();
-      const parsed = parseTiendaNubeProductDetailHtml(
+      const parsed = parseTiendaNubeDetailResult(
         html,
         res.url || candidateUrl,
         productId,
         store,
         category,
       );
-      if (parsed) return parsed;
-    } catch {
+      // Una segunda ruta no puede sanar un esquema/DOM contradictorio.
+      if (parsed.state === 'conflict') throw new SourceHttpError('inconsistent-source');
+      if (parsed.product) return parsed.product;
+    } catch (error) {
+      if (error instanceof SourceHttpError && error.reason === 'inconsistent-source') throw error;
       continue;
     }
   }
