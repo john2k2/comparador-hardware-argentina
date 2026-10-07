@@ -1,0 +1,142 @@
+{
+  "review_date_utc": "2026-10-07",
+  "candidate_base": "638d6dad0a72fc591b273bc97a02e025964d441a",
+  "public_reference": "99d5917",
+  "new_remote_measurements": false,
+  "budget": "zero",
+  "reused_capacity": {
+    "source": "docs/reports/retencion-2026-10-07/capacidad/evidencia.json",
+    "captured_at": "2026-10-07T15:18:55.035892+00:00",
+    "database_bytes": 929205395,
+    "cache_total_bytes": 245424128,
+    "history_total_bytes": 176209920,
+    "history_index_bytes": 133300224,
+    "hypothetical_database_without_entire_cache_bytes": 683781267,
+    "physical_savings_from_code_fixes_demonstrated": false
+  },
+  "reused_retention": {
+    "source": "docs/reports/retencion-aislada-2026-10-07/README.md",
+    "history_global_compactable_rows": null,
+    "preflight_window_examined": 1000,
+    "preflight_window_candidates": 36,
+    "scope": "bounded window; not extrapolatable",
+    "previous_cache_pilot_deleted": 1000,
+    "previous_cache_pilot_physical_size_decrease_observed": false,
+    "current_task_writes_remote": false
+  },
+  "flows": [
+    {
+      "name": "shared-cache",
+      "table": "api_cache_entries",
+      "writer": "src/lib/server/shared-cache.ts:setSharedCache/preloadCache",
+      "write": "local memory then optional Redis then background Supabase upsert",
+      "reader": "getSharedCache: local, optional Redis, DB",
+      "retention": "TTL per entry; expired get opportunistic delete only for requested key",
+      "issue": "renewal race and unchecked resolved errors",
+      "fix_units": [
+        "U1",
+        "U2"
+      ]
+    },
+    {
+      "name": "operational-events",
+      "table": "api_cache_entries",
+      "writer": "src/lib/metrics/recorder.ts:44,69 -> storage.ts:persistTelemetryEntry",
+      "write": "one upsert per normalized event; caller absorbs rejected promise",
+      "key": "scope plus event times/endpoint/suffix; no payload retained in this inventory",
+      "ttl_hours": 48,
+      "read_memory_caps": {
+        "store": 1500,
+        "endpoint": 1000
+      },
+      "retention": "expiry filter is not physical deletion; reader does not use getSharedCache",
+      "fix": "U2 sanitized low-level failure receipt, observable rejection; no batching/sampling"
+    },
+    {
+      "name": "catalog-demand",
+      "table": "api_cache_entries",
+      "writer": "src/lib/catalog/refresh-demand.ts:61-92",
+      "write": "read-modify-upsert, requestCount clipped to 100",
+      "ttl_days": 14,
+      "issue": "concurrent increments can be lost; counter is not human demand denominator",
+      "proposal": "per-key local serialization only; global atomicity not proven"
+    },
+    {
+      "name": "offers-history",
+      "tables": [
+        "products",
+        "product_prices",
+        "price_history"
+      ],
+      "writer": "src/lib/persistence/product-catalog.ts and atomic offer RPCs",
+      "deduplication": "state signatures; older observation rejected; review updates kept; history only on relevant changes",
+      "price_touch_interval_hours": 2,
+      "retention_policy_days": {
+        "raw": 14,
+        "hourly": 90,
+        "daily": 365
+      },
+      "periodic_retention_completion_demonstrated": false,
+      "history_retention_historical_statement_calls": 27,
+      "retention_limit": "last run and deletedRows unknown in reused statement stats; current bounded proposal not executed",
+      "proposal": "six-column state projection implemented locally; no change to offer RPC, identity, freshness or pruning policy",
+      "implemented_local_U3": "price state projection: product_id,store_id,url,state_signature,last_updated,identity_review; five behavioral cases through persistProductsSnapshot"
+    },
+    {
+      "name": "public-db-reads",
+      "readers": [
+        "src/lib/search/search-route-handler.ts:208",
+        "src/lib/products/products-route-handler.ts:113"
+      ],
+      "issue": "DB branch precedes existing live in-flight map",
+      "proposal": "coalesce identical public reads within process; separate bypass and refresh",
+      "impact_limit": "one versus N pending identical reads in local fixture; production timing and cross-isolate savings unknown"
+    }
+  ],
+  "not_authorized": [
+    "remote deletion",
+    "index removal",
+    "vacuum/analyze",
+    "plan changes",
+    "denominator changes",
+    "telemetry sampling"
+  ],
+  "capacity_closed": false,
+  "local_verification": {
+    "U1": {
+      "tests": 16,
+      "duration_ms": 116,
+      "lint_exit": 0,
+      "coordinator_local_commit": "c68d84d"
+    },
+    "U2": {
+      "tests_total": 29,
+      "files": 2,
+      "duration_ms": 129,
+      "lint_exit": 0,
+      "state": "local pending integration"
+    },
+    "runtime_verification": false,
+    "physical_capacity_closed": false,
+    "U3": {
+      "command": "npx vitest run src/lib/persistence/product-catalog.test.ts src/lib/persistence/product-write-dedupe.test.ts",
+      "tests_total": 25,
+      "files": 2,
+      "duration_ms": 149,
+      "lint_command": "npx eslint src/lib/persistence/product-catalog.ts src/lib/persistence/product-catalog.test.ts",
+      "lint_exit": 0,
+      "state": "local pending integration",
+      "production_bytes_cpu_latency_measured": false
+    }
+  },
+  "coordinator_integration": {
+    "recordedAt": "2026-10-07T17:10:23.500780+00:00",
+    "localOnly": true,
+    "U1": "c68d84d",
+    "U2": "181cfc9",
+    "U3": "b195d2f",
+    "independentReview": "without material findings",
+    "suiteVerifiedAtSource": "c69e624",
+    "published": false
+  }
+}
