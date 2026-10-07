@@ -1,0 +1,14 @@
+{
+  "readAt": "2026-10-07T16:01:04.200Z",
+  "target": {
+    "id": "zyiyziubpcpgoqlkcrie",
+    "name": "argen-prices-db",
+    "status": "ACTIVE_HEALTHY",
+    "organizationId": "kfiwqwkjodipapyywoxy",
+    "postgresVersion": "17.6.1.063"
+  },
+  "sameOrganizationProjects": 12,
+  "activeInSameOrganization": 1,
+  "exactBillingTotalKnown": false,
+  "planChanged": false
+}

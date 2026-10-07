@@ -1,0 +1,52 @@
+{
+  "startedAt": "2026-10-07T15:59:45.446Z",
+  "completedAt": "2026-10-07T15:59:48.629Z",
+  "clientElapsedMs": 3183,
+  "projectId": "zyiyziubpcpgoqlkcrie",
+  "sourceSha256": "b5bae8aa0b74d806289b2a47c2517d31dcb9ee8992c10ded306338b38bed0046",
+  "mode": "READ ONLY; fixed cursor reset; statement_timeout3s; no DML",
+  "cursorResetIsLocalSettingOnly": true,
+  "isError": false,
+  "rows": [
+    {
+      "receipt": {
+        "cutoff": "2026-10-07T15:45:00+00:00",
+        "policy": {
+          "timezone": "UTC",
+          "keepRawDays": 14,
+          "keepDailyDays": 365,
+          "keepHourlyDays": 90
+        },
+        "readAt": "2026-10-07T15:59:47.196007+00:00",
+        "operation": "history-retention-preflight-2026-10-07-v1",
+        "batchLimit": 250,
+        "deleteRules": 0,
+        "windowLimit": 1000,
+        "examinedRows": 1000,
+        "operatorRole": "postgres",
+        "candidateRows": 36,
+        "historyIndexes": [
+          "CREATE INDEX price_history_offer_idx ON public.price_history USING btree (product_id, store_id, offer_url, recorded_at DESC)",
+          "CREATE UNIQUE INDEX price_history_pkey ON public.price_history USING btree (id)",
+          "CREATE INDEX price_history_product_recorded_idx ON public.price_history USING btree (product_id, recorded_at DESC)",
+          "CREATE INDEX price_history_product_store_idx ON public.price_history USING btree (product_id, store_id, recorded_at DESC)",
+          "CREATE INDEX price_history_recorded_at_idx ON public.price_history USING btree (recorded_at DESC)",
+          "CREATE INDEX price_history_store_recorded_idx ON public.price_history USING btree (store_id, recorded_at DESC)"
+        ],
+        "operatorCanLock": true,
+        "historyHeapBytes": 42860544,
+        "historyTotalBytes": 176209920,
+        "operatorCanDelete": true,
+        "operatorCanSelect": true,
+        "expiredRowsInWindow": 0,
+        "historyIndexesBytes": 133300224,
+        "enabledDeleteTriggers": 0,
+        "outgoingDeleteActions": 0,
+        "rawOrFutureRowsInWindow": 147,
+        "globalEligibilityUnknown": true,
+        "scanReachedEndAtSnapshot": false
+      }
+    }
+  ],
+  "success": true
+}

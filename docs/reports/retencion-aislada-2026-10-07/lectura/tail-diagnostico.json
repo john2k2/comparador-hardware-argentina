@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-07T15:54:59.186196+00:00",
+  "exitCode": 1,
+  "httpStatuses": [],
+  "apiCodes": [],
+  "signals": [
+    "sampling-filter"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "scope": "Six local history proposal files frozen before productive read",
+  "reviewer": "comparador_reviewer / store_reliability_review",
+  "model": "gpt-6.1-sol",
+  "reasoning": "high",
+  "materialFindings": [],
+  "frozenSha256": {
+    "history-pilot.sql": "f09863bbf85e02912b67da6a24050c2d11c9edcb68fe535fe1d142692c01393f",
+    "history-preflight.sql": "b5bae8aa0b74d806289b2a47c2517d31dcb9ee8992c10ded306338b38bed0046",
+    "test-history.mjs": "8d238c14ba6e73ac9c88b6bbbb559c9f61193f2d18cf960c587f6504fcad97c9"
+  },
+  "limits": [
+    "No remote SQL executed by reviewer",
+    "Review is not human authorization",
+    "No productive history deletion or physical recovery demonstrated"
+  ],
+  "coordinatorRecordedAt": "2026-10-07T16:10:46.567554+00:00",
+  "scenarioGroupsInspected": 11,
+  "reviewerReexecutedTests": false,
+  "reviewCutBeforeProductivePreflight": true
+}

@@ -1,0 +1,130 @@
+{
+  "source": {
+    "inventory": "docs/reports/retencion-2026-10-07/capacidad/evidencia.json",
+    "inventory_captured_at": "2026-10-07T15:18:55.035892+00:00",
+    "inventory_index_count": 39,
+    "read_only_local_contracts": "Código y migraciones leídos de worktree asignada; sin Git ni edición productiva."
+  },
+  "fresh_duplicate_metadata": {
+    "indexes": [
+      {
+        "bytes": 1400832,
+        "index": "products_updated_at_desc_idx",
+        "ready": true,
+        "valid": true,
+        "method": "btree",
+        "unique": false,
+        "options": "3",
+        "primary": false,
+        "key_count": 1,
+        "opclasses": "3127",
+        "predicate": null,
+        "collations": "0",
+        "definition": "CREATE INDEX products_updated_at_desc_idx ON public.products USING btree (updated_at DESC)",
+        "tablespace": "0",
+        "constraints": 0,
+        "expressions": null,
+        "key_attributes": "14",
+        "storage_options": null,
+        "total_attributes": 1,
+        "objects_depending_on_index": 0
+      },
+      {
+        "bytes": 1400832,
+        "index": "products_updated_at_idx",
+        "ready": true,
+        "valid": true,
+        "method": "btree",
+        "unique": false,
+        "options": "3",
+        "primary": false,
+        "key_count": 1,
+        "opclasses": "3127",
+        "predicate": null,
+        "collations": "0",
+        "definition": "CREATE INDEX products_updated_at_idx ON public.products USING btree (updated_at DESC)",
+        "tablespace": "0",
+        "constraints": 0,
+        "expressions": null,
+        "key_attributes": "14",
+        "storage_options": null,
+        "total_attributes": 1,
+        "objects_depending_on_index": 0
+      }
+    ],
+    "captured_at": "2026-10-07T16:05:27.160949+00:00"
+  },
+  "metadata_client_round_trip_ms": 2320,
+  "remote_scope": "Una lectura barata de metadatos de dos índices, BEGIN READ ONLY/statement_timeout3s; sin filas, contadores nuevos, mantenimiento o DDL.",
+  "candidates": [
+    {
+      "index": "products_updated_at_idx",
+      "keep_index": "products_updated_at_desc_idx",
+      "bytes_at_fresh_cut": 1400832,
+      "status": "Duplicado exacto en campos inspeccionados; preparar unidad local revisable, no ejecutar.",
+      "constraint_count": 0,
+      "dependent_objects": 0,
+      "loss": "Ninguna capacidad funcional: conservar un índice equivalente updated_at DESC.",
+      "contracts": [
+        "supabase/migrations/20260304235643_initial_argen_prices_schema.sql:81",
+        "supabase/migrations/20260501172403_add_home_page_performance_indexes.sql:8",
+        "src/lib/persistence/product-read.ts:87-91",
+        "src/lib/persistence/product-read.ts:222-227"
+      ],
+      "pending": "Planes/rendimiento locales de lectura actualizada/guías/comparación/G02; operación y verificación de tamaño requieren autorización distinta.",
+      "rollback_definition": "CREATE INDEX products_updated_at_idx ON public.products USING btree (updated_at DESC)"
+    },
+    {
+      "index": "price_history_product_store_idx",
+      "bytes_at_inventory_cut": 33030144,
+      "status": "No duplicado exacto; candidato condicionado, no recomendar retiro sin comparar planes.",
+      "constraint_count_at_inventory_cut": 0,
+      "recorded_scans_at_inventory_cut": 0,
+      "loss": "No hay función que desaparezca por SQL al quitar índice; sí se pierde acceso ordenado producto/tienda/tiempo independiente de offer_url. Puede degradar preflight/retención o consumidores históricos.",
+      "contracts": [
+        "supabase/migrations/20260501172403_add_home_page_performance_indexes.sql:20-21",
+        "docs/reports/retencion-aislada-2026-10-07/history-preflight.sql:26-36"
+      ],
+      "pending": "Verificar planes del preflight materializado de ingeniería y consultas por producto/tienda, incluidos varios URLs y coalesce(NULL/vacío), sin usar idx_scan0 como criterio. Dependencias completas actuales no consultadas.",
+      "rollback_definition": "CREATE INDEX price_history_product_store_idx ON public.price_history USING btree (product_id, store_id, recorded_at DESC)"
+    },
+    {
+      "index": "price_history_recorded_at_idx",
+      "bytes_at_inventory_cut": 5881856,
+      "status": "Ligado a función opcional; limitación de alcance posible con consentimiento explícito de esa función, no recomendable sólo por capacidad.",
+      "constraint_count_at_inventory_cut": 0,
+      "loss": "La sección home BAJARON DE PRECIO basada en historial24h si se suprime cálculo/render antes del retiro; precios actuales, comparación, armador y G02 conservados.",
+      "contracts": [
+        "supabase/migrations/20260501172403_add_home_page_performance_indexes.sql:17-18",
+        "src/lib/home/home-sections.ts:297-305",
+        "src/lib/home/home-sections.ts:344-356",
+        "src/components/home/PriceDropSection.tsx:7-20",
+        "src/components/home/ObservedHomeSections.tsx:40-44"
+      ],
+      "pending": "Inventario acotado de consumidores SQL externos/planes; garantizar que ocultar render también evita lectura común; tests home/API/conservación de precios/compatibilidad. Dependencias completas actuales no consultadas.",
+      "rollback_definition": "CREATE INDEX price_history_recorded_at_idx ON public.price_history USING btree (recorded_at DESC)"
+    }
+  ],
+  "protected": {
+    "history_offer_index_bytes": 44728320,
+    "reason_history": "Orden por oferta y peers; el plan de mi probe anterior usa offer_idx, no implica que el preflight de ingeniería use el mismo índice.",
+    "catalog_summary_covering_index_bytes": 23650304,
+    "reason_summary": "Lectura paginada/core para comparar identidad/precios sin heap ancho; conservar.",
+    "reason_search": "OR ILIKE por campos mantiene guías, comparativa editorial y priority-refresh. No retirar los grandes trigramas por campo como función opcional: afecta contratos centrales/G02."
+  },
+  "arithmetic_hypothetical": {
+    "all_three_index_bytes": 40312832,
+    "database_after_all_three": 888892563,
+    "database_without_entire_cache_and_all_three": 643468435,
+    "gap_above_500000000_even_in_favorable_hypothesis": 143468435,
+    "optional_home_plus_duplicate_bytes": 7282688
+  },
+  "limits": "No se retiró ningún índice. Ocupación de índice es ahorro potencial de ese objeto sólo si retiro autorizado se completa sin reconstrucción equivalente; crecimiento concurrente afecta DB final. No extrapolar filas a bytes ni prometer recuperación de caché/historial. Se reutilizan fechas distintas.",
+  "decision": "Mantener costo cero, comparación+armador/G02 y denominadores. Preparar sólo duplicado exacto como unidad pequeña; no retirar helpers de historial ni suprimir bajas de home para fingir solución. Bajo500MB no hay camino probado dentro de estos tres candidatos.",
+  "coordinator_preflight": "Resultado comunicado:1000 examinadas/36 candidatas/147raw-futuras/0>365, cliente3183ms con límite SELECT3s; sólo esa ventana, sin estimación global.",
+  "official_sources": [
+    "https://www.postgresql.org/docs/17/sql-dropindex.html",
+    "https://www.postgresql.org/docs/17/sql-createindex.html",
+    "https://supabase.com/docs/guides/platform/database-size"
+  ]
+}
