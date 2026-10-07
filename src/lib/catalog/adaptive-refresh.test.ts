@@ -106,3 +106,113 @@ it('conserva las altas del inventario y detalle aunque falle después la prepara
  expect(await runAdaptiveRefresh({maxOffers:24})).toMatchObject({status:'failed',failureCode:'REFRESH_INVALID_SEED_RESULT',inventory,inventoryDetails:details,attempted:0});
  expect(mocks.from.mock.invocationCallOrder[0]).toBeLessThan(mocks.inventory.mock.invocationCallOrder[0]);
 });
+
+function observeLeaseRelease() {
+  const originalFrom = mocks.from.getMockImplementation()!;
+  const eq = vi.fn().mockResolvedValue({ error: null });
+  const update = vi.fn().mockReturnValue({ eq });
+  mocks.from.mockImplementation((table: string) => table === 'catalog_offer_refresh_state'
+    ? { update } : originalFrom(table));
+  return { update, eq };
+}
+
+it.each(['57014', '40P01'])('diagnostica %s en la primera rotación y conserva la observación previa', async (code) => {
+  const release = observeLeaseRelease();
+  mocks.rpc.mockImplementation(async (name: string) => {
+    if (name === 'claim_catalog_feed_refresh') return { data: [target], error: null };
+    if (name === 'claim_catalog_refresh') {
+      vi.setSystemTime(new Date(Date.now() + 8500));
+      return { data: null, error: { code, message: 'secret-marker', details: 'private SQL', hint: target.url, token: 'secret-marker' } };
+    }
+    return { data: name === 'seed_catalog_refresh_queue' ? 0 : name === 'catalog_refresh_coverage' ? [] : true, error: null };
+  });
+  const result = await runAdaptiveRefresh({ maxOffers: 2 });
+  expect(result).toMatchObject({
+    status: 'failed', failureCode: 'REFRESH_CLAIM_FAILED', attempted: 1, observed: 1, comparable: 1, feedClaimed: 1,
+    groups: { 'compragamer:components': { attempted: 1, observed: 1, comparable: 1 } },
+    claimDiagnostic: { rpc: 'claim_catalog_refresh', phase: 'rotation', batchIndex: 2, limit: 1, elapsedMs: 8500, code },
+  });
+  expect(mocks.rpc.mock.calls.filter(([name]) => name.startsWith('claim_')).map(([name]) => name))
+    .toEqual(['claim_catalog_feed_refresh', 'claim_catalog_refresh']);
+  expect(mocks.rpc.mock.calls.filter(([name]) => name === 'persist_adaptive_offer')).toHaveLength(1);
+  expect(JSON.stringify(result)).not.toMatch(/secret-marker|private SQL|hint|token/);
+  expect(release.update).toHaveBeenCalledWith({ lease_token: null, leased_until: null });
+  expect(release.eq).toHaveBeenCalledWith('lease_token', expect.any(String));
+});
+
+it.each(['response', 'exception'])('diagnostica un fallo shared vía %s sin reintentar ni copiar texto externo', async (mode) => {
+  const release = observeLeaseRelease();
+  mocks.rpc.mockImplementation(async (name: string) => {
+    if (name === 'claim_catalog_feed_refresh') {
+      vi.setSystemTime(new Date(Date.now() + 40));
+      const error = { code: mode === 'response' ? 'PGRST202' : 'private-token', message: target.url, details: 'secret-marker', args: { token: 'secret-marker' } };
+      if (mode === 'exception') throw error;
+      return { data: null, error };
+    }
+    return { data: name === 'seed_catalog_refresh_queue' ? 0 : name === 'catalog_refresh_coverage' ? [] : true, error: null };
+  });
+  const result = await runAdaptiveRefresh({ maxOffers: 24 });
+  expect(result).toMatchObject({ status: 'failed', failureCode: 'REFRESH_CLAIM_FAILED', attempted: 0, observed: 0,
+    claimDiagnostic: { rpc: 'claim_catalog_feed_refresh', phase: 'shared', batchIndex: 1, limit: 12, elapsedMs: 40,
+      code: mode === 'response' ? 'PGRST202' : null } });
+  expect(mocks.rpc.mock.calls.filter(([name]) => name.startsWith('claim_'))).toHaveLength(1);
+  expect(mocks.fetch).not.toHaveBeenCalled();
+  expect(release.update).toHaveBeenCalledWith({ lease_token: null, leased_until: null });
+  expect(release.eq).toHaveBeenCalledWith('lease_token', expect.any(String));
+  expect(JSON.stringify(result)).not.toMatch(/private-token|secret-marker|compragamer.com|details|args/);
+});
+
+it('identifica el lote 51 al fallar la rotación después de 1200 ofertas compartidas', async () => {
+  mocks.rpc.mockImplementation(async (name: string) => {
+    if (name === 'claim_catalog_feed_refresh') return { data: Array.from({ length: 24 }, () => target), error: null };
+    if (name === 'claim_catalog_refresh') return { data: null, error: { code: '57014' } };
+    return { data: name === 'seed_catalog_refresh_queue' ? 0 : name === 'catalog_refresh_coverage' ? [] : true, error: null };
+  });
+  const result = await runAdaptiveRefresh({ maxOffers: 2500 });
+  expect(result).toMatchObject({ failureCode: 'REFRESH_CLAIM_FAILED', attempted: 1200, observed: 1200, feedClaimed: 1200,
+    claimDiagnostic: { rpc: 'claim_catalog_refresh', phase: 'rotation', batchIndex: 51, limit: 24, elapsedMs: 0, code: '57014' } });
+  expect(mocks.rpc.mock.calls.filter(([name]) => name === 'claim_catalog_refresh')).toHaveLength(1);
+});
+
+it.each([
+  ['release', 'response'], ['release', 'rejection'], ['coverage', 'response'],
+  ['coverage', 'rejection'], ['progress', 'response'], ['progress', 'rejection'],
+])('conserva el claim y acumulados cuando el cierre %s falla por %s', async (stage, mode) => {
+  const raw = { message: 'PRIVATE_CREDENTIAL', details: 'private SQL', hint: target.url };
+  const failingResponse = async () => {
+    if (mode === 'rejection') throw raw;
+    return { data: null, error: raw };
+  };
+  const originalFrom = mocks.from.getMockImplementation()!;
+  const release = vi.fn(async () => stage === 'release' ? failingResponse() : { error: null });
+  const finalUpdate = vi.fn(async () => stage === 'progress' ? failingResponse() : { error: null });
+  mocks.from.mockImplementation((table: string) => {
+    if (table === 'catalog_offer_refresh_state') return { update: () => ({ eq: release }) };
+    const chain = originalFrom(table);
+    return { ...chain, update: (payload: { summary?: unknown; finished_at?: string }) =>
+      payload.summary && payload.finished_at ? { eq: finalUpdate } : chain.update(payload) };
+  });
+  mocks.rpc.mockImplementation(async (name: string) => {
+    if (name === 'claim_catalog_feed_refresh') return { data: [target], error: null };
+    if (name === 'claim_catalog_refresh') return { data: null, error: { code: '57014' } };
+    if (name === 'catalog_refresh_coverage') return stage === 'coverage' ? failingResponse()
+      : { data: [{ total: 5, observed_24h: 1 }], error: null };
+    return { data: name === 'seed_catalog_refresh_queue' ? 0 : true, error: null };
+  });
+  const result = await runAdaptiveRefresh({ maxOffers: 2 });
+  expect(result).toMatchObject({ status: 'failed', failureCode: 'REFRESH_CLAIM_FAILED', attempted: 1,
+    observed: 1, comparable: 1, feedClaimed: 1, groups: { 'compragamer:components': { observed: 1 } },
+    claimDiagnostic: { rpc: 'claim_catalog_refresh', phase: 'rotation', batchIndex: 2, code: '57014' },
+    closure: { failureCodes: [`REFRESH_${stage.toUpperCase()}_FAILED`],
+      // Confirmado significa ACK del update; no es una lectura posterior del commit.
+      summaryPersistence: stage === 'progress' ? 'unconfirmed' : 'confirmed' } });
+  expect(result.coverage).toEqual(stage === 'coverage' ? null : [{ total: 5, observed_24h: 1 }]);
+  expect(release).toHaveBeenCalledTimes(1);
+  expect(release).toHaveBeenCalledWith('lease_token', expect.any(String));
+  expect(finalUpdate).toHaveBeenCalledTimes(1);
+  expect(mocks.rpc.mock.calls.filter(([name]) => name === 'catalog_refresh_coverage')).toHaveLength(1);
+  expect(mocks.rpc.mock.calls.filter(([name]) => name.startsWith('claim_'))).toHaveLength(2);
+  expect(JSON.stringify(result)).not.toContain(raw.message);
+  expect(JSON.stringify(result)).not.toContain(raw.details);
+  expect(JSON.stringify(result)).not.toContain(raw.hint);
+});

@@ -14,10 +14,12 @@ import { sourceHttpMetrics } from '@/lib/scrapers/source-http';
 import { runInventoryDiscovery } from './inventory-discovery';
 import { runInventoryDetailDiscovery } from './inventory-detail-discovery';
 import { createKnownOfferContext, fetchKnownOffer, prepareKnownOfferBatch } from './on-demand/worker';
+import { createRefreshClaimError, extractRefreshClaimDiagnostic, type RefreshClaimDiagnostic } from './refresh-diagnostics';
 
 type Target = { offer_id: string; product_id: string; store_id: string; url: string; interval_hours: number; reason: string };
 type Outcome = 'observed' | 'no-observation' | 'source-failed' | 'persist-failed' | 'unsupported';
 type Counts = { attempted: number; observed: number; comparable: number; failures: Record<string, number> };
+type ClosureFailureCode = 'REFRESH_RELEASE_FAILED' | 'REFRESH_COVERAGE_FAILED' | 'REFRESH_PROGRESS_FAILED';
 const emptyCounts = (): Counts => ({ attempted: 0, observed: 0, comparable: 0, failures: {} });
 
 export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs?: number } = {}) {
@@ -46,6 +48,9 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   const storeReady = new Map<string, Promise<void>>();
   let taskFailed = false;
   let failureCode: string | undefined;
+  let claimDiagnostic: RefreshClaimDiagnostic | null = null;
+  const closureFailureCodes: ClosureFailureCode[] = [];
+  let claimBatchIndex = 0;
   let feedClaimed = 0, feedPhase = true;
   let feedDeadline = started + deadline;
   const phaseMs = { inventory: 0, preparation: 0, shared: 0, rotation: 0 };
@@ -94,9 +99,20 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
     while (counts.attempted < maxOffers && Date.now() - started < deadline) {
       if (feedClaimed >= feedLimit || Date.now() >= feedDeadline) feedPhase = false;
       const batchStarted = Date.now(), sharedBatch = feedPhase;
-      const claimed = await client.rpc(feedPhase ? 'claim_catalog_feed_refresh' : 'claim_catalog_refresh', { p_token: token,
-        p_limit: Math.min(24, maxOffers - counts.attempted, feedPhase ? feedLimit-feedClaimed : 24) });
-      if (claimed.error) throw new Error('REFRESH_CLAIM_FAILED');
+      const claimContext = {
+        rpc: feedPhase ? 'claim_catalog_feed_refresh' as const : 'claim_catalog_refresh' as const,
+        phase: feedPhase ? 'shared' as const : 'rotation' as const,
+        batchIndex: ++claimBatchIndex,
+        limit: Math.min(24, maxOffers - counts.attempted, feedPhase ? feedLimit - feedClaimed : 24),
+      };
+      const claimStarted = Date.now();
+      let claimed;
+      try {
+        claimed = await client.rpc(claimContext.rpc, { p_token: token, p_limit: claimContext.limit });
+      } catch (error) {
+        throw createRefreshClaimError(error, claimContext, Date.now() - claimStarted);
+      }
+      if (claimed.error) throw createRefreshClaimError(claimed.error, claimContext, Date.now() - claimStarted);
       const targets = claimed.data as Target[];
       if (!targets?.length) { if (feedPhase) { feedPhase=false; continue; } break; }
       if (feedPhase) feedClaimed += targets.length;
@@ -164,21 +180,52 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
     if (Date.now() - started >= deadline) status = 'deadline';
     if (counts.attempted > 0 && counts.observed === 0) status = 'failed';
   } catch (error) {
+    claimDiagnostic = extractRefreshClaimDiagnostic(error);
     failureCode = error instanceof Error && /^REFRESH_[A-Z_]+$/.test(error.message) ? error.message : 'REFRESH_UNEXPECTED_ERROR';
     status = 'failed';
   } finally {
-    const released = await client.from('catalog_offer_refresh_state').update({ lease_token: null, leased_until: null }).eq('lease_token', token);
-    if (released.error) status = 'failed';
+    try {
+      const released = await client.from('catalog_offer_refresh_state').update({ lease_token: null, leased_until: null }).eq('lease_token', token);
+      if (released.error) {
+        status = 'failed';
+        if (claimDiagnostic) closureFailureCodes.push('REFRESH_RELEASE_FAILED');
+      }
+    } catch (error) {
+      if (!claimDiagnostic) throw error;
+      closureFailureCodes.push('REFRESH_RELEASE_FAILED');
+      status = 'failed';
+    }
   }
-  const coverage = await client.rpc('catalog_refresh_coverage');
-  if (coverage.error) status = 'failed';
+  let coverageData: unknown = null;
+  try {
+    const coverage = await client.rpc('catalog_refresh_coverage');
+    if (coverage.error) {
+      status = 'failed';
+      if (claimDiagnostic) closureFailureCodes.push('REFRESH_COVERAGE_FAILED');
+    } else {
+      coverageData = coverage.data ?? [];
+    }
+  } catch (error) {
+    if (!claimDiagnostic) throw error;
+    closureFailureCodes.push('REFRESH_COVERAGE_FAILED');
+    status = 'failed';
+  }
   if (inventory.some(item => item.status === 'failed')) status = 'failed';
   if (inventoryDetails?.status === 'failed') status = 'failed';
   const sourceFailureReasons: Record<string,number> = {};
   for (const reason of context.failures.values()) sourceFailureReasons[reason]=(sourceFailureReasons[reason] ?? 0)+1;
   const summary = { source: 'adaptive-catalog', trigger: ['github-schedule','cloudflare-fallback'].includes(process.env.CATALOG_RUN_TRIGGER ?? '') ? process.env.CATALOG_RUN_TRIGGER : 'manual', runId: run.data.id, startedAt, finishedAt: new Date().toISOString(),
-    status, failureCode, inventory, inventoryDetails, feedClaimed, sourceFailureReasons, limitReached: counts.attempted >= maxOffers, ...counts, groups, seeded, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads, coverage: coverage.data ?? [] };
-  const completed = await client.from('catalog_refresh_runs').update({ status, finished_at: summary.finishedAt, summary }).eq('id', run.data.id);
-  if (completed.error) throw new Error('REFRESH_PROGRESS_FAILED');
-  return summary;
+    status, failureCode, ...(claimDiagnostic ? { claimDiagnostic, closure: { failureCodes: closureFailureCodes } } : {}), inventory, inventoryDetails, feedClaimed, sourceFailureReasons, limitReached: counts.attempted >= maxOffers, ...counts, groups, seeded, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads, coverage: coverageData };
+  let summaryPersistence: 'confirmed' | 'unconfirmed' = 'unconfirmed';
+  try {
+    const completed = await client.from('catalog_refresh_runs').update({ status, finished_at: summary.finishedAt, summary }).eq('id', run.data.id);
+    if (completed.error) throw new Error('REFRESH_PROGRESS_FAILED');
+    summaryPersistence = 'confirmed';
+  } catch (error) {
+    if (!claimDiagnostic) throw error;
+    closureFailureCodes.push('REFRESH_PROGRESS_FAILED');
+  }
+  // Confirma sólo el ACK del update, no verifica commit posterior ni rollback.
+  // El payload enviado todavía no podía conocer esa confirmación.
+  return claimDiagnostic ? { ...summary, closure: { failureCodes: closureFailureCodes, summaryPersistence } } : summary;
 }
