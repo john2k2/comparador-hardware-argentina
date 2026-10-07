@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { parseWooProductDetail, scrapeWooPages } from './woocommerce-shared';
+import { fetchWooCommerceKnownOffer, parseWooProductDetail, scrapeWooPages } from './woocommerce-shared';
 
 const scpStore = {
   id: 'scphardstore',
@@ -30,6 +30,50 @@ afterEach(() => {
 });
 
 describe('woocommerce-shared', () => {
+  it('rechaza USD del Offer principal y no usa metadata numérica sin corroborar ARS', async () => {
+    const url = 'https://dinobyte.ar/producto/ram/';
+    const store = { id: 'dinobyte', name: 'Dinobyte', baseUrl: 'https://dinobyte.ar' };
+    const schema = { '@type': 'Product', name: 'Memoria RAM', url, offers: { '@type': 'Offer', price: 200, priceCurrency: 'USD' } };
+    const html = '<main class="product instock"><h1 class="product_title">Memoria RAM</h1></main>'
+      + `<link rel="canonical" href="${url}"><meta property="product:price:amount" content="200">`
+      + `<script type="application/ld+json">${JSON.stringify(schema)}</script>`;
+    expect(parseWooProductDetail(html, url, store, 'memoria-ram', 'ram')).toBeNull();
+    const relativeSchema = html.replace(JSON.stringify(url), JSON.stringify('/producto/ram/'))
+      .replace('</main>', '<p class="price"><bdi>$200</bdi></p></main>');
+    expect(parseWooProductDetail(relativeSchema, url, store, 'memoria-ram', 'ram')).toBeNull();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(html)));
+    await expect(fetchWooCommerceKnownOffer(store.id, url, 'memoria-ram')).rejects.toMatchObject({ reason: 'inconsistent-source' });
+    expect(parseWooProductDetail(html.replace('USD', 'ARS'), url, store, 'memoria-ram', 'ram')).toBeNull();
+  });
+
+  it('el USD de otro Product no cambia el importe ARS visible del principal', () => {
+    const related = JSON.stringify({ '@type': 'Product', name: 'Otro producto', offers: { price: 200, priceCurrency: 'USD' } });
+    const html = scpDetailHtml.replace('</html>', `<script type="application/ld+json">${related}</script></html>`);
+    expect(parseWooProductDetail(html, scpProductUrl, scpStore, 'motherboards', 'mother')?.prices[0].price).toBe(221468);
+  });
+  it('no usa el fallback JSON-LD para sanar una moneda extranjera en el precio principal', async () => {
+    const html = '<h1 class="product_title">Memoria RAM</h1><p class="price"><bdi>USD 100</bdi></p>'
+      + '<link rel="canonical" href="https://katech.com.ar/producto/ram/"><script type="application/ld+json">'
+      + JSON.stringify({ '@type': 'Product', name: 'Memoria RAM', offers: { '@type': 'Offer', price: 100, priceCurrency: 'ARS' } }) + '</script>';
+    const source = vi.fn().mockResolvedValue(new Response(html));
+    vi.stubGlobal('fetch', source);
+    await expect(fetchWooCommerceKnownOffer('katech', 'https://katech.com.ar/producto/ram/', 'memoria-ram'))
+      .rejects.toMatchObject({ reason: 'inconsistent-source' });
+    expect(source).toHaveBeenCalledTimes(1);
+  });
+  it.each(['USD 221.468,38', 'U$S 221.468,38', 'US$ 221.468,38', 'EUR 221.468,38'])('no interpreta %s como pesos argentinos', amount => {
+    const html = scpDetailHtml.replace('$ 221.468,38', amount);
+    expect(parseWooProductDetail(html, scpProductUrl, scpStore, 'motherboards', 'mother')).toBeNull();
+  });
+
+  it('rechaza moneda extranjera explícita del principal y excluye monedas de relacionados', () => {
+    const currency = '<meta itemprop="priceCurrency" content="USD">';
+    const parse = (html: string) => parseWooProductDetail(html, scpProductUrl, scpStore, 'motherboards', 'mother');
+    expect(parse(scpDetailHtml.replace('<main class="product">', `<main class="product">${currency}`))).toBeNull();
+    const related = scpDetailHtml.replace('<section class="related products">', `<section class="related products">${currency}`);
+    expect(parse(related)?.prices[0].price).toBe(221468);
+    expect(parse(scpDetailHtml.replace('<html>', '<html><meta property="product:price:currency" content="ARS">'))?.prices[0].price).toBe(221468);
+  });
   it('toma el ID de la publicación principal y rechaza IDs contradictorios', () => {
     const html = scpDetailHtml.replace('<main class="product">', '<main id="product-123" class="product instock"><button name="add-to-cart" value="123">Comprar</button>')
       .replace('<section class="related products">', '<section class="related products"><button name="add-to-cart" value="987">Comprar otro</button>');

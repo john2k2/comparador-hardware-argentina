@@ -1,5 +1,7 @@
-import { sourceFetch } from './source-http';
+import { sourceFetch, SourceHttpError } from './source-http';
 import { parseKnownProductDetail } from './known-product-detail';
+import { normalizeIdentityText } from '@/lib/product-identity';
+import { sameListing } from './listing-reference';
 import * as cheerio from 'cheerio';
 import type { HardwareCategory, Product } from '../types';
 import {
@@ -220,8 +222,55 @@ export async function scrapeWooPages(
 function parseWooPrice(text: string): number {
   const normalized = text.trim();
   if (!normalized) return 0;
+  if (/\b(?:USD|EUR)\b|(?:U\$S|US\$)/i.test(normalized)) return 0;
   if (/^\d+(\.\d+)?$/.test(normalized)) return Math.round(Number(normalized));
   return parseScrapedArsPrice(normalized);
+}
+
+function foreignWooCurrency($: cheerio.CheerioAPI, pageUrl: string, storeId: string): boolean {
+  const excluded = '.related, .up-sells, .upsells, .cross-sells, .products, .w-grid-item';
+  const metaConflict = $('meta[property="product:price:currency"], meta[itemprop="priceCurrency"]').toArray()
+    .filter(element => !$(element).closest(excluded).length)
+    .some(element => {
+      const currency = $(element).attr('content')?.trim().toUpperCase();
+      return Boolean(currency && currency !== 'ARS');
+    });
+  const visibleConflict = $('p.price, .product_field.price, .scp-price-main__current, main.product .price-main').toArray()
+    .filter(element => !$(element).closest(excluded).length)
+    .some(element => {
+      const copy = $(element).clone();
+      copy.find('del, s').remove();
+      return /\b(?:USD|EUR)\b|(?:U\$S|US\$)/i.test(copy.text());
+    });
+  const heading = $('h1').filter((_, element) => !$(element).closest(excluded).length).first().text();
+  let schemaConflict = false;
+  function checkSchema(value: unknown, depth = 0) {
+    if (depth > 6 || !value || typeof value !== 'object') return;
+    if (Array.isArray(value)) { value.slice(0, 200).forEach(item => checkSchema(item, depth + 1)); return; }
+    const node = value as Record<string, unknown>;
+    const type = node['@type'];
+    let matchesUrl = node.url === undefined;
+    if (typeof node.url === 'string') {
+      try { matchesUrl = sameListing(storeId, new URL(node.url, pageUrl).href, pageUrl); } catch { matchesUrl = false; }
+    }
+    if ((type === 'Product' || (Array.isArray(type) && type.includes('Product')))
+      && typeof node.name === 'string' && heading.trim()
+      && normalizeIdentityText(node.name) === normalizeIdentityText(heading)
+      && matchesUrl) {
+      const offers = Array.isArray(node.offers) ? node.offers : [node.offers];
+      schemaConflict ||= offers.some(offer => {
+        if (!offer || typeof offer !== 'object') return false;
+        const currency = (offer as Record<string, unknown>).priceCurrency;
+        return typeof currency === 'string' && Boolean(currency.trim()) && currency.trim().toUpperCase() !== 'ARS';
+      });
+    }
+    if (node['@graph']) checkSchema(node['@graph'], depth + 1);
+    if (node.mainEntity) checkSchema(node.mainEntity, depth + 1);
+  }
+  $('script[type="application/ld+json"]').each((_, element) => {
+    try { checkSchema(JSON.parse($(element).text())); } catch { /* Un esquema roto no demuestra moneda. */ }
+  });
+  return metaConflict || visibleConflict || schemaConflict;
 }
 
 export function parseWooProductDetail(
@@ -233,7 +282,7 @@ export function parseWooProductDetail(
 ): Product | null {
   const $ = cheerio.load(html);
   // Una publicación con variantes necesita observar la opción exacta.
-  if ($('form.variations_form, table.variations').length > 0) return null;
+  if ($('form.variations_form, table.variations').length > 0 || foreignWooCurrency($, pageUrl, store.id)) return null;
 
   const name =
     $('h1.product_title').first().text().trim() ||
@@ -254,7 +303,8 @@ export function parseWooProductDetail(
   const productFieldPrice = primaryPrices.filter('.product_field.price').first().text().trim();
   const insPrice = primaryPrices.find('ins .woocommerce-Price-amount bdi, ins bdi').first().text().trim();
   const anyPrice = primaryPrices.find('.woocommerce-Price-amount bdi, bdi').first().text().trim();
-  const metaPrice = $('meta[property="product:price:amount"]').attr('content') || '';
+  const metaPrice = $('meta[property="product:price:currency"]').attr('content') === 'ARS'
+    ? $('meta[property="product:price:amount"]').attr('content') || '' : '';
   // El importe sin impuestos de SCP también usa las clases estándar de Woo.
   const storePrice = store.id === 'scphardstore' ? primary('.scp-price-main__current').first().text().trim()
     : store.id === 'maxtecno' ? primary('main.product .price-showcase-box .price-main').first().text().trim() : '';
@@ -371,6 +421,7 @@ export async function fetchWooCommerceKnownOffer(storeId: string, rawUrl: string
   if (url.protocol !== 'https:' || url.username || url.password || url.port || host(rawUrl) !== host(store.baseUrl)) return null;
   const response = await sourceFetch(store.id, url.href, { headers: SCRAPE_HEADERS, signal },8_000_000,[host(store.baseUrl)]);
   const html = await response.text();
+  if (foreignWooCurrency(cheerio.load(html), url.href, store.id)) throw new SourceHttpError('inconsistent-source');
   const product = parseWooProductDetail(html, url.href, store, category, slugFromScrapedUrl(url.href))
     ?? (cheerio.load(html)('form.variations_form, table.variations').length === 0
       ? parseKnownProductDetail(html, url.href, store, category) : null);
