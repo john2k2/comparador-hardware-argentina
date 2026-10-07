@@ -31,3 +31,9 @@ Los [límites oficiales de Cloudflare](https://developers.cloudflare.com/workers
 La lectura de product_prices usa seis columnas consumidas por identidad, firma, fecha y revisión; la RPC de precios/historial conserva su contrato. Pruebas: 25/25 en catálogo/dedupe y lint focal exit0. El mock aplica la proyección y reproduce rechazo de observación vieja, dedupe, touch real, revisión diferente y poda que conserva una oferta reciente. Revisión independiente sin hallazgos.
 
 Reduce columnas transferidas y procesadas; bytes, CPU, latencia y ahorro de cuota no están medidos. Reversión: restaurar select('*') en esta consulta; no requiere cambios DB.
+
+## A2: conservar un recibo cuando el hijo termina sin resultado
+
+El wrapper valida argumentos de sus ocho modos, supervisa sólo su hijo, termina por SIGTERM y escala a SIGKILL cinco segundos después. Cancela timers y limpia temporales. Si falta el resultado o está vacío, escribe atómicamente un error propio con timestamps y salidas separadas del hijo/wrapper, sin mensajes privados ni contadores inventados; persistencia queda unknown. Preserva cualquier resultado no vacío, incluso parcial, y nunca usa el input de import-interest como output.
+
+Nueve pruebas con hijos reales offline aprobadas (1783 ms; revisión independiente 1770 ms), incluidas ambas señales, salida0/1, bundle/spawn fallidos, argumentos y artefacto vacío. Sintaxis y diff aprobados. La muerte forzada del padre y una salida no vacía incompleta conservan límites: no se afirma recuperación de escrituras. Reversión local de wrapper/test; no toca runners, DB, límites de scraping o artifacts anteriores.
