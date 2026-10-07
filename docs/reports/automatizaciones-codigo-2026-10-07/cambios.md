@@ -37,3 +37,9 @@ Reduce columnas transferidas y procesadas; bytes, CPU, latencia y ahorro de cuot
 El wrapper valida argumentos de sus ocho modos, supervisa sólo su hijo, termina por SIGTERM y escala a SIGKILL cinco segundos después. Cancela timers y limpia temporales. Si falta el resultado o está vacío, escribe atómicamente un error propio con timestamps y salidas separadas del hijo/wrapper, sin mensajes privados ni contadores inventados; persistencia queda unknown. Preserva cualquier resultado no vacío, incluso parcial, y nunca usa el input de import-interest como output.
 
 Nueve pruebas con hijos reales offline aprobadas (1783 ms; revisión independiente 1770 ms), incluidas ambas señales, salida0/1, bundle/spawn fallidos, argumentos y artefacto vacío. Sintaxis y diff aprobados. La muerte forzada del padre y una salida no vacía incompleta conservan límites: no se afirma recuperación de escrituras. Reversión local de wrapper/test; no toca runners, DB, límites de scraping o artifacts anteriores.
+
+## A3: evitar el reporte global repetido en guías
+
+Guías conservan su resultado propio y un reporte explícito omitted; no consultan globalmente la DB. Priority diario y modos manuales previos conservan exact counts, muestra y denominador. El reporte separa filas de ventana de observaciones propias validadas. G02 rechaza omitted/guides aunque tengan campos legacy aparentemente suficientes; no cambian siete días útiles, nueve fichas o 95%.
+
+Catorce pruebas focales, lint, sintaxis, YAML y diff aprobados. Comandos/condiciones reales del workflow sobre fixture de dos tiendas: guides0requests, priority12 con8exact counts, tracked12. Ausencia/error no es cero; resultado original idéntico; tres filas de ventana no se atribuyen al runner que guardó una. Revisión independiente sin hallazgos. No hay cifra de ahorro productivo o bytes físicos. Reversión local de los seis archivos de esta unidad devuelve la frecuencia anterior de diagnóstico sin tocar observación de precios.

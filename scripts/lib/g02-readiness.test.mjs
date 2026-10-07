@@ -33,3 +33,14 @@ test('cero denominador o conteos ausentes no son una meta de frescura cumplida',
   assert.equal(report.globalFresh24hRatio, null);
   assert.ok(report.blockers.includes('global-freshness-below-proposed-95-percent'));
 });
+test('un reporte omitted o guides no reutiliza campos legacy para declarar listo G02', () => {
+  for (const excluded of [{ status: 'omitted' }, { mode: 'guides' }]) {
+    const report = evaluateG02Readiness(cycles, { ...snapshot, ...excluded }, ids, now);
+    assert.equal(report.status, 'not-ready');
+    assert.equal(report.globalFresh24hRatio, null);
+    assert.equal(report.sampleFresh24hRatio, null);
+    assert.equal(report.fixedSampleMatches, false);
+    assert.ok(report.blockers.includes('global-freshness-report-omitted-or-guides'));
+    assert.equal(report.usefulDailyCycles, 7);
+  }
+});

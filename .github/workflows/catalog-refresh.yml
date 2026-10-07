@@ -307,16 +307,25 @@ jobs:
                   sys.exit(1)
           PY
 
-      - name: Measure persisted observations and store freshness
-        if: always() && steps.resolve.outputs.mode != 'cleanup-history' && env.REFRESH_WINDOW_START != ''
+      - name: Record omitted global report for guides
+        if: always() && steps.resolve.outputs.mode == 'guides'
+        run: |
+          node scripts/lib/freshness-report-policy.mjs \
+            "$RUNNER_TEMP/catalog-refresh-result.json" \
+            "$RUNNER_TEMP/catalog-freshness.json"
+
+      - name: Measure global window updates and store freshness
+        if: always() && steps.resolve.outputs.mode != 'guides' && steps.resolve.outputs.mode != 'cleanup-history' && env.REFRESH_WINDOW_START != ''
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           MODE: ${{ steps.resolve.outputs.mode }}
         run: |
           EXTRA=()
-          if [[ "$MODE" != "guides" ]]; then EXTRA+=(--require-observed); fi
+          EXTRA+=(--require-observed)
+          if [[ "$MODE" == "priority" ]]; then EXTRA+=(--runner-result "$RUNNER_TEMP/catalog-refresh-result.json"); fi
           node scripts/catalog-freshness-report.mjs \
+            --mode "$MODE" \
             --since "$REFRESH_WINDOW_START" \
             --sample docs/reports/crecimiento-2026-09-12/G02-MUESTRA-PRIORITARIA.json \
             "${EXTRA[@]}" \

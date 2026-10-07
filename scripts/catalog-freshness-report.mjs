@@ -2,12 +2,15 @@ import { createClient } from '@supabase/supabase-js';
 import { readFile, writeFile } from 'node:fs/promises';
 import { createObservedOfferSummary } from './lib/observed-offers.mjs';
 import { loadG02SampleEvaluator } from './lib/load-g02-sample.mjs';
+import { readRunnerEvidence } from './lib/freshness-report-policy.mjs';
 
 const args = process.argv.slice(2);
 const valueAfter = (flag) => args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined;
 const since = valueAfter('--since');
 const outputPath = valueAfter('--output');
 const samplePath = valueAfter('--sample');
+const runnerPath = valueAfter('--runner-result');
+const mode = valueAfter('--mode');
 const requireObserved = args.includes('--require-observed');
 const now = new Date();
 if (since && (!Number.isFinite(Date.parse(since)) || Date.parse(since) > now.getTime())) {
@@ -92,13 +95,17 @@ if (samplePath) {
 
 }
 const report = {
+  status: 'measured',
+  ...(mode ? { mode } : {}),
   measuredAt: now.toISOString(), definition: 'Ofertas almacenadas con precio positivo y stock disponible; frescura según last_updated. candidateComparable3h excluye status needs-review pero no verifica identidad contra el producto ni render público.',
   denominator: sum('available'), fresh24h: sum('fresh24h'), fresh3h: sum('fresh3h'),
   identityPending3h: sum('identityPending3h'),
   candidateComparable3h: sum('fresh3h') - sum('identityPending3h'),
   ...(since ? { windowStart: since,
-    observationDefinition: 'Filas de precio actualizadas en la ventana, con o sin disponibilidad; productos distintos contados globalmente y por tienda. availableObservedRows solo cuenta stock disponible y precio positivo, sin acreditar identidad ni compra real.',
+    observationDefinition: 'Filas de precio actualizadas en la ventana, con o sin disponibilidad; pueden proceder de otros runners. No atribuye autoría a este ciclo. availableObservedRows solo cuenta stock disponible y precio positivo, sin acreditar identidad ni compra real.',
+    observationAttribution: 'window-only-not-runner-authorship',
     ...observedSummary } : {}),
+  ...(runnerPath ? { runnerEvidence: await readRunnerEvidence(runnerPath) } : {}),
   ...(sample ? { sample } : {}),
   byStore,
 };
@@ -110,8 +117,11 @@ if (process.env.GITHUB_STEP_SUMMARY) {
     `Corte: ${report.measuredAt}. Denominador: ${report.denominator} ofertas disponibles almacenadas.`,
     `≤24 h: ${report.fresh24h}; ≤3 h: ${report.fresh3h}; pendientes de identidad entre las de 3 h: ${report.identityPending3h}.`,
     ...(sample ? [`Muestra prioritaria fija: ${sample.fresh24h}/${sample.denominator} ofertas disponibles observadas ≤24 h; ${sample.fresh3h} ≤3 h. Identidad aceptada: ${sample.identityAccepted3h}; fichas con una oferta aceptada reciente: ${sample.productsWithAcceptedOffer3h}/${sample.byProduct.length}.`] : []),
-    ...(since ? [`Filas actualizadas desde ${since}: ${report.observedRows}; productos distintos: ${report.persistedProducts}; filas con stock disponible y precio positivo: ${report.availableObservedRows}.`] : []),
-    '', '| Tienda | Disponibles | ≤24 h | ≤3 h | Identidad pendiente ≤3 h | Filas actualizadas | Productos distintos del ciclo | Filas disponibles del ciclo |',
+    ...(since ? [`Filas actualizadas en la ventana desde ${since}: ${report.observedRows}; productos distintos: ${report.persistedProducts}; filas disponibles: ${report.availableObservedRows}. Pueden proceder de otros runners; no acredita autoría del ciclo.`] : []),
+    ...(report.runnerEvidence ? [report.runnerEvidence.status === 'available'
+      ? `Recibo propio (${report.runnerEvidence.source}): intentos ${report.runnerEvidence.attempted}; observaciones guardadas ${report.runnerEvidence.observed}; comparables ${report.runnerEvidence.comparable}.`
+      : `Recibo propio no disponible: ${report.runnerEvidence.reason}.`] : []),
+    '', '| Tienda | Disponibles | ≤24 h | ≤3 h | Identidad pendiente ≤3 h | Filas de la ventana | Productos distintos de la ventana | Filas disponibles de la ventana |',
     '|---|---:|---:|---:|---:|---:|---:|---:|',
     ...[...new Set([...byStore.map(row => row.storeId), ...Object.keys(observedByStore)])].sort().map(id => {
       const row = byStore.find(store => store.storeId === id);
@@ -122,6 +132,6 @@ if (process.env.GITHUB_STEP_SUMMARY) {
   await writeFile(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`, { flag: 'a' });
 }
 if (requireObserved && report.observedRows === 0) {
-  process.stderr.write('El ciclo no persistió ninguna observación de precio.\n');
+  process.stderr.write('No hay filas de precio actualizadas en la ventana medida; este control no atribuye autoría al runner.\n');
   process.exitCode = 2;
 }

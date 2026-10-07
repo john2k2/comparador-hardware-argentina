@@ -17,10 +17,14 @@ export function evaluateG02Readiness(cycles, freshness, fixedIds, measuredAt = n
   }
   const blockers = [];
   if (days.size < 7) blockers.push('fewer-than-seven-useful-daily-cycles');
-  const snapshotTime = Date.parse(freshness?.measuredAt);
+  const excludedReport = freshness?.status === 'omitted' || freshness?.mode === 'guides';
+  if (excludedReport) blockers.push('global-freshness-report-omitted-or-guides');
+  // No reutilizar campos legacy mezclados con un recibo que no mide el catálogo global.
+  const measuredFreshness = excludedReport ? undefined : freshness;
+  const snapshotTime = Date.parse(measuredFreshness?.measuredAt);
   const recent = Number.isFinite(snapshotTime) && snapshotTime <= now && now - snapshotTime <= 3 * 3600_000;
   if (!recent) blockers.push('missing-or-stale-freshness-snapshot');
-  const sample = freshness?.sample;
+  const sample = measuredFreshness?.sample;
   const rows = sample?.byProduct;
   const fixedSampleMatches = Array.isArray(rows) && rows.length === fixedIds.length
     && new Set(rows.map(row => row.productId)).size === fixedIds.length
@@ -29,7 +33,7 @@ export function evaluateG02Readiness(cycles, freshness, fixedIds, measuredAt = n
   const ratio = value => Number.isSafeInteger(value?.denominator) && value.denominator > 0
     && Number.isSafeInteger(value?.fresh24h) && value.fresh24h >= 0 && value.fresh24h <= value.denominator
     ? value.fresh24h / value.denominator : null;
-  const globalRatio = ratio(freshness), sampleRatio = ratio(sample);
+  const globalRatio = ratio(measuredFreshness), sampleRatio = ratio(sample);
   if (globalRatio === null || globalRatio < 0.95) blockers.push('global-freshness-below-proposed-95-percent');
   if (sampleRatio === null || sampleRatio < 0.95) blockers.push('sample-freshness-below-proposed-95-percent');
   const covered = fixedSampleMatches ? rows.filter(row => Number.isSafeInteger(row.identityAccepted3h)
