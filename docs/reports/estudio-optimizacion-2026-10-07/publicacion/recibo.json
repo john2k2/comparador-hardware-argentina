@@ -1,0 +1,117 @@
+{
+  "recordedAt": "2026-10-07T18:35:37.987826+00:00",
+  "sourceSha": "614caa1d30ce5381f064cda406a1e96a015f52af",
+  "reviewedCodeHead": "a149fc20ec57f8d3521e87cf53330277077fcfc0",
+  "previousSource": "527cd6b8bfdcad6d9b8a214d4b96433e369eb487",
+  "rollbackVersion": "96eaf5ba-6f94-4bec-a2c3-eac55beeec2f",
+  "push": "fast-forward; no force",
+  "deployment": {
+    "id": "ee1bcbce-f6b1-4b90-b5e4-3945a2eef197",
+    "created_on": "2026-10-07T18:28:54.701726Z",
+    "versions": [
+      {
+        "version_id": "b9a4905d-67b0-4ae2-b6ee-1b18977be2a1",
+        "percentage": 100
+      }
+    ]
+  },
+  "workersBuild": "success",
+  "ci": {
+    "runId": 37666954516,
+    "sourceSha": "614caa1d30ce5381f064cda406a1e96a015f52af",
+    "conclusion": "success",
+    "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37666954516",
+    "finishedAt": "2026-10-07T18:33:02Z",
+    "isolatedBrowserPassed": 66,
+    "isolatedDatabaseRegressions": "passed; no remote migration",
+    "safeSummary": [
+      "Test Files  209 passed | 2 skipped (211)",
+      "Tests  1985 passed | 2 skipped (1987)",
+      "# tests 41",
+      "# pass 41",
+      "# tests 2",
+      "# pass 2",
+      "66 passed (1.6m)"
+    ]
+  },
+  "bindings": {
+    "count": 40,
+    "namesUnchangedFromPreviousVersion": true,
+    "valuesAndSecretsExcluded": true
+  },
+  "publicSite": {
+    "at": "2026-10-07T18:30:53.001Z",
+    "checks": 32,
+    "passed": true,
+    "fixtures": false,
+    "workerRuntime": true
+  },
+  "publicConfidence": {
+    "at": "2026-10-07T18:29:50.339Z",
+    "release": "614caa1d30ce5381f064cda406a1e96a015f52af",
+    "result": "passed",
+    "comparison": {
+      "leftId": "agrupado-procesadores-amd-ryzen-5-5600-1ru8te5",
+      "rightId": "agrupado-procesadores-amd-ryzen-7-5700x-xr4ubs",
+      "recovered": true,
+      "idsOnly": true
+    },
+    "builder": {
+      "status": 200,
+      "loaded": true,
+      "commercialBuildVerified": false
+    },
+    "pageErrors": [],
+    "readOnlyNetwork": {
+      "attemptedAnonymousSessionCleanupBlocked": 10,
+      "attemptedCloudflareDiagnosticsBlocked": 15,
+      "unexpectedApplicationMutation": []
+    }
+  },
+  "localVerification": {
+    "unitPassed": 1985,
+    "unitSkipped": 2,
+    "opsPassed": 41,
+    "styledBrowserPassed": 13,
+    "openNextBuild": "passed"
+  },
+  "rawProofHashes": {
+    "sitio/public-site.json": "3b8935db6e8ca01113c4e4dfae70fa4dcb1689e7a9d022702e3355fbdc2151d6",
+    "confianza/catalogo-real.json": "f738f6528bd7cd8f31f72b69ba501866da1ab4d2ff46f242ce207c928a0669bb",
+    "deployments.json": "402d2f64bbeaf4c913cf5c34c03f5f969279d7bf3851bf2b1d7618b9a2ebf266",
+    "version.json": "460dd08ad34f8f44fb2f60b080f990dd121107c8fc68e9bd59431c07275ce15e",
+    "ci.log": "8d177c9e136beeafee543689ae3ac6870b546af6ba50a2d197cf378f0450c3c0"
+  },
+  "limits": [
+    "representative public cut; not all routes or stores",
+    "not seven eligible purchasable PC pieces",
+    "not G02/95% or capacity closure",
+    "not production CPU/latency measurement",
+    "no remote database maintenance or manual refresh"
+  ],
+  "checkRuns": [
+    {
+      "completed_at": "2026-10-07T18:28:59Z",
+      "conclusion": "success",
+      "details_url": "https://dash.cloudflare.com/a80650839fdd1917a4585c51e5c0522b/workers/services/view/comparador-hardware-argentina/production/builds/b9f5efb8-f5d9-43c7-a63f-1029ecc4497b",
+      "name": "Workers Builds: comparador-hardware-argentina",
+      "started_at": "2026-10-07T18:28:59Z",
+      "status": "completed"
+    },
+    {
+      "completed_at": "2026-10-07T18:33:01Z",
+      "conclusion": "success",
+      "details_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37666954516/job/112948521112",
+      "name": "verify",
+      "started_at": "2026-10-07T18:27:23Z",
+      "status": "completed"
+    }
+  ],
+  "monitor": {
+    "existingId": "seguimiento-comparador-hardware",
+    "savedPromptChars": 9584,
+    "configUnchangedSinceApprovedUpdate": true,
+    "tomlSha256": "55096e2c374b5b1debdd54af613f8634cb20a75a8acbb19ac7c3da00386118f4",
+    "duplicateCreated": false
+  }
+}

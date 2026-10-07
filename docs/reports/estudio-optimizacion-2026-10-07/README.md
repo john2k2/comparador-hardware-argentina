@@ -1,6 +1,6 @@
 # Estudio y optimización del Comparador — 07/10/2026
 
-**La integración local está revisada y verificada.** Fuente `a149fc20ec57f8d3521e87cf53330277077fcfc0`, cinco unidades acotadas. La publicación final y la comprobación posterior tendrán un recibo específico; no confundir ese estado con la publicación previa `527cd6b`.
+**Código publicado y comprobado.** Fuente `614caa1d30ce5381f064cda406a1e96a015f52af`, con cinco nuevas unidades revisadas sobre `a149fc2`. Worker `b9a4905d` al 100%, Workers Builds y CI aprobados, 32 comprobaciones públicas y confianza real escritorio/móvil aprobadas. [Recibo y límites de publicación](publicacion/README.md). La publicación previa `527cd6b` contiene las seis reparaciones operativas iniciales; sus recibos conservan su corte histórico.
 
 - Búsqueda: relectura cuando vence el mínimo de la página cacheada, sin filtrar después de paginar ni inventar totales.
 - Lecturas simultáneas: una promesa pendiente para parámetros equivalentes dentro del mismo proceso; límite de 200 claves, sin caché de resultados ni unión de permisos, demanda o telemetría.

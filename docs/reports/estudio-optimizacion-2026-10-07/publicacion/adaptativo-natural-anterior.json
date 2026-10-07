@@ -1,0 +1,71 @@
+{
+  "source": "adaptive-catalog",
+  "trigger": "cloudflare-fallback",
+  "runId": "86c4fb93-d407-4746-bf1e-1db336289888",
+  "startedAt": "2026-10-07T18:11:46.587Z",
+  "finishedAt": "2026-10-07T18:28:54.925Z",
+  "status": "deadline",
+  "feedClaimed": 1200,
+  "limitReached": false,
+  "attempted": 1512,
+  "observed": 471,
+  "comparable": 136,
+  "failures": {
+    "no-observation": 962,
+    "source-failed": 69,
+    "persist-failed": 10
+  },
+  "phaseMs": {
+    "inventory": 3828,
+    "preparation": 12334,
+    "shared": 460979,
+    "rotation": 531806
+  },
+  "githubRunId": 37664905750,
+  "githubSourceSha": "527cd6b8bfdcad6d9b8a214d4b96433e369eb487",
+  "githubConclusion": "success",
+  "artifactSha256": "dccf11f5a75de7c1897681753a206c53b4a9e680bfa4d01f5ee33c3ccfe7d788",
+  "countsAsDailyUsefulG02": false,
+  "selectedGroups": {
+    "dinobyte:components": {
+      "attempted": 225,
+      "observed": 225,
+      "comparable": 0,
+      "failures": {}
+    },
+    "maxtecno:components": {
+      "attempted": 250,
+      "observed": 1,
+      "comparable": 0,
+      "failures": {
+        "no-observation": 249
+      }
+    },
+    "compragamer:components": {
+      "attempted": 225,
+      "observed": 2,
+      "comparable": 2,
+      "failures": {
+        "no-observation": 223
+      }
+    },
+    "maximus:components": {
+      "attempted": 13,
+      "observed": 0,
+      "comparable": 0,
+      "failures": {
+        "no-observation": 6,
+        "persist-failed": 7
+      }
+    },
+    "maximus:maintenance": {
+      "attempted": 4,
+      "observed": 0,
+      "comparable": 0,
+      "failures": {
+        "persist-failed": 3,
+        "no-observation": 1
+      }
+    }
+  }
+}
