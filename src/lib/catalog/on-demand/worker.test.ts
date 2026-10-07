@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Product, ProductPrice } from '@/lib/types';
+import { SourceHttpError } from '@/lib/scrapers/source-http';
 
 const mocks = vi.hoisted(() => ({
   getServerSupabaseServiceClient: vi.fn(),
@@ -13,11 +14,12 @@ const mocks = vi.hoisted(() => ({
   buildPriceStateSignature: vi.fn(),
   withAbortTimeout: vi.fn(),
   withPromiseTimeout: vi.fn(),
+  knownDetail: vi.fn<typeof import('@/lib/scrapers/known-product-detail').fetchKnownProductDetail>(async () => null),
 }));
 
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/scrapers/compragamer', () => ({ fetchCompraGamerCatalogProducts: mocks.compraGamerCatalog }));
-vi.mock('@/lib/scrapers/known-product-detail', () => ({ fetchKnownProductDetail: vi.fn(async () => null) }));
+vi.mock('@/lib/scrapers/known-product-detail', () => ({ fetchKnownProductDetail: mocks.knownDetail }));
 vi.mock('@/lib/server/supabase-server', () => ({
   getServerSupabaseServiceClient: mocks.getServerSupabaseServiceClient,
 }));
@@ -358,6 +360,34 @@ describe('adaptive known offers', () => {
     mocks.withPromiseTimeout.mockImplementation((promise: Promise<unknown>) => promise);
   });
   afterEach(() => vi.useRealTimers());
+  it('el refresh solicitado lee primero la publicación exacta y conserva el estado observado', async () => {
+    configureClaimedJob([sourceProduct()]);
+    mocks.knownDetail.mockResolvedValueOnce(sourceProduct({ offer: { stock: 'out-of-stock', price: 415000 } }));
+    const context = createKnownOfferContext(false);
+    const observation = await fetchKnownOffer(catalogProduct(), target, Date.parse('2026-09-21T12:00:00Z'), context);
+    expect(observation?.price).toMatchObject({ price: 415000, stock: 'out-of-stock' });
+    expect(mocks.knownDetail).toHaveBeenCalledWith(target.url, expect.objectContaining({ id: 'mexx' }), 'tarjetas-graficas', expect.any(AbortSignal));
+    expect(mocks.scrape).not.toHaveBeenCalled();
+  });
+  it('una contradicción en la ficha detiene el fallback aunque la búsqueda ofrezca el mismo enlace', async () => {
+    configureClaimedJob([sourceProduct()]);
+    mocks.knownDetail.mockRejectedValueOnce(new SourceHttpError('inconsistent-source'));
+    const context = createKnownOfferContext(true);
+    const observation = await fetchKnownOffer(catalogProduct(), target, Date.parse('2026-09-21T12:00:00Z'), context);
+    expect(observation).toBeNull();
+    expect(context.failures.get(target.url)).toBe('inconsistent-source');
+    expect(mocks.scrape).not.toHaveBeenCalled();
+  });
+
+  it('la ausencia de un detalle soportado permite buscar la publicación exacta', async () => {
+    configureClaimedJob([sourceProduct()]);
+    mocks.knownDetail.mockResolvedValueOnce(null);
+    const context = createKnownOfferContext(true);
+    const observation = await fetchKnownOffer(catalogProduct(), target, Date.parse('2026-09-21T12:00:00Z'), context);
+    expect(observation?.price.price).toBe(420000);
+    expect(mocks.scrape).toHaveBeenCalledTimes(1);
+    expect(context.failures.has(target.url)).toBe(false);
+  });
   it('un título de plantilla sin resolver no produce observación aunque coincidan URL y precio', async () => {
     configureClaimedJob([sourceProduct({ name:'§ITEMTIT§', offer:{price:1} })]);
     expect(await fetchKnownOffer(catalogProduct(), target, Date.parse('2026-09-21T12:00:00Z'), createKnownOfferContext(true))).toBeNull();

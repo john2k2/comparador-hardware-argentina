@@ -82,11 +82,11 @@ export async function fetchKnownOffer(product: Product, target: RefreshTarget, s
       );
       return [item ? [item] : []];
     }
-    if (context.batchCatalog) {
+    if (target.storeId !== 'compragamer') {
       const store = configuredStores.find(item => item.id === target.storeId);
       if (store) {
         const item = await withAbortTimeout(signal => fetchKnownProductDetail(target.url, { id:store.id,name:store.name,baseUrl:store.url },product.category,signal),25000,'known-detail').catch((error: unknown) => {
-          if (error instanceof SourceHttpError && ['blocked','rate-limited'].includes(error.reason)) throw error;
+          if (error instanceof SourceHttpError && ['blocked','rate-limited','inconsistent-source'].includes(error.reason)) throw error;
           return null;
         });
         if (item) return [[item]];

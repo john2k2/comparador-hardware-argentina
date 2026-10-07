@@ -27,6 +27,7 @@ import { fetchAllWooCommerceSearch, fetchWooCommerceProductById } from '@/lib/sc
 import { fetchWiztechProductById, fetchWiztechProducts } from '@/lib/scrapers/wiztech';
 import { fetchXtpcProductById, fetchXtpcProducts } from '@/lib/scrapers/xtpc';
 import { logger } from '@/lib/logger';
+import { SourceHttpError } from '@/lib/scrapers/source-http';
 
 type ObserveSource = (
   storeId: string,
@@ -57,11 +58,16 @@ export async function resolveLiveProductDetail(
     ? category
     : inferDetailHardwareCategory(`${searchQuery} ${id}`);
 
+  let detailSourceConflict = false;
   const tiendanubeProduct = await withAbortTimeout(
     (signal) => fetchTiendaNubeProductById(id, fallbackCategory, { signal }),
     SCRAPER_TIMEOUT_MS,
     'tiendanube-detail',
-  ).catch(() => null);
+  ).catch((error: unknown) => {
+    detailSourceConflict = error instanceof SourceHttpError && error.reason === 'inconsistent-source';
+    return null;
+  });
+  if (detailSourceConflict) return null;
   if (tiendanubeProduct) return tiendanubeProduct;
 
   const foxtiendaProduct = await withAbortTimeout(
