@@ -174,7 +174,7 @@ async function readPersistedCatalogState(
         .in('id', batch),
       supabase
         .from('product_prices')
-        .select('*')
+        .select('product_id,store_id,url,state_signature,last_updated,identity_review')
         .in('product_id', batch),
     ]);
 

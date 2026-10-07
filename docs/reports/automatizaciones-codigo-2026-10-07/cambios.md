@@ -25,3 +25,9 @@ El respaldo admite una sola espera de hasta diez segundos ante una negativa vál
 Prueba focal: 39/39; ESLint y TypeScript sin emisión exit0. Revisión independiente sin hallazgos materiales, incluyendo la unión de 68 casos con U1/U2. Se prueban tiempos 6/10/11 segundos, timer demorado, segunda negativa, relectura y dos eventos concurrentes. No hubo dispatch real ni lectura DB.
 
 Los [límites oficiales de Cloudflare](https://developers.cloudflare.com/workers/platform/limits/#duration) y su [handler scheduled](https://developers.cloudflare.com/workers/runtime-apis/handlers/scheduled/) distinguen wall time de CPU. La espera cabe en el contrato documentado de cron; no demuestra que el código local esté publicado ni mide CPU. Reversión: revertir esta unidad local devuelve el comportamiento previo sin cambiar el bucket o la base.
+
+## U3: reducir las columnas del estado usado para deduplicar
+
+La lectura de product_prices usa seis columnas consumidas por identidad, firma, fecha y revisión; la RPC de precios/historial conserva su contrato. Pruebas: 25/25 en catálogo/dedupe y lint focal exit0. El mock aplica la proyección y reproduce rechazo de observación vieja, dedupe, touch real, revisión diferente y poda que conserva una oferta reciente. Revisión independiente sin hallazgos.
+
+Reduce columnas transferidas y procesadas; bytes, CPU, latencia y ahorro de cuota no están medidos. Reversión: restaurar select('*') en esta consulta; no requiere cambios DB.

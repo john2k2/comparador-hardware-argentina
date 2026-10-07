@@ -15,14 +15,25 @@ vi.mock('@/lib/catalog/catalog-metadata', () => ({ buildCatalogMetadata: async (
 vi.mock('@/lib/persistence/stale-product-prices-maintenance', () => ({ deleteProductPriceIdentities: vi.fn() }));
 
 import { persistProductsSnapshot } from './product-catalog';
+import { buildPriceStateSignature } from './product-write-dedupe';
+import { deleteProductPriceIdentities } from './stale-product-prices-maintenance';
 
-function createServiceClient(persistedProducts: Array<Record<string, unknown>> = []) {
+function createServiceClient(
+  persistedProducts: Array<Record<string, unknown>> = [],
+  persistedPrices: Array<Record<string, unknown>> = [],
+) {
   return {
     rpc: mocks.rpc,
     from: (table: string) => ({
-      select: () => ({ in: () => table === 'price_alerts'
+      // El mock aplica la proyección, para que un campo omitido afecte al plan real.
+      select: (columns: string) => ({ in: () => table === 'price_alerts'
         ? { eq: async () => ({ data: [], error: null }) }
-        : Promise.resolve({ data: table === 'stores' ? [{ id: 'mexx' }] : table === 'products' ? persistedProducts : [], error: null }) }),
+        : Promise.resolve({
+          data: table === 'stores' ? [{ id: 'mexx' }] : table === 'products' ? persistedProducts
+            : table === 'product_prices' ? persistedPrices.map((row) => columns === '*' ? row
+              : Object.fromEntries(columns.split(',').map((column) => [column, row[column]]))) : [],
+          error: null,
+        }) }),
       upsert: table === 'product_prices' ? mocks.priceUpsert : mocks.productUpsert,
       insert: mocks.historyInsert,
     }),
@@ -39,6 +50,20 @@ function product(withReview = true): Product {
       ...(withReview ? { identityReview: { version: 1 as const, status: 'needs-review' as const, reason: 'low-confidence' as const, reviewedAt: observed.toISOString(), model: 'jev-1.13.0', confidence: 0.4, subject: { name: 'amd ryzen 5 5600', category: 'procesadores', url } } } : {}),
     }],
     lowestPrice: 250_000, highestPrice: 250_000, averagePrice: 250_000, createdAt: observed, updatedAt: observed,
+  };
+}
+
+function persistedPrice(source: Product, lastUpdated: string): Record<string, unknown> {
+  const price = source.prices[0];
+  return {
+    product_id: source.id, store_id: price.storeId, url: price.url,
+    last_updated: lastUpdated, identity_review: price.identityReview,
+    state_signature: buildPriceStateSignature({
+      price: price.price, original_price: price.originalPrice ?? null, stock: 'in-stock',
+      installment_count: null, installment_amount: null,
+    }),
+    // Campos de la fila completa que el plan de deduplicación no necesita leer.
+    price: price.price, stock: price.stock, updated_at: lastUpdated,
   };
 }
 
@@ -175,5 +200,80 @@ describe('persistencia de revisión de ofertas', () => {
     const image = 'https://www.mexx.com.ar/images/ryzen-5600.jpg';
     await persistProductsSnapshot([{ ...product(), image }, product()]);
     expect(mocks.productUpsert.mock.calls[0][0][0].image).toBe(image);
+  });
+
+  it('rechaza observación anterior con precio y revisión distintos al leer el estado proyectado', async () => {
+    const source = product();
+    const existing = persistedPrice(source, '2026-09-29T14:40:00Z');
+    source.prices[0].price = 240_000;
+    source.prices[0].identityReview = { ...source.prices[0].identityReview!, confidence: 0.8 };
+    mocks.getServerClient.mockReturnValue(createServiceClient([], [existing]));
+
+    await persistProductsSnapshot([source]);
+
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.priceUpsert).not.toHaveBeenCalled();
+    expect(mocks.historyInsert).not.toHaveBeenCalled();
+    expect(deleteProductPriceIdentities).toHaveBeenCalledWith(expect.anything(), []);
+  });
+
+  it.each([
+    { lastUpdated: '2026-09-29T14:40:00Z', shouldWrite: false },
+    { lastUpdated: '2026-09-29T12:00:00Z', shouldWrite: true },
+  ])('conserva dedupe y touch de frescura con estado previo $lastUpdated', async ({ lastUpdated, shouldWrite }) => {
+    const source = product();
+    source.prices[0].lastUpdated = new Date('2026-09-29T14:50:00Z');
+    const existing = persistedPrice(source, lastUpdated);
+    mocks.getServerClient.mockReturnValue(createServiceClient([], [existing]));
+
+    await persistProductsSnapshot([source]);
+
+    expect(mocks.rpc).toHaveBeenCalledTimes(shouldWrite ? 1 : 0);
+    if (shouldWrite) {
+      expect(mocks.rpc.mock.calls[0][1].p_offers).toEqual([expect.objectContaining({
+        product_id: source.id, store_id: 'mexx', url: source.prices[0].url,
+        price: 250_000, identity_review: source.prices[0].identityReview,
+        last_updated: '2026-09-29T14:50:00.000Z', state_signature: existing.state_signature,
+      })]);
+    }
+    expect(mocks.priceUpsert).not.toHaveBeenCalled();
+    expect(mocks.historyInsert).not.toHaveBeenCalled();
+  });
+
+  it('persiste revisión cambiada sin adelantar la fecha real ni cambiar firma de precio', async () => {
+    const source = product();
+    source.prices[0].lastUpdated = new Date('2026-09-29T14:50:00Z');
+    const existing = persistedPrice(source, '2026-09-29T14:40:00Z');
+    source.prices[0].identityReview = { ...source.prices[0].identityReview!, confidence: 0.8 };
+    mocks.getServerClient.mockReturnValue(createServiceClient([], [existing]));
+
+    await persistProductsSnapshot([source]);
+
+    expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith('persist_catalog_offers', {
+      p_offers: [expect.objectContaining({
+        identity_review: source.prices[0].identityReview, price: 250_000,
+        last_updated: '2026-09-29T14:50:00.000Z', state_signature: existing.state_signature,
+      })],
+    });
+    expect(mocks.priceUpsert).not.toHaveBeenCalled();
+    expect(mocks.historyInsert).not.toHaveBeenCalled();
+  });
+
+  it('conserva poda por identidad y fecha de ofertas ausentes con la proyección mínima', async () => {
+    const source = product();
+    source.prices[0].lastUpdated = new Date('2026-09-29T14:50:00Z');
+    const present = persistedPrice(source, '2026-09-29T14:40:00Z');
+    const ghost = { ...present, store_id: 'venex', url: 'https://fixture.invalid/old', last_updated: '2026-09-01T12:00:00Z' };
+    const recent = { ...present, store_id: 'logg', url: 'https://fixture.invalid/recent' };
+    const replacedUrl = { ...present, url: 'https://fixture.invalid/replaced' };
+    mocks.getServerClient.mockReturnValue(createServiceClient([], [present, ghost, recent, replacedUrl]));
+
+    await persistProductsSnapshot([source]);
+
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(deleteProductPriceIdentities).toHaveBeenCalledWith(expect.anything(), [
+      { product_id: source.id, store_id: ghost.store_id, url: ghost.url },
+      { product_id: source.id, store_id: replacedUrl.store_id, url: replacedUrl.url },
+    ]);
   });
 });
