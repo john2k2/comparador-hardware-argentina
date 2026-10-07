@@ -102,3 +102,37 @@ test('preparar una cola sin cambios no bloquea una oferta en observación', { ti
     await query(`delete from products where id=${literal(id)};`);
   }
 });
+
+test('una categoría discrepante bloqueada falla de forma acotada y no declara la cola completa', { timeout: 20000 }, async () => {
+  assert.ok(['127.0.0.1', 'localhost'].includes(env.PGHOST), 'Sólo base LOCAL');
+  assert.match(env.PGDATABASE ?? '', /^catalog[_-]/);
+  const id = `test-seed-drift-${process.pid}`, holder = `${id}-holder`;
+  const token = '00000000-0000-0000-0000-000000000002';
+  let lock;
+  await query(`insert into products(id,name,model,category) values(${literal(id)},'Seed drift','Fixture','perifericos');
+    insert into product_prices(product_id,store_id,url,price,stock,last_updated)
+    values(${literal(id)},'mexx','https://example.invalid/seed-drift',100,'in-stock',now());
+    update catalog_offer_refresh_state q set category='almacenamiento',lease_token=${literal(token)},
+      leased_until=now()+interval '10 minutes',failures=3,last_result='source-failed'
+    from product_prices pp where pp.id=q.offer_id and pp.product_id=${literal(id)};`);
+  try {
+    lock = transaction(`begin; select q.offer_id from catalog_offer_refresh_state q join product_prices pp on pp.id=q.offer_id
+      where pp.product_id=${literal(id)} for update of q; select pg_sleep(4); commit;`, holder);
+    await waitFor(`select exists(select 1 from pg_stat_activity where application_name=${literal(holder)} and wait_event='PgSleep');`);
+    await assert.rejects(query(`begin; set local lock_timeout='200ms';
+      set local statement_timeout='2s'; select seed_catalog_refresh_queue(); commit;`), /lock timeout/);
+    assert.equal(await query(`select exists(select 1 from pg_stat_activity where application_name=${literal(holder)} and wait_event='PgSleep');`), 't');
+    assert.equal(await query(`select q.category from catalog_offer_refresh_state q join product_prices pp on pp.id=q.offer_id
+      where pp.product_id=${literal(id)};`), 'almacenamiento', 'El fallo no simula reconciliación');
+    lock.child.kill(); await Promise.allSettled([lock.result]);
+    lock = undefined;
+    assert.equal(await query('select seed_catalog_refresh_queue();'), '1');
+    assert.equal(await query('select seed_catalog_refresh_queue();'), '0');
+    assert.equal(await query(`select (q.category='perifericos' and q.lease_token=${literal(token)}::uuid
+      and q.leased_until>now() and q.failures=3 and q.last_result='source-failed')
+      from catalog_offer_refresh_state q join product_prices pp on pp.id=q.offer_id where pp.product_id=${literal(id)};`), 't');
+  } finally {
+    lock?.child.kill(); await Promise.allSettled([lock?.result]);
+    await query(`delete from products where id=${literal(id)};`);
+  }
+});

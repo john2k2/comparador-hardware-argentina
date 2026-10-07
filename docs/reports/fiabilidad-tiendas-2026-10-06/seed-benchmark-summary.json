@@ -1,0 +1,263 @@
+{
+  "finishedAt": "2026-10-07T02:35:06.622Z",
+  "sizes": [
+    {
+      "table": "product_prices",
+      "totalBytes": 264478720,
+      "heapBytes": 58548224
+    },
+    {
+      "table": "products",
+      "totalBytes": 253018112,
+      "heapBytes": 96903168
+    },
+    {
+      "table": "catalog_offer_refresh_state",
+      "totalBytes": 8937472,
+      "heapBytes": 5611520
+    }
+  ],
+  "indexes": [
+    {
+      "name": "products_catalog_seed_lookup_idx",
+      "bytes": 2965504
+    },
+    {
+      "name": "product_prices_catalog_seed_lookup_idx",
+      "bytes": 4325376
+    }
+  ],
+  "matrix": [
+    {
+      "label": "baseline-complete",
+      "repetition": 1,
+      "selectMs": 42.211,
+      "selectRows": 0,
+      "sharedHits": 4161,
+      "sharedReads": 15500,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 39.172
+    },
+    {
+      "label": "baseline-complete",
+      "repetition": 2,
+      "selectMs": 48.365,
+      "selectRows": 0,
+      "sharedHits": 4289,
+      "sharedReads": 15372,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 39.154
+    },
+    {
+      "label": "baseline-complete",
+      "repetition": 3,
+      "selectMs": 41.282,
+      "selectRows": 0,
+      "sharedHits": 4417,
+      "sharedReads": 15244,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 37.705
+    },
+    {
+      "label": "baseline-501-missing",
+      "repetition": 1,
+      "selectMs": 42.589,
+      "selectRows": 500,
+      "sharedHits": 4527,
+      "sharedReads": 15116,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 41.394
+    },
+    {
+      "label": "baseline-501-missing",
+      "repetition": 2,
+      "selectMs": 42.216,
+      "selectRows": 500,
+      "sharedHits": 4922,
+      "sharedReads": 14724,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 42.161
+    },
+    {
+      "label": "baseline-501-missing",
+      "repetition": 3,
+      "selectMs": 43.31,
+      "selectRows": 500,
+      "sharedHits": 5030,
+      "sharedReads": 14596,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 42.384
+    },
+    {
+      "label": "baseline-10000-missing",
+      "repetition": 1,
+      "selectMs": 22.03,
+      "selectRows": 500,
+      "sharedHits": 4945,
+      "sharedReads": 3470,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 23.193
+    },
+    {
+      "label": "baseline-10000-missing",
+      "repetition": 2,
+      "selectMs": 21.922,
+      "selectRows": 500,
+      "sharedHits": 4761,
+      "sharedReads": 3481,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 23.426
+    },
+    {
+      "label": "baseline-10000-missing",
+      "repetition": 3,
+      "selectMs": 21.854,
+      "selectRows": 500,
+      "sharedHits": 4943,
+      "sharedReads": 3292,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 23.077
+    },
+    {
+      "label": "covering-complete",
+      "repetition": 1,
+      "selectMs": 31.292,
+      "selectRows": 0,
+      "sharedHits": 753,
+      "sharedReads": 884,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 24.694
+    },
+    {
+      "label": "covering-complete",
+      "repetition": 2,
+      "selectMs": 27.342,
+      "selectRows": 0,
+      "sharedHits": 1637,
+      "sharedReads": 0,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 23.701
+    },
+    {
+      "label": "covering-complete",
+      "repetition": 3,
+      "selectMs": 28.152,
+      "selectRows": 0,
+      "sharedHits": 1637,
+      "sharedReads": 0,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 23.316
+    },
+    {
+      "label": "covering-501-missing",
+      "repetition": 1,
+      "selectMs": 12.182,
+      "selectRows": 500,
+      "sharedHits": 1118,
+      "sharedReads": 0,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 14.062
+    },
+    {
+      "label": "covering-501-missing",
+      "repetition": 2,
+      "selectMs": 11.89,
+      "selectRows": 500,
+      "sharedHits": 1118,
+      "sharedReads": 0,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 14.055
+    },
+    {
+      "label": "covering-501-missing",
+      "repetition": 3,
+      "selectMs": 12.108,
+      "selectRows": 500,
+      "sharedHits": 1118,
+      "sharedReads": 0,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 13.89
+    },
+    {
+      "label": "covering-10000-missing",
+      "repetition": 1,
+      "selectMs": 11.846,
+      "selectRows": 500,
+      "sharedHits": 1118,
+      "sharedReads": 0,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 13.588
+    },
+    {
+      "label": "covering-10000-missing",
+      "repetition": 2,
+      "selectMs": 11.238,
+      "selectRows": 500,
+      "sharedHits": 1118,
+      "sharedReads": 0,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 13.643
+    },
+    {
+      "label": "covering-10000-missing",
+      "repetition": 3,
+      "selectMs": 11.341,
+      "selectRows": 500,
+      "sharedHits": 1118,
+      "sharedReads": 0,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 13.202
+    },
+    {
+      "label": "covering-501-category-drift",
+      "repetition": 1,
+      "selectMs": 11.916,
+      "selectRows": 500,
+      "sharedHits": 1118,
+      "sharedReads": 0,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 12.862
+    },
+    {
+      "label": "covering-501-category-drift",
+      "repetition": 2,
+      "selectMs": 11.761,
+      "selectRows": 500,
+      "sharedHits": 1118,
+      "sharedReads": 0,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 13.551
+    },
+    {
+      "label": "covering-501-category-drift",
+      "repetition": 3,
+      "selectMs": 12.056,
+      "selectRows": 500,
+      "sharedHits": 1118,
+      "sharedReads": 0,
+      "tempReads": 0,
+      "tempWrites": 0,
+      "rpcMs": 13.024
+    }
+  ]
+}
