@@ -22,6 +22,7 @@ import {
   emptySearchResponse,
   getCachedSearchResponse,
   hasSearchFiltersIntent,
+  hasCurrentSearchPagePrices,
   inFlightSearchRequests,
   parseNonNegativeNumber,
   parsePositiveInteger,
@@ -199,7 +200,10 @@ export async function GET(request: NextRequest) {
         await recordCatalogRefreshDemand({ query: query || undefined, category: effectiveCategory });
         if (query) scheduleBackgroundSearchRefresh(request, cacheKey);
       }
-      return respond(cached, { headers: { 'X-Search-Cache': staleCache ? 'HIT-STALE' : 'HIT' } }, { success: true, resultCount: cached.products.length, note: staleCache ? 'HIT_STALE' : 'HIT' });
+      // La escritura de demanda puede atravesar el límite de frescura de una oferta.
+      if (includeUnavailable || hasCurrentSearchPagePrices(cached.products)) {
+        return respond(cached, { headers: { 'X-Search-Cache': staleCache ? 'HIT-STALE' : 'HIT' } }, { success: true, resultCount: cached.products.length, note: staleCache ? 'HIT_STALE' : 'HIT' });
+      }
     }
   }
 

@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Product } from '@/lib/types';
 
 vi.mock('server-only', () => ({}));
 
@@ -112,6 +113,7 @@ vi.mock('@/lib/scrapers/woocommerce', () => ({ fetchAllWooCommerceSearch: vi.fn(
 describe('/api/search route', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.useRealTimers();
   });
 
   beforeEach(() => {
@@ -320,5 +322,76 @@ describe('/api/search route', () => {
     expect((await GET(new NextRequest('http://localhost/api/search?category=procesadores'))).status).toBe(200);
     expect(mockReadProductsFromDatabase).not.toHaveBeenCalled();
     expect(mockResolveLiveProductsList).not.toHaveBeenCalled();
+  });
+
+  function cachedMouse(otherCurrentOffer = false): Product {
+    const now = new Date('2026-10-07T18:00:00Z');
+    const cheap = { storeId: 'mexx', storeName: 'Mexx', price: 100, stock: 'in-stock' as const,
+      url: 'https://www.mexx.com.ar/mouse-logitech-g502', installment: null,
+      lastUpdated: new Date('2026-10-06T17:59:59Z') };
+    return {
+      id: 'mouse', name: 'Mouse Logitech G502', brand: 'Logitech', model: 'G502', category: 'perifericos', specs: {},
+      prices: [cheap, ...(otherCurrentOffer ? [{ ...cheap, storeId: 'venex', storeName: 'Venex',
+        url: 'https://www.venex.com.ar/mouse-logitech-g502', price: 200, lastUpdated: now }] : [])],
+      lowestPrice: 100, highestPrice: otherCurrentOffer ? 200 : 100, averagePrice: otherCurrentOffer ? 150 : 100,
+      createdAt: now, updatedAt: now,
+    };
+  }
+
+  function cachedPage(item: Product) {
+    return { products: [item], pagination: { limit: 1, offset: 12, total: 40, totalPages: 4, page: 2, pageSize: 12 },
+      facets: { categories: [], brands: [], stores: [] } };
+  }
+
+  it.each([true, false])('relee SQL con mismos filtros cuando vence mínimo (otra actual=%s), sin filtrar la página', async (otherCurrentOffer) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-07T18:00:00Z'));
+    vi.stubEnv('DISABLE_LIVE_SCRAPING', '1');
+    mockGetSharedCache.mockResolvedValue(cachedPage(cachedMouse(otherCurrentOffer)));
+    const replacement = { ...cachedMouse(), id: 'replacement', prices: [], lowestPrice: 80 };
+    const databasePage = { products: [replacement], total: 25, totalPages: 3, page: 2, pageSize: 12 };
+    mockReadProductsFromDatabase.mockResolvedValue(databasePage);
+    const { GET } = await import('./route');
+
+    const response = await GET(new NextRequest('http://localhost/api/search?q=mouse&category=perifericos&sortBy=price-asc&page=2&minPrice=0&maxPrice=150&stores=venex,mexx'));
+    const payload = await response.json();
+
+    expect(mockReadProductsFromDatabase).toHaveBeenCalledExactlyOnceWith({ query: 'mouse', category: 'perifericos',
+      minPrice: 0, maxPrice: 150, storeIds: new Set(['venex', 'mexx']), sortBy: 'price-asc', page: 2, pageSize: 12, onlyCurrentOffers: true });
+    expect(payload.products.map((item: Product) => item.id)).toEqual(['replacement']);
+    expect(payload.pagination).toMatchObject({ total: 25, totalPages: 3, page: 2, offset: 12 });
+    expect(mockResolveLiveProductsList).not.toHaveBeenCalled();
+    expect(mockRecordEndpointRequestEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it('conserva ventana pública 24h y referencias opt-in sin renovar observaciones', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-07T18:00:00Z'));
+    const item = cachedMouse();
+    item.prices[0].lastUpdated = new Date('2026-10-07T14:00:00Z');
+    mockGetSharedCache.mockResolvedValue(cachedPage(item));
+    const { GET } = await import('./route');
+    const publicPayload = await (await GET(new NextRequest('http://localhost/api/search?q=mouse'))).json();
+    expect(publicPayload.products[0].prices[0].lastUpdated).toBe('2026-10-07T14:00:00.000Z');
+    mockGetSharedCache.mockResolvedValue(cachedPage(cachedMouse()));
+    expect((await GET(new NextRequest('http://localhost/api/search?q=mouse&includeUnavailable=1'))).headers.get('X-Search-Cache')).toBe('HIT');
+    expect(mockReadProductsFromDatabase).not.toHaveBeenCalled();
+  });
+
+  it('revalida tras esperar demanda y relee una vez si la última oferta vence durante la espera', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-07T18:00:00Z'));
+    const item = cachedMouse();
+    item.prices[0].lastUpdated = new Date('2026-10-06T18:00:01Z');
+    item.updatedAt = new Date('2026-10-07T17:00:00Z');
+    mockGetSharedCache.mockResolvedValue(cachedPage(item));
+    mockRecordCatalogRefreshDemand.mockImplementationOnce(async () => vi.setSystemTime(new Date('2026-10-07T18:00:02Z')));
+    mockReadProductsFromDatabase.mockResolvedValue({ products: [], total: 0, totalPages: 0, page: 1, pageSize: 12 });
+    const { GET } = await import('./route');
+    const payload = await (await GET(new NextRequest('http://localhost/api/search?q=mouse'))).json();
+    expect(payload.products).toEqual([]);
+    expect(payload.pagination.total).toBe(0);
+    expect(mockReadProductsFromDatabase).toHaveBeenCalledTimes(1);
+    expect(mockRecordEndpointRequestEvent).toHaveBeenCalledTimes(1);
   });
 });
