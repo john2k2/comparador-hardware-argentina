@@ -13,6 +13,29 @@ import { CATALOG_OFFER_FRESH_MS, OFFER_FRESH_MS } from '@/lib/price-freshness';
 
 type Side = 'left' | 'right';
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isComparisonCandidate(value: unknown): value is Product {
+  if (!isRecord(value)
+    || typeof value.id !== 'string' || !value.id.trim()
+    || typeof value.name !== 'string' || !value.name.trim()
+    || !COMPARABLE_CATEGORIES.some(entry => entry.id === value.category)
+    || typeof value.brand !== 'string' || typeof value.model !== 'string'
+    || typeof value.lowestPrice !== 'number' || !Number.isFinite(value.lowestPrice)
+    || !isRecord(value.specs) || !Object.values(value.specs).every(spec => typeof spec === 'string')
+    || !Array.isArray(value.prices)) return false;
+  return value.prices.every(offer => isRecord(offer)
+    && typeof offer.storeId === 'string' && typeof offer.storeName === 'string'
+    && typeof offer.url === 'string'
+    && typeof offer.price === 'number' && Number.isFinite(offer.price)
+    && ['in-stock', 'low-stock', 'out-of-stock', 'unknown'].includes(offer.stock as string)
+    // Una fecha desconocida sigue siendo desconocida; la elegibilidad la decide el contrato compartido.
+    && (offer.lastUpdated == null || typeof offer.lastUpdated === 'string'
+      || typeof offer.lastUpdated === 'number' && Number.isFinite(offer.lastUpdated)));
+}
+
 function ProductFinder({ category, side, selected, onSelect, onInteract }: {
   category: HardwareCategory;
   side: Side;
@@ -22,7 +45,8 @@ function ProductFinder({ category, side, selected, onSelect, onInteract }: {
 }) {
   const [query, setQuery] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [searchStatus, setSearchStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const loading = searchStatus === 'loading';
   const requestRef = useRef<AbortController | null>(null);
 
   useEffect(() => () => requestRef.current?.abort(), []);
@@ -32,7 +56,7 @@ function ProductFinder({ category, side, selected, onSelect, onInteract }: {
     requestRef.current?.abort();
     setQuery(value);
     setProducts([]);
-    setLoading(false);
+    setSearchStatus('idle');
   }
 
   async function search() {
@@ -41,19 +65,24 @@ function ProductFinder({ category, side, selected, onSelect, onInteract }: {
     if (query.trim().length < 2) return;
     const controller = new AbortController();
     requestRef.current = controller;
-    setLoading(true);
+    setSearchStatus('loading');
     try {
       const response = await fetch(`/api/products?category=${encodeURIComponent(category)}&q=${encodeURIComponent(query.trim())}`, { signal: controller.signal });
       if (!response.ok) throw new Error(`Product request failed: ${response.status}`);
-      const payload = await response.json() as { products?: Product[] };
+      const payload: unknown = await response.json();
+      // Validar todas las filas antes de filtrar/limitar evita ocultar un catálogo dañado.
+      if (!isRecord(payload) || !Array.isArray(payload.products)
+        || !payload.products.every(isComparisonCandidate)) throw new Error('Invalid product response');
       if (!controller.signal.aborted) {
-        setProducts((payload.products ?? []).filter((product) => product.category === category
+        setProducts(payload.products.filter((product) => product.category === category
           && (category === 'computadoras' || !isCompleteComputerTitle(product.name))).slice(0, 5));
+        setSearchStatus('success');
       }
     } catch {
-      if (!controller.signal.aborted) setProducts([]);
-    } finally {
-      if (!controller.signal.aborted) setLoading(false);
+      if (!controller.signal.aborted) {
+        setProducts([]);
+        setSearchStatus('error');
+      }
     }
   }
 
@@ -68,7 +97,7 @@ function ProductFinder({ category, side, selected, onSelect, onInteract }: {
             requestRef.current?.abort();
             setQuery('');
             setProducts([]);
-            setLoading(false);
+            setSearchStatus('idle');
             onSelect(null);
           }} className="mt-3 min-h-10 border-2 border-border px-3 text-[12px] font-bold hover:border-primary">CAMBIAR</button>
         </div>
@@ -88,13 +117,19 @@ function ProductFinder({ category, side, selected, onSelect, onInteract }: {
             </button>
           </div>
           <div className="mt-3 space-y-2">
-            {products.map((product) => (
+            {searchStatus === 'success' && products.map((product) => (
               <button key={product.id} type="button" onClick={() => onSelect(product)} className="w-full border-2 border-border p-3 text-left hover:border-primary">
                 <span className="block text-[12px] font-bold leading-relaxed">{product.name}</span>
                 <span className="mt-1 block text-[12px] text-muted-foreground">{product.prices.length} ofertas · último precio registrado {product.lowestPrice > 0 ? formatPriceARS(product.lowestPrice) : 'sin precio'}</span>
               </button>
             ))}
-            {!loading && query.length >= 2 && products.length === 0 && <p className="text-[12px] text-muted-foreground">Buscá para ver productos del catálogo.</p>}
+            {searchStatus === 'idle' && <p className="text-[12px] text-muted-foreground">Escribí un modelo y buscá productos del catálogo.</p>}
+            {loading && <p role="status" className="text-[12px] text-muted-foreground">Buscando productos…</p>}
+            {searchStatus === 'success' && products.length === 0 && <p role="status" className="text-[12px] text-muted-foreground">No encontramos coincidencias. Probá otro modelo o una búsqueda más corta. Esto no confirma que esté agotado.</p>}
+            {searchStatus === 'error' && <div role="alert" className="space-y-2 text-[12px]">
+              <p>No pudimos consultar el catálogo. Conservamos tu búsqueda; volvé a intentarlo.</p>
+              <button type="button" onClick={() => void search()} className="min-h-11 border-2 border-border px-3 font-bold hover:border-primary">Reintentar búsqueda</button>
+            </div>}
           </div>
         </>
       )}

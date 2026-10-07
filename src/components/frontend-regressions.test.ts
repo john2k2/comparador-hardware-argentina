@@ -142,8 +142,8 @@ async function resolveRequest(page: Page, index: number, products: object[] = []
   }, { index, products, status });
 }
 
-const cpu = { id: 'cpu', category: 'procesadores', name: 'CPU fixture', prices: [], lowestPrice: 0 };
-const gpu = { ...cpu, id: 'gpu', category: 'tarjetas-graficas', name: 'GPU fixture' };
+const cpu = { id: 'cpu', category: 'procesadores', name: 'CPU fixture', brand: 'Fixture', model: 'CPU fixture', specs: {}, prices: [], lowestPrice: 0 };
+const gpu = { ...cpu, id: 'gpu', category: 'tarjetas-graficas', name: 'GPU fixture', model: 'GPU fixture' };
 
 describe('frontend interaction regressions', () => {
   it.each([200, 500])('keeps the client response authoritative after native navigation (HTTP %s)', async (status) => {
