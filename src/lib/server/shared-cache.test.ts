@@ -6,11 +6,46 @@ vi.mock('@/lib/server/supabase-server', () => ({
 }));
 
 import { getSharedCache, setSharedCache, deleteSharedCache } from './shared-cache';
+import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
+
+function mockExpiredEntry(key: string, expiresAt: string, renewAfterRead = false) {
+  let row: { cache_key: string; payload: unknown; expires_at: string } | null = {
+    cache_key: `expiry-race:${key}`, payload: { version: 'old' }, expires_at: expiresAt,
+  };
+  const filters = new Map<string, unknown>();
+  const deleteQuery = {
+    eq: vi.fn((column: string, value: unknown) => {
+      filters.set(column, value);
+      return deleteQuery;
+    }),
+    lte: vi.fn(async (column: string, value: string) => {
+      if (row && [...filters].every(([field, expected]) => row?.[field as keyof typeof row] === expected)
+        && new Date(row[column as 'expires_at']).getTime() <= new Date(value).getTime()) {
+        row = null;
+      }
+      return { error: null };
+    }),
+  };
+  const deleteEntry = vi.fn(() => deleteQuery);
+  const client = { from: vi.fn(() => ({
+    select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn(async () => {
+      const snapshot = row && { ...row };
+      if (row && renewAfterRead) {
+        row = { ...row, payload: { version: 'renewed' }, expires_at: '2026-04-14T10:05:00Z' };
+      }
+      return { data: snapshot, error: null };
+    }) })) })),
+    delete: deleteEntry,
+  })) };
+  vi.mocked(getServerSupabaseServiceClient).mockReturnValue(client as unknown as ReturnType<typeof getServerSupabaseServiceClient>);
+  return { readRow: () => row, deleteEntry, deleteQuery };
+}
 
 describe('shared-cache', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-04-14T10:00:00Z'));
+    vi.mocked(getServerSupabaseServiceClient).mockReturnValue(null);
   });
 
   afterEach(() => {
@@ -126,6 +161,33 @@ describe('shared-cache', () => {
 
       expect(resultA).toBeUndefined();
       expect(resultB).toEqual({ scope: 'b' });
+    });
+  });
+
+  describe('limpieza de la entrada vencida observada', () => {
+    it('conserva la renovación concurrente y retorna cache miss para la lectura anterior', async () => {
+      const db = mockExpiredEntry('renewed', '2026-04-14T09:59:00Z', true);
+
+      expect(await getSharedCache('expiry-race', 'renewed')).toBeUndefined();
+      expect(db.readRow()?.payload).toEqual({ version: 'renewed' });
+      expect(db.deleteQuery.eq).toHaveBeenCalledWith('expires_at', '2026-04-14T09:59:00Z');
+      expect(db.deleteQuery.lte).toHaveBeenCalledWith('expires_at', '2026-04-14T10:00:00.000Z');
+    });
+
+    it('elimina la misma entrada cuando sigue vencida', async () => {
+      const db = mockExpiredEntry('unchanged', '2026-04-14T10:00:00Z');
+
+      expect(await getSharedCache('expiry-race', 'unchanged')).toBeUndefined();
+      expect(db.readRow()).toBeNull();
+      expect(db.deleteQuery.eq).toHaveBeenCalledWith('cache_key', 'expiry-race:unchanged');
+    });
+
+    it('no elimina una entrada cuya expiración no se puede validar', async () => {
+      const db = mockExpiredEntry('invalid', 'invalid-date');
+
+      expect(await getSharedCache('expiry-race', 'invalid')).toBeUndefined();
+      expect(db.readRow()).not.toBeNull();
+      expect(db.deleteEntry).not.toHaveBeenCalled();
     });
   });
 

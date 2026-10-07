@@ -144,7 +144,15 @@ export async function getSharedCache<T>(
   const expiresAtMs = new Date(String(data.expires_at)).getTime();
   if (!Number.isFinite(expiresAtMs) || expiresAtMs <= now) {
     metrics.dbMisses++;
-    await supabase.from('api_cache_entries').delete().eq('cache_key', scopedKey);
+    if (Number.isFinite(expiresAtMs)) {
+      // Revalidar en el DELETE: otra request pudo renovar la entrada desde el SELECT.
+      await supabase
+        .from('api_cache_entries')
+        .delete()
+        .eq('cache_key', scopedKey)
+        .eq('expires_at', data.expires_at)
+        .lte('expires_at', new Date(now).toISOString());
+    }
     return undefined;
   }
 
