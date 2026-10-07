@@ -76,6 +76,52 @@ describe('offer identity evidence', () => {
   });
 });
 
+describe('contradicciones de velocidad RAM sin unidad', () => {
+  const storedName = 'MEMORIA RAM 16GB DDR4 3200 KINGSTON FURY BEAST RGB';
+  const differentSpeed = 'MEMORIA RAM KINGSTON FURY BEAST 16GB 1X16 3600MHZ CL18 DDR4';
+  const conflict = (name: string, offerText: string) => hasExplicitIdentityConflict({ name, offerText, category: 'memoria-ram' });
+
+  it('rechaza la publicación de 3600 MHz frente al nombre literal de G02 y en sentido inverso', () => {
+    expect(conflict(storedName, differentSpeed)).toBe(true);
+    expect(conflict(differentSpeed, storedName)).toBe(true);
+  });
+
+  it('mantiene pendiente una oferta contradictoria aunque conserve una aprobación anterior', () => {
+    const url = 'https://store.example/producto/ram';
+    const sourceIdentity = { title: differentSpeed, listingRef: 'store:id:10985' };
+    const review = identityReview({ sourceIdentity,
+      subject: { name: storedName.toLowerCase(), category: 'memoria-ram', url } });
+    expect(needsIdentityReview({ url, sourceIdentity, identityReview: review }, {
+      name: storedName, category: 'memoria-ram',
+    })).toBe(true);
+  });
+
+  it.each(['DDR3 1600', 'DDR4 3200', 'DDR5 6000'])('reconoce la velocidad junto a %s sin inventar diferencias por la unidad', (memory) => {
+    const name = `Memoria Kingston Fury Beast 16GB ${memory}`;
+    expect(conflict(name, `${name}MHz`)).toBe(false);
+    expect(conflict(`${name}MHz`, name)).toBe(false);
+    expect(conflict(name, name.replace(/\d{4}$/, '7200MHz'))).toBe(true);
+  });
+
+  it.each([
+    'MEMORIA RAM KINGSTON FURY BEAST 16GB DDR4',
+    'MEMORIA RAM KINGSTON FURY BEAST 16GB DDR4 SKU 3600',
+    'MEMORIA RAM KINGSTON FURY BEAST 16GB DDR4 modelo 3600',
+    'MEMORIA RAM KINGSTON FURY BEAST 16GB DDR4 edición 2026',
+    'MEMORIA RAM KINGSTON FURY BEAST 16GB DDR4 2026',
+    'MEMORIA RAM KINGSTON FURY BEAST 16GB SKU DDR4 3600',
+    'MEMORIA RAM KINGSTON FURY BEAST 16GB modelo: DDR4 3600',
+    'MEMORIA RAM KINGSTON FURY BEAST 16GB año DDR4 2000',
+    'MEMORIA RAM KINGSTON FURY BEAST 16GB SKU DDR4-3600',
+    'MEMORIA RAM KINGSTON FURY BEAST 16GB DDR4 SKU (DDR4 3600)',
+    'MEMORIA RAM KINGSTON FURY BEAST 16GB DDR4 MPN: [DDR4 3600]',
+    'MEMORIA RAM KINGSTON FURY BEAST 16GB 3600',
+  ])('conserva una velocidad omitida o un distractor como desconocidos: %s', (source) => {
+    expect(conflict(storedName, source)).toBe(false);
+    expect(conflict(source, storedName)).toBe(false);
+  });
+});
+
 describe('stored offer identity reviews', () => {
   it('invalida una aprobación al cambiar título, SKU, publicación o ID de la fuente', () => {
     const product = { name: 'AMD Ryzen 7 7800X3D', category: 'procesadores' };

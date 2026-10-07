@@ -172,8 +172,21 @@ export function hasExplicitIdentityConflict(evidence: IdentityEvidence): boolean
   if (leftKit && rightKit && leftKit !== rightKit) return true;
   const rgbConflict = (a: string, b: string) => /\brgb\b/i.test(a) && /\b(?:sin|no|non)[ -]?rgb\b/i.test(b) && !/\b(?:sin|no|non)[ -]?rgb\b/i.test(a);
   if (rgbConflict(evidence.name, evidence.offerText) || rgbConflict(evidence.offerText, evidence.name)) return true;
+  const speed = (value: string) => {
+    const explicit = value.match(/\b(\d{4,5})\s*(?:mhz|mt\s*\/\s*s)\b/i)?.[1];
+    if (explicit) return explicit;
+    // Sin unidad sólo reconocemos velocidades redondas junto a DDR. Un número
+    // aislado, un código comercial o un año no acredita la frecuencia de RAM.
+    const adjacent = value.match(/\bddr\s*[345]\s+([1-9]\d{1,2}00)\b/i);
+    if (!adjacent) return undefined;
+    const prefix = value.slice(0, adjacent.index);
+    if (/\b(?:sku|mpn|modelo|model|c[oó]digo|año|year)\s*[:#=-]?\s*[([]?\s*$/i.test(prefix)) return undefined;
+    return adjacent[1];
+  };
+  const leftSpeed = speed(evidence.name), rightSpeed = speed(evidence.offerText);
+  if (leftSpeed && rightSpeed && leftSpeed !== rightSpeed) return true;
   // Sólo atributos explícitos en ambos textos. Una omisión no prueba contradicción.
-  return [/\bcl\s*(\d{2,3})\b/i, /\b(\d{1,3})\s*gb\b/i, /\b(\d{4,5})\s*(?:mhz|mt\s*\/\s*s)\b/i, /\bddr\s*([345])\b/i]
+  return [/\bcl\s*(\d{2,3})\b/i, /\b(\d{1,3})\s*gb\b/i, /\bddr\s*([345])\b/i]
     .some((pattern) => {
       const left = evidence.name.match(pattern)?.[1];
       const right = evidence.offerText.match(pattern)?.[1];
