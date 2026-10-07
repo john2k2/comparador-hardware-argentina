@@ -55,6 +55,8 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      mode: ${{ steps.resolve.outputs.mode }}
 
     steps:
       - name: Checkout
@@ -352,3 +354,48 @@ jobs:
       - name: Show local runtime log on failure
         if: failure()
         run: cat "$RUNNER_TEMP/catalog-refresh-runtime.log" || true
+
+  telemetry-maintenance:
+    needs: refresh
+    # Una comprobación diaria dentro del workflow existente; manuales y guides no retiran eventos.
+    if: ${{ always() && github.event_name == 'schedule' && needs.refresh.outputs.mode == 'priority' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TELEMETRY_RETENTION_MODE: ${{ vars.TELEMETRY_RETENTION_MODE || 'inspect' }}
+      TELEMETRY_RETENTION_APPROVAL_ID: ${{ vars.TELEMETRY_RETENTION_APPROVAL_ID }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Inspect or maintain backed telemetry
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARGS=("$TELEMETRY_RETENTION_MODE" --batch-size 250 --max-batches 4
+            --deadline-ms 120000 --max-stored-bytes 5242880
+            --out "$RUNNER_TEMP/telemetry-maintenance.json")
+          if [[ "$TELEMETRY_RETENTION_MODE" == 'archive-retire' ]]; then
+            ARGS+=(--approval-id "$TELEMETRY_RETENTION_APPROVAL_ID")
+          fi
+          node scripts/telemetry-maintenance.mjs "${ARGS[@]}"
+
+      - name: Preserve aggregate maintenance receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: telemetry-maintenance-${{ github.run_id }}
+          path: ${{ runner.temp }}/telemetry-maintenance.json
+          if-no-files-found: warn
+          retention-days: 30
