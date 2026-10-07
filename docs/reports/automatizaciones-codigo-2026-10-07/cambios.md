@@ -17,3 +17,11 @@ Las escrituras de caché ahora comprueban el ACK devuelto y los rechazos. Conser
 Pruebas focales: 29/29 en shared-cache y storage; ESLint de cuatro archivos exit0. Revisión independiente de U1/U2/A1: 68/68, sin hallazgos materiales. Estas pruebas no garantizan entrega al terminar el Worker; las escrituras en background se conservan y no se afirma reducción de volumen.
 
 Reversión: revertir esta unidad local conserva U1 y restaura el manejo anterior de errores; no requiere operación DB.
+
+## A1: recuperar un turno próximo al vencimiento de su guarda
+
+El respaldo admite una sola espera de hasta diez segundos ante una negativa válida con vencimiento próximo. Después relee GitHub y la misma RPC. Conserva 75 minutos entre inicios listados, una adquisición por ventana de 3600 segundos y un único dispatch. Presupuesto total de aplicación: 60 segundos; request de hasta ocho segundos ajustado al resto. Un 403 o timeout no libera la guarda ni repite el despacho.
+
+Prueba focal: 39/39; ESLint y TypeScript sin emisión exit0. Revisión independiente sin hallazgos materiales, incluyendo la unión de 68 casos con U1/U2. Se prueban tiempos 6/10/11 segundos, timer demorado, segunda negativa, relectura y dos eventos concurrentes. No hubo dispatch real ni lectura DB.
+
+Los [límites oficiales de Cloudflare](https://developers.cloudflare.com/workers/platform/limits/#duration) y su [handler scheduled](https://developers.cloudflare.com/workers/runtime-apis/handlers/scheduled/) distinguen wall time de CPU. La espera cabe en el contrato documentado de cron; no demuestra que el código local esté publicado ni mide CPU. Reversión: revertir esta unidad local devuelve el comportamiento previo sin cambiar el bucket o la base.
