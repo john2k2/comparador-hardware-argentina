@@ -1,0 +1,917 @@
+{
+  "projectId": "zyiyziubpcpgoqlkcrie",
+  "selectedAt": "2026-10-07T02:37:31.979Z",
+  "samplingMethod": "READ ONLY, latest stored CPU/RAM offer among first 80 index-limited rows per store; not a freshness or stock proof",
+  "samples": [
+    {
+      "store_id": "37bytes",
+      "offer_id": "4e7c137f-1254-4a69-906c-9bc4ffe02c96",
+      "product_id": "agrupado-memoria-ram-kingston-8gb-1562oo7",
+      "url": "https://www.37bytes.com.ar/productos/memoria-ram-8gb-ddr4-3600mhz-rgb-dimm-kingston-kf436c17bb2a-8/",
+      "price": "213413.00",
+      "stock": "in-stock",
+      "last_updated": "2026-10-06 00:27:36.244+00",
+      "source_identity": {
+        "title": "MEMORIA RAM 8GB DDR4 3600Mhz RGB DIMM KINGSTON KF436C17BB2A/8",
+        "storeSku": "37000010",
+        "listingRef": "37bytes:url:https://37bytes.com.ar/productos/memoria-ram-8gb-ddr4-3600mhz-rgb-dimm-kingston-kf436c17bb2a-8"
+      },
+      "identity_review": {
+        "model": null,
+        "reason": "provider-unavailable",
+        "status": "needs-review",
+        "subject": {
+          "url": "https://www.37bytes.com.ar/productos/memoria-ram-8gb-ddr4-3600mhz-rgb-dimm-kingston-kf436c17bb2a-8/",
+          "name": "memoria ram 8gb ddr4 3600mhz rgb dimm kingston kf436c17bb2a 8",
+          "category": "memoria-ram"
+        },
+        "version": 1,
+        "confidence": null,
+        "reviewedAt": "2026-10-06T00:27:51.909Z",
+        "sourceIdentity": {
+          "title": "MEMORIA RAM 8GB DDR4 3600Mhz RGB DIMM KINGSTON KF436C17BB2A/8",
+          "storeSku": "37000010",
+          "listingRef": "37bytes:url:https://37bytes.com.ar/productos/memoria-ram-8gb-ddr4-3600mhz-rgb-dimm-kingston-kf436c17bb2a-8"
+        }
+      },
+      "name": "MEMORIA RAM 8GB DDR4 3600Mhz RGB DIMM KINGSTON KF436C17BB2A/8",
+      "category": "memoria-ram",
+      "brand": "Kingston",
+      "model": "MEMORIA RAM 8GB DDR4 3600Mhz RGB DIMM KINGSTON KF436C17BB2A/8",
+      "specs": {}
+    },
+    {
+      "store_id": "armytech",
+      "offer_id": "b277fec0-3330-45cc-9421-9f9f04d2e441",
+      "product_id": "armytech-5782-procesador-amd-ryzen-5-3500x-am4-s-video-bulk-sin-cooler-y-sin-caja",
+      "url": "https://www.armytech.com.ar/procesadores/5782-procesador-amd-ryzen-5-3500x-am4-s-video-bulk-sin-cooler-y-sin-caja.html",
+      "price": "79792.00",
+      "stock": "low-stock",
+      "last_updated": "2026-06-01 06:41:58.551+00",
+      "source_identity": null,
+      "identity_review": null,
+      "name": "Procesador Amd Ryzen 5 3500x Am4 S/video Bulk (sin Cooler Y Sin Caja)",
+      "category": "procesadores",
+      "brand": "AMD",
+      "model": "Procesador Amd Ryzen 5 3500x Am4 S/video Bulk (sin Cooler Y Sin Caja)",
+      "specs": {}
+    },
+    {
+      "store_id": "beings",
+      "offer_id": "756fccae-4f0c-4f5a-a805-32b6b2b7189b",
+      "product_id": "beings-procesador-intel-i7-12700",
+      "url": "https://beings.com.ar/product/procesador-intel-i7-12700/",
+      "price": "662357.00",
+      "stock": "in-stock",
+      "last_updated": "2026-09-04 09:30:25.773+00",
+      "source_identity": null,
+      "identity_review": null,
+      "name": "Procesador Intel Core i7 12700 - Socket 1700",
+      "category": "procesadores",
+      "brand": "Intel",
+      "model": "Procesador Intel Core i7 12700 - Socket 1700",
+      "specs": {}
+    },
+    {
+      "store_id": "clickgaming",
+      "offer_id": "0e872f6c-1aaf-4740-9bbc-1494e892cd2a",
+      "product_id": "clickgaming-82398-procesador-amd-am5-ryzen-9-7900x-82398",
+      "url": "https://clickgaming.com.ar/componentes-de-pc/procesadores/procesador-amd-am5-ryzen-9-7900x-82398.html",
+      "price": "700289.00",
+      "stock": "unknown",
+      "last_updated": "2026-06-26 06:29:53.522+00",
+      "source_identity": null,
+      "identity_review": null,
+      "name": "Procesador Amd (am5) Ryzen 9 7900x",
+      "category": "procesadores",
+      "brand": "AMD",
+      "model": "Procesador Amd (am5) Ryzen 9 7900x",
+      "specs": {}
+    },
+    {
+      "store_id": "compragamer",
+      "offer_id": "da21284f-27ed-4dd7-8b3c-7a6f605001e4",
+      "product_id": "agrupado-procesadores-procesador-amd-ryzen-5-7600x-5-3ghz-turbo-am5-no-incluye-cooler-c-video",
+      "url": "https://compragamer.com/producto/14066",
+      "price": "351700.00",
+      "stock": "in-stock",
+      "last_updated": "2026-03-05 02:07:21.24+00",
+      "source_identity": null,
+      "identity_review": null,
+      "name": "Procesador AMD Ryzen 5 7600X 5.3GHz Turbo AM5 - No incluye Cooler - C/VIDEO",
+      "category": "procesadores",
+      "brand": "AMD",
+      "model": "Procesador AMD Ryzen 5 7600X 5.3GHz Turbo AM5 - No incluye Cooler - C/VIDEO",
+      "specs": {}
+    },
+    {
+      "store_id": "compugarden",
+      "offer_id": "0fc5e9e2-3834-4e31-a599-ba26623c565f",
+      "product_id": "agrupado-memoria-ram-3200-8gb-aimerican-ddr4-mhz-telekinesis-hvk7lt",
+      "url": "https://www.compugarden.com.ar/DETALLE/Memoria-Ram-Kimota-8GB-2666-Mhz-DDR4/ITEM_ID=19838/OR=/H=/CANT=/compugarden.aspx",
+      "price": "99229.00",
+      "stock": "in-stock",
+      "last_updated": "2026-08-14 14:51:12.588+00",
+      "source_identity": null,
+      "identity_review": null,
+      "name": "Memoria Ram Aimerican Telekinesis 8gb 3200 Mhz DDR4",
+      "category": "memoria-ram",
+      "brand": "Generica",
+      "model": "Memoria Ram Aimerican Telekinesis 8gb 3200 Mhz DDR4",
+      "specs": {}
+    },
+    {
+      "store_id": "dinobyte",
+      "offer_id": "d07a9641-8a09-4be8-98f6-8105d8bce70a",
+      "product_id": "dinobyte-api-2453938",
+      "url": "https://dinobyte.ar/producto/microprocesador-amd-ryzen-7-5700x3d-sin-cooler/",
+      "price": "541041.00",
+      "stock": "out-of-stock",
+      "last_updated": "2026-10-06 17:30:54.329+00",
+      "source_identity": {
+        "title": "Microprocesador Amd Ryzen 7 5700X3D (Sin Cooler)",
+        "sourceId": "2453938",
+        "storeSku": "CPU162",
+        "listingRef": "dinobyte:url:https://dinobyte.ar/producto/microprocesador-amd-ryzen-7-5700x3d-sin-cooler"
+      },
+      "identity_review": {
+        "model": null,
+        "proof": {
+          "method": "exact-attributes",
+          "version": 1,
+          "attributes": {
+            "model": "5700",
+            "cooler": "excluded",
+            "family": "ryzen7",
+            "suffixes": "x3d",
+            "condition": "",
+            "packaging": ""
+          }
+        },
+        "reason": "exact-attributes",
+        "status": "consistent",
+        "subject": {
+          "url": "https://dinobyte.ar/producto/microprocesador-amd-ryzen-7-5700x3d-sin-cooler/",
+          "name": "microprocesador amd ryzen 7 5700x3d sin cooler",
+          "category": "procesadores"
+        },
+        "version": 1,
+        "confidence": null,
+        "reviewedAt": "2026-10-06T17:30:56.641Z",
+        "sourceIdentity": {
+          "title": "Microprocesador Amd Ryzen 7 5700X3D (Sin Cooler)",
+          "sourceId": "2453938",
+          "storeSku": "CPU162",
+          "listingRef": "dinobyte:url:https://dinobyte.ar/producto/microprocesador-amd-ryzen-7-5700x3d-sin-cooler"
+        }
+      },
+      "name": "Microprocesador Amd Ryzen 7 5700X3D (Sin Cooler)",
+      "category": "procesadores",
+      "brand": "AMD",
+      "model": "Microprocesador Amd Ryzen 7 5700X3D (Sin Cooler)",
+      "specs": {
+        "SKU": "CPU162",
+        "SourceListingId": "2453938"
+      }
+    },
+    {
+      "store_id": "fullh4rd",
+      "offer_id": "3a91c2d9-9c0e-4d00-804c-5c56b5213c91",
+      "product_id": "agrupado-procesadores-combo-9800x3d-amd-b650-combo-ryzen",
+      "url": "https://www.fullh4rd.com.ar/prod/18970/combo-amd-ryzen-7-9800x3d-b650",
+      "price": "1006780.00",
+      "stock": "in-stock",
+      "last_updated": "2026-03-05 02:20:09.294+00",
+      "source_identity": null,
+      "identity_review": null,
+      "name": "COMBO AMD RYZEN 7 9800X3D+B650",
+      "category": "procesadores",
+      "brand": "AMD",
+      "model": "COMBO AMD RYZEN 7 9800X3D+B650",
+      "specs": {}
+    },
+    {
+      "store_id": "gamerspoint",
+      "offer_id": "3108d829-be47-4a42-b755-fe36ecaf3bf6",
+      "product_id": "agrupado-memoria-ram-crucial-32gb-1n2cvji",
+      "url": "https://www.gamerspoint.com.ar/producto/memoria-ram-crucial-32gb-3200mts-pro-ddr4-cl22/",
+      "price": "533508.00",
+      "stock": "in-stock",
+      "last_updated": "2026-10-05 16:30:36.121+00",
+      "source_identity": {
+        "title": "MEMORIA RAM CRUCIAL 32GB 3200MTS PRO DDR4 CL22",
+        "sourceId": "8883",
+        "storeSku": "CP32G4dfra32a",
+        "listingRef": "gamerspoint:url:https://gamerspoint.com.ar/producto/memoria-ram-crucial-32gb-3200mts-pro-ddr4-cl22"
+      },
+      "identity_review": {
+        "model": null,
+        "reason": "provider-unavailable",
+        "status": "needs-review",
+        "subject": {
+          "url": "https://www.gamerspoint.com.ar/producto/memoria-ram-crucial-32gb-3200mts-pro-ddr4-cl22/",
+          "name": "memoria ram crucial pro 32gb 1 32 3200mts cl22 ddr4",
+          "category": "memoria-ram"
+        },
+        "version": 1,
+        "confidence": null,
+        "reviewedAt": "2026-10-05T16:30:57.789Z",
+        "sourceIdentity": {
+          "title": "MEMORIA RAM CRUCIAL 32GB 3200MTS PRO DDR4 CL22",
+          "sourceId": "8883",
+          "storeSku": "CP32G4dfra32a",
+          "listingRef": "gamerspoint:url:https://gamerspoint.com.ar/producto/memoria-ram-crucial-32gb-3200mts-pro-ddr4-cl22"
+        }
+      },
+      "name": "Memoria Ram CRUCIAL PRO 32gb 1×32 3200mts cl22 DDR4",
+      "category": "memoria-ram",
+      "brand": "Crucial",
+      "model": "Memoria Ram CRUCIAL PRO 32gb 1×32 3200mts cl22 DDR4",
+      "specs": {}
+    },
+    {
+      "store_id": "gamingcity",
+      "offer_id": "4ab5baed-61da-4d5f-ba4e-e9deb58c4f93",
+      "product_id": "agrupado-memoria-ram-corsair-16gb-12nj1or",
+      "url": "https://www.gamingcity.com.ar/ddr4-corsair-dominator-platinum-rgb-ddr4-16gb-4000mhz-white--det--12555",
+      "price": "413249.00",
+      "stock": "in-stock",
+      "last_updated": "2026-08-14 14:51:11.978+00",
+      "source_identity": null,
+      "identity_review": null,
+      "name": "Memoria Ddr4 16Gb (2X8) 4000Mhz Corsair Dominator Platinum Rgb White",
+      "category": "memoria-ram",
+      "brand": "Corsair",
+      "model": "Memoria Ddr4 16Gb (2X8) 4000Mhz Corsair Dominator Platinum Rgb White",
+      "specs": {}
+    },
+    {
+      "store_id": "gezatek",
+      "offer_id": "e6d6530b-ef53-4339-b3c6-db4520d8878d",
+      "product_id": "agrupado-procesadores-16-2ghz-9800x3d-am5-amd-nucleos-ryzen-threads",
+      "url": "https://www.gezatek.com.ar/tienda/procesadores-amd/2505-micro-amd-ryzen-7-9800x3d---8-nucleos--16-threads-52ghz-am5.html",
+      "price": "809999.00",
+      "stock": "in-stock",
+      "last_updated": "2026-03-05 02:19:51.241+00",
+      "source_identity": null,
+      "identity_review": null,
+      "name": "Micro AMD Ryzen 7 9800X3D - 8 Núcleos / 16 Threads 5.2Ghz AM5",
+      "category": "procesadores",
+      "brand": "AMD",
+      "model": "Micro AMD Ryzen 7 9800X3D - 8 Núcleos / 16 Threads 5.2Ghz AM5",
+      "specs": {}
+    },
+    {
+      "store_id": "goldentechstore",
+      "offer_id": "a1eafdc4-d407-4c0d-8feb-c24568c39ef1",
+      "product_id": "agrupado-memoria-ram-patriot-16gb-umr8lz",
+      "url": "https://goldentechstore.com.ar/producto/memoria-ram-ddr5-16gb-xpg-6000mhz-lancer-blade-rgb-black/",
+      "price": "456220.00",
+      "stock": "in-stock",
+      "last_updated": "2026-06-07 06:37:38.821+00",
+      "source_identity": null,
+      "identity_review": null,
+      "name": "Memoria Ram Ddr5 16Gb 6000Mhz Patriot Viper Venom",
+      "category": "memoria-ram",
+      "brand": "Generica",
+      "model": "Memoria Ram Ddr5 16Gb 6000Mhz Patriot Viper Venom",
+      "specs": {}
+    },
+    {
+      "store_id": "hardcore",
+      "offer_id": "25ecd700-6759-42ad-8612-9b0548a616d2",
+      "product_id": "agrupado-perifericos-2x8gb-3200mhz-corsair-ddr4-pro-sl-11sffrj",
+      "url": "https://hardcorecomputacion.com.ar/producto/memoria-corsair-pro-sl-2x8gb-3200mhz/",
+      "price": "274500.00",
+      "stock": "in-stock",
+      "last_updated": "2026-08-03 16:17:59.359+00",
+      "source_identity": null,
+      "identity_review": null,
+      "name": "Memoria Corsair Pro SL 2x8GB DDR4 3200mhz",
+      "category": "memoria-ram",
+      "brand": "Corsair",
+      "model": "Memoria Corsair Pro SL 2x8GB DDR4 3200mhz",
+      "specs": {}
+    },
+    {
+      "store_id": "hftecnologia",
+      "offer_id": "011ed6d1-04aa-4b42-9eef-8524c61dbab5",
+      "product_id": "hftecnologia-539689-memoria-ram-netac-shadow-ii-ddr5-4800-16gb-c40-black",
+      "url": "https://hftecnologia.com.ar/539689-componentes-de-pc-memoria-ram-netac-shadow-ii-ddr5-4800-16gb-c40-black",
+      "price": "409957.00",
+      "stock": "out-of-stock",
+      "last_updated": "2026-10-02 03:21:11.912+00",
+      "source_identity": {
+        "title": "Memoria Ram Netac Shadow II Ddr5 4800 16Gb C40 Black",
+        "listingRef": "hftecnologia:url:https://hftecnologia.com.ar/539689-componentes-de-pc-memoria-ram-netac-shadow-ii-ddr5-4800-16gb-c40-black"
+      },
+      "identity_review": null,
+      "name": "Memoria Ram Netac Shadow II Ddr5 4800 16Gb C40 Black",
+      "category": "memoria-ram",
+      "brand": "Generica",
+      "model": "Memoria Ram Netac Shadow II Ddr5 4800 16Gb C40 Black",
+      "specs": {}
+    },
+    {
+      "store_id": "hypergaming",
+      "offer_id": "9447cf9a-7d22-4b39-a7fa-5f6c8856651e",
+      "product_id": "hypergaming-121809-memoria-8gb-3200mhz-vengeance-lpx-corsair-121809",
+      "url": "https://hypergaming.com.ar/memorias-ram/memoria-pc/memoria-8gb-3200mhz-vengeance-lpx-corsair-121809.html",
+      "price": "132199.00",
+      "stock": "unknown",
+      "last_updated": "2026-05-21 06:30:16.748+00",
+      "source_identity": null,
+      "identity_review": null,
+      "name": "Memoria 8gb 3200mhz Vengeance Lpx Corsair",
+      "category": "memoria-ram",
+      "brand": "Corsair",
+      "model": "Memoria 8gb 3200mhz Vengeance Lpx Corsair",
+      "specs": {}
+    },
+    {
+      "store_id": "integradosargentinos",
+      "offer_id": "dcb2596f-ca9a-4082-b2d0-f5cfaadd4fc6",
+      "product_id": "integradosargentinos-313190475-procesador-intel-core-ultra-5-245k-4-2-ghz-24mb-lga1851",
+      "url": "https://www.integradosargentinos.com/productos/procesador-intel-core-ultra-5-245k-4-2-ghz-24mb-lga1851/",
+      "price": "634908.00",
+      "stock": "in-stock",
+      "last_updated": "2026-10-06 17:31:55.197+00",
+      "source_identity": {
+        "title": "Procesador Intel Core Ultra 5 245K 4.2 GHz 24MB LGA1851",
+        "storeSku": "BX80768245K",
+        "listingRef": "integradosargentinos:url:https://integradosargentinos.com/productos/procesador-intel-core-ultra-5-245k-4-2-ghz-24mb-lga1851"
+      },
+      "identity_review": {
+        "model": null,
+        "reason": "provider-unavailable",
+        "status": "needs-review",
+        "subject": {
+          "url": "https://www.integradosargentinos.com/productos/procesador-intel-core-ultra-5-245k-4-2-ghz-24mb-lga1851/",
+          "name": "procesador intel core ultra 5 245k 4 2 ghz 24mb lga1851",
+          "category": "procesadores"
+        },
+        "version": 1,
+        "confidence": null,
+        "reviewedAt": "2026-10-06T17:32:04.239Z",
+        "sourceIdentity": {
+          "title": "Procesador Intel Core Ultra 5 245K 4.2 GHz 24MB LGA1851",
+          "storeSku": "BX80768245K",
+          "listingRef": "integradosargentinos:url:https://integradosargentinos.com/productos/procesador-intel-core-ultra-5-245k-4-2-ghz-24mb-lga1851"
+        }
+      },
+      "name": "Procesador Intel Core Ultra 5 245K 4.2 GHz 24MB LGA1851",
+      "category": "procesadores",
+      "brand": "Intel",
+      "model": "Procesador Intel Core Ultra 5 245K 4.2 GHz 24MB LGA1851",
+      "specs": {}
+    },
+    {
+      "store_id": "katech",
+      "offer_id": "00261f6f-eb55-44a1-b1ad-9ef70a2a6040",
+      "product_id": "agrupado-procesadores-9800x3d-am5-amd-ryzen",
+      "url": "https://katech.com.ar/producto/procesador-amd-ryzen-7-9800x3d-am5-2/",
+      "price": "844710.00",
+      "stock": "unknown",
+      "last_updated": "2026-10-01 23:00:15.417+00",
+      "source_identity": {
+        "title": "PROCESADOR AMD RYZEN 7 9800X3D AM5",
+        "storeSku": "CPU344",
+        "listingRef": "katech:url:https://katech.com.ar/producto/procesador-amd-ryzen-7-9800x3d-am5-2"
+      },
+      "identity_review": null,
+      "name": "PROCESADOR AMD RYZEN 7 9800X3D AM5",
+      "category": "procesadores",
+      "brand": "AMD",
+      "model": "PROCESADOR AMD RYZEN 7 9800X3D AM5",
+      "specs": {}
+    },
+    {
+      "store_id": "liontech",
+      "offer_id": "44a60eef-96ac-4342-8d5a-5fadd04ad202",
+      "product_id": "agrupado-procesadores-amd-ryzen-5-8500g-16gb-b620-1gtztfi",
+      "url": "https://liontech.com.ar/producto/procesador-amd-ryzen-5-8500g-3-50ghz-am5-ddr5/",
+      "price": "288078.00",
+      "stock": "out-of-stock",
+      "last_updated": "2026-10-06 17:35:16.415+00",
+      "source_identity": {
+        "title": "Procesador AMD Ryzen 5 8500G 3.50GHz AM5 DDR5",
+        "sourceId": "3408",
+        "storeSku": "100-100000931BOX",
+        "listingRef": "liontech:url:https://liontech.com.ar/producto/procesador-amd-ryzen-5-8500g-3-50ghz-am5-ddr5"
+      },
+      "identity_review": {
+        "model": null,
+        "proof": {
+          "method": "exact-attributes",
+          "version": 1,
+          "attributes": {
+            "model": "8500",
+            "cooler": "",
+            "family": "ryzen5",
+            "suffixes": "g",
+            "condition": "",
+            "packaging": ""
+          }
+        },
+        "reason": "exact-attributes",
+        "status": "consistent",
+        "subject": {
+          "url": "https://liontech.com.ar/producto/procesador-amd-ryzen-5-8500g-3-50ghz-am5-ddr5/",
+          "name": "procesador amd ryzen 5 8500g 5 0 ghz am5",
+          "category": "procesadores"
+        },
+        "version": 1,
+        "confidence": null,
+        "reviewedAt": "2026-10-06T17:35:40.658Z",
+        "sourceIdentity": {
+          "title": "Procesador AMD Ryzen 5 8500G 3.50GHz AM5 DDR5",
+          "sourceId": "3408",
+          "storeSku": "100-100000931BOX",
+          "listingRef": "liontech:url:https://liontech.com.ar/producto/procesador-amd-ryzen-5-8500g-3-50ghz-am5-ddr5"
+        }
+      },
+      "name": "Procesador Amd Ryzen 5 8500G 5.0 Ghz - AM5",
+      "category": "procesadores",
+      "brand": "AMD",
+      "model": "Procesador Amd Ryzen 5 8500G 5.0 Ghz - AM5",
+      "specs": {}
+    },
+    {
+      "store_id": "logg",
+      "offer_id": "b6f68484-2b74-4d22-903e-dce2f4fc9acf",
+      "product_id": "logg-59740-procesador-amd-ryzen-3-4100-4-0ghz-4mb-zen2-am4-c-cooler",
+      "url": "https://logg.com.ar/ProductDetail/Ryzen-3-4100-BOX",
+      "price": "94999.00",
+      "stock": "in-stock",
+      "last_updated": "2026-09-04 09:30:23.177+00",
+      "source_identity": null,
+      "identity_review": null,
+      "name": "Procesador AMD Ryzen 3 4100 4.0GHz 4MB Zen2 AM4 c/ Cooler",
+      "category": "procesadores",
+      "brand": "AMD",
+      "model": "Procesador AMD Ryzen 3 4100 4.0GHz 4MB Zen2 AM4 c/ Cooler",
+      "specs": {}
+    },
+    {
+      "store_id": "maximus",
+      "offer_id": "d0fedc60-b3f7-4b2b-baf3-d49ac5b0b1eb",
+      "product_id": "agrupado-procesadores-amd-ryzen-5-8600g",
+      "url": "https://www.maximus.com.ar/Producto/Micro-AMD-Ryzen-5-8600G-50-Ghz-AM5/ITEM=13444/maximus.aspx?PN=100-100001237BOX",
+      "price": "359100.00",
+      "stock": "unknown",
+      "last_updated": "2026-10-02 10:22:10.275+00",
+      "source_identity": {
+        "title": "Micro AMD Ryzen 5 8600G 5.0 Ghz AM5",
+        "storeSku": "100-100001237BOX",
+        "listingRef": "maximus:id:13444"
+      },
+      "identity_review": null,
+      "name": "Procesador Amd Ryzen 5 8600G 5.3 Ghz - AM5",
+      "category": "procesadores",
+      "brand": "AMD",
+      "model": "Procesador Amd Ryzen 5 8600G 5.3 Ghz - AM5",
+      "specs": {}
+    },
+    {
+      "store_id": "maxtecno",
+      "offer_id": "a6c4db45-7ea3-4156-8e51-a23c78b25014",
+      "product_id": "maxtecno-api-953791",
+      "url": "https://maxtecno.com.ar/producto/memoria-ddr4-8-gb-3200-mhz-rgb-corsair-vengeance-outlet/",
+      "price": "157013.14",
+      "stock": "in-stock",
+      "last_updated": "2026-10-06 17:30:00.808+00",
+      "source_identity": {
+        "title": "Memoria Ddr4 8 Gb 3200 Mhz Rgb Corsair Vengeance - Outlet",
+        "sourceId": "953791",
+        "storeSku": "PT_24302",
+        "listingRef": "maxtecno:url:https://maxtecno.com.ar/producto/memoria-ddr4-8-gb-3200-mhz-rgb-corsair-vengeance-outlet"
+      },
+      "identity_review": {
+        "model": null,
+        "reason": "provider-unavailable",
+        "status": "needs-review",
+        "subject": {
+          "url": "https://maxtecno.com.ar/producto/memoria-ddr4-8-gb-3200-mhz-rgb-corsair-vengeance-outlet/",
+          "name": "memoria ddr4 8 gb 3200 mhz rgb corsair vengeance outlet",
+          "category": "memoria-ram"
+        },
+        "version": 1,
+        "confidence": null,
+        "reviewedAt": "2026-10-06T17:30:04.028Z",
+        "sourceIdentity": {
+          "title": "Memoria Ddr4 8 Gb 3200 Mhz Rgb Corsair Vengeance - Outlet",
+          "sourceId": "953791",
+          "storeSku": "PT_24302",
+          "listingRef": "maxtecno:url:https://maxtecno.com.ar/producto/memoria-ddr4-8-gb-3200-mhz-rgb-corsair-vengeance-outlet"
+        }
+      },
+      "name": "Memoria Ddr4 8 Gb 3200 Mhz Rgb Corsair Vengeance - Outlet",
+      "category": "memoria-ram",
+      "brand": "Corsair",
+      "model": "Memoria Ddr4 8 Gb 3200 Mhz Rgb Corsair Vengeance - Outlet",
+      "specs": {
+        "SKU": "PT_24302",
+        "SourceListingId": "953791"
+      }
+    },
+    {
+      "store_id": "megasoft",
+      "offer_id": "c62874d8-b12b-4033-a7b2-164c63ac844f",
+      "product_id": "megasoft-182029-memoria-ram-sodimm-ddr4-16gb-3200-mhz-adata-182029",
+      "url": "https://megasoftargentina.com.ar/Memorias-Ram-/memorias-ddr4/memoria-ram-sodimm-ddr4-16gb-3200-mhz-adata-182029.html",
+      "price": "220395.00",
+      "stock": "out-of-stock",
+      "last_updated": "2026-10-06 16:24:34.402+00",
+      "source_identity": {
+        "title": "Memoria Ram SODIMM DDR4 16Gb 3200 Mhz ADATA",
+        "storeSku": "182029",
+        "listingRef": "megasoft:url:https://megasoftargentina.com.ar/Memorias-Ram-/memorias-ddr4/memoria-ram-sodimm-ddr4-16gb-3200-mhz-adata-182029.html"
+      },
+      "identity_review": {
+        "model": null,
+        "reason": "provider-unavailable",
+        "status": "needs-review",
+        "subject": {
+          "url": "https://megasoftargentina.com.ar/Memorias-Ram-/memorias-ddr4/memoria-ram-sodimm-ddr4-16gb-3200-mhz-adata-182029.html",
+          "name": "memoria ram sodimm ddr4 16gb 3200 mhz adata",
+          "category": "memoria-ram"
+        },
+        "version": 1,
+        "confidence": null,
+        "reviewedAt": "2026-10-06T16:24:48.879Z",
+        "sourceIdentity": {
+          "title": "Memoria Ram SODIMM DDR4 16Gb 3200 Mhz ADATA",
+          "storeSku": "182029",
+          "listingRef": "megasoft:url:https://megasoftargentina.com.ar/Memorias-Ram-/memorias-ddr4/memoria-ram-sodimm-ddr4-16gb-3200-mhz-adata-182029.html"
+        }
+      },
+      "name": "Memoria Ram SODIMM DDR4 16Gb 3200 Mhz ADATA",
+      "category": "memoria-ram",
+      "brand": "Generica",
+      "model": "Memoria Ram SODIMM DDR4 16Gb 3200 Mhz ADATA",
+      "specs": {}
+    },
+    {
+      "store_id": "mexx",
+      "offer_id": "5b184418-eb20-4a67-b5ce-77729f5101e3",
+      "product_id": "agrupado-memoria-ram-16gb-3200-armor-ddr4-hiksemi-mhz-p9piom",
+      "url": "https://www.mexx.com.ar/productos-rubro/memorias-ram/51471-memoria-ram-ddr4-16gb-3200-mhz-x-micro-value.html",
+      "price": "151119.00",
+      "stock": "in-stock",
+      "last_updated": "2026-08-14 14:51:10.846+00",
+      "source_identity": null,
+      "identity_review": null,
+      "name": "Memoria Ram DDR4 - 16Gb 3200 Mhz X-Micro Value",
+      "category": "memoria-ram",
+      "brand": "Generica",
+      "model": "Memoria Ram DDR4 - 16Gb 3200 Mhz X-Micro Value",
+      "specs": {}
+    },
+    {
+      "store_id": "noxie",
+      "offer_id": "28b7093b-396a-4978-9fd5-0a2066cbc0b7",
+      "product_id": "noxie-193357-procesador-intel-core-i5-12400f-6-nucleos-lga1700-s-cooler-y-s-video-oem-tray-193357",
+      "url": "https://noxiestore.com/procesadores/intel/procesador-intel-core-i5-12400f-6-nucleos-lga1700-s-cooler-y-s-video-oem-tray-193357.html",
+      "price": "230000.00",
+      "stock": "in-stock",
+      "last_updated": "2026-10-04 17:27:59.98+00",
+      "source_identity": {
+        "title": "Procesador Intel Core I5 12400f 6 Nucleos Lga1700 S-cooler Y S-video Oem-tray",
+        "storeSku": "12400F-TRAY",
+        "listingRef": "noxie:url:https://noxiestore.com/procesadores/intel/procesador-intel-core-i5-12400f-6-nucleos-lga1700-s-cooler-y-s-video-oem-tray-193357.html"
+      },
+      "identity_review": {
+        "model": null,
+        "proof": {
+          "method": "exact-attributes",
+          "version": 1,
+          "attributes": {
+            "model": "12400",
+            "cooler": "excluded",
+            "family": "corei5",
+            "suffixes": "f",
+            "condition": "",
+            "packaging": "oem-tray"
+          }
+        },
+        "reason": "exact-attributes",
+        "status": "consistent",
+        "subject": {
+          "url": "https://noxiestore.com/procesadores/intel/procesador-intel-core-i5-12400f-6-nucleos-lga1700-s-cooler-y-s-video-oem-tray-193357.html",
+          "name": "procesador intel core i5 12400f 6 nucleos lga1700 s cooler y s video oem tray",
+          "category": "procesadores"
+        },
+        "version": 1,
+        "confidence": null,
+        "reviewedAt": "2026-10-04T17:28:29.049Z",
+        "sourceIdentity": {
+          "title": "Procesador Intel Core I5 12400f 6 Nucleos Lga1700 S-cooler Y S-video Oem-tray",
+          "storeSku": "12400F-TRAY",
+          "listingRef": "noxie:url:https://noxiestore.com/procesadores/intel/procesador-intel-core-i5-12400f-6-nucleos-lga1700-s-cooler-y-s-video-oem-tray-193357.html"
+        }
+      },
+      "name": "Procesador Intel Core I5 12400f 6 Nucleos Lga1700 S-cooler Y S-video Oem-tray",
+      "category": "procesadores",
+      "brand": "Intel",
+      "model": "Procesador Intel Core I5 12400f 6 Nucleos Lga1700 S-cooler Y S-video Oem-tray",
+      "specs": {}
+    },
+    {
+      "store_id": "portaltech",
+      "offer_id": "55c3c78f-c47f-4476-a633-2e6a442bdfd1",
+      "product_id": "portaltech-procesador-amd-am5-ryzen-5-7600x",
+      "url": "https://portalstore.com.ar/producto/procesador-amd-am5-ryzen-5-7600x",
+      "price": "425500.00",
+      "stock": "unknown",
+      "last_updated": "2026-09-04 09:30:30.73+00",
+      "source_identity": null,
+      "identity_review": null,
+      "name": "PROCESADOR AMD (AM5) RYZEN 5 7600X",
+      "category": "procesadores",
+      "brand": "AMD",
+      "model": "PROCESADOR AMD (AM5) RYZEN 5 7600X",
+      "specs": {}
+    },
+    {
+      "store_id": "rockethard",
+      "offer_id": "fc5092a0-b323-4e39-a6ac-bf657dd55721",
+      "product_id": "rockethard-162084-memoria-corsair-32gb-2x16gb-6000-mhz-vengeance-amd-expo-ddr5-162084",
+      "url": "https://rockethard.com.ar/hardware/memoria-ddr5/memoria-corsair-32gb-2x16gb-6000-mhz-vengeance-amd-expo-ddr5-162084.html",
+      "price": "890594.00",
+      "stock": "out-of-stock",
+      "last_updated": "2026-10-06 17:35:38.658+00",
+      "source_identity": {
+        "title": "Memoria Corsair 32gb (2x16gb) 6000 Mhz Vengeance Amd Expo Ddr5",
+        "storeSku": "CMK32GX5M2E6000Z36",
+        "listingRef": "rockethard:url:https://rockethard.com.ar/hardware/memoria-ddr5/memoria-corsair-32gb-2x16gb-6000-mhz-vengeance-amd-expo-ddr5-162084.html"
+      },
+      "identity_review": {
+        "model": null,
+        "reason": "provider-unavailable",
+        "status": "needs-review",
+        "subject": {
+          "url": "https://rockethard.com.ar/hardware/memoria-ddr5/memoria-corsair-32gb-2x16gb-6000-mhz-vengeance-amd-expo-ddr5-162084.html",
+          "name": "memoria corsair 32gb 2x16gb 6000 mhz vengeance amd expo ddr5",
+          "category": "memoria-ram"
+        },
+        "version": 1,
+        "confidence": null,
+        "reviewedAt": "2026-10-06T17:35:48.410Z",
+        "sourceIdentity": {
+          "title": "Memoria Corsair 32gb (2x16gb) 6000 Mhz Vengeance Amd Expo Ddr5",
+          "storeSku": "CMK32GX5M2E6000Z36",
+          "listingRef": "rockethard:url:https://rockethard.com.ar/hardware/memoria-ddr5/memoria-corsair-32gb-2x16gb-6000-mhz-vengeance-amd-expo-ddr5-162084.html"
+        }
+      },
+      "name": "Memoria Corsair 32gb (2x16gb) 6000 Mhz Vengeance Amd Expo Ddr5",
+      "category": "memoria-ram",
+      "brand": "AMD",
+      "model": "Memoria Corsair 32gb (2x16gb) 6000 Mhz Vengeance Amd Expo Ddr5",
+      "specs": {}
+    },
+    {
+      "store_id": "scphardstore",
+      "offer_id": "942ebc52-39f3-44b6-8019-793e2a9a002e",
+      "product_id": "agrupado-memoria-ram-shadow-16gb-1g3im22",
+      "url": "https://www.scphardstore.com/producto/memoria-ram-ddr5-netac-16gb-6000mhz-shadow-ii-black-cl38/",
+      "price": "505572.00",
+      "stock": "in-stock",
+      "last_updated": "2026-10-02 12:26:53.183+00",
+      "source_identity": {
+        "title": "Memoria RAM DDR5 NETAC 16GB 6000MHz Shadow II Black CL38",
+        "listingRef": "scphardstore:url:https://scphardstore.com/producto/memoria-ram-ddr5-netac-16gb-6000mhz-shadow-ii-black-cl38"
+      },
+      "identity_review": null,
+      "name": "Memoria RAM DDR5 NETAC 16GB 6000MHz Shadow II Black CL38",
+      "category": "memoria-ram",
+      "brand": "Generica",
+      "model": "Memoria RAM DDR5 NETAC 16GB 6000MHz Shadow II Black CL38",
+      "specs": {}
+    },
+    {
+      "store_id": "shopgamer",
+      "offer_id": "1abc16b4-1969-4325-8b52-557a211e3316",
+      "product_id": "agrupado-memoria-ram-16gb-5600mhz-ddr5-lexar-sodimm-glhpma",
+      "url": "https://www.shopgamer.com.ar/productos/shp-memoria-lexar-udimm-ddr5-16gb-5600mhz-ld5u16g56c46st-bgs/",
+      "price": "512612.00",
+      "stock": "out-of-stock",
+      "last_updated": "2026-10-05 03:27:10.845+00",
+      "source_identity": {
+        "title": "Memoria Lexar Udimm Ddr5 16Gb 5600Mhz",
+        "storeSku": "LD5U16G56C46ST-BGS",
+        "listingRef": "shopgamer:url:https://shopgamer.com.ar/productos/shp-memoria-lexar-udimm-ddr5-16gb-5600mhz-ld5u16g56c46st-bgs"
+      },
+      "identity_review": {
+        "model": null,
+        "reason": "provider-unavailable",
+        "status": "needs-review",
+        "subject": {
+          "url": "https://www.shopgamer.com.ar/productos/shp-memoria-lexar-udimm-ddr5-16gb-5600mhz-ld5u16g56c46st-bgs/",
+          "name": "memoria ram lexar sodimm ddr5 16gb 5600mhz",
+          "category": "memoria-ram"
+        },
+        "version": 1,
+        "confidence": null,
+        "reviewedAt": "2026-10-05T03:27:35.168Z",
+        "sourceIdentity": {
+          "title": "Memoria Lexar Udimm Ddr5 16Gb 5600Mhz",
+          "storeSku": "LD5U16G56C46ST-BGS",
+          "listingRef": "shopgamer:url:https://shopgamer.com.ar/productos/shp-memoria-lexar-udimm-ddr5-16gb-5600mhz-ld5u16g56c46st-bgs"
+        }
+      },
+      "name": "Memoria RAM Lexar SODIMM DDR5 16GB 5600MHz",
+      "category": "memoria-ram",
+      "brand": "Generica",
+      "model": "Memoria RAM Lexar SODIMM DDR5 16GB 5600MHz",
+      "specs": {}
+    },
+    {
+      "store_id": "spacevideojuegos",
+      "offer_id": "c1eb9062-9cff-410e-9ca0-4404fe13252d",
+      "product_id": "spacevideojuegos-495569-memoria-ram-sodimm-ddr3-hiksemi-4gb-1600mhz-hiker",
+      "url": "https://spacegamer.com.ar/495569-componentes-de-pc-memoria-ram-sodimm-ddr3-hiksemi-4gb-1600mhz-hiker",
+      "price": "28000.00",
+      "stock": "out-of-stock",
+      "last_updated": "2026-10-06 00:27:47.695+00",
+      "source_identity": {
+        "title": "Memoria ram sodimm ddr3 HIKSEMI 4Gb 1600MHz Hiker",
+        "listingRef": "spacevideojuegos:url:https://spacegamer.com.ar/495569-componentes-de-pc-memoria-ram-sodimm-ddr3-hiksemi-4gb-1600mhz-hiker"
+      },
+      "identity_review": {
+        "model": null,
+        "reason": "provider-unavailable",
+        "status": "needs-review",
+        "subject": {
+          "url": "https://spacegamer.com.ar/495569-componentes-de-pc-memoria-ram-sodimm-ddr3-hiksemi-4gb-1600mhz-hiker",
+          "name": "memoria ram sodimm ddr3 hiksemi 4gb 1600mhz hiker",
+          "category": "memoria-ram"
+        },
+        "version": 1,
+        "confidence": null,
+        "reviewedAt": "2026-10-06T00:27:51.909Z",
+        "sourceIdentity": {
+          "title": "Memoria ram sodimm ddr3 HIKSEMI 4Gb 1600MHz Hiker",
+          "listingRef": "spacevideojuegos:url:https://spacegamer.com.ar/495569-componentes-de-pc-memoria-ram-sodimm-ddr3-hiksemi-4gb-1600mhz-hiker"
+        }
+      },
+      "name": "Memoria ram sodimm ddr3 HIKSEMI 4Gb 1600MHz Hiker",
+      "category": "memoria-ram",
+      "brand": "Generica",
+      "model": "Memoria ram sodimm ddr3 HIKSEMI 4Gb 1600MHz Hiker",
+      "specs": {}
+    },
+    {
+      "store_id": "thegamershop",
+      "offer_id": "80a63a99-f3ab-43d0-87e4-78228a6f09a9",
+      "product_id": "agrupado-procesadores-amd-ryzen-7-9800x3d-am5",
+      "url": "https://thegamershop.com.ar/producto/procesador-amd-am5-ryzen-7-9800x3d/",
+      "price": "806275.00",
+      "stock": "in-stock",
+      "last_updated": "2026-03-05 02:44:52.173+00",
+      "source_identity": null,
+      "identity_review": null,
+      "name": "Procesador AMD Ryzen 7 9800X3D 5.2GHz Turbo AM5 - No Incluye Cooler",
+      "category": "procesadores",
+      "brand": "AMD",
+      "model": "Procesador AMD Ryzen 7 9800X3D 5.2GHz Turbo AM5 - No Incluye Cooler",
+      "specs": {}
+    },
+    {
+      "store_id": "venex",
+      "offer_id": "e441a66d-49b7-4e7a-8f94-4b3fa9ffe53c",
+      "product_id": "agrupado-memoria-ram-16gb-3200-armor-ddr4-hiksemi-mhz-p9piom",
+      "url": "https://www.venex.com.ar/memorias-ram/desktop/memoria-ram-timetec-bulk-16gb-ddr4-3200mhz-cl22.html",
+      "price": "199990.00",
+      "stock": "in-stock",
+      "last_updated": "2026-08-14 14:51:11.498+00",
+      "source_identity": null,
+      "identity_review": null,
+      "name": "Memoria Ram DDR4 - 16Gb 3200 Mhz X-Micro Value",
+      "category": "memoria-ram",
+      "brand": "Generica",
+      "model": "Memoria Ram DDR4 - 16Gb 3200 Mhz X-Micro Value",
+      "specs": {}
+    },
+    {
+      "store_id": "vertexretail",
+      "offer_id": "dd4b9c97-c375-40e2-9916-23fc4832f3e8",
+      "product_id": "agrupado-procesadores-dual-flexispot-gas-ma8d2-monitor-negro-resorte-s-msvni5",
+      "url": "https://vrx.com.ar/productos/soporte-monitor-flexispot-simple-resorte-de-gas-ma8d2-negro-r9c61/",
+      "price": "269730.00",
+      "stock": "in-stock",
+      "last_updated": "2026-10-05 07:24:27.18+00",
+      "source_identity": {
+        "title": "Soporte monitor Flexispot dual MA8D2 Negro resorte de gas",
+        "storeSku": "ma8d2b",
+        "listingRef": "vertexretail:url:https://vrx.com.ar/productos/soporte-monitor-flexispot-simple-resorte-de-gas-ma8d2-negro-r9c61"
+      },
+      "identity_review": {
+        "model": null,
+        "reason": "provider-unavailable",
+        "status": "needs-review",
+        "subject": {
+          "url": "https://vrx.com.ar/productos/soporte-monitor-flexispot-simple-resorte-de-gas-ma8d2-negro-r9c61/",
+          "name": "soporte monitor flexispot dual ma8d2 negro resorte de gas",
+          "category": "procesadores"
+        },
+        "version": 1,
+        "confidence": null,
+        "reviewedAt": "2026-10-05T07:24:33.400Z",
+        "sourceIdentity": {
+          "title": "Soporte monitor Flexispot dual MA8D2 Negro resorte de gas",
+          "storeSku": "ma8d2b",
+          "listingRef": "vertexretail:url:https://vrx.com.ar/productos/soporte-monitor-flexispot-simple-resorte-de-gas-ma8d2-negro-r9c61"
+        }
+      },
+      "name": "Soporte monitor Flexispot dual MA8D2 Negro resorte de gas",
+      "category": "procesadores",
+      "brand": "Generica",
+      "model": "Soporte monitor Flexispot dual MA8D2 Negro resorte de gas",
+      "specs": {}
+    },
+    {
+      "store_id": "wiztech",
+      "offer_id": "5b3e7dfe-93ea-467d-874b-83d0eb701aaa",
+      "product_id": "agrupado-procesadores-amd-ryzen-5-8500g-16gb-b620-1gtztfi",
+      "url": "https://wiztech.com.ar/catalogo/producto/procesador/1084/amd-ryzen-5-8500g-promo-wiz",
+      "price": "225000.00",
+      "stock": "in-stock",
+      "last_updated": "2026-10-06 17:35:20.763+00",
+      "source_identity": {
+        "title": "AMD Ryzen 5 8500G Promo Wiz",
+        "listingRef": "wiztech:url:https://wiztech.com.ar/catalogo/producto/procesador/1084/amd-ryzen-5-8500g-promo-wiz"
+      },
+      "identity_review": {
+        "model": null,
+        "proof": {
+          "method": "exact-attributes",
+          "version": 1,
+          "attributes": {
+            "model": "8500",
+            "cooler": "",
+            "family": "ryzen5",
+            "suffixes": "g",
+            "condition": "",
+            "packaging": ""
+          }
+        },
+        "reason": "exact-attributes",
+        "status": "consistent",
+        "subject": {
+          "url": "https://wiztech.com.ar/catalogo/producto/procesador/1084/amd-ryzen-5-8500g-promo-wiz",
+          "name": "procesador amd ryzen 5 8500g 5 0 ghz am5",
+          "category": "procesadores"
+        },
+        "version": 1,
+        "confidence": null,
+        "reviewedAt": "2026-10-06T17:35:40.658Z",
+        "sourceIdentity": {
+          "title": "AMD Ryzen 5 8500G Promo Wiz",
+          "listingRef": "wiztech:url:https://wiztech.com.ar/catalogo/producto/procesador/1084/amd-ryzen-5-8500g-promo-wiz"
+        }
+      },
+      "name": "Procesador Amd Ryzen 5 8500G 5.0 Ghz - AM5",
+      "category": "procesadores",
+      "brand": "AMD",
+      "model": "Procesador Amd Ryzen 5 8500G 5.0 Ghz - AM5",
+      "specs": {}
+    },
+    {
+      "store_id": "xtpc",
+      "offer_id": "fbff69ad-c2ce-4c4e-aec4-6e53852601c3",
+      "product_id": "xtpc-27478-memoria-sodimm-16gb-ddr5-5600-kingston-fury-impact",
+      "url": "https://www.xt-pc.com.ar/prod/27478/memoria-sodimm-16gb-ddr5-5600-kingston-fury-impact",
+      "price": "541174.00",
+      "stock": "out-of-stock",
+      "last_updated": "2026-10-06 17:31:59.05+00",
+      "source_identity": {
+        "title": "MEMORIA SODIMM 16GB DDR5 5600 KINGSTON FURY IMPACT",
+        "storeSku": "MEM1853",
+        "listingRef": "xtpc:id:27478"
+      },
+      "identity_review": {
+        "model": null,
+        "reason": "provider-unavailable",
+        "status": "needs-review",
+        "subject": {
+          "url": "https://www.xt-pc.com.ar/prod/27478/memoria-sodimm-16gb-ddr5-5600-kingston-fury-impact",
+          "name": "memoria sodimm 16gb ddr5 5600 kingston fury impact",
+          "category": "memoria-ram"
+        },
+        "version": 1,
+        "confidence": null,
+        "reviewedAt": "2026-10-06T17:32:04.239Z",
+        "sourceIdentity": {
+          "title": "MEMORIA SODIMM 16GB DDR5 5600 KINGSTON FURY IMPACT",
+          "storeSku": "MEM1853",
+          "listingRef": "xtpc:id:27478"
+        }
+      },
+      "name": "MEMORIA SODIMM 16GB DDR5 5600 KINGSTON FURY IMPACT",
+      "category": "memoria-ram",
+      "brand": "Kingston",
+      "model": "MEMORIA SODIMM 16GB DDR5 5600 KINGSTON FURY IMPACT",
+      "specs": {}
+    }
+  ]
+}

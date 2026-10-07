@@ -1,0 +1,144 @@
+{
+  "recordedAt": "2026-10-07T03:08:18.675411+00:00",
+  "branch": "codex/fiabilidad-todas-tiendas",
+  "base": "dcefbe72998bafabd719e96d9568ab512f81751e",
+  "sourceHead": "1a09fb44be392104569fdb78fa901eac640892be",
+  "commits": [
+    {
+      "sha": "fb984a222f0b98f2992965db1320b80de45da5ce",
+      "subject": "fix(catalog): retain seed attempts and preparation failures",
+      "authoredLines": 283,
+      "generatedEvidenceLines": 0,
+      "sizeException": false,
+      "files": [
+        "docs/reports/fiabilidad-tiendas-2026-10-06/01-diagnostico-cola.md",
+        "src/lib/catalog/adaptive-refresh.test.ts",
+        "src/lib/catalog/adaptive-refresh.ts",
+        "src/lib/catalog/refresh-diagnostics.test.ts",
+        "src/lib/catalog/refresh-diagnostics.ts"
+      ]
+    },
+    {
+      "sha": "c4c4fa306fc6bb0cf9eb0937e433f974fd1f96fd",
+      "subject": "perf(catalog): prepare covering seed indexes with bounded regressions",
+      "authoredLines": 192,
+      "generatedEvidenceLines": 3301,
+      "sizeException": false,
+      "files": [
+        ".github/workflows/verify.yml",
+        "docs/reports/fiabilidad-tiendas-2026-10-06/02-indices-cola.md",
+        "docs/reports/fiabilidad-tiendas-2026-10-06/seed-benchmark-churn.json",
+        "docs/reports/fiabilidad-tiendas-2026-10-06/seed-benchmark-mixed.json",
+        "docs/reports/fiabilidad-tiendas-2026-10-06/seed-benchmark-summary.json",
+        "docs/reports/fiabilidad-tiendas-2026-10-06/seed-local.md",
+        "supabase/migrations/20261007023548_catalog_seed_covering_indexes.sql",
+        "supabase/tests/catalog-concurrency.test.mjs",
+        "supabase/tests/catalog_seed_covering.sql"
+      ]
+    },
+    {
+      "sha": "e366bc8b8eca8ab1e22b6eba2fd2c0e46b6fce48",
+      "subject": "fix(maximus): exclude suggestions and invalid ARS search prices",
+      "authoredLines": 108,
+      "generatedEvidenceLines": 0,
+      "sizeException": false,
+      "files": [
+        "docs/reports/fiabilidad-tiendas-2026-10-06/03-maximus-busqueda.md",
+        "src/lib/scrapers/maximus.test.ts",
+        "src/lib/scrapers/maximus.ts"
+      ]
+    },
+    {
+      "sha": "50aa1776c3a3aec3865ee78312e93e788d5fe8e4",
+      "subject": "feat(maximus): corroborate exact public detail price and online stock",
+      "authoredLines": 225,
+      "generatedEvidenceLines": 0,
+      "sizeException": false,
+      "files": [
+        "docs/reports/fiabilidad-tiendas-2026-10-06/04-maximus-detalle.md",
+        "src/lib/scrapers/maximus-known-detail.test.ts",
+        "src/lib/scrapers/maximus-known-detail.ts"
+      ]
+    },
+    {
+      "sha": "15cb2ff98e0a2731a36396159d228d9ad59767a2",
+      "subject": "fix(scrapers): corroborate principal offers and exact variant SKUs",
+      "authoredLines": 464,
+      "generatedEvidenceLines": 0,
+      "sizeException": true,
+      "files": [
+        "docs/reports/fiabilidad-tiendas-2026-10-06/05-evidencia-principal.md",
+        "src/lib/scrapers/known-product-detail.test.ts",
+        "src/lib/scrapers/known-product-detail.ts",
+        "src/lib/scrapers/product-detail-evidence.ts"
+      ]
+    },
+    {
+      "sha": "fccf4127c2c72fea223ee3f498682c7a4951ec3e",
+      "subject": "fix(tiendanube): preserve primary offer evidence and terminal conflicts",
+      "authoredLines": 307,
+      "generatedEvidenceLines": 0,
+      "sizeException": false,
+      "files": [
+        "docs/reports/fiabilidad-tiendas-2026-10-06/06-tiendanube.md",
+        "src/lib/scrapers/tiendanube-shared.test.ts",
+        "src/lib/scrapers/tiendanube-shared.ts"
+      ]
+    },
+    {
+      "sha": "5f3068469d9cf01e82f4f35092c3a7d92f859ecd",
+      "subject": "fix(catalog): prefer exact details and stop inconsistent fallbacks",
+      "authoredLines": 94,
+      "generatedEvidenceLines": 0,
+      "sizeException": false,
+      "files": [
+        "docs/reports/fiabilidad-tiendas-2026-10-06/07-consumidores.md",
+        "src/lib/catalog/on-demand/worker.test.ts",
+        "src/lib/catalog/on-demand/worker.ts",
+        "src/lib/products/products-detail-service.test.ts",
+        "src/lib/products/products-detail-service.ts"
+      ]
+    },
+    {
+      "sha": "9a1ad5fb6392fdec1db8e1795cdebe04d69c9148",
+      "subject": "fix(woocommerce): require corroborated ARS metadata prices",
+      "authoredLines": 112,
+      "generatedEvidenceLines": 0,
+      "sizeException": false,
+      "files": [
+        "docs/reports/fiabilidad-tiendas-2026-10-06/08-moneda-woo.md",
+        "src/lib/scrapers/woocommerce-shared.test.ts",
+        "src/lib/scrapers/woocommerce-shared.ts"
+      ]
+    },
+    {
+      "sha": "1a09fb44be392104569fdb78fa901eac640892be",
+      "subject": "fix(portaltech): preserve observation dates across render cache hits",
+      "authoredLines": 89,
+      "generatedEvidenceLines": 0,
+      "sizeException": false,
+      "files": [
+        "docs/reports/fiabilidad-tiendas-2026-10-06/09-fecha-portaltech.md",
+        "src/lib/scrapers/portaltech.test.ts",
+        "src/lib/scrapers/portaltech.ts"
+      ]
+    }
+  ],
+  "evidenceUnit": "Next commit includes readonly harness and final reports, identified by Git history; no self-referential final HEAD",
+  "budget": 400,
+  "smallestCohesiveException": 464,
+  "remotePushed": false,
+  "candidateDeployed": false,
+  "remoteMigrationApplied": false,
+  "migrationDecision": "deferred pending capacity and retention",
+  "publicationProposal": "publish sources and diagnostics only after approval; remote migration not part of proposal",
+  "closure": {
+    "localImplementation": true,
+    "localVerification": true,
+    "independentReview": true,
+    "allConfiguredSourcesInspected": 36,
+    "allCatalogCertified": false,
+    "refreshRecoveryProven": false,
+    "coverageG02Closed": false
+  }
+}

@@ -1,0 +1,534 @@
+{
+  "projectId": "zyiyziubpcpgoqlkcrie",
+  "definitions": [
+    {
+      "proname": "seed_catalog_refresh_queue",
+      "definition": "CREATE OR REPLACE FUNCTION public.seed_catalog_refresh_queue()\n RETURNS integer\n LANGUAGE plpgsql\n SET search_path TO 'pg_catalog', 'public'\n SET jit TO 'off'\n SET work_mem TO '32MB'\n SET enable_nestloop TO 'off'\n SET enable_mergejoin TO 'off'\nAS $function$\ndeclare changed integer;\nbegin\n insert into public.catalog_offer_refresh_state(offer_id,category)\n select pp.id,p.category from public.product_prices pp join public.products p on p.id=pp.product_id\n left join public.catalog_offer_refresh_state q on q.offer_id=pp.id\n where q.offer_id is null or q.category is distinct from p.category limit 500\n on conflict(offer_id) do update set category=excluded.category\n where catalog_offer_refresh_state.category is distinct from excluded.category;\n get diagnostics changed=row_count; return changed;\nend $function$\n",
+      "proconfig": [
+        "search_path=pg_catalog, public",
+        "jit=off",
+        "work_mem=32MB",
+        "enable_nestloop=off",
+        "enable_mergejoin=off"
+      ],
+      "prosecdef": false,
+      "owner": "postgres"
+    }
+  ],
+  "metadata": [
+    {
+      "evidence": {
+        "roles": [
+          {
+            "name": "anon",
+            "config": [
+              "statement_timeout=3s"
+            ]
+          },
+          {
+            "name": "authenticated",
+            "config": [
+              "statement_timeout=8s"
+            ]
+          },
+          {
+            "name": "authenticator",
+            "config": [
+              "session_preload_libraries=safeupdate",
+              "statement_timeout=8s",
+              "lock_timeout=8s"
+            ]
+          },
+          {
+            "name": "service_role",
+            "config": null
+          }
+        ],
+        "tables": [
+          {
+            "name": "products",
+            "bytes": 234864640,
+            "last_autovacuum": "2026-10-06T03:26:25.114287+00:00",
+            "last_autoanalyze": "2026-10-06T16:14:49.130548+00:00",
+            "estimated_dead_rows": 7570,
+            "estimated_live_rows": 59160
+          },
+          {
+            "name": "product_prices",
+            "bytes": 101294080,
+            "last_autovacuum": "2026-10-06T17:29:38.479516+00:00",
+            "last_autoanalyze": "2026-10-06T16:13:28.948219+00:00",
+            "estimated_dead_rows": 2913,
+            "estimated_live_rows": 73291
+          },
+          {
+            "name": "catalog_offer_refresh_state",
+            "bytes": 15630336,
+            "last_autovacuum": "2026-10-07T01:14:54.665846+00:00",
+            "last_autoanalyze": "2026-10-06T23:13:47.73704+00:00",
+            "estimated_dead_rows": 1451,
+            "estimated_live_rows": 76302
+          }
+        ],
+        "settings": {
+          "work_mem": "2184kB",
+          "server_version": "17.6",
+          "statement_timeout": "5s"
+        },
+        "queue_indexes": [
+          {
+            "index": "catalog_offer_refresh_state_pkey",
+            "definition": "CREATE UNIQUE INDEX catalog_offer_refresh_state_pkey ON public.catalog_offer_refresh_state USING btree (offer_id)"
+          },
+          {
+            "index": "catalog_offer_refresh_retry_idx",
+            "definition": "CREATE INDEX catalog_offer_refresh_retry_idx ON public.catalog_offer_refresh_state USING btree (next_attempt_at, leased_until)"
+          }
+        ]
+      }
+    }
+  ],
+  "plan": [
+    {
+      "QUERY PLAN": [
+        {
+          "Plan": {
+            "Node Type": "Limit",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 9093.84,
+            "Total Cost": 9202.96,
+            "Plan Rows": 500,
+            "Plan Width": 29,
+            "Plans": [
+              {
+                "Node Type": "Hash Join",
+                "Parent Relationship": "Outer",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Join Type": "Left",
+                "Startup Cost": 9093.84,
+                "Total Cost": 23341.2,
+                "Plan Rows": 65282,
+                "Plan Width": 29,
+                "Inner Unique": true,
+                "Hash Cond": "(pp.id = q.offer_id)",
+                "Filter": "((q.offer_id IS NULL) OR (q.category IS DISTINCT FROM p.category))",
+                "Plans": [
+                  {
+                    "Node Type": "Hash Join",
+                    "Parent Relationship": "Outer",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Join Type": "Inner",
+                    "Startup Cost": 6379.05,
+                    "Total Cost": 20434.01,
+                    "Plan Rows": 73291,
+                    "Plan Width": 29,
+                    "Inner Unique": false,
+                    "Hash Cond": "(p.id = pp.product_id)",
+                    "Plans": [
+                      {
+                        "Node Type": "Seq Scan",
+                        "Parent Relationship": "Outer",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Relation Name": "products",
+                        "Alias": "p",
+                        "Startup Cost": 0,
+                        "Total Cost": 9550.6,
+                        "Plan Rows": 59160,
+                        "Plan Width": 65
+                      },
+                      {
+                        "Node Type": "Hash",
+                        "Parent Relationship": "Inner",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Startup Cost": 5462.91,
+                        "Total Cost": 5462.91,
+                        "Plan Rows": 73291,
+                        "Plan Width": 69,
+                        "Plans": [
+                          {
+                            "Node Type": "Seq Scan",
+                            "Parent Relationship": "Outer",
+                            "Parallel Aware": false,
+                            "Async Capable": false,
+                            "Relation Name": "product_prices",
+                            "Alias": "pp",
+                            "Startup Cost": 0,
+                            "Total Cost": 5462.91,
+                            "Plan Rows": 73291,
+                            "Plan Width": 69
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "Node Type": "Hash",
+                    "Parent Relationship": "Inner",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Startup Cost": 1761.02,
+                    "Total Cost": 1761.02,
+                    "Plan Rows": 76302,
+                    "Plan Width": 29,
+                    "Plans": [
+                      {
+                        "Node Type": "Seq Scan",
+                        "Parent Relationship": "Outer",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Relation Name": "catalog_offer_refresh_state",
+                        "Alias": "q",
+                        "Startup Cost": 0,
+                        "Total Cost": 1761.02,
+                        "Plan Rows": 76302,
+                        "Plan Width": 29
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "postgresIntervalLogs": {
+    "result": [
+      {
+        "command": "SELECT",
+        "context": "SQL statement \"insert into public.catalog_offer_refresh_state(offer_id,category)\n select pp.id,p.category from public.product_prices pp join public.products p on p.id=pp.product_id\n left join public.catalog_offer_refresh_state q on q.offer_id=pp.id\n where q.offer_id is null or q.category is distinct from p.category limit 500\n on conflict(offer_id) do update set category=excluded.category\n where catalog_offer_refresh_state.category is distinct from excluded.category\"\nPL/pgSQL function seed_catalog_refresh_queue() line 4 at SQL statement",
+        "severity": "ERROR",
+        "source": "postgres_logs",
+        "sql_state": "57014",
+        "timestamp": "2026-10-07T01:46:58.275000"
+      },
+      {
+        "command": "SELECT",
+        "context": "SQL statement \"insert into public.catalog_offer_refresh_state(offer_id,category)\n select pp.id,p.category from public.product_prices pp join public.products p on p.id=pp.product_id\n left join public.catalog_offer_refresh_state q on q.offer_id=pp.id\n where q.offer_id is null or q.category is distinct from p.category limit 500\n on conflict(offer_id) do update set category=excluded.category\n where catalog_offer_refresh_state.category is distinct from excluded.category\"\nPL/pgSQL function seed_catalog_refresh_queue() line 4 at SQL statement",
+        "severity": "ERROR",
+        "source": "postgres_logs",
+        "sql_state": "57014",
+        "timestamp": "2026-10-07T01:47:07.111000"
+      },
+      {
+        "command": "SELECT",
+        "context": "SQL statement \"insert into public.catalog_offer_refresh_state(offer_id,category)\n select pp.id,p.category from public.product_prices pp join public.products p on p.id=pp.product_id\n left join public.catalog_offer_refresh_state q on q.offer_id=pp.id\n where q.offer_id is null or q.category is distinct from p.category limit 500\n on conflict(offer_id) do update set category=excluded.category\n where catalog_offer_refresh_state.category is distinct from excluded.category\"\nPL/pgSQL function seed_catalog_refresh_queue() line 4 at SQL statement",
+        "severity": "ERROR",
+        "source": "postgres_logs",
+        "sql_state": "57014",
+        "timestamp": "2026-10-07T01:47:17.513000"
+      }
+    ]
+  },
+  "rpcIntervalLogs": {
+    "result": [
+      {
+        "origin_time": "8260",
+        "path": "/rest/v1/rpc/seed_catalog_refresh_queue",
+        "status": "500",
+        "timestamp": "2026-10-07T01:46:50.196000",
+        "upstream_ms": "8104"
+      },
+      {
+        "origin_time": "8885",
+        "path": "/rest/v1/rpc/seed_catalog_refresh_queue",
+        "status": "500",
+        "timestamp": "2026-10-07T01:46:58.978000",
+        "upstream_ms": "8465"
+      },
+      {
+        "origin_time": "8781",
+        "path": "/rest/v1/rpc/seed_catalog_refresh_queue",
+        "status": "500",
+        "timestamp": "2026-10-07T01:47:08.887000",
+        "upstream_ms": "8625"
+      }
+    ]
+  },
+  "logWindowUTC": [
+    "2026-10-07T01:46:35Z",
+    "2026-10-07T01:47:35Z"
+  ],
+  "mode": "BEGIN READ ONLY; plan EXPLAIN without ANALYZE; no write or RPC seed execution",
+  "updatedAt": "2026-10-07T02:36:24.926Z",
+  "actualCancellation": {
+    "result": [
+      {
+        "event_message": "canceling statement due to statement timeout",
+        "sql_state": "57014",
+        "timestamp": "2026-10-07T01:46:58.275000"
+      },
+      {
+        "event_message": "canceling statement due to statement timeout",
+        "sql_state": "57014",
+        "timestamp": "2026-10-07T01:47:07.111000"
+      },
+      {
+        "event_message": "canceling statement due to statement timeout",
+        "sql_state": "57014",
+        "timestamp": "2026-10-07T01:47:17.513000"
+      }
+    ]
+  },
+  "currentReadOnlyAnalyze": [
+    {
+      "QUERY PLAN": [
+        {
+          "Plan": {
+            "Node Type": "Limit",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 9093.84,
+            "Total Cost": 9202.96,
+            "Plan Rows": 500,
+            "Plan Width": 29,
+            "Actual Startup Time": 4263.769,
+            "Actual Total Time": 4265.184,
+            "Actual Rows": 0,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 14429,
+            "Shared Read Blocks": 258,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0,
+            "Plans": [
+              {
+                "Node Type": "Hash Join",
+                "Parent Relationship": "Outer",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Join Type": "Left",
+                "Startup Cost": 9093.84,
+                "Total Cost": 23341.2,
+                "Plan Rows": 65282,
+                "Plan Width": 29,
+                "Actual Startup Time": 4263.768,
+                "Actual Total Time": 4265.183,
+                "Actual Rows": 0,
+                "Actual Loops": 1,
+                "Inner Unique": true,
+                "Hash Cond": "(pp.id = q.offer_id)",
+                "Filter": "((q.offer_id IS NULL) OR (q.category IS DISTINCT FROM p.category))",
+                "Rows Removed by Filter": 73291,
+                "Shared Hit Blocks": 14429,
+                "Shared Read Blocks": 258,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0,
+                "Plans": [
+                  {
+                    "Node Type": "Hash Join",
+                    "Parent Relationship": "Outer",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Join Type": "Inner",
+                    "Startup Cost": 6379.05,
+                    "Total Cost": 20434.01,
+                    "Plan Rows": 73291,
+                    "Plan Width": 29,
+                    "Actual Startup Time": 3164.697,
+                    "Actual Total Time": 3670.96,
+                    "Actual Rows": 73291,
+                    "Actual Loops": 1,
+                    "Inner Unique": false,
+                    "Hash Cond": "(p.id = pp.product_id)",
+                    "Shared Hit Blocks": 13431,
+                    "Shared Read Blocks": 258,
+                    "Shared Dirtied Blocks": 0,
+                    "Shared Written Blocks": 0,
+                    "Local Hit Blocks": 0,
+                    "Local Read Blocks": 0,
+                    "Local Dirtied Blocks": 0,
+                    "Local Written Blocks": 0,
+                    "Temp Read Blocks": 0,
+                    "Temp Written Blocks": 0,
+                    "Plans": [
+                      {
+                        "Node Type": "Seq Scan",
+                        "Parent Relationship": "Outer",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Relation Name": "products",
+                        "Alias": "p",
+                        "Startup Cost": 0,
+                        "Total Cost": 9550.6,
+                        "Plan Rows": 59160,
+                        "Plan Width": 65,
+                        "Actual Startup Time": 2.439,
+                        "Actual Total Time": 378.775,
+                        "Actual Rows": 59159,
+                        "Actual Loops": 1,
+                        "Shared Hit Blocks": 8701,
+                        "Shared Read Blocks": 258,
+                        "Shared Dirtied Blocks": 0,
+                        "Shared Written Blocks": 0,
+                        "Local Hit Blocks": 0,
+                        "Local Read Blocks": 0,
+                        "Local Dirtied Blocks": 0,
+                        "Local Written Blocks": 0,
+                        "Temp Read Blocks": 0,
+                        "Temp Written Blocks": 0
+                      },
+                      {
+                        "Node Type": "Hash",
+                        "Parent Relationship": "Inner",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Startup Cost": 5462.91,
+                        "Total Cost": 5462.91,
+                        "Plan Rows": 73291,
+                        "Plan Width": 69,
+                        "Actual Startup Time": 3161.872,
+                        "Actual Total Time": 3161.873,
+                        "Actual Rows": 73291,
+                        "Actual Loops": 1,
+                        "Hash Buckets": 131072,
+                        "Original Hash Buckets": 131072,
+                        "Hash Batches": 1,
+                        "Original Hash Batches": 1,
+                        "Peak Memory Usage": 8289,
+                        "Shared Hit Blocks": 4730,
+                        "Shared Read Blocks": 0,
+                        "Shared Dirtied Blocks": 0,
+                        "Shared Written Blocks": 0,
+                        "Local Hit Blocks": 0,
+                        "Local Read Blocks": 0,
+                        "Local Dirtied Blocks": 0,
+                        "Local Written Blocks": 0,
+                        "Temp Read Blocks": 0,
+                        "Temp Written Blocks": 0,
+                        "Plans": [
+                          {
+                            "Node Type": "Seq Scan",
+                            "Parent Relationship": "Outer",
+                            "Parallel Aware": false,
+                            "Async Capable": false,
+                            "Relation Name": "product_prices",
+                            "Alias": "pp",
+                            "Startup Cost": 0,
+                            "Total Cost": 5462.91,
+                            "Plan Rows": 73291,
+                            "Plan Width": 69,
+                            "Actual Startup Time": 3.576,
+                            "Actual Total Time": 3121.242,
+                            "Actual Rows": 73291,
+                            "Actual Loops": 1,
+                            "Shared Hit Blocks": 4730,
+                            "Shared Read Blocks": 0,
+                            "Shared Dirtied Blocks": 0,
+                            "Shared Written Blocks": 0,
+                            "Local Hit Blocks": 0,
+                            "Local Read Blocks": 0,
+                            "Local Dirtied Blocks": 0,
+                            "Local Written Blocks": 0,
+                            "Temp Read Blocks": 0,
+                            "Temp Written Blocks": 0
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "Node Type": "Hash",
+                    "Parent Relationship": "Inner",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Startup Cost": 1761.02,
+                    "Total Cost": 1761.02,
+                    "Plan Rows": 76302,
+                    "Plan Width": 29,
+                    "Actual Startup Time": 558.574,
+                    "Actual Total Time": 558.575,
+                    "Actual Rows": 73291,
+                    "Actual Loops": 1,
+                    "Hash Buckets": 131072,
+                    "Original Hash Buckets": 131072,
+                    "Hash Batches": 1,
+                    "Original Hash Batches": 1,
+                    "Peak Memory Usage": 5423,
+                    "Shared Hit Blocks": 998,
+                    "Shared Read Blocks": 0,
+                    "Shared Dirtied Blocks": 0,
+                    "Shared Written Blocks": 0,
+                    "Local Hit Blocks": 0,
+                    "Local Read Blocks": 0,
+                    "Local Dirtied Blocks": 0,
+                    "Local Written Blocks": 0,
+                    "Temp Read Blocks": 0,
+                    "Temp Written Blocks": 0,
+                    "Plans": [
+                      {
+                        "Node Type": "Seq Scan",
+                        "Parent Relationship": "Outer",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Relation Name": "catalog_offer_refresh_state",
+                        "Alias": "q",
+                        "Startup Cost": 0,
+                        "Total Cost": 1761.02,
+                        "Plan Rows": 76302,
+                        "Plan Width": 29,
+                        "Actual Startup Time": 2.853,
+                        "Actual Total Time": 533.606,
+                        "Actual Rows": 73291,
+                        "Actual Loops": 1,
+                        "Shared Hit Blocks": 998,
+                        "Shared Read Blocks": 0,
+                        "Shared Dirtied Blocks": 0,
+                        "Shared Written Blocks": 0,
+                        "Local Hit Blocks": 0,
+                        "Local Read Blocks": 0,
+                        "Local Dirtied Blocks": 0,
+                        "Local Written Blocks": 0,
+                        "Temp Read Blocks": 0,
+                        "Temp Written Blocks": 0
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "Planning": {
+            "Shared Hit Blocks": 808,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "Planning Time": 75.001,
+          "Triggers": [],
+          "Execution Time": 4268.307
+        }
+      ]
+    }
+  ],
+  "splitReadOnlyResult": {
+    "error": {
+      "name": "HttpException",
+      "message": "Failed to run sql query: ERROR:  57014: canceling statement due to statement timeout\n"
+    }
+  },
+  "note": "All measurements are read-only SELECTs; not seed INSERT/RPC runtime. Split candidate exceeded 7s and is rejected."
+}

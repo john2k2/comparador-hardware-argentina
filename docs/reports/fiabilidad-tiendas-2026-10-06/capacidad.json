@@ -1,0 +1,122 @@
+{
+  "recordedAt": "2026-10-07T03:05:59.769220+00:00",
+  "projectId": "zyiyziubpcpgoqlkcrie",
+  "mode": "read-only metadata and aggregate counts; no deletion, vacuum, migration, plan or account changes",
+  "plan": "free",
+  "sizing": [
+    {
+      "database_bytes": 926215315,
+      "products_total_bytes": 234864640,
+      "product_prices_total_bytes": 101294080,
+      "other_active_sessions": 0
+    }
+  ],
+  "tables": [
+    {
+      "schemaname": "public",
+      "relname": "api_cache_entries",
+      "bytes": 245334016,
+      "n_live_tup": 338202,
+      "n_dead_tup": 859
+    },
+    {
+      "schemaname": "public",
+      "relname": "products",
+      "bytes": 234864640,
+      "n_live_tup": 59160,
+      "n_dead_tup": 7570
+    },
+    {
+      "schemaname": "public",
+      "relname": "price_history",
+      "bytes": 175366144,
+      "n_live_tup": 247509,
+      "n_dead_tup": 175
+    },
+    {
+      "schemaname": "public",
+      "relname": "catalog_price_summaries",
+      "bytes": 117587968,
+      "n_live_tup": 57012,
+      "n_dead_tup": 1511
+    },
+    {
+      "schemaname": "public",
+      "relname": "product_prices",
+      "bytes": 101294080,
+      "n_live_tup": 73291,
+      "n_dead_tup": 2913
+    },
+    {
+      "schemaname": "public",
+      "relname": "catalog_offer_refresh_state",
+      "bytes": 15630336,
+      "n_live_tup": 76302,
+      "n_dead_tup": 1451
+    },
+    {
+      "schemaname": "public",
+      "relname": "product_title_normalizations",
+      "bytes": 11599872,
+      "n_live_tup": 39625,
+      "n_dead_tup": 0
+    },
+    {
+      "schemaname": "public",
+      "relname": "catalog_inventory_listings",
+      "bytes": 8364032,
+      "n_live_tup": 19047,
+      "n_dead_tup": 0
+    },
+    {
+      "schemaname": "public",
+      "relname": "catalog_refresh_runs",
+      "bytes": 1269760,
+      "n_live_tup": 92,
+      "n_dead_tup": 25
+    },
+    {
+      "schemaname": "supabase_migrations",
+      "relname": "schema_migrations",
+      "bytes": 270336,
+      "n_live_tup": 75,
+      "n_dead_tup": 0
+    }
+  ],
+  "defaultTransaction": [
+    {
+      "default_transaction_read_only": "off",
+      "database_bytes": 926215315
+    }
+  ],
+  "cacheExpiry": [
+    {
+      "rows_total": 347944,
+      "expired_rows": 346397,
+      "oldest_expiry": "2026-03-06 20:44:07.362+00",
+      "latest_expiry": "2026-10-21 01:53:48.143+00"
+    }
+  ],
+  "visibility": [
+    {
+      "relname": "catalog_offer_refresh_state",
+      "relpages": 998,
+      "relallvisible": 995,
+      "all_visible_percent": "99.70"
+    },
+    {
+      "relname": "product_prices",
+      "relpages": 4730,
+      "relallvisible": 4724,
+      "all_visible_percent": "99.87"
+    },
+    {
+      "relname": "products",
+      "relpages": 8959,
+      "relallvisible": 5945,
+      "all_visible_percent": "66.36"
+    }
+  ],
+  "documentation": "https://supabase.com/docs/guides/platform/database-size",
+  "recommendation": "Defer remote covering indexes until capacity and retention reviewed; source readers and diagnostics can be published without those indexes. Expired cache counts are not a measured physical space reclaim estimate."
+}

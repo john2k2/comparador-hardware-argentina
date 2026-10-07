@@ -1,0 +1,1818 @@
+{
+  "at": "2026-10-07T02:49:27.625Z",
+  "mode": "bounded-source-readonly-no-db-no-persistence",
+  "stores": 36,
+  "limits": "One stored/discovered publication per store; <=4 requests/store including redirects, 3 stores in parallel, 2s between requests/host. Does not certify an entire catalog or persisted freshness.",
+  "readerSha256": "f125ee8ee9c005ed6c36962c03d31b868c1f153087ea5f4cae64979c3f3e6cf9",
+  "results": [
+    {
+      "storeId": "37bytes",
+      "name": "37 Bytes",
+      "platform": "tiendanube",
+      "storedTarget": true,
+      "target": {
+        "url": "https://www.37bytes.com.ar/productos/memoria-ram-8gb-ddr4-3600mhz-rgb-dimm-kingston-kf436c17bb2a-8/",
+        "name": "MEMORIA RAM 8GB DDR4 3600Mhz RGB DIMM KINGSTON KF436C17BB2A/8",
+        "category": "memoria-ram",
+        "originalObservedAt": "2026-10-06 00:27:36.244+00"
+      },
+      "elapsedMs": 2269,
+      "state": "read-observation",
+      "failure": null,
+      "observation": {
+        "name": "MEMORIA RAM 8GB DDR4 3600Mhz RGB DIMM KINGSTON KF436C17BB2A/8",
+        "price": 213413,
+        "stock": "in-stock",
+        "observedAt": "2026-10-07T02:48:33.454Z",
+        "sourceIdentity": {
+          "listingRef": "37bytes:url:https://37bytes.com.ar/productos/memoria-ram-8gb-ddr4-3600mhz-rgb-dimm-kingston-kf436c17bb2a-8",
+          "title": "MEMORIA RAM 8GB DDR4 3600Mhz RGB DIMM KINGSTON KF436C17BB2A/8",
+          "storeSku": "37000010"
+        },
+        "priceCondition": "unspecified",
+        "identityReview": null
+      },
+      "requests": 1
+    },
+    {
+      "storeId": "acuarioinsumos",
+      "name": "Acuario Insumos",
+      "platform": "woocommerce",
+      "storedTarget": false,
+      "state": "probe-failed",
+      "failure": "AssertionError",
+      "requests": 1
+    },
+    {
+      "storeId": "armytech",
+      "name": "ArmyTech",
+      "platform": "prestashop",
+      "storedTarget": true,
+      "target": {
+        "url": "https://www.armytech.com.ar/procesadores/5782-procesador-amd-ryzen-5-3500x-am4-s-video-bulk-sin-cooler-y-sin-caja.html",
+        "name": "Procesador Amd Ryzen 5 3500x Am4 S/video Bulk (sin Cooler Y Sin Caja)",
+        "category": "procesadores",
+        "originalObservedAt": "2026-06-01 06:41:58.551+00"
+      },
+      "elapsedMs": 9122,
+      "state": "no-observation",
+      "failure": "no-observation",
+      "requests": 3
+    },
+    {
+      "storeId": "beings",
+      "name": "Beings",
+      "platform": "woocommerce",
+      "storedTarget": true,
+      "target": {
+        "url": "https://beings.com.ar/product/procesador-intel-i7-12700/",
+        "name": "Procesador Intel Core i7 12700 - Socket 1700",
+        "category": "procesadores",
+        "originalObservedAt": "2026-09-04 09:30:25.773+00"
+      },
+      "elapsedMs": 1661,
+      "state": "no-observation",
+      "failure": "blocked",
+      "requests": 1
+    },
+    {
+      "storeId": "clickgaming",
+      "name": "Click Gaming",
+      "platform": "qloud",
+      "storedTarget": true,
+      "target": {
+        "url": "https://clickgaming.com.ar/componentes-de-pc/procesadores/procesador-amd-am5-ryzen-9-7900x-82398.html",
+        "name": "Procesador Amd (am5) Ryzen 9 7900x",
+        "category": "procesadores",
+        "originalObservedAt": "2026-06-26 06:29:53.522+00"
+      },
+      "elapsedMs": 11856,
+      "state": "no-observation",
+      "failure": "no-observation",
+      "requests": 2
+    },
+    {
+      "storeId": "compragamer",
+      "name": "CompraGamer",
+      "platform": "direct",
+      "storedTarget": true,
+      "target": {
+        "url": "https://compragamer.com/producto/14066",
+        "name": "Procesador AMD Ryzen 5 7600X 5.3GHz Turbo AM5 - No incluye Cooler - C/VIDEO",
+        "category": "procesadores",
+        "originalObservedAt": "2026-03-05 02:07:21.24+00"
+      },
+      "elapsedMs": 11118,
+      "state": "read-observation",
+      "failure": null,
+      "observation": {
+        "name": "Procesador AMD Ryzen 5 7600X 5.3GHz Turbo AM5 - No incluye Cooler - C/VIDEO",
+        "price": 399300,
+        "stock": "in-stock",
+        "observedAt": "2026-10-07T02:49:03.411Z",
+        "sourceIdentity": {
+          "listingRef": "compragamer:id:14066",
+          "title": "Procesador AMD Ryzen 5 7600X 5.3GHz Turbo AM5 - No incluye Cooler - C/VIDEO",
+          "storeSku": "100-100000593WOF"
+        },
+        "priceCondition": "special",
+        "identityReview": null
+      },
+      "requests": 3
+    },
+    {
+      "storeId": "compugarden",
+      "name": "Compugarden",
+      "platform": "direct",
+      "storedTarget": true,
+      "target": {
+        "url": "https://www.compugarden.com.ar/DETALLE/Memoria-Ram-Kimota-8GB-2666-Mhz-DDR4/ITEM_ID=19838/OR=/H=/CANT=/compugarden.aspx",
+        "name": "Memoria Ram Aimerican Telekinesis 8gb 3200 Mhz DDR4",
+        "category": "memoria-ram",
+        "originalObservedAt": "2026-08-14 14:51:12.588+00"
+      },
+      "elapsedMs": 2220,
+      "state": "read-observation",
+      "failure": null,
+      "observation": {
+        "name": "Memoria Ram Kimota 8GB 2666 Mhz DDR4",
+        "price": 120901,
+        "stock": "in-stock",
+        "observedAt": "2026-10-07T02:49:06.784Z",
+        "sourceIdentity": {
+          "listingRef": "compugarden:url:https://compugarden.com.ar/DETALLE/Memoria-Ram-Kimota-8GB-2666-Mhz-DDR4/ITEM_ID=19838/OR=/H=/CANT=/compugarden.aspx",
+          "title": "Memoria Ram Kimota 8GB 2666 Mhz DDR4",
+          "storeSku": "KF436C17BB-8"
+        },
+        "priceCondition": "special",
+        "identityReview": {
+          "version": 1,
+          "status": "needs-review",
+          "reason": "explicit-conflict",
+          "reviewedAt": "2026-10-07T02:49:06.784Z",
+          "model": null,
+          "confidence": null,
+          "sourceIdentity": {
+            "listingRef": "compugarden:url:https://compugarden.com.ar/DETALLE/Memoria-Ram-Kimota-8GB-2666-Mhz-DDR4/ITEM_ID=19838/OR=/H=/CANT=/compugarden.aspx",
+            "title": "Memoria Ram Kimota 8GB 2666 Mhz DDR4",
+            "storeSku": "KF436C17BB-8"
+          },
+          "subject": {
+            "name": "memoria ram aimerican telekinesis 8gb 3200 mhz ddr4",
+            "category": "memoria-ram",
+            "url": "https://www.compugarden.com.ar/DETALLE/Memoria-Ram-Kimota-8GB-2666-Mhz-DDR4/ITEM_ID=19838/OR=/H=/CANT=/compugarden.aspx"
+          }
+        }
+      },
+      "requests": 1
+    },
+    {
+      "storeId": "dinobyte",
+      "name": "Dinobyte",
+      "platform": "woocommerce",
+      "storedTarget": true,
+      "target": {
+        "url": "https://dinobyte.ar/producto/microprocesador-amd-ryzen-7-5700x3d-sin-cooler/",
+        "name": "Microprocesador Amd Ryzen 7 5700X3D (Sin Cooler)",
+        "category": "procesadores",
+        "originalObservedAt": "2026-10-06 17:30:54.329+00"
+      },
+      "elapsedMs": 3790,
+      "state": "read-observation",
+      "failure": null,
+      "observation": {
+        "name": "Microprocesador Amd Ryzen 7 5700X3D (Sin Cooler)",
+        "price": 541041,
+        "stock": "out-of-stock",
+        "observedAt": "2026-10-07T02:49:13.156Z",
+        "sourceIdentity": {
+          "listingRef": "dinobyte:url:https://dinobyte.ar/producto/microprocesador-amd-ryzen-7-5700x3d-sin-cooler",
+          "title": "Microprocesador Amd Ryzen 7 5700X3D (Sin Cooler)",
+          "storeSku": "CPU162"
+        },
+        "priceCondition": "unspecified",
+        "identityReview": null
+      },
+      "requests": 1
+    },
+    {
+      "storeId": "fullh4rd",
+      "name": "FullH4rd",
+      "platform": "direct",
+      "storedTarget": true,
+      "target": {
+        "url": "https://www.fullh4rd.com.ar/prod/18970/combo-amd-ryzen-7-9800x3d-b650",
+        "name": "COMBO AMD RYZEN 7 9800X3D+B650",
+        "category": "procesadores",
+        "originalObservedAt": "2026-03-05 02:20:09.294+00"
+      },
+      "elapsedMs": 364,
+      "state": "no-observation",
+      "failure": "blocked",
+      "requests": 1
+    },
+    {
+      "storeId": "gamerspoint",
+      "name": "Gamers Point",
+      "platform": "woocommerce",
+      "storedTarget": true,
+      "target": {
+        "url": "https://www.gamerspoint.com.ar/producto/memoria-ram-crucial-32gb-3200mts-pro-ddr4-cl22/",
+        "name": "Memoria Ram CRUCIAL PRO 32gb 1×32 3200mts cl22 DDR4",
+        "category": "memoria-ram",
+        "originalObservedAt": "2026-10-05 16:30:36.121+00"
+      },
+      "elapsedMs": 1655,
+      "state": "read-observation",
+      "failure": null,
+      "observation": {
+        "name": "MEMORIA RAM CRUCIAL 32GB 3200MTS PRO DDR4 CL22",
+        "price": 533508,
+        "stock": "in-stock",
+        "observedAt": "2026-10-07T02:48:41.965Z",
+        "sourceIdentity": {
+          "listingRef": "gamerspoint:url:https://gamerspoint.com.ar/producto/memoria-ram-crucial-32gb-3200mts-pro-ddr4-cl22",
+          "title": "MEMORIA RAM CRUCIAL 32GB 3200MTS PRO DDR4 CL22",
+          "sourceId": "8883",
+          "storeSku": "CP32G4dfra32a"
+        },
+        "priceCondition": "unspecified",
+        "identityReview": null
+      },
+      "requests": 1
+    },
+    {
+      "storeId": "gamingcity",
+      "name": "Gaming City",
+      "platform": "direct",
+      "storedTarget": true,
+      "target": {
+        "url": "https://www.gamingcity.com.ar/ddr4-corsair-dominator-platinum-rgb-ddr4-16gb-4000mhz-white--det--12555",
+        "name": "Memoria Ddr4 16Gb (2X8) 4000Mhz Corsair Dominator Platinum Rgb White",
+        "category": "memoria-ram",
+        "originalObservedAt": "2026-08-14 14:51:11.978+00"
+      },
+      "elapsedMs": 5148,
+      "state": "no-observation",
+      "failure": "no-observation",
+      "requests": 2
+    },
+    {
+      "storeId": "gezatek",
+      "name": "Gezatek",
+      "platform": "direct",
+      "storedTarget": true,
+      "target": {
+        "url": "https://www.gezatek.com.ar/tienda/procesadores-amd/2505-micro-amd-ryzen-7-9800x3d---8-nucleos--16-threads-52ghz-am5.html",
+        "name": "Micro AMD Ryzen 7 9800X3D - 8 Núcleos / 16 Threads 5.2Ghz AM5",
+        "category": "procesadores",
+        "originalObservedAt": "2026-03-05 02:19:51.241+00"
+      },
+      "elapsedMs": 12780,
+      "state": "no-observation",
+      "failure": "no-observation",
+      "requests": 4
+    },
+    {
+      "storeId": "goldentechstore",
+      "name": "Golden Tech",
+      "platform": "woocommerce",
+      "storedTarget": true,
+      "target": {
+        "url": "https://goldentechstore.com.ar/producto/memoria-ram-ddr5-16gb-xpg-6000mhz-lancer-blade-rgb-black/",
+        "name": "Memoria Ram Ddr5 16Gb 6000Mhz Patriot Viper Venom",
+        "category": "memoria-ram",
+        "originalObservedAt": "2026-06-07 06:37:38.821+00"
+      },
+      "elapsedMs": 1264,
+      "state": "no-observation",
+      "failure": "not-found",
+      "requests": 1
+    },
+    {
+      "storeId": "hardcore",
+      "name": "Hardcore",
+      "platform": "woocommerce",
+      "storedTarget": true,
+      "target": {
+        "url": "https://hardcorecomputacion.com.ar/producto/memoria-corsair-pro-sl-2x8gb-3200mhz/",
+        "name": "Memoria Corsair Pro SL 2x8GB DDR4 3200mhz",
+        "category": "memoria-ram",
+        "originalObservedAt": "2026-08-03 16:17:59.359+00"
+      },
+      "elapsedMs": 162,
+      "state": "no-observation",
+      "failure": "blocked",
+      "requests": 1
+    },
+    {
+      "storeId": "hftecnologia",
+      "name": "HF Tecnologia",
+      "platform": "foxtienda",
+      "storedTarget": true,
+      "target": {
+        "url": "https://hftecnologia.com.ar/539689-componentes-de-pc-memoria-ram-netac-shadow-ii-ddr5-4800-16gb-c40-black",
+        "name": "Memoria Ram Netac Shadow II Ddr5 4800 16Gb C40 Black",
+        "category": "memoria-ram",
+        "originalObservedAt": "2026-10-02 03:21:11.912+00"
+      },
+      "elapsedMs": 11653,
+      "state": "no-observation",
+      "failure": "no-observation",
+      "requests": 2
+    },
+    {
+      "storeId": "hypergaming",
+      "name": "Hyper Gaming",
+      "platform": "qloud",
+      "storedTarget": true,
+      "target": {
+        "url": "https://hypergaming.com.ar/memorias-ram/memoria-pc/memoria-8gb-3200mhz-vengeance-lpx-corsair-121809.html",
+        "name": "Memoria 8gb 3200mhz Vengeance Lpx Corsair",
+        "category": "memoria-ram",
+        "originalObservedAt": "2026-05-21 06:30:16.748+00"
+      },
+      "elapsedMs": 5542,
+      "state": "no-observation",
+      "failure": "inconsistent-source",
+      "requests": 2
+    },
+    {
+      "storeId": "integradosargentinos",
+      "name": "Integrados Argentinos",
+      "platform": "tiendanube",
+      "storedTarget": true,
+      "target": {
+        "url": "https://www.integradosargentinos.com/productos/procesador-intel-core-ultra-5-245k-4-2-ghz-24mb-lga1851/",
+        "name": "Procesador Intel Core Ultra 5 245K 4.2 GHz 24MB LGA1851",
+        "category": "procesadores",
+        "originalObservedAt": "2026-10-06 17:31:55.197+00"
+      },
+      "elapsedMs": 1193,
+      "state": "read-observation",
+      "failure": null,
+      "observation": {
+        "name": "Procesador Intel Core Ultra 5 245K 4.2 GHz 24MB LGA1851",
+        "price": 634908,
+        "stock": "in-stock",
+        "observedAt": "2026-10-07T02:48:48.169Z",
+        "sourceIdentity": {
+          "listingRef": "integradosargentinos:url:https://integradosargentinos.com/productos/procesador-intel-core-ultra-5-245k-4-2-ghz-24mb-lga1851",
+          "title": "Procesador Intel Core Ultra 5 245K 4.2 GHz 24MB LGA1851",
+          "storeSku": "BX80768245K"
+        },
+        "priceCondition": "unspecified",
+        "identityReview": null
+      },
+      "requests": 1
+    },
+    {
+      "storeId": "katech",
+      "name": "Katech",
+      "platform": "woocommerce",
+      "storedTarget": true,
+      "target": {
+        "url": "https://katech.com.ar/producto/procesador-amd-ryzen-7-9800x3d-am5-2/",
+        "name": "PROCESADOR AMD RYZEN 7 9800X3D AM5",
+        "category": "procesadores",
+        "originalObservedAt": "2026-10-01 23:00:15.417+00"
+      },
+      "elapsedMs": 1988,
+      "state": "read-observation",
+      "failure": null,
+      "observation": {
+        "name": "PROCESADOR AMD RYZEN 7 9800X3D AM5",
+        "price": 881740,
+        "stock": "in-stock",
+        "observedAt": "2026-10-07T02:49:09.753Z",
+        "sourceIdentity": {
+          "listingRef": "katech:url:https://katech.com.ar/producto/procesador-amd-ryzen-7-9800x3d-am5-2",
+          "title": "PROCESADOR AMD RYZEN 7 9800X3D AM5",
+          "sourceId": "985575",
+          "storeSku": "CPU344"
+        },
+        "priceCondition": "unspecified",
+        "identityReview": null
+      },
+      "requests": 1
+    },
+    {
+      "storeId": "liontech",
+      "name": "LionTech",
+      "platform": "woocommerce",
+      "storedTarget": true,
+      "target": {
+        "url": "https://liontech.com.ar/producto/procesador-amd-ryzen-5-8500g-3-50ghz-am5-ddr5/",
+        "name": "Procesador Amd Ryzen 5 8500G 5.0 Ghz - AM5",
+        "category": "procesadores",
+        "originalObservedAt": "2026-10-06 17:35:16.415+00"
+      },
+      "elapsedMs": 4026,
+      "state": "read-observation",
+      "failure": null,
+      "observation": {
+        "name": "Procesador AMD Ryzen 5 8500G 3.50GHz AM5 DDR5",
+        "price": 288078,
+        "stock": "out-of-stock",
+        "observedAt": "2026-10-07T02:48:51.122Z",
+        "sourceIdentity": {
+          "listingRef": "liontech:url:https://liontech.com.ar/producto/procesador-amd-ryzen-5-8500g-3-50ghz-am5-ddr5",
+          "title": "Procesador AMD Ryzen 5 8500G 3.50GHz AM5 DDR5",
+          "sourceId": "3408",
+          "storeSku": "100-100000931BOX"
+        },
+        "priceCondition": "unspecified",
+        "identityReview": null
+      },
+      "requests": 1
+    },
+    {
+      "storeId": "logg",
+      "name": "Logg",
+      "platform": "direct",
+      "storedTarget": true,
+      "target": {
+        "url": "https://logg.com.ar/ProductDetail/Ryzen-3-4100-BOX",
+        "name": "Procesador AMD Ryzen 3 4100 4.0GHz 4MB Zen2 AM4 c/ Cooler",
+        "category": "procesadores",
+        "originalObservedAt": "2026-09-04 09:30:23.177+00"
+      },
+      "elapsedMs": 2580,
+      "state": "no-observation",
+      "failure": "no-observation",
+      "requests": 2
+    },
+    {
+      "storeId": "maximus",
+      "name": "Maximus",
+      "platform": "direct",
+      "storedTarget": true,
+      "target": {
+        "url": "https://www.maximus.com.ar/Producto/Micro-AMD-Ryzen-5-8600G-50-Ghz-AM5/ITEM=13444/maximus.aspx?PN=100-100001237BOX",
+        "name": "Procesador Amd Ryzen 5 8600G 5.3 Ghz - AM5",
+        "category": "procesadores",
+        "originalObservedAt": "2026-10-02 10:22:10.275+00"
+      },
+      "elapsedMs": 4505,
+      "state": "read-observation",
+      "failure": null,
+      "observation": {
+        "name": "Micro AMD Ryzen 5 8600G 5.0 Ghz AM5",
+        "price": 323190,
+        "stock": "in-stock",
+        "observedAt": "2026-10-07T02:49:01.311Z",
+        "sourceIdentity": {
+          "listingRef": "maximus:id:13444",
+          "title": "Micro AMD Ryzen 5 8600G 5.0 Ghz AM5",
+          "sourceId": "13444",
+          "storeSku": "100-100001237BOX"
+        },
+        "priceCondition": "special",
+        "identityReview": null
+      },
+      "requests": 2
+    },
+    {
+      "storeId": "maxtecno",
+      "name": "MaxTecno",
+      "platform": "woocommerce",
+      "storedTarget": true,
+      "target": {
+        "url": "https://maxtecno.com.ar/producto/memoria-ddr4-8-gb-3200-mhz-rgb-corsair-vengeance-outlet/",
+        "name": "Memoria Ddr4 8 Gb 3200 Mhz Rgb Corsair Vengeance - Outlet",
+        "category": "memoria-ram",
+        "originalObservedAt": "2026-10-06 17:30:00.808+00"
+      },
+      "elapsedMs": 3422,
+      "state": "read-observation",
+      "failure": null,
+      "observation": {
+        "name": "Memoria Ddr4 8 Gb 3200 Mhz Rgb Corsair Vengeance - Outlet",
+        "price": 157013,
+        "stock": "in-stock",
+        "observedAt": "2026-10-07T02:49:13.178Z",
+        "sourceIdentity": {
+          "listingRef": "maxtecno:url:https://maxtecno.com.ar/producto/memoria-ddr4-8-gb-3200-mhz-rgb-corsair-vengeance-outlet",
+          "title": "Memoria Ddr4 8 Gb 3200 Mhz Rgb Corsair Vengeance - Outlet",
+          "sourceId": "953791"
+        },
+        "priceCondition": "special",
+        "identityReview": null
+      },
+      "requests": 1
+    },
+    {
+      "storeId": "megasoft",
+      "name": "Megasoft",
+      "platform": "qloud",
+      "storedTarget": true,
+      "target": {
+        "url": "https://megasoftargentina.com.ar/Memorias-Ram-/memorias-ddr4/memoria-ram-sodimm-ddr4-16gb-3200-mhz-adata-182029.html",
+        "name": "Memoria Ram SODIMM DDR4 16Gb 3200 Mhz ADATA",
+        "category": "memoria-ram",
+        "originalObservedAt": "2026-10-06 16:24:34.402+00"
+      },
+      "elapsedMs": 3193,
+      "state": "no-observation",
+      "failure": "inconsistent-source",
+      "requests": 1
+    },
+    {
+      "storeId": "mexx",
+      "name": "Mexx",
+      "platform": "direct",
+      "storedTarget": true,
+      "target": {
+        "url": "https://www.mexx.com.ar/productos-rubro/memorias-ram/51471-memoria-ram-ddr4-16gb-3200-mhz-x-micro-value.html",
+        "name": "Memoria Ram DDR4 - 16Gb 3200 Mhz X-Micro Value",
+        "category": "memoria-ram",
+        "originalObservedAt": "2026-08-14 14:51:10.846+00"
+      },
+      "elapsedMs": 5344,
+      "state": "read-observation",
+      "failure": null,
+      "observation": {
+        "name": "Memoria Ram DDR4 - 16Gb 3200 Mhz X-Micro Value",
+        "price": 209999,
+        "stock": "in-stock",
+        "observedAt": "2026-10-07T02:48:56.476Z",
+        "sourceIdentity": {
+          "listingRef": "mexx:url:https://mexx.com.ar/productos-rubro/memorias-ram/51471-memoria-ram-ddr4-16gb-3200-mhz-x-micro-value.html",
+          "title": "Memoria Ram DDR4 - 16Gb 3200 Mhz X-Micro Value"
+        },
+        "priceCondition": "special",
+        "identityReview": null
+      },
+      "requests": 1
+    },
+    {
+      "storeId": "noxie",
+      "name": "Noxie Store",
+      "platform": "qloud",
+      "storedTarget": true,
+      "target": {
+        "url": "https://noxiestore.com/procesadores/intel/procesador-intel-core-i5-12400f-6-nucleos-lga1700-s-cooler-y-s-video-oem-tray-193357.html",
+        "name": "Procesador Intel Core I5 12400f 6 Nucleos Lga1700 S-cooler Y S-video Oem-tray",
+        "category": "procesadores",
+        "originalObservedAt": "2026-10-04 17:27:59.98+00"
+      },
+      "elapsedMs": 2622,
+      "state": "no-observation",
+      "failure": "inconsistent-source",
+      "requests": 1
+    },
+    {
+      "storeId": "portaltech",
+      "name": "Portal Tech",
+      "platform": "direct",
+      "storedTarget": true,
+      "target": {
+        "url": "https://portalstore.com.ar/producto/procesador-amd-am5-ryzen-5-7600x",
+        "name": "PROCESADOR AMD (AM5) RYZEN 5 7600X",
+        "category": "procesadores",
+        "originalObservedAt": "2026-09-04 09:30:30.73+00"
+      },
+      "elapsedMs": 5788,
+      "state": "no-observation",
+      "failure": "no-observation",
+      "requests": 1
+    },
+    {
+      "storeId": "rockethard",
+      "name": "Rocket Hard",
+      "platform": "qloud",
+      "storedTarget": true,
+      "target": {
+        "url": "https://rockethard.com.ar/hardware/memoria-ddr5/memoria-corsair-32gb-2x16gb-6000-mhz-vengeance-amd-expo-ddr5-162084.html",
+        "name": "Memoria Corsair 32gb (2x16gb) 6000 Mhz Vengeance Amd Expo Ddr5",
+        "category": "memoria-ram",
+        "originalObservedAt": "2026-10-06 17:35:38.658+00"
+      },
+      "elapsedMs": 1496,
+      "state": "no-observation",
+      "failure": "inconsistent-source",
+      "requests": 1
+    },
+    {
+      "storeId": "scphardstore",
+      "name": "SCP Hardstore",
+      "platform": "woocommerce",
+      "storedTarget": true,
+      "target": {
+        "url": "https://www.scphardstore.com/producto/memoria-ram-ddr5-netac-16gb-6000mhz-shadow-ii-black-cl38/",
+        "name": "Memoria RAM DDR5 NETAC 16GB 6000MHz Shadow II Black CL38",
+        "category": "memoria-ram",
+        "originalObservedAt": "2026-10-02 12:26:53.183+00"
+      },
+      "elapsedMs": 535,
+      "state": "no-observation",
+      "failure": "blocked",
+      "requests": 1
+    },
+    {
+      "storeId": "shopgamer",
+      "name": "ShopGamer",
+      "platform": "tiendanube",
+      "storedTarget": true,
+      "target": {
+        "url": "https://www.shopgamer.com.ar/productos/shp-memoria-lexar-udimm-ddr5-16gb-5600mhz-ld5u16g56c46st-bgs/",
+        "name": "Memoria RAM Lexar SODIMM DDR5 16GB 5600MHz",
+        "category": "memoria-ram",
+        "originalObservedAt": "2026-10-05 03:27:10.845+00"
+      },
+      "elapsedMs": 2427,
+      "state": "read-observation",
+      "failure": null,
+      "observation": {
+        "name": "Memoria Lexar Udimm Ddr5 16Gb 5600Mhz",
+        "price": 512612.09,
+        "stock": "out-of-stock",
+        "observedAt": "2026-10-07T02:49:16.147Z",
+        "sourceIdentity": {
+          "listingRef": "shopgamer:url:https://shopgamer.com.ar/productos/shp-memoria-lexar-udimm-ddr5-16gb-5600mhz-ld5u16g56c46st-bgs",
+          "title": "Memoria Lexar Udimm Ddr5 16Gb 5600Mhz",
+          "storeSku": "LD5U16G56C46ST-BGS"
+        },
+        "priceCondition": "unspecified",
+        "identityReview": null
+      },
+      "requests": 1
+    },
+    {
+      "storeId": "slotone",
+      "name": "Slot One",
+      "platform": "tiendanube",
+      "storedTarget": false,
+      "discoveryStatus": 200,
+      "discoveredTarget": true,
+      "target": {
+        "url": "https://www.slot-one.com.ar/productos/pc-gamer-amd-ryzen-5-5600gt-16gb-ddr4-ssd-512gb-win-111/",
+        "name": "Pc Gamer Amd Ryzen 5 5600gt - 16gb Ddr4 - Ssd 512gb - Win 11 Precio de Lista Con tarjeta de Crédito $0 $1.347.964,97 Precio Slot One $876.177",
+        "category": "perifericos",
+        "originalObservedAt": null
+      },
+      "elapsedMs": 2659,
+      "state": "read-observation",
+      "failure": null,
+      "observation": {
+        "name": "Pc Gamer Amd Ryzen 5 5600gt - 16gb Ddr4 - Ssd 512gb - Win 11",
+        "price": 1347964.97,
+        "stock": "in-stock",
+        "observedAt": "2026-10-07T02:49:19.140Z",
+        "sourceIdentity": {
+          "listingRef": "slotone:url:https://slot-one.com.ar/productos/pc-gamer-amd-ryzen-5-5600gt-16gb-ddr4-ssd-512gb-win-111",
+          "title": "Pc Gamer Amd Ryzen 5 5600gt - 16gb Ddr4 - Ssd 512gb - Win 11",
+          "storeSku": "34523429922223344"
+        },
+        "priceCondition": "unspecified",
+        "identityReview": {
+          "version": 1,
+          "status": "needs-review",
+          "reason": "explicit-conflict",
+          "reviewedAt": "2026-10-07T02:49:19.140Z",
+          "model": null,
+          "confidence": null,
+          "sourceIdentity": {
+            "listingRef": "slotone:url:https://slot-one.com.ar/productos/pc-gamer-amd-ryzen-5-5600gt-16gb-ddr4-ssd-512gb-win-111",
+            "title": "Pc Gamer Amd Ryzen 5 5600gt - 16gb Ddr4 - Ssd 512gb - Win 11",
+            "storeSku": "34523429922223344"
+          },
+          "subject": {
+            "name": "pc gamer amd ryzen 5 5600gt 16gb ddr4 ssd 512gb win 11 precio de lista con tarjeta de credito 0 1 347 964 97 precio slot one 876 177",
+            "category": "perifericos",
+            "url": "https://www.slot-one.com.ar/productos/pc-gamer-amd-ryzen-5-5600gt-16gb-ddr4-ssd-512gb-win-111/"
+          }
+        }
+      },
+      "requests": 2
+    },
+    {
+      "storeId": "spacevideojuegos",
+      "name": "Space",
+      "platform": "foxtienda",
+      "storedTarget": true,
+      "target": {
+        "url": "https://spacegamer.com.ar/495569-componentes-de-pc-memoria-ram-sodimm-ddr3-hiksemi-4gb-1600mhz-hiker",
+        "name": "Memoria ram sodimm ddr3 HIKSEMI 4Gb 1600MHz Hiker",
+        "category": "memoria-ram",
+        "originalObservedAt": "2026-10-06 00:27:47.695+00"
+      },
+      "elapsedMs": 1813,
+      "state": "read-observation",
+      "failure": null,
+      "observation": {
+        "name": "Memoria ram sodimm ddr3 HIKSEMI 4Gb 1600MHz Hiker",
+        "price": 28000,
+        "stock": "out-of-stock",
+        "observedAt": "2026-10-07T02:49:16.491Z",
+        "sourceIdentity": {
+          "listingRef": "spacevideojuegos:url:https://spacegamer.com.ar/495569-componentes-de-pc-memoria-ram-sodimm-ddr3-hiksemi-4gb-1600mhz-hiker",
+          "title": "Memoria ram sodimm ddr3 HIKSEMI 4Gb 1600MHz Hiker"
+        },
+        "priceCondition": "unspecified",
+        "identityReview": null
+      },
+      "requests": 1
+    },
+    {
+      "storeId": "thegamershop",
+      "name": "The Gamer Shop",
+      "platform": "woocommerce",
+      "storedTarget": true,
+      "target": {
+        "url": "https://thegamershop.com.ar/producto/procesador-amd-am5-ryzen-7-9800x3d/",
+        "name": "Procesador AMD Ryzen 7 9800X3D 5.2GHz Turbo AM5 - No Incluye Cooler",
+        "category": "procesadores",
+        "originalObservedAt": "2026-03-05 02:44:52.173+00"
+      },
+      "elapsedMs": 1510,
+      "state": "no-observation",
+      "failure": "not-found",
+      "requests": 1
+    },
+    {
+      "storeId": "venex",
+      "name": "Venex",
+      "platform": "direct",
+      "storedTarget": true,
+      "target": {
+        "url": "https://www.venex.com.ar/memorias-ram/desktop/memoria-ram-timetec-bulk-16gb-ddr4-3200mhz-cl22.html",
+        "name": "Memoria Ram DDR4 - 16Gb 3200 Mhz X-Micro Value",
+        "category": "memoria-ram",
+        "originalObservedAt": "2026-08-14 14:51:11.498+00"
+      },
+      "elapsedMs": 2655,
+      "state": "no-observation",
+      "failure": "inconsistent-source",
+      "requests": 1
+    },
+    {
+      "storeId": "vertexretail",
+      "name": "Vertex Retail",
+      "platform": "tiendanube",
+      "storedTarget": true,
+      "target": {
+        "url": "https://vrx.com.ar/productos/soporte-monitor-flexispot-simple-resorte-de-gas-ma8d2-negro-r9c61/",
+        "name": "Soporte monitor Flexispot dual MA8D2 Negro resorte de gas",
+        "category": "procesadores",
+        "originalObservedAt": "2026-10-05 07:24:27.18+00"
+      },
+      "elapsedMs": 658,
+      "state": "read-observation",
+      "failure": null,
+      "observation": {
+        "name": "Soporte monitor Flexispot dual MA8D2 Negro resorte de gas",
+        "price": 269730,
+        "stock": "in-stock",
+        "observedAt": "2026-10-07T02:49:18.317Z",
+        "sourceIdentity": {
+          "listingRef": "vertexretail:url:https://vrx.com.ar/productos/soporte-monitor-flexispot-simple-resorte-de-gas-ma8d2-negro-r9c61",
+          "title": "Soporte monitor Flexispot dual MA8D2 Negro resorte de gas",
+          "storeSku": "ma8d2b"
+        },
+        "priceCondition": "unspecified",
+        "identityReview": {
+          "version": 1,
+          "status": "needs-review",
+          "reason": "explicit-conflict",
+          "reviewedAt": "2026-10-07T02:49:18.317Z",
+          "model": null,
+          "confidence": null,
+          "sourceIdentity": {
+            "listingRef": "vertexretail:url:https://vrx.com.ar/productos/soporte-monitor-flexispot-simple-resorte-de-gas-ma8d2-negro-r9c61",
+            "title": "Soporte monitor Flexispot dual MA8D2 Negro resorte de gas",
+            "storeSku": "ma8d2b"
+          },
+          "subject": {
+            "name": "soporte monitor flexispot dual ma8d2 negro resorte de gas",
+            "category": "procesadores",
+            "url": "https://vrx.com.ar/productos/soporte-monitor-flexispot-simple-resorte-de-gas-ma8d2-negro-r9c61/"
+          }
+        }
+      },
+      "requests": 1
+    },
+    {
+      "storeId": "wiztech",
+      "name": "WizTech",
+      "platform": "direct",
+      "storedTarget": true,
+      "target": {
+        "url": "https://wiztech.com.ar/catalogo/producto/procesador/1084/amd-ryzen-5-8500g-promo-wiz",
+        "name": "Procesador Amd Ryzen 5 8500G 5.0 Ghz - AM5",
+        "category": "procesadores",
+        "originalObservedAt": "2026-10-06 17:35:20.763+00"
+      },
+      "elapsedMs": 9692,
+      "state": "read-observation",
+      "failure": null,
+      "observation": {
+        "name": "AMD Ryzen 5 8500G Promo Wiz",
+        "price": 225000,
+        "stock": "in-stock",
+        "observedAt": "2026-10-07T02:49:27.616Z",
+        "sourceIdentity": {
+          "listingRef": "wiztech:url:https://wiztech.com.ar/catalogo/producto/procesador/1084/amd-ryzen-5-8500g-promo-wiz",
+          "title": "AMD Ryzen 5 8500G Promo Wiz"
+        },
+        "priceCondition": "unspecified",
+        "identityReview": null
+      },
+      "requests": 2
+    },
+    {
+      "storeId": "xtpc",
+      "name": "Xt-PC",
+      "platform": "direct",
+      "storedTarget": true,
+      "target": {
+        "url": "https://www.xt-pc.com.ar/prod/27478/memoria-sodimm-16gb-ddr5-5600-kingston-fury-impact",
+        "name": "MEMORIA SODIMM 16GB DDR5 5600 KINGSTON FURY IMPACT",
+        "category": "memoria-ram",
+        "originalObservedAt": "2026-10-06 17:31:59.05+00"
+      },
+      "elapsedMs": 4046,
+      "state": "read-observation",
+      "failure": null,
+      "observation": {
+        "name": "MEMORIA SODIMM 16GB DDR5 5600 KINGSTON FURY IMPACT",
+        "price": 541174,
+        "stock": "out-of-stock",
+        "observedAt": "2026-10-07T02:49:22.375Z",
+        "sourceIdentity": {
+          "listingRef": "xtpc:id:27478",
+          "title": "MEMORIA SODIMM 16GB DDR5 5600 KINGSTON FURY IMPACT",
+          "storeSku": "MEM1853"
+        },
+        "priceCondition": "special",
+        "identityReview": null
+      },
+      "requests": 1
+    }
+  ],
+  "trace": [
+    {
+      "storeId": "acuarioinsumos",
+      "url": "https://www.acuarioinsumos.com.ar/",
+      "method": "GET",
+      "at": "2026-10-07T02:48:31.189Z",
+      "status": 302,
+      "ms": 10365,
+      "failure": "network-or-bound"
+    },
+    {
+      "storeId": "37bytes",
+      "url": "https://www.37bytes.com.ar/productos/memoria-ram-8gb-ddr4-3600mhz-rgb-dimm-kingston-kf436c17bb2a-8/",
+      "method": "GET",
+      "at": "2026-10-07T02:48:31.200Z",
+      "status": 200,
+      "ms": 2196,
+      "bytes": 501016
+    },
+    {
+      "storeId": "armytech",
+      "url": "https://www.armytech.com.ar/procesadores/5782-procesador-amd-ryzen-5-3500x-am4-s-video-bulk-sin-cooler-y-sin-caja.html",
+      "method": "GET",
+      "at": "2026-10-07T02:48:31.200Z",
+      "status": 404,
+      "ms": 3405,
+      "bytes": 248974
+    },
+    {
+      "storeId": "beings",
+      "url": "https://beings.com.ar/product/procesador-intel-i7-12700/",
+      "method": "GET",
+      "at": "2026-10-07T02:48:33.457Z",
+      "status": 403,
+      "ms": 1660,
+      "bytes": 75193
+    },
+    {
+      "storeId": "clickgaming",
+      "url": "https://clickgaming.com.ar/componentes-de-pc/procesadores/procesador-amd-am5-ryzen-9-7900x-82398.html",
+      "method": "GET",
+      "at": "2026-10-07T02:48:35.119Z",
+      "status": 404,
+      "ms": 6643,
+      "bytes": 260834
+    },
+    {
+      "storeId": "armytech",
+      "url": "https://www.armytech.com.ar/buscar?controller=search&s=ryzen%205%203500x",
+      "method": "GET",
+      "at": "2026-10-07T02:48:36.608Z",
+      "status": 302,
+      "ms": 548
+    },
+    {
+      "storeId": "armytech",
+      "url": "https://www.armytech.com.ar/busqueda?s=ryzen+5+3500x",
+      "method": "GET",
+      "at": "2026-10-07T02:48:39.158Z",
+      "status": 200,
+      "ms": 1122,
+      "bytes": 243312
+    },
+    {
+      "storeId": "gamerspoint",
+      "url": "https://www.gamerspoint.com.ar/producto/memoria-ram-crucial-32gb-3200mts-pro-ddr4-cl22/",
+      "method": "GET",
+      "at": "2026-10-07T02:48:40.311Z",
+      "status": 200,
+      "ms": 1606,
+      "bytes": 371340
+    },
+    {
+      "storeId": "hypergaming",
+      "url": "https://hypergaming.com.ar/memorias-ram/memoria-pc/memoria-8gb-3200mhz-vengeance-lpx-corsair-121809.html",
+      "method": "GET",
+      "at": "2026-10-07T02:48:41.555Z",
+      "status": 301,
+      "ms": 807
+    },
+    {
+      "storeId": "hftecnologia",
+      "url": "https://hftecnologia.com.ar/539689-componentes-de-pc-memoria-ram-netac-shadow-ii-ddr5-4800-16gb-c40-black",
+      "method": "GET",
+      "at": "2026-10-07T02:48:41.967Z",
+      "status": 404,
+      "ms": 4233,
+      "bytes": 87400
+    },
+    {
+      "storeId": "clickgaming",
+      "url": "https://clickgaming.com.ar/buscar/?q=ryzen%209%207900x",
+      "method": "GET",
+      "at": "2026-10-07T02:48:43.764Z",
+      "status": 404,
+      "ms": 3209,
+      "bytes": 259177
+    },
+    {
+      "storeId": "hypergaming",
+      "url": "https://hypergaming.com.ar/memorias-ram/memoria-pc/memoria-8gb-3200mhz-ddr4-vengeance-lpx-corsair-121809.html",
+      "method": "GET",
+      "at": "2026-10-07T02:48:44.364Z",
+      "status": 200,
+      "ms": 2717,
+      "bytes": 277976
+    },
+    {
+      "storeId": "integradosargentinos",
+      "url": "https://www.integradosargentinos.com/productos/procesador-intel-core-ultra-5-245k-4-2-ghz-24mb-lga1851/",
+      "method": "GET",
+      "at": "2026-10-07T02:48:46.976Z",
+      "status": 200,
+      "ms": 1161,
+      "bytes": 500274
+    },
+    {
+      "storeId": "liontech",
+      "url": "https://liontech.com.ar/producto/procesador-amd-ryzen-5-8500g-3-50ghz-am5-ddr5/",
+      "method": "GET",
+      "at": "2026-10-07T02:48:47.097Z",
+      "status": 200,
+      "ms": 4005,
+      "bytes": 85291
+    },
+    {
+      "storeId": "megasoft",
+      "url": "https://megasoftargentina.com.ar/Memorias-Ram-/memorias-ddr4/memoria-ram-sodimm-ddr4-16gb-3200-mhz-adata-182029.html",
+      "method": "GET",
+      "at": "2026-10-07T02:48:48.170Z",
+      "status": 200,
+      "ms": 3151,
+      "bytes": 243218
+    },
+    {
+      "storeId": "hftecnologia",
+      "url": "https://hftecnologia.com.ar/Home/Listado?buscar=Memoria%20Ram%20Netac%20Shadow%20II%20Ddr5%204800%2016Gb%20C40%20Black",
+      "method": "GET",
+      "at": "2026-10-07T02:48:48.200Z",
+      "status": 404,
+      "ms": 5419,
+      "bytes": 87400
+    },
+    {
+      "storeId": "mexx",
+      "url": "https://www.mexx.com.ar/productos-rubro/memorias-ram/51471-memoria-ram-ddr4-16gb-3200-mhz-x-micro-value.html",
+      "method": "GET",
+      "at": "2026-10-07T02:48:51.133Z",
+      "status": 200,
+      "ms": 5317,
+      "bytes": 198612
+    },
+    {
+      "storeId": "noxie",
+      "url": "https://noxiestore.com/procesadores/intel/procesador-intel-core-i5-12400f-6-nucleos-lga1700-s-cooler-y-s-video-oem-tray-193357.html",
+      "method": "GET",
+      "at": "2026-10-07T02:48:51.364Z",
+      "status": 200,
+      "ms": 2581,
+      "bytes": 292842
+    },
+    {
+      "storeId": "portaltech",
+      "url": "https://portalstore.com.ar/producto/procesador-amd-am5-ryzen-5-7600x",
+      "method": "GET",
+      "at": "2026-10-07T02:48:53.621Z",
+      "status": 200,
+      "ms": 5765,
+      "bytes": 231457
+    },
+    {
+      "storeId": "venex",
+      "url": "https://www.venex.com.ar/memorias-ram/desktop/memoria-ram-timetec-bulk-16gb-ddr4-3200mhz-cl22.html",
+      "method": "GET",
+      "at": "2026-10-07T02:48:53.991Z",
+      "status": 200,
+      "ms": 2635,
+      "bytes": 542983
+    },
+    {
+      "storeId": "fullh4rd",
+      "url": "https://www.fullh4rd.com.ar/prod/18970/combo-amd-ryzen-7-9800x3d-b650",
+      "method": "GET",
+      "at": "2026-10-07T02:48:56.478Z",
+      "status": 403,
+      "ms": 364,
+      "bytes": 5639
+    },
+    {
+      "storeId": "compragamer",
+      "url": "https://static.compragamer.com/productos",
+      "method": "GET",
+      "at": "2026-10-07T02:48:56.647Z",
+      "status": 200,
+      "ms": 6750,
+      "bytes": 2214964
+    },
+    {
+      "storeId": "maximus",
+      "url": "https://www.maximus.com.ar/Producto/Micro-AMD-Ryzen-5-8600G-50-Ghz-AM5/ITEM=13444/maximus.aspx?PN=100-100001237BOX",
+      "method": "GET",
+      "at": "2026-10-07T02:48:56.844Z",
+      "status": 200,
+      "ms": 1931,
+      "bytes": 512430
+    },
+    {
+      "storeId": "gamingcity",
+      "url": "https://www.gamingcity.com.ar/ddr4-corsair-dominator-platinum-rgb-ddr4-16gb-4000mhz-white--det--12555",
+      "method": "GET",
+      "at": "2026-10-07T02:48:59.414Z",
+      "status": 404,
+      "ms": 2159,
+      "bytes": 80924
+    },
+    {
+      "storeId": "maximus",
+      "url": "https://www.maximus.com.ar/wfmWebSite2.aspx/wsNRW_Script",
+      "method": "POST",
+      "at": "2026-10-07T02:49:00.779Z",
+      "status": 200,
+      "ms": 530,
+      "bytes": 10892
+    },
+    {
+      "storeId": "gezatek",
+      "url": "https://www.gezatek.com.ar/tienda/procesadores-amd/2505-micro-amd-ryzen-7-9800x3d---8-nucleos--16-threads-52ghz-am5.html",
+      "method": "GET",
+      "at": "2026-10-07T02:49:01.349Z",
+      "status": 301,
+      "ms": 2207
+    },
+    {
+      "storeId": "gamingcity",
+      "url": "https://www.gamingcity.com.ar/busqueda_avanzada.php?buscar=1&palabra=Corsair%2016gb%20ddr4",
+      "method": "GET",
+      "at": "2026-10-07T02:49:03.576Z",
+      "status": 200,
+      "ms": 969,
+      "bytes": 121287
+    },
+    {
+      "storeId": "compugarden",
+      "url": "https://www.compugarden.com.ar/DETALLE/Memoria-Ram-Kimota-8GB-2666-Mhz-DDR4/ITEM_ID=19838/OR=/H=/CANT=/compugarden.aspx",
+      "method": "GET",
+      "at": "2026-10-07T02:49:04.564Z",
+      "status": 200,
+      "ms": 2205,
+      "bytes": 224620
+    },
+    {
+      "storeId": "compragamer",
+      "url": "https://static.compragamer.com/categorias_sub",
+      "method": "GET",
+      "at": "2026-10-07T02:49:05.405Z",
+      "status": 200,
+      "ms": 163,
+      "bytes": 32046
+    },
+    {
+      "storeId": "gezatek",
+      "url": "https://gezatek.com.ar/tienda/procesadores-amd/2505-micro-amd-ryzen-7-9800x3d---8-nucleos--16-threads-52ghz-am5.html",
+      "method": "GET",
+      "at": "2026-10-07T02:49:05.557Z",
+      "status": 404,
+      "ms": 2455,
+      "bytes": 169968
+    },
+    {
+      "storeId": "logg",
+      "url": "https://logg.com.ar/ProductDetail/Ryzen-3-4100-BOX",
+      "method": "GET",
+      "at": "2026-10-07T02:49:06.785Z",
+      "status": 200,
+      "ms": 281,
+      "bytes": 91464
+    },
+    {
+      "storeId": "compragamer",
+      "url": "https://static.compragamer.com/marcas",
+      "method": "GET",
+      "at": "2026-10-07T02:49:07.571Z",
+      "status": 200,
+      "ms": 159,
+      "bytes": 42365
+    },
+    {
+      "storeId": "katech",
+      "url": "https://katech.com.ar/producto/procesador-amd-ryzen-7-9800x3d-am5-2/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:07.766Z",
+      "status": 200,
+      "ms": 1930,
+      "bytes": 432501
+    },
+    {
+      "storeId": "logg",
+      "url": "https://logg.com.ar/Products?CurrentPage=1&PageSize=25&Order=3&categoryName=Procesadores&FilterText=ryzen+3+4100",
+      "method": "GET",
+      "at": "2026-10-07T02:49:09.069Z",
+      "status": 200,
+      "ms": 274,
+      "bytes": 167094
+    },
+    {
+      "storeId": "dinobyte",
+      "url": "https://dinobyte.ar/producto/microprocesador-amd-ryzen-7-5700x3d-sin-cooler/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:09.366Z",
+      "status": 200,
+      "ms": 3755,
+      "bytes": 264585
+    },
+    {
+      "storeId": "maxtecno",
+      "url": "https://maxtecno.com.ar/producto/memoria-ddr4-8-gb-3200-mhz-rgb-corsair-vengeance-outlet/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:09.757Z",
+      "status": 200,
+      "ms": 3364,
+      "bytes": 261430
+    },
+    {
+      "storeId": "gezatek",
+      "url": "https://www.gezatek.com.ar/buscar/?q=ryzen%207%209800x3d",
+      "method": "GET",
+      "at": "2026-10-07T02:49:10.016Z",
+      "status": 301,
+      "ms": 903
+    },
+    {
+      "storeId": "gezatek",
+      "url": "https://gezatek.com.ar/buscar/?q=ryzen%207%209800x3d",
+      "method": "GET",
+      "at": "2026-10-07T02:49:12.921Z",
+      "status": 200,
+      "ms": 1190,
+      "bytes": 178255
+    },
+    {
+      "storeId": "rockethard",
+      "url": "https://rockethard.com.ar/hardware/memoria-ddr5/memoria-corsair-32gb-2x16gb-6000-mhz-vengeance-amd-expo-ddr5-162084.html",
+      "method": "GET",
+      "at": "2026-10-07T02:49:13.183Z",
+      "status": 200,
+      "ms": 1471,
+      "bytes": 286554
+    },
+    {
+      "storeId": "scphardstore",
+      "url": "https://www.scphardstore.com/producto/memoria-ram-ddr5-netac-16gb-6000mhz-shadow-ii-black-cl38/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:13.184Z",
+      "status": 403,
+      "ms": 534,
+      "bytes": 6057
+    },
+    {
+      "storeId": "shopgamer",
+      "url": "https://www.shopgamer.com.ar/productos/shp-memoria-lexar-udimm-ddr5-16gb-5600mhz-ld5u16g56c46st-bgs/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:13.721Z",
+      "status": 200,
+      "ms": 2363,
+      "bytes": 861498
+    },
+    {
+      "storeId": "slotone",
+      "url": "https://www.slot-one.com.ar/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:14.130Z",
+      "status": 200,
+      "ms": 2293,
+      "bytes": 1577830
+    },
+    {
+      "storeId": "spacevideojuegos",
+      "url": "https://spacegamer.com.ar/495569-componentes-de-pc-memoria-ram-sodimm-ddr3-hiksemi-4gb-1600mhz-hiker",
+      "method": "GET",
+      "at": "2026-10-07T02:49:14.679Z",
+      "status": 200,
+      "ms": 1803,
+      "bytes": 258114
+    },
+    {
+      "storeId": "thegamershop",
+      "url": "https://thegamershop.com.ar/producto/procesador-amd-am5-ryzen-7-9800x3d/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:16.148Z",
+      "status": 404,
+      "ms": 1509,
+      "bytes": 156824
+    },
+    {
+      "storeId": "hardcore",
+      "url": "https://hardcorecomputacion.com.ar/producto/memoria-corsair-pro-sl-2x8gb-3200mhz/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:16.497Z",
+      "status": 403,
+      "ms": 162,
+      "bytes": 5862
+    },
+    {
+      "storeId": "goldentechstore",
+      "url": "https://goldentechstore.com.ar/producto/memoria-ram-ddr5-16gb-xpg-6000mhz-lancer-blade-rgb-black/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:16.660Z",
+      "status": 404,
+      "ms": 1262,
+      "bytes": 288914
+    },
+    {
+      "storeId": "vertexretail",
+      "url": "https://vrx.com.ar/productos/soporte-monitor-flexispot-simple-resorte-de-gas-ma8d2-negro-r9c61/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:17.659Z",
+      "status": 200,
+      "ms": 611,
+      "bytes": 627764
+    },
+    {
+      "storeId": "wiztech",
+      "url": "https://wiztech.com.ar/catalogo/producto/procesador/1084/amd-ryzen-5-8500g-promo-wiz",
+      "method": "GET",
+      "at": "2026-10-07T02:49:17.925Z",
+      "status": 200,
+      "ms": 829,
+      "bytes": 2938
+    },
+    {
+      "storeId": "xtpc",
+      "url": "https://www.xt-pc.com.ar/prod/27478/memoria-sodimm-16gb-ddr5-5600-kingston-fury-impact",
+      "method": "GET",
+      "at": "2026-10-07T02:49:18.330Z",
+      "status": 200,
+      "ms": 4035,
+      "bytes": 62318
+    },
+    {
+      "storeId": "slotone",
+      "url": "https://www.slot-one.com.ar/productos/pc-gamer-amd-ryzen-5-5600gt-16gb-ddr4-ssd-512gb-win-111/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:18.425Z",
+      "status": 200,
+      "ms": 640,
+      "bytes": 1580369
+    },
+    {
+      "storeId": "wiztech",
+      "url": "https://wiztech.com.ar/backend/Controller/ProductosController.php?action=getProductos",
+      "method": "GET",
+      "at": "2026-10-07T02:49:20.758Z",
+      "status": 200,
+      "ms": 6850,
+      "bytes": 1507142
+    }
+  ],
+  "captures": [
+    {
+      "storeId": "37bytes",
+      "url": "https://www.37bytes.com.ar/productos/memoria-ram-8gb-ddr4-3600mhz-rgb-dimm-kingston-kf436c17bb2a-8/",
+      "method": "GET",
+      "at": "2026-10-07T02:48:31.200Z",
+      "status": 200,
+      "ms": 2196,
+      "bytes": 501016,
+      "file": "37bytes-1.txt",
+      "sha256": "66095770ad5ac8b89ff354a153f035e205593e85701b24016acd02010595875a"
+    },
+    {
+      "storeId": "armytech",
+      "url": "https://www.armytech.com.ar/procesadores/5782-procesador-amd-ryzen-5-3500x-am4-s-video-bulk-sin-cooler-y-sin-caja.html",
+      "method": "GET",
+      "at": "2026-10-07T02:48:31.200Z",
+      "status": 404,
+      "ms": 3405,
+      "bytes": 248974,
+      "file": "armytech-1.txt",
+      "sha256": "e6023ab0906cdf8982012221e40d49970bdbe8f8a2393ce55e50456382e0c81d"
+    },
+    {
+      "storeId": "beings",
+      "url": "https://beings.com.ar/product/procesador-intel-i7-12700/",
+      "method": "GET",
+      "at": "2026-10-07T02:48:33.457Z",
+      "status": 403,
+      "ms": 1660,
+      "bytes": 75193,
+      "file": "beings-1.txt",
+      "sha256": "ac4f780358ba4326a07c3a9bb83dff5a70cbb95a22be0f4c9385efe182cd722f"
+    },
+    {
+      "storeId": "armytech",
+      "url": "https://www.armytech.com.ar/busqueda?s=ryzen+5+3500x",
+      "method": "GET",
+      "at": "2026-10-07T02:48:39.158Z",
+      "status": 200,
+      "ms": 1122,
+      "bytes": 243312,
+      "file": "armytech-3.txt",
+      "sha256": "c72477007005406642e8bae8c1d4791312e3b7cac485d580d693d36c7942125e"
+    },
+    {
+      "storeId": "clickgaming",
+      "url": "https://clickgaming.com.ar/componentes-de-pc/procesadores/procesador-amd-am5-ryzen-9-7900x-82398.html",
+      "method": "GET",
+      "at": "2026-10-07T02:48:35.119Z",
+      "status": 404,
+      "ms": 6643,
+      "bytes": 260834,
+      "file": "clickgaming-1.txt",
+      "sha256": "e6ba1392d91a6f445de3de83bc96b1b23735556b66ddbb7a8b53ed628c9b3833"
+    },
+    {
+      "storeId": "gamerspoint",
+      "url": "https://www.gamerspoint.com.ar/producto/memoria-ram-crucial-32gb-3200mts-pro-ddr4-cl22/",
+      "method": "GET",
+      "at": "2026-10-07T02:48:40.311Z",
+      "status": 200,
+      "ms": 1606,
+      "bytes": 371340,
+      "file": "gamerspoint-1.txt",
+      "sha256": "1ba5266d8136e5590d0919497d7fea753475c1d072143955e1335e7600401032"
+    },
+    {
+      "storeId": "hftecnologia",
+      "url": "https://hftecnologia.com.ar/539689-componentes-de-pc-memoria-ram-netac-shadow-ii-ddr5-4800-16gb-c40-black",
+      "method": "GET",
+      "at": "2026-10-07T02:48:41.967Z",
+      "status": 404,
+      "ms": 4233,
+      "bytes": 87400,
+      "file": "hftecnologia-1.txt",
+      "sha256": "a16ae2b21b6af3b43ca9024b7095ed804574f8e1ab5dd39f104ea622e58a231c"
+    },
+    {
+      "storeId": "clickgaming",
+      "url": "https://clickgaming.com.ar/buscar/?q=ryzen%209%207900x",
+      "method": "GET",
+      "at": "2026-10-07T02:48:43.764Z",
+      "status": 404,
+      "ms": 3209,
+      "bytes": 259177,
+      "file": "clickgaming-2.txt",
+      "sha256": "454fe7474f98c3b220c266b17f455ceba99eaaa1e412a6d5d9b150ba6b742dc0"
+    },
+    {
+      "storeId": "hypergaming",
+      "url": "https://hypergaming.com.ar/memorias-ram/memoria-pc/memoria-8gb-3200mhz-ddr4-vengeance-lpx-corsair-121809.html",
+      "method": "GET",
+      "at": "2026-10-07T02:48:44.364Z",
+      "status": 200,
+      "ms": 2717,
+      "bytes": 277976,
+      "file": "hypergaming-2.txt",
+      "sha256": "b151a9f08fa390e3133fb3893a5cd3e323c33c82079473aa6f8519d2512e2078"
+    },
+    {
+      "storeId": "integradosargentinos",
+      "url": "https://www.integradosargentinos.com/productos/procesador-intel-core-ultra-5-245k-4-2-ghz-24mb-lga1851/",
+      "method": "GET",
+      "at": "2026-10-07T02:48:46.976Z",
+      "status": 200,
+      "ms": 1161,
+      "bytes": 500274,
+      "file": "integradosargentinos-1.txt",
+      "sha256": "cf9db14a3fb4270ce72375d7464fbd8bf3a1f5449dad2f4546c4ff26b5c5eb74"
+    },
+    {
+      "storeId": "liontech",
+      "url": "https://liontech.com.ar/producto/procesador-amd-ryzen-5-8500g-3-50ghz-am5-ddr5/",
+      "method": "GET",
+      "at": "2026-10-07T02:48:47.097Z",
+      "status": 200,
+      "ms": 4005,
+      "bytes": 85291,
+      "file": "liontech-1.txt",
+      "sha256": "866917742821673b01bac9ef63d3dd2524eb9704b56b0908f266f9ad9e29d1d8"
+    },
+    {
+      "storeId": "megasoft",
+      "url": "https://megasoftargentina.com.ar/Memorias-Ram-/memorias-ddr4/memoria-ram-sodimm-ddr4-16gb-3200-mhz-adata-182029.html",
+      "method": "GET",
+      "at": "2026-10-07T02:48:48.170Z",
+      "status": 200,
+      "ms": 3151,
+      "bytes": 243218,
+      "file": "megasoft-1.txt",
+      "sha256": "7ab2d0ed69d6407337153925c7fb2cea0a5fdbbe16d109ef73e1755c911c4353"
+    },
+    {
+      "storeId": "hftecnologia",
+      "url": "https://hftecnologia.com.ar/Home/Listado?buscar=Memoria%20Ram%20Netac%20Shadow%20II%20Ddr5%204800%2016Gb%20C40%20Black",
+      "method": "GET",
+      "at": "2026-10-07T02:48:48.200Z",
+      "status": 404,
+      "ms": 5419,
+      "bytes": 87400,
+      "file": "hftecnologia-2.txt",
+      "sha256": "e644cc8a32ca0068d8eb915d3828f43099fe8878fa85c860971b03cf3c90e004"
+    },
+    {
+      "storeId": "noxie",
+      "url": "https://noxiestore.com/procesadores/intel/procesador-intel-core-i5-12400f-6-nucleos-lga1700-s-cooler-y-s-video-oem-tray-193357.html",
+      "method": "GET",
+      "at": "2026-10-07T02:48:51.364Z",
+      "status": 200,
+      "ms": 2581,
+      "bytes": 292842,
+      "file": "noxie-1.txt",
+      "sha256": "fb5ba53ed2fcff9249ee2dec2a0a318722169936162e914239c2a0c5dc674767"
+    },
+    {
+      "storeId": "mexx",
+      "url": "https://www.mexx.com.ar/productos-rubro/memorias-ram/51471-memoria-ram-ddr4-16gb-3200-mhz-x-micro-value.html",
+      "method": "GET",
+      "at": "2026-10-07T02:48:51.133Z",
+      "status": 200,
+      "ms": 5317,
+      "bytes": 198612,
+      "file": "mexx-1.txt",
+      "sha256": "dd1f668d10e311d90ab8769d13ef56998181997d8986bb8acb188e91efe71c71"
+    },
+    {
+      "storeId": "venex",
+      "url": "https://www.venex.com.ar/memorias-ram/desktop/memoria-ram-timetec-bulk-16gb-ddr4-3200mhz-cl22.html",
+      "method": "GET",
+      "at": "2026-10-07T02:48:53.991Z",
+      "status": 200,
+      "ms": 2635,
+      "bytes": 542983,
+      "file": "venex-1.txt",
+      "sha256": "cde45d01e2712433e76ea645c9b54803a85cf84e3002af6de9682dc166875ddf"
+    },
+    {
+      "storeId": "fullh4rd",
+      "url": "https://www.fullh4rd.com.ar/prod/18970/combo-amd-ryzen-7-9800x3d-b650",
+      "method": "GET",
+      "at": "2026-10-07T02:48:56.478Z",
+      "status": 403,
+      "ms": 364,
+      "bytes": 5639,
+      "file": "fullh4rd-1.txt",
+      "sha256": "96288971e465bcbfe7e0a0a4856c554b71562fb7eb8e466eeca5d8cedea0888b"
+    },
+    {
+      "storeId": "maximus",
+      "url": "https://www.maximus.com.ar/Producto/Micro-AMD-Ryzen-5-8600G-50-Ghz-AM5/ITEM=13444/maximus.aspx?PN=100-100001237BOX",
+      "method": "GET",
+      "at": "2026-10-07T02:48:56.844Z",
+      "status": 200,
+      "ms": 1931,
+      "bytes": 512430,
+      "file": "maximus-1.txt",
+      "sha256": "19a91d2fa047115237f10f2b7beddf70243223562bf412bccdd548e1ffbd7e4d"
+    },
+    {
+      "storeId": "portaltech",
+      "url": "https://portalstore.com.ar/producto/procesador-amd-am5-ryzen-5-7600x",
+      "method": "GET",
+      "at": "2026-10-07T02:48:53.621Z",
+      "status": 200,
+      "ms": 5765,
+      "bytes": 231457,
+      "file": "portaltech-1.txt",
+      "sha256": "49def900b416b7db9f17d82edeb685f57fd255cd2c623e053f088db39b83fd86"
+    },
+    {
+      "storeId": "maximus",
+      "url": "https://www.maximus.com.ar/wfmWebSite2.aspx/wsNRW_Script",
+      "method": "POST",
+      "at": "2026-10-07T02:49:00.779Z",
+      "status": 200,
+      "ms": 530,
+      "bytes": 10892,
+      "file": "maximus-2.txt",
+      "sha256": "9317182db10bc422e5535666964e5214d3f0b45452554df774b260e0f85854db"
+    },
+    {
+      "storeId": "gamingcity",
+      "url": "https://www.gamingcity.com.ar/ddr4-corsair-dominator-platinum-rgb-ddr4-16gb-4000mhz-white--det--12555",
+      "method": "GET",
+      "at": "2026-10-07T02:48:59.414Z",
+      "status": 404,
+      "ms": 2159,
+      "bytes": 80924,
+      "file": "gamingcity-1.txt",
+      "sha256": "7745d8247f29f3c98e96380a98cd262aacffbd5b46987f12019030432cf1da71"
+    },
+    {
+      "storeId": "compragamer",
+      "url": "https://static.compragamer.com/productos",
+      "method": "GET",
+      "at": "2026-10-07T02:48:56.647Z",
+      "status": 200,
+      "ms": 6750,
+      "bytes": 2214964,
+      "file": "compragamer-1.txt",
+      "sha256": "a29e1b8aeb656fef4ca84ff5e1e7e09907fa2f594d9b3da04cc19bea098e9f53"
+    },
+    {
+      "storeId": "gamingcity",
+      "url": "https://www.gamingcity.com.ar/busqueda_avanzada.php?buscar=1&palabra=Corsair%2016gb%20ddr4",
+      "method": "GET",
+      "at": "2026-10-07T02:49:03.576Z",
+      "status": 200,
+      "ms": 969,
+      "bytes": 121287,
+      "file": "gamingcity-2.txt",
+      "sha256": "f20e339da306a2ced6e2c153ebe2e0f227f6affddae83cacc31bfb60c3de71ce"
+    },
+    {
+      "storeId": "compragamer",
+      "url": "https://static.compragamer.com/categorias_sub",
+      "method": "GET",
+      "at": "2026-10-07T02:49:05.405Z",
+      "status": 200,
+      "ms": 163,
+      "bytes": 32046,
+      "file": "compragamer-2.txt",
+      "sha256": "dbcaf25221ccab63d685d2d67d82a904cfe04a28416b9f636536286e60a6a6b7"
+    },
+    {
+      "storeId": "compugarden",
+      "url": "https://www.compugarden.com.ar/DETALLE/Memoria-Ram-Kimota-8GB-2666-Mhz-DDR4/ITEM_ID=19838/OR=/H=/CANT=/compugarden.aspx",
+      "method": "GET",
+      "at": "2026-10-07T02:49:04.564Z",
+      "status": 200,
+      "ms": 2205,
+      "bytes": 224620,
+      "file": "compugarden-1.txt",
+      "sha256": "f63922532cdf805c1c2fac532e0efced8959c4cb24696b37d9395f32cea6add8"
+    },
+    {
+      "storeId": "logg",
+      "url": "https://logg.com.ar/ProductDetail/Ryzen-3-4100-BOX",
+      "method": "GET",
+      "at": "2026-10-07T02:49:06.785Z",
+      "status": 200,
+      "ms": 281,
+      "bytes": 91464,
+      "file": "logg-1.txt",
+      "sha256": "c885ec77484cda996b94cfcfdd617942af77ec46d984aff8a7031e0f7c0b312f"
+    },
+    {
+      "storeId": "compragamer",
+      "url": "https://static.compragamer.com/marcas",
+      "method": "GET",
+      "at": "2026-10-07T02:49:07.571Z",
+      "status": 200,
+      "ms": 159,
+      "bytes": 42365,
+      "file": "compragamer-3.txt",
+      "sha256": "8aeb70a11b164c6a42bc5fda41b0720e5c989d3640d438cf432e22e768cf4a76"
+    },
+    {
+      "storeId": "gezatek",
+      "url": "https://gezatek.com.ar/tienda/procesadores-amd/2505-micro-amd-ryzen-7-9800x3d---8-nucleos--16-threads-52ghz-am5.html",
+      "method": "GET",
+      "at": "2026-10-07T02:49:05.557Z",
+      "status": 404,
+      "ms": 2455,
+      "bytes": 169968,
+      "file": "gezatek-2.txt",
+      "sha256": "dab03f5d327035efc158c2517b882f8c0a4a4ed5fb3d4bb8f160d239010130e6"
+    },
+    {
+      "storeId": "logg",
+      "url": "https://logg.com.ar/Products?CurrentPage=1&PageSize=25&Order=3&categoryName=Procesadores&FilterText=ryzen+3+4100",
+      "method": "GET",
+      "at": "2026-10-07T02:49:09.069Z",
+      "status": 200,
+      "ms": 274,
+      "bytes": 167094,
+      "file": "logg-2.txt",
+      "sha256": "c7ee237a1c965fce72cd19842b63703c3acab8af9e5aefc22b132428072f7065"
+    },
+    {
+      "storeId": "katech",
+      "url": "https://katech.com.ar/producto/procesador-amd-ryzen-7-9800x3d-am5-2/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:07.766Z",
+      "status": 200,
+      "ms": 1930,
+      "bytes": 432501,
+      "file": "katech-1.txt",
+      "sha256": "42b68e0c730139533b126e447a3440b91c322b7c77621e77af7abda97ae7c8cc"
+    },
+    {
+      "storeId": "dinobyte",
+      "url": "https://dinobyte.ar/producto/microprocesador-amd-ryzen-7-5700x3d-sin-cooler/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:09.366Z",
+      "status": 200,
+      "ms": 3755,
+      "bytes": 264585,
+      "file": "dinobyte-1.txt",
+      "sha256": "023fe8c534e15e5bb5007b67cdf6db7608c6f26d1e24f108c2a3bcf78a1164b3"
+    },
+    {
+      "storeId": "maxtecno",
+      "url": "https://maxtecno.com.ar/producto/memoria-ddr4-8-gb-3200-mhz-rgb-corsair-vengeance-outlet/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:09.757Z",
+      "status": 200,
+      "ms": 3364,
+      "bytes": 261430,
+      "file": "maxtecno-1.txt",
+      "sha256": "f10d141bfcdbb895f1d8e440010fe7eedf98b7df1fdc827071670de12bbe570c"
+    },
+    {
+      "storeId": "scphardstore",
+      "url": "https://www.scphardstore.com/producto/memoria-ram-ddr5-netac-16gb-6000mhz-shadow-ii-black-cl38/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:13.184Z",
+      "status": 403,
+      "ms": 534,
+      "bytes": 6057,
+      "file": "scphardstore-1.txt",
+      "sha256": "1cf69ba116ca2b463956404c06fa9000e331f2f85f6b4758ce0b6e9da6b00cad"
+    },
+    {
+      "storeId": "gezatek",
+      "url": "https://gezatek.com.ar/buscar/?q=ryzen%207%209800x3d",
+      "method": "GET",
+      "at": "2026-10-07T02:49:12.921Z",
+      "status": 200,
+      "ms": 1190,
+      "bytes": 178255,
+      "file": "gezatek-4.txt",
+      "sha256": "383a8cd275fb933b760010f9b3d77e8e550e8d8a1f77b925a90ace475e2db46c"
+    },
+    {
+      "storeId": "rockethard",
+      "url": "https://rockethard.com.ar/hardware/memoria-ddr5/memoria-corsair-32gb-2x16gb-6000-mhz-vengeance-amd-expo-ddr5-162084.html",
+      "method": "GET",
+      "at": "2026-10-07T02:49:13.183Z",
+      "status": 200,
+      "ms": 1471,
+      "bytes": 286554,
+      "file": "rockethard-1.txt",
+      "sha256": "c41fbed67b032f13eb740776c43497f84f813d3bd0cf4aaa75c106f18ec17bb5"
+    },
+    {
+      "storeId": "shopgamer",
+      "url": "https://www.shopgamer.com.ar/productos/shp-memoria-lexar-udimm-ddr5-16gb-5600mhz-ld5u16g56c46st-bgs/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:13.721Z",
+      "status": 200,
+      "ms": 2363,
+      "bytes": 861498,
+      "file": "shopgamer-1.txt",
+      "sha256": "04adfcf399f1ecdc58ff4ccb9230126a28eceda37775cb63740578e267285b8b"
+    },
+    {
+      "storeId": "slotone",
+      "url": "https://www.slot-one.com.ar/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:14.130Z",
+      "status": 200,
+      "ms": 2293,
+      "bytes": 1577830,
+      "file": "slotone-1.txt",
+      "sha256": "c3c1b5ae3bf8ced612cd22365a1885fd30a08acbb4dde4ded1862a34bb50768a"
+    },
+    {
+      "storeId": "spacevideojuegos",
+      "url": "https://spacegamer.com.ar/495569-componentes-de-pc-memoria-ram-sodimm-ddr3-hiksemi-4gb-1600mhz-hiker",
+      "method": "GET",
+      "at": "2026-10-07T02:49:14.679Z",
+      "status": 200,
+      "ms": 1803,
+      "bytes": 258114,
+      "file": "spacevideojuegos-1.txt",
+      "sha256": "b181271514b326c631a9ad61a8b8db4adedbc28dcb251688f527857739536925"
+    },
+    {
+      "storeId": "hardcore",
+      "url": "https://hardcorecomputacion.com.ar/producto/memoria-corsair-pro-sl-2x8gb-3200mhz/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:16.497Z",
+      "status": 403,
+      "ms": 162,
+      "bytes": 5862,
+      "file": "hardcore-1.txt",
+      "sha256": "cfde26574d75db07b878956716575e1ad015fa7a5a3968b6afc818b5c86a3178"
+    },
+    {
+      "storeId": "thegamershop",
+      "url": "https://thegamershop.com.ar/producto/procesador-amd-am5-ryzen-7-9800x3d/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:16.148Z",
+      "status": 404,
+      "ms": 1509,
+      "bytes": 156824,
+      "file": "thegamershop-1.txt",
+      "sha256": "90d8831dfa0cf09081d6b3418bd6b0bdbf6f086953c32cf16244b48f072a4502"
+    },
+    {
+      "storeId": "goldentechstore",
+      "url": "https://goldentechstore.com.ar/producto/memoria-ram-ddr5-16gb-xpg-6000mhz-lancer-blade-rgb-black/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:16.660Z",
+      "status": 404,
+      "ms": 1262,
+      "bytes": 288914,
+      "file": "goldentechstore-1.txt",
+      "sha256": "f5a38e0ceb2137ac48850387839a2c52065a880311e6b994a54d4aaafaf7d2e9"
+    },
+    {
+      "storeId": "vertexretail",
+      "url": "https://vrx.com.ar/productos/soporte-monitor-flexispot-simple-resorte-de-gas-ma8d2-negro-r9c61/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:17.659Z",
+      "status": 200,
+      "ms": 611,
+      "bytes": 627764,
+      "file": "vertexretail-1.txt",
+      "sha256": "c81aa6b178a25eb64bb93f0fbf8cefec834cb3a56edb999ef7a73a320bc5b161"
+    },
+    {
+      "storeId": "wiztech",
+      "url": "https://wiztech.com.ar/catalogo/producto/procesador/1084/amd-ryzen-5-8500g-promo-wiz",
+      "method": "GET",
+      "at": "2026-10-07T02:49:17.925Z",
+      "status": 200,
+      "ms": 829,
+      "bytes": 2938,
+      "file": "wiztech-1.txt",
+      "sha256": "29f469640f764ffcc2f387a818caacee948510515c08a0265a69d5a99888f287"
+    },
+    {
+      "storeId": "slotone",
+      "url": "https://www.slot-one.com.ar/productos/pc-gamer-amd-ryzen-5-5600gt-16gb-ddr4-ssd-512gb-win-111/",
+      "method": "GET",
+      "at": "2026-10-07T02:49:18.425Z",
+      "status": 200,
+      "ms": 640,
+      "bytes": 1580369,
+      "file": "slotone-2.txt",
+      "sha256": "7d6378bd4d41b222b2063d7838d3d03edb099279b91eb32961e439a00bc07f33"
+    },
+    {
+      "storeId": "xtpc",
+      "url": "https://www.xt-pc.com.ar/prod/27478/memoria-sodimm-16gb-ddr5-5600-kingston-fury-impact",
+      "method": "GET",
+      "at": "2026-10-07T02:49:18.330Z",
+      "status": 200,
+      "ms": 4035,
+      "bytes": 62318,
+      "file": "xtpc-1.txt",
+      "sha256": "395241e73dc690d08c183eb4f120385be81b08be903cc1624e24c6fd25850bea"
+    },
+    {
+      "storeId": "wiztech",
+      "url": "https://wiztech.com.ar/backend/Controller/ProductosController.php?action=getProductos",
+      "method": "GET",
+      "at": "2026-10-07T02:49:20.758Z",
+      "status": 200,
+      "ms": 6850,
+      "bytes": 1507142,
+      "file": "wiztech-2.txt",
+      "sha256": "fef51ab3f59792a14eb454ea143b438233ac5275c3b219de355fae8d14529a6a"
+    }
+  ]
+}

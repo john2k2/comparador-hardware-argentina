@@ -1,0 +1,77 @@
+{
+  "recordedAt": "2026-10-07T03:05:59.770621+00:00",
+  "branch": "codex/fiabilidad-todas-tiendas",
+  "base": "dcefbe72998bafabd719e96d9568ab512f81751e",
+  "productionAtCut": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+  "fullVerify": {
+    "command": "npm run verify",
+    "exitCode": 0,
+    "unitPassed": 1816,
+    "unitSkipped": 2,
+    "unitFilesPassed": 205,
+    "opsPassed": 25,
+    "lintPassed": true,
+    "typesPassed": true,
+    "logSha256": "bd5e2d53515b08c0d93f68c19467ba622501a6ca552314821d6d9354b30367f0"
+  },
+  "sql": {
+    "version": "17.11 local; production 17.6",
+    "migrations": 76,
+    "filesPassed": [
+      "supabase/tests/atomic_catalog_offers.sql",
+      "supabase/tests/paginated_catalog.sql",
+      "supabase/tests/peripheral_reclassification.sql",
+      "supabase/tests/adaptive_payment_conditions.sql",
+      "supabase/tests/complete_computer_categories.sql",
+      "supabase/tests/apu_accessory_categories.sql",
+      "supabase/tests/shared_feed_claims.sql",
+      "supabase/tests/idempotent_catalog_completion.sql",
+      "supabase/tests/catalog_inventory_discovery.sql",
+      "supabase/tests/inventory_detail_fallback.sql",
+      "supabase/tests/bounded_catalog_queue.sql",
+      "supabase/tests/catalog_seed_covering.sql",
+      "supabase/tests/network_thermal_categories.sql",
+      "supabase/tests/current_offer_evidence.sql"
+    ],
+    "concurrencyPassed": 3,
+    "sqlLogSha256": "ed102f0e7a116ae81572362afbe119d2e7ac333cc88475da855cceda88ede4e5",
+    "clusterStopped": true
+  },
+  "openNext": {
+    "command": "DISABLE_INTERNAL_BACKGROUND_REFRESH=1 DISABLE_LIVE_SCRAPING=1 ENABLE_ON_DEMAND_REFRESH=0 NEXT_TELEMETRY_DISABLED=1 npx opennextjs-cloudflare build",
+    "exitCode": 0,
+    "publicDocumentsChecked": 8,
+    "logSha256": "d6f53cdb6d5cd7244eed13a469fe387bce1aaeb4c108ea99cbe1859ece83158d"
+  },
+  "wrangler": {
+    "command": "npx wrangler deploy --dry-run --outdir tmp/fiabilidad-tiendas/worker-dry-run",
+    "exitCode": 0,
+    "totalUploadKiB": 21009.84,
+    "gzipKiB": 5258.53,
+    "logSha256": "7c422e8716915223a01b14da20fa5f8b43f7fa3599a96e9322fde43f20b0596e"
+  },
+  "independentReview": {
+    "profile": "comparador_reviewer",
+    "mode": "read-only no HTTP/DB/refresh",
+    "focusedTestsPassed": 74,
+    "confirmedFindings": 2,
+    "findingsClosed": 2,
+    "newMaterialFinding": false
+  },
+  "replay": {
+    "catalogFocalPassed": 55,
+    "adversarialDollarOne": 5,
+    "newHttpRequests": 0,
+    "savedObservations": 0
+  },
+  "scriptSyntax": {
+    "command": "node --check scripts/qa/audit-store-sources.mjs",
+    "exitCode": 0
+  },
+  "limits": [
+    "No remote migration, delete, vacuum, role/account/plan changes",
+    "No refresh dispatch, seed, claim or offer write",
+    "No candidate deployment or new public UI audit",
+    "No whole-store/catalog, G02 or return/revenue closure"
+  ]
+}
