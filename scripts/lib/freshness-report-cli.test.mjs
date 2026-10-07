@@ -12,8 +12,11 @@ import { evaluateG02Readiness } from './g02-readiness.mjs';
 
 const execute = promisify(execFile);
 
-async function withFakeCatalog(missingCount, run, windowRows) {
+async function withFakeCatalog(missingCount, run, windowRows, sampleResponseDelayMs = 0) {
   const requests = [];
+  // El informe fija su corte antes de compilar/consultar la muestra. La fixture
+  // debe existir antes de ese corte, aunque el transporte tarde en responder.
+  const fixtureObservedAt = new Date(Date.now() - 60_000).toISOString();
   const fixed = JSON.parse(await readFile('docs/reports/crecimiento-2026-09-12/G02-MUESTRA-PRIORITARIA.json', 'utf8')).products;
   const products = [{ id: 'cpu', name: 'AMD Ryzen 5 5600', category: 'procesadores' },
     ...fixed.map(row => ({ ...row, name: row.id.replaceAll('-', ' ') }))];
@@ -42,15 +45,17 @@ async function withFakeCatalog(missingCount, run, windowRows) {
       response.end();
       return;
     }
-    response.end(JSON.stringify(url.searchParams.has('product_id') ? selected(url.searchParams.get('product_id')).map(row => ({
+    const sendPrices = () => response.end(JSON.stringify(url.searchParams.has('product_id') ? selected(url.searchParams.get('product_id')).map(row => ({
       product_id: row.id, store_id: 'a', url: 'https://store.example/amd-ryzen-5-5600',
-      price: 100, stock: 'in-stock', last_updated: new Date(Date.now() - 1000).toISOString(),
+      price: 100, stock: 'in-stock', last_updated: fixtureObservedAt,
       identity_review: null,
     })) : windowRows ?? [
       { store_id: 'a', product_id: 'cpu', price: 100, stock: 'in-stock' },
       { store_id: 'a', product_id: 'gpu', price: 300, stock: 'low-stock' },
       { store_id: 'shopgamer', product_id: 'cpu', price: 0, stock: 'out-of-stock' },
     ]));
+    if (sampleResponseDelayMs > 0 && url.searchParams.has('product_id')) setTimeout(sendPrices, sampleResponseDelayMs);
+    else sendPrices();
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const directory = await mkdtemp(join(tmpdir(), 'catalog-freshness-test-'));
@@ -221,11 +226,12 @@ test('el CLI de muestra compila el contrato real y no aprueba una revisión lega
   await withFakeCatalog(false, async env => {
     const sample = join(env.GITHUB_STEP_SUMMARY, '..', 'sample.json');
     await writeFile(sample, JSON.stringify({ products: [{ id: 'cpu', category: 'procesadores' }] }));
-    const { stdout } = await execute(process.execPath, [...args(), '--sample', sample], { env, timeout: 5000 });
+    // Incluye compilación del contrato real; no mide el tiempo de la API productiva.
+    const { stdout } = await execute(process.execPath, [...args(), '--sample', sample], { env, timeout: 15000 });
     const report = JSON.parse(stdout);
     assert.equal(report.sample.fresh3h, 1);
     assert.equal(report.sample.candidateComparable3h, 1);
     assert.equal(report.sample.identityAccepted3h, 0);
     assert.deepEqual(report.sample.productsWithoutAcceptedOffer3h, ['cpu']);
-  });
+  }, undefined, 1250); // Supera el margen de 1 s de la fixture anterior y reproduce el corte.
 });
