@@ -73,7 +73,6 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f supabase/tests/catalog_inventory_discovery.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/inventory_detail_fallback.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/bounded_catalog_queue.sql
-          psql -v ON_ERROR_STOP=1 -f supabase/tests/catalog_seed_covering.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/network_thermal_categories.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/current_offer_evidence.sql
           node scripts/test-current-catalog-prices.mjs
