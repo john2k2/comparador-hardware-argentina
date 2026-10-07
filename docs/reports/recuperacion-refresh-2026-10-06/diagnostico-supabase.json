@@ -1,0 +1,176 @@
+{
+  "recordedAt": "2026-10-07 01:22:46 UTC",
+  "source": "Lecturas autenticadas de solo lectura; SQL envuelto en BEGIN READ ONLY/COMMIT",
+  "projectId": "zyiyziubpcpgoqlkcrie",
+  "logWindowUTC": {
+    "from": "2026-10-06T06:55:00Z",
+    "to": "2026-10-06T07:35:00Z"
+  },
+  "logSourceCounts": [
+    {
+      "entries": 2052,
+      "source": "edge_logs"
+    },
+    {
+      "entries": 37,
+      "source": "postgrest_logs"
+    },
+    {
+      "entries": 14,
+      "source": "postgres_logs"
+    }
+  ],
+  "postgres": {
+    "entries": 14,
+    "errorCount": 0,
+    "sqlStates": [
+      "00000"
+    ]
+  },
+  "rpcNon200Edges": [],
+  "lastAdaptiveClosingEdges": [
+    {
+      "timestamp": "2026-10-06T07:28:07.147000Z",
+      "path": "/rest/v1/rpc/finish_catalog_refresh",
+      "httpStatus": 200,
+      "originMs": 134
+    },
+    {
+      "timestamp": "2026-10-06T07:28:07.294000Z",
+      "path": "/rest/v1/rpc/persist_adaptive_offer",
+      "httpStatus": 200,
+      "originMs": 167
+    },
+    {
+      "timestamp": "2026-10-06T07:28:07.472000Z",
+      "path": "/rest/v1/rpc/finish_catalog_refresh",
+      "httpStatus": 200,
+      "originMs": 141
+    },
+    {
+      "timestamp": "2026-10-06T07:28:07.628000Z",
+      "path": "/rest/v1/rpc/persist_adaptive_offer",
+      "httpStatus": 200,
+      "originMs": 244
+    },
+    {
+      "timestamp": "2026-10-06T07:28:07.887000Z",
+      "path": "/rest/v1/rpc/finish_catalog_refresh",
+      "httpStatus": 200,
+      "originMs": 135
+    },
+    {
+      "timestamp": "2026-10-06T07:28:08.033000Z",
+      "path": "/rest/v1/catalog_refresh_runs",
+      "httpStatus": 204,
+      "originMs": 136
+    },
+    {
+      "timestamp": "2026-10-06T07:28:08.539000Z",
+      "path": "/rest/v1/catalog_offer_refresh_state",
+      "httpStatus": 204,
+      "originMs": 195
+    },
+    {
+      "timestamp": "2026-10-06T07:28:08.763000Z",
+      "path": "/rest/v1/rpc/catalog_refresh_coverage",
+      "httpStatus": 200,
+      "originMs": 431
+    },
+    {
+      "timestamp": "2026-10-06T07:28:09.212000Z",
+      "path": "/rest/v1/catalog_refresh_runs",
+      "httpStatus": 204,
+      "originMs": 185
+    }
+  ],
+  "postgrestTimeoutManagerWarnings": {
+    "count": 37,
+    "nearestBeforeFailure": [
+      {
+        "timestamp": "2026-10-06T07:28:02.288471Z",
+        "message": "Warp server error: Thread killed by timeout manager"
+      }
+    ],
+    "attributedToClaim": false,
+    "exactWarpMessages": 34,
+    "otherMessagesContainingTimeoutManager": 3
+  },
+  "currentRpcDefinitions": [
+    {
+      "proname": "claim_catalog_feed_refresh",
+      "args": "p_token uuid, p_limit integer",
+      "definition_md5": "1071ddfd2ae63146d6507f88f8a455ee",
+      "definition_length": 2267
+    },
+    {
+      "proname": "claim_catalog_refresh",
+      "args": "p_token uuid, p_limit integer",
+      "definition_md5": "b1cad6d2621b92bcc16a81d6f5f53c67",
+      "definition_length": 2182
+    },
+    {
+      "proname": "claim_offer_refresh",
+      "args": "",
+      "definition_md5": "2698481b1451e2863f4dd350d336f08f",
+      "definition_length": 916
+    }
+  ],
+  "currentRoleTimeouts": [
+    {
+      "rolname": "anon",
+      "rolconfig": [
+        "statement_timeout=3s"
+      ]
+    },
+    {
+      "rolname": "authenticated",
+      "rolconfig": [
+        "statement_timeout=8s"
+      ]
+    },
+    {
+      "rolname": "authenticator",
+      "rolconfig": [
+        "session_preload_libraries=safeupdate",
+        "statement_timeout=8s",
+        "lock_timeout=8s"
+      ]
+    },
+    {
+      "rolname": "service_role",
+      "rolconfig": null
+    }
+  ],
+  "requestedJob": {
+    "id": "6392c753-094e-4eb1-8174-81411c90655d",
+    "status": "failed",
+    "created_at": "2026-10-06 07:06:14.300687+00",
+    "started_at": "2026-10-06 07:06:57.298671+00",
+    "finished_at": "2026-10-06 07:07:02.24+00",
+    "expires_at": "2026-10-06 07:16:57.298671+00",
+    "targets": [
+      {
+        "url": "https://compragamer.com/producto/Mother_Asrock_B550_Phantom_Gaming_4_10534",
+        "storeId": "compragamer",
+        "productId": "agrupado-motherboards-asrock-gaming-b550-590yyj"
+      }
+    ],
+    "results": [
+      {
+        "url": "https://compragamer.com/producto/Mother_Asrock_B550_Phantom_Gaming_4_10534",
+        "state": "failed",
+        "storeId": "compragamer",
+        "productId": "agrupado-motherboards-asrock-gaming-b550-590yyj",
+        "observedAt": null,
+        "failureReason": "no-observation"
+      }
+    ]
+  },
+  "limits": [
+    "Ausencia de error en estos logs no prueba ausencia de fallo",
+    "La advertencia de timeout manager no está atribuida a una RPC concreta",
+    "No se recuperó el mensaje/código original del SDK del incidente adaptativo",
+    "No se ejecutaron claims, refresh, migraciones ni escrituras remotas"
+  ]
+}

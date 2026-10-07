@@ -1,0 +1,80 @@
+{
+  "sourceArtifacts": {
+    "directory": "/Users/johnortiz/Documents/Proyectos/comparador-hardware-argentina/docs/reports/crecimiento-2026-09-12/cortes/2026-10-06",
+    "commit": "baaaa8ad9adf9f4ff08b2a06563065b56252840e"
+  },
+  "adaptiveRun": {
+    "githubRunId": 37428162455,
+    "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37428162455",
+    "summary": {
+      "runId": "5c4b6bdc-998b-404a-bbc9-19c622062aed",
+      "trigger": "cloudflare-fallback",
+      "startedAt": "2026-10-06T07:12:17.113Z",
+      "finishedAt": "2026-10-06T07:28:09.205Z",
+      "status": "failed",
+      "failureCode": "REFRESH_CLAIM_FAILED",
+      "attempted": 1200,
+      "observed": 598,
+      "comparable": 253,
+      "feedClaimed": 984,
+      "phaseMs": {
+        "inventory": 202453,
+        "preparation": 6492,
+        "shared": 404464,
+        "rotation": 327493
+      }
+    },
+    "groupCount": 48,
+    "sourceCount": 30,
+    "sourceTotals": {
+      "requests": 437,
+      "backoffSkips": 22,
+      "failures": 83
+    }
+  },
+  "requestedRun": {
+    "githubRunId": 37427607976,
+    "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37427607976",
+    "summary": {
+      "processed": true,
+      "jobId": "6392c753-094e-4eb1-8174-81411c90655d",
+      "status": "failed",
+      "sourceHttp": {
+        "compragamer": {
+          "requests": 3,
+          "bytes": 2316555,
+          "durationMs": 4214,
+          "conditionalHits": 0,
+          "backoffSkips": 0,
+          "failures": 0,
+          "failureReasons": {}
+        }
+      }
+    }
+  },
+  "publicSourceReads": {
+    "compragamer": {
+      "source": "https://static.compragamer.com/productos",
+      "observedAt": "2026-10-07T01:09:16.871644+00:00",
+      "httpStatus": 200,
+      "durationMs": 3163,
+      "records": 1559,
+      "targetId": 10534,
+      "matchingRecords": []
+    },
+    "maximus": {
+      "at": "2026-10-07T01:08:46.314Z",
+      "finishedAt": "2026-10-07T01:08:50.541Z",
+      "url": "https://www.maximus.com.ar/Producto/Memoria-Ram-Corsair-Vengeance-LPX-Black-16GB-3200-Mhz-DDR4/ITEM=15359/maximus.aspx?PN=CMK16GX4M1E3200C16",
+      "status": 200,
+      "bytes": 512175,
+      "file": "tmp/ram-source-readonly/maximus-15359-2026-10-07.html"
+    }
+  },
+  "limits": [
+    "Los cortes públicos son posteriores al incidente; no prueban disponibilidad histórica",
+    "Feed sin ID no acredita agotamiento",
+    "Plantilla HTML y JSON-LD de Maximus no acreditan una oferta comprable actual",
+    "No hay una nueva medición de cobertura ni un refresh ejecutado en esta entrega"
+  ]
+}

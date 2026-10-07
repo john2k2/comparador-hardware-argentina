@@ -1,0 +1,97 @@
+{
+  "recordedAt": "2026-10-07T01:28:45.419157+00:00",
+  "branch": "codex/recuperacion-refresh",
+  "sourceBase": "5a1990b8459a9e28d11e5c796c209f9c781f9049",
+  "scope": "Diff final de fuentes/tests; evidencias locales, sin publicación ni refresh real",
+  "verification": {
+    "lint": {
+      "passed": true
+    },
+    "typecheck": {
+      "passed": true
+    },
+    "unit": {
+      "passed": 1688,
+      "skipped": 2,
+      "failed": 0,
+      "filesPassed": 203,
+      "filesSkipped": 2
+    },
+    "ops": {
+      "passed": 25,
+      "failed": 0
+    },
+    "entryArtifactHarness": {
+      "passed": 5,
+      "failed": 0,
+      "isolatedRunners": true
+    },
+    "focusedClaimAndClosure": {
+      "passed": 48
+    },
+    "focusedRamIdentity": {
+      "passed": 52
+    },
+    "openNext": {
+      "passed": true,
+      "publicDocuments": 8,
+      "remainingWarning": "Node middleware experimental, preexisting"
+    },
+    "wrangler": {
+      "dryRunPassed": true,
+      "uploaded": false
+    },
+    "runnerNode": {
+      "built": true,
+      "bytes": 390143,
+      "executed": false
+    },
+    "independentReview": {
+      "materialFindingsOpen": 0,
+      "closureReproductionCasesPassed": 6,
+      "fixedFindings": [
+        "SKU bracket interpreted as speed",
+        "secondary closure failure lost primary claim diagnostic"
+      ]
+    },
+    "diffCheck": {
+      "passed": true
+    }
+  },
+  "sourceAndTestSHA256": {
+    "src/lib/catalog/refresh-diagnostics.ts": "2420cb5f0cca6bb78ac9ecede4c66959a9a3979402db5254162516b504a6fe6d",
+    "src/lib/catalog/refresh-diagnostics.test.ts": "32794cedefa845369bab10b4b30950ef039c9eb293abd9a142d77b6f6918a78d",
+    "src/lib/catalog/adaptive-refresh.ts": "666b9de5baab4f287d562cce558c06fb34852f90fb88d8d33b8c659ba5248aad",
+    "src/lib/catalog/adaptive-refresh.test.ts": "bdde18bbcc9e4cf3e79bd63f47f6258cbd9cf9817324a980f584e21a127a9164",
+    "src/lib/catalog/on-demand/worker.ts": "6372829447bee5e12c4608eea0161ba6898e729c9aadb991fedbaf9e5e7a28fc",
+    "src/lib/catalog/on-demand/worker.test.ts": "967e51b5fd28b100f3450c356c0e04be11a0fd8d229436f425aefc09f364e3b5",
+    "scripts/catalog/refresh-entry.ts": "1883846efe323cd9c2057471c82997d093e6b652726170857d78a28969d42662",
+    "scripts/lib/refresh-entry.test.mjs": "f6682a7102ea2d2b4d637e5063262276db76ce9db79ea818477a99b87c242a87",
+    "src/lib/quality/offer-identity.ts": "9ac9d27894bd139c8b44473b61f3545df7171d9a7ca9900953f1cb48685bcd69",
+    "src/lib/quality/offer-identity.test.ts": "2081e30bf5f24d41255736725242940cf6d213181cf3d68369a26a861ee99246"
+  },
+  "bundleSHA256": {
+    "tmp/refresh-diagnosis/refresh-entry.mjs": "9243409130ef57225cd95326439bcac5ed4b27166dca33a152464229b54957a9",
+    ".open-next/worker.js": "d05223bf4d44c84108a102ab62aa3bc9c5568f0c3ac2064c37be5cc65c64bc45"
+  },
+  "state": {
+    "localCandidateVerified": true,
+    "remotePublication": false,
+    "remoteDatabaseWrite": false,
+    "refreshDispatched": false,
+    "catalogRecoveryProven": false,
+    "G02Closed": false
+  },
+  "limits": [
+    "Fixtures/review/build do not prove store availability or recovery",
+    "Original server cause not retained",
+    "No new visual audit; first-delivery visual evidence remains separate",
+    "No new current coverage cut"
+  ],
+  "verifiedCodeHead": "7a249be58e75be341050cf1a156db4e76ffd2135",
+  "codeCommits": [
+    "7a249be58e75be341050cf1a156db4e76ffd2135 fix(identity): reject RAM speed conflicts without units",
+    "182f9e7ec7d622778a5d14cbe856b1ae7cd997d1 fix(refresh): report persisted requested offer outcomes",
+    "8188bf00488cf0d742d4bb25c9543158041f6863 fix(catalog): preserve claim diagnostics through failed closure"
+  ]
+}
