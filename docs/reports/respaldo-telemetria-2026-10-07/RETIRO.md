@@ -1,4 +1,6 @@
-# Lote respaldado preparado para revisión
+# Contrato del lote respaldado
+
+**Ejecución posterior del 07/10 21:25 UTC:** el lote fue autorizado y retirado una vez; 250 claves reconciliadas mediante lectura independiente posterior. El conector no devuelve command tag nativo COMMIT; se registra esa limitación y la evidencia posterior, sin afirmar un ACK inexistente. [Resultado actual](ejecucion/README.md). Las instrucciones siguientes conservan el estado de preparación previo.
 
 Sólo están preparados 250 eventos: 149 de operational-endpoint-event y 101 de operational-store-event. Se identifican por la selección custodiada y el manifiesto SHA-256 6558b3d3ccc94614e90a16264c835cd604a1f8afac18ef7791e50847e848a654. El respaldo completo y su restauración local están comprobados. El retiro remoto no está autorizado ni ejecutado.
 

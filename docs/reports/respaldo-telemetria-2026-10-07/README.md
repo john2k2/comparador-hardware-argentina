@@ -1,8 +1,12 @@
-# Respaldo recuperable de telemetría y retiro preparado
+# Respaldo recuperable de telemetría y retiro del lote
+
+**Estado actual, 07/10 21:25 UTC:** retiro específico autorizado y confirmado: 250 eventos, 149 endpoint/101 tienda, cero claves restantes en la lectura independiente. Tamaños físicos iguales; capacidad abierta. [Ejecución y conciliación posterior](ejecucion/README.md).
+
+El resto de este documento conserva el corte de preparación anterior a esa autorización.
 
 **Respaldo concreto cerrado, originales intactos.** Jonathan autorizó continuar las recomendaciones tras la primera medición de capacidad. Esta entrega respaldó los mismos 250 eventos, verificó recuperación y preparó su retiro/restauración para revisión. El permiso anterior del piloto de 1.000 filas no se amplía y el retiro remoto sigue pendiente.
 
-## Resultado real del 07/10/2026
+## Resultado de preparación del 07/10/2026, anterior al retiro
 
 | Verificación | Resultado |
 |---|---|

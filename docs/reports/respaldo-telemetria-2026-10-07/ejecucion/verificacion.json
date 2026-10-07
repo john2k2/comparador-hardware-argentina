@@ -1,0 +1,188 @@
+{
+  "recordedAt": "2026-10-07 21:29:36 UTC",
+  "status": "approved exact batch removed and reconciled; physical capacity remains open",
+  "authorization": {
+    "humanMessage": "si hacelo",
+    "approvedAction": "remove only the exact 250 expired backed-up events, preserving changed rows",
+    "projectId": "zyiyziubpcpgoqlkcrie",
+    "maximumRows": 250,
+    "expandedBatch": false,
+    "maintenance": false,
+    "restore": false,
+    "deployment": false
+  },
+  "selection": {
+    "cutoff": "2026-10-07T20:10:00.000000Z",
+    "rows": 250,
+    "scopes": {
+      "operational-endpoint-event": 149,
+      "operational-store-event": 101
+    },
+    "receiptSha256": "28200f5820003ab6634f2acd09ac0322a61395bfb5d3175d230b271b99aee009"
+  },
+  "backup": {
+    "bucket": "catalog-history-archive",
+    "private": true,
+    "objects": 2,
+    "storedBytes": 11352,
+    "manifestSha256": "6558b3d3ccc94614e90a16264c835cd604a1f8afac18ef7791e50847e848a654",
+    "gzipSha256": "6c8bfa764172ada8f3390ecec69c3432dda3dd86bebf0c896faa89088ff9ce32",
+    "recheckedAt": "2026-10-07T21:21:04.814Z",
+    "freshRemoteDownloadBeforeRemoval": true,
+    "remoteBytesExact": true,
+    "rowsVerified": 250,
+    "previousLocalRestoreFields": 6,
+    "previousLocalRestoreCasesPassed": 10,
+    "productionRestoreExecuted": false
+  },
+  "preview": {
+    "readOnly": true,
+    "selected": 250,
+    "matchedAllSixFields": 250,
+    "changedOrMissing": 0,
+    "removed": 0,
+    "sha256": "4e60051117d15388a1e8a7481c6b9bcc6ba25fc0a8ca031ac12e9dae94cf12f9"
+  },
+  "before": {
+    "observedAt": "2026-10-07T21:22:04.331623+00:00",
+    "rows": 347501,
+    "activeRows": 1681,
+    "databaseBytes": 930827411,
+    "cacheBytes": 245456896,
+    "historyBytes": 176742400,
+    "noNonInternalTriggers": true,
+    "noIncomingForeignKeys": true,
+    "cacheRls": true
+  },
+  "execution": {
+    "startedAt": "2026-10-07T21:23:14.240634+00:00",
+    "completedAt": "2026-10-07T21:25:05.084Z",
+    "sqlSha256": "28e6aa1bf4ed207b225f7fefc5fffef5ed59db7e5e19e253d366a3706f9ae58e",
+    "attempts": 1,
+    "retried": false,
+    "selected": 250,
+    "removed": 250,
+    "changedOrMissing": 0,
+    "acknowledgedKeysExactlyEqualSelection": true,
+    "operationCompleted": true,
+    "commitStatementIncluded": true,
+    "nativeCommitCommandTagReturned": false,
+    "committedOutcomeReconciledByIndependentRead": true,
+    "statementTimeoutMs": 3000,
+    "lockTimeoutMs": 500,
+    "fieldsCompared": 6
+  },
+  "after": {
+    "independentRestReadCompletedAt": "2026-10-07T21:25:06.384Z",
+    "independentRestReads": 5,
+    "requestedKeys": 250,
+    "remainingSelectedKeys": 0,
+    "absentSelectedKeys": 250,
+    "scopeSnapshotAt": "2026-10-07T21:25:07.919007+00:00",
+    "rows": 347251,
+    "activeRows": 1681,
+    "scopeDeltas": [
+      {
+        "scope": "catalog-refresh-demand",
+        "removed": 0,
+        "activeDelta": 0
+      },
+      {
+        "scope": "eneba-affiliate-pilot",
+        "removed": 0,
+        "activeDelta": 0
+      },
+      {
+        "scope": "home-sections",
+        "removed": 0,
+        "activeDelta": 0
+      },
+      {
+        "scope": "jev-identity",
+        "removed": 0,
+        "activeDelta": 0
+      },
+      {
+        "scope": "jev-identity-offer",
+        "removed": 0,
+        "activeDelta": 0
+      },
+      {
+        "scope": "operational-endpoint-event",
+        "removed": 149,
+        "activeDelta": 0
+      },
+      {
+        "scope": "operational-store-event",
+        "removed": 101,
+        "activeDelta": 0
+      },
+      {
+        "scope": "product-detail",
+        "removed": 0,
+        "activeDelta": 0
+      },
+      {
+        "scope": "search-response",
+        "removed": 0,
+        "activeDelta": 0
+      },
+      {
+        "scope": "search-response-v2",
+        "removed": 0,
+        "activeDelta": 0
+      },
+      {
+        "scope": "store-scrape-circuit",
+        "removed": 0,
+        "activeDelta": 0
+      }
+    ],
+    "outOfScopeCountsUnchanged": true,
+    "allActiveCountsUnchanged": true,
+    "scopeCountsDoNotProveEveryUnrelatedRowUnchanged": true,
+    "databaseBytes": 930827411,
+    "cacheBytes": 245456896,
+    "historyBytes": 176742400,
+    "physicalSavingBytes": 0,
+    "storageObjects": 21,
+    "storageObjectBytes": 102016,
+    "bucketPrivate": true,
+    "storagePolicies": 0
+  },
+  "review": {
+    "profile": "comparador_reviewer",
+    "model": "gpt-6.1-sol",
+    "reasoning": "high",
+    "readOnly": true,
+    "status": "passed",
+    "materialFindingsOpen": 0,
+    "exactAckKeysAndSqlHashIndependentlyReconciled": true,
+    "offlineBackupReverified": true,
+    "scopeDeltasAndLimitsReconciled": true,
+    "noNativeCommitTagAssumed": true
+  },
+  "limits": {
+    "physicalCapacityClosed": false,
+    "globalBackupProven": false,
+    "productionRestoreProven": false,
+    "noFurtherRemoval": true,
+    "noMaintenance": true,
+    "noVacuum": true,
+    "noIndexChange": true,
+    "noHistoryRemoval": true,
+    "noSchedulerChange": true,
+    "noRlsOrPolicyChange": true,
+    "noAccountOrPlanChange": true,
+    "noCodeDeployment": true
+  },
+  "reviewedCodeHead": "c78b7d9d857a473535f0c6cb566e6097da8995b8",
+  "branch": "codex/capacidad-costo-cero",
+  "codeChangedThisExecution": false,
+  "previousTestResultsNotRerun": {
+    "operationalPassed": 96,
+    "newBehaviorPassed": 20,
+    "localPostgresCasesPassed": 10
+  },
+  "nextUnit": "prepare bounded maintenance within the existing schedule and dimension physical recovery; retain history equivalence and avoid blind batch expansion"
+}
