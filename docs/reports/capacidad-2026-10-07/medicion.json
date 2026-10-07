@@ -1,0 +1,208 @@
+{
+  "projectId": "zyiyziubpcpgoqlkcrie",
+  "accountPlan": "free",
+  "capacityReferenceAt": "2026-10-07T20:10:00.000000Z",
+  "physicalCutAt": "2026-10-07 20:08:38.961925+00",
+  "databaseBytes": 930516115,
+  "remotePostgresVersion": "17.6",
+  "defaultTransactionReadOnly": "off",
+  "tables": [
+    {
+      "table": "api_cache_entries",
+      "totalBytes": 245448704,
+      "tableBytes": 167501824,
+      "indexBytes": 77946880,
+      "estimatedRows": 335806
+    },
+    {
+      "table": "products",
+      "totalBytes": 236339200,
+      "tableBytes": 73646080,
+      "indexBytes": 162693120,
+      "estimatedRows": 59326
+    },
+    {
+      "table": "price_history",
+      "totalBytes": 176644096,
+      "tableBytes": 43081728,
+      "indexBytes": 133562368,
+      "estimatedRows": 226940
+    },
+    {
+      "table": "catalog_price_summaries",
+      "totalBytes": 118325248,
+      "tableBytes": 68263936,
+      "indexBytes": 50061312,
+      "estimatedRows": 57188
+    },
+    {
+      "table": "product_prices",
+      "totalBytes": 101449728,
+      "tableBytes": 38854656,
+      "indexBytes": 62595072,
+      "estimatedRows": 73466
+    },
+    {
+      "table": "catalog_offer_refresh_state",
+      "totalBytes": 15769600,
+      "tableBytes": 8216576,
+      "indexBytes": 7553024,
+      "estimatedRows": 73466
+    },
+    {
+      "table": "product_title_normalizations",
+      "totalBytes": 11640832,
+      "tableBytes": 6012928,
+      "indexBytes": 5627904,
+      "estimatedRows": 38787
+    },
+    {
+      "table": "catalog_inventory_listings",
+      "totalBytes": 8372224,
+      "tableBytes": 7176192,
+      "indexBytes": 1196032,
+      "estimatedRows": 19253
+    }
+  ],
+  "coreIndexesBytes": 501235712,
+  "cache": {
+    "observedAt": "2026-10-07 20:10:49.343607+00",
+    "totalRows": 347458,
+    "expiredAtReference": 345779,
+    "activeAtReference": 1679,
+    "scopes": [
+      {
+        "scope": "operational-store-event",
+        "rows": 330830,
+        "expired": 329414,
+        "active": 1416,
+        "createdLast24h": 664,
+        "createdLast7d": 3937
+      },
+      {
+        "scope": "operational-endpoint-event",
+        "rows": 14077,
+        "expired": 14075,
+        "active": 2,
+        "createdLast24h": 0,
+        "createdLast7d": 5
+      },
+      {
+        "scope": "search-response",
+        "rows": 1914,
+        "expired": 1914,
+        "active": 0,
+        "createdLast24h": 0,
+        "createdLast7d": 0
+      },
+      {
+        "scope": "catalog-refresh-demand",
+        "rows": 369,
+        "expired": 122,
+        "active": 247,
+        "createdLast24h": 5,
+        "createdLast7d": 129
+      },
+      {
+        "scope": "jev-identity-offer",
+        "rows": 144,
+        "expired": 133,
+        "active": 11,
+        "createdLast24h": 9,
+        "createdLast7d": 133
+      },
+      {
+        "scope": "product-detail",
+        "rows": 74,
+        "expired": 74,
+        "active": 0,
+        "createdLast24h": 0,
+        "createdLast7d": 0
+      },
+      {
+        "scope": "jev-identity",
+        "rows": 41,
+        "expired": 41,
+        "active": 0,
+        "createdLast24h": 0,
+        "createdLast7d": 0
+      },
+      {
+        "scope": "home-sections",
+        "rows": 3,
+        "expired": 3,
+        "active": 0,
+        "createdLast24h": 1,
+        "createdLast7d": 3
+      },
+      {
+        "scope": "store-scrape-circuit",
+        "rows": 3,
+        "expired": 1,
+        "active": 2,
+        "createdLast24h": 0,
+        "createdLast7d": 3
+      },
+      {
+        "scope": "search-response-v2",
+        "rows": 2,
+        "expired": 2,
+        "active": 0,
+        "createdLast24h": 0,
+        "createdLast7d": 2
+      },
+      {
+        "scope": "eneba-affiliate-pilot",
+        "rows": 1,
+        "expired": 0,
+        "active": 1,
+        "createdLast24h": 0,
+        "createdLast7d": 1
+      }
+    ],
+    "expiredTelemetryRows": 343489
+  },
+  "history": {
+    "observed_at": "2026-10-07 20:11:28.031941+00",
+    "reference_at": "2026-10-07 20:10:00+00",
+    "total_rows": 248876,
+    "first_recorded_at": "2026-03-05 01:51:12.263+00",
+    "last_recorded_at": "2026-10-07 18:28:40.073+00",
+    "recent_14d": 36771,
+    "between_14_and_90d": 61491,
+    "between_90_and_365d": 150614,
+    "over_365d": 0,
+    "after_reference": 0,
+    "before_pilot_cutoff": 149514,
+    "missing_offer_urls": 193751
+  },
+  "storage": {
+    "objects": 19,
+    "objectBytes": 90664,
+    "originalsRemoved": 0
+  },
+  "budget": {
+    "nominalDatabaseCeilingBytes": 500000000,
+    "proposedOperatingTargetBytes": 450000000,
+    "nominalUnit": "decimal MB; conservative planning; not a query of enforcement setting",
+    "maxTheoreticalRemoveAllCacheAndHistoryBytes": 422092800,
+    "theoreticalRemainingAfterRemovingWholeTablesBytes": 508423315,
+    "remainingAboveNominalCeilingBytes": 8423315,
+    "remainingAboveOperatingTargetBytes": 58423315,
+    "realisticRemainingBytes": null,
+    "actualPhysicalSavingBytes": 0
+  },
+  "limits": {
+    "logicalCacheExpiryIsNotDeletion": true,
+    "indexScanCounterAloneIsNotRemovalAuthority": true,
+    "ageIsNotRedundancy": true,
+    "wholeDatabaseBackupProven": false,
+    "sourceInventoryIsNotTransactional": true,
+    "globalColdHistoryArchiveUploaded": false,
+    "physicalSavingProven": false
+  },
+  "readOnlyMeasurements": true,
+  "sourceMutations": 0,
+  "newAutomation": false,
+  "codePublished": false
+}

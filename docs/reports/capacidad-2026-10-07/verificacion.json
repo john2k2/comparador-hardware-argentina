@@ -1,0 +1,96 @@
+{
+  "observedAt": "2026-10-07T20:33:08.538Z",
+  "referenceAt": "2026-10-07T20:10:00.000000Z",
+  "dryRun": {
+    "selected": 250,
+    "scopes": {
+      "operational-endpoint-event": 149,
+      "operational-store-event": 101
+    },
+    "removed": 0,
+    "networkGetOnly": true,
+    "redirectsAllowed": false,
+    "metadataFields": [
+      "cache_key",
+      "scope",
+      "expires_at",
+      "updated_at"
+    ],
+    "metadataReceiptBytes": 64492,
+    "metadataReceiptSha256": "28200f5820003ab6634f2acd09ac0322a61395bfb5d3175d230b271b99aee009",
+    "globalCoverage": false
+  },
+  "backupPayloadsCreated": false,
+  "restoreAfterCommittedDeleteProven": false,
+  "mutationApproved": false,
+  "sourceMutations": 0,
+  "physicalDatabaseSavingProven": false,
+  "telemetryPolicyInstalled": false,
+  "newScheduler": false,
+  "published": false,
+  "tests": {
+    "newBehaviorPassed": 12,
+    "initialOperationalSuite": {
+      "total": 73,
+      "passed": 70,
+      "failed": 3
+    },
+    "isolatedPreviousFailures": {
+      "total": 18,
+      "passed": 18,
+      "command": "node --test --test-concurrency=1 scripts/lib/catalog-process.test.mjs scripts/lib/freshness-report-cli.test.mjs"
+    },
+    "initialFailures": [
+      "SIGTERM actual vs SIGKILL expected in child startup timeout case",
+      "catalog freshness CLI reached 5s child timeout",
+      "sample freshness counts 0 vs expected1"
+    ],
+    "cause": "timing sensitivity under concurrent run is an inference; startup readiness/current-time fixtures have hard budgets",
+    "sequentialOperationalSuite": {
+      "total": 73,
+      "passed": 73,
+      "scope": "before final guard extraction"
+    },
+    "sequentialAfterGuardBeforeFixtureFix": {
+      "total": 76,
+      "passed": 75,
+      "failed": 1
+    },
+    "finalNormalOperationalSuite": {
+      "total": 76,
+      "passed": 76,
+      "failed": 0,
+      "command": "npm run test:ops",
+      "durationMs": 2210.654958
+    },
+    "fixtureCorrection": "Freeze observed time before CLI start; sample response delayed 1250 ms; 15s test-only compilation budget; production cutoff untouched",
+    "knownScopeLimit": "One final normal run passed; generalized stability under arbitrary host load not claimed"
+  },
+  "independentReview": {
+    "status": "passed",
+    "profile": "comparador_reviewer Sol/high",
+    "newBehaviorTests": 12,
+    "incidentalFreshnessFixtureTests": 9,
+    "redirectFinding": "closed"
+  },
+  "baseCommit": "e3920dfecaa16f66fad83288a61b9d7f65e2a898",
+  "branch": "codex/capacidad-costo-cero",
+  "initialDryRun": {
+    "selected": 250,
+    "scopes": {
+      "operational-endpoint-event": 149,
+      "operational-store-event": 101
+    },
+    "removed": 0,
+    "networkGetOnly": true,
+    "metadataFields": [
+      "cache_key",
+      "scope",
+      "expires_at",
+      "updated_at"
+    ],
+    "metadataReceiptBytes": 64463,
+    "metadataReceiptSha256": "6ea472faaef5fc7ae673e9ba0c3a83a1efb76b951e823e68155c1a162e991752",
+    "globalCoverage": false
+  }
+}
