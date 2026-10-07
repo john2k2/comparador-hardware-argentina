@@ -1,0 +1,298 @@
+{
+  "version": 1,
+  "recordedAt": "2026-10-07T22:17:37.416835+00:00",
+  "status": "reviewed local candidate; not published or activated; physical capacity remains open",
+  "authorization": {
+    "humanMessage": "ok hace eso",
+    "scope": "prepare bounded retention inside the existing daily schedule and dimension physical recovery",
+    "additionalRemoteRetirementAuthorized": false,
+    "publicationAuthorized": false,
+    "remoteSchemaInstallAuthorized": false
+  },
+  "candidate": {
+    "branch": "codex/capacidad-costo-cero",
+    "base": "4f6c9d3769ff695532e09c6e1b1cbe910e9bd830",
+    "sourceCodeHead": "09351bdb59ba7f55ca741504c3c4120c7f480621",
+    "verifiedRemoteMain": "614caa1d30ce5381f064cda406a1e96a015f52af",
+    "workUnits": [
+      {
+        "unit": "core",
+        "commit": "6f66230e965b3dba41aa34ca45093d6a46bed873",
+        "parent": "4f6c9d3769ff695532e09c6e1b1cbe910e9bd830",
+        "message": "feat(ops): require verified backups before bounded telemetry retirement",
+        "addedLines": 364,
+        "deletedLines": 0
+      },
+      {
+        "unit": "transport",
+        "commit": "d4d8fb5560d664508d6c62256cef6c01f1d048f5",
+        "parent": "6f66230e965b3dba41aa34ca45093d6a46bed873",
+        "message": "feat(ops): preserve private archives with one-attempt retirement transport",
+        "addedLines": 315,
+        "deletedLines": 0
+      },
+      {
+        "unit": "rpc",
+        "commit": "00f131cbfd7294626ea90539d8409c1dd40ecace",
+        "parent": "d4d8fb5560d664508d6c62256cef6c01f1d048f5",
+        "message": "feat(db): prepare exact service-only telemetry retention functions",
+        "addedLines": 299,
+        "deletedLines": 0
+      },
+      {
+        "unit": "scheduler",
+        "commit": "f6dbe16c58b18c78695cc291110195e764c3077f",
+        "parent": "00f131cbfd7294626ea90539d8409c1dd40ecace",
+        "message": "feat(ops): prepare bounded telemetry maintenance in the existing daily schedule",
+        "addedLines": 340,
+        "deletedLines": 0
+      },
+      {
+        "unit": "capacity",
+        "commit": "09351bdb59ba7f55ca741504c3c4120c7f480621",
+        "parent": "f6dbe16c58b18c78695cc291110195e764c3077f",
+        "message": "test(capacity): measure local space reuse and physical recovery limits",
+        "addedLines": 259,
+        "deletedLines": 0
+      }
+    ],
+    "documentationCommitCustodiedInDirection": true,
+    "pushed": false
+  },
+  "preparedOperation": {
+    "defaultMode": "inspect",
+    "mutatingMode": "archive-retire",
+    "explicitApprovalIdRequired": true,
+    "scopes": [
+      "operational-endpoint-event",
+      "operational-store-event"
+    ],
+    "batchRowsMaximum": 250,
+    "batchesMaximum": 4,
+    "rowsPerDailyRunMaximum": 1000,
+    "deadlineMsMaximum": 120000,
+    "storedBytesPerRunMaximum": 5242880,
+    "archiveBucketBytesMaximum": 52428800,
+    "selectionReserveBytesPerBatch": 3145728,
+    "cutoffSafetyMinutes": 5,
+    "privateObjectsPerBatch": 3,
+    "immutableObjects": true,
+    "downloadVerificationBeforeRetirement": true,
+    "sourceFieldsCompared": 6,
+    "payloadNumbersPreservedAsText": true,
+    "retireAttemptsPerBody": 1,
+    "readAfterAcknowledgement": true,
+    "changedOrMissingNotAttributedAsRemoved": true,
+    "unknownResultStopsCurrentRun": true,
+    "persistentPauseAcrossFutureSchedules": false,
+    "failureAction": "operator switches to inspect before next daily run and reconciles backed batch",
+    "priceHistoryOrUserDataSelected": false,
+    "globallyComplete": false,
+    "physicalSavingProven": false
+  },
+  "scheduler": {
+    "workflow": "catalog-refresh.yml",
+    "existingCronPreserved": [
+      "5 5 * * *",
+      "17 0-4,6-23 * * *"
+    ],
+    "newCronOrWorkflowCreated": false,
+    "onlyNaturalDailyPriority": true,
+    "guidesOrManualExcluded": true,
+    "concurrencyGroup": "catalog-refresh",
+    "jobFailurePreserved": true,
+    "artifact": "telemetry-maintenance.json",
+    "artifactRetentionDays": 30,
+    "privateSelectionOrPayloadInArtifact": false,
+    "activationVariablesConfigured": false,
+    "existingServerSecretNamesVerified": [
+      "SUPABASE_URL",
+      "SUPABASE_SECRET_KEY"
+    ],
+    "workflowExecuted": false,
+    "githubSecretValuesRead": false
+  },
+  "verification": {
+    "operationalTests": {
+      "command": "npm run test:ops",
+      "passed": 133,
+      "failed": 0,
+      "skipped": 0,
+      "newFocused": {
+        "core": 16,
+        "network": 9,
+        "cli": 10,
+        "workflow": 2
+      },
+      "durationMs": 2243.626709
+    },
+    "cliFourBatchSimulation": {
+      "selected": 1000,
+      "confirmedRemoved": 1000,
+      "unknown": 0,
+      "privateObjects": 12,
+      "identicalReadOnlySelectors": 4,
+      "uniqueRetirementBodies": 4,
+      "realRemoteMutation": false
+    },
+    "postgresLocal": {
+      "completedAt": "2026-10-07T22:06:21.619Z",
+      "postgresVersion": "17.11 (Homebrew)",
+      "localOnly": true,
+      "noTcp": true,
+      "schemaMigrationExecutedLocalOnly": true,
+      "productionChanges": false,
+      "fixtureRolledBack": true,
+      "groups": [
+        "six fields, numeric precision and microseconds",
+        "250 exact acknowledgements and repeat zero",
+        "changed payload, created_at, updated_at and missing preserved",
+        "bounds and malformed snapshots rejected",
+        "foreign keys and triggers fail closed",
+        "service-role access with RLS; public execution denied",
+        "whole-bucket capacity cap and unknown metadata fail closed"
+      ],
+      "allGroupsPassed": true,
+      "clusterStopped": true
+    },
+    "localAdvisors": {
+      "cliVersion": "2.109.1",
+      "completedAt": "2026-10-07T22:13:16.919573+00:00",
+      "exitCode": 0,
+      "noIssuesFound": true,
+      "localOnly": true,
+      "noTcp": true,
+      "clusterStopped": true,
+      "scope": "minimal fixture schema; not a production audit"
+    },
+    "liveInspect": {
+      "completedAt": "2026-10-07T22:07:38.014Z",
+      "readOnly": true,
+      "rpcCalls": 0,
+      "storageCalls": 0,
+      "sourceMutations": 0,
+      "calls": [
+        {
+          "method": "GET",
+          "path": "/rest/v1/api_cache_entries",
+          "status": 200,
+          "elapsedMs": 1004
+        }
+      ],
+      "summary": {
+        "version": 1,
+        "mode": "inspect",
+        "cutoff": "2026-10-07T22:02:37.001000Z",
+        "success": true,
+        "stopped": false,
+        "reason": null,
+        "selected": 250,
+        "archived": 0,
+        "removed": 0,
+        "changedOrMissing": 0,
+        "unknown": 0,
+        "absentAfterUnknown": 0,
+        "storedBytes": 0,
+        "batches": [],
+        "globallyComplete": false,
+        "physicalSavingProven": false
+      }
+    },
+    "eslint": "new MJS files passed",
+    "diffCheck": "passed",
+    "independentReview": {
+      "profile": "comparador_reviewer",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "focusedTestsPassed": 37,
+      "openMaterialFindings": 0,
+      "scope": "local source and aggregate evidence; no remote mutation"
+    },
+    "webBuildAndE2eRunThisUnit": false,
+    "webBuildAndE2eReason": "no web source or UI changes"
+  },
+  "productionReadOnly": {
+    "capacityObservedAt": "2026-10-07T21:46:39.925693+00:00",
+    "databaseBytes": 930827411,
+    "cacheBytes": 245456896,
+    "historyBytes": 176742400,
+    "currentCatalogTableAndIndexBytes": 456237056,
+    "fiveLargeTablesIndexBytes": 486522880,
+    "serverVersion": "17.6",
+    "candidateFunctionsPresent": [],
+    "functionStateObservedAt": "2026-10-07 22:15:44.515913+00",
+    "storageObservedAt": "2026-10-07T21:58:24.540857+00:00",
+    "privateBucket": true,
+    "bucketBytes": 102016,
+    "bucketObjects": 21,
+    "unknownSizeObjects": 0,
+    "globalAccountStorageQuotaVerified": false,
+    "newRemoteSourceDeletes": 0,
+    "remoteMigrationOrMaintenance": false,
+    "physicalSavingFromPreviousApproved250Bytes": 0
+  },
+  "capacityScenarios": {
+    "expiredOperationalBacklogAtPrevious2125Cut": 343280,
+    "backlogSynchronizedWithNewIngressCut": false,
+    "completeUtcDays": "2026-10-01 through 2026-10-06",
+    "survivingCreatedRowsByDay": [
+      344,
+      841,
+      475,
+      418,
+      558,
+      774
+    ],
+    "survivingRowsDailyMean": 568.3333333333334,
+    "survivingRowsDailyPeak": 841,
+    "grossInsertRateProven": false,
+    "dailyCeilingWithMeanMinimumDays": 796,
+    "dailyCeilingWithObservedPeakMinimumDays": 2159,
+    "automaticThroughputProven": false,
+    "hypotheticalResidualAfterEntireCacheAndHistoryRemovedBytes": 508628115,
+    "residualIsCompactedMinimum": false,
+    "proposedOperationalTargetBytes": 450000000,
+    "hypotheticalGapToTargetBytes": 58628115
+  },
+  "physicalRecoveryLocal": {
+    "completedAt": "2026-10-07T21:49:11.261Z",
+    "postgresVersion": "17.11 (Homebrew)",
+    "localOnly": true,
+    "noTcp": true,
+    "sampleRows": 250,
+    "restoredFields": 6,
+    "exactSampleRestore": true,
+    "syntheticRows": 20000,
+    "syntheticRetired": 18000,
+    "results": {
+      "sampleDeleteReturnedBytes": 0,
+      "sampleVacuumReusableHeapBytes": 97728,
+      "syntheticVacuumReusableHeapBytes": 11238848,
+      "syntheticReinsertHeapGrowthBytes": 0,
+      "syntheticFullReturnedTableAndIndexBytes": 12607488,
+      "syntheticFullDatabaseDeltaBytes": 12591104
+    },
+    "clusterStopped": true,
+    "productionProjectionProven": false,
+    "productionLockOrTemporaryDiskMeasured": false
+  },
+  "recommendation": {
+    "nextConcreteDecision": "publish reviewed candidate, install only two prepared service-only functions, enable existing daily retention with stated caps, then read the first natural cycle",
+    "activationAwaitingSpecificApproval": true,
+    "nextD02Unit": "prepare staged backed backlog drain and active catalog space/contracts study before broader retirement or physical maintenance",
+    "keepHistoryCarryForwardAndBuenosAiresDays": true,
+    "zeroCostCapacityClosed": false
+  },
+  "privateEvidenceSha256": {
+    "ops-reviewed.log": "570db33b21f70912e2fb49efc28a1461a045a3a86400c796ac63f04e6a00ec6e",
+    "inspection-real-transport.json": "65f41d1331aae6ccf540039414dc4d9ddaf1c7bc2a3c76747b6d27c7f3cbf10e",
+    "sql-local-reviewed.json": "d01a4c20d7489a842685e7f9693818eab9817cd52640fa2743bd0e7dd1563389",
+    "advisors-local.json": "bc918e0a6ffe65f2cfa2fa1f0fc0c7d33b5efb485ef7975714d0f9d868e54462",
+    "capacity.json": "e62bf0f16c39441b23ddc45100cc81a187d7bf82448f9f2400062cc39b91c4d2",
+    "indexes.json": "468ab3c009216b1273e928a38467e2ce77fe8ef5fe20fb23a47ff6edc44fcdf3",
+    "ingress-plan.json": "2d22a991bb8b3e3b4d7936ef0889638392542020ef257c574c0c0a5dbc69681a",
+    "ingress.json": "7d688c00ad594abdd827e234d41c488324f4146ec2cafbabd553b546ef57610b",
+    "archive-budget.json": "9db041d22c6fa20b6bcd7dfd2385ffc3f5d58429ed44667fe13ce6101ebb470e",
+    "rpc-state.json": "88fbe8e69dd4c3c67b413dc6b955fb7685f3b1772a36df860c09188777950b8f"
+  }
+}
