@@ -12,11 +12,38 @@ test('maintenance comparte la programación y concurrencia existentes; excluye m
   const job = workflow.jobs['telemetry-maintenance'];
   assert.equal(job.needs,'refresh');
   assert.ok(job.if.includes("github.event_name == 'schedule'"));
+  assert.ok(job.if.includes("github.run_attempt == '1'"));
+  assert.ok(job.if.includes("github.event.schedule == '5 5 * * *'"));
   assert.ok(job.if.includes("needs.refresh.outputs.mode == 'priority'"));
   assert.equal(workflow.jobs.refresh.outputs.mode,'${{ steps.resolve.outputs.mode }}');
   assert.equal(job.env.TELEMETRY_RETENTION_MODE,"${{ vars.TELEMETRY_RETENTION_MODE || 'inspect' }}");
   assert.equal(job.env.SUPABASE_SECRET_KEY,'${{ secrets.SUPABASE_SECRET_KEY }}');
   assert.equal(job.steps.find(step => step.uses === 'actions/setup-node@v4').with['node-version'],22);
+});
+test('la guardia del job excluye reintentos del diario y eventos a pedido', () => {
+  const expression = workflow.jobs['telemetry-maintenance'].if.slice(3,-2).trim();
+  const predicates = expression.split(' && ');
+  function allows(context) {
+    return predicates.every(predicate => {
+      if (predicate === 'always()') return true;
+      const comparison = predicate.match(/^([a-zA-Z_.]+) == '([^']*)'$/);
+      assert.ok(comparison, 'La prueba debe reconocer todos los términos de la guardia');
+      const actual = comparison[1].split('.').reduce((value,key) => value?.[key],context);
+      return actual === comparison[2];
+    });
+  }
+  for (const [event,attempt,cron,mode,expected] of [
+    ['schedule','1','5 5 * * *','priority',true],
+    ['schedule','2','5 5 * * *','priority',false],
+    ['schedule','3','5 5 * * *','priority',false],
+    ['workflow_dispatch','1','5 5 * * *','priority',false],
+    ['schedule','1','17 0-4,6-23 * * *','guides',false],
+    ['schedule','1','17 0-4,6-23 * * *','priority',false],
+    ['schedule','1','5 5 * * *','guides',false],
+  ]) {
+    const context={ github:{event_name:event,run_attempt:attempt,event:{schedule:cron}},needs:{refresh:{outputs:{mode}}}};
+    assert.equal(allows(context),expected,`${event}/${attempt}/${cron}/${mode}`);
+  }
 });
 test('los límites del workflow parsean y sólo preserva el resumen agregado, incluso en error', () => {
   const job = workflow.jobs['telemetry-maintenance'];

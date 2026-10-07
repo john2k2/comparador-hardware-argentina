@@ -357,8 +357,8 @@ jobs:
 
   telemetry-maintenance:
     needs: refresh
-    # Una comprobación diaria dentro del workflow existente; manuales y guides no retiran eventos.
-    if: ${{ always() && github.event_name == 'schedule' && needs.refresh.outputs.mode == 'priority' }}
+    # Sólo primer intento del diario natural; un rerun de GitHub conserva el evento original.
+    if: ${{ always() && github.event_name == 'schedule' && github.run_attempt == '1' && github.event.schedule == '5 5 * * *' && needs.refresh.outputs.mode == 'priority' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
