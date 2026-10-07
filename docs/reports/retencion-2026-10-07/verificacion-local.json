@@ -1,0 +1,47 @@
+{
+  "recordedAt": "2026-10-07T15:34:56.993713+00:00",
+  "branch": "codex/retencion-comprobable",
+  "sourceCommit": "0ba14fc1dcf54d0034df5c341b09a96c282ce661",
+  "published": false,
+  "productionSource": "99d5917b5ec185314d8ae081beb971894709ebcd",
+  "files": {
+    "src/lib/persistence/price-history-maintenance.ts": "9b0278107f04e9cfa89fbe36ba62f2ac6705ceb36cf6a33e4485fc420f50741d",
+    "src/lib/persistence/price-history-maintenance.test.ts": "d29a0eb4e903049a02720b2d9edc92b3bdbf3416dbd4543d6eb14d52d1d16769"
+  },
+  "focusedTests": {
+    "passed": 64,
+    "profile": "comparador_engineering",
+    "command": "npx vitest run src/lib/persistence/price-history-maintenance.test.ts",
+    "realRpcCalled": false
+  },
+  "lint": {
+    "passed": true,
+    "files": [
+      "src/lib/persistence/price-history-maintenance.ts",
+      "src/lib/persistence/price-history-maintenance.test.ts"
+    ],
+    "profile": "comparador_engineering"
+  },
+  "typecheck": {
+    "startedAt": "2026-10-07T15:33:49.351685+00:00",
+    "completedAt": "2026-10-07T15:33:52.152470+00:00",
+    "command": "npm run typecheck",
+    "exitCode": 0,
+    "logSha256": "96b30055c3a4c4100989a9a345c35c1c56b58e4484e802cad839719675d624a9"
+  },
+  "diffCheck": true,
+  "review": {
+    "profile": "comparador_reviewer",
+    "mode": "read-only; mock in memory; no real RPC, HTTP or DB",
+    "confirmedFindings": 1,
+    "closedFindings": 1,
+    "finding": "Date.parse accepted malformed timestamps; calendar and complete timestamp now checked",
+    "newMaterialFinding": false
+  },
+  "limits": [
+    "No history RPC or cleanup execution",
+    "Invalid receipt after RPC does not prove remote rollback",
+    "No new release, scheduler change or account change",
+    "No arithmetic invariant imposed across concurrent counts"
+  ]
+}

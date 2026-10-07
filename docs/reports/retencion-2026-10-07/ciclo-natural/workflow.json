@@ -1,0 +1,12 @@
+{
+  "readAt": "2026-10-07T15:35:29.041082+00:00",
+  "workflow": {
+    "id": 372504563,
+    "name": "Adaptive catalog refresh",
+    "path": ".github/workflows/catalog-adaptive-refresh.yml",
+    "state": "active",
+    "updated_at": "2026-10-01T16:46:20.000-03:00",
+    "html_url": "https://github.com/john2k2/comparador-hardware-argentina/blob/main/.github/workflows/catalog-adaptive-refresh.yml"
+  },
+  "accountChanged": false
+}

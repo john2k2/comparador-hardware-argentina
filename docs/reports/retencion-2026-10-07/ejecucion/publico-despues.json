@@ -1,0 +1,39 @@
+{
+  "at": "2026-10-07T15:23:32.233Z",
+  "mode": "public GET checks after bounded cache pilot; no source visits/forms/refresh",
+  "checks": [
+    {
+      "path": "/",
+      "status": 200,
+      "clientMs": 463,
+      "passed": true
+    },
+    {
+      "path": "/api/search?q=ryzen&minPrice=100000&sortBy=price-asc",
+      "status": 200,
+      "clientMs": 5599,
+      "passed": true,
+      "count": 12
+    },
+    {
+      "path": "/api/products?category=procesadores&q=5600",
+      "status": 200,
+      "clientMs": 1050,
+      "passed": true,
+      "count": 12
+    },
+    {
+      "path": "/product/agrupado-procesadores-amd-ryzen-5-5600-1ru8te5",
+      "status": 200,
+      "clientMs": 608,
+      "passed": true
+    },
+    {
+      "path": "/guia/armar",
+      "status": 200,
+      "clientMs": 44,
+      "passed": true
+    }
+  ],
+  "result": "passed"
+}

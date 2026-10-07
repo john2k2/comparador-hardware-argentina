@@ -1,0 +1,13 @@
+{
+  "batch": 4,
+  "startedAt": "2026-10-07T15:21:05.986Z",
+  "acknowledgedAt": "2026-10-07T15:21:32.332Z",
+  "clientElapsedMs": 1950,
+  "result": {
+    "operation": "retencion-2026-10-07-pilot-v1",
+    "cutoff": "2026-10-07 14:30:00+00",
+    "batch_limit": 250,
+    "deleted_rows": 250
+  },
+  "commitAcknowledged": true
+}

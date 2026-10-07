@@ -1,0 +1,14 @@
+{
+  "httpStatus": 403,
+  "success": false,
+  "errorCodes": [
+    10000
+  ],
+  "timeframe": {
+    "from": 1791385800000,
+    "to": 1791385980000
+  },
+  "filterService": "comparador-hardware-argentina",
+  "keys": [],
+  "resultType": "NoneType"
+}

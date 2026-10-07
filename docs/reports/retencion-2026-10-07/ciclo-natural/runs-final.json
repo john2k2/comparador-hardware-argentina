@@ -1,0 +1,116 @@
+{
+  "readAt": "2026-10-07T15:41:02.344476+00:00",
+  "runs": [
+    {
+      "id": 37626593331,
+      "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+      "event": "workflow_dispatch",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-07T13:11:43Z",
+      "updated_at": "2026-10-07T13:29:32Z",
+      "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37626593331",
+      "run_attempt": 1
+    },
+    {
+      "id": 37612432741,
+      "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+      "event": "workflow_dispatch",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-07T11:11:43Z",
+      "updated_at": "2026-10-07T11:29:35Z",
+      "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37612432741",
+      "run_attempt": 1
+    },
+    {
+      "id": 37598915578,
+      "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+      "event": "workflow_dispatch",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-07T09:11:42Z",
+      "updated_at": "2026-10-07T09:46:43Z",
+      "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37598915578",
+      "run_attempt": 1
+    },
+    {
+      "id": 37598837751,
+      "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+      "event": "schedule",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-07T09:11:01Z",
+      "updated_at": "2026-10-07T09:28:48Z",
+      "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37598837751",
+      "run_attempt": 1
+    },
+    {
+      "id": 37585832597,
+      "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+      "event": "workflow_dispatch",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-07T07:11:35Z",
+      "updated_at": "2026-10-07T07:29:14Z",
+      "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37585832597",
+      "run_attempt": 1
+    },
+    {
+      "id": 37575094729,
+      "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+      "event": "workflow_dispatch",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-07T05:11:30Z",
+      "updated_at": "2026-10-07T05:29:14Z",
+      "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37575094729",
+      "run_attempt": 1
+    },
+    {
+      "id": 37565581417,
+      "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+      "event": "workflow_dispatch",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-07T03:11:23Z",
+      "updated_at": "2026-10-07T03:28:52Z",
+      "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37565581417",
+      "run_attempt": 1
+    },
+    {
+      "id": 37558743501,
+      "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+      "event": "schedule",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-10-07T01:46:23Z",
+      "updated_at": "2026-10-07T01:47:26Z",
+      "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37558743501",
+      "run_attempt": 1
+    },
+    {
+      "id": 37555870770,
+      "head_sha": "f899ced036eccc785915f0e6635a0fa4fc7920cc",
+      "event": "workflow_dispatch",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-10-07T01:11:45Z",
+      "updated_at": "2026-10-07T01:23:51Z",
+      "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37555870770",
+      "run_attempt": 1
+    },
+    {
+      "id": 37545180880,
+      "head_sha": "f899ced036eccc785915f0e6635a0fa4fc7920cc",
+      "event": "workflow_dispatch",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-06T23:11:46Z",
+      "updated_at": "2026-10-06T23:29:25Z",
+      "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37545180880",
+      "run_attempt": 1
+    }
+  ],
+  "manualDispatchByThisTask": false
+}

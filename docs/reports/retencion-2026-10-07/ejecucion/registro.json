@@ -1,0 +1,122 @@
+{
+  "projectId": "zyiyziubpcpgoqlkcrie",
+  "operation": "retencion-2026-10-07-pilot-v1",
+  "authorization": {
+    "humanMessage": "ok continua con tu recomendacion",
+    "scope": "piloto previamente presentado de1000 eventos vencidos; excluye índices/maintenance/plan y otros datos"
+  },
+  "preflight": {
+    "metadata": {
+      "read_at": "2026-10-07 15:17:47.391898+00",
+      "operator_role": "postgres",
+      "default_read_only": "off",
+      "database_bytes": 929205395,
+      "cache_heap_bytes": 158253056,
+      "cache_total_bytes": 245424128,
+      "cache_indexes_bytes": 77922304,
+      "cache_rls": true,
+      "cache_has_rules": false,
+      "user_trigger_count": 0,
+      "incoming_foreign_keys": 0,
+      "operator_can_read_delete": true
+    },
+    "counts": {
+      "cutoff": "2026-10-07 14:30:00+00",
+      "all_rows": 348342,
+      "pilot_scope_eligible": 330295,
+      "active_or_boundary_at_cutoff": 1689,
+      "pilot_scope_updated_after_cutoff": 0
+    }
+  },
+  "rollbackTrial": {
+    "startedAt": "2026-10-07T15:19:10.541Z",
+    "clientElapsedMs": 2264,
+    "result": {
+      "operation": "retencion-2026-10-07-pilot-v1",
+      "cutoff": "2026-10-07 14:30:00+00",
+      "batch_limit": 250,
+      "deleted_rows": 250
+    },
+    "post": {
+      "read_at": "2026-10-07 15:19:37.19098+00",
+      "all_rows": 348342,
+      "pilot_scope_eligible": 330295,
+      "active_or_boundary_at_cutoff": 1689,
+      "pilot_scope_updated_after_cutoff": 0
+    },
+    "verified": true
+  },
+  "committedBatches": [
+    {
+      "batch": 1,
+      "startedAt": "2026-10-07T15:20:10.500Z",
+      "acknowledgedAt": "2026-10-07T15:20:45.411Z",
+      "clientElapsedMs": 1807,
+      "result": {
+        "operation": "retencion-2026-10-07-pilot-v1",
+        "cutoff": "2026-10-07 14:30:00+00",
+        "batch_limit": 250,
+        "deleted_rows": 250
+      },
+      "commitAcknowledged": true
+    },
+    {
+      "batch": 2,
+      "startedAt": "2026-10-07T15:20:45.455Z",
+      "acknowledgedAt": "2026-10-07T15:20:55.759Z",
+      "clientElapsedMs": 1911,
+      "result": {
+        "operation": "retencion-2026-10-07-pilot-v1",
+        "cutoff": "2026-10-07 14:30:00+00",
+        "batch_limit": 250,
+        "deleted_rows": 250
+      },
+      "commitAcknowledged": true
+    },
+    {
+      "batch": 3,
+      "startedAt": "2026-10-07T15:20:55.793Z",
+      "acknowledgedAt": "2026-10-07T15:21:05.952Z",
+      "clientElapsedMs": 1820,
+      "result": {
+        "operation": "retencion-2026-10-07-pilot-v1",
+        "cutoff": "2026-10-07 14:30:00+00",
+        "batch_limit": 250,
+        "deleted_rows": 250
+      },
+      "commitAcknowledged": true
+    },
+    {
+      "batch": 4,
+      "startedAt": "2026-10-07T15:21:05.986Z",
+      "acknowledgedAt": "2026-10-07T15:21:32.332Z",
+      "clientElapsedMs": 1950,
+      "result": {
+        "operation": "retencion-2026-10-07-pilot-v1",
+        "cutoff": "2026-10-07 14:30:00+00",
+        "batch_limit": 250,
+        "deleted_rows": 250
+      },
+      "commitAcknowledged": true
+    }
+  ],
+  "committedRows": 1000,
+  "nextBatch": null,
+  "state": "complete-exactly1000-no-expansion",
+  "postflight": {
+    "read_at": "2026-10-07 15:21:36.554162+00",
+    "default_read_only": "off",
+    "database_bytes": 929205395,
+    "cache_heap_bytes": 158253056,
+    "cache_total_bytes": 245424128,
+    "cache_indexes_bytes": 77922304,
+    "all_rows": 347342,
+    "pilot_scope_eligible": 329295,
+    "active_or_boundary_at_cutoff": 1689,
+    "pilot_scope_updated_after_cutoff": 0
+  },
+  "countsReconciled": true,
+  "physicalBytesChange": 0,
+  "expandedCleanupAuthorized": false,
+  "physicalCapacitySolved": false
+}
