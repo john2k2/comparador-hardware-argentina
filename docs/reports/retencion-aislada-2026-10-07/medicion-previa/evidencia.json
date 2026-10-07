@@ -1,0 +1,147 @@
+{
+  "source": {
+    "revision_informed_by_coordinator": "e420dc0",
+    "branch_informed_by_coordinator": "codex/retencion-comprobable",
+    "worktree": "comparador-confianza/comparador-hardware-argentina",
+    "supabase_project": "zyiyziubpcpgoqlkcrie",
+    "identity_check": "El proyecto se fijó explícitamente en el argumento MCP, coincidente con la referencia confirmada por coordinación; current_database=postgres y contratos de tablas/función esperados."
+  },
+  "artifact_generated_at": "2026-10-07 15:54:54 UTC",
+  "cutoff_utc": "2026-10-07T15:45:00Z",
+  "policy": {
+    "raw_days": 14,
+    "hourly_days": 90,
+    "daily_days": 365,
+    "timezone": "UTC",
+    "offer_key": "product_id/store_id/coalesce(offer_url,'')",
+    "keeper_order": "recorded_at DESC,id DESC"
+  },
+  "metadata": {
+    "timezone": "UTC",
+    "captured_at": "2026-10-07T15:49:51.16431+00:00",
+    "database_name": "postgres",
+    "database_bytes": 929205395,
+    "history_columns": [
+      {
+        "type": "uuid",
+        "column": "id",
+        "not_null": true
+      },
+      {
+        "type": "text",
+        "column": "offer_url",
+        "not_null": false
+      },
+      {
+        "type": "text",
+        "column": "product_id",
+        "not_null": true
+      },
+      {
+        "type": "timestamp with time zone",
+        "column": "recorded_at",
+        "not_null": true
+      },
+      {
+        "type": "text",
+        "column": "store_id",
+        "not_null": true
+      }
+    ],
+    "cache_total_bytes": 245424128,
+    "cleanup_signature": "retain_recent interval DEFAULT '14 days'::interval, retain_hourly interval DEFAULT '90 days'::interval, retain_daily interval DEFAULT '365 days'::interval",
+    "history_heap_bytes": 42860544,
+    "history_index_bytes": 133300224,
+    "history_total_bytes": 176209920,
+    "default_transaction_read_only": "off"
+  },
+  "query_budget": {
+    "valid_heavy_queries": 3,
+    "heavy_query_cap": 3,
+    "validation_error_before_execution": 1,
+    "metadata_reads": 1,
+    "explain_without_analyze": 1,
+    "remote_execution_stopped": true
+  },
+  "attempts": [
+    {
+      "file": "agregado-global.sql",
+      "kind": "agregado jerárquico horas/días",
+      "result": "timeout",
+      "sqlstate": "57014",
+      "message": "canceling statement due to statement timeout",
+      "client_round_trip_ms": 4904,
+      "server_execution_ms": null,
+      "counts_returned": false
+    },
+    {
+      "file": "agregado-franjas.sql",
+      "kind": "agregado sólo por rangos/buckets completos relevantes",
+      "result": "timeout",
+      "sqlstate": "57014",
+      "message": "canceling statement due to statement timeout",
+      "client_round_trip_ms": 5150,
+      "server_execution_ms": null,
+      "counts_returned": false
+    },
+    {
+      "file": "ventana-1000.sql",
+      "kind": "primeros1000ids de filas antiguas por PK, keeper global EXISTS",
+      "result": "timeout",
+      "sqlstate": "57014",
+      "message": "canceling statement due to statement timeout",
+      "client_round_trip_ms": 4934,
+      "server_execution_ms": null,
+      "counts_returned": false
+    }
+  ],
+  "validation_error": {
+    "code": "42803",
+    "details": "CASE diario referenciaba límite constante fuera de agregación; corregido con max(límite) antes de ejecutar. No fue un resultado de medición."
+  },
+  "result": {
+    "global_total_rows": null,
+    "global_candidates": {
+      "raw": 0,
+      "hourly": null,
+      "daily": null,
+      "old": null,
+      "total": null
+    },
+    "window_examined_rows": null,
+    "window_candidates": null,
+    "positive_lower_bound": null,
+    "physical_bytes_recoverable": null,
+    "remaining_rows_after_hypothetical_cleanup": null,
+    "status": "UNKNOWN: ninguna consulta de candidatos completó; no interpretar como cero."
+  },
+  "planning": {
+    "file": "explain-ventana.sql",
+    "analyze": false,
+    "client_round_trip_ms": 2028,
+    "sanitized_plan_file": "plan-sanitizado.json",
+    "sample_access": "Limit1000/Index Scan price_history_pkey",
+    "keeper_subplans": 5,
+    "keeper_index": "price_history_offer_idx",
+    "finding": "El CTE marked fue inlinado; varias expresiones COUNT provocaron cinco SubPlans de EXISTS. Amplificación visible de diseño del probe, sin loops/tiempos reales. No se demuestra causa única del timeout.",
+    "comparison": "Preflight de ingeniería materializa classified/eligible y limita todas las filas antes de clasificar. Mi timeout no mide ni refuta ese diseño."
+  },
+  "previous_evidence_reused": {
+    "metadata_file": "tmp/capacidad-siguiente-2026-10-07/evidencia.json",
+    "date": "2026-10-07T15:18:55.035892+00:00",
+    "indexes": 39,
+    "duplicate_visible_definition": "products_updated_at_idx / products_updated_at_desc_idx",
+    "one_copy_bytes": 1400832,
+    "limit": "No repetida auditoría de índices; ahorro operativo no ejecutado ni suficiente para cuota."
+  },
+  "arithmetic": {
+    "database_without_entire_cache_hypothesis_bytes": 683781267,
+    "gap_above_500000000_hypothesis_bytes": 183781267,
+    "physical_reclamation_demonstrated": false
+  },
+  "synthetic": {
+    "file": "prueba-sintetica.json",
+    "scope": "Equivalencia lógica entre rank por recorded_at/id y dos agregados, más ventana con keeper global, sobre fixtures; no evidencia de conteos o timings productivos."
+  },
+  "restrictions_respected": "Sin exportar IDs, URLs, precios, payloads, usuarios, credenciales; sin DDL/DML/RPC/refresh/seed/claim/vacuum/analyze/configuración/plan/cuenta/Git. No se inició PostgreSQL local ni procesos persistentes."
+}

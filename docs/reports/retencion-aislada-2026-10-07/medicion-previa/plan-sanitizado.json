@@ -1,0 +1,131 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Aggregate",
+      "Strategy": "Plain",
+      "Partial Mode": "Simple",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Startup Cost": 13444.27,
+      "Total Cost": 13444.32,
+      "Plan Rows": 1,
+      "Plan Width": 32,
+      "Plans": [
+        {
+          "Node Type": "Limit",
+          "Parent Relationship": "InitPlan",
+          "Subplan Name": "CTE sample",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 0.42,
+          "Total Cost": 74.27,
+          "Plan Rows": 1000,
+          "Plan Width": 238,
+          "Plans": [
+            {
+              "Node Type": "Index Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Scan Direction": "Forward",
+              "Index Name": "price_history_pkey",
+              "Relation Name": "price_history",
+              "Alias": "ph",
+              "Startup Cost": 0.42,
+              "Total Cost": 19061.95,
+              "Plan Rows": 258110,
+              "Plan Width": 238
+            }
+          ]
+        },
+        {
+          "Node Type": "CTE Scan",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "CTE Name": "sample",
+          "Alias": "s",
+          "Startup Cost": 0,
+          "Total Cost": 20,
+          "Plan Rows": 1000,
+          "Plan Width": 176
+        },
+        {
+          "Node Type": "Index Scan",
+          "Parent Relationship": "SubPlan",
+          "Subplan Name": "SubPlan 2",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Scan Direction": "Forward",
+          "Index Name": "price_history_offer_idx",
+          "Relation Name": "price_history",
+          "Alias": "newer",
+          "Startup Cost": 0.42,
+          "Total Cost": 2.66,
+          "Plan Rows": 1,
+          "Plan Width": 0
+        },
+        {
+          "Node Type": "Index Scan",
+          "Parent Relationship": "SubPlan",
+          "Subplan Name": "SubPlan 3",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Scan Direction": "Forward",
+          "Index Name": "price_history_offer_idx",
+          "Relation Name": "price_history",
+          "Alias": "newer_1",
+          "Startup Cost": 0.42,
+          "Total Cost": 2.66,
+          "Plan Rows": 1,
+          "Plan Width": 0
+        },
+        {
+          "Node Type": "Index Scan",
+          "Parent Relationship": "SubPlan",
+          "Subplan Name": "SubPlan 4",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Scan Direction": "Forward",
+          "Index Name": "price_history_offer_idx",
+          "Relation Name": "price_history",
+          "Alias": "newer_2",
+          "Startup Cost": 0.42,
+          "Total Cost": 2.66,
+          "Plan Rows": 1,
+          "Plan Width": 0
+        },
+        {
+          "Node Type": "Index Scan",
+          "Parent Relationship": "SubPlan",
+          "Subplan Name": "SubPlan 5",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Scan Direction": "Forward",
+          "Index Name": "price_history_offer_idx",
+          "Relation Name": "price_history",
+          "Alias": "newer_3",
+          "Startup Cost": 0.42,
+          "Total Cost": 2.66,
+          "Plan Rows": 1,
+          "Plan Width": 0
+        },
+        {
+          "Node Type": "Index Scan",
+          "Parent Relationship": "SubPlan",
+          "Subplan Name": "SubPlan 6",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Scan Direction": "Forward",
+          "Index Name": "price_history_offer_idx",
+          "Relation Name": "price_history",
+          "Alias": "newer_4",
+          "Startup Cost": 0.42,
+          "Total Cost": 2.66,
+          "Plan Rows": 1,
+          "Plan Width": 0
+        }
+      ]
+    }
+  }
+]

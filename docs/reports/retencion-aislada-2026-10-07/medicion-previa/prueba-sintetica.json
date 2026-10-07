@@ -1,0 +1,17 @@
+{
+  "mode": "synthetic only; no production counts",
+  "cutoff": "2026-10-07T15:45:00+00:00",
+  "checks": [
+    {
+      "fixture_rows": 25,
+      "fixture_candidates": 12,
+      "window_rows": 19
+    },
+    {
+      "fixture_rows": 1588,
+      "fixture_candidates": 424,
+      "window_rows": 1000
+    }
+  ],
+  "passed": true
+}
