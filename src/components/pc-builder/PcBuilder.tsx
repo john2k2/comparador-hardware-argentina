@@ -11,7 +11,7 @@ import { BUILD_STORAGE_KEY, createBuildShareUrl, createWhatsAppShareUrl, decodeB
 import { fetchBuilderProducts, mergeCatalog } from '@/lib/pc-builder/client';
 import { trackBudgetBuilder, trackPcBuilderAction, trackStoreClick, type PcBuilderAction } from '@/lib/analytics/ga4';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
-import { isOfferFresh } from '@/lib/price-freshness';
+import { isOfferFresh, OFFER_FRESH_MS } from '@/lib/price-freshness';
 import { AdvisoryCta } from '@/components/commercial/AdvisoryCta';
 import { MotherboardMemorySupport } from '@/components/product/MotherboardMemorySupport';
 import { RefreshOffersButton } from './RefreshOffersButton';
@@ -37,10 +37,37 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
   const [shareUrl, setShareUrl] = useState('');
   const [sharedDraft, setSharedDraft] = useState<BuildDraft | null>(null);
   const [shareOrigin, setShareOrigin] = useState('');
-  const quote = useMemo(() => quoteBuild(draft, products), [draft, products]);
+  const [quoteNow, setQuoteNow] = useState(() => Date.now());
+  const quote = useMemo(() => quoteBuild(draft, products, quoteNow), [draft, products, quoteNow]);
   const selectedMotherboard = quote.lines.find((line) => line.slot === 'motherboard')?.product;
   const componentCount = Object.keys(draft.selections).length;
   const whatsappUrl = shareOrigin && componentCount ? createWhatsAppShareUrl(draft, shareOrigin) : '';
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const updateClock = () => {
+      clearTimeout(timer);
+      const now = Date.now();
+      setQuoteNow(now);
+      // El reloj sólo vence la presentación; no consulta ni renueva ofertas.
+      const deadlines = products.flatMap((product) => product.prices)
+        .map((offer) => new Date(offer.lastUpdated).getTime() + OFFER_FRESH_MS + 1)
+        .filter((deadline) => Number.isFinite(deadline) && deadline > now);
+      if (deadlines.length) {
+        timer = setTimeout(updateClock, Math.min(Math.min(...deadlines) - now, OFFER_FRESH_MS));
+      }
+    };
+    updateClock();
+    window.addEventListener('focus', updateClock);
+    window.addEventListener('pageshow', updateClock);
+    document.addEventListener('visibilitychange', updateClock);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('focus', updateClock);
+      window.removeEventListener('pageshow', updateClock);
+      document.removeEventListener('visibilitychange', updateClock);
+    };
+  }, [products]);
 
   function trackAction(action: PcBuilderAction, extra: { slot?: string; status?: string; updatedCount?: number } = {}, currentDraft = draft, catalog = products) {
     const currentQuote = quoteBuild(currentDraft, catalog);
@@ -161,7 +188,7 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
             <label className="block font-body text-xs mt-3">Componente<select aria-label={`Elegir ${SLOT_LABELS[slot]}`} className={`${control} mt-1`} value={selection?.productId ?? ''} onChange={(event) => choose(slot, event.target.value)} disabled={loading}>
               <option value="">{loading ? 'Cargando…' : 'Elegí una pieza'}</option>
               {selection && !candidates.some((product) => product.id === selection.productId) && <option value={selection.productId}>{selected?.name ?? 'Pieza guardada no disponible'} — selección actual</option>}
-              {candidates.map((product) => { const offer = eligibleOffers(product)[0]; return <option key={product.id} value={product.id}>{product.name} — {isOfferFresh(offer.lastUpdated) ? 'desde' : 'último precio relevado'} {formatPriceARS(offer.price)}</option>; })}
+              {candidates.map((product) => { const offer = eligibleOffers(product)[0]; return <option key={product.id} value={product.id}>{product.name} — {isOfferFresh(offer.lastUpdated, quoteNow) ? 'desde' : 'último precio relevado'} {formatPriceARS(offer.price)}</option>; })}
             </select></label>
             {!loading && !candidates.length && <p className="font-body text-xs mt-2">No hay ofertas aptas en esta selección. Probá buscar otro modelo.</p>}
             {selection && <>
@@ -172,10 +199,10 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
                 trackAction('offer_selected', { slot }, nextDraft);
               }}>
                 {!selectedOffer && <option value={JSON.stringify([selection.storeId, selection.url])}>{reviewPending ? 'Modelo pendiente de revisión' : 'Oferta anterior — pendiente de confirmar'}</option>}
-                {offers.map((offer) => <option key={offer.url} value={JSON.stringify([offer.storeId, offer.url])}>{offer.storeName} — {formatPriceARS(offer.price)} contado{offer.installment ? ` / ${offer.installment.count} cuotas, total ${formatPriceARS(offer.installment.totalAmount)}` : ''}{isOfferFresh(offer.lastUpdated) ? '' : ' · pendiente de actualizar'}</option>)}
+                {offers.map((offer) => <option key={offer.url} value={JSON.stringify([offer.storeId, offer.url])}>{offer.storeName} — {formatPriceARS(offer.price)} contado{offer.installment ? ` / ${offer.installment.count} cuotas, total ${formatPriceARS(offer.installment.totalAmount)}` : ''}{isOfferFresh(offer.lastUpdated, quoteNow) ? '' : ' · pendiente de actualizar'}</option>)}
               </select></label>
               {reviewPending && <p className="font-body text-sm mt-3 leading-relaxed"><strong>Oferta pendiente: </strong>La coincidencia del modelo requiere revisión. Conservamos el precio y la fecha informados, pero esta oferta no entra al total. Podés elegir otra tienda.</p>}
-              {recordedOffer && !isOfferFresh(recordedOffer.lastUpdated) && <p className="font-body text-sm mt-3 leading-relaxed"><strong>Precio anterior: </strong> no se suma al presupuesto hasta volver a comprobar esta oferta.</p>}
+              {recordedOffer && !isOfferFresh(recordedOffer.lastUpdated, quoteNow) && <p className="font-body text-sm mt-3 leading-relaxed"><strong>Precio anterior: </strong> no se suma al presupuesto hasta volver a comprobar esta oferta.</p>}
               <div className="flex flex-wrap items-center gap-4 mt-3 font-body text-xs">
                 {(slot === 'ram' || slot === 'ssd') && <label>Cantidad {slot === 'ram' ? 'de kits / unidades' : 'de unidades'}<select aria-label={`Cantidad de ${SLOT_LABELS[slot]}`} className="border-2 border-border bg-background min-h-11 ml-2 px-2" value={selection.quantity} onChange={(event) => setDraft((current) => ({ ...current, selections: { ...current.selections, [slot]: { ...selection, quantity: Number(event.target.value) } } }))}>{[1, 2, 3, 4].map((quantity) => <option key={quantity}>{quantity}</option>)}</select></label>}
                 {selectedOffer && selected && <a className="underline min-h-11 inline-flex items-center" href={selectedOffer.url} target="_blank" rel="noopener noreferrer" onClick={() => trackStoreClick({
