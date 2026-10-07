@@ -7,13 +7,16 @@ const base = process.env.OFFER_CONFIDENCE_BASE_URL ?? 'https://www.comparador-ha
 const origin = new URL(base);
 assert(origin.protocol === 'https:' && origin.hostname === 'www.comparador-hardware.com.ar' && !origin.username && !origin.password && origin.pathname === '/', 'La QA pública requiere el dominio autorizado');
 const folder = process.env.OFFER_CONFIDENCE_REPORT_DIR ?? 'tmp/publicacion-2026-10-06/confianza-final';
+const release = process.env.OFFER_CONFIDENCE_RELEASE ?? 'unknown';
+assert(release === 'unknown' || /^[a-f0-9]{7,40}$/.test(release), 'La revisión pública debe ser un SHA de Git');
+const probe = `confidence-${release}-readonly`;
 await mkdir(folder, { recursive: true });
 const bundled = await build({ entryPoints: ['src/lib/product/offer-presentation.ts'], bundle: true, platform: 'node', format: 'esm', write: false });
 const { buildOfferPresentation } = await import('data:text/javascript;base64,' + Buffer.from(bundled.outputFiles[0].text).toString('base64'));
-const report = { at: new Date().toISOString(), runtime: 'Cloudflare público; datos reales, sin fixtures; release 2dc40b8', routes: [], details: [], comparison: null, builder: null, pageErrors: [] };
+const report = { at: new Date().toISOString(), runtime: 'Cloudflare público; datos reales, sin fixtures', release, routes: [], details: [], comparison: null, builder: null, pageErrors: [] };
 async function read(path) {
  const start = performance.now();
- const response = await fetch(base + path, { headers: { 'X-Release-Probe': 'confidence-2dc40b8-readonly' }, signal: AbortSignal.timeout(20000) });
+ const response = await fetch(base + path, { headers: { 'X-Release-Probe': probe }, signal: AbortSignal.timeout(20000) });
  report.routes.push({ path, status: response.status, ms: Math.round(performance.now() - start) });
  assert.equal(response.status, 200, path);
  return response.json();
@@ -33,7 +36,7 @@ await context.route('**/*', async route => {
   (report.blockedMutations ??= []).push({ method: request.method(), path: url.pathname });
   return route.abort();
  }
- return route.continue(url.origin === origin.origin ? { headers: { ...request.headers(), 'x-release-probe': 'confidence-2dc40b8-readonly' } } : undefined);
+ return route.continue(url.origin === origin.origin ? { headers: { ...request.headers(), 'x-release-probe': probe } } : undefined);
 });
 const page = await context.newPage();
 page.on('pageerror', error => report.pageErrors.push(error.message));
