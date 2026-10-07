@@ -1,0 +1,410 @@
+{
+  "recordedAt": "2026-10-07T15:58:04.489Z",
+  "status": "LOCAL_SYNTHETIC_ONLY",
+  "base": "e420dc0",
+  "serverVersion": "17.11 (Homebrew)",
+  "host": "127.0.0.1",
+  "port": 55484,
+  "database": "history_retention_local",
+  "clusterDirectory": "tmp/history-retention-local-2026-10-07/data-1791388677159",
+  "clusterStopped": true,
+  "cutoff": "2026-10-07T15:45:00Z",
+  "cases": [
+    "approval/role/operator-ledger guards; no writes on rejection",
+    "bounded preflight agrees with independent rank oracle; default rollback preserves every field",
+    "UTC14/90/365 boundaries; buckets crossing tiers; latest timestamp/id; URL/product/store separation; null/empty equivalence; leap date; raw/future preserved",
+    "four250 commits;1000 maximum; cursor retains excess candidates; keeper outside scanned window preserved",
+    "zero candidates in one window does not imply global exhaustion; next cursor finds later eligible row",
+    "candidate and keeper locks abort entire batch at200ms; no skip/no cursor advancement/no partial deletion",
+    "concurrent selected-row movement aborts snapshot; renewed observation preserved; no partial deletion",
+    "concurrent insert preserved; snapshot keeper preserved conservatively without before-minus-after arithmetic",
+    "delete trigger/outgoing cascade guards; products/prices/users/stores unchanged",
+    "filtered DELETE produces incomplete receipt, unchanged cursor and transaction abort before COMMIT; RLS changed only synthetically",
+    "3s statement timeout aborts transaction and preserves all rows"
+  ],
+  "semanticFixtureRows": 30,
+  "independentOracleEligibleRows": 11,
+  "defaultRollbackReceipt": {
+    "cutoff": "2026-10-07T15:45:00+00:00",
+    "policy": {
+      "timezone": "UTC",
+      "keepRawDays": 14,
+      "keepDailyDays": 365,
+      "keepHourlyDays": 90
+    },
+    "cursorTo": "00000000-0000-0000-0000-000000000030",
+    "operation": "history-retention-2026-10-07-v1",
+    "batchLimit": 250,
+    "cursorFrom": null,
+    "executedAt": "2026-10-07T15:57:57.935038+00:00",
+    "deletedRows": 11,
+    "windowLimit": 1000,
+    "batchOrdinal": 1,
+    "examinedRows": 30,
+    "selectedRows": 11,
+    "batchComplete": true,
+    "candidateRows": 11,
+    "lastExaminedId": "00000000-0000-0000-0000-000000000030",
+    "transactionOutcome": "pending; default terminator ROLLBACK",
+    "moreCandidatesInWindow": false,
+    "globalEligibilityUnknown": true,
+    "scanReachedEndAtSnapshot": true,
+    "priorCommittedDeletedRows": 0
+  },
+  "committedBatches": [
+    {
+      "cutoff": "2026-10-07T15:45:00+00:00",
+      "policy": {
+        "timezone": "UTC",
+        "keepRawDays": 14,
+        "keepDailyDays": 365,
+        "keepHourlyDays": 90
+      },
+      "cursorTo": "00000000-0000-0000-0000-000000000250",
+      "operation": "history-retention-2026-10-07-v1",
+      "batchLimit": 250,
+      "cursorFrom": null,
+      "executedAt": "2026-10-07T15:57:58.035488+00:00",
+      "deletedRows": 250,
+      "windowLimit": 1000,
+      "batchOrdinal": 1,
+      "examinedRows": 1000,
+      "selectedRows": 250,
+      "batchComplete": true,
+      "candidateRows": 1000,
+      "lastExaminedId": "00000000-0000-0000-0000-000000001000",
+      "transactionOutcome": "pending; default terminator ROLLBACK",
+      "moreCandidatesInWindow": true,
+      "globalEligibilityUnknown": true,
+      "scanReachedEndAtSnapshot": false,
+      "priorCommittedDeletedRows": 0,
+      "clientElapsedMs": 26,
+      "syntheticCommitAcknowledged": true
+    },
+    {
+      "cutoff": "2026-10-07T15:45:00+00:00",
+      "policy": {
+        "timezone": "UTC",
+        "keepRawDays": 14,
+        "keepDailyDays": 365,
+        "keepHourlyDays": 90
+      },
+      "cursorTo": "00000000-0000-0000-0000-000000000500",
+      "operation": "history-retention-2026-10-07-v1",
+      "batchLimit": 250,
+      "cursorFrom": "00000000-0000-0000-0000-000000000250",
+      "executedAt": "2026-10-07T15:57:58.060878+00:00",
+      "deletedRows": 250,
+      "windowLimit": 1000,
+      "batchOrdinal": 2,
+      "examinedRows": 1000,
+      "selectedRows": 250,
+      "batchComplete": true,
+      "candidateRows": 1000,
+      "lastExaminedId": "00000000-0000-0000-0000-000000001250",
+      "transactionOutcome": "pending; default terminator ROLLBACK",
+      "moreCandidatesInWindow": true,
+      "globalEligibilityUnknown": true,
+      "scanReachedEndAtSnapshot": false,
+      "priorCommittedDeletedRows": 250,
+      "clientElapsedMs": 25,
+      "syntheticCommitAcknowledged": true
+    },
+    {
+      "cutoff": "2026-10-07T15:45:00+00:00",
+      "policy": {
+        "timezone": "UTC",
+        "keepRawDays": 14,
+        "keepDailyDays": 365,
+        "keepHourlyDays": 90
+      },
+      "cursorTo": "00000000-0000-0000-0000-000000000750",
+      "operation": "history-retention-2026-10-07-v1",
+      "batchLimit": 250,
+      "cursorFrom": "00000000-0000-0000-0000-000000000500",
+      "executedAt": "2026-10-07T15:57:58.085936+00:00",
+      "deletedRows": 250,
+      "windowLimit": 1000,
+      "batchOrdinal": 3,
+      "examinedRows": 1000,
+      "selectedRows": 250,
+      "batchComplete": true,
+      "candidateRows": 1000,
+      "lastExaminedId": "00000000-0000-0000-0000-000000001500",
+      "transactionOutcome": "pending; default terminator ROLLBACK",
+      "moreCandidatesInWindow": true,
+      "globalEligibilityUnknown": true,
+      "scanReachedEndAtSnapshot": false,
+      "priorCommittedDeletedRows": 500,
+      "clientElapsedMs": 25,
+      "syntheticCommitAcknowledged": true
+    },
+    {
+      "cutoff": "2026-10-07T15:45:00+00:00",
+      "policy": {
+        "timezone": "UTC",
+        "keepRawDays": 14,
+        "keepDailyDays": 365,
+        "keepHourlyDays": 90
+      },
+      "cursorTo": "00000000-0000-0000-0000-000000001000",
+      "operation": "history-retention-2026-10-07-v1",
+      "batchLimit": 250,
+      "cursorFrom": "00000000-0000-0000-0000-000000000750",
+      "executedAt": "2026-10-07T15:57:58.111296+00:00",
+      "deletedRows": 250,
+      "windowLimit": 1000,
+      "batchOrdinal": 4,
+      "examinedRows": 751,
+      "selectedRows": 250,
+      "batchComplete": true,
+      "candidateRows": 750,
+      "lastExaminedId": "00000000-0000-0000-0000-000000001501",
+      "transactionOutcome": "pending; default terminator ROLLBACK",
+      "moreCandidatesInWindow": true,
+      "globalEligibilityUnknown": true,
+      "scanReachedEndAtSnapshot": true,
+      "priorCommittedDeletedRows": 750,
+      "clientElapsedMs": 22,
+      "syntheticCommitAcknowledged": true
+    }
+  ],
+  "boundedZeroReceipt": {
+    "cutoff": "2026-10-07T15:45:00+00:00",
+    "policy": {
+      "timezone": "UTC",
+      "keepRawDays": 14,
+      "keepDailyDays": 365,
+      "keepHourlyDays": 90
+    },
+    "cursorTo": "00000000-0000-0000-0000-000000001000",
+    "operation": "history-retention-2026-10-07-v1",
+    "batchLimit": 250,
+    "cursorFrom": null,
+    "executedAt": "2026-10-07T15:57:58.199345+00:00",
+    "deletedRows": 0,
+    "windowLimit": 1000,
+    "batchOrdinal": 1,
+    "examinedRows": 1000,
+    "selectedRows": 0,
+    "batchComplete": true,
+    "candidateRows": 0,
+    "lastExaminedId": "00000000-0000-0000-0000-000000001000",
+    "transactionOutcome": "pending; default terminator ROLLBACK",
+    "moreCandidatesInWindow": false,
+    "globalEligibilityUnknown": true,
+    "scanReachedEndAtSnapshot": false,
+    "priorCommittedDeletedRows": 0
+  },
+  "concurrentInsertReceipt": {
+    "cutoff": "2026-10-07T15:45:00+00:00",
+    "policy": {
+      "timezone": "UTC",
+      "keepRawDays": 14,
+      "keepDailyDays": 365,
+      "keepHourlyDays": 90
+    },
+    "cursorTo": "00000000-0000-0000-0000-000000000030",
+    "operation": "history-retention-2026-10-07-v1",
+    "batchLimit": 250,
+    "cursorFrom": null,
+    "executedAt": "2026-10-07T15:58:00.299125+00:00",
+    "deletedRows": 11,
+    "windowLimit": 1000,
+    "batchOrdinal": 1,
+    "examinedRows": 30,
+    "selectedRows": 11,
+    "batchComplete": true,
+    "candidateRows": 11,
+    "lastExaminedId": "00000000-0000-0000-0000-000000000030",
+    "transactionOutcome": "pending; default terminator ROLLBACK",
+    "moreCandidatesInWindow": false,
+    "globalEligibilityUnknown": true,
+    "scanReachedEndAtSnapshot": true,
+    "priorCommittedDeletedRows": 0
+  },
+  "concurrentMovementError": "ERROR:  could not serialize access due to concurrent update",
+  "incompleteDeleteReceipt": {
+    "cutoff": "2026-10-07T15:45:00+00:00",
+    "policy": {
+      "timezone": "UTC",
+      "keepRawDays": 14,
+      "keepDailyDays": 365,
+      "keepHourlyDays": 90
+    },
+    "cursorTo": null,
+    "operation": "history-retention-2026-10-07-v1",
+    "batchLimit": 250,
+    "cursorFrom": null,
+    "executedAt": "2026-10-07T15:58:01.26609+00:00",
+    "deletedRows": 0,
+    "windowLimit": 1000,
+    "batchOrdinal": 1,
+    "examinedRows": 30,
+    "selectedRows": 11,
+    "batchComplete": false,
+    "candidateRows": 11,
+    "lastExaminedId": "00000000-0000-0000-0000-000000000030",
+    "transactionOutcome": "pending; default terminator ROLLBACK",
+    "moreCandidatesInWindow": true,
+    "globalEligibilityUnknown": true,
+    "scanReachedEndAtSnapshot": true,
+    "priorCommittedDeletedRows": 0
+  },
+  "localPreflightPlanNodes": [
+    {
+      "node": "CTE Scan"
+    },
+    {
+      "node": "Result",
+      "subplan": "CTE settings"
+    },
+    {
+      "node": "Limit",
+      "subplan": "CTE scanned"
+    },
+    {
+      "node": "Sort"
+    },
+    {
+      "node": "Nested Loop"
+    },
+    {
+      "node": "CTE Scan"
+    },
+    {
+      "node": "Bitmap Heap Scan"
+    },
+    {
+      "node": "Bitmap Index Scan",
+      "index": "price_history_pkey"
+    },
+    {
+      "node": "Nested Loop",
+      "subplan": "CTE classified"
+    },
+    {
+      "node": "CTE Scan"
+    },
+    {
+      "node": "CTE Scan"
+    },
+    {
+      "node": "Nested Loop",
+      "subplan": "CTE eligible"
+    },
+    {
+      "node": "CTE Scan"
+    },
+    {
+      "node": "Limit"
+    },
+    {
+      "node": "Incremental Sort"
+    },
+    {
+      "node": "Result"
+    },
+    {
+      "node": "Index Scan",
+      "index": "price_history_product_store_idx"
+    },
+    {
+      "node": "Aggregate",
+      "subplan": "InitPlan 5"
+    },
+    {
+      "node": "CTE Scan"
+    },
+    {
+      "node": "Aggregate",
+      "subplan": "InitPlan 6"
+    },
+    {
+      "node": "CTE Scan"
+    },
+    {
+      "node": "Aggregate",
+      "subplan": "InitPlan 9"
+    },
+    {
+      "node": "CTE Scan"
+    },
+    {
+      "node": "Aggregate",
+      "subplan": "InitPlan 10"
+    },
+    {
+      "node": "Seq Scan"
+    },
+    {
+      "node": "Aggregate",
+      "subplan": "InitPlan 11"
+    },
+    {
+      "node": "Index Scan",
+      "index": "pg_rewrite_rel_rulename_index"
+    },
+    {
+      "node": "Aggregate",
+      "subplan": "InitPlan 12"
+    },
+    {
+      "node": "Seq Scan"
+    },
+    {
+      "node": "Aggregate",
+      "subplan": "InitPlan 13"
+    },
+    {
+      "node": "Sort"
+    },
+    {
+      "node": "Nested Loop"
+    },
+    {
+      "node": "Nested Loop"
+    },
+    {
+      "node": "Hash Join"
+    },
+    {
+      "node": "Seq Scan"
+    },
+    {
+      "node": "Hash"
+    },
+    {
+      "node": "Index Scan",
+      "index": "pg_class_relname_nsp_index"
+    },
+    {
+      "node": "Index Scan",
+      "index": "pg_class_oid_index"
+    },
+    {
+      "node": "Seq Scan"
+    },
+    {
+      "node": "Aggregate",
+      "subplan": "SubPlan 7"
+    },
+    {
+      "node": "CTE Scan"
+    },
+    {
+      "node": "Aggregate",
+      "subplan": "SubPlan 8"
+    },
+    {
+      "node": "CTE Scan"
+    }
+  ],
+  "limits": [
+    "No remote SQL/RPC/HTTP or application workload executed",
+    "Synthetic elapsed time does not predict production cost",
+    "Window bounds output rows, not underlying peer/index/heap work;3s timeout remains the execution guard",
+    "Commit total ledger remains operator-controlled; marker is not human authorization",
+    "No postcommit restoration or physical space recovery demonstrated"
+  ]
+}
