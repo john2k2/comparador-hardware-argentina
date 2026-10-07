@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Product } from '@/lib/types';
+import type { ProductPageResult } from '@/lib/persistence/product-read-types';
 
 vi.mock('server-only', () => ({}));
 
@@ -162,7 +163,7 @@ describe('/api/search route', () => {
       description: 'CPU',
       image: '/pixel-box.svg',
       specs: {},
-      prices: [],
+      prices: [currentOffer(1)],
       lowestPrice: 1,
       highestPrice: 1,
       averagePrice: 1,
@@ -217,7 +218,7 @@ describe('/api/search route', () => {
       description: 'CPU',
       image: '/pixel-box.svg',
       specs: {},
-      prices: [],
+      prices: [currentOffer(2)],
       lowestPrice: 2,
       highestPrice: 2,
       averagePrice: 2,
@@ -295,7 +296,7 @@ describe('/api/search route', () => {
 
   it('preserves RPC totals and page two without slicing or filtering the page', async () => {
     vi.stubEnv('DISABLE_LIVE_SCRAPING', '1');
-    mockReadProductsFromDatabase.mockResolvedValue({ products: [{ id: 'target50', prices: [], updatedAt: new Date() }], total: 1501, totalPages: 126, page: 2, pageSize: 12 });
+    mockReadProductsFromDatabase.mockResolvedValue({ products: [currentMouse('target50')], total: 1501, totalPages: 126, page: 2, pageSize: 12 });
     const { GET } = await import('./route');
     const response = await GET(new NextRequest('http://localhost/api/search?q=target50&page=2&stores=MEXX,mexx'));
     const payload = await response.json();
@@ -343,12 +344,22 @@ describe('/api/search route', () => {
       facets: { categories: [], brands: [], stores: [] } };
   }
 
+  function currentOffer(price: number) {
+    return { storeId: 'mexx', storeName: 'Mexx', price, stock: 'in-stock' as const,
+      url: 'https://www.mexx.com.ar/publicacion', installment: null, lastUpdated: new Date() };
+  }
+
+  function currentMouse(id = 'mouse', price = 100): Product {
+    return { ...cachedMouse(), id, prices: [currentOffer(price)], lowestPrice: price,
+      highestPrice: price, averagePrice: price, updatedAt: new Date() };
+  }
+
   it.each([true, false])('relee SQL con mismos filtros cuando vence mínimo (otra actual=%s), sin filtrar la página', async (otherCurrentOffer) => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-10-07T18:00:00Z'));
     vi.stubEnv('DISABLE_LIVE_SCRAPING', '1');
     mockGetSharedCache.mockResolvedValue(cachedPage(cachedMouse(otherCurrentOffer)));
-    const replacement = { ...cachedMouse(), id: 'replacement', prices: [], lowestPrice: 80 };
+    const replacement = currentMouse('replacement', 80);
     const databasePage = { products: [replacement], total: 25, totalPages: 3, page: 2, pageSize: 12 };
     mockReadProductsFromDatabase.mockResolvedValue(databasePage);
     const { GET } = await import('./route');
@@ -393,5 +404,179 @@ describe('/api/search route', () => {
     expect(payload.pagination.total).toBe(0);
     expect(mockReadProductsFromDatabase).toHaveBeenCalledTimes(1);
     expect(mockRecordEndpointRequestEvent).toHaveBeenCalledTimes(1);
+  });
+
+  function deferredPage() {
+    let resolve!: (page: ProductPageResult) => void;
+    let reject!: (reason: unknown) => void;
+    const promise = new Promise<ProductPageResult>((ok, fail) => { resolve = ok; reject = fail; });
+    return { promise, resolve, reject };
+  }
+
+  function currentPage(item = currentMouse()): ProductPageResult {
+    return { products: [item], total: 40, totalPages: 4, page: 2, pageSize: 12 };
+  }
+
+  it('diez requests comparten lector/cache-write conservando respuestas, rate checks y demanda individual', async () => {
+    vi.stubEnv('DISABLE_LIVE_SCRAPING', '1');
+    const pending = deferredPage();
+    mockReadProductsFromDatabase.mockReturnValueOnce(pending.promise);
+    const { GET } = await import('./route');
+    const url = 'http://localhost/api/search?q=mouse&page=2';
+    const callers = Array.from({ length: 10 }, () => GET(new NextRequest(url)));
+    await vi.waitFor(() => expect(mockReadProductsFromDatabase).toHaveBeenCalledTimes(1));
+    const item = currentMouse();
+    item.updatedAt = new Date(Date.now() - 60 * 60 * 1000);
+    pending.resolve(currentPage(item));
+    const responses = await Promise.all(callers);
+    expect(responses.every((response) => response.status === 200)).toBe(true);
+    expect(mockSetSharedCache).toHaveBeenCalledTimes(1);
+    expect(mockCheckRateLimit).toHaveBeenCalledTimes(10);
+    expect(mockRecordEndpointRequestEvent).toHaveBeenCalledTimes(10);
+    expect(mockRecordCatalogRefreshDemand).toHaveBeenCalledTimes(10);
+    for (const response of responses) expect((await response.json()).pagination.total).toBe(40);
+    mockReadProductsFromDatabase.mockResolvedValueOnce(currentPage());
+    await GET(new NextRequest(url));
+    expect(mockReadProductsFromDatabase).toHaveBeenCalledTimes(2);
+    expect(mockSetSharedCache).toHaveBeenCalledTimes(2);
+  });
+
+  it('separa toda la tupla de filtros/modos y comparte tiendas equivalentes', async () => {
+    vi.stubEnv('DISABLE_LIVE_SCRAPING', '1');
+    const pending = deferredPage();
+    mockReadProductsFromDatabase.mockReturnValue(pending.promise);
+    const base = 'http://localhost/api/search?q=mouse&category=perifericos&stores=mexx,venex';
+    const urls = [base, base.replace('mexx,venex', 'venex,mexx,mexx'), base.replace('q=mouse', 'q=teclado'),
+      base.replace('category=perifericos', 'category=procesadores'), `${base}&page=2`, `${base}&sortBy=price-desc`,
+      `${base}&minPrice=50`, `${base}&maxPrice=200`, base.replace('mexx,venex', 'mexx'),
+      `${base}&includeUnavailable=1`, `${base}&preferDb=1`];
+    const { GET } = await import('./route');
+    const callers = urls.map((url) => GET(new NextRequest(url)));
+    await vi.waitFor(() => expect(mockReadProductsFromDatabase).toHaveBeenCalledTimes(urls.length - 1));
+    pending.resolve(currentPage());
+    expect((await Promise.all(callers)).every((response) => response.status === 200)).toBe(true);
+    expect(mockRecordEndpointRequestEvent).toHaveBeenCalledTimes(urls.length);
+  });
+
+  it.each(['refresh', 'internal', 'bypass'])('%s queda fuera del vuelo DB-first normal', async (mode) => {
+    vi.stubEnv('DISABLE_LIVE_SCRAPING', '1');
+    vi.stubEnv('INTERNAL_REFRESH_SECRET', 'fixture-secret');
+    const pending = deferredPage();
+    mockReadProductsFromDatabase.mockReturnValue(pending.promise);
+    const { GET } = await import('./route');
+    const base = 'http://localhost/api/search?q=mouse';
+    const special = `${base}${mode === 'refresh' ? '&refresh=1' : mode === 'bypass' ? '&bypassDb=1' : ''}`;
+    const headers = mode === 'refresh' ? undefined : { 'x-internal-refresh': 'fixture-secret' };
+    const callers = [GET(new NextRequest(base)), GET(new NextRequest(special, { headers })), GET(new NextRequest(special, { headers }))];
+    await vi.waitFor(() => expect(mockReadProductsFromDatabase).toHaveBeenCalledTimes(3));
+    pending.resolve(currentPage());
+    expect((await Promise.all(callers)).every((response) => response.status === 200)).toBe(true);
+  });
+
+  it('rechazo compartido mantiene error por request y una llamada posterior vuelve a leer', async () => {
+    vi.stubEnv('DISABLE_LIVE_SCRAPING', '1');
+    const pending = deferredPage();
+    mockReadProductsFromDatabase.mockReturnValueOnce(pending.promise);
+    const { GET } = await import('./route');
+    const callers = Array.from({ length: 10 }, () => GET(new NextRequest('http://localhost/api/search?q=mouse')));
+    await vi.waitFor(() => expect(mockReadProductsFromDatabase).toHaveBeenCalledTimes(1));
+    pending.reject(new Error('fixture database unavailable'));
+    expect((await Promise.all(callers)).every((response) => response.status === 503)).toBe(true);
+    expect(mockRecordEndpointRequestEvent).toHaveBeenCalledTimes(10);
+    expect(mockLoggerWarn).toHaveBeenCalledTimes(10);
+    expect(mockSetSharedCache).not.toHaveBeenCalled();
+    mockReadProductsFromDatabase.mockResolvedValueOnce(currentPage());
+    expect((await GET(new NextRequest('http://localhost/api/search?q=mouse'))).status).toBe(200);
+    expect(mockReadProductsFromDatabase).toHaveBeenCalledTimes(2);
+  });
+
+  it('error de cache-write única no se absorbe como error DB ni catálogo vacío', async () => {
+    vi.stubEnv('DISABLE_LIVE_SCRAPING', '1');
+    const pending = deferredPage();
+    mockReadProductsFromDatabase.mockReturnValueOnce(pending.promise);
+    mockSetSharedCache.mockRejectedValueOnce(new Error('fixture cache unavailable'));
+    const { GET } = await import('./route');
+    const callers = Array.from({ length: 10 }, () => GET(new NextRequest('http://localhost/api/search?q=mouse')));
+    await vi.waitFor(() => expect(mockReadProductsFromDatabase).toHaveBeenCalledTimes(1));
+    pending.resolve(currentPage());
+    expect((await Promise.all(callers)).every((response) => response.status === 503)).toBe(true);
+    expect(mockSetSharedCache).toHaveBeenCalledTimes(1);
+    expect(mockLoggerWarn).not.toHaveBeenCalled();
+    expect(mockLoggerError).toHaveBeenCalledTimes(10);
+  });
+
+  it('catálogo vacío compartido conserva diez intenciones de demanda y sus recibos', async () => {
+    const pending = deferredPage();
+    mockReadProductsFromDatabase.mockReturnValueOnce(pending.promise);
+    const { GET } = await import('./route');
+    const callers = Array.from({ length: 10 }, () => GET(new NextRequest('http://localhost/api/search?q=mouse')));
+    await vi.waitFor(() => expect(mockReadProductsFromDatabase).toHaveBeenCalledTimes(1));
+    pending.resolve({ products: [], total: 0, totalPages: 0, page: 1, pageSize: 12 });
+    expect((await Promise.all(callers)).every((response) => response.headers.get('X-Search-Cache') === 'CATALOG-PENDING')).toBe(true);
+    expect(mockRecordCatalogRefreshDemand).toHaveBeenCalledTimes(10);
+    expect(mockRecordEndpointRequestEvent).toHaveBeenCalledTimes(10);
+    expect(mockSetSharedCache).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([true, false])('reread acotado tras cache-write: nueva página válida=%s', async (validAgain) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-07T18:00:00Z'));
+    vi.stubEnv('DISABLE_LIVE_SCRAPING', '1');
+    const first = cachedMouse(true);
+    first.prices[0].lastUpdated = new Date('2026-10-06T18:00:01Z');
+    const next = { ...first, lowestPrice: validAgain ? 200 : 100 };
+    mockReadProductsFromDatabase.mockResolvedValueOnce(currentPage(first))
+      .mockResolvedValueOnce({ ...currentPage(next), total: 25, totalPages: 3 });
+    mockSetSharedCache.mockImplementationOnce(async () => vi.setSystemTime(new Date('2026-10-07T18:00:02Z')));
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest('http://localhost/api/search?q=mouse&page=2'));
+    expect(response.status).toBe(validAgain ? 200 : 503);
+    expect(mockReadProductsFromDatabase).toHaveBeenCalledTimes(2);
+    expect(mockSetSharedCache).toHaveBeenCalledTimes(validAgain ? 2 : 1);
+    const payload = await response.json();
+    if (validAgain) {
+      expect(payload.pagination).toMatchObject({ total: 25, totalPages: 3, page: 2 });
+      expect(payload.products[0].lowestPrice).toBe(200);
+    } else {
+      expect(mockLoggerError).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
+        error: expect.objectContaining({ message: 'SEARCH_PAGE_NO_LONGER_CURRENT' }),
+      }));
+      expect(payload).not.toHaveProperty('products');
+    }
+  });
+
+  it('consumidor lento revalida su oferta tras demanda aunque el rápido ya respondió', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-07T18:00:00Z'));
+    vi.stubEnv('DISABLE_LIVE_SCRAPING', '1');
+    const first = cachedMouse(true);
+    first.prices[0].lastUpdated = new Date('2026-10-06T18:00:01Z');
+    first.updatedAt = new Date('2026-10-07T17:00:00Z');
+    const pending = deferredPage();
+    mockReadProductsFromDatabase.mockReturnValueOnce(pending.promise)
+      .mockResolvedValueOnce({ ...currentPage({ ...first, lowestPrice: 200 }), total: 25, totalPages: 3 });
+    let release!: () => void;
+    let entered!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const waiting = new Promise<void>((resolve) => { entered = resolve; });
+    mockRecordCatalogRefreshDemand.mockResolvedValueOnce(undefined)
+      .mockImplementationOnce(() => { entered(); return gate; });
+    const { GET } = await import('./route');
+    const fast = GET(new NextRequest('http://localhost/api/search?q=mouse&page=2'));
+    const slow = GET(new NextRequest('http://localhost/api/search?q=mouse&page=2'));
+    pending.resolve(currentPage(first));
+    const fastPayload = await (await fast).json();
+    await waiting;
+    expect(fastPayload.products[0].lowestPrice).toBe(100);
+    expect(mockReadProductsFromDatabase).toHaveBeenCalledTimes(1);
+    vi.setSystemTime(new Date('2026-10-07T18:00:02Z'));
+    release();
+    const slowPayload = await (await slow).json();
+    expect(slowPayload.products[0].lowestPrice).toBe(200);
+    expect(slowPayload.pagination).toMatchObject({ total: 25, totalPages: 3 });
+    expect(mockReadProductsFromDatabase).toHaveBeenCalledTimes(2);
+    expect(mockSetSharedCache).toHaveBeenCalledTimes(2);
+    expect(mockRecordCatalogRefreshDemand).toHaveBeenCalledTimes(2);
+    expect(mockRecordEndpointRequestEvent).toHaveBeenCalledTimes(2);
   });
 });

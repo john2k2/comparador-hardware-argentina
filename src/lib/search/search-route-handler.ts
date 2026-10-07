@@ -40,6 +40,11 @@ import { recordCatalogRefreshDemand } from '@/lib/catalog/refresh-demand';
 import { isStableRuntimeMode, shouldSkipLiveScraping } from '@/lib/server/runtime-flags';
 import { getStableFixtureProducts } from '@/lib/server/stable-search-fixtures';
 import { filterCurrentCatalogProducts } from './search-availability';
+import { createCoalescedRead } from '@/lib/server/coalesced-read';
+import type { ProductPageResult } from '@/lib/persistence/product-read-types';
+
+type SearchDatabaseRead = { page: ProductPageResult; cacheWrite?: Promise<void> };
+const readPendingSearchPage = createCoalescedRead<SearchDatabaseRead>();
 
 function buildPayloadFromProducts(products: Product[], page: number): SearchApiResponse {
   const pageSlice = paginateProducts(products, page, SEARCH_PAGE_SIZE);
@@ -209,7 +214,7 @@ export async function GET(request: NextRequest) {
 
   try {
     if (!bypassDb || catalogOnlyMode) {
-      const databasePage = await readProductsPageFromDatabase({
+      const databaseParams = {
         query: query || undefined,
         category: effectiveCategory,
         minPrice,
@@ -218,7 +223,13 @@ export async function GET(request: NextRequest) {
         sortBy,
         page, pageSize: SEARCH_PAGE_SIZE,
         onlyCurrentOffers: !includeUnavailable,
-      }).catch((databaseError) => {
+      };
+      const normalRead = !bypassDb && !isRefreshRequest && !internalRefreshRequest;
+      const read = async (): Promise<SearchDatabaseRead> => ({ page: await readProductsPageFromDatabase(databaseParams) });
+      const readKey = JSON.stringify(['search-db-first-v1', query, effectiveCategory ?? null,
+        sortBy, page, SEARCH_PAGE_SIZE, minPrice ?? null, maxPrice ?? null,
+        [...selectedStoreIds].sort(), includeUnavailable, searchParams.get('preferDb') === '1']);
+      const handleReadError = (databaseError: unknown) => {
         logger.warn('DB-first search read skipped', {
           endpoint: '/api/search',
           query,
@@ -227,19 +238,52 @@ export async function GET(request: NextRequest) {
         });
         if (catalogOnlyMode) throw databaseError;
         return null;
-      });
+      };
+      let databaseRead = await (normalRead ? readPendingSearchPage(readKey, read) : read()).catch(handleReadError);
+      let rereads = 0;
+      let demandRecorded = false;
+      let backgroundScheduled = false;
+      const reread = async () => {
+        if (rereads >= 1) throw new Error('SEARCH_PAGE_NO_LONGER_CURRENT');
+        rereads++;
+        databaseRead = await read().catch(handleReadError);
+      };
 
-      if (databasePage) {
+      while (databaseRead) {
+        const databasePage = databaseRead.page;
+        const stillCurrent = () => includeUnavailable || hasCurrentSearchPagePrices(databasePage.products);
+        if (normalRead && !stillCurrent()) {
+          await reread();
+          continue;
+        }
         const staleDatabase = hasStaleProducts(databasePage.products, DB_STALE_AFTER_MS);
-        if (staleDatabase && !isRefreshRequest) {
+        if (!demandRecorded && ((staleDatabase && !isRefreshRequest) || databasePage.total === 0)) {
           await recordCatalogRefreshDemand({ query: query || undefined, category: effectiveCategory });
-          if (query) scheduleBackgroundSearchRefresh(request, cacheKey);
+          demandRecorded = true;
+        }
+        if (staleDatabase && !isRefreshRequest && query && !backgroundScheduled) {
+          scheduleBackgroundSearchRefresh(request, cacheKey);
+          backgroundScheduled = true;
         }
 
         const payload = catalogPageResponse(databasePage);
-        if (databasePage.total === 0) await recordCatalogRefreshDemand({ query: query || undefined, category: effectiveCategory });
-
-        await setCachedSearchResponse(cacheKey, payload);
+        if (normalRead) {
+          if (!stillCurrent()) {
+            await reread();
+            continue;
+          }
+          // Cada consumidor valida; sólo el primero reclama esta escritura del resultado.
+          databaseRead.cacheWrite ??= Promise.resolve().then(async () => {
+            if (stillCurrent()) await setCachedSearchResponse(cacheKey, payload);
+          });
+          await databaseRead.cacheWrite;
+          if (!stillCurrent()) {
+            await reread();
+            continue;
+          }
+        } else {
+          await setCachedSearchResponse(cacheKey, payload);
+        }
         return respond(payload, { headers: { 'X-Search-Cache': databasePage.total === 0 ? 'CATALOG-PENDING' : staleDatabase ? 'DB-STALE' : 'DB' } }, { success: true, resultCount: payload.products.length, note: staleDatabase ? 'DB_STALE' : 'DB_HIT' });
       }
     }
