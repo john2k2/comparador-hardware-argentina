@@ -1,0 +1,268 @@
+{
+  "publishedCode": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+  "authorization": "Jonathan: si hacelo; authorization for concrete candidate publication and public verification",
+  "originMainMethod": "non-force fast-forward push",
+  "deployment": {
+    "id": "9f5b5c96-8bff-41ec-bb02-d51704d6f1ab",
+    "created_on": "2026-10-07T01:45:25.154451Z",
+    "source": "wrangler",
+    "versions": [
+      {
+        "version_id": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+        "percentage": 100
+      }
+    ],
+    "annotations": {
+      "workers/triggered_by": "deployment"
+    }
+  },
+  "workerVersion": {
+    "id": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+    "number": 193,
+    "metadata": {
+      "created_on": "2026-10-07T01:45:20.970746Z",
+      "source": "wrangler"
+    },
+    "bindings": [
+      {
+        "name": "ASSETS",
+        "type": "assets"
+      },
+      {
+        "name": "CATALOG_REFRESH_CRON_SECRET",
+        "type": "secret_text"
+      },
+      {
+        "name": "CATALOG_REQUESTED_RUNNER",
+        "type": "plain_text"
+      },
+      {
+        "name": "CATALOG_SCHEDULER_ENABLED",
+        "type": "plain_text"
+      },
+      {
+        "name": "CF_VERSION_METADATA",
+        "type": "version_metadata"
+      },
+      {
+        "name": "DISABLE_INTERNAL_BACKGROUND_REFRESH",
+        "type": "plain_text"
+      },
+      {
+        "name": "DISABLE_LIVE_SCRAPING",
+        "type": "plain_text"
+      },
+      {
+        "name": "ENABLE_ON_DEMAND_REFRESH",
+        "type": "plain_text"
+      },
+      {
+        "name": "ENEBA_AFFILIATE_PILOT_ENABLED",
+        "type": "plain_text"
+      },
+      {
+        "name": "GITHUB_ACTIONS_DISPATCH_TOKEN",
+        "type": "secret_text"
+      },
+      {
+        "name": "GOOGLE_SITE_VERIFICATION",
+        "type": "secret_text"
+      },
+      {
+        "name": "IMAGES",
+        "type": "images"
+      },
+      {
+        "name": "KV_REST_API_READ_ONLY_TOKEN",
+        "type": "secret_text"
+      },
+      {
+        "name": "KV_REST_API_TOKEN",
+        "type": "secret_text"
+      },
+      {
+        "name": "KV_REST_API_URL",
+        "type": "secret_text"
+      },
+      {
+        "name": "KV_URL",
+        "type": "secret_text"
+      },
+      {
+        "name": "MEASUREMENT_COLLECTION_MODE",
+        "type": "plain_text"
+      },
+      {
+        "name": "MEASUREMENT_CREDENTIAL_ENCRYPTION_KEY",
+        "type": "secret_text"
+      },
+      {
+        "name": "MEASUREMENT_GOOGLE_CLIENT_ID",
+        "type": "secret_text"
+      },
+      {
+        "name": "MEASUREMENT_GOOGLE_CLIENT_SECRET",
+        "type": "secret_text"
+      },
+      {
+        "name": "MEASUREMENT_GOOGLE_CLIENT_TYPE",
+        "type": "plain_text"
+      },
+      {
+        "name": "MEASUREMENT_PUBLIC_URL",
+        "type": "plain_text"
+      },
+      {
+        "name": "NEXT_PUBLIC_GA4_MEASUREMENT_ID",
+        "type": "secret_text"
+      },
+      {
+        "name": "NX_DAEMON",
+        "type": "secret_text"
+      },
+      {
+        "name": "PUBLIC_HOME_DOCUMENTS",
+        "type": "plain_text"
+      },
+      {
+        "name": "REDIS_URL",
+        "type": "secret_text"
+      },
+      {
+        "name": "SITE_URL",
+        "type": "secret_text"
+      },
+      {
+        "name": "SUPABASE_PUBLISHABLE_KEY",
+        "type": "secret_text"
+      },
+      {
+        "name": "SUPABASE_SECRET_KEY",
+        "type": "secret_text"
+      },
+      {
+        "name": "SUPABASE_URL",
+        "type": "secret_text"
+      },
+      {
+        "name": "SUPPORT_EMAIL",
+        "type": "secret_text"
+      },
+      {
+        "name": "TURBO_CACHE",
+        "type": "secret_text"
+      },
+      {
+        "name": "TURBO_DOWNLOAD_LOCAL_ENABLED",
+        "type": "secret_text"
+      },
+      {
+        "name": "TURBO_REMOTE_ONLY",
+        "type": "secret_text"
+      },
+      {
+        "name": "TURBO_RUN_SUMMARY",
+        "type": "secret_text"
+      },
+      {
+        "name": "VERCEL",
+        "type": "secret_text"
+      },
+      {
+        "name": "VERCEL_ENV",
+        "type": "secret_text"
+      },
+      {
+        "name": "VERCEL_OIDC_TOKEN",
+        "type": "secret_text"
+      },
+      {
+        "name": "VERCEL_TARGET_ENV",
+        "type": "secret_text"
+      },
+      {
+        "name": "WORKER_SELF_REFERENCE",
+        "type": "service"
+      }
+    ]
+  },
+  "bindingComparison": {
+    "beforeVersion": "626c0842-a969-42bb-9f44-f43fc2b353c2",
+    "afterVersion": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+    "bindingCountBefore": 40,
+    "bindingCountAfter": 40,
+    "changedBindingDefinitions": [],
+    "preserved": true,
+    "secretValuesRead": false
+  },
+  "verify": {
+    "runId": 37558527304,
+    "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37558527304",
+    "headSha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+    "status": "completed",
+    "conclusion": "success",
+    "updatedAt": "2026-10-07T01:46:52Z",
+    "steps": [
+      "Set up job",
+      "Initialize containers",
+      "Run actions/checkout@v4",
+      "Run actions/setup-node@v4",
+      "Run npm ci",
+      "Run npx playwright install --with-deps chrome",
+      "Check application and runner contracts",
+      "Replay migrations and database regressions",
+      "Verify browser behavior with isolated data",
+      "Post Run actions/setup-node@v4",
+      "Post Run actions/checkout@v4",
+      "Stop containers",
+      "Complete job"
+    ],
+    "countsFromLog": {
+      "unitPassed": 1688,
+      "unitSkipped": 2,
+      "opsPassed": 25,
+      "sqlConcurrencyPassed": 2,
+      "isolatedBrowserPassed": 66
+    },
+    "sqlTarget": "ephemeral CI PostgreSQL; no production migrations"
+  },
+  "githubChecks": [
+    {
+      "app": "github-actions",
+      "completed_at": "2026-10-07T01:47:25Z",
+      "conclusion": "failure",
+      "details_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37558743501/job/112590948694",
+      "name": "refresh",
+      "started_at": "2026-10-07T01:46:25Z",
+      "status": "completed"
+    },
+    {
+      "app": "cloudflare-workers-and-pages",
+      "completed_at": "2026-10-07T01:45:34Z",
+      "conclusion": "success",
+      "details_url": "https://dash.cloudflare.com/a80650839fdd1917a4585c51e5c0522b/workers/services/view/comparador-hardware-argentina/production/builds/614607af-f61d-42d7-8c19-c32bd3f836df",
+      "name": "Workers Builds: comparador-hardware-argentina",
+      "started_at": "2026-10-07T01:45:34Z",
+      "status": "completed"
+    },
+    {
+      "app": "github-actions",
+      "completed_at": "2026-10-07T01:46:51Z",
+      "conclusion": "success",
+      "details_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37558527304/job/112590257776",
+      "name": "verify",
+      "started_at": "2026-10-07T01:43:45Z",
+      "status": "completed"
+    }
+  ],
+  "controls": {
+    "refreshDispatchedByThisTask": false,
+    "remoteDatabaseWriteByThisTask": false,
+    "accountSettingsChanged": false,
+    "externalFormsOrPurchases": false
+  },
+  "rollback": {
+    "previousWorkerVersion": "626c0842-a969-42bb-9f44-f43fc2b353c2",
+    "automaticRollbackExecuted": false
+  }
+}

@@ -1,6 +1,6 @@
 # Segunda entrega: diagnóstico de refresh y protección de RAM
 
-**Estado: cambios locales; publicación y recuperación real pendientes. D02 continúa abierta.** Jonathan aplazó Versus el 06/10 y pidió continuar el plan de confiabilidad. Comparar componentes y armar una PC conservan igual prioridad y comparten estas reglas de identidad/observación.
+**Estado actual: publicada en `2dc40b8` y verificada en el dominio público; D02 continúa abierta.** Ver [publicación, controles y nuevo incidente operativo](publicacion/README.md). Este informe conserva la evidencia del corte local anterior a esa autorización. Jonathan aplazó Versus el 06/10 y pidió continuar el plan de confiabilidad. Comparar componentes y armar una PC conservan igual prioridad y comparten estas reglas de identidad/observación.
 
 Rama `codex/recuperacion-refresh`, desde la primera candidata `5a1990b`. Se reutiliza la worktree `/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina`; `codex/confianza-precios-identidad` conserva esa primera entrega. Referencia remota consultada: `origin/main` `f899ced036eccc785915f0e6635a0fa4fc7920cc`. La copia principal y otros trabajos mantienen sus cambios.
 
@@ -65,7 +65,7 @@ No se repitió una auditoría visual general: la primera entrega conserva sus re
 
 ## Siguiente paso y condición de cierre
 
-La candidata está preparada para revisión y publicación autorizada. Después: verificar el runtime publicado y conservar el siguiente ciclo natural de diagnóstico/observación, sin contar disparos manuales u horarios como fechas útiles diarias G02. Un éxito del workflow no acredita ofertas útiles.
+El código ya fue publicado con autorización concreta y comprobado en el runtime público. El siguiente ciclo natural falló antes del claim por `REFRESH_SEED_TIMEOUT`; su evidencia se conserva en el informe de publicación. Resolver la preparación de cola precede ahora al trabajo Maximus. No contar disparos manuales u horarios como fechas útiles diarias G02. Un éxito del workflow no acredita ofertas útiles.
 
 Si vuelve a fallar una adquisición, usar su RPC/fase/código/duración para elegir una corrección proporcional y probarla antes de tocar producción. En paralelo al seguimiento autorizado, el siguiente trabajo de fuente es Maximus: detalle real ligado a ITEM/PN/título y precio/stock/pago corroborados, con fixtures que no acepten plantillas o JSON-LD antiguo.
 

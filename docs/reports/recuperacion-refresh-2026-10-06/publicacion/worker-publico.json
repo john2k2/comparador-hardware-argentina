@@ -1,0 +1,262 @@
+{
+  "windowSeconds": 100.99,
+  "filter": {
+    "header": "X-Release-Probe:confidence-2dc40b8-readonly",
+    "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9"
+  },
+  "eventCount": 20,
+  "outcomes": [
+    "ok"
+  ],
+  "exceptionCount": 0,
+  "errorLogCount": 0,
+  "maxCpuMs": 189,
+  "maxWallMs": 3111,
+  "allRequestsUsedNewVersion": true,
+  "events": [
+    {
+      "timestamp": 1791338002426,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/api/products",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 39,
+      "wallMs": 3111,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338005581,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/api/products",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 19,
+      "wallMs": 499,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338006113,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/api/products",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 11,
+      "wallMs": 1749,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338008711,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/api/products",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 18,
+      "wallMs": 282,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338009670,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/product/agrupado-procesadores-amd-ryzen-5-5600-1ru8te5",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 45,
+      "wallMs": 307,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338012507,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/comparativa/comparar",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 1,
+      "wallMs": 7,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338012676,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/api/products",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 8,
+      "wallMs": 252,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338013356,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/product/dinobyte-api-3343136",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 28,
+      "wallMs": 310,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338014043,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/comparativa/comparar",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 0,
+      "wallMs": 5,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338014639,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/comparativa/comparar",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 1,
+      "wallMs": 5,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338015003,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/contacto",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 1,
+      "wallMs": 7,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338015027,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/api/products",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 13,
+      "wallMs": 750,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338016373,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/api/products",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 14,
+      "wallMs": 589,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338017237,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/product/agrupado-procesadores-amd-ryzen-7-5700x-xr4ubs",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 4,
+      "wallMs": 4,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338017236,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/product/agrupado-procesadores-amd-ryzen-5-5600-1ru8te5",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 189,
+      "wallMs": 442,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338020579,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/contacto",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 1,
+      "wallMs": 114,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338020568,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/api/products",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 129,
+      "wallMs": 505,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338022413,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/guia",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 8,
+      "wallMs": 9,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338023025,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/api/pc-builder/catalog",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 18,
+      "wallMs": 589,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    },
+    {
+      "timestamp": 1791338023690,
+      "outcome": "ok",
+      "versionId": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+      "path": "/api/pc-builder/catalog",
+      "method": "GET",
+      "status": 200,
+      "cpuMs": 9,
+      "wallMs": 362,
+      "exceptionCount": 0,
+      "errorLogCount": 0
+    }
+  ],
+  "limits": [
+    "Short filtered sample; not availability or p95 proof",
+    "Raw logs, headers, cookies and error messages excluded"
+  ]
+}

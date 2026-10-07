@@ -1,0 +1,35 @@
+{
+  "at": "2026-10-07T01:46:55.072Z",
+  "result": "failed",
+  "routes": [
+    {
+      "path": "/api/products?category=procesadores&q=5600",
+      "status": 200,
+      "ms": 3922
+    },
+    {
+      "path": "/api/products?category=procesadores&q=5700X",
+      "status": 200,
+      "ms": 2596
+    },
+    {
+      "path": "/api/products?category=tarjetas-graficas&q=RTX%204060",
+      "status": 200,
+      "ms": 9553
+    },
+    {
+      "path": "/api/products?id=agrupado-procesadores-amd-ryzen-5-5600-1ru8te5&preferDb=1",
+      "status": 200,
+      "ms": 1175
+    },
+    {
+      "path": "/api/products?id=dinobyte-api-3343136&preferDb=1",
+      "status": 200,
+      "ms": 809
+    }
+  ],
+  "scope": "First public attempt: all product assertions passed; final guard wrongly treated blocked anonymous-session cleanup and Cloudflare diagnostics as forbidden application mutations",
+  "correctedGuard": "Continue blocking every non-GET/HEAD, classify expected anonymous DELETE /api/auth/session and Cloudflare diagnostics; assert unexpected application mutations empty",
+  "changedBusinessAssertions": false,
+  "rawErrorAndChallengePathsRetainedInIgnoredTmpOnly": true
+}

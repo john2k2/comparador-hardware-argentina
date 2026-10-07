@@ -1,0 +1,290 @@
+{
+  "stats": {
+    "startTime": "2026-10-07T01:46:54.280Z",
+    "duration": 134834.723,
+    "expected": 14,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "suites": [
+    {
+      "title": "global-price-search.spec.ts",
+      "file": "global-price-search.spec.ts",
+      "specs": [
+        {
+          "title": "rango general con catálogo real conserva precio, tarjetas y paginación",
+          "ok": true,
+          "tests": [
+            {
+              "projectName": "desktop",
+              "status": "expected",
+              "expectedStatus": "passed",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 17135,
+                  "retry": 0,
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "rangos nuevos se consultan en base de datos y se renderizan sin error inicial",
+          "ok": true,
+          "tests": [
+            {
+              "projectName": "desktop",
+              "status": "expected",
+              "expectedStatus": "passed",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 7475,
+                  "retry": 0,
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "rango general con catálogo real conserva precio, tarjetas y paginación",
+          "ok": true,
+          "tests": [
+            {
+              "projectName": "mobile",
+              "status": "expected",
+              "expectedStatus": "passed",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 10800,
+                  "retry": 0,
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "rangos nuevos se consultan en base de datos y se renderizan sin error inicial",
+          "ok": true,
+          "tests": [
+            {
+              "projectName": "mobile",
+              "status": "expected",
+              "expectedStatus": "passed",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 24320,
+                  "retry": 0,
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "public-site.spec.ts",
+      "file": "public-site.spec.ts",
+      "specs": [
+        {
+          "title": "el filtro de procesadores no entrega refrigeración como si fuera un CPU",
+          "ok": true,
+          "tests": [
+            {
+              "projectName": "desktop",
+              "status": "expected",
+              "expectedStatus": "passed",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 2089,
+                  "retry": 0,
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "busca con catálogo real, filtra precio y abre el producto correspondiente",
+          "ok": true,
+          "tests": [
+            {
+              "projectName": "desktop",
+              "status": "expected",
+              "expectedStatus": "passed",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 4333,
+                  "retry": 0,
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "armador recupera el ID elegido después de recargar",
+          "ok": true,
+          "tests": [
+            {
+              "projectName": "desktop",
+              "status": "expected",
+              "expectedStatus": "passed",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 10839,
+                  "retry": 0,
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "guía presenta contenido real sin desbordar en móvil",
+          "ok": true,
+          "tests": [
+            {
+              "projectName": "desktop",
+              "status": "expected",
+              "expectedStatus": "passed",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 12336,
+                  "retry": 0,
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "el índice retirado y su CSV responden 404 sin enlaces ni indexación",
+          "ok": true,
+          "tests": [
+            {
+              "projectName": "desktop",
+              "status": "expected",
+              "expectedStatus": "passed",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 4655,
+                  "retry": 0,
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "el filtro de procesadores no entrega refrigeración como si fuera un CPU",
+          "ok": true,
+          "tests": [
+            {
+              "projectName": "mobile",
+              "status": "expected",
+              "expectedStatus": "passed",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 2146,
+                  "retry": 0,
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "busca con catálogo real, filtra precio y abre el producto correspondiente",
+          "ok": true,
+          "tests": [
+            {
+              "projectName": "mobile",
+              "status": "expected",
+              "expectedStatus": "passed",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 9417,
+                  "retry": 0,
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "armador recupera el ID elegido después de recargar",
+          "ok": true,
+          "tests": [
+            {
+              "projectName": "mobile",
+              "status": "expected",
+              "expectedStatus": "passed",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 11596,
+                  "retry": 0,
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "guía presenta contenido real sin desbordar en móvil",
+          "ok": true,
+          "tests": [
+            {
+              "projectName": "mobile",
+              "status": "expected",
+              "expectedStatus": "passed",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 6575,
+                  "retry": 0,
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "el índice retirado y su CSV responden 404 sin enlaces ni indexación",
+          "ok": true,
+          "tests": [
+            {
+              "projectName": "mobile",
+              "status": "expected",
+              "expectedStatus": "passed",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 5693,
+                  "retry": 0,
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

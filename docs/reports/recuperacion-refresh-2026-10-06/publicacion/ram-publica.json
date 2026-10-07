@@ -1,0 +1,309 @@
+{
+  "requestCount": 4,
+  "observations": [
+    {
+      "id": "agrupado-memoria-ram-kingston-16gb-11mqs9y",
+      "url": "https://www.comparador-hardware.com.ar/api/products?id=agrupado-memoria-ram-kingston-16gb-11mqs9y&preferDb=1",
+      "startedAt": "2026-10-07T01:49:07.112Z",
+      "finishedAt": "2026-10-07T01:49:08.160Z",
+      "status": 200,
+      "offerCount": 8,
+      "name": "MEMORIA RAM 16GB DDR4 3200 KINGSTON FURY BEAST RGB",
+      "lowestPrice": 293550,
+      "highestPrice": 402184,
+      "averagePrice": 367803
+    },
+    {
+      "id": "agrupado-memoria-ram-corsair-16gb-x4icqy",
+      "url": "https://www.comparador-hardware.com.ar/api/products?id=agrupado-memoria-ram-corsair-16gb-x4icqy&preferDb=1",
+      "startedAt": "2026-10-07T01:49:08.160Z",
+      "finishedAt": "2026-10-07T01:49:09.252Z",
+      "status": 200,
+      "offerCount": 1,
+      "name": "Memoria Ram UDIMM CORSAIR VENGEANCE RS 16GB DDR4 3200Mhz C16 1.35V (1x16GB) RGB",
+      "lowestPrice": 276935,
+      "highestPrice": 276935,
+      "averagePrice": 276935
+    }
+  ],
+  "htmlObservations": [
+    {
+      "id": "agrupado-memoria-ram-corsair-16gb-x4icqy",
+      "url": "https://www.comparador-hardware.com.ar/product/agrupado-memoria-ram-corsair-16gb-x4icqy",
+      "startedAt": "2026-10-07T01:50:49.349Z",
+      "finishedAt": "2026-10-07T01:50:50.968Z",
+      "status": 200
+    },
+    {
+      "id": "agrupado-memoria-ram-kingston-16gb-11mqs9y",
+      "url": "https://www.comparador-hardware.com.ar/product/agrupado-memoria-ram-kingston-16gb-11mqs9y",
+      "startedAt": "2026-10-07T01:50:50.968Z",
+      "finishedAt": "2026-10-07T01:50:51.456Z",
+      "status": 200
+    }
+  ],
+  "localEvaluation": {
+    "sourceCommit": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+    "checkedAt": "2026-10-07T01:49:31.064Z",
+    "runtimeBundleIdentityProvenByTheseReads": false,
+    "method": "real local functions bundled in memory; no additional requests",
+    "results": [
+      {
+        "id": "agrupado-memoria-ram-kingston-16gb-11mqs9y",
+        "name": "MEMORIA RAM 16GB DDR4 3200 KINGSTON FURY BEAST RGB",
+        "category": "memoria-ram",
+        "lastScrapedAt": "2026-10-06T12:02:16.197Z",
+        "publicLowestPrice": 293550,
+        "publicHighestPrice": 402184,
+        "publicAveragePrice": 367803,
+        "offers": [
+          {
+            "storeId": "hardcore",
+            "url": "https://hardcorecomputacion.com.ar/producto/memoria-kingston-fury-beast-16gb-3200mhz/",
+            "price": 293550,
+            "stock": "in-stock",
+            "lastUpdated": "2026-09-04T17:22:38.721Z",
+            "identityReview": null,
+            "localExplicitConflict": false,
+            "localNeedsReview": false,
+            "localComparable": true,
+            "fresh24hAtRead": false,
+            "fresh3hAtRead": false
+          },
+          {
+            "storeId": "scphardstore",
+            "url": "https://www.scphardstore.com/producto/memoria-ram-ddr4-kingston-16gb-3200mhz-fury-beast/",
+            "price": 370354,
+            "stock": "in-stock",
+            "lastUpdated": "2026-10-04T11:07:49.982Z",
+            "sourceIdentity": {
+              "title": "Memoria RAM DDR4 KINGSTON 16GB 3200MHz Fury Beast",
+              "sourceId": "11483",
+              "listingRef": "scphardstore:url:https://scphardstore.com/producto/memoria-ram-ddr4-kingston-16gb-3200mhz-fury-beast"
+            },
+            "identityReview": {
+              "status": "needs-review",
+              "reason": "low-confidence",
+              "reviewedAt": "2026-10-04T11:08:09.664Z"
+            },
+            "localExplicitConflict": false,
+            "localNeedsReview": true,
+            "localComparable": false,
+            "fresh24hAtRead": false,
+            "fresh3hAtRead": false
+          },
+          {
+            "storeId": "katech",
+            "url": "https://katech.com.ar/producto/memoria-ram-16gb-ddr4-3200-kingston-fury-beast/",
+            "price": 385890,
+            "stock": "in-stock",
+            "lastUpdated": "2026-10-06T12:01:56.288Z",
+            "sourceIdentity": {
+              "title": "MEMORIA RAM 16GB DDR4 3200 KINGSTON FURY BEAST",
+              "sourceId": "213569",
+              "storeSku": "MEM328",
+              "listingRef": "katech:url:https://katech.com.ar/producto/memoria-ram-16gb-ddr4-3200-kingston-fury-beast"
+            },
+            "identityReview": {
+              "status": "needs-review",
+              "reason": "low-confidence",
+              "reviewedAt": "2026-10-06T12:02:19.138Z"
+            },
+            "localExplicitConflict": false,
+            "localNeedsReview": true,
+            "localComparable": false,
+            "fresh24hAtRead": true,
+            "fresh3hAtRead": false
+          },
+          {
+            "storeId": "goldentechstore",
+            "url": "https://goldentechstore.com.ar/producto/memoria-ddr4-kingston-16gb-3200mhz-fury-beast/",
+            "price": 387037,
+            "stock": "in-stock",
+            "lastUpdated": "2026-10-06T12:01:59.972Z",
+            "sourceIdentity": {
+              "title": "MEMORIA DDR4 KINGSTON FURY BEAST 16GB 3200MHZ",
+              "sourceId": "574",
+              "storeSku": "MEM028",
+              "listingRef": "goldentechstore:url:https://goldentechstore.com.ar/producto/memoria-ddr4-kingston-16gb-3200mhz-fury-beast"
+            },
+            "identityReview": {
+              "status": "needs-review",
+              "reason": "low-confidence",
+              "reviewedAt": "2026-10-05T12:17:08.463Z"
+            },
+            "localExplicitConflict": false,
+            "localNeedsReview": true,
+            "localComparable": false,
+            "fresh24hAtRead": true,
+            "fresh3hAtRead": false
+          },
+          {
+            "storeId": "maxtecno",
+            "url": "https://maxtecno.com.ar/producto/memoria-ddr4-kingston-16gb-3200-mhz-fury-beast-rgb-7976/",
+            "price": 402184,
+            "stock": "in-stock",
+            "lastUpdated": "2026-10-06T12:02:03.487Z",
+            "sourceIdentity": {
+              "title": "Memoria DDR4 Kingston 16Gb 3200 MHz FURY BEAST RGB (7976)",
+              "sourceId": "893725",
+              "listingRef": "maxtecno:url:https://maxtecno.com.ar/producto/memoria-ddr4-kingston-16gb-3200-mhz-fury-beast-rgb-7976"
+            },
+            "identityReview": {
+              "status": "needs-review",
+              "reason": "low-confidence",
+              "reviewedAt": "2026-10-05T12:17:08.463Z"
+            },
+            "localExplicitConflict": false,
+            "localNeedsReview": true,
+            "localComparable": false,
+            "fresh24hAtRead": true,
+            "fresh3hAtRead": false
+          },
+          {
+            "storeId": "shopgamer",
+            "url": "https://www.shopgamer.com.ar/productos/shp-memoria-ddr4-kingston-16gb-3200-mhz-fury-beast-kf432c16bb1-16wp/",
+            "price": 393857,
+            "stock": "out-of-stock",
+            "lastUpdated": "2026-10-06T12:02:11.282Z",
+            "sourceIdentity": {
+              "title": "Memoria RAM Kingston Fury Beast 16GB DDR4 3200MHz",
+              "listingRef": "shopgamer:url:https://shopgamer.com.ar/productos/shp-memoria-ddr4-kingston-16gb-3200-mhz-fury-beast-kf432c16bb1-16wp"
+            },
+            "identityReview": {
+              "status": "needs-review",
+              "reason": "low-confidence",
+              "reviewedAt": "2026-10-05T12:17:08.463Z"
+            },
+            "localExplicitConflict": false,
+            "localNeedsReview": true,
+            "localComparable": false,
+            "fresh24hAtRead": true,
+            "fresh3hAtRead": false
+          },
+          {
+            "storeId": "compugarden",
+            "url": "https://www.compugarden.com.ar/DETALLE/Memoria-Ram-Kingston-Fury-Beast-Black-16GB-3200-Mhz-DDR4/ITEM_ID=8958/OR=/H=/CANT=/compugarden.aspx",
+            "price": 394916,
+            "stock": "out-of-stock",
+            "lastUpdated": "2026-10-06T12:02:16.197Z",
+            "sourceIdentity": {
+              "title": "Memoria Ram Kingston Fury Beast Black 16GB 3200 Mhz DDR4",
+              "listingRef": "compugarden:url:https://compugarden.com.ar/DETALLE/Memoria-Ram-Kingston-Fury-Beast-Black-16GB-3200-Mhz-DDR4/ITEM_ID=8958/OR=/H=/CANT=/compugarden.aspx"
+            },
+            "identityReview": {
+              "status": "needs-review",
+              "reason": "low-confidence",
+              "reviewedAt": "2026-10-06T12:02:19.138Z"
+            },
+            "localExplicitConflict": false,
+            "localNeedsReview": true,
+            "localComparable": false,
+            "fresh24hAtRead": true,
+            "fresh3hAtRead": false
+          },
+          {
+            "storeId": "maximus",
+            "url": "https://www.maximus.com.ar/Producto/Memoria-Ram-Kingston-Fury-Beast-16GB-3200-Mhz-CL15-XMP-DDR4/ITEM=8958/maximus.aspx?PN=KF432C16BB1-16",
+            "price": 438200,
+            "stock": "out-of-stock",
+            "lastUpdated": "2026-09-04T17:22:21.698Z",
+            "identityReview": null,
+            "localExplicitConflict": false,
+            "localNeedsReview": false,
+            "localComparable": false,
+            "fresh24hAtRead": false,
+            "fresh3hAtRead": false
+          }
+        ],
+        "localPresentation": {
+          "recentOfferCount": 0,
+          "referenceOfferCount": 8,
+          "bestOffer": null,
+          "lowest": 0,
+          "highest": 0
+        }
+      },
+      {
+        "id": "agrupado-memoria-ram-corsair-16gb-x4icqy",
+        "name": "Memoria Ram UDIMM CORSAIR VENGEANCE RS 16GB DDR4 3200Mhz C16 1.35V (1x16GB) RGB",
+        "category": "memoria-ram",
+        "lastScrapedAt": "2026-10-06T12:01:45.778Z",
+        "publicLowestPrice": 276935,
+        "publicHighestPrice": 276935,
+        "publicAveragePrice": 276935,
+        "offers": [
+          {
+            "storeId": "goldentechstore",
+            "url": "https://goldentechstore.com.ar/producto/memoria-ram-udimm-corsair-vengeance-lpx-16gb-ddr4-3200mhz-c16-1-35v-1x16gb-black/",
+            "price": 276935,
+            "stock": "unknown",
+            "lastUpdated": "2026-09-04T17:24:36.746Z",
+            "identityReview": {
+              "status": "needs-review",
+              "reason": "explicit-conflict",
+              "reviewedAt": null
+            },
+            "localExplicitConflict": true,
+            "localNeedsReview": true,
+            "localComparable": false,
+            "fresh24hAtRead": false,
+            "fresh3hAtRead": false
+          }
+        ],
+        "localPresentation": {
+          "recentOfferCount": 0,
+          "referenceOfferCount": 1,
+          "bestOffer": null,
+          "lowest": 0,
+          "highest": 0
+        }
+      }
+    ],
+    "retainedTextGuard": {
+      "provenance": "historical retained GamersPoint listing text; not fetched in this public QA and not a live price/stock observation",
+      "name": "MEMORIA RAM 16GB DDR4 3200 KINGSTON FURY BEAST RGB",
+      "category": "memoria-ram",
+      "offerText": "Memoria RAM Kingston Fury Beast 16GB (1x16) 3600MHz CL18 DDR4",
+      "explicitConflict": true
+    }
+  },
+  "htmlChecks": [
+    {
+      "id": "agrupado-memoria-ram-corsair-16gb-x4icqy",
+      "status": 200,
+      "hasRecentMinimumHighlight": false,
+      "referenceOfferCount": 1,
+      "hasGamersPoint3600": false,
+      "summary": "PRECIOS PENDIENTES DE ACTUALIZAR; identidad por corroborar; referencia LPX visible sin mínimo reciente"
+    },
+    {
+      "id": "agrupado-memoria-ram-kingston-16gb-11mqs9y",
+      "status": 200,
+      "hasRecentMinimumHighlight": false,
+      "referenceOfferCount": 9,
+      "hasGamersPoint3600": false,
+      "summary": "SIN OFERTAS APTAS PARA COMPARAR; referencias visibles sin mínimo reciente"
+    }
+  ],
+  "codeComparison": {
+    "baseCommit": "f899ced",
+    "publishedCommit": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+    "unchanged": [
+      "src/lib/persistence/product-read-mapper.ts",
+      "src/lib/price-utils.ts"
+    ],
+    "meaning": "raw historical/pending offers and API fallback aggregate contract are unchanged; they do not certify current comparability",
+    "presentationChanges": [
+      "src/lib/product/offer-presentation.ts",
+      "src/components/product/PriceSummary.tsx",
+      "src/components/product/StoresList.tsx",
+      "src/lib/product/product-detail-hooks.ts"
+    ],
+    "limits": [
+      "SSR Kingston retains 9 references while preferDb API returns 8; extra Katech RGB reference displays original HTML date \"1/10/26, 10:41 p. m.\"; no raw UTC timestamp was obtained for that extra reference",
+      "HTTP/SSR observations do not identify the active Worker bundle by themselves",
+      "No browser hydration, store visits or refresh were performed"
+    ]
+  }
+}

@@ -1,0 +1,202 @@
+{
+  "readAt": "2026-10-07T01:57:02.139977+00:00",
+  "run": {
+    "id": 37558743501,
+    "event": "schedule",
+    "workflow": ".github/workflows/catalog-adaptive-refresh.yml",
+    "headSha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+    "jobId": 112590948694,
+    "conclusion": "failure",
+    "jobStartedAt": "2026-10-07T01:46:25Z",
+    "jobCompletedAt": "2026-10-07T01:47:25Z",
+    "refreshStepStartedAt": "2026-10-07T01:46:45Z",
+    "refreshStepCompletedAt": "2026-10-07T01:47:22Z",
+    "setupAndDependencies": "success",
+    "artifactPreservation": "success"
+  },
+  "artifact": {
+    "id": 11456156071,
+    "name": "catalog-adaptive-37558743501",
+    "files": [
+      {
+        "name": "catalog-adaptive-result.json",
+        "topLevelFields": [
+          "source",
+          "trigger",
+          "runId",
+          "startedAt",
+          "finishedAt",
+          "status",
+          "failureCode",
+          "inventory",
+          "inventoryDetails",
+          "feedClaimed",
+          "sourceFailureReasons",
+          "limitReached",
+          "attempted",
+          "observed",
+          "comparable",
+          "failures",
+          "groups",
+          "seeded",
+          "phaseMs",
+          "sourceHttp",
+          "sharedReads",
+          "coverage"
+        ],
+        "selected": {
+          "source": "adaptive-catalog",
+          "trigger": "github-schedule",
+          "runId": "af00ccbf-95f0-4b66-9e5a-979acbf93c31",
+          "startedAt": "2026-10-07T01:46:45.915Z",
+          "finishedAt": "2026-10-07T01:47:21.819Z",
+          "status": "failed",
+          "failureCode": "REFRESH_SEED_TIMEOUT",
+          "attempted": 0,
+          "observed": 0,
+          "comparable": 0,
+          "feedClaimed": 0,
+          "limitReached": false,
+          "failures": {},
+          "sourceFailureReasons": {},
+          "seeded": 0,
+          "phaseMs": {
+            "inventory": 3030,
+            "preparation": 0,
+            "shared": 0,
+            "rotation": 0
+          },
+          "sourceHttp": {},
+          "sharedReads": 0,
+          "groups": {},
+          "inventory": [
+            {
+              "storeId": "compragamer",
+              "status": "deferred"
+            },
+            {
+              "storeId": "maxtecno",
+              "status": "deferred"
+            },
+            {
+              "storeId": "dinobyte",
+              "status": "deferred"
+            },
+            {
+              "storeId": "goldentechstore",
+              "status": "deferred"
+            },
+            {
+              "storeId": "katech",
+              "status": "deferred"
+            }
+          ],
+          "inventoryDetails": {
+            "status": "completed",
+            "attempted": 0,
+            "imported": 0,
+            "failures": 0
+          },
+          "coverageCut": {
+            "includedReasons": [
+              "build-support",
+              "components",
+              "maintenance"
+            ],
+            "overall": {
+              "total": 73291,
+              "observed_3h": 1364,
+              "observed_24h": 8847,
+              "never_attempted": 31023
+            },
+            "byReason": {
+              "build-support": {
+                "total": 6796,
+                "observed_3h": 14,
+                "observed_24h": 246,
+                "never_attempted": 2670
+              },
+              "components": {
+                "total": 34413,
+                "observed_3h": 1302,
+                "observed_24h": 8103,
+                "never_attempted": 7295
+              },
+              "maintenance": {
+                "total": 32082,
+                "observed_3h": 48,
+                "observed_24h": 498,
+                "never_attempted": 21058
+              }
+            },
+            "meaning": "Existing coverage read at closure, not new observations or comparability achieved by this execution"
+          }
+        }
+      }
+    ]
+  },
+  "selectedLogMarkers": [
+    {
+      "timestamp": "2026-10-07T01:47:22.0855333Z",
+      "internalCodes": [],
+      "exitCode": 1
+    }
+  ],
+  "limits": [
+    "No raw logs, headers, tokens or credentials retained",
+    "No DB, replay, refresh, store or feed calls performed"
+  ],
+  "interpretation": {
+    "actualMode": "adaptive",
+    "phase": "preparation",
+    "claimReached": false,
+    "classification": "preparation DB/RPC failure; underlying cause unknown",
+    "errorCodeFromControlFlow": "57014",
+    "errorCodeIsDirectTrace": false,
+    "evidence": "REFRESH_SEED_TIMEOUT is generated only by seed_catalog_refresh_queue error.code 57014 in published source line 91",
+    "seedPathChangedVsBase": false,
+    "newClaimDiagnosticsApplicable": false,
+    "sourceObservationFailureDemonstrated": false,
+    "deploymentRegressionDemonstrated": false,
+    "caution": "phaseMs.preparation remains zero because it is only assigned after preparation completes; zero is not proof of no time spent"
+  },
+  "codeComparison": {
+    "baseCommit": "f899ced",
+    "publishedCommit": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+    "publishedCommitCount": 8,
+    "seedRpc": "seed_catalog_refresh_queue",
+    "seedArguments": "none in both versions",
+    "seedPathChanged": false,
+    "sqlOrMigrationFilesChanged": false,
+    "adaptiveWorkflowChanged": false,
+    "runnerWrapperChanged": false,
+    "existingControls": {
+      "seedRetriesMaximum": 2,
+      "seedCallsMaximumPerBatch": 3,
+      "seedRetryDelaysMs": [
+        500,
+        1000
+      ],
+      "adaptiveDeadlineMs": 1020000,
+      "seedBatchMaximum": 200,
+      "wrapperTimeoutMs": 1140000,
+      "workflowTimeoutMinutes": 24,
+      "perSeedRpcTimeoutSpecifiedInThisCode": false
+    },
+    "locations": {
+      "baseSeed": "f899ced:src/lib/catalog/adaptive-refresh.ts:78-91",
+      "publishedSeed": "2dc40b81:src/lib/catalog/adaptive-refresh.ts:83-96"
+    },
+    "limits": [
+      "The actual per-attempt request count and latency are not retained in this artifact",
+      "No database statement timeout, cancellation reason, query plan or server message was read or inferred"
+    ]
+  },
+  "conclusion": {
+    "summary": "Scheduled adaptive execution failed during unchanged seed preparation before acquiring offers. It produced no new offer attempts, saved observations or comparables. This is a preparation DB/RPC failure with underlying cause unknown; the retained evidence does not demonstrate a published-code regression or source-store failure.",
+    "priority": "Diagnose seed preparation before Maximus because this failure blocks the entire offer-processing cycle.",
+    "nextActionCriterion": "Review retained prior execution evidence and prepare bounded timing/code diagnostics for seed attempts; establish the server-side cause before changing SQL, expanding retries, replaying or claiming recovery.",
+    "recoveryProven": false,
+    "newClaimDiagnosticRuntimeVerifiedByThisRun": false
+  }
+}

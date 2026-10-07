@@ -1,6 +1,6 @@
 # Primera entrega: confianza en ofertas
 
-**Estado: candidata local verificada, sin publicar.** Rama `codex/confianza-precios-identidad`, preparada desde `origin/main` `f899ced036eccc785915f0e6635a0fa4fc7920cc`. Se confirmó de nuevo esa referencia al finalizar las pruebas del 06/10/2026.
+**Estado actual: publicada dentro de `2dc40b8` y verificada en el dominio público.** Ver [publicación y evidencia posterior](../recuperacion-refresh-2026-10-06/publicacion/README.md). El resto de este informe conserva el corte local original: rama `codex/confianza-precios-identidad`, preparada desde `origin/main` `f899ced036eccc785915f0e6635a0fa4fc7920cc`, referencia confirmada al cerrar las pruebas locales del 06/10/2026.
 
 Se adaptaron las intenciones útiles de la rama de producto; no se importaron ramas ni archivos completos que sustituyeran reparaciones recientes. La copia principal y los otros worktrees conservaron sus cambios. Esta candidata usa el lector canónico vigente, caché v5, custom-worker.mjs y los controles actuales de identidad/variante y destino.
 
@@ -56,4 +56,4 @@ Para el corte real, iniciar `npx wrangler dev --local --ip 127.0.0.1 --port 3143
 
 Capturas sintéticas de comportamiento: `precios-escritorio.png`, `precios-movil.png`, sus versiones de viewport y `comparador-regreso.png`. Capturas de catálogo real sobre Wrangler local: `cpu-real.png`, `gpu-real.png`, `comparador-real-regreso.png`. Las primeras prueban casos controlados; las segundas documentan el corte real indicado arriba.
 
-Publicación y validación posterior en el dominio siguen siendo pasos separados. Antes de otra funcionalidad, investigar la llamada y causa reales de `REFRESH_CLAIM_FAILED` y medir recuperación útil del catálogo con los criterios existentes.
+La publicación y validación posterior tienen su evidencia separada en el enlace inicial. Antes de otra funcionalidad, resolver el bloqueo operativo del refresh y medir recuperación útil del catálogo con los criterios existentes.
