@@ -1,0 +1,7 @@
+{
+  "readAt": "2026-10-07T17:01:20.153342+00:00",
+  "crontabRead": "no-user-crontab",
+  "projectCronEntries": 0,
+  "relatedLaunchAgents": [],
+  "limits": "Only user crontab and user LaunchAgents inspected; not system-wide or other accounts."
+}

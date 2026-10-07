@@ -1,0 +1,34 @@
+{
+  "observedAtUtc": "2026-10-07T17:06:03.132174+00:00",
+  "sourceRevision": "c69e624",
+  "localOnly": true,
+  "npmVerify": {
+    "exitCode": 0,
+    "lint": "passed",
+    "typecheck": "passed",
+    "unitPassed": 1922,
+    "unitSkipped": 2,
+    "unitFilesPassed": 206,
+    "unitFilesSkipped": 2,
+    "opsPassed": 41,
+    "opsFailed": 0,
+    "logSha256": "16e14586b4f8f5a7a08e3720724d4d1bc5edb07956ce651e2acb9808501f999b"
+  },
+  "openNextBuild": {
+    "exitCode": 0,
+    "workerArtifactPresent": true,
+    "logSha256": "7dbe2ee5889482e9b111254f062a6298716a4a995bcbd5894e5d606ca5bc462f",
+    "internalRefreshDisabled": true,
+    "liveScrapingDisabled": true,
+    "serverSecretKeysEmpty": true
+  },
+  "independentReview": "U1 U2 A1 U3 A2 A3 without material findings; real child termination tested offline",
+  "notVerified": [
+    "physical database recovery",
+    "new candidate published",
+    "natural scheduler recovery with new candidate",
+    "daily G02 cycle of new candidate",
+    "complete commercial seven-part PC",
+    "end-of-Worker delivery of background writes"
+  ]
+}

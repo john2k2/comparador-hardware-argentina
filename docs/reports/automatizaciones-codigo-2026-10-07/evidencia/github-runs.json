@@ -1,0 +1,241 @@
+{
+  "startedAt": "2026-10-07T16:39:29.168055+00:00",
+  "readAt": "2026-10-07T16:39:30.940497+00:00",
+  "readOnly": true,
+  "workflows": [
+    {
+      "workflow": "catalog-adaptive-refresh.yml",
+      "status": "READ_COMPLETED",
+      "runs": [
+        {
+          "id": 37626593331,
+          "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+          "status": "completed",
+          "conclusion": "success",
+          "event": "workflow_dispatch",
+          "created_at": "2026-10-07T13:11:43Z",
+          "updated_at": "2026-10-07T13:29:32Z",
+          "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37626593331",
+          "run_attempt": 1
+        },
+        {
+          "id": 37612432741,
+          "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+          "status": "completed",
+          "conclusion": "success",
+          "event": "workflow_dispatch",
+          "created_at": "2026-10-07T11:11:43Z",
+          "updated_at": "2026-10-07T11:29:35Z",
+          "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37612432741",
+          "run_attempt": 1
+        },
+        {
+          "id": 37598915578,
+          "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+          "status": "completed",
+          "conclusion": "success",
+          "event": "workflow_dispatch",
+          "created_at": "2026-10-07T09:11:42Z",
+          "updated_at": "2026-10-07T09:46:43Z",
+          "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37598915578",
+          "run_attempt": 1
+        }
+      ]
+    },
+    {
+      "workflow": "catalog-refresh.yml",
+      "status": "READ_COMPLETED",
+      "runs": [
+        {
+          "id": 37652691808,
+          "head_sha": "99d5917b5ec185314d8ae081beb971894709ebcd",
+          "status": "completed",
+          "conclusion": "success",
+          "event": "schedule",
+          "created_at": "2026-10-07T16:31:19Z",
+          "updated_at": "2026-10-07T16:32:52Z",
+          "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37652691808",
+          "run_attempt": 1
+        },
+        {
+          "id": 37615730041,
+          "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+          "status": "completed",
+          "conclusion": "success",
+          "event": "schedule",
+          "created_at": "2026-10-07T11:40:59Z",
+          "updated_at": "2026-10-07T11:47:37Z",
+          "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37615730041",
+          "run_attempt": 1
+        },
+        {
+          "id": 37595522059,
+          "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+          "status": "completed",
+          "conclusion": "success",
+          "event": "schedule",
+          "created_at": "2026-10-07T08:42:08Z",
+          "updated_at": "2026-10-07T08:44:12Z",
+          "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37595522059",
+          "run_attempt": 1
+        }
+      ]
+    },
+    {
+      "workflow": "eneba-pilot.yml",
+      "status": "READ_COMPLETED",
+      "runs": [
+        {
+          "id": 37586652944,
+          "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+          "status": "completed",
+          "conclusion": "success",
+          "event": "schedule",
+          "created_at": "2026-10-07T07:19:50Z",
+          "updated_at": "2026-10-07T07:20:22Z",
+          "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37586652944",
+          "run_attempt": 1
+        },
+        {
+          "id": 37554036809,
+          "head_sha": "f899ced036eccc785915f0e6635a0fa4fc7920cc",
+          "status": "completed",
+          "conclusion": "success",
+          "event": "schedule",
+          "created_at": "2026-10-07T00:50:15Z",
+          "updated_at": "2026-10-07T00:50:43Z",
+          "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37554036809",
+          "run_attempt": 1
+        },
+        {
+          "id": 37515215595,
+          "head_sha": "f899ced036eccc785915f0e6635a0fa4fc7920cc",
+          "status": "completed",
+          "conclusion": "success",
+          "event": "schedule",
+          "created_at": "2026-10-06T18:56:52Z",
+          "updated_at": "2026-10-06T18:57:27Z",
+          "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37515215595",
+          "run_attempt": 1
+        }
+      ]
+    },
+    {
+      "workflow": "measurement-snapshot.yml",
+      "status": "READ_COMPLETED",
+      "runs": [
+        {
+          "id": 37631985891,
+          "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+          "status": "completed",
+          "conclusion": "failure",
+          "event": "schedule",
+          "created_at": "2026-10-07T13:52:25Z",
+          "updated_at": "2026-10-07T13:53:05Z",
+          "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37631985891",
+          "run_attempt": 1
+        },
+        {
+          "id": 37605536586,
+          "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+          "status": "completed",
+          "conclusion": "success",
+          "event": "schedule",
+          "created_at": "2026-10-07T10:09:39Z",
+          "updated_at": "2026-10-07T10:10:14Z",
+          "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37605536586",
+          "run_attempt": 1
+        },
+        {
+          "id": 37561357856,
+          "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+          "status": "completed",
+          "conclusion": "success",
+          "event": "schedule",
+          "created_at": "2026-10-07T02:18:32Z",
+          "updated_at": "2026-10-07T02:19:05Z",
+          "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37561357856",
+          "run_attempt": 1
+        }
+      ]
+    },
+    {
+      "workflow": "requested-offer-refresh.yml",
+      "status": "READ_COMPLETED",
+      "runs": [
+        {
+          "id": 37618052605,
+          "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+          "status": "completed",
+          "conclusion": "success",
+          "event": "schedule",
+          "created_at": "2026-10-07T12:01:16Z",
+          "updated_at": "2026-10-07T12:01:24Z",
+          "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37618052605",
+          "run_attempt": 1
+        },
+        {
+          "id": 37577579860,
+          "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+          "status": "completed",
+          "conclusion": "success",
+          "event": "schedule",
+          "created_at": "2026-10-07T05:41:41Z",
+          "updated_at": "2026-10-07T05:41:48Z",
+          "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37577579860",
+          "run_attempt": 1
+        },
+        {
+          "id": 37549553350,
+          "head_sha": "f899ced036eccc785915f0e6635a0fa4fc7920cc",
+          "status": "completed",
+          "conclusion": "success",
+          "event": "schedule",
+          "created_at": "2026-10-06T23:59:39Z",
+          "updated_at": "2026-10-06T23:59:46Z",
+          "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37549553350",
+          "run_attempt": 1
+        }
+      ]
+    },
+    {
+      "workflow": "verify.yml",
+      "status": "READ_COMPLETED",
+      "runs": [
+        {
+          "id": 37640084761,
+          "head_sha": "99d5917b5ec185314d8ae081beb971894709ebcd",
+          "status": "completed",
+          "conclusion": "success",
+          "event": "push",
+          "created_at": "2026-10-07T14:50:26Z",
+          "updated_at": "2026-10-07T14:54:50Z",
+          "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37640084761",
+          "run_attempt": 1
+        },
+        {
+          "id": 37558527304,
+          "head_sha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+          "status": "completed",
+          "conclusion": "success",
+          "event": "push",
+          "created_at": "2026-10-07T01:43:42Z",
+          "updated_at": "2026-10-07T01:46:52Z",
+          "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37558527304",
+          "run_attempt": 1
+        },
+        {
+          "id": 37473535010,
+          "head_sha": "f899ced036eccc785915f0e6635a0fa4fc7920cc",
+          "status": "completed",
+          "conclusion": "success",
+          "event": "push",
+          "created_at": "2026-10-06T13:46:58Z",
+          "updated_at": "2026-10-06T13:50:23Z",
+          "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37473535010",
+          "run_attempt": 1
+        }
+      ]
+    }
+  ]
+}

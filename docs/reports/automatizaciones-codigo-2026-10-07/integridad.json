@@ -1,0 +1,145 @@
+{
+  "capturedAtUtc": "2026-10-07T17:13:46.065343+00:00",
+  "branch": "codex/optimizacion-automatizaciones",
+  "sourceHead": "c69e624",
+  "base": "638d6da",
+  "publicReferenceHeadConfirmed": "99d5917b5ec185314d8ae081beb971894709ebcd",
+  "sourceReviewHashMismatches": 0,
+  "inventoryHashMismatches": 0,
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 9266,
+      "sha256": "66566ff8d722c0ee81368275989b29dea7322122f63f9606a557c9335cd79bff"
+    },
+    {
+      "path": "automatizaciones.md",
+      "bytes": 30502,
+      "sha256": "54600eef403c44ce0e54888a11ed2ba95c331e1aef8e6575faf4cf92b7067e5b"
+    },
+    {
+      "path": "cambios.md",
+      "bytes": 5877,
+      "sha256": "fdcb177ac7fb3620c0d741f2f054ab5afd91330db733cfe64f40e651e7d5b54e"
+    },
+    {
+      "path": "direccion-corte/EVIDENCIA-2026-10-06.json",
+      "bytes": 92198,
+      "sha256": "1ecae95247e759a492b621f4d2d2a93c25b721d853dcd28be55ab08f0886915f"
+    },
+    {
+      "path": "direccion-corte/ORQUESTACION.md",
+      "bytes": 9822,
+      "sha256": "ed5afc5330e4e7e82fccc0fb923fdca2b89aed38a4d356e07298609335f838bd"
+    },
+    {
+      "path": "direccion-corte/README.md",
+      "bytes": 43503,
+      "sha256": "1e364ed10587022864cdf32cf880cc1050dc459721f80e41cf9ae849d14e846b"
+    },
+    {
+      "path": "evidencia/catalog-freshness.json",
+      "bytes": 9943,
+      "sha256": "260e031a55308dd53ba8db8531006a9a69825f2f201d9c3b0988afdfa38da5e0"
+    },
+    {
+      "path": "evidencia/catalog-guides-artifacts-metadata.json",
+      "bytes": 937,
+      "sha256": "90886a71c347e29348474f3d73425ec04be3d4657bc9633f6db59eca7fd615b1"
+    },
+    {
+      "path": "evidencia/catalog-refresh-result.json",
+      "bytes": 6540,
+      "sha256": "7166a869dc6531c4c5339acb39e826bf70e9e8e9079bb6719c15ac9e3217b880"
+    },
+    {
+      "path": "evidencia/db-scheduler-metadata.json",
+      "bytes": 247,
+      "sha256": "c874b76b2418fd33dad36925c478d77806f5a3b32f1ff640567f71835d0b66b7"
+    },
+    {
+      "path": "evidencia/eneba-cache-measurement-state.json",
+      "bytes": 412,
+      "sha256": "3533fd4225bc453e38097e24defa00ece3644e9cf1d401a8345af038ffbc751e"
+    },
+    {
+      "path": "evidencia/eneba-new-run.json",
+      "bytes": 492,
+      "sha256": "4c7f69bbf2dd673550b26e4fd3f99eb9a36ecd1a240f3447b97dd23e67541612"
+    },
+    {
+      "path": "evidencia/github-runs.json",
+      "bytes": 8843,
+      "sha256": "972548bfa2aa50964b7c389f598b4d5162d6b73dd2c379eaa3103e9c22a8e599"
+    },
+    {
+      "path": "evidencia/github-workflows.json",
+      "bytes": 1779,
+      "sha256": "eb592dc1b22a4d2d108240e419d7b17f41d80c67cff31e3c33327f8420853d35"
+    },
+    {
+      "path": "evidencia/local-scheduler-metadata.json",
+      "bytes": 244,
+      "sha256": "1eb8fdbc5a6f5fac5d3000c56a33a2fa85abea4995348fbcf9a739019f38a426"
+    },
+    {
+      "path": "evidencia/measurement-failure-cause-sanitized.json",
+      "bytes": 565,
+      "sha256": "69a68b23452d5e030520bf0a3096ffc747e31c556ca6971a7e8cc5d3296d9fd8"
+    },
+    {
+      "path": "evidencia/measurement-failure-jobs.json",
+      "bytes": 1517,
+      "sha256": "9bba3148cf5acb54bf98c440ee267776f08b944239f050c3c4a44dcd83829152"
+    },
+    {
+      "path": "evidencia/requested-repository-state.json",
+      "bytes": 151,
+      "sha256": "515291eede972d1fb2505aad54d3fe3fe6878ea2eed1e02858f966f61a4878ed"
+    },
+    {
+      "path": "evidencia/verificacion.json",
+      "bytes": 1078,
+      "sha256": "4ab58576aab9919da8b8ab6d17081a21266c28d9b0bfe1b6526ede8a51e66536"
+    },
+    {
+      "path": "inventario-almacenamiento.json",
+      "bytes": 5478,
+      "sha256": "3d163e0e63a78a6f11bca7914eefa44c74e8f153620500e85156476eb1bf4fdd"
+    },
+    {
+      "path": "inventario-scripts.json",
+      "bytes": 46701,
+      "sha256": "2823ccc7f65db93fc93ce438dbe65314ca04d198b40cb2ab2c6e4902c471e02d"
+    },
+    {
+      "path": "monitor-propuesta.md",
+      "bytes": 13444,
+      "sha256": "89ca039827fe2cb425433fcc3ae750b5d6d17e673ada83e2d745f2698ff1b0db"
+    },
+    {
+      "path": "optimizaciones.md",
+      "bytes": 9530,
+      "sha256": "d40ac640b80ed39afa8f35debb57405b29c15d6939dddd4812c6ffd49eb79d3d"
+    },
+    {
+      "path": "revision-independiente.md",
+      "bytes": 3422,
+      "sha256": "6093b82b35af9a21d5e1fdf11d04cd60426f443a46cfbe384d5d5801872aebb8"
+    }
+  ],
+  "monitor": {
+    "originalPromptCharacters": 48170,
+    "candidatePromptCharacters": 9585,
+    "activeConfigChanged": false,
+    "originalTomlSha256": "6c087638e115ab5c05d9677535ba9491c971390e3384419aacfdccb72cb73664",
+    "candidateDocumentSha256": "89ca039827fe2cb425433fcc3ae750b5d6d17e673ada83e2d745f2698ff1b0db"
+  },
+  "snapshots": "direccion-corte files are generated copies before final evidence commit; primary is current entrypoint",
+  "notExtrapolated": [
+    "physical DB savings",
+    "actual workflow minutes/cost",
+    "production CPU/latency",
+    "global coverage from fixture"
+  ]
+}

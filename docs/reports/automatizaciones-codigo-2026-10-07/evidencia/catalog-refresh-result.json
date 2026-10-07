@@ -1,0 +1,187 @@
+{
+  "source": "priority-known-offers",
+  "startedAt": "2026-10-07T16:31:45.931Z",
+  "finishedAt": "2026-10-07T16:32:29.866Z",
+  "includeSample": false,
+  "attempted": 10,
+  "observed": 10,
+  "comparable": 10,
+  "missingGuideSlots": [
+    "pc-gamer-1-millon/ram",
+    "pc-gamer-2-millones/cpu",
+    "pc-gamer-2-millones/ram",
+    "pc-gamer-2-millones/motherboard",
+    "pc-gamer-3-millones/cpu",
+    "pc-gamer-3-millones/gpu",
+    "pc-gamer-3-millones/ram",
+    "pc-gamer-3-millones/motherboard",
+    "pc-gamer-3-millones/psu"
+  ],
+  "sampleRequested": 0,
+  "sampleTruncated": false,
+  "deadlineReached": false,
+  "results": [
+    {
+      "productId": "agrupado-procesadores-combo-amd-ryzen-5-5500-am4-18sztmy",
+      "storeId": "compragamer",
+      "url": "https://compragamer.com/producto/Procesador_AMD_Ryzen_5_5500_4_2GHz_Turbo_AM4_Wraith_Stealth_Cooler_13359",
+      "state": "updated",
+      "observedAt": "2026-10-07T16:31:57.502Z",
+      "sourceIdentity": {
+        "listingRef": "compragamer:id:13359",
+        "title": "Procesador AMD Ryzen 5 5500 4.2GHz Turbo AM4 + Wraith Stealth Cooler",
+        "storeSku": "100-100000457BOX"
+      },
+      "comparable": true
+    },
+    {
+      "productId": "cg-19298",
+      "storeId": "compragamer",
+      "url": "https://compragamer.com/producto/Placa_de_Video_Asrock_Intel_ARC_A380_6GB_GDDR6_Challenger_ITX_OC_19298",
+      "state": "updated",
+      "observedAt": "2026-10-07T16:31:57.502Z",
+      "sourceIdentity": {
+        "listingRef": "compragamer:id:19298",
+        "title": "Placa de Video Asrock Intel ARC A380 6GB GDDR6 Challenger ITX OC",
+        "storeSku": "A380 CLI 6GO"
+      },
+      "comparable": true
+    },
+    {
+      "productId": "cg-17143",
+      "storeId": "compragamer",
+      "url": "https://compragamer.com/producto/Disco_Solido_SSD_Adata_512GB_SU650SS_520MB_s_17143",
+      "state": "updated",
+      "observedAt": "2026-10-07T16:31:57.502Z",
+      "sourceIdentity": {
+        "listingRef": "compragamer:id:17143",
+        "title": "Disco Solido SSD Adata 512GB SU650SS SATA 520MB/s",
+        "storeSku": "ASU650SS-512GT-R"
+      },
+      "comparable": true
+    },
+    {
+      "productId": "agrupado-motherboards-asrock-am4-b550m-m53xw3",
+      "storeId": "compragamer",
+      "url": "https://compragamer.com/producto/Mother_Asrock_B550M_HDV_DDR4_AM4_10535",
+      "state": "updated",
+      "observedAt": "2026-10-07T16:31:57.502Z",
+      "sourceIdentity": {
+        "listingRef": "compragamer:id:10535",
+        "title": "Mother Asrock B550M-HDV DDR4 AM4",
+        "storeSku": "B550M-HDV"
+      },
+      "comparable": true
+    },
+    {
+      "productId": "cg-18257",
+      "storeId": "compragamer",
+      "url": "https://compragamer.com/producto/Fuente_Antec_650W_80_Plus_Bronze_ATX_3_1_PCIe_5_1_CSK650DC_AR_18257",
+      "state": "updated",
+      "observedAt": "2026-10-07T16:31:57.502Z",
+      "sourceIdentity": {
+        "listingRef": "compragamer:id:18257",
+        "title": "Fuente Antec 650W 80 Plus Bronze ATX 3.1 PCIe 5.1 CSK650DC AR",
+        "storeSku": "CSK650DC AR"
+      },
+      "comparable": true
+    },
+    {
+      "productId": "agrupado-gabinetes-4x120mm-antec-argb-black-gabinete-templado-vidri-15eoh7x",
+      "storeId": "compragamer",
+      "url": "https://compragamer.com/producto/Gabinete_Antec_VX310_RGB_Black_4x120mm_Vidrio_Templado_18607",
+      "state": "updated",
+      "observedAt": "2026-10-07T16:31:57.502Z",
+      "sourceIdentity": {
+        "listingRef": "compragamer:id:18607",
+        "title": "Gabinete Antec VX310 RGB Black 4x120mm Vidrio Templado",
+        "storeSku": "0-761345-10232-2"
+      },
+      "comparable": true
+    },
+    {
+      "productId": "agrupado-tarjetas-graficas-asrock-rx-7600-challenger-8gb-17sao4p",
+      "storeId": "compragamer",
+      "url": "https://compragamer.com/producto/Placa_de_Video_Asrock_Radeon_RX_7600_8GB_GDDR6_Challenger_OC_14722",
+      "state": "updated",
+      "observedAt": "2026-10-07T16:31:57.502Z",
+      "sourceIdentity": {
+        "listingRef": "compragamer:id:14722",
+        "title": "Placa de Video Asrock Radeon RX 7600 8GB GDDR6 Challenger OC",
+        "storeSku": "RX7600 CL 8GO"
+      },
+      "comparable": true
+    },
+    {
+      "productId": "agrupado-almacenamiento-kingston-1tb-n1g31v",
+      "storeId": "compragamer",
+      "url": "https://compragamer.com/producto/Disco_Solido_SSD_M_2_Kingston_1TB_NV3_6000MB_s_NVMe_PCI_E_Gen4_x4_16872",
+      "state": "updated",
+      "observedAt": "2026-10-07T16:31:57.502Z",
+      "sourceIdentity": {
+        "listingRef": "compragamer:id:16872",
+        "title": "Disco S\u00f3lido SSD M.2 Kingston 1TB NV3 6000MB/s NVMe PCI-E Gen4 x4",
+        "storeSku": "SNV3S/1000G"
+      },
+      "comparable": true
+    },
+    {
+      "productId": "dinobyte-api-2578551",
+      "storeId": "dinobyte",
+      "url": "https://dinobyte.ar/producto/fuente-coolermaster-mwe-v3-650w-80plus-gold/",
+      "state": "updated",
+      "observedAt": "2026-10-07T16:32:22.885Z",
+      "sourceIdentity": {
+        "listingRef": "dinobyte:url:https://dinobyte.ar/producto/fuente-coolermaster-mwe-v3-650w-80plus-gold",
+        "title": "Fuente Coolermaster Mwe V3 650W 80Plus Gold",
+        "sourceId": "2578551",
+        "storeSku": "FUE303"
+      },
+      "comparable": true
+    },
+    {
+      "productId": "goldentechstore-api-184534",
+      "storeId": "goldentechstore",
+      "url": "https://goldentechstore.com.ar/producto/gabinete-cooler-master-elite-302-black-3-fans-argb/",
+      "state": "updated",
+      "observedAt": "2026-10-07T16:32:26.669Z",
+      "sourceIdentity": {
+        "listingRef": "goldentechstore:url:https://goldentechstore.com.ar/producto/gabinete-cooler-master-elite-302-black-3-fans-argb",
+        "title": "GABINETE COOLER MASTER ELITE 302 BLACK (3 Fans ARGB)",
+        "sourceId": "184534",
+        "storeSku": "NB_E302-KGNN-S00"
+      },
+      "comparable": true
+    }
+  ],
+  "sourceHttp": {
+    "compragamer": {
+      "requests": 3,
+      "bytes": 2296540,
+      "durationMs": 4233,
+      "conditionalHits": 0,
+      "backoffSkips": 0,
+      "failures": 0,
+      "failureReasons": {}
+    },
+    "dinobyte": {
+      "requests": 1,
+      "bytes": 287348,
+      "durationMs": 1799,
+      "conditionalHits": 0,
+      "backoffSkips": 0,
+      "failures": 0,
+      "failureReasons": {}
+    },
+    "goldentechstore": {
+      "requests": 1,
+      "bytes": 369813,
+      "durationMs": 1712,
+      "conditionalHits": 0,
+      "backoffSkips": 0,
+      "failures": 0,
+      "failureReasons": {}
+    }
+  },
+  "sharedListingReads": 0
+}

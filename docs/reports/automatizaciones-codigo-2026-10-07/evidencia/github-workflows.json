@@ -1,0 +1,56 @@
+{
+  "startedAt": "2026-10-07T16:38:48.317251+00:00",
+  "readAt": "2026-10-07T16:38:48.875193+00:00",
+  "status": "READ_COMPLETED",
+  "total": 6,
+  "workflows": [
+    {
+      "id": 372504563,
+      "name": "Adaptive catalog refresh",
+      "path": ".github/workflows/catalog-adaptive-refresh.yml",
+      "state": "active",
+      "created_at": "2026-10-01T16:46:20.000-03:00",
+      "updated_at": "2026-10-01T16:46:20.000-03:00"
+    },
+    {
+      "id": 252554336,
+      "name": "Catalog refresh scheduler",
+      "path": ".github/workflows/catalog-refresh.yml",
+      "state": "active",
+      "created_at": "2026-03-27T14:48:44.000-03:00",
+      "updated_at": "2026-08-24T16:08:49.000-04:00"
+    },
+    {
+      "id": 373423389,
+      "name": "Eneba affiliate pilot snapshot",
+      "path": ".github/workflows/eneba-pilot.yml",
+      "state": "active",
+      "created_at": "2026-10-02T16:41:48.000-03:00",
+      "updated_at": "2026-10-02T16:41:48.000-03:00"
+    },
+    {
+      "id": 376042410,
+      "name": "Private measurement snapshots",
+      "path": ".github/workflows/measurement-snapshot.yml",
+      "state": "active",
+      "created_at": "2026-10-06T01:35:52.000-03:00",
+      "updated_at": "2026-10-06T01:35:52.000-03:00"
+    },
+    {
+      "id": 363861087,
+      "name": "Requested offer refresh",
+      "path": ".github/workflows/requested-offer-refresh.yml",
+      "state": "active",
+      "created_at": "2026-09-21T23:02:55.000-03:00",
+      "updated_at": "2026-09-21T23:02:55.000-03:00"
+    },
+    {
+      "id": 370584454,
+      "name": "Verify application and catalog runners",
+      "path": ".github/workflows/verify.yml",
+      "state": "active",
+      "created_at": "2026-09-29T18:43:04.000-03:00",
+      "updated_at": "2026-09-29T18:43:04.000-03:00"
+    }
+  ]
+}

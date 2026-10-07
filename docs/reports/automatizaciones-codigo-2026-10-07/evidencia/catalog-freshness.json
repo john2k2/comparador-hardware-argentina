@@ -1,0 +1,388 @@
+{
+  "measuredAt": "2026-10-07T16:32:29.986Z",
+  "definition": "Ofertas almacenadas con precio positivo y stock disponible; frescura seg\u00fan last_updated. candidateComparable3h excluye status needs-review pero no verifica identidad contra el producto ni render p\u00fablico.",
+  "denominator": 52061,
+  "fresh24h": 4434,
+  "fresh3h": 10,
+  "identityPending3h": 0,
+  "candidateComparable3h": 10,
+  "windowStart": "2026-10-07T16:31:44Z",
+  "observationDefinition": "Filas de precio actualizadas en la ventana, con o sin disponibilidad; productos distintos contados globalmente y por tienda. availableObservedRows solo cuenta stock disponible y precio positivo, sin acreditar identidad ni compra real.",
+  "observedRows": 10,
+  "persistedProducts": 10,
+  "observedByStore": {
+    "compragamer": 8,
+    "dinobyte": 1,
+    "goldentechstore": 1
+  },
+  "persistedProductsByStore": {
+    "compragamer": 8,
+    "dinobyte": 1,
+    "goldentechstore": 1
+  },
+  "availableObservedRows": 10,
+  "availableObservedByStore": {
+    "compragamer": 8,
+    "dinobyte": 1,
+    "goldentechstore": 1
+  },
+  "sample": {
+    "source": "docs/reports/crecimiento-2026-09-12/G02-MUESTRA-PRIORITARIA.json",
+    "selectedAtUtc": "2026-09-25",
+    "definition": "Ofertas almacenadas disponibles de fichas fijas; identityAccepted3h exige revisi\u00f3n v\u00e1lida ligada a producto/URL y t\u00edtulo observado, sin contradicci\u00f3n expl\u00edcita. No acredita compra real ni render p\u00fablico.",
+    "denominator": 55,
+    "fresh24h": 27,
+    "fresh3h": 0,
+    "identityPending3h": 0,
+    "candidateComparable3h": 0,
+    "identityAccepted3h": 0,
+    "identityUnverified3h": 0,
+    "explicitConflicts3h": 0,
+    "productsWithAcceptedOffer3h": 0,
+    "productsWithoutAcceptedOffer3h": [
+      "agrupado-procesadores-amd-ryzen-5-5600-1ru8te5",
+      "agrupado-procesadores-intel-core-i5-12400-gfjrbb",
+      "agrupado-procesadores-amd-ryzen-5-7600x-am5-12rxuv9",
+      "agrupado-tarjetas-graficas-gigabyte-rtx-5060-eagle-8gb-1i1rdb",
+      "agrupado-tarjetas-graficas-msi-rtx-5060-shadow-8gb-csxx7o",
+      "agrupado-tarjetas-graficas-asus-rtx-5060-dual-8gb-1lrxth",
+      "maximus-15359-memoria-ram-corsair-vengeance-lpx-black-16gb-3200-mhz-ddr4",
+      "agrupado-memoria-ram-corsair-16gb-x4icqy",
+      "agrupado-memoria-ram-kingston-16gb-11mqs9y"
+    ],
+    "byProduct": [
+      {
+        "productId": "agrupado-procesadores-amd-ryzen-5-5600-1ru8te5",
+        "category": "procesadores",
+        "available": 8,
+        "fresh24h": 3,
+        "fresh3h": 0,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 0,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-procesadores-intel-core-i5-12400-gfjrbb",
+        "category": "procesadores",
+        "available": 10,
+        "fresh24h": 6,
+        "fresh3h": 0,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 0,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-procesadores-amd-ryzen-5-7600x-am5-12rxuv9",
+        "category": "procesadores",
+        "available": 2,
+        "fresh24h": 1,
+        "fresh3h": 0,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 0,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-tarjetas-graficas-gigabyte-rtx-5060-eagle-8gb-1i1rdb",
+        "category": "tarjetas-graficas",
+        "available": 7,
+        "fresh24h": 2,
+        "fresh3h": 0,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 0,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-tarjetas-graficas-msi-rtx-5060-shadow-8gb-csxx7o",
+        "category": "tarjetas-graficas",
+        "available": 10,
+        "fresh24h": 4,
+        "fresh3h": 0,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 0,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-tarjetas-graficas-asus-rtx-5060-dual-8gb-1lrxth",
+        "category": "tarjetas-graficas",
+        "available": 9,
+        "fresh24h": 5,
+        "fresh3h": 0,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 0,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "maximus-15359-memoria-ram-corsair-vengeance-lpx-black-16gb-3200-mhz-ddr4",
+        "category": "memoria-ram",
+        "available": 1,
+        "fresh24h": 0,
+        "fresh3h": 0,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 0,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-memoria-ram-corsair-16gb-x4icqy",
+        "category": "memoria-ram",
+        "available": 2,
+        "fresh24h": 2,
+        "fresh3h": 0,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 0,
+        "explicitConflicts3h": 0
+      },
+      {
+        "productId": "agrupado-memoria-ram-kingston-16gb-11mqs9y",
+        "category": "memoria-ram",
+        "available": 6,
+        "fresh24h": 4,
+        "fresh3h": 0,
+        "identityPending3h": 0,
+        "identityAccepted3h": 0,
+        "identityUnverified3h": 0,
+        "explicitConflicts3h": 0
+      }
+    ]
+  },
+  "byStore": [
+    {
+      "storeId": "37bytes",
+      "available": 37,
+      "fresh24h": 0,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "armytech",
+      "available": 456,
+      "fresh24h": 2,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "beings",
+      "available": 584,
+      "fresh24h": 0,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "compragamer",
+      "available": 5312,
+      "fresh24h": 953,
+      "fresh3h": 8,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "compugarden",
+      "available": 1134,
+      "fresh24h": 43,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "dinobyte",
+      "available": 897,
+      "fresh24h": 14,
+      "fresh3h": 1,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "fullh4rd",
+      "available": 3268,
+      "fresh24h": 0,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "gamerspoint",
+      "available": 698,
+      "fresh24h": 61,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "gamingcity",
+      "available": 2788,
+      "fresh24h": 54,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "gezatek",
+      "available": 765,
+      "fresh24h": 0,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "goldentechstore",
+      "available": 3506,
+      "fresh24h": 669,
+      "fresh3h": 1,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "hardcore",
+      "available": 1308,
+      "fresh24h": 0,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "hftecnologia",
+      "available": 219,
+      "fresh24h": 0,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "hypergaming",
+      "available": 169,
+      "fresh24h": 0,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "integradosargentinos",
+      "available": 305,
+      "fresh24h": 89,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "katech",
+      "available": 4467,
+      "fresh24h": 192,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "liontech",
+      "available": 316,
+      "fresh24h": 18,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "logg",
+      "available": 861,
+      "fresh24h": 15,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "maximus",
+      "available": 2207,
+      "fresh24h": 0,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "maxtecno",
+      "available": 10151,
+      "fresh24h": 1798,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "megasoft",
+      "available": 93,
+      "fresh24h": 12,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "mexx",
+      "available": 3376,
+      "fresh24h": 47,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "noxie",
+      "available": 184,
+      "fresh24h": 4,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "portaltech",
+      "available": 369,
+      "fresh24h": 0,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "rockethard",
+      "available": 144,
+      "fresh24h": 77,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "scphardstore",
+      "available": 1342,
+      "fresh24h": 0,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "shopgamer",
+      "available": 203,
+      "fresh24h": 52,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "spacevideojuegos",
+      "available": 445,
+      "fresh24h": 101,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "thegamershop",
+      "available": 576,
+      "fresh24h": 0,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "venex",
+      "available": 666,
+      "fresh24h": 36,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "vertexretail",
+      "available": 18,
+      "fresh24h": 0,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "wiztech",
+      "available": 441,
+      "fresh24h": 81,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    },
+    {
+      "storeId": "xtpc",
+      "available": 4756,
+      "fresh24h": 116,
+      "fresh3h": 0,
+      "identityPending3h": 0
+    }
+  ]
+}

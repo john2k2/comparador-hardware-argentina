@@ -1,0 +1,16 @@
+{
+  "readAt": "2026-10-07T16:57:52.717971+00:00",
+  "runs": [
+    {
+      "id": 37653916174,
+      "event": "schedule",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "99d5917b5ec185314d8ae081beb971894709ebcd",
+      "created_at": "2026-10-07T16:40:38Z",
+      "updated_at": "2026-10-07T16:41:07Z",
+      "run_started_at": "2026-10-07T16:40:38Z",
+      "html_url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37653916174"
+    }
+  ]
+}

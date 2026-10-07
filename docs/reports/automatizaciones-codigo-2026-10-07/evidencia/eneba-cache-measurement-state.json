@@ -1,0 +1,15 @@
+{
+  "readAt": "2026-10-07T16:52:49.104935+00:00",
+  "enebaCache": {
+    "status": "ready",
+    "expiresAt": "2026-10-07T22:41:01+00:00",
+    "fetchedAt": "2026-10-07T16:41:01.135Z",
+    "feedUpdatedAt": "2026-10-07T16:41:01.000Z",
+    "cacheCurrentlyValid": true
+  },
+  "measurementConnection": {
+    "state": "error",
+    "updatedAt": "2026-10-07T13:52:58.641+00:00",
+    "issueClass": "feed-not-current"
+  }
+}

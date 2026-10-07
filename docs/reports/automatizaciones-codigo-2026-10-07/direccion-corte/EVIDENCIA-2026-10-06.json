@@ -1,0 +1,2465 @@
+{
+  "date": "2026-10-06",
+  "timezone": "America/Santiago",
+  "scope": "Línea base y gobierno del proyecto; no auditoría exhaustiva ni certificación de runtime",
+  "decisions": {
+    "objective": "Usuarios reales que encuentran ofertas fiables y vuelven",
+    "primaryUsers": [
+      "Comparar componente",
+      "Armar PC completa"
+    ],
+    "equalPriority": true,
+    "weeklyUserTime": ">10 horas",
+    "orchestration": "Coordinador central + subagentes específicos gpt-6.1-sol/high",
+    "capacityBudget": {
+      "confirmedAt": "2026-10-07",
+      "choice": "Mantener costo cero y aceptar límites de alcance",
+      "purchaseOrPlanChangeAuthorized": false,
+      "catalogOrHistoryDeletionAuthorized": false,
+      "coverageDenominatorChangeAuthorized": false
+    }
+  },
+  "referenceCode": {
+    "remote": "f899ced036eccc785915f0e6635a0fa4fc7920cc",
+    "primary": "b1c6a4f05c3e03d4f0072ed773911be70feb8034",
+    "ahead": 1,
+    "behind": 67
+  },
+  "coverage": {
+    "measuredAt": "2026-10-06 17:32:57.410716+00",
+    "groups": {
+      "build-support": {
+        "total": 6796,
+        "observed_24h": 441,
+        "observed_3h": 6,
+        "within_policy": 1977,
+        "never_attempted": 2691,
+        "stores": 33,
+        "observed_24h_pct": 6.49
+      },
+      "components": {
+        "total": 34413,
+        "observed_24h": 8121,
+        "observed_3h": 1024,
+        "within_policy": 8121,
+        "never_attempted": 8063,
+        "stores": 34,
+        "observed_24h_pct": 23.6
+      },
+      "maintenance": {
+        "total": 32082,
+        "observed_24h": 382,
+        "observed_3h": 28,
+        "within_policy": 12390,
+        "never_attempted": 21496,
+        "stores": 34,
+        "observed_24h_pct": 1.19
+      }
+    }
+  },
+  "coverageByStore": {
+    "measured_at": "2026-10-06 17:32:57.410716+00",
+    "coverage": [
+      {
+        "total": 4,
+        "reason": "build-support",
+        "store_id": "37bytes",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 72,
+        "never_attempted": 2,
+        "oldest_attempt_at": "2026-10-04T01:25:06.201312+00:00",
+        "oldest_observation_at": "2026-05-05T06:00:18.316+00:00"
+      },
+      {
+        "total": 118,
+        "reason": "components",
+        "store_id": "37bytes",
+        "observed_3h": 0,
+        "observed_24h": 42,
+        "within_policy": 42,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-04T17:28:18.267039+00:00",
+        "oldest_observation_at": "2026-04-07T05:42:00.475+00:00"
+      },
+      {
+        "total": 165,
+        "reason": "maintenance",
+        "store_id": "37bytes",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 2,
+        "interval_hours": 168,
+        "never_attempted": 146,
+        "oldest_attempt_at": "2026-10-03T17:47:18.750731+00:00",
+        "oldest_observation_at": "2026-04-30T02:39:09.143+00:00"
+      },
+      {
+        "total": 121,
+        "reason": "build-support",
+        "store_id": "armytech",
+        "observed_3h": 0,
+        "observed_24h": 3,
+        "within_policy": 4,
+        "interval_hours": 72,
+        "never_attempted": 67,
+        "oldest_attempt_at": "2026-10-02T03:25:02.943367+00:00",
+        "oldest_observation_at": "2026-03-31T18:56:05.798+00:00"
+      },
+      {
+        "total": 290,
+        "reason": "components",
+        "store_id": "armytech",
+        "observed_3h": 0,
+        "observed_24h": 5,
+        "within_policy": 5,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-02T18:54:45.980528+00:00",
+        "oldest_observation_at": "2026-03-31T18:54:34.345+00:00"
+      },
+      {
+        "total": 332,
+        "reason": "maintenance",
+        "store_id": "armytech",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 3,
+        "interval_hours": 168,
+        "never_attempted": 210,
+        "oldest_attempt_at": "2026-10-01T20:51:26.18655+00:00",
+        "oldest_observation_at": "2026-03-31T18:56:25.299+00:00"
+      },
+      {
+        "total": 25,
+        "reason": "build-support",
+        "store_id": "beings",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 72,
+        "never_attempted": 20,
+        "oldest_attempt_at": "2026-10-02T03:25:24.060447+00:00",
+        "oldest_observation_at": "2026-03-31T18:56:08.982+00:00"
+      },
+      {
+        "total": 280,
+        "reason": "components",
+        "store_id": "beings",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-03T00:26:55.963221+00:00",
+        "oldest_observation_at": "2026-04-07T05:41:58.358+00:00"
+      },
+      {
+        "total": 279,
+        "reason": "maintenance",
+        "store_id": "beings",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 168,
+        "never_attempted": 251,
+        "oldest_attempt_at": "2026-10-03T17:47:05.149586+00:00",
+        "oldest_observation_at": "2026-04-30T02:39:08.663+00:00"
+      },
+      {
+        "total": 126,
+        "reason": "build-support",
+        "store_id": "clickgaming",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 72,
+        "never_attempted": 69,
+        "oldest_attempt_at": "2026-10-02T03:22:56.84872+00:00",
+        "oldest_observation_at": "2026-03-31T18:56:03.474+00:00"
+      },
+      {
+        "total": 520,
+        "reason": "components",
+        "store_id": "clickgaming",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-02T08:23:07.165977+00:00",
+        "oldest_observation_at": "2026-03-31T18:55:04.106+00:00"
+      },
+      {
+        "total": 206,
+        "reason": "maintenance",
+        "store_id": "clickgaming",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 168,
+        "never_attempted": 130,
+        "oldest_attempt_at": "2026-10-02T03:21:16.53957+00:00",
+        "oldest_observation_at": "2026-03-31T18:55:32.015+00:00"
+      },
+      {
+        "total": 615,
+        "reason": "build-support",
+        "store_id": "compragamer",
+        "observed_3h": 1,
+        "observed_24h": 140,
+        "within_policy": 167,
+        "interval_hours": 72,
+        "never_attempted": 3,
+        "oldest_attempt_at": "2026-10-03T05:20:43.133651+00:00",
+        "oldest_observation_at": "2026-03-05T15:15:13.583+00:00"
+      },
+      {
+        "total": 2076,
+        "reason": "components",
+        "store_id": "compragamer",
+        "observed_3h": 9,
+        "observed_24h": 1010,
+        "within_policy": 1010,
+        "interval_hours": 24,
+        "never_attempted": 7,
+        "oldest_attempt_at": "2026-10-05T11:12:37.238641+00:00",
+        "oldest_observation_at": "2026-03-05T02:07:21.24+00:00"
+      },
+      {
+        "total": 2635,
+        "reason": "maintenance",
+        "store_id": "compragamer",
+        "observed_3h": 0,
+        "observed_24h": 73,
+        "within_policy": 1430,
+        "interval_hours": 168,
+        "never_attempted": 327,
+        "oldest_attempt_at": "2026-10-01T20:44:59.040587+00:00",
+        "oldest_observation_at": "2026-03-05T02:07:21.242+00:00"
+      },
+      {
+        "total": 125,
+        "reason": "build-support",
+        "store_id": "compugarden",
+        "observed_3h": 0,
+        "observed_24h": 2,
+        "within_policy": 2,
+        "interval_hours": 72,
+        "never_attempted": 98,
+        "oldest_attempt_at": "2026-10-02T00:18:54.551915+00:00",
+        "oldest_observation_at": "2026-03-06T06:43:27.017+00:00"
+      },
+      {
+        "total": 868,
+        "reason": "components",
+        "store_id": "compugarden",
+        "observed_3h": 12,
+        "observed_24h": 132,
+        "within_policy": 132,
+        "interval_hours": 24,
+        "never_attempted": 1,
+        "oldest_attempt_at": "2026-10-01T21:07:26.578117+00:00",
+        "oldest_observation_at": "1970-01-01T00:00:00+00:00"
+      },
+      {
+        "total": 505,
+        "reason": "maintenance",
+        "store_id": "compugarden",
+        "observed_3h": 0,
+        "observed_24h": 1,
+        "within_policy": 49,
+        "interval_hours": 168,
+        "never_attempted": 361,
+        "oldest_attempt_at": "2026-10-01T19:48:46.069369+00:00",
+        "oldest_observation_at": "1970-01-01T00:00:00+00:00"
+      },
+      {
+        "total": 818,
+        "reason": "build-support",
+        "store_id": "dinobyte",
+        "observed_3h": 0,
+        "observed_24h": 15,
+        "within_policy": 776,
+        "interval_hours": 72,
+        "never_attempted": 9,
+        "oldest_attempt_at": "2026-10-05T01:13:53.658989+00:00",
+        "oldest_observation_at": "2026-03-06T06:43:47.759+00:00"
+      },
+      {
+        "total": 3182,
+        "reason": "components",
+        "store_id": "dinobyte",
+        "observed_3h": 508,
+        "observed_24h": 2700,
+        "within_policy": 2700,
+        "interval_hours": 24,
+        "never_attempted": 16,
+        "oldest_attempt_at": "2026-10-04T12:14:08.539785+00:00",
+        "oldest_observation_at": "2026-03-05T02:07:22.762+00:00"
+      },
+      {
+        "total": 3061,
+        "reason": "maintenance",
+        "store_id": "dinobyte",
+        "observed_3h": 0,
+        "observed_24h": 62,
+        "within_policy": 2712,
+        "interval_hours": 168,
+        "never_attempted": 2426,
+        "oldest_attempt_at": "2026-10-01T20:41:22.099207+00:00",
+        "oldest_observation_at": "2026-03-05T02:07:22.762+00:00"
+      },
+      {
+        "total": 101,
+        "reason": "build-support",
+        "store_id": "fullh4rd",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 72,
+        "never_attempted": 43,
+        "oldest_attempt_at": "2026-10-03T00:23:46.891749+00:00",
+        "oldest_observation_at": "2026-03-05T18:02:06.122+00:00"
+      },
+      {
+        "total": 1304,
+        "reason": "components",
+        "store_id": "fullh4rd",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 24,
+        "never_attempted": 456,
+        "oldest_attempt_at": "2026-10-01T19:18:26.817632+00:00",
+        "oldest_observation_at": "2026-03-05T02:07:21.76+00:00"
+      },
+      {
+        "total": 1863,
+        "reason": "maintenance",
+        "store_id": "fullh4rd",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 168,
+        "never_attempted": 1154,
+        "oldest_attempt_at": "2026-10-01T19:06:36.994718+00:00",
+        "oldest_observation_at": "2026-03-05T02:07:21.76+00:00"
+      },
+      {
+        "total": 12,
+        "reason": "build-support",
+        "store_id": "gamerspoint",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 2,
+        "interval_hours": 72,
+        "never_attempted": 7,
+        "oldest_attempt_at": "2026-10-03T03:26:44.506546+00:00",
+        "oldest_observation_at": "2026-07-28T22:34:45.244+00:00"
+      },
+      {
+        "total": 371,
+        "reason": "components",
+        "store_id": "gamerspoint",
+        "observed_3h": 0,
+        "observed_24h": 37,
+        "within_policy": 37,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-02T08:23:28.385082+00:00",
+        "oldest_observation_at": "2026-04-12T15:53:09.87+00:00"
+      },
+      {
+        "total": 315,
+        "reason": "maintenance",
+        "store_id": "gamerspoint",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 23,
+        "interval_hours": 168,
+        "never_attempted": 263,
+        "oldest_attempt_at": "2026-10-01T19:18:43.836152+00:00",
+        "oldest_observation_at": "2026-04-23T23:19:38.124+00:00"
+      },
+      {
+        "total": 388,
+        "reason": "build-support",
+        "store_id": "gamingcity",
+        "observed_3h": 0,
+        "observed_24h": 8,
+        "within_policy": 16,
+        "interval_hours": 72,
+        "never_attempted": 225,
+        "oldest_attempt_at": "2026-10-02T03:22:54.685804+00:00",
+        "oldest_observation_at": "2026-03-31T18:56:03.367+00:00"
+      },
+      {
+        "total": 1490,
+        "reason": "components",
+        "store_id": "gamingcity",
+        "observed_3h": 3,
+        "observed_24h": 36,
+        "within_policy": 36,
+        "interval_hours": 24,
+        "never_attempted": 940,
+        "oldest_attempt_at": "2026-10-01T19:50:24.539683+00:00",
+        "oldest_observation_at": "2026-03-31T18:55:14.948+00:00"
+      },
+      {
+        "total": 937,
+        "reason": "maintenance",
+        "store_id": "gamingcity",
+        "observed_3h": 2,
+        "observed_24h": 5,
+        "within_policy": 82,
+        "interval_hours": 168,
+        "never_attempted": 689,
+        "oldest_attempt_at": "2026-10-02T03:26:29.249726+00:00",
+        "oldest_observation_at": "2026-03-31T18:56:23.195+00:00"
+      },
+      {
+        "total": 264,
+        "reason": "build-support",
+        "store_id": "gezatek",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 72,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-02T00:21:58.399662+00:00",
+        "oldest_observation_at": "2026-03-06T06:43:44.967+00:00"
+      },
+      {
+        "total": 550,
+        "reason": "components",
+        "store_id": "gezatek",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-01T22:30:19.528823+00:00",
+        "oldest_observation_at": "2026-03-05T02:07:21.112+00:00"
+      },
+      {
+        "total": 145,
+        "reason": "maintenance",
+        "store_id": "gezatek",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 168,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-01T19:49:07.869391+00:00",
+        "oldest_observation_at": "2026-03-05T02:07:39.273+00:00"
+      },
+      {
+        "total": 366,
+        "reason": "build-support",
+        "store_id": "goldentechstore",
+        "observed_3h": 5,
+        "observed_24h": 59,
+        "within_policy": 293,
+        "interval_hours": 72,
+        "never_attempted": 2,
+        "oldest_attempt_at": "2026-10-05T01:13:54.414139+00:00",
+        "oldest_observation_at": "2026-03-06T06:43:33.404+00:00"
+      },
+      {
+        "total": 1661,
+        "reason": "components",
+        "store_id": "goldentechstore",
+        "observed_3h": 123,
+        "observed_24h": 842,
+        "within_policy": 842,
+        "interval_hours": 24,
+        "never_attempted": 8,
+        "oldest_attempt_at": "2026-10-04T12:14:07.95652+00:00",
+        "oldest_observation_at": "2026-03-05T02:00:54.238+00:00"
+      },
+      {
+        "total": 1379,
+        "reason": "maintenance",
+        "store_id": "goldentechstore",
+        "observed_3h": 0,
+        "observed_24h": 15,
+        "within_policy": 957,
+        "interval_hours": 168,
+        "never_attempted": 581,
+        "oldest_attempt_at": "2026-10-02T00:17:27.292775+00:00",
+        "oldest_observation_at": "2026-03-05T18:02:03.933+00:00"
+      },
+      {
+        "total": 94,
+        "reason": "build-support",
+        "store_id": "hardcore",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 72,
+        "never_attempted": 35,
+        "oldest_attempt_at": "2026-10-02T01:25:20.373033+00:00",
+        "oldest_observation_at": "2026-03-06T06:43:14.034+00:00"
+      },
+      {
+        "total": 757,
+        "reason": "components",
+        "store_id": "hardcore",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 24,
+        "never_attempted": 180,
+        "oldest_attempt_at": "2026-10-01T19:06:23.753044+00:00",
+        "oldest_observation_at": "2026-03-05T02:00:53.133+00:00"
+      },
+      {
+        "total": 462,
+        "reason": "maintenance",
+        "store_id": "hardcore",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 168,
+        "never_attempted": 364,
+        "oldest_attempt_at": "2026-10-01T20:40:05.142007+00:00",
+        "oldest_observation_at": "2026-03-05T02:07:57.266+00:00"
+      },
+      {
+        "total": 23,
+        "reason": "build-support",
+        "store_id": "hftecnologia",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 72,
+        "never_attempted": 21,
+        "oldest_attempt_at": "2026-10-05T13:27:57.433281+00:00",
+        "oldest_observation_at": "2026-05-09T06:01:30.6+00:00"
+      },
+      {
+        "total": 95,
+        "reason": "components",
+        "store_id": "hftecnologia",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-02T13:15:50.287032+00:00",
+        "oldest_observation_at": "2026-03-31T18:55:32.333+00:00"
+      },
+      {
+        "total": 160,
+        "reason": "maintenance",
+        "store_id": "hftecnologia",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 5,
+        "interval_hours": 168,
+        "never_attempted": 131,
+        "oldest_attempt_at": "2026-10-02T06:15:50.011676+00:00",
+        "oldest_observation_at": "2026-04-04T05:34:09.916+00:00"
+      },
+      {
+        "total": 211,
+        "reason": "build-support",
+        "store_id": "hypergaming",
+        "observed_3h": 0,
+        "observed_24h": 16,
+        "within_policy": 42,
+        "interval_hours": 72,
+        "never_attempted": 158,
+        "oldest_attempt_at": "2026-10-02T03:23:43.336687+00:00",
+        "oldest_observation_at": "2026-04-14T05:49:40.257+00:00"
+      },
+      {
+        "total": 337,
+        "reason": "components",
+        "store_id": "hypergaming",
+        "observed_3h": 0,
+        "observed_24h": 21,
+        "within_policy": 21,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-02T10:28:34.825174+00:00",
+        "oldest_observation_at": "2026-04-07T05:41:59.672+00:00"
+      },
+      {
+        "total": 214,
+        "reason": "maintenance",
+        "store_id": "hypergaming",
+        "observed_3h": 0,
+        "observed_24h": 11,
+        "within_policy": 37,
+        "interval_hours": 168,
+        "never_attempted": 172,
+        "oldest_attempt_at": "2026-10-02T03:26:52.589739+00:00",
+        "oldest_observation_at": "2026-04-01T05:47:30.601+00:00"
+      },
+      {
+        "total": 152,
+        "reason": "build-support",
+        "store_id": "integradosargentinos",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 8,
+        "interval_hours": 72,
+        "never_attempted": 100,
+        "oldest_attempt_at": "2026-10-01T22:28:52.01413+00:00",
+        "oldest_observation_at": "2026-04-08T05:43:24.699+00:00"
+      },
+      {
+        "total": 873,
+        "reason": "components",
+        "store_id": "integradosargentinos",
+        "observed_3h": 13,
+        "observed_24h": 87,
+        "within_policy": 87,
+        "interval_hours": 24,
+        "never_attempted": 95,
+        "oldest_attempt_at": "2026-10-01T19:18:34.692062+00:00",
+        "oldest_observation_at": "2026-03-31T18:54:32.662+00:00"
+      },
+      {
+        "total": 1561,
+        "reason": "maintenance",
+        "store_id": "integradosargentinos",
+        "observed_3h": 1,
+        "observed_24h": 10,
+        "within_policy": 20,
+        "interval_hours": 168,
+        "never_attempted": 1277,
+        "oldest_attempt_at": "2026-10-01T20:51:23.847882+00:00",
+        "oldest_observation_at": "2026-03-31T18:56:23.733+00:00"
+      },
+      {
+        "total": 644,
+        "reason": "build-support",
+        "store_id": "katech",
+        "observed_3h": 0,
+        "observed_24h": 16,
+        "within_policy": 113,
+        "interval_hours": 72,
+        "never_attempted": 329,
+        "oldest_attempt_at": "2026-10-01T23:49:52.208577+00:00",
+        "oldest_observation_at": "2026-03-06T06:43:08.637+00:00"
+      },
+      {
+        "total": 2575,
+        "reason": "components",
+        "store_id": "katech",
+        "observed_3h": 14,
+        "observed_24h": 170,
+        "within_policy": 170,
+        "interval_hours": 24,
+        "never_attempted": 981,
+        "oldest_attempt_at": "2026-10-01T19:18:42.806901+00:00",
+        "oldest_observation_at": "2026-03-05T02:07:50.822+00:00"
+      },
+      {
+        "total": 3210,
+        "reason": "maintenance",
+        "store_id": "katech",
+        "observed_3h": 4,
+        "observed_24h": 52,
+        "within_policy": 1471,
+        "interval_hours": 168,
+        "never_attempted": 2786,
+        "oldest_attempt_at": "2026-10-01T19:06:14.714899+00:00",
+        "oldest_observation_at": "2026-03-05T02:07:22.193+00:00"
+      },
+      {
+        "total": 429,
+        "reason": "components",
+        "store_id": "liontech",
+        "observed_3h": 8,
+        "observed_24h": 93,
+        "within_policy": 93,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-02T08:23:30.188168+00:00",
+        "oldest_observation_at": "2026-08-29T11:49:34.655+00:00"
+      },
+      {
+        "total": 196,
+        "reason": "maintenance",
+        "store_id": "liontech",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 168,
+        "never_attempted": 196,
+        "oldest_attempt_at": null,
+        "oldest_observation_at": "2026-07-28T22:34:49.445+00:00"
+      },
+      {
+        "total": 164,
+        "reason": "build-support",
+        "store_id": "logg",
+        "observed_3h": 0,
+        "observed_24h": 1,
+        "within_policy": 2,
+        "interval_hours": 72,
+        "never_attempted": 91,
+        "oldest_attempt_at": "2026-10-02T03:22:22.337624+00:00",
+        "oldest_observation_at": "2026-03-31T18:56:03.248+00:00"
+      },
+      {
+        "total": 460,
+        "reason": "components",
+        "store_id": "logg",
+        "observed_3h": 0,
+        "observed_24h": 4,
+        "within_policy": 4,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-02T08:23:46.24406+00:00",
+        "oldest_observation_at": "2026-03-31T18:55:35.256+00:00"
+      },
+      {
+        "total": 363,
+        "reason": "maintenance",
+        "store_id": "logg",
+        "observed_3h": 0,
+        "observed_24h": 1,
+        "within_policy": 6,
+        "interval_hours": 168,
+        "never_attempted": 291,
+        "oldest_attempt_at": "2026-10-02T05:25:47.40409+00:00",
+        "oldest_observation_at": "2026-04-01T05:48:01.673+00:00"
+      },
+      {
+        "total": 171,
+        "reason": "build-support",
+        "store_id": "maximus",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 8,
+        "interval_hours": 72,
+        "never_attempted": 117,
+        "oldest_attempt_at": "2026-10-02T00:16:57.496048+00:00",
+        "oldest_observation_at": "2026-03-06T06:43:06.957+00:00"
+      },
+      {
+        "total": 1528,
+        "reason": "components",
+        "store_id": "maximus",
+        "observed_3h": 9,
+        "observed_24h": 84,
+        "within_policy": 84,
+        "interval_hours": 24,
+        "never_attempted": 798,
+        "oldest_attempt_at": "2026-10-01T19:50:18.95072+00:00",
+        "oldest_observation_at": "2026-03-05T02:07:39.491+00:00"
+      },
+      {
+        "total": 988,
+        "reason": "maintenance",
+        "store_id": "maximus",
+        "observed_3h": 4,
+        "observed_24h": 10,
+        "within_policy": 85,
+        "interval_hours": 168,
+        "never_attempted": 801,
+        "oldest_attempt_at": "2026-10-01T20:45:35.542197+00:00",
+        "oldest_observation_at": "2026-03-05T03:22:45.467+00:00"
+      },
+      {
+        "total": 536,
+        "reason": "build-support",
+        "store_id": "maxtecno",
+        "observed_3h": 0,
+        "observed_24h": 27,
+        "within_policy": 327,
+        "interval_hours": 72,
+        "never_attempted": 1,
+        "oldest_attempt_at": "2026-10-03T23:28:01.717364+00:00",
+        "oldest_observation_at": "2026-03-06T06:43:27.725+00:00"
+      },
+      {
+        "total": 4305,
+        "reason": "components",
+        "store_id": "maxtecno",
+        "observed_3h": 256,
+        "observed_24h": 2245,
+        "within_policy": 2245,
+        "interval_hours": 24,
+        "never_attempted": 14,
+        "oldest_attempt_at": "2026-10-04T12:14:11.021325+00:00",
+        "oldest_observation_at": "2026-03-05T02:07:21.61+00:00"
+      },
+      {
+        "total": 6199,
+        "reason": "maintenance",
+        "store_id": "maxtecno",
+        "observed_3h": 2,
+        "observed_24h": 30,
+        "within_policy": 4939,
+        "interval_hours": 168,
+        "never_attempted": 3368,
+        "oldest_attempt_at": "2026-10-01T22:21:56.565992+00:00",
+        "oldest_observation_at": "2026-03-05T02:07:21.612+00:00"
+      },
+      {
+        "total": 241,
+        "reason": "build-support",
+        "store_id": "megasoft",
+        "observed_3h": 0,
+        "observed_24h": 21,
+        "within_policy": 39,
+        "interval_hours": 72,
+        "never_attempted": 151,
+        "oldest_attempt_at": "2026-10-02T05:25:25.506887+00:00",
+        "oldest_observation_at": "2026-04-01T05:47:44.198+00:00"
+      },
+      {
+        "total": 265,
+        "reason": "components",
+        "store_id": "megasoft",
+        "observed_3h": 5,
+        "observed_24h": 33,
+        "within_policy": 33,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-02T08:23:28.760405+00:00",
+        "oldest_observation_at": "2026-04-04T05:34:39.01+00:00"
+      },
+      {
+        "total": 77,
+        "reason": "maintenance",
+        "store_id": "megasoft",
+        "observed_3h": 0,
+        "observed_24h": 4,
+        "within_policy": 13,
+        "interval_hours": 168,
+        "never_attempted": 62,
+        "oldest_attempt_at": "2026-10-02T05:29:26.198489+00:00",
+        "oldest_observation_at": "2026-04-05T05:42:08.504+00:00"
+      },
+      {
+        "total": 120,
+        "reason": "build-support",
+        "store_id": "mexx",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 2,
+        "interval_hours": 72,
+        "never_attempted": 103,
+        "oldest_attempt_at": "2026-10-01T23:58:20.478176+00:00",
+        "oldest_observation_at": "2026-03-06T06:43:06.706+00:00"
+      },
+      {
+        "total": 1702,
+        "reason": "components",
+        "store_id": "mexx",
+        "observed_3h": 11,
+        "observed_24h": 53,
+        "within_policy": 53,
+        "interval_hours": 24,
+        "never_attempted": 1002,
+        "oldest_attempt_at": "2026-10-01T19:18:43.585613+00:00",
+        "oldest_observation_at": "2026-03-05T02:07:20.698+00:00"
+      },
+      {
+        "total": 1555,
+        "reason": "maintenance",
+        "store_id": "mexx",
+        "observed_3h": 0,
+        "observed_24h": 1,
+        "within_policy": 93,
+        "interval_hours": 168,
+        "never_attempted": 1357,
+        "oldest_attempt_at": "2026-10-01T22:27:13.592016+00:00",
+        "oldest_observation_at": "2026-03-05T15:15:13.247+00:00"
+      },
+      {
+        "total": 81,
+        "reason": "build-support",
+        "store_id": "noxie",
+        "observed_3h": 0,
+        "observed_24h": 12,
+        "within_policy": 16,
+        "interval_hours": 72,
+        "never_attempted": 50,
+        "oldest_attempt_at": "2026-10-01T20:40:21.519033+00:00",
+        "oldest_observation_at": "2026-04-06T05:50:38.018+00:00"
+      },
+      {
+        "total": 529,
+        "reason": "components",
+        "store_id": "noxie",
+        "observed_3h": 0,
+        "observed_24h": 1,
+        "within_policy": 1,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-02T08:23:24.522955+00:00",
+        "oldest_observation_at": "2026-03-31T18:55:08.252+00:00"
+      },
+      {
+        "total": 116,
+        "reason": "maintenance",
+        "store_id": "noxie",
+        "observed_3h": 2,
+        "observed_24h": 3,
+        "within_policy": 5,
+        "interval_hours": 168,
+        "never_attempted": 74,
+        "oldest_attempt_at": "2026-10-02T06:17:42.822798+00:00",
+        "oldest_observation_at": "2026-04-04T05:35:31.557+00:00"
+      },
+      {
+        "total": 48,
+        "reason": "build-support",
+        "store_id": "portaltech",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 72,
+        "never_attempted": 13,
+        "oldest_attempt_at": "2026-10-01T20:44:05.217959+00:00",
+        "oldest_observation_at": "2026-04-24T05:55:14.81+00:00"
+      },
+      {
+        "total": 282,
+        "reason": "components",
+        "store_id": "portaltech",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-02T08:23:06.449167+00:00",
+        "oldest_observation_at": "2026-04-12T15:53:15.586+00:00"
+      },
+      {
+        "total": 179,
+        "reason": "maintenance",
+        "store_id": "portaltech",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 168,
+        "never_attempted": 151,
+        "oldest_attempt_at": "2026-10-02T18:54:31.655279+00:00",
+        "oldest_observation_at": "2026-04-14T15:01:58.803+00:00"
+      },
+      {
+        "total": 174,
+        "reason": "build-support",
+        "store_id": "rockethard",
+        "observed_3h": 0,
+        "observed_24h": 23,
+        "within_policy": 28,
+        "interval_hours": 72,
+        "never_attempted": 138,
+        "oldest_attempt_at": "2026-10-01T20:42:32.626099+00:00",
+        "oldest_observation_at": "2026-04-10T05:50:40.542+00:00"
+      },
+      {
+        "total": 358,
+        "reason": "components",
+        "store_id": "rockethard",
+        "observed_3h": 8,
+        "observed_24h": 101,
+        "within_policy": 101,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-02T08:23:30.531039+00:00",
+        "oldest_observation_at": "2026-04-09T05:42:38.023+00:00"
+      },
+      {
+        "total": 146,
+        "reason": "maintenance",
+        "store_id": "rockethard",
+        "observed_3h": 4,
+        "observed_24h": 8,
+        "within_policy": 51,
+        "interval_hours": 168,
+        "never_attempted": 63,
+        "oldest_attempt_at": "2026-10-01T20:44:50.134431+00:00",
+        "oldest_observation_at": "2026-04-10T05:50:40.749+00:00"
+      },
+      {
+        "total": 85,
+        "reason": "build-support",
+        "store_id": "scphardstore",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 72,
+        "never_attempted": 81,
+        "oldest_attempt_at": "2026-10-02T15:27:43.246442+00:00",
+        "oldest_observation_at": "2026-04-12T15:53:19.053+00:00"
+      },
+      {
+        "total": 996,
+        "reason": "components",
+        "store_id": "scphardstore",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 24,
+        "never_attempted": 203,
+        "oldest_attempt_at": "2026-10-01T22:53:04.462783+00:00",
+        "oldest_observation_at": "2026-05-15T15:59:41.187+00:00"
+      },
+      {
+        "total": 261,
+        "reason": "maintenance",
+        "store_id": "scphardstore",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 168,
+        "never_attempted": 259,
+        "oldest_attempt_at": "2026-10-04T14:26:46.561514+00:00",
+        "oldest_observation_at": "2026-05-06T19:18:28.602+00:00"
+      },
+      {
+        "total": 200,
+        "reason": "build-support",
+        "store_id": "shopgamer",
+        "observed_3h": 0,
+        "observed_24h": 28,
+        "within_policy": 39,
+        "interval_hours": 72,
+        "never_attempted": 143,
+        "oldest_attempt_at": "2026-10-02T06:16:19.347614+00:00",
+        "oldest_observation_at": "2026-04-04T05:35:13.7+00:00"
+      },
+      {
+        "total": 2601,
+        "reason": "components",
+        "store_id": "shopgamer",
+        "observed_3h": 13,
+        "observed_24h": 148,
+        "within_policy": 148,
+        "interval_hours": 24,
+        "never_attempted": 1903,
+        "oldest_attempt_at": "2026-10-01T19:06:42.85427+00:00",
+        "oldest_observation_at": "2026-04-06T05:49:33.408+00:00"
+      },
+      {
+        "total": 979,
+        "reason": "maintenance",
+        "store_id": "shopgamer",
+        "observed_3h": 1,
+        "observed_24h": 4,
+        "within_policy": 72,
+        "interval_hours": 168,
+        "never_attempted": 847,
+        "oldest_attempt_at": "2026-10-02T06:19:12.118582+00:00",
+        "oldest_observation_at": "2026-04-04T15:32:12.372+00:00"
+      },
+      {
+        "total": 223,
+        "reason": "build-support",
+        "store_id": "spacevideojuegos",
+        "observed_3h": 0,
+        "observed_24h": 20,
+        "within_policy": 25,
+        "interval_hours": 72,
+        "never_attempted": 189,
+        "oldest_attempt_at": "2026-10-01T22:29:03.35072+00:00",
+        "oldest_observation_at": "2026-04-21T05:51:18.069+00:00"
+      },
+      {
+        "total": 416,
+        "reason": "components",
+        "store_id": "spacevideojuegos",
+        "observed_3h": 8,
+        "observed_24h": 82,
+        "within_policy": 82,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-02T08:24:06.836342+00:00",
+        "oldest_observation_at": "2026-04-08T05:42:51.157+00:00"
+      },
+      {
+        "total": 92,
+        "reason": "maintenance",
+        "store_id": "spacevideojuegos",
+        "observed_3h": 1,
+        "observed_24h": 7,
+        "within_policy": 11,
+        "interval_hours": 168,
+        "never_attempted": 70,
+        "oldest_attempt_at": "2026-10-02T08:29:03.139964+00:00",
+        "oldest_observation_at": "2026-04-07T05:42:53.866+00:00"
+      },
+      {
+        "total": 50,
+        "reason": "build-support",
+        "store_id": "thegamershop",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 72,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-02T00:20:45.012708+00:00",
+        "oldest_observation_at": "2026-03-06T06:43:13.033+00:00"
+      },
+      {
+        "total": 311,
+        "reason": "components",
+        "store_id": "thegamershop",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-03T12:52:59.597681+00:00",
+        "oldest_observation_at": "2026-03-05T02:07:22.451+00:00"
+      },
+      {
+        "total": 263,
+        "reason": "maintenance",
+        "store_id": "thegamershop",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 168,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-01T19:06:10.127994+00:00",
+        "oldest_observation_at": "2026-03-05T02:07:22.452+00:00"
+      },
+      {
+        "total": 17,
+        "reason": "build-support",
+        "store_id": "venex",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 72,
+        "never_attempted": 8,
+        "oldest_attempt_at": "2026-10-02T03:21:25.572276+00:00",
+        "oldest_observation_at": "2026-03-31T18:55:05.471+00:00"
+      },
+      {
+        "total": 317,
+        "reason": "components",
+        "store_id": "venex",
+        "observed_3h": 3,
+        "observed_24h": 7,
+        "within_policy": 7,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-02T08:23:06.137087+00:00",
+        "oldest_observation_at": "2026-03-05T02:08:01.386+00:00"
+      },
+      {
+        "total": 332,
+        "reason": "maintenance",
+        "store_id": "venex",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 168,
+        "never_attempted": 248,
+        "oldest_attempt_at": "2026-10-01T19:06:05.688806+00:00",
+        "oldest_observation_at": "2026-03-05T02:08:01.386+00:00"
+      },
+      {
+        "total": 16,
+        "reason": "build-support",
+        "store_id": "vertexretail",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 72,
+        "never_attempted": 7,
+        "oldest_attempt_at": "2026-10-01T22:24:40.223606+00:00",
+        "oldest_observation_at": "2026-07-28T22:34:45.293+00:00"
+      },
+      {
+        "total": 7,
+        "reason": "components",
+        "store_id": "vertexretail",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 0,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-04T20:26:40.997578+00:00",
+        "oldest_observation_at": "2026-10-04T20:26:29.159+00:00"
+      },
+      {
+        "total": 28,
+        "reason": "maintenance",
+        "store_id": "vertexretail",
+        "observed_3h": 0,
+        "observed_24h": 0,
+        "within_policy": 2,
+        "interval_hours": 168,
+        "never_attempted": 22,
+        "oldest_attempt_at": "2026-10-01T19:06:16.197878+00:00",
+        "oldest_observation_at": "2026-03-31T18:56:24.691+00:00"
+      },
+      {
+        "total": 60,
+        "reason": "build-support",
+        "store_id": "wiztech",
+        "observed_3h": 0,
+        "observed_24h": 2,
+        "within_policy": 2,
+        "interval_hours": 72,
+        "never_attempted": 49,
+        "oldest_attempt_at": "2026-10-02T03:26:24.701645+00:00",
+        "oldest_observation_at": "2026-05-10T06:10:22.563+00:00"
+      },
+      {
+        "total": 270,
+        "reason": "components",
+        "store_id": "wiztech",
+        "observed_3h": 7,
+        "observed_24h": 27,
+        "within_policy": 27,
+        "interval_hours": 24,
+        "never_attempted": 0,
+        "oldest_attempt_at": "2026-10-02T08:23:27.991251+00:00",
+        "oldest_observation_at": "2026-04-06T05:49:56.36+00:00"
+      },
+      {
+        "total": 158,
+        "reason": "maintenance",
+        "store_id": "wiztech",
+        "observed_3h": 5,
+        "observed_24h": 19,
+        "within_policy": 31,
+        "interval_hours": 168,
+        "never_attempted": 110,
+        "oldest_attempt_at": "2026-10-02T06:19:58.650886+00:00",
+        "oldest_observation_at": "2026-04-07T05:42:53.447+00:00"
+      },
+      {
+        "total": 521,
+        "reason": "build-support",
+        "store_id": "xtpc",
+        "observed_3h": 0,
+        "observed_24h": 48,
+        "within_policy": 66,
+        "interval_hours": 72,
+        "never_attempted": 362,
+        "oldest_attempt_at": "2026-10-02T01:49:41.772213+00:00",
+        "oldest_observation_at": "2026-03-31T18:56:04.256+00:00"
+      },
+      {
+        "total": 2290,
+        "reason": "components",
+        "store_id": "xtpc",
+        "observed_3h": 14,
+        "observed_24h": 161,
+        "within_policy": 161,
+        "interval_hours": 24,
+        "never_attempted": 1459,
+        "oldest_attempt_at": "2026-10-01T19:49:06.491324+00:00",
+        "oldest_observation_at": "2026-03-31T18:54:53.307+00:00"
+      },
+      {
+        "total": 2721,
+        "reason": "maintenance",
+        "store_id": "xtpc",
+        "observed_3h": 2,
+        "observed_24h": 66,
+        "within_policy": 291,
+        "interval_hours": 168,
+        "never_attempted": 2309,
+        "oldest_attempt_at": "2026-10-02T01:50:12.615756+00:00",
+        "oldest_observation_at": "2026-04-08T05:43:23.196+00:00"
+      }
+    ]
+  },
+  "httpChecks": [
+    {
+      "url": "https://www.comparador-hardware.com.ar/comparar/procesadores",
+      "measuredAt": "2026-10-06T17:29:15.467Z",
+      "status": 200,
+      "durationMs": 3005,
+      "bytes": 136454,
+      "cfRay": "a46663203ccca5bf-SCL",
+      "cache": null,
+      "title": "Comparar procesadores: precios AMD e Intel | Comparador Hardware Argentina",
+      "products": [
+        {
+          "href": "/product/maxtecno-api-898711?from=%2Fsearch%3Fcategory%3Dprocesadores",
+          "text": "// AMD1 TIENDAProces. AMD Ryzen 7 9700X AM5 (8 Core) CON VIDEO SIN COOLER (5593)MEJOR PRECIO REGISTRADO$ 726.341@MaxTecnoCOMPARAR TIENDAS >ACTUALIZADO HACE 10 H"
+        },
+        {
+          "href": "/product/maxtecno-api-910386?from=%2Fsearch%3Fcategory%3Dprocesadores",
+          "text": "// AMD1 TIENDAMicro Amd (Am5) Ryzen 5 7600x Sin CoolerMEJOR PRECIO REGISTRADO$ 458.104@MaxTecnoCOMPARAR TIENDAS >ACTUALIZADO HACE 10 H"
+        },
+        {
+          "href": "/product/maxtecno-api-954917?from=%2Fsearch%3Fcategory%3Dprocesadores",
+          "text": "// Intel1 TIENDACPU INTEL CORE ULTRA 7 265 ARROW LAKE S1851 BOXMEJOR PRECIO REGISTRADO$ 879.177@MaxTecnoCOMPARAR TIENDAS >ACTUALIZADO HACE 10 H"
+        },
+        {
+          "href": "/product/katech-api-1022956?from=%2Fsearch%3Fcategory%3Dprocesadores",
+          "text": "// Intel1 TIENDAPROCESADOR INTEL CORE I7 13700K LGA1700MEJOR PRECIO REGISTRADO$ 1.075.490@KatechCOMPARAR TIENDAS >ACTUALIZADO HACE 14 H"
+        },
+        {
+          "href": "/product/goldentechstore-api-641?from=%2Fsearch%3Fcategory%3Dprocesadores",
+          "text": "// Intel1 TIENDAMICRO INTEL CORE I7 12700KF LGA1700 .0GHZ ALDER LAKEMEJOR PRECIO REGISTRADO$ 652.970@Golden TechCOMPARAR TIENDAS >ACTUALIZADO HACE 10 H"
+        },
+        {
+          "href": "/product/goldentechstore-api-1029?from=%2Fsearch%3Fcategory%3Dprocesadores",
+          "text": "// Intel1 TIENDAMICRO INTEL CORE I9 12900K 12GEN S1700 S/COOLER C/VIDEOMEJOR PRECIO REGISTRADO$ 952.639@Golden TechCOMPARAR TIENDAS >ACTUALIZADO HACE 10 H"
+        },
+        {
+          "href": "/product/maxtecno-api-5524?from=%2Fsearch%3Fcategory%3Dprocesadores",
+          "text": "// Generica1 TIENDAProcesador Core i3-14100 3.5GHz 12MB LGA 1700MEJOR PRECIO REGISTRADO$ 294.217@MaxTecnoCOMPARAR TIENDAS >ACTUALIZADO HACE 20 H"
+        },
+        {
+          "href": "/product/maxtecno-api-814374?from=%2Fsearch%3Fcategory%3Dprocesadores",
+          "text": "// AMD1 TIENDACPU AMD RYZEN 9 9900X3DMEJOR PRECIO REGISTRADO$ 1.364.164@MaxTecnoCOMPARAR TIENDAS >ACTUALIZADO HACE 21 H"
+        },
+        {
+          "href": "/product/maxtecno-api-880051?from=%2Fsearch%3Fcategory%3Dprocesadores",
+          "text": "// AMD1 TIENDAMicroprocesador AMD Ryzen 7 9800X3D 104MB 4.7GHz AM5 SIN COOLERMEJOR PRECIO REGISTRADO$ 1.092.216@MaxTecnoCOMPARAR TIENDAS >ACTUALIZADO HACE 21 H"
+        },
+        {
+          "href": "/product/maxtecno-api-885430?from=%2Fsearch%3Fcategory%3Dprocesadores",
+          "text": "// AMD1 TIENDAProcesador AMD Ryzen 3 3200G 3.60Ghz AM4 DDR4MEJOR PRECIO REGISTRADO$ 128.366@MaxTecnoCOMPARAR TIENDAS >ACTUALIZADO HACE 21 H"
+        },
+        {
+          "href": "/product/maxtecno-api-885618?from=%2Fsearch%3Fcategory%3Dprocesadores",
+          "text": "// Intel1 TIENDAProcesador INTEL Core i3-12100 3.30GHz LGA1700 DDR4/DDR5MEJOR PRECIO REGISTRADO$ 270.775@MaxTecnoCOMPARAR TIENDAS >ACTUALIZADO HACE 21 H"
+        }
+      ]
+    },
+    {
+      "url": "https://www.comparador-hardware.com.ar/api/products?category=procesadores&page=1&limit=12",
+      "measuredAt": "2026-10-06T17:29:19.300Z",
+      "status": 200,
+      "durationMs": 3431,
+      "bytes": 8517,
+      "cfRay": "a4666337bdc7a5bf-SCL",
+      "cache": null,
+      "keys": [
+        "products",
+        "pagination",
+        "facets"
+      ],
+      "products": [
+        {
+          "id": "maxtecno-api-898711",
+          "name": "Proces. AMD Ryzen 7 9700X AM5 (8 Core) CON VIDEO SIN COOLER (5593)",
+          "category": "procesadores",
+          "offers": 1
+        },
+        {
+          "id": "maxtecno-api-910386",
+          "name": "Micro Amd (Am5) Ryzen 5 7600x Sin Cooler",
+          "category": "procesadores",
+          "offers": 1
+        },
+        {
+          "id": "maxtecno-api-954917",
+          "name": "CPU INTEL CORE ULTRA 7 265 ARROW LAKE S1851 BOX",
+          "category": "procesadores",
+          "offers": 1
+        },
+        {
+          "id": "katech-api-1022956",
+          "name": "PROCESADOR INTEL CORE I7 13700K LGA1700",
+          "category": "procesadores",
+          "offers": 1
+        },
+        {
+          "id": "katech-api-982406",
+          "name": "PROCESADOR INTEL I3 13100F S1700 OEM SIN COOLER",
+          "category": "procesadores",
+          "offers": 1
+        },
+        {
+          "id": "katech-api-907747",
+          "name": "PROCESADOR INTEL CORE ULTRA 7 265 LGA1851",
+          "category": "procesadores",
+          "offers": 1
+        }
+      ]
+    },
+    {
+      "url": "https://www.comparador-hardware.com.ar/api/juegos-digitales",
+      "measuredAt": "2026-10-06T17:29:23.533Z",
+      "status": 200,
+      "durationMs": 145,
+      "bytes": 1450,
+      "cfRay": "a4666352297fa5bf-SCL",
+      "cache": null,
+      "payload": {
+        "status": "ready",
+        "offers": [
+          {
+            "id": "epic-games-chivalry-ii-epic-games-key-latam",
+            "sku": "CHVLRY2/LA",
+            "feedTitle": "Chivalry II Epic Games Key LATAM",
+            "name": "Chivalry II",
+            "region": "latam",
+            "platform": "Epic Games",
+            "edition": "Juego base · clave digital LATAM",
+            "restrictions": "PC Windows. Se activa en Epic Games, no en Steam. La ficha anuncia inglés. Revisá los requisitos y la región de tu cuenta antes de comprar.",
+            "reviewedAt": "2026-10-02T17:48:55.000Z",
+            "activationCountry": "AR",
+            "price": 63988.6,
+            "currency": "ARS",
+            "url": "https://www.eneba.com/latam/epic-games-chivalry-ii-epic-games-key-latam?af_id=Comparador_Hardware_Argentina&currency=ARS",
+            "observedAt": "2026-10-06T12:06:48.000Z"
+          },
+          {
+            "id": "steam-knights-of-pen-paper-steam-key-global",
+            "sku": "KOPP",
+            "feedTitle": "Knights of Pen & Paper Steam Key GLOBAL",
+            "name": "Knights of Pen & Paper",
+            "region": "global",
+            "platform": "Steam",
+            "edition": "Juego base · clave digital GLOBAL",
+            "restrictions": "Se activa en Steam. La ficha incluye español y lista Windows, Mac y Linux; revisá los requisitos actuales de tu sistema. No anuncia extras ni una edición Deluxe.",
+            "reviewedAt": "2026-10-02T17:48:55.000Z",
+            "activationCountry": "AR",
+            "price": 4265.91,
+            "currency": "ARS",
+            "url": "https://www.eneba.com/latam/steam-knights-of-pen-paper-steam-key-global?af_id=Comparador_Hardware_Argentina&currency=ARS",
+            "observedAt": "2026-10-06T12:06:48.000Z"
+          }
+        ],
+        "fetchedAt": "2026-10-06T12:06:48.257Z",
+        "feedUpdatedAt": "2026-10-06T12:06:48.000Z"
+      }
+    }
+  ],
+  "verification": {
+    "lint": "passed",
+    "typecheck": "passed",
+    "unit": {
+      "passed": 1573,
+      "skipped": 2
+    },
+    "operational": {
+      "passed": 20
+    },
+    "initialArtificialFlags": {
+      "result": "2 failures",
+      "reason": "DISABLE_LIVE_SCRAPING=1 interfered with mocked privileged-refresh contracts",
+      "correctedBy": "Repeat normal verify command, no code changes"
+    },
+    "source": "\n> comparador-hardware-argentina@0.1.0 typecheck\n> tsc --noEmit --incremental false\n\n\n> comparador-hardware-argentina@0.1.0 test\n> vitest run\n\n(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:\n  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `\"type\": \"module\"` in the closest package.json\nSet `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.\n\n RUN  v4.1.11 /Users/johnortiz/.codex/worktrees/google-login-publico/comparador-hardware-argentina\n\n(node:54333) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.\n(Use `node --trace-deprecation ...` to show where the warning was created)\n\n Test Files  200 passed | 2 skipped (202)\n      Tests  1573 passed | 2 skipped (1575)\n   Start at  14:29:52\n   Duration  10.32s (transform 3.96s, setup 0ms, import 12.12s, tests 15.77s, environment 17ms)\n\n\n> comparador-hardware-argentina@0.1.0 test:ops\n> node --test scripts/lib/*.test.mjs scripts/pilots/*.test.mjs\n\n✔ el CLI informa una tienda actualizada sin ofertas disponibles y productos por tienda (89.249417ms)\n✔ un conteo exacto ausente falla el informe en lugar de publicar ceros (80.279333ms)\n✔ el CLI de muestra compila el contrato real y no aprueba una revisión legacy ausente (77.517292ms)\n✔ siete días útiles con cobertura sólo habilitan revisión, nunca cierran G02 (1.147334ms)\n✔ manuales, repeticiones horarias y cortes sin calidad no suman días (0.080541ms)\n✔ no sustituye la muestra, no infiere identidad ausente ni acepta cortes vencidos (0.579875ms)\n✔ cero denominador o conteos ausentes no son una meta de frescura cumplida (0.062166ms)\n✔ separa filas de productos distintos por tienda y conserva conteo entre páginas (1.06975ms)\n✔ observar una publicación sin oferta comprable no acredita precio disponible (0.090375ms)\n✔ el corte vacío es explícito y un corte previo no cambia al acumular nuevas páginas (0.178167ms)\n✔ la entrada real conserva Next, el scheduler y los exports al filtrar escaneos (33.578667ms)\n(node:54635) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/johnortiz/.codex/worktrees/google-login-publico/comparador-hardware-argentina/src/lib/product-identity.ts is not specified and it doesn't parse as CommonJS.\nReparsing as ES module because module syntax was detected. This incurs a performance overhead.\nTo eliminate this warning, add \"type\": \"module\" to /Users/johnortiz/.codex/worktrees/google-login-publico/comparador-hardware-argentina/package.json.\n(Use `node --trace-warnings ...` to show where the warning was created)\n✔ una aprobación del modelo no rejuvenece una oferta vencida (1.993916ms)\n✔ separa chips distintos aunque el modelo diga que coinciden (0.124333ms)\n✔ stock desconocido requiere corroboración aunque pase el filtro individual antiguo (0.095042ms)\n✔ fecha de producto reciente no sustituye fecha de oferta ausente o futura (0.136042ms)\n✔ una discrepancia semántica propone revisar, no modificar ni eliminar la oferta (0.104042ms)\n✔ un visto bueno de baja confianza pide corroboración incluso con datos recientes (0.191125ms)\n✔ respuestas malformadas y elecciones ajenas al contrato no habilitan candidatos (0.423584ms)\n✔ precio no numérico y enlaces inválidos quedan fuera de comparación (0.115875ms)\n✔ la muestra conserva fecha fija y los requests sólo incluyen evidencia pública necesaria (0.646208ms)\nℹ tests 20\nℹ suites 0\nℹ pass 20\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 302.227708\n"
+  },
+  "ci": [
+    {
+      "conclusion": "",
+      "createdAt": "2026-10-06T17:23:04Z",
+      "databaseId": 37503118780,
+      "event": "schedule",
+      "headSha": "f899ced036eccc785915f0e6635a0fa4fc7920cc",
+      "status": "in_progress",
+      "updatedAt": "2026-10-06T17:23:07Z",
+      "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37503118780",
+      "workflowName": "Adaptive catalog refresh"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-06T17:18:46Z",
+      "databaseId": 37502563640,
+      "event": "workflow_dispatch",
+      "headSha": "f899ced036eccc785915f0e6635a0fa4fc7920cc",
+      "status": "completed",
+      "updatedAt": "2026-10-06T17:20:17Z",
+      "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37502563640",
+      "workflowName": "Requested offer refresh"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-06T17:12:49Z",
+      "databaseId": 37501788736,
+      "event": "schedule",
+      "headSha": "f899ced036eccc785915f0e6635a0fa4fc7920cc",
+      "status": "completed",
+      "updatedAt": "2026-10-06T17:14:33Z",
+      "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37501788736",
+      "workflowName": "Catalog refresh scheduler"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-06T16:11:32Z",
+      "databaseId": 37493733289,
+      "event": "workflow_dispatch",
+      "headSha": "f899ced036eccc785915f0e6635a0fa4fc7920cc",
+      "status": "completed",
+      "updatedAt": "2026-10-06T16:29:22Z",
+      "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37493733289",
+      "workflowName": "Adaptive catalog refresh"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-06T15:26:16Z",
+      "databaseId": 37487488738,
+      "event": "schedule",
+      "headSha": "f899ced036eccc785915f0e6635a0fa4fc7920cc",
+      "status": "completed",
+      "updatedAt": "2026-10-06T15:26:27Z",
+      "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37487488738",
+      "workflowName": "Requested offer refresh"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-06T14:11:32Z",
+      "databaseId": 37476891219,
+      "event": "workflow_dispatch",
+      "headSha": "f899ced036eccc785915f0e6635a0fa4fc7920cc",
+      "status": "completed",
+      "updatedAt": "2026-10-06T14:29:15Z",
+      "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37476891219",
+      "workflowName": "Adaptive catalog refresh"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-06T13:46:58Z",
+      "databaseId": 37473535010,
+      "event": "push",
+      "headSha": "f899ced036eccc785915f0e6635a0fa4fc7920cc",
+      "status": "completed",
+      "updatedAt": "2026-10-06T13:50:23Z",
+      "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37473535010",
+      "workflowName": "Verify application and catalog runners"
+    },
+    {
+      "conclusion": "failure",
+      "createdAt": "2026-10-06T13:35:14Z",
+      "databaseId": 37471978001,
+      "event": "schedule",
+      "headSha": "6c8dba30aa5d693f2e2c04e1c20e557d1cb76bc4",
+      "status": "completed",
+      "updatedAt": "2026-10-06T13:36:02Z",
+      "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37471978001",
+      "workflowName": "Private measurement snapshots"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-06T13:22:35Z",
+      "databaseId": 37470294121,
+      "event": "push",
+      "headSha": "6c8dba30aa5d693f2e2c04e1c20e557d1cb76bc4",
+      "status": "completed",
+      "updatedAt": "2026-10-06T13:26:47Z",
+      "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37470294121",
+      "workflowName": "Verify application and catalog runners"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-06T12:58:28Z",
+      "databaseId": 37467205517,
+      "event": "workflow_dispatch",
+      "headSha": "baaaa8ad9adf9f4ff08b2a06563065b56252840e",
+      "status": "completed",
+      "updatedAt": "2026-10-06T12:59:06Z",
+      "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37467205517",
+      "workflowName": "Private measurement snapshots"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-06T12:11:48Z",
+      "databaseId": 37461537450,
+      "event": "workflow_dispatch",
+      "headSha": "baaaa8ad9adf9f4ff08b2a06563065b56252840e",
+      "status": "completed",
+      "updatedAt": "2026-10-06T12:29:36Z",
+      "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37461537450",
+      "workflowName": "Adaptive catalog refresh"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-06T12:06:19Z",
+      "databaseId": 37460899830,
+      "event": "schedule",
+      "headSha": "baaaa8ad9adf9f4ff08b2a06563065b56252840e",
+      "status": "completed",
+      "updatedAt": "2026-10-06T12:06:55Z",
+      "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37460899830",
+      "workflowName": "Eneba affiliate pilot snapshot"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-06T12:00:59Z",
+      "databaseId": 37460279181,
+      "event": "schedule",
+      "headSha": "baaaa8ad9adf9f4ff08b2a06563065b56252840e",
+      "status": "completed",
+      "updatedAt": "2026-10-06T12:01:34Z",
+      "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37460279181",
+      "workflowName": "Private measurement snapshots"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-06T11:56:21Z",
+      "databaseId": 37459754322,
+      "event": "schedule",
+      "headSha": "baaaa8ad9adf9f4ff08b2a06563065b56252840e",
+      "status": "completed",
+      "updatedAt": "2026-10-06T12:02:51Z",
+      "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37459754322",
+      "workflowName": "Catalog refresh scheduler"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-06T10:43:54Z",
+      "databaseId": 37451710814,
+      "event": "schedule",
+      "headSha": "baaaa8ad9adf9f4ff08b2a06563065b56252840e",
+      "status": "completed",
+      "updatedAt": "2026-10-06T11:01:44Z",
+      "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37451710814",
+      "workflowName": "Adaptive catalog refresh"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-06T10:21:25Z",
+      "databaseId": 37449234755,
+      "event": "schedule",
+      "headSha": "baaaa8ad9adf9f4ff08b2a06563065b56252840e",
+      "status": "completed",
+      "updatedAt": "2026-10-06T10:22:54Z",
+      "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37449234755",
+      "workflowName": "Catalog refresh scheduler"
+    }
+  ],
+  "orchestration": {
+    "model": "gpt-6.1-sol",
+    "reasoning": "high",
+    "maxConcurrentChildren": 2,
+    "profileFiles": [
+      ".codex/agents/comparador_engineering.toml",
+      ".codex/agents/comparador_catalog.toml",
+      ".codex/agents/comparador_performance.toml",
+      ".codex/agents/comparador_product.toml",
+      ".codex/agents/comparador_measurement.toml",
+      ".codex/agents/comparador_growth.toml",
+      ".codex/agents/comparador_reviewer.toml"
+    ],
+    "explicitSpawnCompleted": "sol_configuration_check",
+    "namedProfileActivation": "available: seven named profiles; five used for concrete deliveries; measurement/growth not launched merely for availability",
+    "tomlSyntax": "validated",
+    "cliStrictCheck": "unsupported for codex features",
+    "initialNamedProfileActivation": "pending: unknown agent_type comparador_reviewer",
+    "namedProfilesExecuted": [
+      "comparador_engineering",
+      "comparador_catalog",
+      "comparador_performance",
+      "comparador_product",
+      "comparador_reviewer"
+    ],
+    "otherProfilesExecutionProven": false
+  },
+  "chatOrganization": {
+    "active": [
+      "01a1123a-ebfe-7f03-9974-9e7800af626c",
+      "01a11167-005e-7de3-aec9-596974d89007",
+      "01a10e2c-e878-7892-a6eb-147981ecf743",
+      "01a095ee-d6dd-7981-a5bf-148b9bacbd9c"
+    ],
+    "old": [
+      "01a0f808-3150-7903-a6bf-7b8fb4a37956",
+      "01a0fdae-7f36-7862-965d-65152fceac89",
+      "01a0f800-4439-7f83-ae46-5ca05a35eb25",
+      "01a0f30a-cc08-76f0-9b81-ed7e3f22e90b",
+      "01a0f2ee-7565-7093-bfe3-f556b3325ec9",
+      "01a0c60a-5a85-7213-93ed-1fb472d08164"
+    ],
+    "directionSection": "a4105765-35ef-47ab-abaf-76f4dd9f0171",
+    "contextSection": "60165f1b-5c9a-4d95-ae95-0679c909c1fb",
+    "verification": {
+      "requestAccepted": true,
+      "contextThreadsConfirmed": 6,
+      "monitorConfirmed": true,
+      "recentThreadPositionVerified": false,
+      "reason": "El listado conserva IDs client-new-thread para tres chats recientes; la herramienta de UI deniega inspeccionar Codex."
+    }
+  },
+  "limitations": [
+    "Public evidence is a short representative cut, not availability or p95 proof",
+    "Natural adaptive run 37558743501 failed preparing seed, with zero new observations; three server statement-timeout cancellations subsequently confirmed; recovery still unproven",
+    "No commercial seven-piece PC, external-retention or revenue baseline certified",
+    "Legacy API aggregates and API/HTML reference differences remain open",
+    "No refresh dispatch, production database write, account/automation changes or outreach by this task"
+  ],
+  "firstDeliveryCandidate": {
+    "recordedAt": "2026-10-06T19:06:13.962520+00:00",
+    "worktree": "/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina",
+    "branch": "codex/confianza-precios-identidad",
+    "commits": [
+      "c6d45e5fa3e2ca460596f7ed8e2881ef9263f2ef fix(identity): exclude abbreviated notebooks from component selection",
+      "e848055c72a7e9ea8d89255afe91b2d858fc4bbe fix(comparison): preserve selections and detail return context",
+      "f6e4074ff6111fbd46ecdecfece4aa0efe20f4fe fix(product): keep recent offer summaries and references coherent",
+      "5a1990b8459a9e28d11e5c796c209f9c781f9049 test(product): verify offer confidence on the current Worker"
+    ],
+    "status": "published-public-verified",
+    "report": "/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/docs/reports/confianza-2026-10-06/README.md",
+    "coverageG02Closed": false,
+    "refreshIncidentResolved": false,
+    "remotePublication": true,
+    "publishedWith": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+    "publicReport": "/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/docs/reports/recuperacion-refresh-2026-10-06/publicacion/README.md"
+  },
+  "secondDeliveryCandidate": {
+    "recordedAt": "2026-10-07T01:32:10.776426+00:00",
+    "worktree": "/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina",
+    "branch": "codex/recuperacion-refresh",
+    "head": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+    "base": "5a1990b8459a9e28d11e5c796c209f9c781f9049",
+    "commits": [
+      "8188bf00488cf0d742d4bb25c9543158041f6863",
+      "182f9e7ec7d622778a5d14cbe856b1ae7cd997d1",
+      "7a249be58e75be341050cf1a156db4e76ffd2135",
+      "2dc40b81f13dce4dcd108a5689256144e368b70d"
+    ],
+    "includesFirstDelivery": true,
+    "firstDeliveryBranchPreserved": true,
+    "status": "published-public-verified-operation-open",
+    "worktreeClean": true,
+    "report": "/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/docs/reports/recuperacion-refresh-2026-10-06/README.md",
+    "adaptiveIncident": {
+      "githubRunId": 37428162455,
+      "attempted": 1200,
+      "observed": 598,
+      "comparable": 253,
+      "feedClaimed": 984,
+      "inferredRpc": "claim_catalog_refresh",
+      "inferredPhase": "rotation",
+      "inferenceSource": "exact historical code baaaa8ad and nonzero rotation phaseMs",
+      "httpTraceOfFailedClaim": false,
+      "originalServerCauseRetained": false
+    },
+    "requestedIncident": {
+      "githubRunId": 37427607976,
+      "claimSucceeded": true,
+      "failureReason": "no-observation",
+      "sourceStore": "compragamer",
+      "sourceListingId": "10534"
+    },
+    "verification": {
+      "unitPassed": 1688,
+      "unitSkipped": 2,
+      "opsPassed": 25,
+      "entryArtifactCasesPassed": 5,
+      "lintPassed": true,
+      "typecheckPassed": true,
+      "openNextPassed": true,
+      "publicDocuments": 8,
+      "wranglerDryRunPassed": true,
+      "independentReviewCompleted": true,
+      "newVisualAudit": false
+    },
+    "coverageG02Closed": false,
+    "catalogRecoveryProven": false,
+    "refreshOriginalServerCauseResolved": false,
+    "remotePublication": true,
+    "remoteDatabaseWrite": false,
+    "refreshDispatched": false,
+    "versusDecision": "deferred by Jonathan; continue reliability plan",
+    "next": "Diagnose seed preparation failure before Maximus; retain unchanged recovery/coverage gates",
+    "publicReport": "/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/docs/reports/recuperacion-refresh-2026-10-06/publicacion/README.md",
+    "publicVerificationAt": "2026-10-07T02:01:04.748258+00:00"
+  },
+  "prePublicationLimitations": [
+    "Second delivery has final OpenNext build; no new visual E2E audit or SQL replay",
+    "No revenue or external retention baseline certified",
+    "No new deployment, account write, messages to others, automation update, or database write"
+  ],
+  "publication": {
+    "recordedAt": "2026-10-07T02:01:04.748258+00:00",
+    "authorizedBy": "Jonathan: si hacelo",
+    "code": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+    "mainPush": "non-force fast-forward",
+    "workerVersion": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+    "deploymentId": "9f5b5c96-8bff-41ec-bb02-d51704d6f1ab",
+    "deploymentAt": "2026-10-07T01:45:25.154451Z",
+    "trafficPercent": 100,
+    "verifyRunId": 37558527304,
+    "verifyConclusion": "success",
+    "ciUnitPassed": 1688,
+    "ciUnitSkipped": 2,
+    "ciOpsPassed": 25,
+    "ciBrowserPassed": 66,
+    "publicBrowserPassed": 14,
+    "publicHttpPassed": 32,
+    "publicConfidencePassed": true,
+    "ramReadOnlyGetPassed": 4,
+    "workerSample": {
+      "events": 20,
+      "exceptions": 0,
+      "errorLogs": 0,
+      "seconds": 100.99,
+      "allNewVersion": true
+    },
+    "publishedSourceIntegrityMatches": 10,
+    "accountBindingsPreserved": 40,
+    "naturalAdaptiveRun": {
+      "runId": 37558743501,
+      "failureCode": "REFRESH_SEED_TIMEOUT",
+      "attempted": 0,
+      "observed": 0,
+      "comparable": 0,
+      "failedBeforeClaim": true,
+      "seedPathChanged": false,
+      "serverSubcauseRetained": false
+    },
+    "remoteDatabaseWriteByThisTask": false,
+    "refreshDispatchedByThisTask": false,
+    "publicReport": "/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/docs/reports/recuperacion-refresh-2026-10-06/publicacion/README.md",
+    "evidenceBranch": "codex/evidencia-publicacion-2026-10-06",
+    "coverageG02Closed": false,
+    "catalogRecoveryProven": false,
+    "evidenceCommit": "dcefbe7",
+    "evidenceWorkUnit": {
+      "authoredLines": 171,
+      "generatedEvidenceLines": 2449,
+      "screenshots": 3,
+      "codeSourceChanged": false,
+      "remotePushed": false
+    }
+  },
+  "thirdDeliveryCandidate": {
+    "recordedAt": "2026-10-07T03:09:57.598465+00:00",
+    "worktree": "/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina",
+    "branch": "codex/fiabilidad-todas-tiendas",
+    "head": "53d471e08812189fbc86297df2ec112bd4638aba",
+    "base": "dcefbe72998bafabd719e96d9568ab512f81751e",
+    "sourceHead": "1a09fb44be392104569fdb78fa901eac640892be",
+    "commits": [
+      "fb984a222f0b98f2992965db1320b80de45da5ce",
+      "c4c4fa306fc6bb0cf9eb0937e433f974fd1f96fd",
+      "e366bc8b8eca8ab1e22b6eba2fd2c0e46b6fce48",
+      "50aa1776c3a3aec3865ee78312e93e788d5fe8e4",
+      "15cb2ff98e0a2731a36396159d228d9ad59767a2",
+      "fccf4127c2c72fea223ee3f498682c7a4951ec3e",
+      "5f3068469d9cf01e82f4f35092c3a7d92f859ecd",
+      "9a1ad5fb6392fdec1db8e1795cdebe04d69c9148",
+      "1a09fb44be392104569fdb78fa901eac640892be",
+      "53d471e08812189fbc86297df2ec112bd4638aba"
+    ],
+    "status": "local-verified-publication-pending-indexes-deferred",
+    "worktreeClean": true,
+    "report": "/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/docs/reports/fiabilidad-tiendas-2026-10-06/README.md",
+    "storesInspected": 36,
+    "publicCuts": {
+      "requests": [
+        63,
+        51
+      ],
+      "secondReadObservations": 17,
+      "secondOutOfStock": 5,
+      "secondExplicitIdentityConflicts": 3,
+      "offlineAdditionalReaders": 3,
+      "savedObservations": 0
+    },
+    "verification": {
+      "recordedAt": "2026-10-07T03:05:59.770621+00:00",
+      "branch": "codex/fiabilidad-todas-tiendas",
+      "base": "dcefbe72998bafabd719e96d9568ab512f81751e",
+      "productionAtCut": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+      "fullVerify": {
+        "command": "npm run verify",
+        "exitCode": 0,
+        "unitPassed": 1816,
+        "unitSkipped": 2,
+        "unitFilesPassed": 205,
+        "opsPassed": 25,
+        "lintPassed": true,
+        "typesPassed": true,
+        "logSha256": "bd5e2d53515b08c0d93f68c19467ba622501a6ca552314821d6d9354b30367f0"
+      },
+      "sql": {
+        "version": "17.11 local; production 17.6",
+        "migrations": 76,
+        "filesPassed": [
+          "supabase/tests/atomic_catalog_offers.sql",
+          "supabase/tests/paginated_catalog.sql",
+          "supabase/tests/peripheral_reclassification.sql",
+          "supabase/tests/adaptive_payment_conditions.sql",
+          "supabase/tests/complete_computer_categories.sql",
+          "supabase/tests/apu_accessory_categories.sql",
+          "supabase/tests/shared_feed_claims.sql",
+          "supabase/tests/idempotent_catalog_completion.sql",
+          "supabase/tests/catalog_inventory_discovery.sql",
+          "supabase/tests/inventory_detail_fallback.sql",
+          "supabase/tests/bounded_catalog_queue.sql",
+          "supabase/tests/catalog_seed_covering.sql",
+          "supabase/tests/network_thermal_categories.sql",
+          "supabase/tests/current_offer_evidence.sql"
+        ],
+        "concurrencyPassed": 3,
+        "sqlLogSha256": "ed102f0e7a116ae81572362afbe119d2e7ac333cc88475da855cceda88ede4e5",
+        "clusterStopped": true
+      },
+      "openNext": {
+        "command": "DISABLE_INTERNAL_BACKGROUND_REFRESH=1 DISABLE_LIVE_SCRAPING=1 ENABLE_ON_DEMAND_REFRESH=0 NEXT_TELEMETRY_DISABLED=1 npx opennextjs-cloudflare build",
+        "exitCode": 0,
+        "publicDocumentsChecked": 8,
+        "logSha256": "d6f53cdb6d5cd7244eed13a469fe387bce1aaeb4c108ea99cbe1859ece83158d"
+      },
+      "wrangler": {
+        "command": "npx wrangler deploy --dry-run --outdir tmp/fiabilidad-tiendas/worker-dry-run",
+        "exitCode": 0,
+        "totalUploadKiB": 21009.84,
+        "gzipKiB": 5258.53,
+        "logSha256": "7c422e8716915223a01b14da20fa5f8b43f7fa3599a96e9322fde43f20b0596e"
+      },
+      "independentReview": {
+        "profile": "comparador_reviewer",
+        "mode": "read-only no HTTP/DB/refresh",
+        "focusedTestsPassed": 74,
+        "confirmedFindings": 2,
+        "findingsClosed": 2,
+        "newMaterialFinding": false
+      },
+      "replay": {
+        "catalogFocalPassed": 55,
+        "adversarialDollarOne": 5,
+        "newHttpRequests": 0,
+        "savedObservations": 0
+      },
+      "scriptSyntax": {
+        "command": "node --check scripts/qa/audit-store-sources.mjs",
+        "exitCode": 0
+      },
+      "limits": [
+        "No remote migration, delete, vacuum, role/account/plan changes",
+        "No refresh dispatch, seed, claim or offer write",
+        "No candidate deployment or new public UI audit",
+        "No whole-store/catalog, G02 or return/revenue closure"
+      ]
+    },
+    "seedServerCause": {
+      "sqlstate": "57014",
+      "message": "canceling statement due to statement timeout",
+      "cancellations": 3,
+      "runtimeRecoveryProven": false
+    },
+    "capacity": {
+      "plan": "free",
+      "databaseBytes": 926215315,
+      "cacheBytes": 245334016,
+      "cacheRows": 347944,
+      "expiredCacheRows": 346397,
+      "defaultTransactionReadOnly": "off",
+      "liveQuotaLockProven": false,
+      "indexesDecision": "deferred pending capacity/retention; no remote migration"
+    },
+    "publicationProposal": "publish source readers and diagnostics without applying remote indexes, after Jonathan decision",
+    "remotePublication": false,
+    "remoteDatabaseWrite": false,
+    "refreshDispatched": false,
+    "coverageG02Closed": false,
+    "next": "Decide code publication; prepare capacity/retention operation before approving deletion or maintenance; then measure natural cycle and repair per-store matrix.",
+    "recordType": "historical local candidate snapshot; current publication is thirdDeliveryPublication"
+  },
+  "thirdDeliveryPublication": {
+    "status": "published-and-public-verified-coverage-open",
+    "sourceSha": "99d5917b5ec185314d8ae081beb971894709ebcd",
+    "authorization": "Jonathan: ok, hace tu recomendacion; previous recommendation excludes indexes and cleanup",
+    "sourceBranch": "codex/publicacion-fiabilidad-tiendas",
+    "candidateBranchPreserved": "codex/fiabilidad-todas-tiendas",
+    "evidenceBranch": "codex/evidencia-fiabilidad-2026-10-07",
+    "evidenceHead": "8f759a8cf492ade26c579f41057716db6ec697d6",
+    "report": "/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/docs/reports/fiabilidad-tiendas-2026-10-06/publicacion/README.md",
+    "deploy": {
+      "sourceSha": "99d5917b5ec185314d8ae081beb971894709ebcd",
+      "before": {
+        "version": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+        "number": 193
+      },
+      "after": {
+        "version": "652e3c18-4182-43d1-9d98-5f10afd67aa8",
+        "number": 194,
+        "createdAt": "2026-10-07T14:53:28.590662Z",
+        "deployment": "5dd3a28d-bca0-4138-8460-4e3923987cd2",
+        "deployedAt": "2026-10-07T14:53:32.586624Z",
+        "traffic": 100
+      },
+      "bindingDefinitionsPreserved": true,
+      "bindingCount": 40,
+      "buildCheck": {
+        "name": "Workers Builds: comparador-hardware-argentina",
+        "id": "9c2061cb-4ebf-49fc-be3f-35f52e2cbfc1",
+        "conclusion": "success"
+      },
+      "rollback": {
+        "workerVersion": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+        "sourceSha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+        "schemaChanged": false
+      },
+      "limits": [
+        "Metadata verifica nombres/tipos/configuración de bindings, no valores de secretos ni su uso efectivo.",
+        "Código relacionado por check de build del SHA; las lecturas públicas se correlacionan además por eventos de esta versión."
+      ]
+    },
+    "ci": {
+      "sourceSha": "99d5917b5ec185314d8ae081beb971894709ebcd",
+      "runId": 37640084761,
+      "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37640084761",
+      "conclusion": "success",
+      "completedAt": "2026-10-07T14:54:49Z",
+      "lintPassed": true,
+      "typesPassed": true,
+      "unitPassed": 1816,
+      "unitSkipped": 2,
+      "opsPassed": 25,
+      "isolatedBrowserPassed": 66,
+      "migrationsReplayed": 75,
+      "sqlFilesPassed": 13,
+      "concurrencyPassed": 2,
+      "limit": "SQL de CI en PostgreSQL efímero; no migraciones ni índices remotos. Dos casos de índices y la migración correspondiente quedaron fuera de esta publicación."
+    },
+    "publicVerification": {
+      "httpPassed": 32,
+      "browserPassed": 14,
+      "browserRetries": 0,
+      "confidenceResult": "passed",
+      "confidenceCut": "2026-10-07T15:02:07.123Z",
+      "commercialBuildVerified": false,
+      "workerEvents": 2,
+      "workerExpectedVersion": true,
+      "workerExceptions": 0,
+      "workerErrorLogs": 0,
+      "visualCapturesReviewed": [
+        "cpu-publico.png",
+        "gpu-publico.png",
+        "comparador-publico.png"
+      ]
+    },
+    "favicon": {
+      "problem": "ICO still had template triangle",
+      "fix": "existing Comparador C rasterized as ICO and Apple PNG",
+      "bothHostnamesVerified": true,
+      "assetReads": 8,
+      "allBytesMatchCandidate": true,
+      "searchResultUpdatedProven": false,
+      "indexingRequested": false
+    },
+    "indexesApplied": false,
+    "cleanupExecuted": false,
+    "refreshDispatched": false,
+    "wholeCatalogCertified": false,
+    "coverageG02Closed": false,
+    "previousNaturalCycle": {
+      "workflowId": 37626593331,
+      "workflowUrl": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37626593331",
+      "headSha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+      "workflowConclusion": "success",
+      "runnerRunId": "8d274c2a-c80f-451f-a16f-03dd450bf266",
+      "trigger": "cloudflare-fallback",
+      "startedAt": "2026-10-07T13:12:12.288Z",
+      "finishedAt": "2026-10-07T13:29:28.353Z",
+      "status": "deadline",
+      "attempted": 1299,
+      "observed": 653,
+      "comparable": 295,
+      "phaseMs": {
+        "inventory": 3192,
+        "preparation": 14467,
+        "shared": 497076,
+        "rotation": 506337
+      },
+      "failures": {
+        "no-observation": 592,
+        "source-failed": 54
+      },
+      "limit": "Ejecutado antes del release 99d5917; no es atribución de recuperación nueva ni ciclo diario útil G02."
+    },
+    "newNaturalCycleCompletedAtCut": false
+  },
+  "capacityRetentionProposal": {
+    "status": "prepared-reviewed-synthetic-only-approval-pending",
+    "report": "/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/docs/reports/retencion-2026-10-07/PLAN.md",
+    "capacityCut": "2026-10-07T14:39:02.006739+00:00",
+    "databaseBytes": 929205395,
+    "cacheBytes": 245424128,
+    "cacheRows": 348342,
+    "expiredCacheRows": 346653,
+    "defaultTransactionReadOnly": "off",
+    "plan": "free confirmed earlier same-session cut; not changed",
+    "liveQuotaLockProven": false,
+    "evenRemovingWholeCacheRemainingBytes": 683781267,
+    "pilot": {
+      "scope": "operational-store-event",
+      "cutoffUTC": "2026-10-07T14:30:00Z",
+      "maxBatchRows": 250,
+      "maxCommittedBatches": 4,
+      "maxCommittedRows": 1000,
+      "totalLimitEnforcement": "procedural with operator log",
+      "defaultTerminator": "ROLLBACK",
+      "remoteExecuted": false,
+      "approvalReceived": false,
+      "restorationAfterCommitDemonstrated": false,
+      "physicalCapacitySolutionProven": false
+    },
+    "localTest": {
+      "initialRows": 1121,
+      "deletedRows": 1000,
+      "remainingRows": 121,
+      "preservedRows": 71,
+      "eligibleRowsRemaining": 50,
+      "clusterStopped": true
+    },
+    "independentReview": {
+      "profile": "comparador_reviewer",
+      "materialFindings": 0,
+      "mode": "read-only"
+    },
+    "historyRetention": {
+      "historicalExecutionsProven": 27,
+      "lastExecutionDateProven": false,
+      "currentCadenceProven": false,
+      "cleanupEndpointAlsoDeletesGhostOffers": true
+    },
+    "recordType": "historical proposal before subsequent human authorization; execution in capacityRetentionExecution"
+  },
+  "currentState": {
+    "recordedAt": "2026-10-07T17:10:23.500780+00:00",
+    "sourcePublication": "99d5917b5ec185314d8ae081beb971894709ebcd",
+    "publicWorker": "652e3c18-4182-43d1-9d98-5f10afd67aa8",
+    "D01": "closed as code delivery included in current published release",
+    "D02": "six local automation/cache optimizations tested; published guides natural10observed10comparable/9slots pending; fixed sample27of55<=24h/zero accepted<=3h; capacity coverage continuity open",
+    "D03": "utility, complete build and real user return still to demonstrate",
+    "next": "Publish reviewed automation candidate only with explicit authority; verify natural guide/priority/scheduler; recover useful offers and design zero-cost sustainable storage",
+    "noNewAutomation": true,
+    "primaryCheckoutUnrelatedChangesPreserved": true,
+    "localSourceHead": "c69e624",
+    "localBranch": "codex/optimizacion-automatizaciones",
+    "localEvidenceHead": null,
+    "localWorktreeClean": "pending evidence commit; unrelated primary changes preserved",
+    "newReceiptPublication": false,
+    "localPreparationCommit": "eac9b6a",
+    "localMeasurementCommit": "9acaefb"
+  },
+  "capacityRetentionExecution": {
+    "projectId": "zyiyziubpcpgoqlkcrie",
+    "operation": "retencion-2026-10-07-pilot-v1",
+    "authorization": {
+      "humanMessage": "ok continua con tu recomendacion",
+      "scope": "piloto previamente presentado de1000 eventos vencidos; excluye índices/maintenance/plan y otros datos"
+    },
+    "preflight": {
+      "metadata": {
+        "read_at": "2026-10-07 15:17:47.391898+00",
+        "operator_role": "postgres",
+        "default_read_only": "off",
+        "database_bytes": 929205395,
+        "cache_heap_bytes": 158253056,
+        "cache_total_bytes": 245424128,
+        "cache_indexes_bytes": 77922304,
+        "cache_rls": true,
+        "cache_has_rules": false,
+        "user_trigger_count": 0,
+        "incoming_foreign_keys": 0,
+        "operator_can_read_delete": true
+      },
+      "counts": {
+        "cutoff": "2026-10-07 14:30:00+00",
+        "all_rows": 348342,
+        "pilot_scope_eligible": 330295,
+        "active_or_boundary_at_cutoff": 1689,
+        "pilot_scope_updated_after_cutoff": 0
+      }
+    },
+    "rollbackTrial": {
+      "startedAt": "2026-10-07T15:19:10.541Z",
+      "clientElapsedMs": 2264,
+      "result": {
+        "operation": "retencion-2026-10-07-pilot-v1",
+        "cutoff": "2026-10-07 14:30:00+00",
+        "batch_limit": 250,
+        "deleted_rows": 250
+      },
+      "post": {
+        "read_at": "2026-10-07 15:19:37.19098+00",
+        "all_rows": 348342,
+        "pilot_scope_eligible": 330295,
+        "active_or_boundary_at_cutoff": 1689,
+        "pilot_scope_updated_after_cutoff": 0
+      },
+      "verified": true
+    },
+    "committedBatches": [
+      {
+        "batch": 1,
+        "startedAt": "2026-10-07T15:20:10.500Z",
+        "acknowledgedAt": "2026-10-07T15:20:45.411Z",
+        "clientElapsedMs": 1807,
+        "result": {
+          "operation": "retencion-2026-10-07-pilot-v1",
+          "cutoff": "2026-10-07 14:30:00+00",
+          "batch_limit": 250,
+          "deleted_rows": 250
+        },
+        "commitAcknowledged": true
+      },
+      {
+        "batch": 2,
+        "startedAt": "2026-10-07T15:20:45.455Z",
+        "acknowledgedAt": "2026-10-07T15:20:55.759Z",
+        "clientElapsedMs": 1911,
+        "result": {
+          "operation": "retencion-2026-10-07-pilot-v1",
+          "cutoff": "2026-10-07 14:30:00+00",
+          "batch_limit": 250,
+          "deleted_rows": 250
+        },
+        "commitAcknowledged": true
+      },
+      {
+        "batch": 3,
+        "startedAt": "2026-10-07T15:20:55.793Z",
+        "acknowledgedAt": "2026-10-07T15:21:05.952Z",
+        "clientElapsedMs": 1820,
+        "result": {
+          "operation": "retencion-2026-10-07-pilot-v1",
+          "cutoff": "2026-10-07 14:30:00+00",
+          "batch_limit": 250,
+          "deleted_rows": 250
+        },
+        "commitAcknowledged": true
+      },
+      {
+        "batch": 4,
+        "startedAt": "2026-10-07T15:21:05.986Z",
+        "acknowledgedAt": "2026-10-07T15:21:32.332Z",
+        "clientElapsedMs": 1950,
+        "result": {
+          "operation": "retencion-2026-10-07-pilot-v1",
+          "cutoff": "2026-10-07 14:30:00+00",
+          "batch_limit": 250,
+          "deleted_rows": 250
+        },
+        "commitAcknowledged": true
+      }
+    ],
+    "committedRows": 1000,
+    "nextBatch": null,
+    "state": "complete-exactly1000-no-expansion",
+    "postflight": {
+      "read_at": "2026-10-07 15:21:36.554162+00",
+      "default_read_only": "off",
+      "database_bytes": 929205395,
+      "cache_heap_bytes": 158253056,
+      "cache_total_bytes": 245424128,
+      "cache_indexes_bytes": 77922304,
+      "all_rows": 347342,
+      "pilot_scope_eligible": 329295,
+      "active_or_boundary_at_cutoff": 1689,
+      "pilot_scope_updated_after_cutoff": 0
+    },
+    "countsReconciled": true,
+    "physicalBytesChange": 0,
+    "expandedCleanupAuthorized": false,
+    "physicalCapacitySolved": false,
+    "report": "/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/docs/reports/retencion-2026-10-07/ejecucion/README.md",
+    "indexesApplied": false,
+    "historyCleanupExecuted": false,
+    "vacuumOrAnalyzeExecuted": false,
+    "refreshDispatched": false,
+    "planChanged": false,
+    "publicGetChecksPassed": 5
+  },
+  "localHistoryReceiptCandidate": {
+    "recordedAt": "2026-10-07T15:34:56.993713+00:00",
+    "branch": "codex/retencion-comprobable",
+    "sourceCommit": "0ba14fc1dcf54d0034df5c341b09a96c282ce661",
+    "published": false,
+    "productionSource": "99d5917b5ec185314d8ae081beb971894709ebcd",
+    "files": {
+      "src/lib/persistence/price-history-maintenance.ts": "9b0278107f04e9cfa89fbe36ba62f2ac6705ceb36cf6a33e4485fc420f50741d",
+      "src/lib/persistence/price-history-maintenance.test.ts": "d29a0eb4e903049a02720b2d9edc92b3bdbf3416dbd4543d6eb14d52d1d16769"
+    },
+    "focusedTests": {
+      "passed": 64,
+      "profile": "comparador_engineering",
+      "command": "npx vitest run src/lib/persistence/price-history-maintenance.test.ts",
+      "realRpcCalled": false
+    },
+    "lint": {
+      "passed": true,
+      "files": [
+        "src/lib/persistence/price-history-maintenance.ts",
+        "src/lib/persistence/price-history-maintenance.test.ts"
+      ],
+      "profile": "comparador_engineering"
+    },
+    "typecheck": {
+      "startedAt": "2026-10-07T15:33:49.351685+00:00",
+      "completedAt": "2026-10-07T15:33:52.152470+00:00",
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "logSha256": "96b30055c3a4c4100989a9a345c35c1c56b58e4484e802cad839719675d624a9"
+    },
+    "diffCheck": true,
+    "review": {
+      "profile": "comparador_reviewer",
+      "mode": "read-only; mock in memory; no real RPC, HTTP or DB",
+      "confirmedFindings": 1,
+      "closedFindings": 1,
+      "finding": "Date.parse accepted malformed timestamps; calendar and complete timestamp now checked",
+      "newMaterialFinding": false
+    },
+    "limits": [
+      "No history RPC or cleanup execution",
+      "Invalid receipt after RPC does not prove remote rollback",
+      "No new release, scheduler change or account change",
+      "No arithmetic invariant imposed across concurrent counts"
+    ]
+  },
+  "naturalCycleDispatchCut": {
+    "githubReadAt": "2026-10-07T15:31:36.534705+00:00",
+    "latestRunId": 37626593331,
+    "latestSourceSha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+    "newSourceCycleCompleted": false,
+    "schedulerGate": {
+      "read_at": "2026-10-07 15:25:49.690968+00",
+      "scheduler_gate": {
+        "count": 1,
+        "created_at": "2026-10-02T03:11:32.663371+00:00",
+        "updated_at": "2026-10-07T15:11:32.516526+00:00",
+        "window_end": "2026-10-07T16:11:32.516526+00:00"
+      }
+    },
+    "workflowState": "active",
+    "historicalTelemetryRead": {
+      "httpStatus": 403,
+      "code": 10000,
+      "causeOfDispatchFailureProven": false
+    },
+    "browserDashboardAuthenticated": false,
+    "manualDispatch": false,
+    "report": "/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/docs/reports/retencion-2026-10-07/ciclo-natural/README.md",
+    "githubFinalReadAt": "2026-10-07T15:41:02.344476+00:00",
+    "newSourceRunVisible": false,
+    "scheduledMinuteFailureProven": false,
+    "limit": "Final cut at beginning of nominal scheduled minute; GitHub scheduling delay remains possible"
+  },
+  "isolatedHistoryPreparation": {
+    "recordedAt": "2026-10-07T16:08:38.570404+00:00",
+    "status": "local proposal tested/reviewed; productive bounded READ ONLY preflight completed; no remote history DELETE",
+    "proposalCommit": "eac9b6a",
+    "report": "/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/docs/reports/retencion-aislada-2026-10-07/README.md",
+    "syntheticScenarioGroups": 11,
+    "reviewMaterialFindings": [],
+    "productiveReadAt": "2026-10-07T15:59:47.196007+00:00",
+    "examinedRows": 1000,
+    "candidateRows": 36,
+    "rawOrFutureRowsInWindow": 147,
+    "expiredRowsInWindow": 0,
+    "globalEligibilityUnknown": true,
+    "clientElapsedMs": 3183,
+    "clientElapsedIncludesNetwork": true,
+    "sqlStatementTimeout": "3s",
+    "remoteHistoryDelete": false,
+    "remoteDDL": false,
+    "newRefreshDispatch": false,
+    "physicalRecoveryProven": false,
+    "finalEvidenceCommit": "638d6dad0a72fc591b273bc97a02e025964d441a"
+  },
+  "zeroCostCapacityDecision": {
+    "recordedAt": "2026-10-07T16:09:38.151670+00:00",
+    "humanDecision": "Mantener costo cero y aceptar límites de alcance",
+    "duplicateIndexBytes": 1400832,
+    "threeCandidatesBytes": 40312832,
+    "favorableHypotheticalDatabaseAfterWholeCacheAndThreeIndexes": 643468435,
+    "hypothesisIsNotExecutableSavingsProof": true,
+    "below500MBProven": false,
+    "protected": [
+      "comparison",
+      "complete builder",
+      "identity",
+      "freshness",
+      "G02 sample and denominators"
+    ],
+    "recommendation": "Freeze storage-expanding scope; prepare sustainable local storage design. Duplicate removal secondary; keep other history indexes and home price drops until proportional evidence.",
+    "indexChangesExecuted": false,
+    "report": "/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/docs/reports/retencion-aislada-2026-10-07/costo-cero/PLAN.md",
+    "finalEvidenceCommit": "638d6dad0a72fc591b273bc97a02e025964d441a"
+  },
+  "naturalCycleObservedCut": {
+    "recordedAt": "2026-10-07T16:14:12.294535+00:00",
+    "sourceWorkerVersion": "652e3c18-4182-43d1-9d98-5f10afd67aa8",
+    "scheduledEvent": {
+      "readAt": "2026-10-07T16:11:26.998289+00:00",
+      "cron": "11 * * * *",
+      "scheduledTime": 1791389469000,
+      "outcome": "ok",
+      "scriptVersionId": "652e3c18-4182-43d1-9d98-5f10afd67aa8",
+      "codes": [],
+      "results": [
+        "deferred"
+      ],
+      "messages": [
+        "completed"
+      ],
+      "exceptionCount": 0
+    },
+    "resultMeaning": "Rate gate denied; this event did not send workflow dispatch",
+    "priorGateWindowEnd": "2026-10-07T16:11:32.516526Z",
+    "newSourceCompletedCycleProven": false,
+    "githubFinalRead": {
+      "startedAt": "2026-10-07T16:13:05.333334+00:00",
+      "readAt": "2026-10-07T16:13:15.341518+00:00",
+      "status": "TIMEOUT_10S",
+      "runsUnknown": true,
+      "previousReadAttempt": {
+        "status": "TIMEOUT_20S",
+        "absenceOfRunProven": false
+      }
+    },
+    "observerStopped": true,
+    "manualDispatch": false,
+    "report": "/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/docs/reports/retencion-aislada-2026-10-07/README.md",
+    "finalEvidenceCommit": "638d6dad0a72fc591b273bc97a02e025964d441a"
+  },
+  "automationCodeReview": {
+    "recordedAt": "2026-10-07T17:10:23.500780+00:00",
+    "report": "/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/docs/reports/automatizaciones-codigo-2026-10-07/README.md",
+    "branch": "codex/optimizacion-automatizaciones",
+    "base": "638d6da",
+    "codeHead": "c69e624",
+    "unitCommits": {
+      "U1": "c68d84d",
+      "U2": "181cfc9",
+      "A1": "8d65c00",
+      "U3": "b195d2f",
+      "A2": "761d596",
+      "A3": "c69e624"
+    },
+    "initialScripts": 30,
+    "candidateScripts": 32,
+    "workflows": 6,
+    "npmCommands": 21,
+    "unitPassed": 1922,
+    "unitSkipped": 2,
+    "opsPassed": 41,
+    "openNextBuild": "passed",
+    "independentReview": "no material findings; monitor contract gaps corrected",
+    "publicReference": "99d5917",
+    "naturalGuidesRun": 37652691808,
+    "ownObserved": 10,
+    "ownComparable": 10,
+    "missingGuideSlots": 9,
+    "fixedSampleDenominator": 55,
+    "fixedSampleFresh24h": 27,
+    "fixedSampleAccepted3h": 0,
+    "newDailyUsefulG02Demonstrated": false,
+    "measurementFailedProvider": "eneba",
+    "otherProvidersVerified": 8,
+    "measurementsPersisted": true,
+    "publicHomePersisted": true,
+    "naturalEnebaRun": 37653916174,
+    "capacityClosed": false,
+    "heartbeatChanged": false,
+    "monitorOriginalCharacters": 48170,
+    "monitorCandidateCharacters": 9585,
+    "localOnly": true,
+    "remoteMutationThisReview": false
+  }
+}

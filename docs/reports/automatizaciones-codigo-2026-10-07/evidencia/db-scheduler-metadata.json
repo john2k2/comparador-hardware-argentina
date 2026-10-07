@@ -1,0 +1,9 @@
+{
+  "readAt": "2026-10-07T16:38:48.058082+00:00",
+  "projectId": "zyiyziubpcpgoqlkcrie",
+  "readOnly": true,
+  "statementTimeoutSeconds": 3,
+  "pgCronInstalled": false,
+  "cronJobRelationPresent": false,
+  "cronRunDetailsRelationPresent": false
+}
