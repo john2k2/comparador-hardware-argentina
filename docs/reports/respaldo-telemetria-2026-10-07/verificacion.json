@@ -1,0 +1,187 @@
+{
+  "completedUnit": "backup-restore-and-prepared-retirement",
+  "projectId": "zyiyziubpcpgoqlkcrie",
+  "selection": {
+    "cutoff": "2026-10-07T20:10:00.000000Z",
+    "rows": 250,
+    "endpointRows": 149,
+    "storeRows": 101,
+    "receiptSha256": "28200f5820003ab6634f2acd09ac0322a61395bfb5d3175d230b271b99aee009"
+  },
+  "archive": {
+    "manifestSha256": "6558b3d3ccc94614e90a16264c835cd604a1f8afac18ef7791e50847e848a654",
+    "rawBytes": 120359,
+    "gzipBytes": 10711,
+    "gzipSha256": "6c8bfa764172ada8f3390ecec69c3432dda3dd86bebf0c896faa89088ff9ce32",
+    "rawSha256": "f7d9667414dd1db556aa158749c83adc51faa19d0e1516c7744edd51d5ba7e8f",
+    "compressionPercent": 91.1
+  },
+  "sourceExport": {
+    "completedAt": "2026-10-07T20:56:34.985Z",
+    "pages": 5,
+    "sourceCsvBytes": 101582,
+    "sourceCsvSha256": "ecc578528d2d249d3ac7e04b501c65da2a66d292a610290b13854a432fa5b280",
+    "selected": 250,
+    "originalRowsRemoved": 0,
+    "transactionalSnapshot": false
+  },
+  "storage": {
+    "action": "upload",
+    "completedAt": "2026-10-07T20:57:34.829Z",
+    "bucket": "catalog-history-archive",
+    "private": true,
+    "prefix": "telemetry/v1/6558b3d3ccc94614e90a16264c835cd604a1f8afac18ef7791e50847e848a654",
+    "storedBytes": 11352,
+    "manifestSha256": "6558b3d3ccc94614e90a16264c835cd604a1f8afac18ef7791e50847e848a654",
+    "uploadedObjects": 2,
+    "reusedObjects": 0,
+    "verifiedRows": 250,
+    "originalRowsRemoved": 0,
+    "physicalSavingProven": false
+  },
+  "download": {
+    "action": "download",
+    "completedAt": "2026-10-07T20:58:56.193Z",
+    "rows": 250,
+    "prefix": "telemetry/v1/6558b3d3ccc94614e90a16264c835cd604a1f8afac18ef7791e50847e848a654",
+    "manifestSha256": "6558b3d3ccc94614e90a16264c835cd604a1f8afac18ef7791e50847e848a654",
+    "remoteBytesExact": true,
+    "originalRowsRemoved": 0
+  },
+  "restore": {
+    "completedAt": "2026-10-07T21:08:11.417Z",
+    "postgresVersion": "17.11 (Homebrew)",
+    "sampleRows": 250,
+    "restoredFields": 6,
+    "cases": [
+      "250 rows and all six fields equal the original CSV in PostgreSQL",
+      "generated preview is read-only and matches exactly the backed-up batch",
+      "downloaded backup restores exactly after committed local deletion",
+      "repeated restoration does not duplicate or overwrite rows",
+      "an existing renewed row is preserved instead of overwritten",
+      "failed transaction rolls back its earlier local deletion",
+      "payload-only changes, changed creation timestamps and missing rows are excluded from retirement",
+      "large JSON numbers, decimals, null, escaped keys and microseconds survive PG17",
+      "dollar-quoted retirement preserves escaped JSON independently of session string settings",
+      "active cache, other scopes, prices, users and history remain unchanged"
+    ],
+    "casesPassed": 10,
+    "exactSampleRestore": true,
+    "sourceCsvSha256": "ecc578528d2d249d3ac7e04b501c65da2a66d292a610290b13854a432fa5b280",
+    "manifestSha256": "6558b3d3ccc94614e90a16264c835cd604a1f8afac18ef7791e50847e848a654",
+    "committedDeleteRestoreLocalOnly": true,
+    "restoredFromDownloadedObjects": true,
+    "durationMs": 1443,
+    "localOnly": true,
+    "productionRestore": false,
+    "originalRowsRemoved": 0,
+    "physicalSavingProven": false,
+    "clusterStopped": true
+  },
+  "sourceCheck": {
+    "action": "check-source",
+    "completedAt": "2026-10-07T21:03:19.415Z",
+    "rows": 250,
+    "sixFieldsUnchanged": true,
+    "pages": 5,
+    "originalRowsRemoved": 0
+  },
+  "access": {
+    "completedAt": "2026-10-07T21:06:34.627Z",
+    "private": true,
+    "checks": [
+      {
+        "file": "gzip",
+        "publicStatus": 400,
+        "anonymousStatus": 400,
+        "readDenied": true
+      },
+      {
+        "file": "manifest",
+        "publicStatus": 400,
+        "anonymousStatus": 400,
+        "readDenied": true
+      }
+    ],
+    "policiesChanged": 0,
+    "originalRowsRemoved": 0
+  },
+  "capacityPost": {
+    "observed_at": "2026-10-07 21:03:19.84103+00",
+    "database_version": "PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit",
+    "database_bytes": 930827411,
+    "cache_bytes": 245456896,
+    "history_bytes": 176742400,
+    "objects": 21,
+    "object_bytes": "102016",
+    "bucket_public": false,
+    "storage_policies": 0
+  },
+  "retirementPrepared": {
+    "completedAt": "2026-10-07T21:09:04.304Z",
+    "selected": 250,
+    "fieldsCompared": 6,
+    "selectionSha256": "28200f5820003ab6634f2acd09ac0322a61395bfb5d3175d230b271b99aee009",
+    "manifestSha256": "6558b3d3ccc94614e90a16264c835cd604a1f8afac18ef7791e50847e848a654",
+    "previewSha256": "4e60051117d15388a1e8a7481c6b9bcc6ba25fc0a8ca031ac12e9dae94cf12f9",
+    "applySha256": "28e6aa1bf4ed207b225f7fefc5fffef5ed59db7e5e19e253d366a3706f9ae58e",
+    "restoreSha256": "91af6e981763bc55b27258301f310178c86e93978f09d9d8ae1da0889bbe4a65",
+    "executionIncluded": false,
+    "productionMutationApproved": false,
+    "originalRowsRemoved": 0
+  },
+  "tests": {
+    "newBehaviorPassed": 20,
+    "operationalPassed": 96,
+    "operationalFailed": 0,
+    "operationalSkipped": 0,
+    "operationalDurationMs": 2271.70575,
+    "command": "npm run test:ops"
+  },
+  "review": {
+    "profile": "comparador_reviewer",
+    "model": "gpt-6.1-sol",
+    "reasoning": "high",
+    "readOnly": true,
+    "materialFindingsOpen": 0,
+    "sourceCsvAndRemoteObjectsIndependentlyCompared": true,
+    "threeFinalSqlReconciled": true,
+    "remoteAndPgExecutedByCoordinatorOnly": true
+  },
+  "attempts": {
+    "pgReceiptsRetained": [
+      "restore-first.json",
+      "restore-final.json",
+      "restore-quoted-final.json",
+      "restore-and-retirement-verified.json"
+    ],
+    "privacyInitialFailures": [
+      "relative-import-before-network",
+      "SDK-error-did-not-carry-HTTP-status"
+    ],
+    "privacyFinalActualHttpStatuses": [
+      400,
+      400,
+      400,
+      400
+    ],
+    "localGzipRecoveryDependencyFixed": true,
+    "sqlDollarQuoteFixed": true,
+    "earlierSqlSuperseded": true
+  },
+  "limits": {
+    "sourceTransactionalSnapshot": false,
+    "allDatabaseBackedUp": false,
+    "independentCloudProviderBackup": false,
+    "productionRestoreProven": false,
+    "originalRowsRemoved": 0,
+    "physicalSavingBytesProven": 0,
+    "physicalCapacityClosed": false,
+    "productionMutationApproved": false,
+    "published": false,
+    "schedulerChanged": false,
+    "bucketPoliciesChanged": false,
+    "accountOrPlanChanged": false
+  },
+  "privateEvidenceDirectory": "tmp/respaldo-telemetria-2026-10-07"
+}
