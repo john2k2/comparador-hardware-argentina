@@ -4,9 +4,11 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 vi.mock('@/lib/server/supabase-server', () => ({
   getServerSupabaseServiceClient: vi.fn(() => null),
 }));
+vi.mock('@/lib/logger', () => ({ logger: { warn: vi.fn() } }));
 
-import { getSharedCache, setSharedCache, deleteSharedCache } from './shared-cache';
+import { getSharedCache, setSharedCache, deleteSharedCache, preloadCache, clearScopeCache } from './shared-cache';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
+import { logger } from '@/lib/logger';
 
 function mockExpiredEntry(key: string, expiresAt: string, renewAfterRead = false) {
   let row: { cache_key: string; payload: unknown; expires_at: string } | null = {
@@ -46,6 +48,7 @@ describe('shared-cache', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-04-14T10:00:00Z'));
     vi.mocked(getServerSupabaseServiceClient).mockReturnValue(null);
+    vi.mocked(logger.warn).mockClear();
   });
 
   afterEach(() => {
@@ -213,6 +216,60 @@ describe('shared-cache', () => {
 
       const cached = await getSharedCache('long-scope', 'long-key');
       expect(cached).toEqual({ data: 'persistent' });
+    });
+  });
+
+  describe('ACK de persistencia best effort', () => {
+    it.each(['resolved-error', 'rejected'] as const)('%s conserva caché local y registra sólo scope/código', async (mode) => {
+      const failure = { code: '57014', message: 'PRIVATE key url payload', details: 'PRIVATE' };
+      const write = vi.fn(() => mode === 'rejected' ? Promise.reject(failure) : Promise.resolve({ error: failure }));
+      const deletion = {
+        eq: vi.fn(() => deletion), like: write, lte: write,
+        then: (resolve: (value: { error: unknown }) => unknown, reject: (reason: unknown) => unknown) => write().then(resolve, reject),
+      };
+      const client = { from: vi.fn(() => ({
+        upsert: write, delete: vi.fn(() => deletion),
+        select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn(async () => ({
+          data: { payload: {}, expires_at: '2026-04-14T09:00:00Z' }, error: null,
+        })) })) })),
+      })) };
+      vi.mocked(getServerSupabaseServiceClient).mockReturnValue(client as unknown as ReturnType<typeof getServerSupabaseServiceClient>);
+      const scope = `ack-${mode}`;
+
+      await setSharedCache(scope, 'single', { version: 1 }, 60_000);
+      await preloadCache([{ scope, key: 'bulk', value: { version: 2 }, ttlMs: 60_000 }]);
+      expect(await getSharedCache(scope, 'single')).toEqual({ version: 1 });
+      expect(await getSharedCache(scope, 'bulk')).toEqual({ version: 2 });
+      await expect(deleteSharedCache(scope, 'single')).resolves.toBeUndefined();
+      await expect(clearScopeCache(scope)).resolves.toBeUndefined();
+      await expect(getSharedCache(scope, 'expired')).resolves.toBeUndefined();
+
+      expect(write).toHaveBeenCalledTimes(5);
+      expect(logger.warn).toHaveBeenCalledTimes(5);
+      for (const [, context] of vi.mocked(logger.warn).mock.calls) {
+        expect(context).toEqual({ scope: 'shared-cache', code: '57014' });
+      }
+      expect(JSON.stringify(vi.mocked(logger.warn).mock.calls)).not.toContain('PRIVATE');
+      expect(JSON.stringify(vi.mocked(logger.warn).mock.calls)).not.toContain(scope);
+    });
+
+    it('ACK exitoso no registra fallo y skipDbWrite no escribe', async () => {
+      const upsert = vi.fn(async () => ({ error: null }));
+      const client = { from: vi.fn(() => ({ upsert })) };
+      vi.mocked(getServerSupabaseServiceClient).mockReturnValue(client as unknown as ReturnType<typeof getServerSupabaseServiceClient>);
+      await setSharedCache('ack-ok', 'saved', {}, 60_000);
+      await setSharedCache('ack-ok', 'local', {}, 60_000, { skipDbWrite: true });
+      await preloadCache([{ scope: 'ack-ok', key: 'bulk', value: {}, ttlMs: 60_000 }]);
+      expect(upsert).toHaveBeenCalledTimes(2);
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('descarta códigos inválidos del registro', async () => {
+      const client = { from: vi.fn(() => ({ upsert: vi.fn(async () => ({ error: { code: 'PRIVATE-url', message: 'PRIVATE' } })) })) };
+      vi.mocked(getServerSupabaseServiceClient).mockReturnValue(client as unknown as ReturnType<typeof getServerSupabaseServiceClient>);
+      await setSharedCache('ack-invalid', 'key', {}, 60_000);
+      expect(logger.warn).toHaveBeenCalledWith(expect.any(String), { scope: 'shared-cache', code: null });
+      expect(JSON.stringify(vi.mocked(logger.warn).mock.calls)).not.toContain('PRIVATE');
     });
   });
 });

@@ -1,5 +1,22 @@
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 import { getRedisCache, setRedisCache, isRedisEnabled } from '@/lib/server/redis-cache';
+import { logger } from '@/lib/logger';
+
+function logCacheFailure(error: unknown): void {
+  const candidate = error && typeof error === 'object' && 'code' in error ? error.code : null;
+  const code = typeof candidate === 'string' && /^[0-9A-Z]{5}$/.test(candidate) ? candidate : null;
+  logger.warn('Fallo de operación de caché compartida', { scope: 'shared-cache', code });
+}
+
+// Persistencia best effort: un ACK fallido o un rechazo no invalida la caché local.
+async function writeDatabaseCache(write: () => PromiseLike<{ error: unknown }>): Promise<void> {
+  try {
+    const { error } = await write();
+    if (error) logCacheFailure(error);
+  } catch (error) {
+    logCacheFailure(error);
+  }
+}
 
 type CacheEntry = {
   value: unknown;
@@ -94,7 +111,7 @@ export async function getSharedCache<T>(
           const freshValue = await options.revalidateCallback!();
           await setSharedCache(scope, key, freshValue, local.expiresAt - local.staleAt);
         } catch (error) {
-          console.warn('[SharedCache] Background revalidation failed:', error);
+          logCacheFailure(error);
         }
       })();
     }
@@ -121,7 +138,7 @@ export async function getSharedCache<T>(
         return redisValue;
       }
     } catch (error) {
-      console.warn('[SharedCache] Redis get failed:', error);
+      logCacheFailure(error);
     }
     metrics.redisMisses++;
   }
@@ -146,12 +163,12 @@ export async function getSharedCache<T>(
     metrics.dbMisses++;
     if (Number.isFinite(expiresAtMs)) {
       // Revalidar en el DELETE: otra request pudo renovar la entrada desde el SELECT.
-      await supabase
+      await writeDatabaseCache(() => supabase
         .from('api_cache_entries')
         .delete()
         .eq('cache_key', scopedKey)
         .eq('expires_at', data.expires_at)
-        .lte('expires_at', new Date(now).toISOString());
+        .lte('expires_at', new Date(now).toISOString()));
     }
     return undefined;
   }
@@ -201,7 +218,7 @@ export async function setSharedCache<T>(
     try {
       await setRedisCache(scopedKey, value, Math.ceil(ttlMs / 1000));
     } catch (error) {
-      console.warn('[SharedCache] Redis set failed:', error);
+      logCacheFailure(error);
     }
   }
 
@@ -213,24 +230,17 @@ export async function setSharedCache<T>(
 
   // Fire-and-forget — no bloquear la respuesta en la escritura a Supabase.
   // El cache local ya sirve la siguiente request.
-  void (async () => {
-    try {
-      await supabase
-        .from('api_cache_entries')
-        .upsert({
-          cache_key: scopedKey,
-          scope,
-          payload: value,
-          expires_at: new Date(expiresAt).toISOString(),
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'cache_key',
-        });
-    } catch (dbError) {
-      // Fallos de cache persistente son no-críticos; el cache local sigue funcionando.
-      console.warn('[SharedCache] DB upsert failed (non-critical):', dbError);
-    }
-  })();
+  void writeDatabaseCache(() => supabase
+    .from('api_cache_entries')
+    .upsert({
+      cache_key: scopedKey,
+      scope,
+      payload: value,
+      expires_at: new Date(expiresAt).toISOString(),
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'cache_key',
+    }));
 }
 
 /**
@@ -260,25 +270,21 @@ export async function preloadCache(
   const supabase = getServerSupabaseServiceClient();
   if (!supabase) return;
   
-  void (async () => {
-    try {
-      const dbEntries = entries.map((entry) => ({
-        cache_key: buildScopedKey(entry.scope, entry.key),
-        scope: entry.scope,
-        payload: entry.value,
-        expires_at: new Date(now + entry.ttlMs).toISOString(),
-        updated_at: new Date().toISOString(),
-      }));
-      
-      await supabase
-        .from('api_cache_entries')
-        .upsert(dbEntries, {
-          onConflict: 'cache_key',
-        });
-    } catch (dbError) {
-      console.warn('[SharedCache] Bulk DB upsert failed (non-critical):', dbError);
-    }
-  })();
+  void writeDatabaseCache(() => {
+    const dbEntries = entries.map((entry) => ({
+      cache_key: buildScopedKey(entry.scope, entry.key),
+      scope: entry.scope,
+      payload: entry.value,
+      expires_at: new Date(now + entry.ttlMs).toISOString(),
+      updated_at: new Date().toISOString(),
+    }));
+
+    return supabase
+      .from('api_cache_entries')
+      .upsert(dbEntries, {
+        onConflict: 'cache_key',
+      });
+  });
 }
 
 export async function deleteSharedCache(scope: string, key: string): Promise<void> {
@@ -291,14 +297,14 @@ export async function deleteSharedCache(scope: string, key: string): Promise<voi
       const { deleteRedisCache } = await import('@/lib/server/redis-cache');
       await deleteRedisCache(scopedKey);
     } catch (error) {
-      console.warn('[SharedCache] Redis delete failed:', error);
+      logCacheFailure(error);
     }
   }
 
   const supabase = getServerSupabaseServiceClient();
   if (!supabase) return;
 
-  await supabase.from('api_cache_entries').delete().eq('cache_key', scopedKey);
+  await writeDatabaseCache(() => supabase.from('api_cache_entries').delete().eq('cache_key', scopedKey));
 }
 
 /**
@@ -318,15 +324,15 @@ export async function clearScopeCache(scope: string): Promise<void> {
       const { deleteRedisPattern } = await import('@/lib/server/redis-cache');
       await deleteRedisPattern(`${scope}:*`);
     } catch (error) {
-      console.warn('[SharedCache] Redis clear scope failed:', error);
+      logCacheFailure(error);
     }
   }
 
   const supabase = getServerSupabaseServiceClient();
   if (!supabase) return;
 
-  await supabase
+  await writeDatabaseCache(() => supabase
     .from('api_cache_entries')
     .delete()
-    .like('cache_key', `${scope}:%`);
+    .like('cache_key', `${scope}:%`));
 }

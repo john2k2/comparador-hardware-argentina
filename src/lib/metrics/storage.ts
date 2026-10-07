@@ -1,4 +1,5 @@
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
+import { logger } from '@/lib/logger';
 import type { StoreScrapeEvent, EndpointRequestEvent, OperationalTelemetryState } from './types';
 import type { PersistedEntryRow } from './types';
 import {
@@ -17,17 +18,27 @@ async function persistTelemetryEntry(scope: string, cacheKey: string, payload: S
   if (!supabase) return;
 
   const expiresAt = new Date(Date.now() + PERSISTED_EVENT_TTL_MS).toISOString();
-  await supabase
-    .from('api_cache_entries')
-    .upsert({
-      cache_key: cacheKey,
-      scope,
-      payload,
-      expires_at: expiresAt,
-      updated_at: new Date().toISOString(),
-    }, {
-      onConflict: 'cache_key',
-    });
+  try {
+    const { error } = await supabase
+      .from('api_cache_entries')
+      .upsert({
+        cache_key: cacheKey,
+        scope,
+        payload,
+        expires_at: expiresAt,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'cache_key',
+      });
+    if (error) throw error;
+  } catch (error) {
+    const candidate = error && typeof error === 'object' && 'code' in error ? error.code : null;
+    const code = typeof candidate === 'string' && /^[0-9A-Z]{5}$/.test(candidate) ? candidate : null;
+    const safeScope = scope === STORE_SCOPE || scope === ENDPOINT_SCOPE ? scope : 'unknown';
+    logger.warn('Fallo de persistencia de telemetría operativa', { scope: safeScope, code });
+    // El recorder puede absorber el rechazo; el recibo saneado queda en este nivel.
+    throw new Error('OPERATIONAL_TELEMETRY_WRITE_FAILED');
+  }
 }
 
 export async function readPersistedTelemetryState(nowMs = Date.now()): Promise<OperationalTelemetryState | null> {
