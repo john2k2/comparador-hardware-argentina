@@ -3,6 +3,7 @@ import { runAdaptiveRefresh } from '../../src/lib/catalog/adaptive-refresh';
 import { runPriorityRefresh } from '../../src/lib/catalog/priority-refresh';
 import { runRequestedRefresh } from '../../src/lib/catalog/on-demand/worker';
 import { sourceHttpMetrics } from '../../src/lib/scrapers/source-http';
+import { extractRefreshClaimDiagnostic } from '../../src/lib/catalog/refresh-diagnostics';
 
 const [mode, output] = process.argv.slice(2);
 if (!output || !['priority', 'guides', 'requested', 'adaptive'].includes(mode)) throw new Error('INVALID_REFRESH_ARGUMENTS');
@@ -14,6 +15,8 @@ try {
 } catch (error) {
   // El log del runner conserva códigos propios, nunca mensajes de SDK o secretos.
   const code = error instanceof Error && /^(?:PRIORITY|REFRESH)_[A-Z_]+$/.test(error.message) ? error.message : 'REFRESH_FAILED';
-  await writeFile(output, JSON.stringify({ error: code, sourceHttp: sourceHttpMetrics() }, null, 2));
+  const claimDiagnostic = extractRefreshClaimDiagnostic(error);
+  await writeFile(output, JSON.stringify({ error: code,
+    ...(claimDiagnostic ? { claimDiagnostic } : {}), sourceHttp: sourceHttpMetrics() }, null, 2));
   process.exitCode = 1;
 }

@@ -35,6 +35,7 @@ vi.mock('@/lib/persistence/product-write-dedupe', () => ({ buildPriceStateSignat
 
 import { runRequestedRefresh, fetchKnownOffer, createKnownOfferContext } from './worker';
 import type { RefreshJob, RefreshTarget } from './contracts';
+import { extractRefreshClaimDiagnostic } from '../refresh-diagnostics';
 
 const target: RefreshTarget = {
   productId: 'gpu-4060',
@@ -89,7 +90,7 @@ function sourceProduct(overrides: { name?: string; offer?: Partial<ProductPrice>
     id: 'scraped-gpu',
     name: overrides.name ?? 'Gigabyte GeForce RTX 4060 Eagle 8GB',
     category: 'tarjetas-graficas',
-    prices: [price({ storeId: target.storeId, storeName: 'Mexx', ...overrides.offer })],
+    prices: [price({ storeId: target.storeId, storeName: 'Mexx', price: 420_000, ...overrides.offer })],
   });
 }
 
@@ -156,7 +157,8 @@ describe('runRequestedRefresh', () => {
     const result = await runRequestedRefresh();
     const persistCall = mocks.rpc.mock.calls.find(([name]) => name === 'persist_verified_requested_offer');
 
-    expect(result).toEqual({ processed: true, jobId: job.id, status: 'completed' });
+    expect(result).toEqual({ processed: true, jobId: job.id, status: 'completed',
+      attempted: 1, observed: 1, comparable: 1, failures: {} });
     expect(mocks.reviewProductOffers).toHaveBeenCalledWith(
       [expect.objectContaining({ name: 'Gigabyte GeForce RTX 4060 8GB' })],
       { authorizedRefresh: true, sourceTitles: { [target.url]: sourceTitle } },
@@ -198,7 +200,8 @@ describe('runRequestedRefresh', () => {
       configureClaimedJob(found);
       const result = await runRequestedRefresh();
 
-      expect(result).toEqual({ processed: true, jobId: job.id, status: 'failed' });
+      expect(result).toEqual({ processed: true, jobId: job.id, status: 'failed',
+        attempted: 1, observed: 0, comparable: 0, failures: { 'no-observation': 1 } });
       expect(mocks.rpc.mock.calls.some(([name]) => name === 'persist_verified_requested_offer')).toBe(false);
     }
   });
@@ -229,6 +232,7 @@ describe('runRequestedRefresh', () => {
     const persistCall = mocks.rpc.mock.calls.find(([name]) => name === 'persist_verified_requested_offer');
 
     expect(result.status).toBe('completed');
+    expect(result).toMatchObject({ attempted: 1, observed: 1, comparable: 0, failures: {} });
     expect(persistCall?.[1]).toMatchObject({ p_stock: 'out-of-stock' });
     expect(mocks.from.mock.results[0].value.update).toHaveBeenCalledWith(expect.objectContaining({ results: [expect.objectContaining({ state: 'unavailable', comparable: false })] }));
   });
@@ -256,6 +260,10 @@ describe('runRequestedRefresh', () => {
     const update = mocks.from.mock.results[0].value.update;
 
     expect(result.status).toBe('failed');
+    expect(result).toMatchObject({ attempted: 1, observed: 0, comparable: 0, failures: { 'persist-failed': 1 } });
+    expect(mocks.rpc).toHaveBeenCalledWith('persist_verified_requested_offer', expect.objectContaining({
+      p_price: 420_000, p_url: target.url,
+    }));
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ results: [expect.objectContaining({ state: 'failed' })] }));
     expect(update).not.toHaveBeenCalledWith(expect.objectContaining({ results: [expect.objectContaining({ state: 'updated' })] }));
   });
@@ -279,6 +287,44 @@ describe('runRequestedRefresh', () => {
     configureFinalUpdate([]);
 
     await expect(runRequestedRefresh()).rejects.toThrow('REFRESH_LEASE_EXPIRED');
+  });
+
+  it.each(['response', 'rejection'])('identifica el claim fallido por %s sin reintentar ni revelar el SDK', async (mode) => {
+    const raw = { code: 'PGRST003', message: 'PRIVATE_CREDENTIAL', details: 'private SQL', hint: 'private URL' };
+    mocks.rpc.mockImplementationOnce(async () => {
+      vi.advanceTimersByTime(17);
+      if (mode === 'rejection') throw raw;
+      return { data: null, error: raw };
+    });
+    const error = await runRequestedRefresh().catch(error => error);
+    expect(error.message).toBe('REFRESH_CLAIM_FAILED');
+    expect(extractRefreshClaimDiagnostic(error)).toEqual({ rpc: 'claim_offer_refresh',
+      phase: 'requested', batchIndex: 1, limit: 1, elapsedMs: 17, code: 'PGRST003' });
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
+    expect(mocks.readBuilderCatalog).not.toHaveBeenCalled();
+    expect(mocks.from).not.toHaveBeenCalled();
+    expect(JSON.stringify(error)).not.toMatch(/PRIVATE_CREDENTIAL|private SQL|private URL/);
+  });
+
+  it('conserva las observaciones guardadas en un resultado parcial y distingue una ficha ausente', async () => {
+    configureClaimedJob();
+    const missing = { ...target, productId: 'missing-product', url: 'https://mexx.com.ar/missing-product' };
+    mocks.rpc.mockImplementation(async (name: string) => name === 'claim_offer_refresh'
+      ? { data: { ...job, targets: [target, missing] }, error: null } : { data: true, error: null });
+    const result = await runRequestedRefresh();
+    expect(result).toMatchObject({ status: 'partial', attempted: 2, observed: 1, comparable: 1,
+      failures: { 'product-not-found': 1 } });
+    expect(mocks.rpc.mock.calls.filter(([name]) => name === 'persist_verified_requested_offer')).toHaveLength(1);
+  });
+
+  it('registra un fallo de procesamiento sin contarlo como observación ni copiar su mensaje', async () => {
+    configureClaimedJob();
+    mocks.readBuilderCatalog.mockRejectedValueOnce(new Error('PRIVATE_CREDENTIAL'));
+    const result = await runRequestedRefresh();
+    expect(result).toMatchObject({ status: 'failed', attempted: 1, observed: 0, comparable: 0,
+      failures: { 'processing-failed': 1 } });
+    expect(JSON.stringify(result)).not.toContain('PRIVATE_CREDENTIAL');
+    expect(mocks.rpc.mock.calls.some(([name]) => name === 'persist_verified_requested_offer')).toBe(false);
   });
 });
 

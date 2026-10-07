@@ -17,6 +17,7 @@ import { bindReviewToSource, hasExplicitIdentityConflict, needsIdentityReview } 
 import { isOfferFresh } from '@/lib/price-freshness';
 import { normalizeIdentityText, parseCpuModelSignature, parseGpuChipSignature } from '@/lib/product-identity';
 import { inferHardwareCategoryFromName } from '@/lib/catalog/hardware-categories';
+import { createRefreshClaimError } from '../refresh-diagnostics';
 import type { Product, ProductPrice } from '@/lib/types';
 import type { RefreshItemResult, RefreshJob, RefreshTarget } from './contracts';
 
@@ -138,11 +139,28 @@ export async function fetchKnownOffer(product: Product, target: RefreshTarget, s
   if (!context.failures.has(target.url)) context.failures.set(target.url, 'no-observation');
   return null;
 }
-export async function runRequestedRefresh(context = createKnownOfferContext()): Promise<{ processed: boolean; jobId?: string; status?: RefreshJob['status'] }> {
+type RequestedRefreshSummary = {
+  processed: boolean;
+  jobId?: string;
+  status?: RefreshJob['status'];
+  attempted?: number;
+  observed?: number;
+  comparable?: number;
+  failures?: Record<string, number>;
+};
+
+export async function runRequestedRefresh(context = createKnownOfferContext()): Promise<RequestedRefreshSummary> {
   const supabase = getServerSupabaseServiceClient();
   if (!supabase) throw new Error('REFRESH_UNAVAILABLE');
-  const claimed = await supabase.rpc('claim_offer_refresh');
-  if (claimed.error) throw new Error('REFRESH_CLAIM_FAILED');
+  const claimStarted = Date.now();
+  const claimContext = { rpc: 'claim_offer_refresh', phase: 'requested', batchIndex: 1, limit: 1 } as const;
+  let claimed;
+  try {
+    claimed = await supabase.rpc('claim_offer_refresh');
+  } catch (error) {
+    throw createRefreshClaimError(error, claimContext, Date.now() - claimStarted);
+  }
+  if (claimed.error) throw createRefreshClaimError(claimed.error, claimContext, Date.now() - claimStarted);
   if (!claimed.data) return { processed: false };
   const job = claimed.data as ClaimedJob;
   const results: RefreshItemResult[] = [];
@@ -153,7 +171,8 @@ export async function runRequestedRefresh(context = createKnownOfferContext()): 
       const product = products.find((item) => item.id === target.productId);
       const fresh = product ? await fetchKnownOffer(product, target, Date.parse(job.started_at ?? job.created_at), context) : null;
       if (fresh) observed.push({ target, ...fresh });
-      else results.push({ ...target, state: 'failed', observedAt: null, failureReason: context.failures.get(target.url) });
+      else results.push({ ...target, state: 'failed', observedAt: null,
+        failureReason: product ? context.failures.get(target.url) ?? 'no-observation' : 'product-not-found' });
     }
     const reviewable = observed.filter((item) => item.price.identityReview?.reason !== 'explicit-conflict');
     const reviewed = await reviewProductOffers(reviewable.map((item) => item.product), { authorizedRefresh: true,
@@ -174,15 +193,25 @@ export async function runRequestedRefresh(context = createKnownOfferContext()): 
         && Number.isFinite(price.price) && price.price > 0
         && isOfferFresh(price.lastUpdated) && !needsIdentityReview(price, item.product);
       results.push({ ...item.target, state: !persisted ? 'failed' : price.stock === 'out-of-stock' ? 'unavailable' : 'updated',
-        observedAt: persisted ? new Date(price.lastUpdated).toISOString() : null, comparable, sourceIdentity: price.sourceIdentity });
+        observedAt: persisted ? new Date(price.lastUpdated).toISOString() : null, comparable, sourceIdentity: price.sourceIdentity,
+        ...(!persisted ? { failureReason: 'persist-failed' } : {}) });
     }
   } catch {
-    for (const target of job.targets) if (!results.some((result) => result.productId === target.productId && result.storeId === target.storeId && result.url === target.url)) results.push({ ...target, state: 'failed', observedAt: null });
+    for (const target of job.targets) if (!results.some((result) => result.productId === target.productId && result.storeId === target.storeId && result.url === target.url)) results.push({ ...target, state: 'failed', observedAt: null, failureReason: 'processing-failed' });
   }
   const failures = results.filter((result) => result.state === 'failed').length;
   const status = failures === results.length ? 'failed' : failures ? 'partial' : 'completed';
   const { data, error } = await supabase.from('requested_offer_refreshes').update({ status, results, finished_at: new Date().toISOString() })
     .eq('id', job.id).eq('lease_token', job.lease_token).eq('status', 'running').gt('expires_at', new Date().toISOString()).select('id');
   if (error || !data?.length) throw new Error('REFRESH_LEASE_EXPIRED');
-  return { processed: true, jobId: job.id, status };
+  const failureReasons: Record<string, number> = {};
+  for (const result of results) {
+    if (result.state !== 'failed') continue;
+    const reason = result.failureReason ?? 'processing-failed';
+    failureReasons[reason] = (failureReasons[reason] ?? 0) + 1;
+  }
+  // Sólo cuentan observaciones guardadas: leer la tienda no equivale a actualizar una oferta.
+  return { processed: true, jobId: job.id, status, attempted: results.length,
+    observed: results.filter(result => result.observedAt !== null).length,
+    comparable: results.filter(result => result.comparable === true).length, failures: failureReasons };
 }
