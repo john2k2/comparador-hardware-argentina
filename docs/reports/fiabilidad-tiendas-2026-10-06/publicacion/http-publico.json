@@ -1,0 +1,800 @@
+{
+  "at": "2026-10-07T15:00:50.406Z",
+  "origin": "https://www.comparador-hardware.com.ar",
+  "fixtures": false,
+  "workerRuntime": true,
+  "requestSpacingMs": 1000,
+  "results": [
+    {
+      "path": "/api/search?q=ryzen",
+      "status": 200,
+      "ms": 7421,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "shape": true,
+        "pageSize": true,
+        "unique": true,
+        "price": true,
+        "range": true,
+        "category": true,
+        "categorySemantics": true,
+        "stores": true,
+        "sort": true,
+        "expectedEmpty": true
+      },
+      "count": 12,
+      "total": 266,
+      "page": 1,
+      "prices": [
+        399600,
+        645000,
+        233700,
+        459000,
+        275300,
+        432100,
+        403300,
+        407900,
+        415000,
+        640909.23,
+        645000,
+        692664
+      ],
+      "ids": [
+        "agrupado-procesadores-amd-ryzen-5-9600-am5-brjik1",
+        "agrupado-procesadores-amd-ryzen-7-5800x3d-am4-1rcp0lk",
+        "agrupado-procesadores-amd-ryzen-5-5600-1ru8te5",
+        "agrupado-procesadores-amd-ryzen-7-7700-am5-e2exm6",
+        "agrupado-procesadores-combo-amd-rx-9060-xt-16gb-6l1e7g",
+        "agrupado-memoria-ram-amd-ryzen-5-7600x-am5-1hroj9t",
+        "agrupado-procesadores-amd-ryzen-5-9600x-am5-120nn8r",
+        "agrupado-procesadores-amd-ryzen-7-5700x-xr4ubs",
+        "agrupado-procesadores-amd-ryzen-7-5800xt-am4-mtjvop",
+        "agrupado-procesadores-amd-ryzen-7-7700x3d-am5-8dtt7p",
+        "agrupado-procesadores-amd-ryzen-7-5800x3d-1rcp0lk",
+        "agrupado-procesadores-amd-ryzen-9-7900x-am5-ams0z2"
+      ]
+    },
+    {
+      "path": "/api/search?q=rtx&sortBy=price-asc&page=2",
+      "status": 200,
+      "ms": 4622,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "shape": true,
+        "pageSize": true,
+        "unique": true,
+        "price": true,
+        "range": true,
+        "category": true,
+        "categorySemantics": true,
+        "stores": true,
+        "sort": true,
+        "expectedEmpty": true
+      },
+      "count": 12,
+      "total": 144,
+      "page": 2,
+      "prices": [
+        646080,
+        652300,
+        679000,
+        679999,
+        684990,
+        687750,
+        690800,
+        698000,
+        738300,
+        819790.06,
+        820200,
+        821274.45
+      ],
+      "ids": [
+        "cg-21096",
+        "agrupado-tarjetas-graficas-msi-rtx-5050-ventus-8gb-6vx2ge",
+        "agrupado-tarjetas-graficas-msi-rtx-5050-shadow-8gb-1k1sm2h",
+        "venex-placa-de-video-asus-nvidia-geforce-rtx-5050-dual-oc-8gb-gddr6",
+        "venex-placa-de-video-msi-nvidia-geforce-rtx-5050-gaming-oc-8gb",
+        "agrupado-tarjetas-graficas-placa-de-video-asus-dual-geforce-rtx-5050-8gb-gddr6-oc",
+        "agrupado-tarjetas-graficas-msi-rtx-5050-gaming-8gb-jdgw54",
+        "agrupado-tarjetas-graficas-gigabyte-rtx-5050-gaming-8gb-1h6vusb",
+        "cg-20296",
+        "maxtecno-vga-8gb-rtx-5050-gigabyte-windforce-oc",
+        "cg-21246",
+        "maxtecno-api-960328"
+      ]
+    },
+    {
+      "path": "/api/search?minPrice=100000&sortBy=price-asc",
+      "status": 200,
+      "ms": 1417,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "shape": true,
+        "pageSize": true,
+        "unique": true,
+        "price": true,
+        "range": true,
+        "category": true,
+        "categorySemantics": true,
+        "stores": true,
+        "sort": true,
+        "expectedEmpty": true
+      },
+      "count": 12,
+      "total": 1762,
+      "page": 1,
+      "prices": [
+        100641.49,
+        101000,
+        101000,
+        101000,
+        101000,
+        101790,
+        101854.91,
+        101934,
+        101934,
+        102091,
+        102129.23,
+        102429.61
+      ],
+      "ids": [
+        "goldentechstore-api-188811",
+        "spacevideojuegos-339286-fuente-cooler-master-elite-v4-500w-80-white",
+        "spacevideojuegos-463412-fuente-bequiet-u9-600w-80-bronze",
+        "spacevideojuegos-525635-fuente-formula-v-line-apmm-700bd-700w-80-plus-bronze-atx-3-1",
+        "spacevideojuegos-56992-fuente-aerocool-cylon-500w-80-bronze-rgb",
+        "cg-18990",
+        "maxtecno-api-884004",
+        "agrupado-fuentes-alimentacion-750w-80-formula-fuente-gold-modular-plus-11fjn5g",
+        "compugarden-12896-fuente-750w-arkham-by-xpg-coreshield-80-plus-gold-oem",
+        "agrupado-perifericos-asus-prime-am4-a520m-jetp71",
+        "maxtecno-api-776585",
+        "maxtecno-api-901505"
+      ]
+    },
+    {
+      "path": "/api/search?category=procesadores&sortBy=price-asc",
+      "status": 200,
+      "ms": 780,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "shape": true,
+        "pageSize": true,
+        "unique": true,
+        "price": true,
+        "range": true,
+        "category": true,
+        "categorySemantics": true,
+        "stores": true,
+        "sort": true,
+        "expectedEmpty": true
+      },
+      "count": 12,
+      "total": 380,
+      "page": 1,
+      "prices": [
+        41986.38,
+        84550,
+        87399,
+        88898.51,
+        105844,
+        108094.71,
+        113350,
+        113861.43,
+        114712,
+        123465.65,
+        125368,
+        128366.21
+      ],
+      "ids": [
+        "goldentechstore-api-188684",
+        "cg-18761",
+        "agrupado-procesadores-amd-ryzen-3-3200g-am4-19osmke",
+        "agrupado-motherboards-amd-ryzen-3-3200g-am4-qaexcn",
+        "rockethard-163047-procesador-amd-ryzen-3-3200g-c-video-integrado-c-cooler-am4-bulk-163047",
+        "goldentechstore-micro-amd-ryzen-3-3200g-am4-box-c-video",
+        "agrupado-procesadores-combo-amd-ryzen-3-4100-am4-b3r9bh",
+        "maxtecno-api-890397",
+        "agrupado-procesadores-combo-amd-ryzen-3-3200g-am4-eppmtc",
+        "agrupado-motherboards-amd-ryzen-5-3400g-am4-160qr1t",
+        "rockethard-159696-procesador-amd-ryzen-3-4100-am4-s-v-159696",
+        "maxtecno-api-885430"
+      ]
+    },
+    {
+      "path": "/api/search?q=ryzen&maxPrice=200000&sortBy=price-asc",
+      "status": 200,
+      "ms": 1486,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "shape": true,
+        "pageSize": true,
+        "unique": true,
+        "price": true,
+        "range": true,
+        "category": true,
+        "categorySemantics": true,
+        "stores": true,
+        "sort": true,
+        "expectedEmpty": true
+      },
+      "count": 12,
+      "total": 24,
+      "page": 1,
+      "prices": [
+        84550,
+        87399,
+        88898.51,
+        105844,
+        108094.71,
+        113350,
+        113861.43,
+        114712,
+        123465.65,
+        125368,
+        128366.21,
+        133589
+      ],
+      "ids": [
+        "cg-18761",
+        "agrupado-procesadores-amd-ryzen-3-3200g-am4-19osmke",
+        "agrupado-motherboards-amd-ryzen-3-3200g-am4-qaexcn",
+        "rockethard-163047-procesador-amd-ryzen-3-3200g-c-video-integrado-c-cooler-am4-bulk-163047",
+        "goldentechstore-micro-amd-ryzen-3-3200g-am4-box-c-video",
+        "agrupado-procesadores-combo-amd-ryzen-3-4100-am4-b3r9bh",
+        "maxtecno-api-890397",
+        "agrupado-procesadores-combo-amd-ryzen-3-3200g-am4-eppmtc",
+        "agrupado-motherboards-amd-ryzen-5-3400g-am4-160qr1t",
+        "rockethard-159696-procesador-amd-ryzen-3-4100-am4-s-v-159696",
+        "maxtecno-api-885430",
+        "rockethard-164157-procesador-amd-ryzen-5-3400g-c-video-integrado-s-cooler-am4-164157"
+      ]
+    },
+    {
+      "path": "/api/search?category=memoria-ram&sortBy=price-desc",
+      "status": 200,
+      "ms": 691,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "shape": true,
+        "pageSize": true,
+        "unique": true,
+        "price": true,
+        "range": true,
+        "category": true,
+        "categorySemantics": true,
+        "stores": true,
+        "sort": true,
+        "expectedEmpty": true
+      },
+      "count": 12,
+      "total": 22,
+      "page": 1,
+      "prices": [
+        1322229.3,
+        1206037.67,
+        1181165.63,
+        1133810.04,
+        1133810.04,
+        1110754.04,
+        1009351.1,
+        975000,
+        969713.74,
+        709761.37,
+        610786.42,
+        589882.05
+      ],
+      "ids": [
+        "maxtecno-api-960310",
+        "goldentechstore-api-188718",
+        "goldentechstore-api-188716",
+        "goldentechstore-api-188737",
+        "goldentechstore-api-188738",
+        "goldentechstore-api-188734",
+        "goldentechstore-api-188732",
+        "agrupado-memoria-ram-patriot-32gb-x3yg70",
+        "goldentechstore-api-188713",
+        "goldentechstore-api-188742",
+        "goldentechstore-api-188694",
+        "goldentechstore-api-188746"
+      ]
+    },
+    {
+      "path": "/api/search?q=ryzen&stores=mexx",
+      "status": 200,
+      "ms": 2513,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "shape": true,
+        "pageSize": true,
+        "unique": true,
+        "price": true,
+        "range": true,
+        "category": true,
+        "categorySemantics": true,
+        "stores": true,
+        "sort": true,
+        "expectedEmpty": true
+      },
+      "count": 1,
+      "total": 1,
+      "page": 1,
+      "prices": [
+        799999
+      ],
+      "ids": [
+        "agrupado-perifericos-amd-ryzen-7-7800x3d-am5-u1c218"
+      ]
+    },
+    {
+      "path": "/api/search?q=producto-inexistente-testsprite-9382",
+      "status": 200,
+      "ms": 2812,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "shape": true,
+        "pageSize": true,
+        "unique": true,
+        "price": true,
+        "range": true,
+        "category": true,
+        "categorySemantics": true,
+        "stores": true,
+        "sort": true,
+        "expectedEmpty": true
+      },
+      "count": 0,
+      "total": 0,
+      "page": 1,
+      "prices": [],
+      "ids": []
+    },
+    {
+      "path": "/",
+      "status": 200,
+      "ms": 253,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "heading": true,
+        "title": true,
+        "schemas": true,
+        "canonical": true,
+        "removedIndex": true,
+        "fixtureIsolation": true
+      },
+      "h1": "Compará precios de hardware",
+      "canonical": "https://www.comparador-hardware.com.ar",
+      "schemas": [],
+      "robots": "index, follow"
+    },
+    {
+      "path": "/comparar/procesadores",
+      "status": 200,
+      "ms": 843,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "heading": true,
+        "title": true,
+        "schemas": true,
+        "canonical": true,
+        "removedIndex": true,
+        "fixtureIsolation": true
+      },
+      "h1": "Comparar procesadores AMD e Intel",
+      "canonical": "https://www.comparador-hardware.com.ar/comparar/procesadores",
+      "schemas": [
+        "FAQPage"
+      ],
+      "robots": "index, follow"
+    },
+    {
+      "path": "/comparar/placas-de-video",
+      "status": 200,
+      "ms": 812,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "heading": true,
+        "title": true,
+        "schemas": true,
+        "canonical": true,
+        "removedIndex": true,
+        "fixtureIsolation": true
+      },
+      "h1": "Comparar placas de video RTX y Radeon",
+      "canonical": "https://www.comparador-hardware.com.ar/comparar/placas-de-video",
+      "schemas": [
+        "FAQPage"
+      ],
+      "robots": "index, follow"
+    },
+    {
+      "path": "/search?q=ryzen",
+      "status": 200,
+      "ms": 685,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "heading": true,
+        "title": true,
+        "schemas": true,
+        "canonical": true,
+        "removedIndex": true,
+        "fixtureIsolation": true
+      },
+      "h1": "Resultados para ryzen",
+      "canonical": "https://www.comparador-hardware.com.ar/search",
+      "schemas": [],
+      "robots": "noindex, follow"
+    },
+    {
+      "path": "/guia",
+      "status": 200,
+      "ms": 53,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "heading": true,
+        "title": true,
+        "schemas": true,
+        "canonical": true,
+        "removedIndex": true,
+        "fixtureIsolation": true
+      },
+      "h1": "Guías de PC Gamer",
+      "canonical": "https://www.comparador-hardware.com.ar/guia",
+      "schemas": [],
+      "robots": "index, follow"
+    },
+    {
+      "path": "/guia/pc-gamer-1-millon",
+      "status": 200,
+      "ms": 208,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "heading": true,
+        "title": true,
+        "schemas": true,
+        "canonical": true,
+        "removedIndex": true,
+        "fixtureIsolation": true
+      },
+      "h1": "PC Gamer de $ 1.000.000",
+      "canonical": "https://www.comparador-hardware.com.ar/guia/pc-gamer-1-millon",
+      "schemas": [],
+      "robots": "index, follow"
+    },
+    {
+      "path": "/comparativa/rtx-4060-vs-rx-7600",
+      "status": 200,
+      "ms": 457,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "heading": true,
+        "title": true,
+        "schemas": true,
+        "canonical": true,
+        "removedIndex": true,
+        "fixtureIsolation": true
+      },
+      "h1": "RTX 4060 vs RX 7600",
+      "canonical": "https://www.comparador-hardware.com.ar/comparativa/rtx-4060-vs-rx-7600",
+      "schemas": [],
+      "robots": "index, follow"
+    },
+    {
+      "path": "/acerca",
+      "status": 200,
+      "ms": 405,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "heading": true,
+        "title": true,
+        "schemas": true,
+        "canonical": true,
+        "removedIndex": true,
+        "fixtureIsolation": true
+      },
+      "h1": "[ ACERCA DEL PROYECTO ]",
+      "canonical": "https://www.comparador-hardware.com.ar/acerca",
+      "schemas": [],
+      "robots": "index, follow"
+    },
+    {
+      "path": "/contacto",
+      "status": 200,
+      "ms": 57,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "heading": true,
+        "title": true,
+        "schemas": true,
+        "canonical": true,
+        "removedIndex": true,
+        "fixtureIsolation": true
+      },
+      "h1": "[ CONTACTO ]",
+      "canonical": "https://www.comparador-hardware.com.ar/contacto",
+      "schemas": [],
+      "robots": "index, follow"
+    },
+    {
+      "path": "/privacidad",
+      "status": 200,
+      "ms": 687,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "heading": true,
+        "title": true,
+        "schemas": true,
+        "canonical": true,
+        "removedIndex": true,
+        "fixtureIsolation": true
+      },
+      "h1": "[ POLITICA DE PRIVACIDAD ]",
+      "canonical": "https://www.comparador-hardware.com.ar/privacidad",
+      "schemas": [
+        "FAQPage"
+      ],
+      "robots": "index, follow"
+    },
+    {
+      "path": "/terminos",
+      "status": 200,
+      "ms": 3748,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "heading": true,
+        "title": true,
+        "schemas": true,
+        "canonical": true,
+        "removedIndex": true,
+        "fixtureIsolation": true
+      },
+      "h1": "[ TERMINOS DE USO ]",
+      "canonical": "https://www.comparador-hardware.com.ar/terminos",
+      "schemas": [
+        "FAQPage"
+      ],
+      "robots": "index, follow"
+    },
+    {
+      "path": "/auth",
+      "status": 200,
+      "ms": 56,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "heading": true,
+        "title": true,
+        "schemas": true,
+        "canonical": true,
+        "removedIndex": true,
+        "fixtureIsolation": true
+      },
+      "h1": "Entrar o crear cuenta",
+      "canonical": "https://www.comparador-hardware.com.ar/auth",
+      "schemas": [],
+      "robots": "noindex, nofollow"
+    },
+    {
+      "path": "/product/testsprite-nonexistent-9382",
+      "status": 404,
+      "ms": 393,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "noindex": true,
+        "removedIndex": true
+      },
+      "robots": [
+        "noindex",
+        "noindex, nofollow"
+      ]
+    },
+    {
+      "path": "/indice-precios-hardware",
+      "status": 404,
+      "ms": 54,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "noindex": true,
+        "removedIndex": true
+      },
+      "robots": [
+        "noindex",
+        "noindex, nofollow"
+      ]
+    },
+    {
+      "path": "/indice-precios-hardware/datos.csv",
+      "status": 404,
+      "ms": 158,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "noindex": true,
+        "removedIndex": true
+      },
+      "robots": [
+        "noindex",
+        "noindex, nofollow"
+      ]
+    },
+    {
+      "path": "/sitemap.xml",
+      "status": 200,
+      "ms": 47,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "retiredIndexAbsent": true
+      }
+    },
+    {
+      "path": "/llms.txt",
+      "status": 200,
+      "ms": 43,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "retiredIndexAbsent": true
+      }
+    },
+    {
+      "path": "/robots.txt",
+      "status": 200,
+      "ms": 35,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "crawlerPolicy": true
+      }
+    },
+    {
+      "path": "/api/juegos-digitales",
+      "status": 200,
+      "ms": 298,
+      "passed": true,
+      "assertions": {
+        "shape": true,
+        "status": true,
+        "fixtureIsolation": true,
+        "destinations": true
+      },
+      "state": "error",
+      "offers": 0,
+      "feedUpdatedAt": null
+    },
+    {
+      "path": "/api/admin/operational",
+      "status": 401,
+      "ms": 53,
+      "passed": true,
+      "assertions": {
+        "access": true
+      }
+    },
+    {
+      "path": "/api/admin/catalog-refresh",
+      "status": 405,
+      "ms": 33,
+      "passed": true,
+      "assertions": {
+        "access": true
+      }
+    },
+    {
+      "path": "/api/admin/alerts",
+      "status": 404,
+      "ms": 75,
+      "passed": true,
+      "assertions": {
+        "access": true
+      }
+    },
+    {
+      "path": "/.env.local",
+      "status": 404,
+      "ms": 77,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "guard": true
+      }
+    },
+    {
+      "path": "/phpinfo.php",
+      "status": 404,
+      "ms": 27,
+      "passed": true,
+      "assertions": {
+        "status": true,
+        "guard": true
+      }
+    }
+  ],
+  "observations": [
+    {
+      "kind": "search-coverage",
+      "query": "?q=ryzen",
+      "count": 12,
+      "total": 266,
+      "note": "Vacío significa sin coincidencias elegibles; no acredita agotamiento ni catálogo completo."
+    },
+    {
+      "kind": "search-coverage",
+      "query": "?q=rtx&sortBy=price-asc&page=2",
+      "count": 12,
+      "total": 144,
+      "note": "Vacío significa sin coincidencias elegibles; no acredita agotamiento ni catálogo completo."
+    },
+    {
+      "kind": "search-coverage",
+      "query": "?minPrice=100000&sortBy=price-asc",
+      "count": 12,
+      "total": 1762,
+      "note": "Vacío significa sin coincidencias elegibles; no acredita agotamiento ni catálogo completo."
+    },
+    {
+      "kind": "search-coverage",
+      "query": "?category=procesadores&sortBy=price-asc",
+      "count": 12,
+      "total": 380,
+      "note": "Vacío significa sin coincidencias elegibles; no acredita agotamiento ni catálogo completo."
+    },
+    {
+      "kind": "search-coverage",
+      "query": "?q=ryzen&maxPrice=200000&sortBy=price-asc",
+      "count": 12,
+      "total": 24,
+      "note": "Vacío significa sin coincidencias elegibles; no acredita agotamiento ni catálogo completo."
+    },
+    {
+      "kind": "search-coverage",
+      "query": "?category=memoria-ram&sortBy=price-desc",
+      "count": 12,
+      "total": 22,
+      "note": "Vacío significa sin coincidencias elegibles; no acredita agotamiento ni catálogo completo."
+    },
+    {
+      "kind": "search-coverage",
+      "query": "?q=ryzen&stores=mexx",
+      "count": 1,
+      "total": 1,
+      "note": "Vacío significa sin coincidencias elegibles; no acredita agotamiento ni catálogo completo."
+    },
+    {
+      "kind": "search-coverage",
+      "query": "?q=producto-inexistente-testsprite-9382",
+      "count": 0,
+      "total": 0,
+      "note": "Vacío significa sin coincidencias elegibles; no acredita agotamiento ni catálogo completo."
+    },
+    {
+      "kind": "eneba-availability",
+      "state": "error",
+      "offers": 0,
+      "feedUpdatedAt": null,
+      "fixtures": false,
+      "note": "No acredita ventas, stock ni activación regional."
+    }
+  ]
+}

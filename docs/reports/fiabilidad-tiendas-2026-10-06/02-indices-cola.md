@@ -10,6 +10,8 @@ En cola completa y páginas visibles, los bloques leídos/consultados pasan de 1
 
 **Aplicación remota pendiente.** El corte de capacidad confirma plan Free y 926.215.315 bytes de base. Esta unidad queda preparada, pero la recomendación de aplicar primero los índices se suspende hasta resolver capacidad y retención. Ver `capacidad.json` y el informe general. No se aplicaron migraciones remotas.
 
+Actualización de publicación del 07/10: el SQL y su prueba se movieron, sin cambiar sus bytes, a [diferido/catalog_seed_covering_indexes.sql](diferido/catalog_seed_covering_indexes.sql) y [diferido/catalog_seed_covering_test.sql](diferido/catalog_seed_covering_test.sql). Quedan fuera de `supabase/migrations` y del circuito CI del release `99d5917`; éste comprobó 75 migraciones, 13 archivos SQL y dos casos concurrentes. Los conteos 76/14/3 anteriores describen únicamente el ensayo local de la candidata original.
+
 Comandos, planes, límites y fallos de ensayo: `seed-local.md`, `seed-benchmark-summary.json`, `seed-benchmark-churn.json`, `seed-benchmark-mixed.json`. La instancia propia fue detenida tras la verificación.
 
 Reversión local: retirar migración/test SQL, el caso concurrente nuevo y su línea CI. Si se aplica después de autorización, retirar únicamente los dos índices mediante otra migración revisada; no eliminar cola, ofertas o historial. El despliegue de los lectores y diagnóstico no requiere estos índices.

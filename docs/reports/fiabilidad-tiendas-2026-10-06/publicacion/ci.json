@@ -1,0 +1,17 @@
+{
+  "sourceSha": "99d5917b5ec185314d8ae081beb971894709ebcd",
+  "runId": 37640084761,
+  "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37640084761",
+  "conclusion": "success",
+  "completedAt": "2026-10-07T14:54:49Z",
+  "lintPassed": true,
+  "typesPassed": true,
+  "unitPassed": 1816,
+  "unitSkipped": 2,
+  "opsPassed": 25,
+  "isolatedBrowserPassed": 66,
+  "migrationsReplayed": 75,
+  "sqlFilesPassed": 13,
+  "concurrencyPassed": 2,
+  "limit": "SQL de CI en PostgreSQL efímero; no migraciones ni índices remotos. Dos casos de índices y la migración correspondiente quedaron fuera de esta publicación."
+}

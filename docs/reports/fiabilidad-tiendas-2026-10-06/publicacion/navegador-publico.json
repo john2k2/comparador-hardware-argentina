@@ -1,0 +1,183 @@
+{
+  "sourceSha": "99d5917b5ec185314d8ae081beb971894709ebcd",
+  "environment": "HTTPS público, catálogo real, sin fixtures",
+  "stats": {
+    "startTime": "2026-10-07T14:59:48.584Z",
+    "duration": 95393.78,
+    "expected": 14,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "errors": [],
+  "tests": [
+    {
+      "title": "rango general con catálogo real conserva precio, tarjetas y paginación",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 6824,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "rangos nuevos se consultan en base de datos y se renderizan sin error inicial",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 6881,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "rango general con catálogo real conserva precio, tarjetas y paginación",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 5636,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "rangos nuevos se consultan en base de datos y se renderizan sin error inicial",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 7596,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "el filtro de procesadores no entrega refrigeración como si fuera un CPU",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 1495,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "busca con catálogo real, filtra precio y abre el producto correspondiente",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 3683,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "armador recupera el ID elegido después de recargar",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 6980,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "guía presenta contenido real sin desbordar en móvil",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 4788,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "el índice retirado y su CSV responden 404 sin enlaces ni indexación",
+      "project": "desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 1078,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "el filtro de procesadores no entrega refrigeración como si fuera un CPU",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 734,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "busca con catálogo real, filtra precio y abre el producto correspondiente",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 2375,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "armador recupera el ID elegido después de recargar",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 8691,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "guía presenta contenido real sin desbordar en móvil",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 2489,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "el índice retirado y su CSV responden 404 sin enlaces ni indexación",
+      "project": "mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 5919,
+          "retry": 0
+        }
+      ]
+    }
+  ]
+}

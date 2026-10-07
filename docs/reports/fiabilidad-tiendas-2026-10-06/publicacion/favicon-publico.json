@@ -1,0 +1,180 @@
+{
+  "at": "2026-10-07T15:01:21.011Z",
+  "release": "99d5917",
+  "worker": "652e3c18-4182-43d1-9d98-5f10afd67aa8",
+  "local": {
+    "ico": "64ff4f316e2df11e42ec93aea40538cd68a6ef2eb0971933b4f74aaa7fb138ca",
+    "svg": "7271ef7e38683664901a9d2e59da351edafdf9bbd8926fead87aa0f569eed63c",
+    "apple": "d734f376ca359e65bb2613830a43cf3bf4426a0b6e9d9281d8430a9985c8c8d0"
+  },
+  "homes": [
+    {
+      "host": "www.comparador-hardware.com.ar",
+      "status": 200,
+      "finalUrl": "https://www.comparador-hardware.com.ar/",
+      "title": "Comparador Hardware Argentina: precios de PC",
+      "canonical": "https://www.comparador-hardware.com.ar",
+      "iconLinks": [
+        {
+          "rel": "shortcut icon",
+          "href": "/favicon.ico"
+        },
+        {
+          "rel": "icon",
+          "href": "/favicon.ico?favicon.0coj34f88w9xt.ico",
+          "sizes": "256x256",
+          "type": "image/x-icon"
+        },
+        {
+          "rel": "icon",
+          "href": "/favicon.ico",
+          "sizes": "16x16 32x32 48x48 256x256",
+          "type": "image/x-icon"
+        },
+        {
+          "rel": "icon",
+          "href": "/favicon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        },
+        {
+          "rel": "apple-touch-icon",
+          "href": "/apple-touch-icon.png",
+          "sizes": "180x180",
+          "type": "image/png"
+        }
+      ],
+      "robots": "index, follow"
+    },
+    {
+      "host": "comparador-hardware.com.ar",
+      "status": 200,
+      "finalUrl": "https://comparador-hardware.com.ar/",
+      "title": "Comparador Hardware Argentina: precios de PC",
+      "canonical": "https://www.comparador-hardware.com.ar",
+      "iconLinks": [
+        {
+          "rel": "shortcut icon",
+          "href": "/favicon.ico"
+        },
+        {
+          "rel": "icon",
+          "href": "/favicon.ico?favicon.0coj34f88w9xt.ico",
+          "sizes": "256x256",
+          "type": "image/x-icon"
+        },
+        {
+          "rel": "icon",
+          "href": "/favicon.ico",
+          "sizes": "16x16 32x32 48x48 256x256",
+          "type": "image/x-icon"
+        },
+        {
+          "rel": "icon",
+          "href": "/favicon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        },
+        {
+          "rel": "apple-touch-icon",
+          "href": "/apple-touch-icon.png",
+          "sizes": "180x180",
+          "type": "image/png"
+        }
+      ],
+      "robots": "index, follow"
+    }
+  ],
+  "assets": [
+    {
+      "host": "www.comparador-hardware.com.ar",
+      "path": "/favicon.ico",
+      "kind": "ico",
+      "status": 200,
+      "bytes": 2859,
+      "contentType": "image/vnd.microsoft.icon",
+      "robots": null,
+      "sha256": "64ff4f316e2df11e42ec93aea40538cd68a6ef2eb0971933b4f74aaa7fb138ca",
+      "matchesCandidate": true
+    },
+    {
+      "host": "www.comparador-hardware.com.ar",
+      "path": "/favicon.svg",
+      "kind": "svg",
+      "status": 200,
+      "bytes": 640,
+      "contentType": "image/svg+xml",
+      "robots": null,
+      "sha256": "7271ef7e38683664901a9d2e59da351edafdf9bbd8926fead87aa0f569eed63c",
+      "matchesCandidate": true
+    },
+    {
+      "host": "www.comparador-hardware.com.ar",
+      "path": "/apple-touch-icon.png",
+      "kind": "apple",
+      "status": 200,
+      "bytes": 1482,
+      "contentType": "image/png",
+      "robots": null,
+      "sha256": "d734f376ca359e65bb2613830a43cf3bf4426a0b6e9d9281d8430a9985c8c8d0",
+      "matchesCandidate": true
+    },
+    {
+      "host": "www.comparador-hardware.com.ar",
+      "path": "/favicon.ico?favicon.0coj34f88w9xt.ico",
+      "kind": "ico",
+      "status": 200,
+      "bytes": 2859,
+      "contentType": "image/vnd.microsoft.icon",
+      "robots": null,
+      "sha256": "64ff4f316e2df11e42ec93aea40538cd68a6ef2eb0971933b4f74aaa7fb138ca",
+      "matchesCandidate": true
+    },
+    {
+      "host": "comparador-hardware.com.ar",
+      "path": "/favicon.ico",
+      "kind": "ico",
+      "status": 200,
+      "bytes": 2859,
+      "contentType": "image/vnd.microsoft.icon",
+      "robots": null,
+      "sha256": "64ff4f316e2df11e42ec93aea40538cd68a6ef2eb0971933b4f74aaa7fb138ca",
+      "matchesCandidate": true
+    },
+    {
+      "host": "comparador-hardware.com.ar",
+      "path": "/favicon.svg",
+      "kind": "svg",
+      "status": 200,
+      "bytes": 640,
+      "contentType": "image/svg+xml",
+      "robots": null,
+      "sha256": "7271ef7e38683664901a9d2e59da351edafdf9bbd8926fead87aa0f569eed63c",
+      "matchesCandidate": true
+    },
+    {
+      "host": "comparador-hardware.com.ar",
+      "path": "/apple-touch-icon.png",
+      "kind": "apple",
+      "status": 200,
+      "bytes": 1482,
+      "contentType": "image/png",
+      "robots": null,
+      "sha256": "d734f376ca359e65bb2613830a43cf3bf4426a0b6e9d9281d8430a9985c8c8d0",
+      "matchesCandidate": true
+    },
+    {
+      "host": "comparador-hardware.com.ar",
+      "path": "/favicon.ico?favicon.0coj34f88w9xt.ico",
+      "kind": "ico",
+      "status": 200,
+      "bytes": 2859,
+      "contentType": "image/vnd.microsoft.icon",
+      "robots": null,
+      "sha256": "64ff4f316e2df11e42ec93aea40538cd68a6ef2eb0971933b4f74aaa7fb138ca",
+      "matchesCandidate": true
+    }
+  ],
+  "result": "passed",
+  "limit": "Googlebot-Image User-Agent simulado; no prueba rastreo de Google ni cambio del resultado de búsqueda."
+}

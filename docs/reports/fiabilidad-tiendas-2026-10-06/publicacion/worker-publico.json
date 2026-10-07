@@ -1,0 +1,34 @@
+{
+  "at": 1791385285607,
+  "windowSeconds": 101.26,
+  "filter": "X-Release-Probe:confidence-99d5917-readonly",
+  "version": "652e3c18-4182-43d1-9d98-5f10afd67aa8",
+  "eventCount": 2,
+  "outcomes": {
+    "ok": 2
+  },
+  "exceptions": 0,
+  "errorLogs": 0,
+  "maxCpuMs": 1,
+  "maxWallMs": 8,
+  "events": [
+    {
+      "version": "652e3c18-4182-43d1-9d98-5f10afd67aa8",
+      "outcome": "ok",
+      "method": "GET",
+      "path": "/",
+      "cpuMs": 1,
+      "wallMs": 7
+    },
+    {
+      "version": "652e3c18-4182-43d1-9d98-5f10afd67aa8",
+      "outcome": "ok",
+      "method": "GET",
+      "path": "/",
+      "cpuMs": 1,
+      "wallMs": 8
+    }
+  ],
+  "limit": "Ventana filtrada y acotada; no certifica ausencia global de errores ni p95.",
+  "allEventsExpectedVersion": true
+}

@@ -1,6 +1,8 @@
 # Fiabilidad de las 36 fuentes del Comparador
 
-**Candidata local `codex/fiabilidad-todas-tiendas`, desde `dcefbe7`; código público del corte: `2dc40b8`.** Jonathan amplió el encargo de Maximus a todas las tiendas. La entrega aplica las reglas compartidas, inspecciona cada fuente integrada y conserva sus fallos. No acredita todo su catálogo ni recuperación publicada. El trabajo comenzó el 06/10 Santiago y los cortes UTC son del 07/10.
+**Corte histórico de la candidata `codex/fiabilidad-todas-tiendas`, desde `dcefbe7`; código público de ese corte: `2dc40b8`.** Jonathan amplió el encargo de Maximus a todas las tiendas. La entrega aplica las reglas compartidas, inspecciona cada fuente integrada y conserva sus fallos. No acredita todo su catálogo. El trabajo comenzó el 06/10 Santiago y los cortes UTC son del 07/10.
+
+**Actualización del 07/10:** lectores y diagnóstico publicados en `99d5917`, junto con la corrección del favicon, sin aplicar índices ni limpiar datos. [Publicación y verificación del sitio](publicacion/README.md). Los resultados siguientes conservan la revisión y la fecha originales; la cobertura y G02 siguen abiertos.
 
 ## Resultado verificable
 

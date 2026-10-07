@@ -1,0 +1,31 @@
+{
+  "sourceSha": "99d5917b5ec185314d8ae081beb971894709ebcd",
+  "before": {
+    "version": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+    "number": 193
+  },
+  "after": {
+    "version": "652e3c18-4182-43d1-9d98-5f10afd67aa8",
+    "number": 194,
+    "createdAt": "2026-10-07T14:53:28.590662Z",
+    "deployment": "5dd3a28d-bca0-4138-8460-4e3923987cd2",
+    "deployedAt": "2026-10-07T14:53:32.586624Z",
+    "traffic": 100
+  },
+  "bindingDefinitionsPreserved": true,
+  "bindingCount": 40,
+  "buildCheck": {
+    "name": "Workers Builds: comparador-hardware-argentina",
+    "id": "9c2061cb-4ebf-49fc-be3f-35f52e2cbfc1",
+    "conclusion": "success"
+  },
+  "rollback": {
+    "workerVersion": "5b529296-48ee-4431-a5e7-cc031a8667e9",
+    "sourceSha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+    "schemaChanged": false
+  },
+  "limits": [
+    "Metadata verifica nombres/tipos/configuración de bindings, no valores de secretos ni su uso efectivo.",
+    "Código relacionado por check de build del SHA; las lecturas públicas se correlacionan además por eventos de esta versión."
+  ]
+}

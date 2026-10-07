@@ -1,0 +1,25 @@
+{
+  "workflowId": 37626593331,
+  "workflowUrl": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37626593331",
+  "headSha": "2dc40b81f13dce4dcd108a5689256144e368b70d",
+  "workflowConclusion": "success",
+  "runnerRunId": "8d274c2a-c80f-451f-a16f-03dd450bf266",
+  "trigger": "cloudflare-fallback",
+  "startedAt": "2026-10-07T13:12:12.288Z",
+  "finishedAt": "2026-10-07T13:29:28.353Z",
+  "status": "deadline",
+  "attempted": 1299,
+  "observed": 653,
+  "comparable": 295,
+  "phaseMs": {
+    "inventory": 3192,
+    "preparation": 14467,
+    "shared": 497076,
+    "rotation": 506337
+  },
+  "failures": {
+    "no-observation": 592,
+    "source-failed": 54
+  },
+  "limit": "Ejecutado antes del release 99d5917; no es atribución de recuperación nueva ni ciclo diario útil G02."
+}
