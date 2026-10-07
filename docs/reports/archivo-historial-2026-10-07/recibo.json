@@ -1,0 +1,168 @@
+{
+  "completedAt": "2026-10-07T19:46:54.809Z",
+  "status": "private storage pilot completed; no original removal",
+  "humanAuthorization": "si hace eso, me gusta lo de supabase y el storage por que no lo estamos usando igual, y no se si lo usamos mas adelante",
+  "sourceBase": "bb59c5537fd280e673ef3681669fabee24103d4f",
+  "branch": "codex/archivo-historial-storage",
+  "selectedUtcDay": "2026-07-05",
+  "sampleRows": 759,
+  "stores": 18,
+  "export": {
+    "cutoff": "2026-07-09T00:00:00.000000Z",
+    "initialCursor": "",
+    "nextCursor": "ffeab92c-1c49-4d34-ac9c-d23d2e9a9dc8",
+    "pages": 4,
+    "exportedRows": 759,
+    "sourceCsvBytes": 115209,
+    "reachedSourceEnd": true,
+    "globallyComplete": false,
+    "transactionalSnapshot": false,
+    "selectionDay": "2026-07-05",
+    "completedAt": "2026-10-07T19:34:10.539Z",
+    "readOnly": true,
+    "originalRowsRemoved": 0
+  },
+  "rawNdjsonBytes": 197772,
+  "gzipBytes": 38274,
+  "payloadReductionPct": 80.65,
+  "totalWithManifestReductionPct": 54.16,
+  "upload": {
+    "completedAt": "2026-10-07T19:43:17.378Z",
+    "bucket": "catalog-history-archive",
+    "private": true,
+    "prefix": "v1/52998f35183f27acfbd76dd6e5b74803b50f954eae276905c603217768c46995",
+    "createdBucket": false,
+    "uploadedObjects": 16,
+    "reusedObjects": 3,
+    "verifiedRows": 759,
+    "storedBytes": 90664,
+    "manifestSha256": "52998f35183f27acfbd76dd6e5b74803b50f954eae276905c603217768c46995",
+    "originalRowsRemoved": 0,
+    "databaseReductionProven": false
+  },
+  "sourceContrast": {
+    "observedAt": "2026-10-07T19:39:07.663Z",
+    "sourceRows": 759,
+    "archivedRows": 759,
+    "comparedFields": 8,
+    "exactFieldValuesMatch": true,
+    "sourceOriginalsPresent": true,
+    "rawCsvPagesSaved": 4,
+    "readOnly": true,
+    "transactionalSnapshot": false,
+    "originalRowsRemoved": 0,
+    "globalBackupProven": false
+  },
+  "remoteRecovery": {
+    "observedAt": "2026-10-07T19:45:37.509Z",
+    "verifiedRows": 759,
+    "downloadedObjects": 19,
+    "totalBytes": 90664,
+    "manifestSha256": "52998f35183f27acfbd76dd6e5b74803b50f954eae276905c603217768c46995",
+    "publicRequestStatus": 400,
+    "publicResponseCode": "Bucket not found",
+    "anonymousDenied": true,
+    "anonymousErrorCode": "StorageUnknownError",
+    "privateRecoverySaved": true,
+    "originalRowsRemoved": 0
+  },
+  "privacyHttp": {
+    "observedAt": "2026-10-07T19:46:54.809Z",
+    "anonymousHttpStatus": 400,
+    "anonymousReason": "Object not found",
+    "publicHttpStatus": 400,
+    "publicReason": "Bucket not found",
+    "anonymousKeyUsed": true,
+    "serviceKeyUsed": false,
+    "accessDenied": true
+  },
+  "restoreFromStorage": {
+    "completedAt": "2026-10-07T19:46:54.108Z",
+    "postgresVersion": "17.11 (Homebrew)",
+    "sampleRows": 759,
+    "restoredFields": 8,
+    "cases": [
+      "missing/corrupt archive rejected before any restore",
+      "interrupted transaction preserves empty destination",
+      "real sample restored with all eight fields and foreign keys",
+      "repeated restore does not duplicate or replace rows",
+      "maximum signed decimal/microseconds/null/escaped text survive PG17",
+      "selective history equals original; current prices/users/cache untouched"
+    ],
+    "casesPassed": 6,
+    "exactSampleRestore": true,
+    "selectiveChunksRead": 1,
+    "totalChunks": 18,
+    "durationMs": 952,
+    "localOnly": true,
+    "productionRestore": false,
+    "originalRowsRemoved": 0,
+    "physicalReductionProven": false
+  },
+  "supabaseCuts": {
+    "preflight": {
+      "observed_at": "2026-10-07T19:39:59.561915+00:00",
+      "storage_rls": true,
+      "bucket_count": 0,
+      "object_bytes": 0,
+      "object_count": 0,
+      "database_bytes": 930270355,
+      "history_total_bytes": 176644096,
+      "storage_policy_count": 0
+    },
+    "runtime": {
+      "buckets": [
+        {
+          "id": "catalog-history-archive",
+          "public": false,
+          "created_at": "2026-10-07T19:40:27.509516+00:00",
+          "file_size_limit": 1048576,
+          "allowed_mime_types": [
+            "application/gzip",
+            "application/json"
+          ]
+        }
+      ],
+      "observed_at": "2026-10-07T19:45:29.0953+00:00",
+      "object_bytes": 90664,
+      "object_count": 19,
+      "public_roles": [
+        {
+          "role": "authenticated",
+          "superuser": false,
+          "bypass_rls": false
+        },
+        {
+          "role": "anon",
+          "superuser": false,
+          "bypass_rls": false
+        }
+      ],
+      "database_bytes": 930516115,
+      "original_day_rows": 759,
+      "history_total_bytes": 176644096,
+      "storage_objects_rls": true,
+      "storage_policy_count": 0
+    },
+    "remoteHistoryWrites": false
+  },
+  "newBehaviorTests": 23,
+  "operationalSuitePassed": 64,
+  "originalRowsRemoved": 0,
+  "newRlsPolicies": 0,
+  "billingOrPlanChanges": false,
+  "sitePublishedThisPilot": false,
+  "newAutomation": false,
+  "physicalDatabaseReductionProven": false,
+  "completeGlobalBackupProven": false,
+  "review": {
+    "specialists": "gpt-6.1-sol/high",
+    "findingsClosed": [
+      "fixed cutoff",
+      "day applied before network",
+      "blob bound before conversion",
+      "signed original_price"
+    ],
+    "finalRuntimeDeltaReview": "passed; no open findings, byte-equal recovered files verified independently"
+  }
+}
