@@ -1,0 +1,182 @@
+{
+  "recordedAt": "2026-10-07T23:06:12.097020+00:00",
+  "status": "published and daily bounded retention armed; first natural mutation cycle pending",
+  "source": "3b7107c5c0953fb9425ee982439efbb34f06ac01",
+  "approvedCandidate": "737825b98306800c616fe733fda3488c14f67ea8",
+  "previousProductionSource": "614caa1d30ce5381f064cda406a1e96a015f52af",
+  "applicationOrWorkerConfigChanged": false,
+  "humanAuthorization": {
+    "message": "si",
+    "scope": "publish candidate, install only two functions, arm at most 1000 expired telemetry rows per existing daily cycle with verified private backup",
+    "manualMutationRunAuthorized": false
+  },
+  "correction": {
+    "commit": "3b7107c5c0953fb9425ee982439efbb34f06ac01",
+    "filesChanged": 3,
+    "changedLines": 42,
+    "focusedTestsPassed": 3,
+    "matrixContexts": 7,
+    "firstAttemptAndExactDailyCronRequired": true,
+    "temporaryInspectPause": "2026-10-07T22:53:11.066510+00:00",
+    "preGuardCatalogRunsChecked": 30,
+    "runsOnIntermediateCandidateFound": 0,
+    "notRetroactiveToOldWorkflowSources": true,
+    "globalRunIdOrDateDeduplicationImplemented": false
+  },
+  "github": {
+    "ciRunId": 37699195605,
+    "ciUrl": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37699195605",
+    "ciConclusion": "success",
+    "ciCompletedAt": "2026-10-07T22:59:34Z",
+    "sourceExact": true,
+    "unitPassed": 1985,
+    "unitPreexistingSkipped": 2,
+    "operationalPassed": 134,
+    "operationalSkipped": 0,
+    "sqlConcurrencyPassed": 2,
+    "migrationReplayPassed": true,
+    "isolatedBrowserPassed": 66,
+    "newSqlRegressionGroupsFromPreviousIsolatedPreparation": 7,
+    "newSqlRegressionExecutedByThisCi": false,
+    "workersBuildConclusion": "success"
+  },
+  "worker": {
+    "version": "9a5e47f0-5ae1-491c-990b-46428d3b0508",
+    "deployment": "555f6885-916f-49fc-b1f0-2a1a5ca47c33",
+    "createdOn": "2026-10-07T22:57:58.233601Z",
+    "percentage": 100,
+    "sourceMappedBySuccessfulBuild": "3b7107c5c0953fb9425ee982439efbb34f06ac01",
+    "bindingValuesPersisted": false
+  },
+  "sql": {
+    "installedOnce": true,
+    "functionsInstalled": 2,
+    "remoteMigrationVersion": "20261007223609",
+    "remoteMigrationName": "backed_telemetry_retention",
+    "preparedMigrationPath": "supabase/migrations/20261007215027_backed_telemetry_retention.sql",
+    "preparedMigrationSha256": "1b8472a31cfc4f768c4c84793639749af9f9c43d2a235edcf76663c22ab0f970",
+    "toolAssignedRemoteMigrationVersion": true,
+    "functionBodyMd5": {
+      "retire_backed_telemetry": "243118edb9ac533d3ed600e1edd84901",
+      "select_backed_telemetry_candidates": "40bd58bea7ec7677ceb9f9f0a079ae50"
+    },
+    "securityMode": "INVOKER",
+    "searchPath": "pg_catalog",
+    "lockTimeoutMs": 500,
+    "executeRoles": {
+      "PUBLIC": false,
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "cacheRlsPreserved": true,
+    "bucketPrivate": true,
+    "realServerSelectorGet": {
+      "httpStatus": 200,
+      "rows": 1,
+      "sixStringFields": true,
+      "utcMicrosecondsPreserved": true
+    },
+    "anonymousRpcDenials": 2,
+    "anonymousErrorCode": "42501",
+    "serverRetireCallsDuringActivation": 0
+  },
+  "securityAdvisors": {
+    "beforeAndAfterIdenticalFindings": true,
+    "previousInfo": 8,
+    "previousWarnings": 2,
+    "newFindings": 0,
+    "generalSecurityAuditClosed": false
+  },
+  "workflow": {
+    "id": 252554336,
+    "state": "active",
+    "path": ".github/workflows/catalog-refresh.yml",
+    "mode": "archive-retire",
+    "approvalId": "jonathan-2026-10-07-737825b-1000-daily",
+    "configuredAfterFinalCiAndWorkersSuccess": true,
+    "restorationVerifiedAt": "2026-10-07T23:02:06.142679+00:00",
+    "cron": "5 5 * * *",
+    "runAttemptRequired": "1",
+    "eventRequired": "schedule",
+    "modeRequired": "priority",
+    "originalHourlyGuidesCronPreserved": "17 0-4,6-23 * * *",
+    "batchRowsMaximum": 250,
+    "batchesMaximum": 4,
+    "dailyExecutionRowsMaximum": 1000,
+    "deadlineSeconds": 120,
+    "newArchiveBytesPerRunMaximum": 5242880,
+    "bucketBytesMaximum": 52428800,
+    "bucketReserveBytesPerSelection": 3145728,
+    "privateObjectsVerifiedBeforeRetirement": 3,
+    "retirementAttemptsPerBatch": 1,
+    "sixFieldCompareAndIndependentReconciliation": true,
+    "unknownAckStopsCurrentRun": true,
+    "operatorInspectBeforeNextDailyRequired": true,
+    "persistentAutomaticPauseImplemented": false,
+    "newCodexAutomationCreated": false
+  },
+  "publicValidation": {
+    "initialReleaseSource": "737825b98306800c616fe733fda3488c14f67ea8",
+    "initialFullChecksAt": "2026-10-07T22:43:28.836Z",
+    "initialFullChecksPassed": 32,
+    "fixtures": false,
+    "finalSourceSmokeAt": "2026-10-07T23:03:51.004Z",
+    "finalSourceSmokePassed": 4,
+    "finalSourceSmokeMethods": [
+      "GET"
+    ],
+    "finalPaths": [
+      "/",
+      "/api/search?q=ryzen",
+      "/comparativa/comparar",
+      "/api/admin/operational"
+    ],
+    "stockOrSevenPurchasablePartsProven": false,
+    "visualUiRevalidatedInThisActivation": false
+  },
+  "independentReview": {
+    "profile": "comparador_reviewer",
+    "model": "gpt-6.1-sol",
+    "reasoningEffort": "high",
+    "materialFindingsOpen": 0,
+    "personallyExecutedFocusedTestsPassed": 3,
+    "finalReceiptsReviewed": true,
+    "initialReviewMissedRerunDefect": true,
+    "reviewerFilesEdited": 0,
+    "reviewerRemoteCalls": 0
+  },
+  "capacity": {
+    "observedAt": "2026-10-07 22:43:22.532403+00",
+    "databaseBytes": 931589267,
+    "cacheBytes": 245489664,
+    "historyBytes": 176963584,
+    "privateBucketObjects": 21,
+    "privateBucketKnownBytes": 102016,
+    "unknownSizeObjects": 0,
+    "sourceRowsRetiredDuringThisActivation": 0,
+    "newStorageObjectsUploadedDuringThisActivation": 0,
+    "physicalSavingsProvenBytes": 0,
+    "capacityClosed": false,
+    "firstNaturalCycleObserved": false,
+    "ongoingWritesNotAttributedToThisDdl": true
+  },
+  "followUp": {
+    "nominalFirstDailyUtc": "2026-10-08T05:05:00Z",
+    "nominalFirstDailyLocal": "2026-10-08T02:05:00-03:00",
+    "timezone": "America/Santiago",
+    "githubMayDelayCron": true,
+    "existingMonitor": "seguimiento-comparador-hardware",
+    "readFirstNaturalArtifactBeforeClaimingSuccess": true,
+    "nextUnit": "measure first natural cycle and continuity; prepare backed backlog drain in stages and active catalog/indices capacity study",
+    "backlogOrHistoryBulkDrainAuthorized": false,
+    "vacuumOrIndexesApplied": false,
+    "budgetPlanChanged": false
+  },
+  "rollback": {
+    "stopFutureMutations": "TELEMETRY_RETENTION_MODE=inspect",
+    "previousWorker": "b9a4905d-67b0-4ae2-b6ee-1b18977be2a1",
+    "previousSource": "614caa1d30ce5381f064cda406a1e96a015f52af",
+    "removedSourceRowsRequirePrivateArchiveAndSpecificRecovery": true
+  }
+}
