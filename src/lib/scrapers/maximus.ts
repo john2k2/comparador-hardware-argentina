@@ -30,6 +30,7 @@ interface MaximusItem {
 
 interface MaximusSearchData {
   items?: MaximusItem[];
+  match?: number;
 }
 
 interface MaximusScriptResponse {
@@ -67,14 +68,18 @@ function buildCookieHeader(setCookies: string[]): string {
 
 function parseArsPrice(value: unknown): number {
   if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
-    return Math.round(value);
+    return value;
   }
 
-  const text = String(value ?? '').trim();
-  if (!text) return 0;
-
-  const digits = text.replace(/\D/g, '');
-  return parseInt(digits, 10) || 0;
+  if (typeof value !== 'string') return 0;
+  const text = value.trim().replace(/^(?:ARS\s*|\$\s*)/, '');
+  let normalized: string;
+  if (/^\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?$/.test(text)) normalized = text.replace(/\./g, '').replace(',', '.');
+  else if (/^\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?$/.test(text)) normalized = text.replace(/,/g, '');
+  else if (/^\d+(?:[.,]\d{1,2})?$/.test(text)) normalized = text.replace(',', '.');
+  else return 0;
+  const price = Number(normalized);
+  return Number.isFinite(price) && price > 0 ? price : 0;
 }
 
 function slugify(value: string): string {
@@ -165,6 +170,8 @@ async function fetchMaximusItems(query: string, signal?: AbortSignal): Promise<M
   if (!envelope.d.trim().startsWith('{')) return [];
 
   const scriptPayload = JSON.parse(envelope.d) as MaximusScriptResponse;
+  // Sin coincidencias, la API devuelve recomendaciones de otras categorías.
+  if (scriptPayload.data?.match === 0) return [];
   const items = scriptPayload.data?.items;
   return Array.isArray(items) ? items : [];
 }
