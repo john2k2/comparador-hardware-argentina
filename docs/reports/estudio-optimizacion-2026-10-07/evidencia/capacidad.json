@@ -1,0 +1,14 @@
+{
+  "verifiedAt": "2026-10-07T17:46:28.538Z",
+  "projectId": "zyiyziubpcpgoqlkcrie",
+  "mode": "BEGIN READ ONLY; timeout3s; ROLLBACK",
+  "result": [
+    {
+      "observed_at": "2026-10-07 17:41:51.297701+00",
+      "database_bytes": 929836179,
+      "cache_bytes": 245432320,
+      "price_history_bytes": 176480256,
+      "default_transaction_read_only": "off"
+    }
+  ]
+}

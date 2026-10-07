@@ -1,0 +1,25 @@
+{
+  "startedAt": "2026-10-07T18:10:38.456664+00:00",
+  "version": "96eaf5ba-6f94-4bec-a2c3-eac55beeec2f",
+  "readOnlyTail": true,
+  "scheduled": [
+    {
+      "readAt": "2026-10-07T18:11:28.659325+00:00",
+      "cron": "11 * * * *",
+      "scheduledTime": 1791396669000,
+      "outcome": "ok",
+      "scriptVersionId": "96eaf5ba-6f94-4bec-a2c3-eac55beeec2f",
+      "codes": [],
+      "results": [
+        "sent"
+      ],
+      "messages": [
+        "completed"
+      ],
+      "exceptionCount": 0
+    }
+  ],
+  "otherEventCount": 1,
+  "finishedAt": "2026-10-07T18:12:31.493349+00:00",
+  "tailExit": null
+}

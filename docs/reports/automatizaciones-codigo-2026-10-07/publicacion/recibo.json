@@ -1,0 +1,76 @@
+{
+  "verifiedAt": "2026-10-07T17:56:33.996900+00:00",
+  "sourceSha": "527cd6b8bfdcad6d9b8a214d4b96433e369eb487",
+  "push": "fast-forward origin/main; no force",
+  "previousSourceSha": "99d5917b5ec185314d8ae081beb971894709ebcd",
+  "deployment": {
+    "id": "de6a18fc-5328-4858-a878-66c82a234b08",
+    "createdOn": "2026-10-07T17:35:35.792344Z",
+    "versions": [
+      {
+        "version_id": "96eaf5ba-6f94-4bec-a2c3-eac55beeec2f",
+        "percentage": 100
+      }
+    ]
+  },
+  "rollbackVersion": "652e3c18-4182-43d1-9d98-5f10afd67aa8",
+  "workersBuild": "success",
+  "ci": {
+    "runId": 37660047632,
+    "conclusion": "success",
+    "migrations": "isolated CI only; no remote operation",
+    "browserSuite": "critical isolated data passed"
+  },
+  "publicSite": {
+    "at": "2026-10-07T17:38:37.367Z",
+    "checks": 32,
+    "passed": true,
+    "fixtures": false
+  },
+  "publicConfidence": {
+    "at": "2026-10-07T17:37:32.526Z",
+    "result": "passed",
+    "pageErrors": [],
+    "readOnlyNetwork": {
+      "attemptedAnonymousSessionCleanupBlocked": 10,
+      "attemptedCloudflareDiagnosticsBlocked": 15,
+      "unexpectedApplicationMutation": []
+    },
+    "comparison": {
+      "leftId": "agrupado-procesadores-amd-ryzen-5-5600-1ru8te5",
+      "rightId": "agrupado-procesadores-amd-ryzen-7-5700x-xr4ubs",
+      "recovered": true,
+      "idsOnly": true
+    },
+    "builder": {
+      "status": 200,
+      "loaded": true,
+      "commercialBuildVerified": false
+    }
+  },
+  "bindings": {
+    "count": 40,
+    "secretsIncluded": false
+  },
+  "monitor": {
+    "verifiedAt": "2026-10-07T17:34:11.560397+00:00",
+    "id": "seguimiento-comparador-hardware",
+    "status": "ACTIVE",
+    "metadataPreserved": true,
+    "oldPromptChars": 48170,
+    "candidatePromptChars": 9585,
+    "savedPromptChars": 9584,
+    "normalization": "tool trims one final newline; otherwise identical",
+    "oldPromptSha256": "4ae5af2305e24984628472910bbbb40eda5169dc9ea9aeb7faa8610688ab7d67",
+    "savedPromptSha256": "0be038260d921f9844f97c620e7b68f2a7717646375150e631b717a032dc84d5",
+    "tomlSha256": "55096e2c374b5b1debdd54af613f8634cb20a75a8acbb19ac7c3da00386118f4",
+    "candidateFileSha256": "89ca039827fe2cb425433fcc3ae750b5d6d17e673ada83e2d745f2698ff1b0db",
+    "duplicateCreated": false
+  },
+  "limits": [
+    "no production CPU/latency benchmark",
+    "no remote DB maintenance/delete or refresh dispatched",
+    "not G02/95% closure",
+    "not seven purchasable PC pieces"
+  ]
+}
