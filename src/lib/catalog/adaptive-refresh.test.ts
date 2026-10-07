@@ -216,3 +216,123 @@ it.each([
   expect(JSON.stringify(result)).not.toContain(raw.details);
   expect(JSON.stringify(result)).not.toContain(raw.hint);
 });
+
+it('mide tres cancelaciones seed y las esperas sin contaminar el artefacto', async () => {
+  const times: number[] = [];
+  mocks.rpc.mockImplementation(async (name: string) => {
+    if (name === 'seed_catalog_refresh_queue') {
+      times.push(Date.now());
+      vi.setSystemTime(new Date(Date.now() + 8000));
+      return { data: null, error: { code: '57014', message: 'PRIVATE_CREDENTIAL', details: 'SQL', url: target.url } };
+    }
+    return { data: [], error: null };
+  });
+  const promise = runAdaptiveRefresh();
+  await vi.runAllTimersAsync();
+  const result = await promise;
+  expect(result).toMatchObject({ status: 'failed', failureCode: 'REFRESH_SEED_TIMEOUT', seeded: 0,
+    attempted: 0, observed: 0, comparable: 0, phaseMs: { preparation: 25500 },
+    seedDiagnostic: { attempts: [1, 2, 3].map(attemptIndex => ({ rpc: 'seed_catalog_refresh_queue',
+      phase: 'preparation', batchIndex: 1, attemptIndex, elapsedMs: 8000, code: '57014' })) } });
+  expect(times.map(time => time - times[0])).toEqual([0, 8500, 17500]);
+  expect(mocks.rpc.mock.calls.some(([name]) => name.startsWith('claim_'))).toBe(false);
+  expect(JSON.stringify(result)).not.toMatch(/PRIVATE_CREDENTIAL|SQL|compragamer.com/);
+});
+
+it('conserva contador y diagnóstico de éxito después de un retry seed', async () => {
+  let seeds = 0;
+  mocks.rpc.mockImplementation(async (name: string) => {
+    if (name === 'seed_catalog_refresh_queue') {
+      vi.setSystemTime(new Date(Date.now() + 10));
+      const error = ++seeds === 2 ? { code: '57014' } : null;
+      return { data: seeds === 1 ? 500 : error ? null : 0, error };
+    }
+    return { data: [], error: null };
+  });
+  const promise = runAdaptiveRefresh();
+  await vi.runAllTimersAsync();
+  const result = await promise;
+  expect(result).toMatchObject({ status: 'completed', seeded: 500, phaseMs: { preparation: 530 },
+    seedDiagnostic: { attempts: [
+      { batchIndex: 2, attemptIndex: 1, elapsedMs: 10, code: '57014' },
+      { batchIndex: 2, attemptIndex: 2, elapsedMs: 10, code: null },
+    ] } });
+  expect(result.seedDiagnostic?.attempts).toHaveLength(2);
+  expect(seeds).toBe(3);
+  expect(result.claimDiagnostic).toBeUndefined();
+});
+
+it.each([undefined, '57014', 'SECRET_URL'])('captura rechazo seed con código %j sin añadir retries', async (code) => {
+  mocks.rpc.mockImplementation(async (name: string) => {
+    if (name === 'seed_catalog_refresh_queue') {
+      vi.setSystemTime(new Date(Date.now() + 35));
+      throw { code, message: 'PRIVATE_CREDENTIAL', hint: target.url };
+    }
+    return { data: [], error: null };
+  });
+  const result = await runAdaptiveRefresh();
+  expect(result).toMatchObject({ failureCode: 'REFRESH_UNEXPECTED_ERROR', status: 'failed',
+    phaseMs: { preparation: 35 }, seedDiagnostic: { attempts: [{
+      batchIndex: 1, attemptIndex: 1, elapsedMs: 35, code: code === '57014' ? code : null,
+    }] } });
+  expect(mocks.rpc.mock.calls.filter(([name]) => name === 'seed_catalog_refresh_queue')).toHaveLength(1);
+  expect(JSON.stringify(result)).not.toMatch(/SECRET_URL|PRIVATE_CREDENTIAL|compragamer.com/);
+});
+
+it('mantiene el deadline seed y retiene el último lote confirmado', async () => {
+  mocks.rpc.mockImplementation(async (name: string) => {
+    if (name === 'seed_catalog_refresh_queue') {
+      vi.setSystemTime(new Date(Date.now() + 1000));
+      return { data: 500, error: null };
+    }
+    return { data: [], error: null };
+  });
+  const result = await runAdaptiveRefresh({ maxRunMs: 1000 });
+  expect(result).toMatchObject({ failureCode: 'REFRESH_SEED_DEADLINE', seeded: 500,
+    phaseMs: { preparation: 1000 }, seedDiagnostic: { attempts: [{ batchIndex: 1, attemptIndex: 1 }] } });
+  expect(mocks.rpc.mock.calls.filter(([name]) => name === 'seed_catalog_refresh_queue')).toHaveLength(1);
+});
+
+it.each([
+  ['release', 'response'], ['release', 'rejection'], ['coverage', 'response'],
+  ['coverage', 'rejection'], ['progress', 'response'], ['progress', 'rejection'],
+])('conserva seed y acumulados cuando el cierre %s falla por %s', async (stage, mode) => {
+  const raw = { message: 'PRIVATE_CREDENTIAL', details: 'private SQL', hint: target.url };
+  const failure = async () => {
+    if (mode === 'rejection') throw raw;
+    return { error: raw, data: null };
+  };
+  const originalFrom = mocks.from.getMockImplementation()!;
+  const update = vi.fn(async () => stage === 'progress' ? failure() : { error: null });
+  const release = vi.fn(async () => stage === 'release' ? failure() : { error: null });
+  mocks.from.mockImplementation((table: string) => {
+    if (table === 'catalog_offer_refresh_state') return { update: () => ({ eq: release }) };
+    const chain = originalFrom(table);
+    return { ...chain, update: (payload: { summary?: unknown }) =>
+      payload.summary ? { eq: update } : chain.update(payload) };
+  });
+  let seeds = 0;
+  mocks.rpc.mockImplementation(async (name: string) => {
+    if (name === 'seed_catalog_refresh_queue') {
+      vi.setSystemTime(new Date(Date.now() + 10));
+      return ++seeds === 1 ? { data: 500, error: null } : { data: null, error: { code: '57014', ...raw } };
+    }
+    return stage === 'coverage' ? failure() : { data: [{ total: 500 }], error: null };
+  });
+  const promise = runAdaptiveRefresh();
+  await vi.runAllTimersAsync();
+  const result = await promise;
+  expect(result).toMatchObject({ status: 'failed', failureCode: 'REFRESH_SEED_TIMEOUT', seeded: 500,
+    attempted: 0, observed: 0, comparable: 0, phaseMs: { preparation: 1540 },
+    closure: { failureCodes: [`REFRESH_${stage.toUpperCase()}_FAILED`],
+      summaryPersistence: stage === 'progress' ? 'unconfirmed' : 'confirmed' } });
+  expect(result.seedDiagnostic?.attempts).toEqual([1, 2, 3].map(attemptIndex => ({
+    rpc: 'seed_catalog_refresh_queue', phase: 'preparation', batchIndex: 2,
+    attemptIndex, elapsedMs: 10, code: '57014',
+  })));
+  expect(result.coverage).toEqual(stage === 'coverage' ? null : [{ total: 500 }]);
+  expect(update).toHaveBeenCalledTimes(1);
+  expect(release).toHaveBeenCalledTimes(1);
+  expect(JSON.stringify(result)).not.toMatch(/PRIVATE_CREDENTIAL|private SQL|compragamer.com/);
+  expect(mocks.rpc.mock.calls.some(([name]) => name.startsWith('claim_'))).toBe(false);
+});

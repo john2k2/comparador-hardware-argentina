@@ -81,3 +81,46 @@ export function createRefreshClaimError(
 export function extractRefreshClaimDiagnostic(error: unknown): RefreshClaimDiagnostic | null {
   return error instanceof RefreshClaimError ? sanitizeDiagnostic(error.diagnostic) : null;
 }
+
+export type RefreshSeedAttempt = {
+  rpc: 'seed_catalog_refresh_queue';
+  phase: 'preparation';
+  batchIndex: number;
+  attemptIndex: number;
+  elapsedMs: number;
+  code: string | null;
+};
+
+export type RefreshSeedDiagnostic = { attempts: RefreshSeedAttempt[] };
+
+export function createRefreshSeedAttempt(
+  error: unknown,
+  batchIndex: number,
+  attemptIndex: number,
+  elapsedMs: number,
+): RefreshSeedAttempt {
+  return { rpc: 'seed_catalog_refresh_queue', phase: 'preparation',
+    batchIndex, attemptIndex, elapsedMs, code: extractCode(error) };
+}
+
+export function sanitizeRefreshSeedDiagnostic(value: unknown): RefreshSeedDiagnostic | null {
+  try {
+    if (!value || typeof value !== 'object') return null;
+    const { attempts } = value as { attempts?: unknown };
+    if (!Array.isArray(attempts) || attempts.length < 1 || attempts.length > 3) return null;
+    const safe: RefreshSeedAttempt[] = [];
+    for (const candidate of attempts) {
+      if (!candidate || typeof candidate !== 'object') return null;
+      const { rpc, phase, batchIndex, attemptIndex, elapsedMs, code } = candidate;
+      if (rpc !== 'seed_catalog_refresh_queue' || phase !== 'preparation'
+        || !Number.isSafeInteger(batchIndex) || batchIndex < 1 || batchIndex > 200
+        || !Number.isSafeInteger(attemptIndex) || attemptIndex !== safe.length + 1
+        || !Number.isSafeInteger(elapsedMs) || elapsedMs < 0
+        || (safe.length > 0 && batchIndex !== safe[0].batchIndex)) return null;
+      safe.push({ rpc, phase, batchIndex, attemptIndex, elapsedMs, code: validatedCode(code) });
+    }
+    return { attempts: safe };
+  } catch {
+    return null;
+  }
+}

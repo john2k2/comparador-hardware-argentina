@@ -14,7 +14,8 @@ import { sourceHttpMetrics } from '@/lib/scrapers/source-http';
 import { runInventoryDiscovery } from './inventory-discovery';
 import { runInventoryDetailDiscovery } from './inventory-detail-discovery';
 import { createKnownOfferContext, fetchKnownOffer, prepareKnownOfferBatch } from './on-demand/worker';
-import { createRefreshClaimError, extractRefreshClaimDiagnostic, type RefreshClaimDiagnostic } from './refresh-diagnostics';
+import { createRefreshClaimError, extractRefreshClaimDiagnostic, createRefreshSeedAttempt,
+  sanitizeRefreshSeedDiagnostic, type RefreshClaimDiagnostic, type RefreshSeedAttempt } from './refresh-diagnostics';
 
 type Target = { offer_id: string; product_id: string; store_id: string; url: string; interval_hours: number; reason: string };
 type Outcome = 'observed' | 'no-observation' | 'source-failed' | 'persist-failed' | 'unsupported';
@@ -49,6 +50,9 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   let taskFailed = false;
   let failureCode: string | undefined;
   let claimDiagnostic: RefreshClaimDiagnostic | null = null;
+  let seedAttempts: RefreshSeedAttempt[] = [];
+  let seedPreparationFailed = false;
+  const hasFailureDiagnostic = () => claimDiagnostic !== null || seedPreparationFailed;
   const closureFailureCodes: ClosureFailureCode[] = [];
   let claimBatchIndex = 0;
   let feedClaimed = 0, feedPhase = true;
@@ -80,20 +84,40 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
     inventoryDetails = process.env.CATALOG_INVENTORY_DISCOVERY === '1' ? await runInventoryDetailDiscovery() : undefined;
     phaseMs.inventory = Date.now() - inventoryStarted;
     const preparationStarted = Date.now();
-    for (let batch = 0; ; batch++) {
-      if (batch >= 200 || Date.now() - started >= deadline) throw new Error('REFRESH_SEED_DEADLINE');
-      let result = await client.rpc('seed_catalog_refresh_queue');
-      // La preparación es idempotente: una respuesta perdida no duplica ofertas.
-      for (let retry=0; result.error && retry<2 && Date.now()-started<deadline; retry++) {
-        await new Promise(resolve=>setTimeout(resolve,500 * (retry+1)));
-        result=await client.rpc('seed_catalog_refresh_queue');
+    try {
+      for (let batch = 0; ; batch++) {
+        if (batch >= 200 || Date.now() - started >= deadline) throw new Error('REFRESH_SEED_DEADLINE');
+        // Retener sólo el último lote; las respuestas externas no entran al resumen.
+        seedAttempts = [];
+        const seed = async (attemptIndex: number) => {
+          const attemptStarted = Date.now();
+          try {
+            const result = await client.rpc('seed_catalog_refresh_queue');
+            seedAttempts.push(createRefreshSeedAttempt(result.error, batch + 1, attemptIndex, Date.now() - attemptStarted));
+            return result;
+          } catch (error) {
+            seedAttempts.push(createRefreshSeedAttempt(error, batch + 1, attemptIndex, Date.now() - attemptStarted));
+            // Mantener el rechazo original: no añadir reintentos para excepciones.
+            throw error;
+          }
+        };
+        let result = await seed(1);
+        // La preparación es idempotente: una respuesta perdida no duplica ofertas.
+        for (let retry=0; result.error && retry<2 && Date.now()-started<deadline; retry++) {
+          await new Promise(resolve=>setTimeout(resolve,500 * (retry+1)));
+          result=await seed(retry + 2);
+        }
+        if (result.error) throw new Error(result.error.code==='57014' ? 'REFRESH_SEED_TIMEOUT' : 'REFRESH_SEED_FAILED');
+        if (!Number.isSafeInteger(result.data) || result.data < 0 || result.data > 500) throw new Error('REFRESH_INVALID_SEED_RESULT');
+        seeded += result.data;
+        if (result.data === 0) break;
       }
-      if (result.error) throw new Error(result.error.code==='57014' ? 'REFRESH_SEED_TIMEOUT' : 'REFRESH_SEED_FAILED');
-      if (!Number.isSafeInteger(result.data) || result.data < 0 || result.data > 500) throw new Error('REFRESH_INVALID_SEED_RESULT');
-      seeded += result.data;
-      if (result.data === 0) break;
+    } catch (error) {
+      seedPreparationFailed = true;
+      throw error;
+    } finally {
+      phaseMs.preparation = Date.now() - preparationStarted;
     }
-    phaseMs.preparation = Date.now() - preparationStarted;
     // La cuota de filas sola no protege el tiempo de las fuentes no compartidas.
     feedDeadline = Date.now() + Math.max(0, started + deadline - Date.now()) / 2;
     while (counts.attempted < maxOffers && Date.now() - started < deadline) {
@@ -188,10 +212,10 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
       const released = await client.from('catalog_offer_refresh_state').update({ lease_token: null, leased_until: null }).eq('lease_token', token);
       if (released.error) {
         status = 'failed';
-        if (claimDiagnostic) closureFailureCodes.push('REFRESH_RELEASE_FAILED');
+        if (hasFailureDiagnostic()) closureFailureCodes.push('REFRESH_RELEASE_FAILED');
       }
     } catch (error) {
-      if (!claimDiagnostic) throw error;
+      if (!hasFailureDiagnostic()) throw error;
       closureFailureCodes.push('REFRESH_RELEASE_FAILED');
       status = 'failed';
     }
@@ -201,12 +225,12 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
     const coverage = await client.rpc('catalog_refresh_coverage');
     if (coverage.error) {
       status = 'failed';
-      if (claimDiagnostic) closureFailureCodes.push('REFRESH_COVERAGE_FAILED');
+      if (hasFailureDiagnostic()) closureFailureCodes.push('REFRESH_COVERAGE_FAILED');
     } else {
       coverageData = coverage.data ?? [];
     }
   } catch (error) {
-    if (!claimDiagnostic) throw error;
+    if (!hasFailureDiagnostic()) throw error;
     closureFailureCodes.push('REFRESH_COVERAGE_FAILED');
     status = 'failed';
   }
@@ -214,18 +238,20 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   if (inventoryDetails?.status === 'failed') status = 'failed';
   const sourceFailureReasons: Record<string,number> = {};
   for (const reason of context.failures.values()) sourceFailureReasons[reason]=(sourceFailureReasons[reason] ?? 0)+1;
+  const seedDiagnostic = sanitizeRefreshSeedDiagnostic({ attempts: seedAttempts });
   const summary = { source: 'adaptive-catalog', trigger: ['github-schedule','cloudflare-fallback'].includes(process.env.CATALOG_RUN_TRIGGER ?? '') ? process.env.CATALOG_RUN_TRIGGER : 'manual', runId: run.data.id, startedAt, finishedAt: new Date().toISOString(),
-    status, failureCode, ...(claimDiagnostic ? { claimDiagnostic, closure: { failureCodes: closureFailureCodes } } : {}), inventory, inventoryDetails, feedClaimed, sourceFailureReasons, limitReached: counts.attempted >= maxOffers, ...counts, groups, seeded, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads, coverage: coverageData };
+    status, failureCode, ...(claimDiagnostic ? { claimDiagnostic } : {}), ...(seedDiagnostic ? { seedDiagnostic } : {}),
+    ...(hasFailureDiagnostic() ? { closure: { failureCodes: closureFailureCodes } } : {}), inventory, inventoryDetails, feedClaimed, sourceFailureReasons, limitReached: counts.attempted >= maxOffers, ...counts, groups, seeded, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads, coverage: coverageData };
   let summaryPersistence: 'confirmed' | 'unconfirmed' = 'unconfirmed';
   try {
     const completed = await client.from('catalog_refresh_runs').update({ status, finished_at: summary.finishedAt, summary }).eq('id', run.data.id);
     if (completed.error) throw new Error('REFRESH_PROGRESS_FAILED');
     summaryPersistence = 'confirmed';
   } catch (error) {
-    if (!claimDiagnostic) throw error;
+    if (!hasFailureDiagnostic()) throw error;
     closureFailureCodes.push('REFRESH_PROGRESS_FAILED');
   }
   // Confirma sólo el ACK del update, no verifica commit posterior ni rollback.
   // El payload enviado todavía no podía conocer esa confirmación.
-  return claimDiagnostic ? { ...summary, closure: { failureCodes: closureFailureCodes, summaryPersistence } } : summary;
+  return hasFailureDiagnostic() ? { ...summary, closure: { failureCodes: closureFailureCodes, summaryPersistence } } : summary;
 }
