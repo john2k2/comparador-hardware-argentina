@@ -1,0 +1,45 @@
+{
+  "utc": "2026-10-07T14:42:54.011Z",
+  "source": "public/favicon.svg",
+  "sourceSha256": "7271ef7e38683664901a9d2e59da351edafdf9bbd8926fead87aa0f569eed63c",
+  "ico": {
+    "path": "src/app/favicon.ico",
+    "format": "ICO with PNG frames",
+    "sha256": "64ff4f316e2df11e42ec93aea40538cd68a6ef2eb0971933b4f74aaa7fb138ca",
+    "bytes": 2859,
+    "frames": [
+      {
+        "size": 16,
+        "format": "png",
+        "bytes": 165,
+        "frameEqualsSourceRaster": true
+      },
+      {
+        "size": 32,
+        "format": "png",
+        "bytes": 185,
+        "frameEqualsSourceRaster": true
+      },
+      {
+        "size": 48,
+        "format": "png",
+        "bytes": 278,
+        "frameEqualsSourceRaster": true
+      },
+      {
+        "size": 256,
+        "format": "png",
+        "bytes": 2161,
+        "frameEqualsSourceRaster": true
+      }
+    ]
+  },
+  "apple": {
+    "path": "public/apple-touch-icon.png",
+    "format": "png",
+    "width": 180,
+    "height": 180,
+    "bytes": 1482,
+    "sha256": "d734f376ca359e65bb2613830a43cf3bf4426a0b6e9d9281d8430a9985c8c8d0"
+  }
+}
