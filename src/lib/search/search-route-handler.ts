@@ -167,6 +167,15 @@ export async function GET(request: NextRequest) {
     privilegedBypass = true;
   }
 
+  const hasFilterIntent = hasSearchFiltersIntent({ category: effectiveCategory, minPrice, maxPrice, stores: selectedStoreIds });
+  const hasSearchIntent = Boolean(query || hasFilterIntent);
+  const stableRuntimeMode = isStableRuntimeMode();
+  // La caché se lee junto al rate limit, pero sólo se usa después de admitir la solicitud.
+  const cachedRead = hasSearchIntent && !stableRuntimeMode && !bypassDb && !isRefreshRequest
+    ? getCachedSearchResponse(cacheKey, includeUnavailable)
+    : null;
+  cachedRead?.catch(() => undefined);
+
   const rateResult = await checkRateLimit(`/api/search:${getRequestIp(request)}`, SEARCH_RATE_LIMIT);
   defaultRateLimitHeaders = buildRateLimitHeaders(rateResult);
   if (!rateResult.allowed) {
@@ -177,9 +186,6 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const hasFilterIntent = hasSearchFiltersIntent({ category: effectiveCategory, minPrice, maxPrice, stores: selectedStoreIds });
-  const hasSearchIntent = Boolean(query || hasFilterIntent);
-  const stableRuntimeMode = isStableRuntimeMode();
   const catalogOnlyMode = shouldSkipLiveScraping({
     internalRefresh: internalRefreshRequest,
     privilegedBypass,
@@ -195,8 +201,8 @@ export async function GET(request: NextRequest) {
       selectedStoreIds, sortBy, page, includeUnavailable }), { headers: { 'X-Search-Cache': 'STABLE-FIXTURE' } });
   }
 
-  if (!bypassDb && !isRefreshRequest) {
-    const cached = await getCachedSearchResponse(cacheKey, includeUnavailable);
+  if (cachedRead) {
+    const cached = await cachedRead;
     if (cached) {
       const staleCache = hasStaleProducts(cached.products, DB_STALE_AFTER_MS);
       if (staleCache && !isRefreshRequest) {
