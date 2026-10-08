@@ -7,7 +7,8 @@ import {createClient} from '@supabase/supabase-js';
 import {parseTelemetryCsv} from './telemetry-backup.mjs';
 import {buildTelemetryMaintenanceArchive,telemetryUtc,TELEMETRY_SCOPES,TELEMETRY_METADATA_FIELDS} from './telemetry-maintenance.mjs';
 import {createTelemetryMaintenanceDataFetch,createTelemetryMaintenanceStorageFetch,telemetryMaintenanceObjectKeys,
-  storeTelemetryMaintenanceArchive,readTelemetryJson,TELEMETRY_SELECT_RPC,TELEMETRY_RETIRE_RPC} from './telemetry-maintenance-network.mjs';
+  readTelemetryJson,TELEMETRY_SELECT_RPC,TELEMETRY_RETIRE_RPC} from './telemetry-maintenance-network.mjs';
+import {storeTelemetryBacklogArchive,reconcileTelemetryBacklogMetadata} from './telemetry-backlog-storage.mjs';
 
 export const projectId='zyiyziubpcpgoqlkcrie';
 export const origin=`https://${projectId}.supabase.co`;
@@ -80,7 +81,8 @@ export async function prepareSample(dir,env,cutoff,counts,transport=fetch) {
   const results=[];
   for(const scope of TELEMETRY_SCOPES) {
     const count=counts[scope];
-    if(!Number.isSafeInteger(count)||count<1)fail('POPULATION');
+    if(!Number.isSafeInteger(count)||count<0)fail('POPULATION');
+    if(count===0)continue;
     const offsets=[...new Set(Array.from({length:4},(_,i)=>Math.floor(Math.max(0,count-250)*i/3)))];
     for(const offset of offsets) {
       const url=sampleUrl(scope,cutoff,offset);
@@ -101,7 +103,7 @@ export async function prepareSample(dir,env,cutoff,counts,transport=fetch) {
   }
   return {readOnly:true,originalRowsRemoved:0,samples:results,estimates:Object.entries(counts).map(([scope,rows])=>{
     const sample=results.filter(r=>r.scope===scope),n=sample.reduce((s,r)=>s+r.rows,0);
-    return {scope,populationRows:rows,sampleRows:n,estimatedStoredBytes:Math.ceil(sample.reduce((s,r)=>s+r.storedBytes,0)/n*rows),isEstimate:true};}),
+    return {scope,populationRows:rows,sampleRows:n,estimatedStoredBytes:rows===0?0:Math.ceil(sample.reduce((s,r)=>s+r.storedBytes,0)/n*rows),isEstimate:true};}),
     limits:['Systematic sample is not a guarantee of full archive size.','No Storage upload or original deletion in preparation.','Selection contains six exact source fields; numeric payload stays text.']};
 }
 
@@ -125,21 +127,15 @@ export function createDrainCallbacks(env,dir,{transport=fetch,getSignal,writeChe
   return {writeCheckpoint,preflightWindow,
     selectSnapshot:(cutoff,limit)=>rpc(TELEMETRY_SELECT_RPC,{p_cutoff:cutoff,p_limit:limit}),
     retireSnapshot:(cutoff,snapshot)=>rpc(TELEMETRY_RETIRE_RPC,{p_cutoff:cutoff,p_snapshot:snapshot}),
-    reconcileMetadata:async keys=>{
-      const rows=[];
-      for(let i=0;i<keys.length;i+=50){
-        const page=keys.slice(i,i+50),literals=page.map(k=>'"'+k.replaceAll('\\','\\\\').replaceAll('"','\\"')+'"');
-        const result=await metadata({cache_key:`in.(${literals.join(',')})`,order:'cache_key.asc',limit:String(page.length)});
-        if(!Array.isArray(result)||result.length>page.length)fail('RECONCILE_PAGE');
-        rows.push(...result);
-      }
-      return rows;
-    },
+    reconcileMetadata:keys=>reconcileTelemetryBacklogMetadata(keys,page=>{
+      const literals=page.map(k=>'"'+k.replaceAll('\\','\\\\').replaceAll('"','\\"')+'"');
+      return metadata({cache_key:`in.(${literals.join(',')})`,order:'cache_key.asc',limit:String(page.length)});
+    }),
     storeArchive:async archive=>{
       const local=await saveLocalArchive(dir,archive); // fsync completo antes de cualquier subida/retiro.
       const client=createClient(origin,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},
         global:{fetch:createTelemetryMaintenanceStorageFetch(origin,telemetryMaintenanceObjectKeys(archive),{allowUpload:true,transport:send})}});
-      const result=await storeTelemetryMaintenanceArchive(client.storage,archive);
+      const result=await storeTelemetryBacklogArchive(client.storage,archive);
       if(onArchive)await onArchive(local);
       return result;
     }};

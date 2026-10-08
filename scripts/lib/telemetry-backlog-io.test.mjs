@@ -3,11 +3,24 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
-import {createOperationDirectory,writeDurable,readPrivate,privateRoot,sampleUrl,saveLocalArchive,projectId,sha,origin,createDrainCallbacks} from './telemetry-backlog-io.mjs';
+import {createOperationDirectory,writeDurable,readPrivate,privateRoot,sampleUrl,saveLocalArchive,projectId,sha,origin,createDrainCallbacks,prepareSample} from './telemetry-backlog-io.mjs';
 import {parseArguments,checkScheduledMaintenance,verifyAuthorization,requireFreshTimestamp} from '../telemetry-backlog-drain.mjs';
 
 test('CLI refuses implicit execute, wrong flags and missing immutable plan',()=>{
   for(const args of [[],['delete'],['execute','--out','x'],['prepare','--out','x','--preflight','y','--max-rows','1','--approval-id','a','--delete','true']])assert.throws(()=>parseArguments(args));
+});
+test('continuation requires both previous private inputs',()=>{
+  const args=['prepare','--out','x','--preflight','y','--max-rows','214000','--approval-id','a'];
+  assert.throws(()=>parseArguments([...args,'--previous-plan','z']),/PREVIOUS_PAIR/);
+  assert.throws(()=>parseArguments([...args,'--previous-summary','z']),/PREVIOUS_PAIR/);
+  assert.equal(parseArguments([...args,'--previous-plan','z','--previous-summary','s']).command,'prepare');
+});
+test('empty scopes produce no requests or NaN estimates',async()=>{
+  let calls=0;
+  const result=await prepareSample(privateRoot,{SUPABASE_URL:origin,SUPABASE_SECRET_KEY:'synthetic'},'2026-10-08T20:16:00Z',
+    {'operational-store-event':0,'operational-endpoint-event':0},async()=>{calls++;});
+  assert.equal(calls,0);assert.equal(result.samples.length,0);
+  assert.ok(result.estimates.every(row=>row.populationRows===0&&row.sampleRows===0&&row.estimatedStoredBytes===0));
 });
 test('sample GET URL fixes table/columns/scopes and cannot address user data',()=>{
   const url=sampleUrl('operational-store-event','2026-10-08T20:00:00Z',0);

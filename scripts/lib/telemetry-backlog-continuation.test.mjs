@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {deriveTelemetryContinuation} from './telemetry-backlog-continuation.mjs';
+import {verifyContinuation} from '../telemetry-backlog-drain.mjs';
 
 const projectId='zyiyziubpcpgoqlkcrie',cutoff='2026-10-08T20:16:00.000000Z';
 const hashes={planSha256:'a'.repeat(64),summarySha256:'b'.repeat(64),now:'2026-10-08T21:17:00Z'};
@@ -43,4 +44,16 @@ test('no renueva seis horas ni admite más ventanas que el plan anterior',()=>{
   assert.throws(()=>deriveTelemetryContinuation(base(),summary(),preflight(),{...hashes,now:'2026-10-09T02:34:00Z'}),/OPERATION_DEADLINE/);
   const short=base();short.plan.deadlineMs=60000;
   assert.throws(()=>deriveTelemetryContinuation(short,summary(),preflight(),hashes),/OPERATION_DEADLINE/);
+});
+test('execute contrasta corte y lineage completa, no sólo los cuatro topes',()=>{
+  const prior={envelope:base(),summary:summary(),...hashes};
+  const continuation=deriveTelemetryContinuation(prior.envelope,prior.summary,preflight(),hashes);
+  const envelope={preflight:preflight(),continuation,plan:{...base().plan,now:hashes.now,
+    maxSelectedRows:continuation.maxSelectedRows,maxStoredBytes:continuation.maxStoredBytes,
+    maxWindows:continuation.maxWindows,deadlineMs:continuation.deadlineMs}};
+  assert.equal(verifyContinuation(envelope,prior),true);
+  assert.throws(()=>verifyContinuation({...envelope,plan:{...envelope.plan,cutoff:'2026-10-08T20:17:00Z'}},prior),/CONTINUATION_CUTOFF/);
+  for(const patch of [{consumed:{...continuation.consumed,selected:0}},{originalRows:1},{operationStartedAt:'2026-10-08T21:00:00Z'},
+    {originalDeadlineMs:21600001},{previousSummarySha256:'d'.repeat(64)}])
+    assert.throws(()=>verifyContinuation({...envelope,continuation:{...continuation,...patch}},prior),/CONTINUATION_LINEAGE/);
 });

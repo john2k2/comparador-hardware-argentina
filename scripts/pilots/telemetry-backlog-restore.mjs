@@ -53,8 +53,8 @@ export async function runTelemetryBacklogRestore(dirArgument, receiptName) {
   const sampleBytes = await readPrivate(path.join(dir, 'sample.json'));
   const samplePlan = JSON.parse(sampleBytes.toString('utf8'));
   requireValue(samplePlan.readOnly === true && samplePlan.originalRowsRemoved === 0
-    && Array.isArray(samplePlan.samples) && samplePlan.samples.length === 8, 'EIGHT_SAMPLES');
-  requireValue(new Set(samplePlan.samples.map(sample => sample.manifestSha256)).size === 8, 'DISTINCT_SAMPLES');
+    && Array.isArray(samplePlan.samples) && samplePlan.samples.length >= 1 && samplePlan.samples.length <= 8, 'SAMPLES_BUDGET');
+  requireValue(new Set(samplePlan.samples.map(sample => sample.manifestSha256)).size === samplePlan.samples.length, 'DISTINCT_SAMPLES');
   const prepared = [];
   for (const sample of samplePlan.samples) prepared.push(await readSample(dir, sample));
   requireValue(prepared.reduce((total, sample) => total + sample.rows.length, 0) <= 2000, 'ROWS_BUDGET');
@@ -161,7 +161,7 @@ export async function runTelemetryBacklogRestore(dirArgument, receiptName) {
       sampleCount: receipts.length, totalRows: receipts.reduce((total, sample) => total + sample.rows, 0),
       fieldsCompared: 6, samples: receipts, exactRestore: true, changedRowsPreserved: true,
       clusterDirectory: local, clusterStopped: false,
-      limits: ['Eight systematic samples verify those rows, not the complete backlog or whole database.',
+      limits: ['Up to eight systematic samples verify those rows, not the complete backlog or whole database.',
         'Independent PostgreSQL COPY validates JSONB numeric precision and six source fields.',
         'Local delete and restore do not demonstrate remote execution, physical savings, or Storage custody.',
         'No production restoration is included or authorized by this laboratory.'] };
