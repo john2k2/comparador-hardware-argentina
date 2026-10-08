@@ -34,4 +34,27 @@ describe('modelos prioritarios de la guía', () => {
     expect(mocks.readGuideCatalogCandidatesFromDatabase.mock.calls.every((call) => call[1] === 8 && call[2])).toBe(true);
     expect(new Set(mocks.readGuideCatalogCandidatesFromDatabase.mock.calls.map((call) => call[0])).size).toBe(7);
   });
+
+  it('resuelve varias piezas a la vez sin superar seis lecturas simultáneas', async () => {
+    vi.resetModules();
+    const fresh = await import('./guide-catalog');
+    mocks.readGuideCatalogCandidatesFromDatabase.mockReset();
+    let inFlight = 0;
+    let peak = 0;
+    mocks.readGuideCatalogCandidatesFromDatabase.mockImplementation(async (category: string, _limit: number, query: string) => {
+      inFlight += 1;
+      peak = Math.max(peak, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      inFlight -= 1;
+      return [{ id: `${category}-${query}`, name: query }] as Product[];
+    });
+
+    const guide = getBudgetGuideBySlug('pc-gamer-1-millon')!;
+    const products = await fresh.loadGuideCatalogProducts(guide);
+
+    expect(fresh.GUIDE_COMPONENT_CONCURRENCY).toBe(3);
+    expect(peak).toBeGreaterThan(2);
+    expect(peak).toBeLessThanOrEqual(6);
+    expect(new Set(products.map((product) => product.id)).size).toBe(mocks.readGuideCatalogCandidatesFromDatabase.mock.calls.length);
+  });
 });

@@ -7,6 +7,9 @@ import type { HardwareCategory, Product } from '@/lib/types';
 const CATALOG_TTL_MS = 5 * 60 * 1000;
 const CATEGORY_LIMIT = 24;
 const FETCH_CONCURRENCY = 2;
+const PRIORITY_QUERIES_PER_COMPONENT = 2;
+// Piezas × consultas por pieza no supera las seis conexiones simultáneas del Worker.
+export const GUIDE_COMPONENT_CONCURRENCY = 3;
 
 let catalogMemo: { at: number; products: Product[] } | null = null;
 const priorityMemo = new Map<string, { at: number; products: Product[] }>();
@@ -53,9 +56,7 @@ async function fetchGuideCatalogProducts(): Promise<Product[]> {
 
 export async function loadGuideCatalogProducts(guide?: BudgetGuideDefinition): Promise<Product[]> {
   if (guide) {
-    // Hasta dos modelos y ocho candidatos por consulta. Resolver una pieza a
-    // la vez mantiene el máximo de dos lecturas concurrentes del Worker.
-    const batches = await mapWithConcurrency(Object.values(guide.components), 1,
+    const batches = await mapWithConcurrency(Object.values(guide.components), GUIDE_COMPONENT_CONCURRENCY,
       (spec) => loadGuidePriorityProducts(spec.category, spec.searchTerms));
     return [...new Map(batches.flat().map((product) => [product.id, product])).values()];
   }
@@ -73,14 +74,14 @@ export async function loadGuideCatalogProducts(guide?: BudgetGuideDefinition): P
 
 /** Amplía una guía con modelos concretos que pueden quedar fuera del top 24 general. */
 export async function loadGuidePriorityProducts(category: HardwareCategory, terms: string[]): Promise<Product[]> {
-  const queries = [...new Set(terms.map((term) => term.trim()).filter(Boolean))].slice(0, 2);
+  const queries = [...new Set(terms.map((term) => term.trim()).filter(Boolean))].slice(0, PRIORITY_QUERIES_PER_COMPONENT);
   if (queries.length === 0) return [];
   const cacheKey = `${category}:${queries.join('|')}`;
   const now = Date.now();
   const cached = priorityMemo.get(cacheKey);
   if (cached && now - cached.at < CATALOG_TTL_MS) return cached.products;
 
-  const batches = await mapWithConcurrency(queries, 2, async (query) => {
+  const batches = await mapWithConcurrency(queries, PRIORITY_QUERIES_PER_COMPONENT, async (query) => {
     try {
       return await readGuideCatalogCandidatesFromDatabase(category, 8, query);
     } catch (error) {
