@@ -3,12 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const {
   permanentRedirectMock,
   readCanonicalProductIdByKeyMock,
+  readCanonicalProductIdForProductIdMock,
   readProductByIdFromDatabaseMock,
 } = vi.hoisted(() => ({
   permanentRedirectMock: vi.fn((url: string) => {
     throw new Error(`PERMANENT_REDIRECT:${url}`);
   }),
   readCanonicalProductIdByKeyMock: vi.fn(),
+  readCanonicalProductIdForProductIdMock: vi.fn(),
   readProductByIdFromDatabaseMock: vi.fn(),
 }));
 
@@ -27,6 +29,7 @@ vi.mock('@/components/product/ProductDetailClient', () => ({
 
 vi.mock('@/lib/persistence/product-read', () => ({
   readCanonicalProductIdByKey: readCanonicalProductIdByKeyMock,
+  readCanonicalProductIdForProductId: readCanonicalProductIdForProductIdMock,
   readProductDetailByIdFromDatabase: readProductByIdFromDatabaseMock,
 }));
 
@@ -44,6 +47,7 @@ describe('product canonical redirects', () => {
       prices: [],
     });
     readCanonicalProductIdByKeyMock.mockResolvedValue('group:canonical-product');
+    readCanonicalProductIdForProductIdMock.mockResolvedValue('group:canonical-product');
   });
 
   it('uses a permanent redirect for duplicate product URLs', async () => {
@@ -61,7 +65,30 @@ describe('product canonical redirects', () => {
     })).resolves.toBeTruthy();
     expect(permanentRedirectMock).not.toHaveBeenCalled();
     expect(readProductByIdFromDatabaseMock).toHaveBeenCalledWith('store-product');
-    expect(readCanonicalProductIdByKeyMock).toHaveBeenCalledWith('canonical-key', expect.objectContaining({ id: 'store-product' }));
+    expect(readCanonicalProductIdForProductIdMock).toHaveBeenCalledWith('store-product');
+  });
+
+  it('inicia la búsqueda canónica sin esperar el detalle completo', async () => {
+    let resolveDetail!: (value: unknown) => void;
+    readProductByIdFromDatabaseMock.mockReturnValue(new Promise((resolve) => { resolveDetail = resolve; }));
+    const render = ProductDetailPage({ params: Promise.resolve({ id: 'store-product' }) });
+    await vi.waitFor(() => expect(readCanonicalProductIdForProductIdMock).toHaveBeenCalledWith('store-product'));
+    resolveDetail({ id: 'store-product', name: 'Producto individual', brand: 'Marca', canonicalProductKey: 'canonical-key', prices: [] });
+    await expect(render).rejects.toThrow('PERMANENT_REDIRECT:/product/group%3Acanonical-product');
+  });
+
+  it('responde 404 sin rechazos sin observar cuando la lectura canónica también falla', async () => {
+    readProductByIdFromDatabaseMock.mockResolvedValue(null);
+    readCanonicalProductIdForProductIdMock.mockRejectedValue(new Error('canonical unavailable'));
+    const unhandled = vi.fn();
+    process.on('unhandledRejection', unhandled);
+    try {
+      await expect(ProductDetailPage({ params: Promise.resolve({ id: 'missing' }) })).rejects.toThrow('NOT_FOUND');
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(unhandled).not.toHaveBeenCalled();
+    } finally {
+      process.off('unhandledRejection', unhandled);
+    }
   });
 
   it('conserva filtros y página al redirigir al agrupado desde una búsqueda', async () => {

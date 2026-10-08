@@ -4,7 +4,11 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { ProductDetailClient } from '@/components/product/ProductDetailClient';
 import { buildCanonicalProductHref, isComparisonProductOrigin } from '@/lib/product/product-cache-utils';
-import { readCanonicalProductIdByKey, readProductDetailByIdFromDatabase } from '@/lib/persistence/product-read';
+import {
+  readCanonicalProductIdByKey,
+  readCanonicalProductIdForProductId,
+  readProductDetailByIdFromDatabase,
+} from '@/lib/persistence/product-read';
 import { getAvailableComparableStorePrices } from '@/lib/price-utils';
 import { decideProductPageIndexing } from '@/lib/seo/product-indexing';
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
@@ -42,11 +46,23 @@ const getProductForPage = cache(async (id: string): Promise<Product | null> => {
   }
 });
 
+const getCanonicalProductIdForPage = cache((id: string): Promise<string | null> => {
+  const read = isStableRuntimeMode()
+    ? getProductForPage(id).then((product) => product?.canonicalProductKey
+      ? readCanonicalProductIdByKey(product.canonicalProductKey, product)
+      : null)
+    : readCanonicalProductIdForProductId(id);
+  // Se inicia antes de saber si la ficha existe; si termina en notFound nadie la espera.
+  read.catch(() => undefined);
+  return read;
+});
+
 export const revalidate = 3600;
 export const dynamicParams = true;
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { id } = await params;
+  const canonicalRead = getCanonicalProductIdForPage(id);
   const product = await getProductForPage(id);
 
   if (!product) {
@@ -62,9 +78,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
   const title = buildShortProductTitle(product);
   const description = buildProductDescription(product);
-  const canonicalProductId = product.canonicalProductKey
-    ? await readCanonicalProductIdByKey(product.canonicalProductKey,product)
-    : null;
+  const canonicalProductId = product.canonicalProductKey ? await canonicalRead : null;
   const resolvedCanonicalId = canonicalProductId ?? id;
   const comparableStoreCount = getAvailableComparableStorePrices(product.prices).length;
   const indexing = decideProductPageIndexing({
@@ -113,6 +127,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export default async function ProductDetailPage({ params, searchParams }: ProductPageProps) {
   const { id } = await params;
+  const canonicalRead = getCanonicalProductIdForPage(id);
   const product = await getProductForPage(id);
   if (!product) {
     notFound();
@@ -122,7 +137,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
   // Una clave heredada puede unir OEM, outlet y modelos con cooler.
   // Redirigir únicamente cuando la variante del agrupado coincide.
   if (product.canonicalProductKey) {
-    const canonicalProductId = await readCanonicalProductIdByKey(product.canonicalProductKey,product);
+    const canonicalProductId = await canonicalRead;
     // El comparador conserva la publicación elegida. Metadata sigue indicando
     // la variante canónica, sin transferir identidad ni sustituir el lector.
     if (canonicalProductId && canonicalProductId !== id && !isComparisonProductOrigin(from)) {

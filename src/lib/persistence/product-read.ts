@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { getServerSupabaseReadClient } from '@/lib/server/supabase-server';
 import { applyDatabaseReadTransforms } from '@/lib/persistence/product-read-grouping';
 import {
@@ -64,9 +65,19 @@ export async function readCanonicalProductIdByKey(canonicalProductKey: string, p
   return data.find(candidate=>shareExactProductVariant(product,{...candidate,canonicalProductKey}))?.id??null;
 }
 
+// Fuera de un render de Server Components React cache no memoriza: cada request lee de nuevo.
+const readProductRowByIdPerRequest = cache(readProductByIdFromDatabase);
+
+/** Resuelve el agrupado canónico desde la fila base, en paralelo con las ofertas relacionadas del detalle. */
+export const readCanonicalProductIdForProductId = cache(async (id: string): Promise<string | null> => {
+  const product = await readProductRowByIdPerRequest(id);
+  if (!product?.canonicalProductKey) return null;
+  return readCanonicalProductIdByKey(product.canonicalProductKey, product);
+});
+
 /** La ficha canónica incorpora altas recientes con la misma identidad exacta. */
-export async function readProductDetailByIdFromDatabase(id: string): Promise<Product | null> {
-  const product=await readProductByIdFromDatabase(id);
+export const readProductDetailByIdFromDatabase = cache(async (id: string): Promise<Product | null> => {
+  const product=await readProductRowByIdPerRequest(id);
   if (!product?.canonicalProductKey) return product;
   const supabase=getServerSupabaseReadClient();
   if (!supabase) throw new Error('Product detail database unavailable');
@@ -77,7 +88,7 @@ export async function readProductDetailByIdFromDatabase(id: string): Promise<Pro
   // No presentar una agrupación truncada como completa ni hacer lecturas sin límite.
   if (data.length>200) throw new Error('Product detail related offers limit exceeded');
   return mergeCanonicalDetailOffers(product,(data as DbProductRow[]).map(mapDbGuideProduct));
-}
+});
 
 export async function readProductsFromDatabase(params: ReadProductsParams) {
   const supabase = getServerSupabaseReadClient();
