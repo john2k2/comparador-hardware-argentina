@@ -18,6 +18,8 @@ begin
     case when tg_op<>'INSERT' then old.product_id end,
     case when tg_op<>'DELETE' then new.product_id end
   ]) key where key is not null order by key loop
+    -- Serializar ofertas distintas de la misma ficha. Tras esperar, la siguiente
+    -- sentencia VOLATILE ve el estado confirmado y evita resúmenes perdidos.
     perform 1 from public.products where id=product_key for update;
     if not found then continue; end if;
     select coalesce(jsonb_agg(jsonb_build_object('id',o.id,'store_id',lower(o.store_id),'price',o.price,'stock',o.stock,'url',o.url)),'[]'),
