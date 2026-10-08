@@ -10,7 +10,7 @@ Pedido de Jonathan: ampliar la selección revisando cada ficha y hacer más visi
 | Juego | Plataforma · región | Idiomas según la ficha |
 |---|---|---|
 | Chivalry II | Epic · LATAM | inglés |
-| Knights of Pen & Paper | Steam · GLOBAL | incluye español |
+| Knights of Pen & Paper | Steam · GLOBAL | incluye español; la portada dice «+1 Deluxier Edition» y el título no |
 | Trine 2: Complete Story | Steam · LATAM | incluye español |
 | El Hijo: A Wild West Tale | Steam · LATAM | incluye español de España |
 | GoNNER (Press Jump To Die Edition) | Steam · GLOBAL | incluye español |

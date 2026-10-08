@@ -48,7 +48,7 @@ export const ENEBA_REVIEWED_GAMES: readonly ReviewedGame[] = [
     region: 'global',
     platform: 'Steam',
     edition: 'Juego base · clave digital GLOBAL',
-    restrictions: 'Se activa en Steam. La ficha incluye español y lista Windows, Mac y Linux; revisá los requisitos actuales de tu sistema. No anuncia extras ni una edición Deluxe.',
+    restrictions: 'Se activa en Steam. La ficha incluye español y lista Windows, Mac y Linux; revisá los requisitos actuales de tu sistema. La portada muestra «+1 Deluxier Edition», pero el título no la anuncia: confirmá en Eneba qué edición se entrega.',
     reviewedAt: REVIEWED_AT,
     activationCountry: 'AR',
   },
