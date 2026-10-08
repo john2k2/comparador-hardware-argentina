@@ -319,17 +319,24 @@ export function parseWooProductDetail(
     '';
   const image = imageRaw ? normalizeAbsoluteUrl(store.baseUrl, imageRaw) : undefined;
 
-  const stockText = primary('.stock').first().text().toLowerCase();
-  const primaryProduct = $('[id^=product-].product, main.product').filter((_, element) => $(element).parents('.related, .products, .w-grid-item').length === 0);
+  const primaryStock = primary('.stock');
+  const stockText = primaryStock.first().text().toLowerCase();
+  const primaryProduct = primary('[id^=product-].product, main.product');
   const hasOutOfStockClass = primary('.stock.out-of-stock, .out-of-stock').length > 0 || primaryProduct.hasClass('outofstock');
   const hasLowStockText = stockText.includes('ultim') || stockText.includes('pocas');
   const hasOutOfStockText = stockText.includes('sin stock') || stockText.includes('agotad');
+  // Una reserva puede permitir añadir al carrito y conservar la clase instock.
+  // Sus señales primarias prevalecen sobre disponibilidad o pocas unidades.
+  const hasBackorder = primaryStock.is('.available-on-backorder, .on-backorder') || primaryProduct.hasClass('onbackorder')
+    || primaryStock.toArray().some(element => /\b(?:reservas?|back[\s-]?orders?|bajo\s+pedido)\b/i.test($(element).text()));
   const stock = hasOutOfStockClass || hasOutOfStockText
     ? 'out-of-stock'
-    : hasLowStockText
-      ? 'low-stock'
-      : primaryProduct.hasClass('instock') || primary('.stock.in-stock, button.single_add_to_cart_button:not([disabled]), input[name=add-to-cart]:not([disabled])').length > 0 || /(?:hay existencias|disponible|in stock)/i.test(stockText)
-        ? 'in-stock' : 'unknown';
+    : hasBackorder
+      ? 'unknown'
+      : hasLowStockText
+        ? 'low-stock'
+        : primaryProduct.hasClass('instock') || primary('.stock.in-stock, button.single_add_to_cart_button:not([disabled]), input[name=add-to-cart]:not([disabled])').length > 0 || /(?:hay existencias|disponible|in stock)/i.test(stockText)
+          ? 'in-stock' : 'unknown';
 
   const canonical = $('link[rel="canonical"]').attr('href') || pageUrl;
   const productUrl = normalizeAbsoluteUrl(store.baseUrl, canonical);

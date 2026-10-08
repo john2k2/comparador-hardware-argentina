@@ -25,11 +25,76 @@ const scpDetailHtml = `
   </html>
 `;
 
+// Fragmento de la ficha real 3750614/DIS731 leída el 08/10/2026 13:13:24 UTC.
+// Sólo se conservaron nodos del principal; el HTML completo queda en el corte.
+const dinobyteReserveUrl = 'https://dinobyte.ar/producto/disco-solido-nvme-western-digital-green-sn3000-500gb/';
+const dinobyteStore = { id: 'dinobyte', name: 'Dinobyte', baseUrl: 'https://dinobyte.ar' };
+const dinobyteReserveFragment = `
+  <body class="single-product">
+    <h1 class="w-post-elm post_title us_custom_8e46ea77 entry-title color_link_inherit">Disco Solido Nvme Western Digital Green SN3000 500GB</h1>
+    <p class="w-post-elm product_field price us_custom_0809a129 has_text_color"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol" translate="no">$</span><span class="woocommerce-Price-amount amount">174.900,00&nbsp;</span></bdi></span></p>
+    <span class="sku">DIS731</span>
+    <p class="stock available-on-backorder">Disponible para reserva</p>
+    <button type="submit" name="add-to-cart" value="3750614" class="single_add_to_cart_button button alt">Añadir al carrito</button>
+  </body>
+`;
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
 describe('woocommerce-shared', () => {
+  it('conserva como desconocida la reserva del fragmento real de Dinobyte aunque permita comprar', () => {
+    const product = parseWooProductDetail(dinobyteReserveFragment, dinobyteReserveUrl, dinobyteStore, 'almacenamiento', 'sn3000');
+    expect(product?.prices[0]).toMatchObject({ price: 174900, stock: 'unknown', url: dinobyteReserveUrl });
+    expect(product?.specs).toMatchObject({ SourceListingId: '3750614', SKU: 'DIS731' });
+  });
+
+  // Controles sintéticos: no representan otras publicaciones observadas.
+  it.each([
+    ['clase de reserva', '<p class="stock available-on-backorder">Disponible</p>'],
+    ['texto de reserva sin clase', '<p class="stock">Disponible para reserva</p>'],
+    ['texto inglés', '<p class="stock">Available on backorder</p>'],
+    ['raíz en reserva', '<main class="product onbackorder"></main>'],
+    ['últimas unidades contradictorias', '<p class="stock">Ultimas unidades</p><p class="stock available-on-backorder">Disponible para reserva</p>'],
+  ])('reserva por %s prevalece sobre raíz instock y botón habilitado', (_, stockMarkup) => {
+    const html = dinobyteReserveFragment.replace('<body class="single-product">', '<body class="single-product"><main class="product instock">')
+      .replace('<p class="stock available-on-backorder">Disponible para reserva</p>', stockMarkup)
+      .replace('</body>', '</main></body>');
+    expect(parseWooProductDetail(html, dinobyteReserveUrl, dinobyteStore, 'almacenamiento', 'sn3000')?.prices[0].stock).toBe('unknown');
+  });
+
+  it('mantiene agotamiento explícito antes de reserva y señales positivas contradictorias', () => {
+    const html = dinobyteReserveFragment.replace('<body class="single-product">', '<body class="single-product"><main class="product instock outofstock">')
+      .replace('</body>', '<p class="stock">Ultimas unidades</p></main></body>');
+    expect(parseWooProductDetail(html, dinobyteReserveUrl, dinobyteStore, 'almacenamiento', 'sn3000')?.prices[0].stock).toBe('out-of-stock');
+  });
+
+  it.each(['related products', 'up-sells', 'cross-sells', 'w-grid-item'])('no toma reserva de %s para bloquear disponibilidad del principal', className => {
+    const html = dinobyteReserveFragment.replace('class="stock available-on-backorder">Disponible para reserva', 'class="stock in-stock">Disponible')
+      .replace('</body>', `<section class="${className}"><p class="stock available-on-backorder">Disponible para reserva</p><div class="product onbackorder"></div></section></body>`);
+    expect(parseWooProductDetail(html, dinobyteReserveUrl, dinobyteStore, 'almacenamiento', 'sn3000')?.prices[0].stock).toBe('in-stock');
+  });
+
+  it.each(['up-sells', 'upsells', 'cross-sells'].flatMap(className => [
+    [className, '<main class="product onbackorder"></main>'],
+    [className, '<div id="product-987" class="product onbackorder"></div>'],
+  ]))('excluye raíces de producto relacionadas en %s: %s', (className, relatedRoot) => {
+    const html = dinobyteReserveFragment.replace('class="stock available-on-backorder">Disponible para reserva', 'class="stock in-stock">Disponible')
+      .replace('</body>', `<section class="${className}">${relatedRoot}</section></body>`);
+    const product = parseWooProductDetail(html, dinobyteReserveUrl, dinobyteStore, 'almacenamiento', 'sn3000');
+    expect(product?.prices[0].stock).toBe('in-stock');
+    expect(product?.specs.SourceListingId).toBe('3750614');
+  });
+
+  it.each([
+    ['disponible normal', '<p class="stock in-stock">Disponible</p>', 'in-stock'],
+    ['pocas unidades', '<p class="stock">Pocas unidades</p>', 'low-stock'],
+  ])('conserva %s del principal cuando no hay reserva', (_, stockMarkup, expected) => {
+    const html = dinobyteReserveFragment.replace('<p class="stock available-on-backorder">Disponible para reserva</p>', stockMarkup);
+    expect(parseWooProductDetail(html, dinobyteReserveUrl, dinobyteStore, 'almacenamiento', 'sn3000')?.prices[0].stock).toBe(expected);
+  });
+
   it('rechaza USD del Offer principal y no usa metadata numérica sin corroborar ARS', async () => {
     const url = 'https://dinobyte.ar/producto/ram/';
     const store = { id: 'dinobyte', name: 'Dinobyte', baseUrl: 'https://dinobyte.ar' };
