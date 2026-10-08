@@ -7,7 +7,19 @@ type Metric = { requests: number; bytes: number; durationMs: number; conditional
 const metrics = new Map<string, Metric>();
 const state = new Map<string, { tail: Promise<void>; nextAt: number; blockedUntil: number; consecutiveFailures: number }>();
 let active = 0;
+let maxActive = 3;
 const waiters: Array<() => void> = [];
+/** Sólo el runner de catálogo lo amplía; el resto de los procesos conserva el tope de tres. */
+export function setSourceFetchConcurrency(limit: number): number {
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 16) throw new Error('SOURCE_INVALID_CONCURRENCY');
+  const previous = maxActive;
+  maxActive = limit;
+  while (active < maxActive && waiters.length) { active++; waiters.shift()!(); }
+  return previous;
+}
+export function sourceBlockedUntil(store: string): number {
+  return state.get(store)?.blockedUntil ?? 0;
+}
 function metric(store: string): Metric {
   if (!metrics.has(store)) metrics.set(store, { requests: 0, bytes: 0, durationMs: 0, conditionalHits: 0, backoffSkips: 0, failures: 0, failureReasons: {} });
   return metrics.get(store)!;
@@ -37,7 +49,7 @@ export async function sourceFetch(store: string, url: string, options: RequestIn
     const delay = gate.nextAt - Date.now();
     if (delay > 0) await new Promise(resolve => setTimeout(resolve, delay));
     options.signal?.throwIfAborted();
-    if (active >= 3) await new Promise<void>(resolve => waiters.push(resolve));
+    if (active >= maxActive) await new Promise<void>(resolve => waiters.push(resolve));
     else active++;
     acquired = true;
     options.signal?.throwIfAborted();
@@ -92,7 +104,7 @@ export async function sourceFetch(store: string, url: string, options: RequestIn
   finally {
     stats.durationMs += Date.now() - startedAt;
     gate.nextAt = Math.max(gate.nextAt, Date.now() + 2000);
-    if (acquired) { const next = waiters.shift(); if (next) next(); else active--; }
+    if (acquired) { const next = active <= maxActive ? waiters.shift() : undefined; if (next) next(); else active--; }
     release();
   }
 }

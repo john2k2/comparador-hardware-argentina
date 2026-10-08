@@ -170,7 +170,7 @@ it('identifica el lote 51 al fallar la rotación después de 1200 ofertas compar
   });
   const result = await runAdaptiveRefresh({ maxOffers: 2500 });
   expect(result).toMatchObject({ failureCode: 'REFRESH_CLAIM_FAILED', attempted: 1200, observed: 1200, feedClaimed: 1200,
-    claimDiagnostic: { rpc: 'claim_catalog_refresh', phase: 'rotation', batchIndex: 51, limit: 24, elapsedMs: 0, code: '57014' } });
+    claimDiagnostic: { rpc: 'claim_catalog_refresh', phase: 'rotation', batchIndex: 51, limit: 48, elapsedMs: 0, code: '57014' } });
   expect(mocks.rpc.mock.calls.filter(([name]) => name === 'claim_catalog_refresh')).toHaveLength(1);
 });
 
@@ -335,4 +335,70 @@ it.each([
   expect(release).toHaveBeenCalledTimes(1);
   expect(JSON.stringify(result)).not.toMatch(/PRIVATE_CREDENTIAL|private SQL|compragamer.com/);
   expect(mocks.rpc.mock.calls.some(([name]) => name.startsWith('claim_'))).toBe(false);
+});
+
+function rotationTargets(stores: string[]) {
+  return stores.map((store, index) => ({ ...target, offer_id: `offer-${index}`, store_id: store, url: `https://${store}.example/p/${index}` }));
+}
+function serveRotation(batch: typeof target[]) {
+  let served = false;
+  mocks.rpc.mockImplementation(async (name: string) => {
+    if (name === 'claim_catalog_refresh') return { data: served ? [] : (served = true, batch), error: null };
+    if (name === 'claim_catalog_feed_refresh') return { data: [], error: null };
+    return { data: name === 'seed_catalog_refresh_queue' ? 0 : name === 'catalog_refresh_coverage' ? [] : true, error: null };
+  });
+}
+function recordFetches(durationMs: number) {
+  const spans: { store: string; start: number; end: number }[] = [];
+  mocks.fetch.mockImplementation(async (_product: Product, request: { storeId: string; url: string }) => {
+    const span = { store: request.storeId, start: Date.now(), end: 0 };
+    spans.push(span);
+    await new Promise(resolve => setTimeout(resolve, durationMs));
+    span.end = Date.now();
+    return { product, price: { ...price, storeId: request.storeId, url: request.url }, sourceTitle: product.name };
+  });
+  return spans;
+}
+
+it('espacia 2000 ms la misma tienda sin superponer y superpone tiendas distintas', async () => {
+  serveRotation(rotationTargets(['mexx', 'mexx', 'mexx', 'venex', 'fullh4rd']));
+  const spans = recordFetches(500);
+  const promise = runAdaptiveRefresh({ maxOffers: 24 });
+  await vi.runAllTimersAsync();
+  expect(await promise).toMatchObject({ attempted: 5, observed: 5, status: 'completed' });
+  const mexx = spans.filter(span => span.store === 'mexx');
+  expect(mexx).toHaveLength(3);
+  for (let index = 1; index < mexx.length; index++) expect(mexx[index].start - mexx[index - 1].end).toBeGreaterThanOrEqual(2000);
+  const origin = mexx[0].start;
+  expect(spans.find(span => span.store === 'venex')!.start).toBe(origin);
+  expect(spans.find(span => span.store === 'fullh4rd')!.start).toBe(origin);
+});
+
+it('usa hasta ocho solicitudes simultáneas entre tiendas distintas', async () => {
+  serveRotation(rotationTargets(Array.from({ length: 12 }, (_, index) => `store-${index}`)));
+  let running = 0, peak = 0;
+  mocks.fetch.mockImplementation(async (_product: Product, request: { storeId: string; url: string }) => {
+    running++; peak = Math.max(peak, running);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    running--;
+    return { product, price: { ...price, storeId: request.storeId, url: request.url }, sourceTitle: product.name };
+  });
+  const promise = runAdaptiveRefresh({ maxOffers: 24 });
+  await vi.runAllTimersAsync();
+  expect(await promise).toMatchObject({ attempted: 12, observed: 12 });
+  expect(peak).toBe(8);
+});
+
+it('no inicia lecturas después del deadline y deja sin cerrar las ofertas pendientes', async () => {
+  const release = observeLeaseRelease();
+  serveRotation(rotationTargets(['mexx', 'mexx', 'mexx', 'mexx']));
+  const spans = recordFetches(500);
+  const started = Date.now();
+  const promise = runAdaptiveRefresh({ maxOffers: 24, maxRunMs: 5000 });
+  await vi.runAllTimersAsync();
+  const result = await promise;
+  expect(spans.map(span => span.start - started)).toEqual([0, 2500]);
+  expect(result).toMatchObject({ attempted: 2, observed: 2, status: 'deadline' });
+  expect(mocks.rpc.mock.calls.filter(([name]) => name === 'finish_catalog_refresh')).toHaveLength(2);
+  expect(release.update).toHaveBeenCalledWith({ lease_token: null, leased_until: null });
 });

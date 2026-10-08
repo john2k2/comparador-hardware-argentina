@@ -8,9 +8,9 @@ import { buildPriceStateSignature } from '@/lib/persistence/product-write-dedupe
 import { reviewProductOffers } from '@/lib/ai/review-product-offers';
 import { isComparableStoreOffer } from '@/lib/price-utils';
 import { isCatalogOfferFresh } from '@/lib/price-freshness';
-import { withConcurrencyLimit } from '@/lib/async/concurrency';
 import { WOO_BATCH_STORES } from '@/lib/scrapers/woocommerce-known-batch';
-import { sourceHttpMetrics } from '@/lib/scrapers/source-http';
+import { setSourceFetchConcurrency, sourceHttpMetrics } from '@/lib/scrapers/source-http';
+import { createStoreLanes, STORE_LANE_SKIPPED } from './store-lanes';
 import { runInventoryDiscovery } from './inventory-discovery';
 import { runInventoryDetailDiscovery } from './inventory-detail-discovery';
 import { createKnownOfferContext, fetchKnownOffer, prepareKnownOfferBatch } from './on-demand/worker';
@@ -22,6 +22,19 @@ type Outcome = 'observed' | 'no-observation' | 'source-failed' | 'persist-failed
 type Counts = { attempted: number; observed: number; comparable: number; failures: Record<string, number> };
 type ClosureFailureCode = 'REFRESH_RELEASE_FAILED' | 'REFRESH_COVERAGE_FAILED' | 'REFRESH_PROGRESS_FAILED';
 const emptyCounts = (): Counts => ({ attempted: 0, observed: 0, comparable: 0, failures: {} });
+/** Solicitudes simultáneas entre tiendas distintas; cada tienda sigue siendo serial. */
+export const ADAPTIVE_FETCH_CONCURRENCY = 8;
+/** Separación mínima entre lecturas a una misma tienda. */
+export const ADAPTIVE_STORE_SPACING_MS = 2000;
+/** Lote por reclamo; las RPC de reclamo rechazan más de 60. */
+export const ADAPTIVE_CLAIM_BATCH = 48;
+// CompraGamer y los lotes WooCommerce comparten una lectura de catálogo; no se espacia por fila.
+const isSharedReadStore = (storeId: string) => storeId === 'compragamer' || WOO_BATCH_STORES.has(storeId);
+function adaptiveConcurrency(): number {
+  const configured = Number(process.env.CATALOG_ADAPTIVE_CONCURRENCY ?? ADAPTIVE_FETCH_CONCURRENCY);
+  if (!Number.isSafeInteger(configured) || configured < 1 || configured > 16) throw new Error('REFRESH_INVALID_CONCURRENCY');
+  return configured;
+}
 
 export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs?: number } = {}) {
   if (process.env.CATALOG_REQUESTED_RUNNER !== '1') throw new Error('REFRESH_RUNNER_REQUIRED');
@@ -30,6 +43,7 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   const requestedLimit = options.maxOffers ?? Number(process.env.CATALOG_ADAPTIVE_MAX_OFFERS ?? 2500);
   if (!Number.isSafeInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 5000) throw new Error('REFRESH_INVALID_LIMIT');
   const maxOffers = requestedLimit;
+  const concurrency = adaptiveConcurrency();
   const deadline = Math.min(17 * 60_000, Math.max(1000, options.maxRunMs ?? 17 * 60_000));
   const started = Date.now(), token = randomUUID(), startedAt = new Date(started).toISOString();
   // Sólo se compactan resúmenes operativos generados por esta cola.
@@ -46,7 +60,9 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   const run = await client.from('catalog_refresh_runs').insert({ started_at: startedAt }).select('id').single();
   if (run.error || !run.data) throw new Error('REFRESH_RUN_CREATE_FAILED');
   const counts = emptyCounts(), groups: Record<string, Counts> = {}, context = createKnownOfferContext(true);
-  const storeReady = new Map<string, Promise<void>>();
+  // Se serializa cada tienda incluso para adaptadores antiguos que aún no usan sourceFetch.
+  const lanes = createStoreLanes({ concurrency, spacingMs: ADAPTIVE_STORE_SPACING_MS, isExempt: isSharedReadStore });
+  const previousSourceConcurrency = setSourceFetchConcurrency(concurrency);
   let taskFailed = false;
   let failureCode: string | undefined;
   let claimDiagnostic: RefreshClaimDiagnostic | null = null;
@@ -127,7 +143,7 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
         rpc: feedPhase ? 'claim_catalog_feed_refresh' as const : 'claim_catalog_refresh' as const,
         phase: feedPhase ? 'shared' as const : 'rotation' as const,
         batchIndex: ++claimBatchIndex,
-        limit: Math.min(24, maxOffers - counts.attempted, feedPhase ? feedLimit - feedClaimed : 24),
+        limit: Math.min(ADAPTIVE_CLAIM_BATCH, maxOffers - counts.attempted, feedPhase ? feedLimit - feedClaimed : ADAPTIVE_CLAIM_BATCH),
       };
       const claimStarted = Date.now();
       let claimed;
@@ -145,30 +161,18 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
       if (read.error) throw new Error('REFRESH_READ_FAILED');
       const products = new Map((read.data as unknown as DbProductRow[]).map(row => { const product = mapDbProduct(row); return [product.id, product]; }));
       await prepareKnownOfferBatch(products,targets.map(target=>({productId:target.product_id,storeId:target.store_id,url:target.url})),context);
-      const observations = await withConcurrencyLimit(targets.map(target => async () => {
-        // Se serializa cada tienda incluso para adaptadores antiguos que aún
-        // no usan sourceFetch. Otras tiendas pueden avanzar en paralelo.
-        const previous = storeReady.get(target.store_id) ?? Promise.resolve();
-        let release!: () => void;
-        const next = new Promise<void>(resolve => { release = resolve; });
-        storeReady.set(target.store_id, next);
-        await previous;
+      const observations = await Promise.all(targets.map(target => lanes.run(target.store_id, async () => {
         try {
-          if (taskFailed || Date.now() - started >= deadline) return null;
           const product = products.get(target.product_id);
           const observation = product ? await fetchKnownOffer(product, { productId: target.product_id, storeId: target.store_id, url: target.url }, started, context).catch(() => null) : null;
           if (!observation) { await finish(target, context.failures.get(target.url) === 'no-observation' ? 'no-observation' : 'source-failed'); return null; }
           return { target, ...observation };
         } catch {
           taskFailed = true; return null;
-        } finally {
-          // CompraGamer comparte la lectura de catálogo; no se duerme por fila.
-          if (target.store_id !== 'compragamer' && !WOO_BATCH_STORES.has(target.store_id)) await new Promise(resolve => setTimeout(resolve, 2000));
-          release();
         }
-      }), 3);
+      }, () => taskFailed || Date.now() - started >= deadline)));
       if (taskFailed) throw new Error('REFRESH_BATCH_FAILED');
-      const observed = observations.filter(item => item !== null);
+      const observed = observations.filter(item => item !== null && item !== STORE_LANE_SKIPPED);
       // Lotes pequeños respetan el máximo de revisión de identidad existente.
       for (let offset = 0; offset < observed.length; offset += 8) {
         const batch = observed.slice(offset, offset + 8);
@@ -208,6 +212,7 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
     failureCode = error instanceof Error && /^REFRESH_[A-Z_]+$/.test(error.message) ? error.message : 'REFRESH_UNEXPECTED_ERROR';
     status = 'failed';
   } finally {
+    setSourceFetchConcurrency(previousSourceConcurrency);
     try {
       const released = await client.from('catalog_offer_refresh_state').update({ lease_token: null, leased_until: null }).eq('lease_token', token);
       if (released.error) {

@@ -49,6 +49,32 @@ describe('source-http', () => {
     await Promise.all(requests);
   });
 
+  it('admite ampliar el tope global y despierta solicitudes en espera', async () => {
+    const { sourceFetch, setSourceFetchConcurrency } = await loadSourceHttp();
+    const pending = Array.from({ length: 5 }, () => deferred<Response>());
+    let started = 0;
+    const fetchMock = vi.fn(() => pending[started++].promise);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const requests = ['a', 'b', 'c', 'd', 'e'].map((store) => sourceFetch(store, `https://${store}.example/item`));
+    await flushMicrotasks();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(setSourceFetchConcurrency(5)).toBe(3);
+    await flushMicrotasks();
+    expect(fetchMock).toHaveBeenCalledTimes(5);
+    pending.forEach((item, index) => item.resolve(new Response(`body-${index}`)));
+    await Promise.all(requests);
+    expect(() => setSourceFetchConcurrency(0)).toThrow('SOURCE_INVALID_CONCURRENCY');
+  });
+
+  it('informa hasta cuándo una tienda queda pausada tras 429', async () => {
+    const { sourceFetch, sourceBlockedUntil } = await loadSourceHttp();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 429, headers: { 'Retry-After': '10' } })));
+    expect(sourceBlockedUntil('paused-store')).toBe(0);
+    await expect(sourceFetch('paused-store', 'https://paused-store.example/item')).rejects.toMatchObject({ reason: 'rate-limited' });
+    expect(sourceBlockedUntil('paused-store') - Date.now()).toBe(10_000);
+  });
+
   it('serializes requests for one store and waits two seconds between them', async () => {
     const { sourceFetch } = await loadSourceHttp();
     const fetchMock = vi.fn().mockImplementation(async () => new Response('ok'));
