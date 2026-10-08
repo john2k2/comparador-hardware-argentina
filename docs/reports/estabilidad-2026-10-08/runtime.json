@@ -1,0 +1,53 @@
+{
+  "recordedAt": "2026-10-08T15:16:47.761Z",
+  "status": "passed",
+  "source": "local Next production server with loopback simulated Supabase",
+  "productionEvidence": false,
+  "remoteWrites": 0,
+  "allCredentialsFictitious": true,
+  "samples": [
+    {
+      "query": "mouse",
+      "status": 200,
+      "elapsedMs": 489,
+      "cache": "DB-STALE",
+      "rpcCount": 1,
+      "demandWriteMs": 2401,
+      "responseBeforeDemandFinished": true,
+      "offerDatePreserved": true
+    },
+    {
+      "query": "mouse",
+      "status": 200,
+      "elapsedMs": 6,
+      "cache": "HIT-STALE",
+      "rpcCount": 0,
+      "demandWriteMs": 2401,
+      "responseBeforeDemandFinished": true,
+      "offerDatePreserved": true
+    },
+    {
+      "query": "sin cobertura laboratorio",
+      "status": 200,
+      "elapsedMs": 20,
+      "cache": "CATALOG-PENDING",
+      "rpcCount": 1,
+      "demandWriteMs": 2401,
+      "responseBeforeDemandFinished": true,
+      "offerDatePreserved": false
+    }
+  ],
+  "simultaneousSsr": {
+    "requests": 20,
+    "status200": 20,
+    "rpc": 1
+  },
+  "counts": {
+    "rpc": 3,
+    "cacheReads": 6,
+    "cacheWrites": 3,
+    "rateChecks": 3,
+    "unknown": 0
+  },
+  "secretsOrLogsPersisted": false
+}

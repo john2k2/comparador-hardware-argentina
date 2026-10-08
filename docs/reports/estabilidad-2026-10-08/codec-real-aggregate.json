@@ -1,0 +1,45 @@
+{
+  "recordedAt": "2026-10-08T15:37:23.725Z",
+  "status": "passed",
+  "source": "new Node codec, four previously verified private selection files",
+  "remoteWrites": 0,
+  "rows": [
+    {
+      "sample": 0,
+      "rawBytes": 52551,
+      "gzipBytes": 4706,
+      "restoredExactly": true,
+      "hashMatchesOriginalManifest": true,
+      "sha256": "24df1cc0e92e84bc802902779374e52a70d40ef1b35c4607029e0bab7a0e29b4"
+    },
+    {
+      "sample": 1,
+      "rawBytes": 52587,
+      "gzipBytes": 4639,
+      "restoredExactly": true,
+      "hashMatchesOriginalManifest": true,
+      "sha256": "3dd606a9ff58be11bc8411ee9f29302d5fbeeda748187cce7f23f0a5eba6ad62"
+    },
+    {
+      "sample": 2,
+      "rawBytes": 53024,
+      "gzipBytes": 4762,
+      "restoredExactly": true,
+      "hashMatchesOriginalManifest": true,
+      "sha256": "ce110123f07bb3043bdc556205d6511f169f2b053faedf3ed422a66a0f5bbe83"
+    },
+    {
+      "sample": 3,
+      "rawBytes": 52920,
+      "gzipBytes": 4734,
+      "restoredExactly": true,
+      "hashMatchesOriginalManifest": true,
+      "sha256": "52964e24be6798df00f6eb673581c15de3a3b510f668ab88580790d58404d1bf"
+    }
+  ],
+  "rawBytes": 211082,
+  "gzipBytes": 18841,
+  "originalArchiveBytes": 256303,
+  "newArchiveBytes": 64062,
+  "databaseSavingProven": false
+}

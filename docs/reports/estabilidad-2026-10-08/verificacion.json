@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "status": "prepared-local-not-published",
+  "recordedAt": "2026-10-08T15:39:47Z",
+  "source": {
+    "publishedMain": "3b7107c5c0953fb9425ee982439efbb34f06ac01",
+    "publishedWorker": "9a5e47f0-5ae1-491c-990b-46428d3b0508",
+    "localStart": "6b91cfc3864de378b71bff4c8056fa8a9f0f6704",
+    "functionalHead": "3d26dafabd6c5ea9b9d134a7f1dcebd40af80cb1",
+    "branch": "codex/capacidad-costo-cero"
+  },
+  "units": [
+    {
+      "name": "api",
+      "message": "fix(search): deliver results before auxiliary demand writes",
+      "files": [
+        "src/lib/search/search-route-handler.ts",
+        "src/app/api/search/route.test.ts",
+        "docs/reports/estabilidad-2026-10-08/BUSQUEDA-API.md"
+      ],
+      "commit": "8e0fe5bb4e74e789fa169fe5935fac5d1daf738b",
+      "authoredChangedLines": 129
+    },
+    {
+      "name": "ssr",
+      "message": "perf(search): reuse validated results across initial page reads",
+      "files": [
+        "src/lib/search/read-initial-search-page.ts",
+        "src/lib/search/read-initial-search-page.test.ts",
+        "docs/reports/estabilidad-2026-10-08/BUSQUEDA-SSR.md"
+      ],
+      "commit": "590eff556ed360c8f26fcbb16ea0d620f2e1a7ac",
+      "authoredChangedLines": 260
+    },
+    {
+      "name": "cadence",
+      "message": "fix(catalog): recover guide observations with the existing fallback",
+      "files": [
+        "src/lib/catalog/scheduler.ts",
+        "src/lib/catalog/scheduler.test.ts",
+        ".github/workflows/catalog-refresh.yml",
+        "scripts/catalog/refresh-entry.ts",
+        "scripts/lib/refresh-entry.test.mjs",
+        "scripts/lib/telemetry-maintenance-workflow.test.mjs",
+        "docs/reports/estabilidad-2026-10-08/CADENCIA.md"
+      ],
+      "commit": "42c8e12d30a7b654ced07cbeac8e988b2d0f7fd9",
+      "authoredChangedLines": 526
+    },
+    {
+      "name": "compression",
+      "message": "perf(ops): compress recoverable telemetry selection archives",
+      "files": [
+        "scripts/lib/telemetry-maintenance.mjs",
+        "scripts/lib/telemetry-maintenance.test.mjs",
+        "scripts/lib/telemetry-maintenance-network.mjs",
+        "scripts/lib/telemetry-maintenance-network.test.mjs",
+        "scripts/lib/telemetry-maintenance-cli.test.mjs",
+        "scripts/lib/telemetry-selection-codec.mjs",
+        "scripts/lib/telemetry-selection-codec.test.mjs",
+        "docs/reports/estabilidad-2026-10-08/COMPRESION.md"
+      ],
+      "commit": "3d26dafabd6c5ea9b9d134a7f1dcebd40af80cb1",
+      "authoredChangedLines": 317
+    }
+  ],
+  "verification": {
+    "lint": "passed",
+    "typecheck": "passed",
+    "unit": {
+      "passed": 2064,
+      "skippedPreexisting": 2,
+      "failed": 0
+    },
+    "ops": {
+      "passed": 150,
+      "failed": 0,
+      "skipped": 0
+    },
+    "chrome": {
+      "passed": 30,
+      "failed": 0,
+      "flaky": 0,
+      "skipped": 0,
+      "durationMs": 46120.292,
+      "productionEvidence": false
+    },
+    "opennextBuild": "passed final web code",
+    "wrangler": "dry-run passed; no upload",
+    "independentReview": {
+      "profile": "comparador_reviewer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "materialOpenFindings": 0,
+      "confirmedEmptyCacheRegression": "fixed and tested",
+      "compressionOwnTests": 47,
+      "compressionConcatenatedGzipChecks": 2,
+      "wooBackorderTests": 41
+    },
+    "realArchiveMetadataCodec": {
+      "samples": 4,
+      "rawBytes": 211082,
+      "gzipBytes": 18841,
+      "exactRestoration": true,
+      "originalManifestHashesMatch": true,
+      "remoteWrites": 0
+    }
+  },
+  "baseline": {
+    "observedAt": "2026-10-08T14:51:27.491032+00:00",
+    "databaseBytes": 937258131,
+    "expiredTelemetry": 342853,
+    "dailyRetirementMax": 1000,
+    "generalComponents": {
+      "recent24h": 7660,
+      "total": 34550
+    },
+    "firstSearchSeconds": [
+      6.14,
+      6.9
+    ],
+    "workerSincePublication": {
+      "until": "2026-10-08T14:42:31Z",
+      "invocations": 1703,
+      "errors": 0,
+      "notSla": true
+    }
+  },
+  "limitations": [
+    "local latency is not public latency",
+    "coalescence is within a process",
+    "fallback guides compete with adaptive; no fresh-offer guarantee",
+    "compressed Storage bytes are not physical PostgreSQL savings",
+    "old writer can be restored only while retaining the dual-format recovery reader",
+    "no extra retirements, migrations, indexes, vacuum, quota, cron or account changes"
+  ],
+  "authorization": {
+    "newRemoteMutations": 0,
+    "newRemoteRefreshDispatches": 0,
+    "publication": "pending concrete final textual approval",
+    "expandedRetirementOrPhysicalMaintenance": "separate concrete operation and approval required"
+  }
+}
