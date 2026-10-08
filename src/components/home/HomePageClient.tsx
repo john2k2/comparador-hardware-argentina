@@ -78,6 +78,8 @@ export function HomePageClient({ latestOffersSection, priceDropSection, showGame
             </details>
           </nav>
 
+          {showGamesPromotion && <EnebaPromotion />}
+
           {recentProducts.length > 0 && (
             <>
               <SectionTitle title="VISTOS RECIENTEMENTE" subtitle="ULTIMOS PRODUCTOS QUE ABRISTE" />
@@ -99,8 +101,6 @@ export function HomePageClient({ latestOffersSection, priceDropSection, showGame
               />
             ))}
           </section>
-
-          {showGamesPromotion && <EnebaPromotion />}
 
           <SectionTitle title="COMPARATIVAS" subtitle="Conocé las diferencias antes de elegir." actionHref="/comparativa" actionLabel="VER TODAS" />
           <section className="mb-8 grid md:grid-cols-3 gap-4">

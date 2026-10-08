@@ -2,7 +2,7 @@ import { expect, test } from './fixtures/deterministic.fixture';
 import { ENEBA_REVIEWED_GAMES, ENEBA_PRICE_MAX_AGE_MS, type EnebaSnapshot } from '../src/lib/eneba/pilot';
 
 // Datos sintéticos: verifican comportamiento, no disponibilidad comercial.
-const now = new Date('2026-10-02T18:00:00.000Z');
+const now = new Date('2026-10-09T18:00:00.000Z');
 const snapshot: EnebaSnapshot = {
   status: 'ready', fetchedAt: now.toISOString(), feedUpdatedAt: now.toISOString(),
   offers: ENEBA_REVIEWED_GAMES.map((game, index) => ({ ...game, price: 1000 + index, currency: 'ARS',
@@ -37,7 +37,7 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 360, height: 800
       await page.goto('/juegos-digitales');
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('Juegos digitales para Argentina');
       await expect(page.getByLabel('Aviso de afiliación')).toContainText('puede recibir una comisión');
-      await expect(page.locator('article')).toHaveCount(2);
+      await expect(page.locator('article')).toHaveCount(ENEBA_REVIEWED_GAMES.length);
       for (const game of snapshot.offers) {
         const card = page.getByRole('article').filter({ has: page.getByRole('heading', { name: game.name, exact: true }) });
         await expect(card).toContainText('ARS');
@@ -67,7 +67,7 @@ test('un precio que vence con la pestaña abierta desaparece sin volver a consul
   let reads = 0;
   await page.route('**/api/juegos-digitales', (route) => { reads += 1; return route.fulfill({ json: snapshot }); });
   await page.goto('/juegos-digitales');
-  await expect(page.locator('article')).toHaveCount(2);
+  await expect(page.locator('article')).toHaveCount(ENEBA_REVIEWED_GAMES.length);
   await page.clock.fastForward(ENEBA_PRICE_MAX_AGE_MS + 30_000);
   await expect(page.locator('article')).toHaveCount(0);
   await expect(page.getByText('Precios sin verificar', { exact: true })).toBeVisible();
@@ -118,7 +118,7 @@ test('el enlace abre la ficha y emite un único clic propio sin ventas', async (
   await page.clock.setFixedTime(now);
   await page.route('**/api/juegos-digitales', (route) => route.fulfill({ json: snapshot }));
   await page.goto('/juegos-digitales');
-  await expect(page.locator('article')).toHaveCount(2);
+  await expect(page.locator('article')).toHaveCount(ENEBA_REVIEWED_GAMES.length);
   await page.evaluate(() => { window.__chaAnalyticsAllowed = true; window.dataLayer = []; window.gtag = (...args) => window.dataLayer.push(args); });
   // No se carga GA4 real ni se envían eventos de prueba a la propiedad del usuario.
   await context.route('https://www.eneba.com/**', (route) => route.fulfill({ body: '<h1>Destino simulado</h1>', contentType: 'text/html' }));
@@ -140,7 +140,7 @@ test('rechazar permite abrir el juego sin analítica; aceptar registra una sola 
   await page.route('https://www.googletagmanager.com/**', (route) => route.fulfill({ contentType: 'application/javascript', body: '' }));
   await context.route('https://www.eneba.com/**', (route) => route.fulfill({ body: '<h1>Destino simulado</h1>', contentType: 'text/html' }));
   await page.goto('/juegos-digitales');
-  await expect(page.locator('article')).toHaveCount(2);
+  await expect(page.locator('article')).toHaveCount(ENEBA_REVIEWED_GAMES.length);
   await page.getByRole('button', { name: 'Rechazar analítica', exact: true }).click();
   const opened = page.waitForEvent('popup');
   await page.getByRole('link', { name: `Ver ${snapshot.offers[0].name} en Eneba ↗`, exact: true }).click();
@@ -152,5 +152,5 @@ test('rechazar permite abrir el juego sin analítica; aceptar registra una sola 
   await page.getByRole('button', { name: 'Aceptar analítica', exact: true }).click();
   await expect.poll(events).toHaveLength(1);
   await page.evaluate(() => window.dispatchEvent(new Event('cha-analytics-ready')));
-  expect(await events()).toEqual([['event', 'affiliate_pilot_view', expect.objectContaining({ offer_count: 2, pilot_status: 'ready' })]]);
+  expect(await events()).toEqual([['event', 'affiliate_pilot_view', expect.objectContaining({ offer_count: ENEBA_REVIEWED_GAMES.length, pilot_status: 'ready' })]]);
 });

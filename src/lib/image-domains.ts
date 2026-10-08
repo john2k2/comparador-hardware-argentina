@@ -15,6 +15,7 @@ export const IMAGE_DOMAINS = [
   // Las fotos de productos se cargan directamente, sin el optimizador de Next.
   // Sus orígenes también deben estar permitidos en img-src.
   'imagenes.compragamer.com',
+  'products.eneba.games',
   'www.venex.com.ar',
   'www.fullh4rd.com.ar',
   'compugarden.com.ar',

@@ -54,7 +54,7 @@ export function DigitalGames({ testData = false }: { testData?: boolean } = {}) 
       <header>
         <h1 className="font-pixel text-xl leading-loose md:text-3xl">Juegos digitales para Argentina</h1>
         {testData && <p className="mt-4 border-2 border-border bg-card p-3 font-body text-sm font-bold">Muestra sintética para pruebas · no son precios reales</p>}
-        <p className="mt-4 font-mono text-sm normal-case text-secondary">Juegos para PC · selección inicial</p>
+        <p className="mt-4 font-mono text-sm normal-case text-secondary">Juegos para PC · selección revisada</p>
         <p className="mt-4 max-w-3xl font-mono text-sm normal-case leading-7 text-muted-foreground">
           Claves digitales de Eneba con plataforma y región revisadas. Esta selección tiene sus propias condiciones de activación.
         </p>
@@ -73,9 +73,12 @@ export function DigitalGames({ testData = false }: { testData?: boolean } = {}) 
             <p>La muestra no tiene precios recientes con todas las condiciones verificadas. Esto no significa que los juegos estén agotados. Volvé más tarde.</p>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {offers.map((offer, index) => (
               <article key={offer.id} className="flex min-w-0 flex-col border-4 border-border bg-card p-5 font-mono text-sm normal-case leading-7">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={offer.coverUrl} alt={`Portada de ${offer.name}`} width={300} height={300} loading="lazy" decoding="async"
+                  referrerPolicy="no-referrer" className="mb-4 aspect-square w-full border-2 border-border object-cover" />
                 <p className="text-xs font-bold uppercase text-secondary">{offer.platform} · Argentina</p>
                 <h2 className="mt-3 font-pixel text-sm leading-7">{offer.name}</h2>
                 <p className="mt-3">{offer.edition}</p>

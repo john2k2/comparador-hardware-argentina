@@ -5,13 +5,13 @@ const source = vi.hoisted(() => vi.fn());
 vi.mock('server-only', () => ({}));
 vi.mock('./fetch', () => ({ fetchEnebaSnapshot: source }));
 import { persistEnebaSnapshot, refreshEnebaPilot } from './producer';
-const now = new Date('2026-10-02T18:00:00.000Z');
+const now = new Date('2026-10-09T18:00:00.000Z');
 const game = ENEBA_REVIEWED_GAMES[0];
-const snapshot: EnebaSnapshot = { status: 'ready', fetchedAt: now.toISOString(), feedUpdatedAt: '2026-10-02T17:55:00.000Z',
-  offers: [{ ...game, price: 1000.5, currency: 'ARS', observedAt: '2026-10-02T17:55:00.000Z',
+const snapshot: EnebaSnapshot = { status: 'ready', fetchedAt: now.toISOString(), feedUpdatedAt: '2026-10-09T17:55:00.000Z',
+  offers: [{ ...game, price: 1000.5, currency: 'ARS', observedAt: '2026-10-09T17:55:00.000Z',
     url: `https://www.eneba.com/latam/${game.id}?af_id=Comparador_Hardware_Argentina&currency=ARS` }] };
 function database() {
-  const read = vi.fn().mockResolvedValue({ data: { payload: snapshot, expires_at: '2026-10-02T23:55:00Z' }, error: null });
+  const read = vi.fn().mockResolvedValue({ data: { payload: snapshot, expires_at: '2026-10-09T23:55:00Z' }, error: null });
   const upsert = vi.fn().mockResolvedValue({ error: null });
   const eq = vi.fn().mockReturnValue({ single: read });
   const select = vi.fn().mockReturnValue({ eq });
@@ -25,9 +25,9 @@ describe('productor privado del piloto Eneba', () => {
     const db = database(); const result = await refreshEnebaPilot(db.client);
     expect(source).toHaveBeenCalledTimes(1); expect(db.from.mock.calls.every(([table]) => table === 'api_cache_entries')).toBe(true);
     expect(db.upsert).toHaveBeenCalledWith(expect.objectContaining({ scope: 'eneba-affiliate-pilot', payload: snapshot,
-      expires_at: '2026-10-02T23:55:00.000Z', updated_at: now.toISOString() }), { onConflict: 'cache_key' });
+      expires_at: '2026-10-09T23:55:00.000Z', updated_at: now.toISOString() }), { onConflict: 'cache_key' });
     expect(db.eq).toHaveBeenCalledWith('cache_key', db.upsert.mock.calls[0][0].cache_key);
-    expect(result).toMatchObject({ status: 'ready', offers: 1, expiresAt: '2026-10-02T23:55:00.000Z' });
+    expect(result).toMatchObject({ status: 'ready', offers: 1, expiresAt: '2026-10-09T23:55:00.000Z' });
   });
   it('preserva la muestra anterior cuando no puede leer el origen', async () => {
     const db = database(); source.mockResolvedValue({ status: 'error', offers: [], fetchedAt: now.toISOString(), feedUpdatedAt: null });
@@ -36,8 +36,8 @@ describe('productor privado del piloto Eneba', () => {
   });
   it.each([
     ['fecha de descarga ausente', { ...snapshot, fetchedAt: null }],
-    ['fecha de descarga futura', { ...snapshot, fetchedAt: '2026-10-02T18:01:00Z' }],
-    ['precio vencido', { ...snapshot, feedUpdatedAt: '2026-10-02T10:00:00Z', offers: [{ ...snapshot.offers[0], observedAt: '2026-10-02T10:00:00Z' }] }],
+    ['fecha de descarga futura', { ...snapshot, fetchedAt: '2026-10-09T18:01:00Z' }],
+    ['precio vencido', { ...snapshot, feedUpdatedAt: '2026-10-09T10:00:00Z', offers: [{ ...snapshot.offers[0], observedAt: '2026-10-09T10:00:00Z' }] }],
     ['identidad contradictoria', { ...snapshot, offers: [{ ...snapshot.offers[0], sku: 'OTHER' }] }],
     ['destino no permitido', { ...snapshot, offers: [{ ...snapshot.offers[0], url: 'https://example.com/' }] }],
   ])('no escribe ante %s', async (_, input) => {
@@ -50,7 +50,7 @@ describe('productor privado del piloto Eneba', () => {
     expect(db.read).not.toHaveBeenCalled();
   });
   it('no declara persistencia si la lectura posterior difiere', async () => {
-    const db = database(); db.read.mockResolvedValue({ data: { payload: snapshot, expires_at: '2026-10-03T18:00:00Z' }, error: null });
+    const db = database(); db.read.mockResolvedValue({ data: { payload: snapshot, expires_at: '2026-10-10T18:00:00Z' }, error: null });
     await expect(refreshEnebaPilot(db.client)).rejects.toThrow('ENEBA_SNAPSHOT_READBACK_FAILED');
   });
 });

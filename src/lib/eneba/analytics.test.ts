@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ENEBA_AFFILIATE_ID, ENEBA_REVIEWED_GAMES, ENEBA_PILOT_CAMPAIGN } from './pilot';
 
-const now = new Date('2026-10-02T18:00:00Z');
+const now = new Date('2026-10-09T18:00:00Z');
 const offer = { ...ENEBA_REVIEWED_GAMES[0], price: 1234.56, currency: 'ARS' as const,
   observedAt: now.toISOString(), url: `https://www.eneba.com/latam/${ENEBA_REVIEWED_GAMES[0].id}?af_id=${ENEBA_AFFILIATE_ID}&currency=ARS` };
 

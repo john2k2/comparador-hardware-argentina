@@ -2,7 +2,7 @@ import 'server-only';
 import { logger } from '@/lib/logger';
 import { parseEnebaFeed } from './feed';
 import { buildEnebaFeedUrl, ENEBA_PRICE_MAX_AGE_MS, type EnebaSnapshot } from './pilot';
-export const ENEBA_MAX_FEED_BYTES = 256 * 1024;
+export const ENEBA_MAX_FEED_BYTES = 384 * 1024;
 async function readBoundedFeed(response: Response): Promise<string> {
   if (Number(response.headers.get('content-length')) > ENEBA_MAX_FEED_BYTES || !response.body) {
     await response.body?.cancel(); throw new Error('oversized-feed');

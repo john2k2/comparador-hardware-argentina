@@ -1,5 +1,37 @@
 # Piloto de afiliación de Eneba — integración y seguimiento
 
+## Ampliación del 08/10/2026: once juegos y banner en portada
+
+Pedido de Jonathan: ampliar la selección revisando cada ficha y hacer más visible el acceso desde la portada.
+
+- **Feed:** 120 filas en vez de 6 (unos 200 KB; límite de lectura subido a 384 KB). Las primeras filas conservaban el orden del 02/10. Las fichas elegidas aparecen hasta la fila 92. Si una sale de las 120, se oculta: no se infiere agotamiento.
+- **Revisión (08/10, 23:36 UTC):** datos estructurados de cada ficha en Eneba. En las once, Argentina figura entre los países permitidos y no hay países bloqueados. Las dos anteriores se revisaron otra vez.
+
+| Juego | Plataforma · región | Idiomas según la ficha |
+|---|---|---|
+| Chivalry II | Epic · LATAM | inglés |
+| Knights of Pen & Paper | Steam · GLOBAL | incluye español |
+| Trine 2: Complete Story | Steam · LATAM | incluye español |
+| El Hijo: A Wild West Tale | Steam · LATAM | incluye español de España |
+| GoNNER (Press Jump To Die Edition) | Steam · GLOBAL | incluye español |
+| MotoGP 14 | Steam · GLOBAL | incluye español |
+| Fashion Police Squad | Steam · LATAM | inglés |
+| Nickelodeon Kart Racers 3 | Steam · LATAM | inglés |
+| SHINOBI: Art of Vengeance (Digital Deluxe) | Steam · LATAM | no informa; contenido Deluxe sin detallar |
+| Planet Coaster 2 (Deluxe) | Steam · LATAM | no informa; contenido Deluxe y sistemas sin detallar |
+| Carmageddon Max Pack + Carmageddon 2 | Steam · GLOBAL | inglés |
+
+Excluidos de las primeras 100 filas:
+- Hood: Outlaws & Legends, porque es sólo online.
+- Undead Inc. y NORSE, por ser títulos poco conocidos.
+- Isle of Skye y NUTMEG, porque sus fichas no tienen datos.
+- F1 2021, F1 2014, Darksiders y Babylon's Fall, porque sus precios no son razonables.
+- Los DLC, porque requieren el juego base.
+- Las claves de Xbox y los juegos en idiomas ajenos.
+
+- **Banner de portada:** subió debajo de las categorías y muestra cuatro portadas de la selección. La portada del sitio es un documento estático generado en el build, así que el banner **no muestra precios ni consulta el feed** por visita; los precios vigentes siguen en `/juegos-digitales`. Las portadas son parte de la revisión (`coverUrl`, CDN `products.eneba.games`).
+- **Vencimiento:** la revisión dura siete días. Hay que repetirla antes del **15/10/2026 a las 23:36 UTC**; si no, la sección queda sin juegos.
+
 Estado del corte de integración: código anterior revisado y portado al checkout de implementación actualizado. Cuenta comprobada tras la activación realizada por Jonathan. Publicado y verificado en producción el 02/10 a las 19:45 UTC, con dos ofertas y comprobación de escritorio/móvil. La primera descarga de GitHub fue manual; la continuidad por cron todavía requiere una ejecución nativa observada. Los controles de cobro y los datos de facturación permanecen privados.
 
 ## Corte posterior de cuenta e integración

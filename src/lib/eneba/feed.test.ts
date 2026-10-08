@@ -9,8 +9,8 @@ import {
 } from './pilot';
 import { parseEnebaFeed, validateEnebaProductUrl } from './feed';
 
-const NOW = '2026-10-02T18:00:00.000Z';
-const OBSERVED_AT = '2026-10-02T17:30:00.000Z';
+const NOW = '2026-10-09T18:00:00.000Z';
+const OBSERVED_AT = '2026-10-09T17:30:00.000Z';
 const NOW_MS = Date.parse(NOW);
 
 type SyntheticItem = {
@@ -96,7 +96,7 @@ describe('Eneba XML v3 feed', () => {
       expect(offer.url).toContain(`af_id=${ENEBA_AFFILIATE_ID}`);
       expect(new URL(offer.url).searchParams.getAll('af_id')).toEqual([ENEBA_AFFILIATE_ID]);
       expect(offer.observedAt).toBe(OBSERVED_AT);
-      expect(offer.reviewedAt).toBe('2026-10-02T17:48:55.000Z');
+      expect(offer.reviewedAt).toBe('2026-10-08T23:36:00.000Z');
     }
   });
 
@@ -170,8 +170,8 @@ describe('Eneba XML v3 feed', () => {
   });
 
   it.each([
-    ['precio con seis horas exactas', '2026-10-02T12:00:00.000Z', NOW],
-    ['precio futuro', '2026-10-02T18:00:01.000Z', NOW],
+    ['precio con seis horas exactas', '2026-10-09T12:00:00.000Z', NOW],
+    ['precio futuro', '2026-10-09T18:00:01.000Z', NOW],
     ['revisión con más de siete días', NOW, '2026-10-10T18:00:00.001Z'],
   ])('excluye una oferta por %s', (_reason, observedAt, now) => {
     const [game] = ENEBA_REVIEWED_GAMES;
@@ -198,5 +198,19 @@ describe('contrato del snapshot público', () => {
     expect(readEnebaSnapshot(snapshot, NOW_MS)?.feedUpdatedAt).toBe(OBSERVED_AT);
     expect(readEnebaSnapshot({ ...snapshot, feedUpdatedAt: NOW }, NOW_MS)?.offers).toEqual([]);
     expect(readEnebaSnapshot({ status: 'ready', offers: [] }, NOW_MS)).toBeNull();
+  });
+});
+
+describe('selección revisada', () => {
+  it('cada ficha tiene ID único, destino LATAM y portada del CDN de Eneba sin parámetros', () => {
+    expect(new Set(ENEBA_REVIEWED_GAMES.map(({ id }) => id)).size).toBe(ENEBA_REVIEWED_GAMES.length);
+    for (const game of ENEBA_REVIEWED_GAMES) {
+      const cover = new URL(game.coverUrl);
+      expect(cover.protocol).toBe('https:');
+      expect(cover.hostname).toBe('products.eneba.games');
+      expect(cover.pathname).toMatch(/^\/products\/[A-Za-z0-9._-]+$/);
+      expect(cover.search + cover.hash).toBe('');
+      expect(validateEnebaProductUrl(`https://www.eneba.com/latam/${game.id}?af_id=${ENEBA_AFFILIATE_ID}&currency=ARS`, game.id)).not.toBeNull();
+    }
   });
 });

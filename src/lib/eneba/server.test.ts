@@ -4,8 +4,8 @@ import { ENEBA_REVIEWED_GAMES, ENEBA_PRICE_MAX_AGE_MS, type EnebaSnapshot } from
 const db = vi.hoisted(() => ({ from: vi.fn(), select: vi.fn(), eq: vi.fn(), read: vi.fn(), client: vi.fn() }));
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/server/supabase-server', () => ({ getServerSupabaseServiceClient: db.client }));
-const now = new Date('2026-10-02T18:00:00.000Z');
-const modified = new Date('2026-10-02T17:55:00.000Z');
+const now = new Date('2026-10-09T18:00:00.000Z');
+const modified = new Date('2026-10-09T17:55:00.000Z');
 const game = ENEBA_REVIEWED_GAMES[0];
 const snapshot: EnebaSnapshot = { status: 'ready', fetchedAt: now.toISOString(), feedUpdatedAt: modified.toISOString(),
   offers: [{ ...game, price: 1000.5, currency: 'ARS', observedAt: modified.toISOString(),
@@ -41,7 +41,7 @@ describe('lector público de la muestra Eneba', () => {
     const result = await handleEnebaGamesGet();
     const data = await result.json();
     expect(result.headers.get('x-qa-fixture')).toBe('eneba-synthetic');
-    expect(data.status).toBe('ready'); expect(data.offers).toHaveLength(2);
+    expect(data.status).toBe('ready'); expect(data.offers).toHaveLength(ENEBA_REVIEWED_GAMES.length);
     expect(data.offers[0]).toMatchObject({ price: 1000, reviewedAt: game.reviewedAt });
     expect(db.client).not.toHaveBeenCalled(); expect(fetch).not.toHaveBeenCalled();
   });
@@ -75,7 +75,7 @@ describe('lector público de la muestra Eneba', () => {
 
   it('revalida la edad dentro del minuto aunque una fila declare una expiración más larga', async () => {
     vi.setSystemTime(new Date(modified.getTime() + ENEBA_PRICE_MAX_AGE_MS - 10_000));
-    db.read.mockResolvedValue({ data: { payload: snapshot, expires_at: '2026-10-03T00:00:00Z' }, error: null });
+    db.read.mockResolvedValue({ data: { payload: snapshot, expires_at: '2026-10-10T00:00:00Z' }, error: null });
     const { handleEnebaGamesGet } = await import('./server');
     expect((await (await handleEnebaGamesGet()).json()).offers).toHaveLength(1);
     vi.advanceTimersByTime(10_000);

@@ -1,14 +1,17 @@
 export const ENEBA_AFFILIATE_ID = 'Comparador_Hardware_Argentina';
-export const ENEBA_SAMPLE_SIZE = 6;
+// Las fichas revisadas aparecen hasta la fila 92 del feed; 120 deja margen sin superar el límite de bytes.
+export const ENEBA_SAMPLE_SIZE = 120;
 export const ENEBA_PRICE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 export const ENEBA_REVIEW_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
-export const ENEBA_REVIEW_VERSION = '2026-10-02-v1';
+export const ENEBA_REVIEW_VERSION = '2026-10-08-v2';
 export const ENEBA_PILOT_CAMPAIGN = 'eneba_pc_ar_20261002';
 
 export type ReviewedGame = {
   id: string;
   sku: string;
   feedTitle: string;
+  /** Portada de la ficha revisada; fija para no consultar el feed desde la portada del sitio. */
+  coverUrl: string;
   name: string;
   region: string;
   platform: 'Steam' | 'Epic Games';
@@ -18,6 +21,8 @@ export type ReviewedGame = {
   activationCountry: 'AR';
 };
 
+const REVIEWED_AT = '2026-10-08T23:36:00.000Z';
+
 // Fichas revisadas en Eneba: Argentina figura en la lista de países permitidos.
 // El título exacto y el SKU fijan la edición; no se deducen de la moneda ni del publisher.
 export const ENEBA_REVIEWED_GAMES: readonly ReviewedGame[] = [
@@ -25,24 +30,143 @@ export const ENEBA_REVIEWED_GAMES: readonly ReviewedGame[] = [
     id: 'epic-games-chivalry-ii-epic-games-key-latam',
     sku: 'CHVLRY2/LA',
     feedTitle: 'Chivalry II Epic Games Key LATAM',
+    coverUrl: 'https://products.eneba.games/products/8ObttYpyTnqCZvTS9RgsExdtuaP3JsM4iVVY9u0pdlQ.jpeg',
     name: 'Chivalry II',
     region: 'latam',
     platform: 'Epic Games',
     edition: 'Juego base · clave digital LATAM',
     restrictions: 'PC Windows. Se activa en Epic Games, no en Steam. La ficha anuncia inglés. Revisá los requisitos y la región de tu cuenta antes de comprar.',
-    reviewedAt: '2026-10-02T17:48:55.000Z',
+    reviewedAt: REVIEWED_AT,
     activationCountry: 'AR',
   },
   {
     id: 'steam-knights-of-pen-paper-steam-key-global',
     sku: 'KOPP',
     feedTitle: 'Knights of Pen & Paper Steam Key GLOBAL',
+    coverUrl: 'https://products.eneba.games/products/wka94aumiowsajkcupn9.jpg',
     name: 'Knights of Pen & Paper',
     region: 'global',
     platform: 'Steam',
     edition: 'Juego base · clave digital GLOBAL',
     restrictions: 'Se activa en Steam. La ficha incluye español y lista Windows, Mac y Linux; revisá los requisitos actuales de tu sistema. No anuncia extras ni una edición Deluxe.',
-    reviewedAt: '2026-10-02T17:48:55.000Z',
+    reviewedAt: REVIEWED_AT,
+    activationCountry: 'AR',
+  },
+  {
+    id: 'steam-trine-2-complete-story-steam-key-pc-latam',
+    sku: 'T2CSLATAM',
+    feedTitle: 'Trine 2: Complete Story Steam Key (PC) LATAM',
+    coverUrl: 'https://products.eneba.games/products/m8i4EFD.jpg',
+    name: 'Trine 2: Complete Story',
+    region: 'latam',
+    platform: 'Steam',
+    edition: 'Complete Story · clave digital LATAM',
+    restrictions: 'Se activa en Steam. La ficha incluye español y lista Windows, Mac y Linux; revisá los requisitos de tu sistema.',
+    reviewedAt: REVIEWED_AT,
+    activationCountry: 'AR',
+  },
+  {
+    id: 'steam-el-hijo-a-wild-west-tale-steam-key-latam',
+    sku: 'ELHIJOWILDWESTALELTM',
+    feedTitle: 'El Hijo - A Wild West Tale Steam Key LATAM',
+    coverUrl: 'https://products.eneba.games/products/oWfbkzBFOelJ6sukjTsj2Sz3gKCnCKw8NihWIYzBySA.jpeg',
+    name: 'El Hijo: A Wild West Tale',
+    region: 'latam',
+    platform: 'Steam',
+    edition: 'Juego base · clave digital LATAM',
+    restrictions: 'PC Windows. Se activa en Steam. La ficha incluye español de España entre sus idiomas.',
+    reviewedAt: REVIEWED_AT,
+    activationCountry: 'AR',
+  },
+  {
+    id: 'steam-gonner-press-jump-to-die-edition-steam-key-global',
+    sku: 'GONR',
+    feedTitle: 'GoNNER - Press Jump To Die Edition Steam Key GLOBAL',
+    coverUrl: 'https://products.eneba.games/products/lW3xm8mBwKu3W7uBHVG-x19SoM0q3JX2A90b84QEIn4.jpeg',
+    name: 'GoNNER',
+    region: 'global',
+    platform: 'Steam',
+    edition: 'Press Jump To Die Edition · clave digital GLOBAL',
+    restrictions: 'PC Windows. Se activa en Steam. La ficha incluye español.',
+    reviewedAt: REVIEWED_AT,
+    activationCountry: 'AR',
+  },
+  {
+    id: 'steam-motogp-2014-steam-key-global',
+    sku: 'MGP14',
+    feedTitle: 'MotoGP 2014 Steam Key GLOBAL',
+    coverUrl: 'https://products.eneba.games/products/2UknSkv.jpg',
+    name: 'MotoGP 14',
+    region: 'global',
+    platform: 'Steam',
+    edition: 'Juego base · clave digital GLOBAL',
+    restrictions: 'PC Windows. Se activa en Steam. La ficha incluye español. Es la edición 2014 del juego.',
+    reviewedAt: REVIEWED_AT,
+    activationCountry: 'AR',
+  },
+  {
+    id: 'steam-fashion-police-squad-pc-steam-key-latam',
+    sku: 'FASHIONPOLICEPCLA',
+    feedTitle: 'Fashion Police Squad (PC) Steam Key LATAM',
+    coverUrl: 'https://products.eneba.games/products/7ObBIvOzPagKYAu0J5uHJ4-ilm2sIFjRNhSI-By8jqY.jpg',
+    name: 'Fashion Police Squad',
+    region: 'latam',
+    platform: 'Steam',
+    edition: 'Juego base · clave digital LATAM',
+    restrictions: 'PC Windows. Se activa en Steam. La ficha anuncia sólo inglés.',
+    reviewedAt: REVIEWED_AT,
+    activationCountry: 'AR',
+  },
+  {
+    id: 'steam-nickelodeon-kart-racers-3-slime-speedway-steam-key-pc-latam',
+    sku: 'NKR3SlimeSpeedwayPClatam',
+    feedTitle: 'Nickelodeon Kart Racers 3: Slime Speedway Steam Key (PC) LATAM',
+    coverUrl: 'https://products.eneba.games/products/kfHZGqVueWY281ci29B3WdTq1ZGHiJVoVGQvXiWeKhM.png',
+    name: 'Nickelodeon Kart Racers 3: Slime Speedway',
+    region: 'latam',
+    platform: 'Steam',
+    edition: 'Juego base · clave digital LATAM',
+    restrictions: 'PC Windows. Se activa en Steam. La ficha anuncia sólo inglés.',
+    reviewedAt: REVIEWED_AT,
+    activationCountry: 'AR',
+  },
+  {
+    id: 'steam-shinobi-art-of-vengeance-digital-deluxe-edition-steam-key-pc-latam',
+    sku: 'GAMES-STEAM-IMPORTS-10-10-55',
+    feedTitle: 'SHINOBI: Art of Vengeance Digital Deluxe Edition Steam Key (PC) LATAM',
+    coverUrl: 'https://products.eneba.games/products/u4ZpYn1F6UZJ0eYOte1rkhTJRjzRc_gEj_CAh6RI7nI.jpg',
+    name: 'SHINOBI: Art of Vengeance',
+    region: 'latam',
+    platform: 'Steam',
+    edition: 'Digital Deluxe Edition · clave digital LATAM',
+    restrictions: 'PC Windows. Se activa en Steam. La ficha no detalla idiomas ni el contenido Deluxe: revisalos en Eneba antes de comprar.',
+    reviewedAt: REVIEWED_AT,
+    activationCountry: 'AR',
+  },
+  {
+    id: 'steam-planet-coaster-2-deluxe-edition-steam-key-pc-latam',
+    sku: 'IMPORT-STEAM-GAMES-1112-14',
+    feedTitle: 'Planet Coaster 2 Deluxe Edition Steam Key (PC) LATAM',
+    coverUrl: 'https://products.eneba.games/products/dckZzy5sTmj4KA-F4x7NPwDDLkjj0UuFb9picDieZUs.d1ebf5a3-8d93-4c23-bb3e-cf31e7f8ac81',
+    name: 'Planet Coaster 2',
+    region: 'latam',
+    platform: 'Steam',
+    edition: 'Deluxe Edition · clave digital LATAM',
+    restrictions: 'Se activa en Steam. La ficha no detalla idiomas, sistemas ni el contenido Deluxe: revisalos en Eneba antes de comprar.',
+    reviewedAt: REVIEWED_AT,
+    activationCountry: 'AR',
+  },
+  {
+    id: 'steam-carmageddon-2-carpocalypse-now-and-carmageddon-max-pack-pc-steam-key-global',
+    sku: 'Carmageddon1+2',
+    feedTitle: 'Carmageddon 2: Carpocalypse Now and Carmageddon Max Pack (PC) Steam Key GLOBAL',
+    coverUrl: 'https://products.eneba.games/products/_YzP2ZvLUnEKy98xUwQyXfsS0SrrsXheyUC0poZnywQ.png',
+    name: 'Carmageddon Max Pack + Carmageddon 2',
+    region: 'global',
+    platform: 'Steam',
+    edition: 'Paquete de dos juegos · clave digital GLOBAL',
+    restrictions: 'PC Windows. Se activa en Steam. La ficha anuncia sólo inglés.',
+    reviewedAt: REVIEWED_AT,
     activationCountry: 'AR',
   },
 ];
@@ -53,6 +177,7 @@ export type EnebaGameOffer = ReviewedGame & {
   url: string;
   observedAt: string;
 };
+
 
 export type EnebaSnapshot = {
   status: 'ready' | 'empty' | 'error' | 'disabled';
