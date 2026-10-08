@@ -15,9 +15,23 @@ import { getStableFixtureProducts } from '@/lib/server/stable-search-fixtures';
 import { filterCurrentCatalogProducts } from './search-availability';
 import { createCoalescedRead } from '@/lib/server/coalesced-read';
 import { logger } from '@/lib/logger';
+import { after } from 'next/server';
 
 export type InitialSearchPage = Pick<SearchApiResponse, 'products' | 'pagination'>;
 const readPendingInitialSearchPage = createCoalescedRead<SearchApiResponse>();
+
+// La caché local se escribe al invocar; la falla ya era opcional, así que la
+// persistencia distribuida puede seguir después de enviar el HTML.
+async function scheduleInitialCacheWrite(cacheKey: string, payload: SearchApiResponse): Promise<void> {
+  const write = setCachedSearchResponse(cacheKey, payload).catch(() => {
+    logger.warn('Initial catalog cache write skipped');
+  });
+  try {
+    after(write);
+  } catch {
+    await write;
+  }
+}
 
 export async function readInitialSearchPage(state: SearchPageState): Promise<InitialSearchPage> {
   if (!hasSearchIntent(state)) return emptySearchResponse();
@@ -44,11 +58,7 @@ export async function readInitialSearchPage(state: SearchPageState): Promise<Ini
       storeIds, sortBy: state.sortBy, page: state.page, pageSize: SEARCH_PAGE_SIZE,
       onlyCurrentOffers: !state.includeUnavailable,
     }));
-    if (stillCurrent(payload)) {
-      await setCachedSearchResponse(cacheKey, payload).catch(() => {
-        logger.warn('Initial catalog cache write skipped');
-      });
-    }
+    if (stillCurrent(payload)) await scheduleInitialCacheWrite(cacheKey, payload);
     return payload;
   };
 

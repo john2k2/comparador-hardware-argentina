@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-const { readPage, getCache, setCache } = vi.hoisted(() => ({ readPage: vi.fn(), getCache: vi.fn(), setCache: vi.fn() }));
+const { readPage, getCache, setCache, afterMock } = vi.hoisted(() => ({ readPage: vi.fn(), getCache: vi.fn(), setCache: vi.fn(), afterMock: vi.fn() }));
 vi.mock('server-only', () => ({}));
+vi.mock('next/server', async (importOriginal) => ({ ...await importOriginal<typeof import('next/server')>(), after: afterMock }));
 vi.mock('@/lib/persistence/product-read', () => ({ readProductsPageFromDatabase: readPage }));
 vi.mock('@/lib/server/shared-cache', () => ({ getSharedCache: getCache, setSharedCache: setCache }));
 import { readInitialSearchPage } from './read-initial-search-page';
@@ -39,6 +40,8 @@ beforeEach(() => {
   cachedPages.clear();
   getCache.mockImplementation(async (_scope, key) => cachedPages.get(key));
   setCache.mockImplementation(async (_scope, key, value) => { cachedPages.set(key, value); });
+  // Sin contexto de request, after() lanza y la escritura se espera como antes.
+  afterMock.mockImplementation(() => { throw new Error('outside request scope'); });
 });
 afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
 
@@ -205,6 +208,18 @@ describe('initial catalog page', () => {
     readPage.mockResolvedValue(page());
     expect((await readInitialSearchPage(parseSearchState({ q: 'ryzen 5600' }))).pagination.total).toBe(1501);
     expect(readPage).toHaveBeenCalledTimes(1);
+  });
+
+  it('entrega la página SSR sin esperar la escritura distribuida cuando hay contexto de request', async () => {
+    const pendingWrite = deferred<void>();
+    setCache.mockReturnValue(pendingWrite.promise);
+    afterMock.mockImplementation(() => undefined);
+    readPage.mockResolvedValue(page());
+    const result = await readInitialSearchPage(parseSearchState({ q: 'ryzen 5600' }));
+    expect(result.pagination.total).toBe(1501);
+    expect(setCache).toHaveBeenCalledTimes(1);
+    expect(afterMock).toHaveBeenCalledWith(expect.any(Promise));
+    pendingWrite.resolve();
   });
 
   it('shares and caches a genuine empty SQL result without inventing fixture products', async () => {
