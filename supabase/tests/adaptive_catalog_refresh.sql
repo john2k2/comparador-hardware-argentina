@@ -30,7 +30,7 @@ insert into catalog_refresh_interest(product_id,view_users,outbound_users,period
 set local role service_role;
 do $$ begin
   if (select interval_hours from catalog_refresh_policy where product_id='mouse-1') <> 3 then raise exception 'tracked priority'; end if;
-  if (select interval_hours from catalog_refresh_policy where product_id='mouse-2') <> 20 then raise exception 'analytics promotion'; end if;
+  if (select interval_hours from catalog_refresh_policy where product_id='mouse-2') <> 24 then raise exception 'analytics promotion'; end if;
   if (select jsonb_array_length(catalog_refresh_coverage())) < 4 then raise exception 'coverage lost'; end if;
   update catalog_refresh_interest set expires_at=now()+interval '1 second' where product_id='mouse-2';
 end $$;
