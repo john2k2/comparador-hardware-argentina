@@ -9,7 +9,7 @@ import { reviewProductOffers } from '@/lib/ai/review-product-offers';
 import { isComparableStoreOffer } from '@/lib/price-utils';
 import { isCatalogOfferFresh } from '@/lib/price-freshness';
 import { WOO_BATCH_STORES } from '@/lib/scrapers/woocommerce-known-batch';
-import { setSourceFetchConcurrency, sourceHttpMetrics } from '@/lib/scrapers/source-http';
+import { setSourceFetchConcurrency, sourceBlockedUntil, sourceHttpMetrics } from '@/lib/scrapers/source-http';
 import { createStoreLanes, STORE_LANE_SKIPPED } from './store-lanes';
 import { runInventoryDiscovery } from './inventory-discovery';
 import { runInventoryDetailDiscovery } from './inventory-detail-discovery';
@@ -63,6 +63,15 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   // Se serializa cada tienda incluso para adaptadores antiguos que aún no usan sourceFetch.
   const lanes = createStoreLanes({ concurrency, spacingMs: ADAPTIVE_STORE_SPACING_MS, isExempt: isSharedReadStore });
   const previousSourceConcurrency = setSourceFetchConcurrency(concurrency);
+  // Una tienda pausada por 403/429/5xx no recibe más solicitudes en esta ejecución.
+  // Sus ofertas quedan sin cerrar: liberar el lease no suma fallos ni backoff.
+  const pausedStores = new Set<string>();
+  const deferredStores: Record<string, number> = {};
+  let deferred = 0;
+  const isStorePaused = (storeId: string) => {
+    if (!pausedStores.has(storeId) && sourceBlockedUntil(storeId) > Date.now()) pausedStores.add(storeId);
+    return pausedStores.has(storeId);
+  };
   let taskFailed = false;
   let failureCode: string | undefined;
   let claimDiagnostic: RefreshClaimDiagnostic | null = null;
@@ -136,14 +145,14 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
     }
     // La cuota de filas sola no protege el tiempo de las fuentes no compartidas.
     feedDeadline = Date.now() + Math.max(0, started + deadline - Date.now()) / 2;
-    while (counts.attempted < maxOffers && Date.now() - started < deadline) {
+    while (counts.attempted + deferred < maxOffers && Date.now() - started < deadline) {
       if (feedClaimed >= feedLimit || Date.now() >= feedDeadline) feedPhase = false;
       const batchStarted = Date.now(), sharedBatch = feedPhase;
       const claimContext = {
         rpc: feedPhase ? 'claim_catalog_feed_refresh' as const : 'claim_catalog_refresh' as const,
         phase: feedPhase ? 'shared' as const : 'rotation' as const,
         batchIndex: ++claimBatchIndex,
-        limit: Math.min(ADAPTIVE_CLAIM_BATCH, maxOffers - counts.attempted, feedPhase ? feedLimit - feedClaimed : ADAPTIVE_CLAIM_BATCH),
+        limit: Math.min(ADAPTIVE_CLAIM_BATCH, maxOffers - counts.attempted - deferred, feedPhase ? feedLimit - feedClaimed : ADAPTIVE_CLAIM_BATCH),
       };
       const claimStarted = Date.now();
       let claimed;
@@ -161,16 +170,29 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
       if (read.error) throw new Error('REFRESH_READ_FAILED');
       const products = new Map((read.data as unknown as DbProductRow[]).map(row => { const product = mapDbProduct(row); return [product.id, product]; }));
       await prepareKnownOfferBatch(products,targets.map(target=>({productId:target.product_id,storeId:target.store_id,url:target.url})),context);
-      const observations = await Promise.all(targets.map(target => lanes.run(target.store_id, async () => {
-        try {
-          const product = products.get(target.product_id);
-          const observation = product ? await fetchKnownOffer(product, { productId: target.product_id, storeId: target.store_id, url: target.url }, started, context).catch(() => null) : null;
-          if (!observation) { await finish(target, context.failures.get(target.url) === 'no-observation' ? 'no-observation' : 'source-failed'); return null; }
-          return { target, ...observation };
-        } catch {
-          taskFailed = true; return null;
+      const observations = await Promise.all(targets.map(async target => {
+        let paused = false;
+        const result = await lanes.run(target.store_id, async () => {
+          try {
+            const product = products.get(target.product_id);
+            const observation = product ? await fetchKnownOffer(product, { productId: target.product_id, storeId: target.store_id, url: target.url }, started, context).catch(() => null) : null;
+            if (!observation) {
+              const reason = context.failures.get(target.url);
+              if (reason === 'rate-limited' || reason === 'blocked') pausedStores.add(target.store_id);
+              await finish(target, reason === 'no-observation' ? 'no-observation' : 'source-failed');
+              return null;
+            }
+            return { target, ...observation };
+          } catch {
+            taskFailed = true; return null;
+          }
+        }, () => taskFailed || Date.now() - started >= deadline || (paused = isStorePaused(target.store_id)));
+        if (result === STORE_LANE_SKIPPED && paused) {
+          deferred++;
+          deferredStores[target.store_id] = (deferredStores[target.store_id] ?? 0) + 1;
         }
-      }, () => taskFailed || Date.now() - started >= deadline)));
+        return result;
+      }));
       if (taskFailed) throw new Error('REFRESH_BATCH_FAILED');
       const observed = observations.filter(item => item !== null && item !== STORE_LANE_SKIPPED);
       // Lotes pequeños respetan el máximo de revisión de identidad existente.
@@ -202,7 +224,7 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
       }
       phaseMs[sharedBatch ? 'shared' : 'rotation'] += Date.now() - batchStarted;
       // El avance persiste por lote aunque el runner se interrumpa luego.
-      const progress = await client.from('catalog_refresh_runs').update({ summary: { ...counts, groups, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads } }).eq('id', run.data.id);
+      const progress = await client.from('catalog_refresh_runs').update({ summary: { ...counts, groups, deferred, deferredStores, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads } }).eq('id', run.data.id);
       if (progress.error) throw new Error('REFRESH_PROGRESS_FAILED');
     }
     if (Date.now() - started >= deadline) status = 'deadline';
@@ -246,7 +268,7 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   const seedDiagnostic = sanitizeRefreshSeedDiagnostic({ attempts: seedAttempts });
   const summary = { source: 'adaptive-catalog', trigger: ['github-schedule','cloudflare-fallback'].includes(process.env.CATALOG_RUN_TRIGGER ?? '') ? process.env.CATALOG_RUN_TRIGGER : 'manual', runId: run.data.id, startedAt, finishedAt: new Date().toISOString(),
     status, failureCode, ...(claimDiagnostic ? { claimDiagnostic } : {}), ...(seedDiagnostic ? { seedDiagnostic } : {}),
-    ...(hasFailureDiagnostic() ? { closure: { failureCodes: closureFailureCodes } } : {}), inventory, inventoryDetails, feedClaimed, sourceFailureReasons, limitReached: counts.attempted >= maxOffers, ...counts, groups, seeded, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads, coverage: coverageData };
+    ...(hasFailureDiagnostic() ? { closure: { failureCodes: closureFailureCodes } } : {}), inventory, inventoryDetails, feedClaimed, sourceFailureReasons, limitReached: counts.attempted + deferred >= maxOffers, ...counts, groups, deferred, deferredStores, seeded, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads, coverage: coverageData };
   let summaryPersistence: 'confirmed' | 'unconfirmed' = 'unconfirmed';
   try {
     const completed = await client.from('catalog_refresh_runs').update({ status, finished_at: summary.finishedAt, summary }).eq('id', run.data.id);

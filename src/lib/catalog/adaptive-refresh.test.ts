@@ -402,3 +402,35 @@ it('no inicia lecturas después del deadline y deja sin cerrar las ofertas pendi
   expect(mocks.rpc.mock.calls.filter(([name]) => name === 'finish_catalog_refresh')).toHaveLength(2);
   expect(release.update).toHaveBeenCalledWith({ lease_token: null, leased_until: null });
 });
+
+it('difiere sin fallo ni backoff las ofertas de una tienda que queda pausada por 429', async () => {
+  const release = observeLeaseRelease();
+  serveRotation(rotationTargets(['mexx-paused', 'mexx-paused', 'mexx-paused', 'venex']));
+  const requested: string[] = [];
+  mocks.fetch.mockImplementation(async (_product: Product, request: { storeId: string; url: string }, _started: number, context: { failures: Map<string, string> }) => {
+    requested.push(request.storeId);
+    if (request.storeId === 'mexx-paused') { context.failures.set(request.url, 'rate-limited'); return null; }
+    return { product, price: { ...price, storeId: request.storeId, url: request.url }, sourceTitle: product.name };
+  });
+  const promise = runAdaptiveRefresh({ maxOffers: 24 });
+  await vi.runAllTimersAsync();
+  const result = await promise;
+  expect(requested.sort()).toEqual(['mexx-paused', 'venex']);
+  expect(result).toMatchObject({ attempted: 2, observed: 1, failures: { 'source-failed': 1 }, deferred: 2, deferredStores: { 'mexx-paused': 2 } });
+  const finished = mocks.rpc.mock.calls.filter(([name]) => name === 'finish_catalog_refresh').map(([, args]) => args.p_offer_id);
+  expect(finished.sort()).toEqual(['offer-0', 'offer-3']);
+  expect(release.update).toHaveBeenCalledWith({ lease_token: null, leased_until: null });
+});
+
+it('no consulta una tienda que ya estaba pausada por el transporte al iniciar el lote', async () => {
+  const { sourceFetch } = await import('@/lib/scrapers/source-http');
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 429, headers: { 'Retry-After': '600' } })));
+  await expect(sourceFetch('pre-paused', 'https://pre-paused.example/x')).rejects.toMatchObject({ reason: 'rate-limited' });
+  vi.unstubAllGlobals();
+  serveRotation(rotationTargets(['pre-paused', 'pre-paused', 'venex']));
+  const spans = recordFetches(100);
+  const promise = runAdaptiveRefresh({ maxOffers: 24 });
+  await vi.runAllTimersAsync();
+  expect(await promise).toMatchObject({ attempted: 1, observed: 1, deferred: 2, deferredStores: { 'pre-paused': 2 }, status: 'completed' });
+  expect(spans.map(span => span.store)).toEqual(['venex']);
+});
