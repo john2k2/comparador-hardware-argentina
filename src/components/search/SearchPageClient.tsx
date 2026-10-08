@@ -45,7 +45,7 @@ function SearchPageClientInner({
 
   const [currentState, setCurrentState] = useState<SearchPageState>(initialState);
   const [draftFilters, setDraftFilters] = useState(() => toSearchFilters(initialState));
-  const [baseProducts, setBaseProducts] = useState<Product[]>(hydrateProducts(initialBaseProducts));
+  const [baseProducts, setBaseProducts] = useState<Product[]>(() => hydrateProducts(initialBaseProducts));
   const [pagination, setPagination] = useState(initialPagination);
   const [isLoading, setIsLoading] = useState(initialHasSearchIntent && !initialResolvedRequestKey);
   const [resolvedRequestKey, setResolvedRequestKey] = useState<string | null>(initialResolvedRequestKey);

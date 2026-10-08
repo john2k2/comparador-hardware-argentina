@@ -2,7 +2,7 @@
  * Custom hooks for search functionality
  */
 
-import { createContext, useCallback, useContext, useEffect, useRef } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import type { SearchPageState } from './search-state';
 import { buildSearchRoute } from './search-state';
 import type { SearchApiResponse } from './search-api';
@@ -87,8 +87,10 @@ export function SearchCacheProvider({ children }: { children: React.ReactNode })
     return null;
   }, []);
 
+  const value = useMemo(() => ({ getCached, setCached, checkStored }), [getCached, setCached, checkStored]);
+
   return (
-    <SearchCacheContext.Provider value={{ getCached, setCached, checkStored }}>
+    <SearchCacheContext.Provider value={value}>
       {children}
     </SearchCacheContext.Provider>
   );
