@@ -27,7 +27,7 @@ function hasValidObservedDate(date: Date, now = Date.now()) {
 export function StoresList({ product, merchantPrices, now }: StoresListProps) {
   const { recentPrices, referencePrices, bestOffer } = buildOfferPresentation(product, merchantPrices, now);
   function renderOffers(prices: ProductPrice[], recent: boolean, offset = 0) {
-    return <div className="space-y-3">
+    return <ul className="space-y-3">
         {prices.map((price, index) => {
           const linkType = getOutboundStoreLinkType(price.storeId);
           const isSponsored = linkType === 'sponsored';
@@ -40,51 +40,62 @@ export function StoresList({ product, merchantPrices, now }: StoresListProps) {
           const validDate = hasValidObservedDate(observedAt, now);
           const available = price.stock === 'in-stock' || price.stock === 'low-stock';
 
+          const observedMs = observedAt.getTime();
+          const hasObservedAt = Number.isFinite(observedMs) && observedMs > 0;
+          const sameStoreRecent = recentPrices.some((offer) => offer.storeId.toLowerCase() === price.storeId.toLowerCase());
+          const outsideRange = !recent && fresh && !pendingIdentity && hasDestination && available && validPrice;
+          // Solo colapsan avisos que no cambian si el precio está vigente o es comparable.
+          const auxiliaryNotices = [
+            outsideRange && sameStoreRecent ? 'Otra publicación de la misma tienda; no participa del mínimo reciente.' : null,
+          ].filter((notice): notice is string => Boolean(notice));
+          const stockLabel = price.stock === 'in-stock' ? (recent ? 'Stock informado en las últimas 24 h' : 'Stock informado')
+            : price.stock === 'low-stock' ? (recent ? 'Stock bajo informado en las últimas 24 h' : 'Stock bajo informado')
+              : price.stock === 'out-of-stock' ? 'La tienda informó sin stock en este relevamiento.'
+                : 'Stock sin confirmar.';
+
           return (
-            <div
+            <li
               key={`${price.storeId}:${price.url}`}
               data-store-id={price.storeId}
               className={cn(
-                'flex flex-col sm:flex-row sm:items-center justify-between p-3 border-2 gap-3',
+                'grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center p-3 border-2 gap-x-4 gap-y-2',
                 isBest
                   ? 'border-secondary bg-secondary/10'
                   : recent ? 'border-muted hover:border-border transition-colors' : 'border-muted bg-muted/30',
               )}
             >
-            <div className="flex flex-col gap-1">
-              {isBest && (
-                <span className="text-[12px] font-bold uppercase text-secondary">
-                  [ MENOR PRECIO RECIENTE ]
-                </span>
-              )}
-              {isSponsored && (
-                <span className="text-[12px] font-bold uppercase text-primary">
-                  [ PATROCINADO ]
-                </span>
-              )}
-              <span className="text-[12px] uppercase font-bold text-foreground">
+            <div className="flex min-w-0 flex-col gap-1">
+              {(isBest || isSponsored) && <p className="flex flex-wrap gap-x-2 text-[12px] font-bold uppercase">
+                {isBest && <span className="text-secondary">[ MENOR PRECIO RECIENTE ]</span>}
+                {isSponsored && <span className="text-primary">[ PATROCINADO ]</span>}
+              </p>}
+              <p className="text-[12px] uppercase font-bold text-foreground break-words">
                 {`@${normalizeDisplayText(price.storeName)}`}
-              </span>
+              </p>
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 font-body text-sm text-foreground/80">
+                <p className={available ? undefined : 'text-accent'}>{stockLabel}</p>
+                {hasObservedAt && (
+                  <p>
+                    Precio relevado: <time dateTime={observedAt.toISOString()}>{observedAt.toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', dateStyle: 'short', timeStyle: 'short' })}</time>
+                  </p>
+                )}
+              </div>
               {pendingIdentity && (
-                <p className="text-[12px] text-accent max-w-sm">
+                <p className="font-body text-sm text-accent max-w-prose">
                   Identidad por corroborar. Confirmá la variante antes de comprar; esta oferta no se usa en presupuestos automáticos.
                 </p>
               )}
-              {recent && <p className="font-body text-sm text-secondary">Relevado en las últimas 24 h · stock informado</p>}
-              {!fresh && <p className="text-[12px] text-accent">{validDate ? 'PRECIO ANTERIOR · PENDIENTE DE ACTUALIZAR' : 'Fecha de relevamiento por corroborar'}</p>}
-              {price.stock === 'out-of-stock' && <p className="font-body text-sm text-accent">La tienda informó sin stock en este relevamiento.</p>}
-              {!available && price.stock !== 'out-of-stock' && <p className="font-body text-sm text-accent">Stock sin confirmar.</p>}
-              {!recent && fresh && !pendingIdentity && hasDestination && available && validPrice && <p className="font-body text-sm text-accent">
-                {recentPrices.some((offer) => offer.storeId.toLowerCase() === price.storeId.toLowerCase())
-                  ? 'Otra publicación de la misma tienda; no participa del mínimo reciente.'
-                  : 'Precio por corroborar: fuera del rango comparable.'}
-              </p>}
-              {price.priceCondition === 'special' && <p className="font-body text-sm text-muted-foreground">Precio especial: verificá el medio de pago.</p>}
-              {Number.isFinite(observedAt.getTime()) && observedAt.getTime() > 0 && (
-                <p className="text-[12px] text-foreground/70">
-                  Precio relevado: {observedAt.toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', dateStyle: 'short', timeStyle: 'short' })}
-                </p>
-              )}
+              {!fresh && <p className="font-body text-sm font-bold text-accent">{validDate ? 'PRECIO ANTERIOR · PENDIENTE DE ACTUALIZAR' : 'Fecha de relevamiento por corroborar'}</p>}
+              {outsideRange && !sameStoreRecent && <p className="font-body text-sm text-accent">Precio por corroborar: fuera del rango comparable.</p>}
+              {price.priceCondition === 'special' && <p className="font-body text-sm text-accent">Precio especial: verificá el medio de pago.</p>}
+              {auxiliaryNotices.length > 0 && <details className="font-body text-sm">
+                <summary className="min-h-11 inline-flex items-center cursor-pointer text-foreground/80 underline decoration-dotted underline-offset-4">
+                  Ver avisos ({auxiliaryNotices.length})
+                </summary>
+                <ul className="mt-1 space-y-1 border-l-2 border-muted pl-3 text-foreground/80">
+                  {auxiliaryNotices.map((notice) => <li key={notice}>{notice}</li>)}
+                </ul>
+              </details>}
             </div>
 
             <div className="flex flex-col items-stretch gap-2 w-full sm:w-auto sm:max-w-[20rem] min-w-0">
@@ -93,6 +104,7 @@ export function StoresList({ product, merchantPrices, now }: StoresListProps) {
                 originalPrice={price.originalPrice}
                 size="md"
                 isReference={!recent}
+                className="tabular-nums sm:items-end"
               /> : <p className="font-body text-sm text-accent">Precio por corroborar</p>}
               {hasDestination ? <a
                 href={price.url}
@@ -127,13 +139,13 @@ export function StoresList({ product, merchantPrices, now }: StoresListProps) {
                 <span>VER EN TIENDA</span>
                 <ExternalLink className="w-4 h-4 shrink-0" aria-hidden="true" />
               </a> : <p className="font-body text-sm text-accent">Enlace por corroborar</p>}
-              <OfferReportLink context={{ productId: product.id, productName: product.name,
+              <OfferReportLink className="justify-center sm:justify-end text-[12px]" context={{ productId: product.id, productName: product.name,
                 storeId: price.storeId, storeName: price.storeName, offerUrl: price.url }} />
             </div>
-            </div>
+            </li>
           );
         })}
-      </div>;
+      </ul>;
   }
   return (
     <section id="ofertas-por-tienda" className="scroll-mt-24 bg-card border-[3px] border-border p-4 md:p-6 pixel-shadow min-w-0" aria-labelledby="store-offers-title">

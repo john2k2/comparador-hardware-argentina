@@ -213,7 +213,7 @@ function SearchHeader({ totalResults, searchQuery, isBusy }: { totalResults: num
 
 function LoadingState({ searchQuery }: { searchQuery: string }) {
   return (
-    <div className="min-w-0 mb-4 border-2 border-secondary bg-card px-3 sm:px-4 py-3 pixel-shadow animate-pulse overflow-hidden">
+    <div role="status" aria-live="polite" className="min-w-0 mb-4 border-2 border-secondary bg-card px-3 sm:px-4 py-3 pixel-shadow motion-safe:animate-pulse overflow-hidden">
       <p className="text-[12px] uppercase font-bold text-secondary tracking-wide break-words">
         {searchQuery ? `CONSULTANDO CATÁLOGO PARA "${searchQuery}"...` : 'CONSULTANDO CATÁLOGO Y PRECIOS...'}
       </p>
@@ -289,7 +289,7 @@ export function PaginationControls({
   };
 
   return (
-    <div className="flex justify-between items-center mt-6 pt-6 border-t-4 border-border border-dashed">
+    <nav aria-label="Paginación de resultados" className="flex justify-between items-center mt-6 pt-6 border-t-4 border-border border-dashed">
       {currentPage > 1 ? (
         <Link
           href={buildSearchPaginationHref(searchRoute, currentPage - 1)}
@@ -310,7 +310,8 @@ export function PaginationControls({
         </span>
       )}
       <div className="text-[12px] font-bold uppercase text-primary px-4 py-2 border-2 border-primary bg-card pixel-shadow-primary flex items-center gap-2">
-        <span className="hidden sm:inline">NIVEL</span> {currentPage} / {totalPages}
+        <span className="sr-only">{`Página ${currentPage} de ${totalPages}`}</span>
+        <span aria-hidden="true"><span className="hidden sm:inline">NIVEL</span> {currentPage} / {totalPages}</span>
       </div>
       {currentPage < totalPages ? (
         <Link
@@ -331,6 +332,6 @@ export function PaginationControls({
           {`NEXT >>`}
         </span>
       )}
-    </div>
+    </nav>
   );
 }

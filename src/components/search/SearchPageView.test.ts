@@ -28,4 +28,18 @@ describe('search pagination controls', () => {
 
     expect(markup).toContain('href="/search?category=procesadores&amp;page=3"');
   });
+
+  it('anuncia la página actual en español dentro de una navegación', () => {
+    const markup = renderToStaticMarkup(createElement(PaginationControls, {
+      currentPage: 2,
+      totalPages: 4,
+      isBusy: false,
+      searchRoute: '/search?q=ryzen&page=2',
+      onPageChange: vi.fn(),
+    }));
+
+    expect(markup).toContain('<nav aria-label="Paginación de resultados"');
+    expect(markup).toContain('<span class="sr-only">Página 2 de 4</span>');
+    expect(markup).toMatch(/<span aria-hidden="true"><span class="hidden sm:inline">NIVEL<\/span> 2 \/ 4<\/span>/);
+  });
 });

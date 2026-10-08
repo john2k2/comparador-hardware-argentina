@@ -181,7 +181,7 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
           const reviewPending = Boolean(recordedOffer && selected && needsIdentityReview(recordedOffer, selected));
           return <article key={slot} className="border-4 border-border bg-card p-4 min-w-0" data-slot={slot}>
             <div className="flex justify-between gap-3 items-start"><h2 className="font-pixel text-xs text-secondary leading-relaxed">{SLOT_LABELS[slot]}</h2>
-              {selection && <button className="font-body text-xs underline min-h-8" onClick={() => choose(slot, '')} aria-label={`Quitar ${SLOT_LABELS[slot]}`}>Quitar</button>}</div>
+              {selection && <button className="font-body text-xs underline min-h-11 min-w-11 px-2 -my-2 -mr-2 inline-flex items-center justify-center" onClick={() => choose(slot, '')} aria-label={`Quitar ${SLOT_LABELS[slot]}`}>Quitar</button>}</div>
             {slot === 'cooler' && <p className="font-body text-xs text-muted-foreground mt-1">Necesaria si la CPU no incluye un disipador adecuado.</p>}
             <div className="flex gap-2 mt-3"><input aria-label={`Buscar ${SLOT_LABELS[slot]}`} className={control} placeholder="Buscar por modelo" value={queries[slot] ?? ''} onChange={(event) => setQueries((current) => ({ ...current, [slot]: event.target.value }))} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); void search(slot); } }} />
               <button type="button" className={button} onClick={() => void search(slot)} disabled={loading || searching !== null}>Buscar</button></div>

@@ -5,7 +5,7 @@
 'use client';
 
 import Link from 'next/link';
-import React, { useMemo } from 'react';
+import React, { useMemo, useSyncExternalStore } from 'react';
 import { trackProductSelection } from '@/lib/analytics';
 import { computeComparableStorePriceStats, formatPriceARS, isComparableStoreOffer } from '@/lib/price-utils';
 import { normalizeDisplayText } from '@/lib/text-utils';
@@ -29,6 +29,18 @@ export interface ProductCardProps {
   returnTo?: string | null;
   surface?: 'search_results' | 'home_featured' | 'home_latest_offers' | 'home_recent' | 'home_price_drop' | 'home_popular' | 'related_products' | 'store_landing';
   position?: number;
+}
+
+const subscribeNever = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
+
+function compactAge(timestamp: number, nowMs = Date.now()): string {
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return 'SIN FECHA';
+  const ageHours = Math.max(0, Math.floor((nowMs - timestamp) / 3_600_000));
+  if (ageHours < 1) return 'HACE < 1 H';
+  if (ageHours < 24) return `HACE ${ageHours} H`;
+  return `HACE ${Math.floor(ageHours / 24)} D`;
 }
 
 function getPriceDropBaseline(bestPrice: Product['prices'][number] | undefined): number | null {
@@ -102,7 +114,14 @@ export const ProductCard = React.memo(function ProductCard({
   const productHref = returnTo
     ? `/product/${encodeURIComponent(product.id)}?from=${encodeURIComponent(returnTo)}`
     : `/product/${encodeURIComponent(product.id)}`;
-  const freshness = freshnessLabel(bestPrice ? new Date(bestPrice.lastUpdated).getTime() : 0);
+  const hydrated = useSyncExternalStore(subscribeNever, getClientSnapshot, getServerSnapshot);
+  const observedMs = bestPrice ? new Date(bestPrice.lastUpdated).getTime() : 0;
+  const hasObservedDate = Number.isFinite(observedMs) && observedMs > 0;
+  // La antigüedad relativa depende del reloj: se calcula después de hidratar para que servidor y cliente coincidan.
+  const freshness = hydrated
+    ? freshnessLabel(observedMs)
+    : !hasObservedDate ? 'ACTUALIZACION NO DISPONIBLE' : hasFreshPrice ? 'RELEVADO EN LAS ÚLTIMAS 24 H' : 'RELEVADO HACE MÁS DE 24 H';
+  const shortFreshness = hydrated ? compactAge(observedMs) : !hasObservedDate ? 'SIN FECHA' : hasFreshPrice ? '< 24 H' : '> 24 H';
 
   return (
     <div className={cn('flex h-full min-w-0 flex-col', className)}>
@@ -165,39 +184,40 @@ export const ProductCard = React.memo(function ProductCard({
             {displayName}
           </h3>
 
-          <div className="mt-auto pt-3 border-t-2 border-muted min-h-[7rem]">
+          <div className="mt-auto pt-3 border-t-2 border-muted">
             {bestPrice ? (
               <>
-                <p className="text-sm leading-snug text-foreground/80 mb-1 min-h-[3.5rem]">{hasFreshPrice ? 'MEJOR PRECIO REGISTRADO' : 'ÚLTIMO PRECIO RELEVADO · PENDIENTE DE ACTUALIZAR'}</p>
+                <p className="text-[12px] uppercase leading-snug text-foreground/80 mb-1 min-h-[2lh]">{hasFreshPrice ? 'MEJOR PRECIO REGISTRADO' : 'ÚLTIMO PRECIO RELEVADO · PENDIENTE DE ACTUALIZAR'}</p>
                 <PriceDisplay
                   price={lowestComparablePrice}
                   originalPrice={hasDiscount ? bestPrice.originalPrice : undefined}
                   size="md"
                   isReference={!hasFreshPrice}
+                  className="tabular-nums [&>div:last-child_span]:text-2xl [&>div:last-child_span]:leading-tight"
                 />
+                <p className="mt-1 flex min-w-0 items-baseline gap-1 text-[12px] uppercase text-foreground/75" title={freshness}>
+                  {showStore && <>
+                    <span className="min-w-0 truncate text-accent font-bold">{`@${normalizeDisplayText(bestPrice.storeName)}`}</span>
+                    <span aria-hidden="true">·</span>
+                  </>}
+                  <time className="shrink-0" dateTime={hasObservedDate ? new Date(observedMs).toISOString() : undefined}>
+                    <span className="sr-only">{freshness}</span>
+                    <span aria-hidden="true">{shortFreshness}</span>
+                  </time>
+                </p>
               </>
             ) : (
-              <p className="text-[12px] uppercase text-accent">Sin oferta disponible para comparar</p>
+              <p className="text-[12px] uppercase text-accent min-h-[2lh]">Sin oferta disponible para comparar</p>
             )}
           </div>
 
-          <div className="flex flex-col items-start gap-2 font-mono text-[12px] uppercase text-foreground/80 pt-2">
-            {showStore && bestPrice ? (
-              <span className="min-w-0 flex items-center gap-1 text-accent font-bold truncate">
-                {`@${normalizeDisplayText(bestPrice.storeName)}`}
-              </span>
-            ) : <span className="min-h-[1.3rem]" aria-hidden="true" />}
-            <span className="max-w-full text-secondary font-bold tracking-normal border border-transparent px-1 py-0.5 transition-colors group-hover:border-secondary">
-              {hasFreshPrice ? 'COMPARAR TIENDAS >' : 'VER FICHA Y REFERENCIAS >'}
-            </span>
-          </div>
-          <p className="pt-2 text-[12px] uppercase text-foreground/60 tracking-wide min-h-[3rem]" title={freshness}>
-            {freshness}
-          </p>
+          <span className="mt-2 self-start max-w-full font-mono text-[12px] uppercase text-secondary font-bold tracking-normal border border-transparent px-1 py-0.5 transition-colors group-hover:border-secondary">
+            {hasFreshPrice ? 'COMPARAR TIENDAS >' : 'VER FICHA Y REFERENCIAS >'}
+          </span>
         </div>
       </article>
     </Link>
-    <OfferReportLink className="self-start mt-1" context={{ productId: product.id, productName: displayName,
+    <OfferReportLink className="self-end text-[11px] text-foreground/75 decoration-dotted" context={{ productId: product.id, productName: displayName,
       storeId: bestPrice?.storeId, storeName: bestPrice?.storeName, offerUrl: bestPrice?.url }} />
     </div>
   );
