@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import test from 'node:test';
 import { privateRoot,validateOutput,selectMigrations,runContracts,suiteNames,carryForwardOracle } from './catalog-restructure-contracts.mjs';
+
+// El laboratorio sólo usa el PG17 de Homebrew; los runners Linux de CI no lo tienen.
+const localPg17 = existsSync('/opt/homebrew/opt/postgresql@17/bin/initdb') || 'PG17 local de Homebrew no disponible';
 
 test('replay uses ordered repository migrations and excludes unrelated private dashboard/retention',async()=>{
   const names=await fs.readdir(new URL('../../supabase/migrations/',import.meta.url));
@@ -21,7 +25,7 @@ test('output cannot address remote targets, other directories or overwrite input
   assert.equal(/persist_.*offer\(/.test(carryForwardOracle),false,'Oracle fixtures never use observation RPCs');
 });
 
-test('SQL current contracts survive local compaction with numeric carry-forward and exact definitions/data', {timeout:180000},async()=>{
+test('SQL current contracts survive local compaction with numeric carry-forward and exact definitions/data', {timeout:180000,skip:localPg17 !== true && localPg17},async()=>{
   await fs.mkdir(privateRoot,{recursive:true,mode:0o700});
   const output=path.join(privateRoot,`contracts-test-${randomUUID()}.json`);
   try {

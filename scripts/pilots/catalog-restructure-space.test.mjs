@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { existsSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
@@ -58,7 +59,10 @@ test('array SQL null is distinct from text null',()=>{
   assert.notEqual(csvCell([null],'_text'),csvCell(['null'],'_text'));
 });
 
-test('PG17 isolation measures TOAST/update/compaction and restores exact original rows',async()=>{
+// El laboratorio sólo usa el PG17 de Homebrew; los runners Linux de CI no lo tienen.
+const localPg17 = existsSync('/opt/homebrew/opt/postgresql@17/bin/initdb') || 'PG17 local de Homebrew no disponible';
+
+test('PG17 isolation measures TOAST/update/compaction and restores exact original rows',{skip:localPg17 !== true && localPg17},async()=>{
   await fs.mkdir(privateRoot,{recursive:true,mode:0o700});
   const suffix=randomUUID(),source=path.join(privateRoot,`test-input-${suffix}.json`),output=path.join(privateRoot,`test-result-${suffix}.json`);
   try {
