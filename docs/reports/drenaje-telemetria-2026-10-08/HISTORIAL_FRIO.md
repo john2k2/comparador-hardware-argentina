@@ -1,6 +1,6 @@
 # Historial frío compatible: diseño preparatorio — 08/10/2026
 
-**Propuesta: empaquetar historia fría por oferta en PostgreSQL, conservar `public.price_history` como tabla hot y leer ambas capas desde la RPC histórica.** Supabase Storage conserva el respaldo exacto recuperable. Este documento prepara el paso 2 del plan, después del drenaje respaldado de telemetría; no implementa cold ni autoriza retirar historia.
+**Propuesta inicial contrastada en laboratorio y rechazada para adopción actual:** empaquetar historia fría por oferta en PostgreSQL, conservar `public.price_history` como hot y leer ambas capas desde la RPC histórica. [HISTORIAL_LAB.md](HISTORIAL_LAB.md) demuestra que ese layout ocupa más que la tabla tipada mínima; no se implementa cold ni se autoriza retirar historia. Storage conserva su función de respaldo exacto recuperable.
 
 Revisión de contratos: `ebd1b69`, rama `codex/capacidad-costo-cero`, worktree `comparador-confianza/comparador-hardware-argentina`. HEAD al preparar este documento: `af3fa91`, con trabajo ajeno preservado. Alcance de escritura: sólo este archivo; sin migración, laboratorio, operaciones remotas, publicación ni cambio de coste/plan.
 
