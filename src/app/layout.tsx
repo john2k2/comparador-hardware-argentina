@@ -5,6 +5,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Navigation } from "@/components/layout/Navigation";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { ParallaxSky } from "@/components/layout/ParallaxSky";
 import { ThemeScript } from "@/components/functional/ThemeScript";
 import { AnalyticsBootstrap } from "@/components/functional/AnalyticsBootstrap";
 import { AnalyticsPreferences } from "@/components/functional/AnalyticsPreferences";
@@ -145,57 +146,7 @@ export default async function RootLayout({
         <link rel="preconnect" href="https://compugarden.com.ar" />
         <link rel="dns-prefetch" href="https://i.imgur.com" />
 
-        {/* --- CAPA FONDO PARALLAX --- */}
-        <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 0 }} className="sky-bg sky-layer">
-          <div className="cloud-wrapper cloud-1"><div className="cloud-inner"><svg viewBox="0 0 34 22" style={{ width: '100%', height: 'auto', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))' }}><use href="#cloud-pixel-art"></use></svg></div></div>
-          <div className="cloud-wrapper cloud-2"><div className="cloud-inner"><svg viewBox="0 0 34 22" style={{ width: '100%', height: 'auto', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))' }}><use href="#cloud-pixel-art"></use></svg></div></div>
-          <div className="cloud-wrapper cloud-3"><div className="cloud-inner"><svg viewBox="0 0 34 22" style={{ width: '100%', height: 'auto', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.1))' }}><use href="#cloud-pixel-art"></use></svg></div></div>
-          <div className="cloud-wrapper cloud-4"><div className="cloud-inner"><svg viewBox="0 0 34 22" style={{ width: '100%', height: 'auto', filter: 'drop-shadow(0 20px 25px rgba(0,0,0,0.1))' }}><use href="#cloud-pixel-art"></use></svg></div></div>
-          <div className="cloud-wrapper cloud-5"><div className="cloud-inner"><svg viewBox="0 0 34 22" style={{ width: '100%', height: 'auto', filter: 'drop-shadow(0 25px 50px rgba(0,0,0,0.25))' }}><use href="#cloud-pixel-art"></use></svg></div></div>
-          <div className="cloud-wrapper cloud-6"><div className="cloud-inner"><svg viewBox="0 0 34 22" style={{ width: '100%', height: 'auto', filter: 'drop-shadow(0 25px 50px rgba(0,0,0,0.25))' }}><use href="#cloud-pixel-art"></use></svg></div></div>
-        </div>
-
-        {/* --- CAPA FONDO NOCTURNO PIXEL ART --- */}
-        <div
-          style={{ position: 'fixed', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 0 }}
-          className="night-sky-bg night-sky-layer"
-        >
-          <div className="night-stars-layer stars-slow" style={{ width: '200vw', height: '100%' }}>
-            <svg width="100%" height="100%" aria-hidden="true">
-              <rect width="100%" height="100%" fill="url(#stars-small)" />
-            </svg>
-          </div>
-          <div className="night-stars-layer stars-fast" style={{ width: '200vw', height: '100%' }}>
-            <svg width="100%" height="100%" aria-hidden="true">
-              <rect width="100%" height="100%" fill="url(#stars-medium)" />
-            </svg>
-          </div>
-
-          <div className="night-moon-layer">
-            <svg viewBox="0 0 16 16" style={{ width: '100%', height: '100%' }} aria-hidden="true">
-              <use href="#pixel-moon" />
-            </svg>
-          </div>
-
-          <div className="shooting-star shooting-star-1" />
-          <div className="shooting-star shooting-star-2" />
-          <div className="shooting-star shooting-star-3" />
-
-          <div className="comet-container">
-            <svg
-              viewBox="0 0 45 15"
-              style={{ width: '100%', height: 'auto', filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.6))' }}
-              aria-hidden="true"
-            >
-              <use href="#pixel-comet" />
-            </svg>
-          </div>
-
-          <div className="night-cloud-wrapper night-cloud-1"><div className="night-cloud-inner"><svg viewBox="0 0 34 22" style={{ width: '100%', height: 'auto', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' }}><use href="#cloud-night-pixel-art" /></svg></div></div>
-          <div className="night-cloud-wrapper night-cloud-2"><div className="night-cloud-inner"><svg viewBox="0 0 34 22" style={{ width: '100%', height: 'auto', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.25))' }}><use href="#cloud-night-pixel-art" /></svg></div></div>
-          <div className="night-cloud-wrapper night-cloud-3"><div className="night-cloud-inner"><svg viewBox="0 0 34 22" style={{ width: '100%', height: 'auto', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.25))' }}><use href="#cloud-night-pixel-art" /></svg></div></div>
-          <div className="night-cloud-wrapper night-cloud-4"><div className="night-cloud-inner"><svg viewBox="0 0 34 22" style={{ width: '100%', height: 'auto', filter: 'drop-shadow(0 20px 25px rgba(0,0,0,0.35))' }}><use href="#cloud-night-pixel-art" /></svg></div></div>
-        </div>
+        <ParallaxSky />
 
         {/* Resto de la aplicación por encima del parallax */}
         <div className="relative z-10 flex flex-col flex-1">
