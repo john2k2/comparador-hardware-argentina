@@ -847,14 +847,15 @@
   transform-origin: center;
 }
 
-/* Efecto Parallax (Profundidad) */
+/* Efecto Parallax (Profundidad). El contenido no siempre tiene fondo propio:
+   las nubes diurnas quedan chicas y translúcidas para no competir con el texto. */
 .cloud-1 {
   top: 15%;
   width: 80px;
   animation-duration: 120s;
   animation-delay: -10s;
   z-index: 0;
-  opacity: 0.5;
+  opacity: 0.35;
 }
 
 /* El desenfoque va en el sprite, no en la capa animada: se rasteriza una vez. */
@@ -873,7 +874,7 @@
   animation-duration: 90s;
   animation-delay: -45s;
   z-index: 0;
-  opacity: 0.6;
+  opacity: 0.4;
 }
 
 .cloud-2 svg {
@@ -887,11 +888,11 @@
 
 .cloud-3 {
   top: 30%;
-  width: 180px;
+  width: 150px;
   animation-duration: 60s;
   animation-delay: -25s;
   z-index: 1;
-  opacity: 0.8;
+  opacity: 0.45;
 }
 
 .cloud-3 .cloud-inner {
@@ -901,11 +902,11 @@
 
 .cloud-4 {
   top: 70%;
-  width: 220px;
+  width: 170px;
   animation-duration: 45s;
   animation-delay: -5s;
   z-index: 2;
-  opacity: 0.9;
+  opacity: 0.5;
 }
 
 .cloud-4 .cloud-inner {
@@ -915,10 +916,11 @@
 
 .cloud-5 {
   top: 10%;
-  width: 350px;
+  width: 200px;
   animation-duration: 30s;
   animation-delay: -15s;
   z-index: 3;
+  opacity: 0.5;
 }
 
 .cloud-5 .cloud-inner {
@@ -928,10 +930,11 @@
 
 .cloud-6 {
   top: 50%;
-  width: 450px;
+  width: 240px;
   animation-duration: 20s;
   animation-delay: -50s;
   z-index: 4;
+  opacity: 0.55;
 }
 
 .cloud-6 .cloud-inner {
