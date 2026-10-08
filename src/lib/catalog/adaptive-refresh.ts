@@ -30,13 +30,29 @@ export const ADAPTIVE_STORE_SPACING_MS = 2000;
 export const ADAPTIVE_CLAIM_BATCH = 48;
 // CompraGamer y los lotes WooCommerce comparten una lectura de catálogo; no se espacia por fila.
 const isSharedReadStore = (storeId: string) => storeId === 'compragamer' || WOO_BATCH_STORES.has(storeId);
+/** Detalle de inventario por ejecución; el resto del lote queda para la próxima. */
+export const ADAPTIVE_INVENTORY_DETAIL_MS = 90_000;
+/** Si el descubrimiento diario ya consumió esto, el detalle espera a otra ejecución. */
+export const ADAPTIVE_INVENTORY_PHASE_MS = 5 * 60_000;
+/** Los triggers mantienen la cola; la preparación completa es una conciliación diaria. */
+export const SEED_RECONCILIATION_HOURS = 24;
+export const SEED_RETRY_HOURS = 6;
+/** Tope de la conciliación automática; si no termina, la próxima ejecución continúa. */
+export const SEED_AUTO_MAX_MS = 3 * 60_000;
+export type SeedMode = 'auto' | 'always' | 'never';
+type SeedSummary = { mode: SeedMode; status: 'skipped' | 'completed' | 'partial' | 'failed'; reason?: string; code?: string };
+function adaptiveSeedMode(option?: SeedMode): SeedMode {
+  const configured = option ?? process.env.CATALOG_ADAPTIVE_SEED ?? 'auto';
+  if (configured !== 'auto' && configured !== 'always' && configured !== 'never') throw new Error('REFRESH_INVALID_SEED_MODE');
+  return configured;
+}
 function adaptiveConcurrency(): number {
   const configured = Number(process.env.CATALOG_ADAPTIVE_CONCURRENCY ?? ADAPTIVE_FETCH_CONCURRENCY);
   if (!Number.isSafeInteger(configured) || configured < 1 || configured > 16) throw new Error('REFRESH_INVALID_CONCURRENCY');
   return configured;
 }
 
-export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs?: number } = {}) {
+export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs?: number; seed?: SeedMode } = {}) {
   if (process.env.CATALOG_REQUESTED_RUNNER !== '1') throw new Error('REFRESH_RUNNER_REQUIRED');
   const client = getServerSupabaseServiceClient();
   if (!client) throw new Error('REFRESH_DATABASE_UNAVAILABLE');
@@ -44,6 +60,7 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   if (!Number.isSafeInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 5000) throw new Error('REFRESH_INVALID_LIMIT');
   const maxOffers = requestedLimit;
   const concurrency = adaptiveConcurrency();
+  const seedMode = adaptiveSeedMode(options.seed);
   const deadline = Math.min(17 * 60_000, Math.max(1000, options.maxRunMs ?? 17 * 60_000));
   const started = Date.now(), token = randomUUID(), startedAt = new Date(started).toISOString();
   // Sólo se compactan resúmenes operativos generados por esta cola.
@@ -56,6 +73,7 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   let inventory: Awaited<ReturnType<typeof runInventoryDiscovery>> = [];
   let inventoryDetails: Awaited<ReturnType<typeof runInventoryDetailDiscovery>> | undefined;
   let seeded = 0;
+  let seedSummary: SeedSummary = { mode: seedMode, status: 'skipped' };
   // Registrar antes de descubrir: un fallo posterior no debe ocultar altas ya guardadas.
   const run = await client.from('catalog_refresh_runs').insert({ started_at: startedAt }).select('id').single();
   if (run.error || !run.data) throw new Error('REFRESH_RUN_CREATE_FAILED');
@@ -86,6 +104,17 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   // Al menos la mitad del presupuesto queda para la rotación de otras tiendas.
   const feedLimit = Math.min(1200, Math.floor(maxOffers / 2));
   let status: 'completed' | 'deadline' | 'failed' = 'completed';
+  async function reconciliationDue(now: number): Promise<{ due: boolean; reason: string }> {
+    const recent = await client!.from('catalog_refresh_runs').select('started_at,seed:summary->seed')
+      .gte('started_at', new Date(now - SEED_RECONCILIATION_HOURS * 3600_000).toISOString())
+      .order('started_at', { ascending: false }).limit(200);
+    if (recent.error || !Array.isArray(recent.data)) return { due: true, reason: 'history-unavailable' };
+    const rows = recent.data as Array<{ started_at?: string; seed?: { status?: string } | null }>;
+    if (rows.some(row => row.seed?.status === 'completed')) return { due: false, reason: 'reconciled' };
+    const retryAfter = now - SEED_RETRY_HOURS * 3600_000;
+    if (rows.some(row => row.seed?.status === 'failed' && Date.parse(row.started_at ?? '') >= retryAfter)) return { due: false, reason: 'recent-failure' };
+    return { due: true, reason: 'reconciliation-due' };
+  }
   async function finish(target: Target, outcome: Outcome, comparable = false) {
     let finished = await client!.rpc('finish_catalog_refresh', { p_offer_id: target.offer_id, p_token: token, p_result: outcome });
     // La RPC confirma el mismo token sin repetir el cambio si la respuesta se perdió.
@@ -106,11 +135,15 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   try {
     const inventoryStarted = Date.now();
     inventory = process.env.CATALOG_INVENTORY_DISCOVERY === '1' ? await runInventoryDiscovery() : [];
-    inventoryDetails = process.env.CATALOG_INVENTORY_DISCOVERY === '1' ? await runInventoryDetailDiscovery() : undefined;
+    inventoryDetails = process.env.CATALOG_INVENTORY_DISCOVERY === '1' && Date.now() - inventoryStarted < ADAPTIVE_INVENTORY_PHASE_MS
+      ? await runInventoryDetailDiscovery({ maxRunMs: ADAPTIVE_INVENTORY_DETAIL_MS }) : undefined;
     phaseMs.inventory = Date.now() - inventoryStarted;
     const preparationStarted = Date.now();
-    try {
+    const seedDecision = seedMode === 'auto' ? await reconciliationDue(started) : { due: seedMode === 'always', reason: seedMode === 'always' ? 'forced' : 'disabled' };
+    seedSummary = { mode: seedMode, status: 'skipped', reason: seedDecision.reason };
+    if (seedDecision.due) try {
       for (let batch = 0; ; batch++) {
+        if (seedMode === 'auto' && (batch >= 200 || Date.now() - preparationStarted >= SEED_AUTO_MAX_MS)) { seedSummary.status = 'partial'; break; }
         if (batch >= 200 || Date.now() - started >= deadline) throw new Error('REFRESH_SEED_DEADLINE');
         // Retener sólo el último lote; las respuestas externas no entran al resumen.
         seedAttempts = [];
@@ -135,11 +168,13 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
         if (result.error) throw new Error(result.error.code==='57014' ? 'REFRESH_SEED_TIMEOUT' : 'REFRESH_SEED_FAILED');
         if (!Number.isSafeInteger(result.data) || result.data < 0 || result.data > 500) throw new Error('REFRESH_INVALID_SEED_RESULT');
         seeded += result.data;
-        if (result.data === 0) break;
+        if (result.data === 0) { seedSummary.status = 'completed'; break; }
       }
     } catch (error) {
-      seedPreparationFailed = true;
-      throw error;
+      const code = error instanceof Error && /^REFRESH_[A-Z_]+$/.test(error.message) ? error.message : 'REFRESH_UNEXPECTED_ERROR';
+      seedSummary = { ...seedSummary, status: 'failed', code };
+      // La conciliación automática no detiene la cola: los triggers ya registran altas y categorías.
+      if (seedMode === 'always') { seedPreparationFailed = true; throw error; }
     } finally {
       phaseMs.preparation = Date.now() - preparationStarted;
     }
@@ -224,7 +259,7 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
       }
       phaseMs[sharedBatch ? 'shared' : 'rotation'] += Date.now() - batchStarted;
       // El avance persiste por lote aunque el runner se interrumpa luego.
-      const progress = await client.from('catalog_refresh_runs').update({ summary: { ...counts, groups, deferred, deferredStores, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads } }).eq('id', run.data.id);
+      const progress = await client.from('catalog_refresh_runs').update({ summary: { ...counts, groups, deferred, deferredStores, seed: seedSummary, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads } }).eq('id', run.data.id);
       if (progress.error) throw new Error('REFRESH_PROGRESS_FAILED');
     }
     if (Date.now() - started >= deadline) status = 'deadline';
@@ -268,7 +303,7 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   const seedDiagnostic = sanitizeRefreshSeedDiagnostic({ attempts: seedAttempts });
   const summary = { source: 'adaptive-catalog', trigger: ['github-schedule','cloudflare-fallback'].includes(process.env.CATALOG_RUN_TRIGGER ?? '') ? process.env.CATALOG_RUN_TRIGGER : 'manual', runId: run.data.id, startedAt, finishedAt: new Date().toISOString(),
     status, failureCode, ...(claimDiagnostic ? { claimDiagnostic } : {}), ...(seedDiagnostic ? { seedDiagnostic } : {}),
-    ...(hasFailureDiagnostic() ? { closure: { failureCodes: closureFailureCodes } } : {}), inventory, inventoryDetails, feedClaimed, sourceFailureReasons, limitReached: counts.attempted + deferred >= maxOffers, ...counts, groups, deferred, deferredStores, seeded, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads, coverage: coverageData };
+    ...(hasFailureDiagnostic() ? { closure: { failureCodes: closureFailureCodes } } : {}), inventory, inventoryDetails, feedClaimed, sourceFailureReasons, limitReached: counts.attempted + deferred >= maxOffers, ...counts, groups, deferred, deferredStores, seeded, seed: seedSummary, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads, coverage: coverageData };
   let summaryPersistence: 'confirmed' | 'unconfirmed' = 'unconfirmed';
   try {
     const completed = await client.from('catalog_refresh_runs').update({ status, finished_at: summary.finishedAt, summary }).eq('id', run.data.id);

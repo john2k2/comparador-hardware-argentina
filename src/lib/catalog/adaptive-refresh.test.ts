@@ -14,8 +14,8 @@ const target={offer_id:'offer',product_id:'cpu',store_id:'compragamer',url:'http
 const price={storeId:'compragamer',storeName:'CompraGamer',url:target.url,price:100,stock:'in-stock',lastUpdated:new Date('2026-10-01T22:00:01Z')};
 const product={id:'cpu',name:'AMD Ryzen 5 5600',category:'procesadores',prices:[price]} as Product;
 beforeEach(()=>{
- vi.resetAllMocks();vi.useFakeTimers();vi.setSystemTime(new Date('2026-10-01T22:00:00Z'));vi.stubEnv('CATALOG_REQUESTED_RUNNER','1');vi.stubEnv('CATALOG_INVENTORY_DISCOVERY','0');
- const chain={delete:()=>chain,lt:async()=>({error:null}),update:()=>chain,eq:()=>chain,then:(resolve:(value:{error:null})=>void)=>resolve({error:null}),insert:()=>chain,select:()=>chain,single:async()=>({data:{id:'run'},error:null}),in:()=>chain,limit:async()=>({data:[{}],error:null})};
+ vi.resetAllMocks();vi.useFakeTimers();vi.setSystemTime(new Date('2026-10-01T22:00:00Z'));vi.stubEnv('CATALOG_REQUESTED_RUNNER','1');vi.stubEnv('CATALOG_INVENTORY_DISCOVERY','0');vi.stubEnv('CATALOG_ADAPTIVE_SEED','always');
+ const chain={delete:()=>chain,lt:async()=>({error:null}),update:()=>chain,eq:()=>chain,then:(resolve:(value:{error:null})=>void)=>resolve({error:null}),insert:()=>chain,select:()=>chain,gte:()=>chain,order:()=>chain,single:async()=>({data:{id:'run'},error:null}),in:()=>chain,limit:async()=>({data:[{}],error:null})};
  mocks.from.mockReturnValue(chain);mocks.map.mockReturnValue(product);mocks.fetch.mockResolvedValue({product,price,sourceTitle:product.name});
  mocks.rpc.mockImplementation(async(name:string)=>({error:null,data:name==='seed_catalog_refresh_queue'?0:name==='catalog_refresh_coverage'?[]:name==='claim_catalog_feed_refresh'||name==='claim_catalog_refresh'?[]:true}));
 });
@@ -433,4 +433,91 @@ it('no consulta una tienda que ya estaba pausada por el transporte al iniciar el
   await vi.runAllTimersAsync();
   expect(await promise).toMatchObject({ attempted: 1, observed: 1, deferred: 2, deferredStores: { 'pre-paused': 2 }, status: 'completed' });
   expect(spans.map(span => span.store)).toEqual(['venex']);
+});
+
+function seedHistory(rows: Array<{ started_at: string; seed: { status: string } | null }>) {
+  const originalFrom = mocks.from.getMockImplementation()!;
+  mocks.from.mockImplementation((table: string) => {
+    const chain = originalFrom(table);
+    return table === 'catalog_refresh_runs' ? { ...chain, select: () => ({ gte: () => ({ order: () => ({ limit: async () => ({ data: rows, error: null }) }) }) }) } : chain;
+  });
+}
+const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3600_000).toISOString();
+const seedCalls = () => mocks.rpc.mock.calls.filter(([name]) => name === 'seed_catalog_refresh_queue').length;
+const claimCalls = () => mocks.rpc.mock.calls.filter(([name]) => name.startsWith('claim_')).length;
+
+it('omite la conciliación automática si otra ejecución la completó en 24 h', async () => {
+  seedHistory([{ started_at: hoursAgo(23), seed: { status: 'completed' } }]);
+  const result = await runAdaptiveRefresh({ maxOffers: 24, seed: 'auto' });
+  expect(seedCalls()).toBe(0);
+  expect(claimCalls()).toBe(2);
+  expect(result).toMatchObject({ status: 'completed', seeded: 0, seed: { mode: 'auto', status: 'skipped', reason: 'reconciled' } });
+});
+
+it('concilia cuando no hay una conciliación completa en 24 h y registra el resultado', async () => {
+  seedHistory([{ started_at: hoursAgo(1), seed: { status: 'skipped' } }, { started_at: hoursAgo(7), seed: { status: 'failed' } }]);
+  let batches = 0;
+  mocks.rpc.mockImplementation(async (name: string) => ({ data: name === 'seed_catalog_refresh_queue' ? [500, 3, 0][batches++] : name === 'catalog_refresh_coverage' ? [] : name.startsWith('claim_') ? [] : true, error: null }));
+  const result = await runAdaptiveRefresh({ maxOffers: 24, seed: 'auto' });
+  expect(result).toMatchObject({ status: 'completed', seeded: 503, seed: { mode: 'auto', status: 'completed', reason: 'reconciliation-due' } });
+});
+
+it('no reintenta antes de seis horas una conciliación automática fallida', async () => {
+  seedHistory([{ started_at: hoursAgo(5), seed: { status: 'failed' } }]);
+  const result = await runAdaptiveRefresh({ maxOffers: 24, seed: 'auto' });
+  expect(seedCalls()).toBe(0);
+  expect(result).toMatchObject({ seed: { status: 'skipped', reason: 'recent-failure' } });
+});
+
+it('un timeout de la conciliación automática no impide reclamar ofertas', async () => {
+  seedHistory([]);
+  mocks.rpc.mockImplementation(async (name: string) => name === 'seed_catalog_refresh_queue'
+    ? { data: null, error: { code: '57014', message: 'respuesta privada' } }
+    : { data: name === 'catalog_refresh_coverage' || name.startsWith('claim_') ? [] : true, error: null });
+  const promise = runAdaptiveRefresh({ maxOffers: 24, seed: 'auto' });
+  await vi.runAllTimersAsync();
+  const result = await promise;
+  expect(seedCalls()).toBe(3);
+  expect(claimCalls()).toBe(2);
+  expect(result).toMatchObject({ status: 'completed', seed: { mode: 'auto', status: 'failed', code: 'REFRESH_SEED_TIMEOUT' },
+    seedDiagnostic: { attempts: [{ attemptIndex: 1, code: '57014' }, { attemptIndex: 2 }, { attemptIndex: 3 }] } });
+  expect(result.failureCode).toBeUndefined();
+  expect(result.closure).toBeUndefined();
+  expect(JSON.stringify(result)).not.toContain('respuesta privada');
+});
+
+it('acota la conciliación automática y deja el resto para la próxima ejecución', async () => {
+  seedHistory([]);
+  mocks.rpc.mockImplementation(async (name: string) => {
+    if (name === 'seed_catalog_refresh_queue') { vi.setSystemTime(new Date(Date.now() + 70_000)); return { data: 500, error: null }; }
+    return { data: name === 'catalog_refresh_coverage' || name.startsWith('claim_') ? [] : true, error: null };
+  });
+  const result = await runAdaptiveRefresh({ maxOffers: 24, seed: 'auto' });
+  expect(seedCalls()).toBe(3);
+  expect(claimCalls()).toBe(2);
+  expect(result).toMatchObject({ status: 'completed', seeded: 1500, seed: { status: 'partial' }, phaseMs: { preparation: 210_000 } });
+});
+
+it('el modo never no consulta historial ni prepara la cola', async () => {
+  const result = await runAdaptiveRefresh({ maxOffers: 24, seed: 'never' });
+  expect(seedCalls()).toBe(0);
+  expect(result).toMatchObject({ status: 'completed', seed: { mode: 'never', status: 'skipped', reason: 'disabled' } });
+});
+
+it('rechaza un modo de conciliación desconocido', async () => {
+  vi.stubEnv('CATALOG_ADAPTIVE_SEED', 'daily');
+  await expect(runAdaptiveRefresh({ maxOffers: 24 })).rejects.toThrow('REFRESH_INVALID_SEED_MODE');
+});
+
+it('acota el detalle de inventario y lo omite si el descubrimiento consumió la fase', async () => {
+  vi.stubEnv('CATALOG_INVENTORY_DISCOVERY', '1');
+  mocks.inventory.mockResolvedValue([]);
+  mocks.details.mockResolvedValue({ status: 'completed', attempted: 0, imported: 0, failures: 0 });
+  await runAdaptiveRefresh({ maxOffers: 24 });
+  expect(mocks.details).toHaveBeenCalledWith({ maxRunMs: 90_000 });
+  mocks.details.mockClear();
+  mocks.inventory.mockImplementation(async () => { vi.setSystemTime(new Date(Date.now() + 5 * 60_000)); return []; });
+  const result = await runAdaptiveRefresh({ maxOffers: 24 });
+  expect(mocks.details).not.toHaveBeenCalled();
+  expect(result.inventoryDetails).toBeUndefined();
 });

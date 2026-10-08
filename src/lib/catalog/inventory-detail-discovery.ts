@@ -22,11 +22,12 @@ export function acceptInventoryDetail(target: DetailTarget, product: Product | n
       ...(product.specs.SKU ? { storeSku: product.specs.SKU } : {}) } }] };
 }
 
-export async function runInventoryDetailDiscovery() {
+export const INVENTORY_DETAIL_MAX_MS = 3 * 60000;
+export async function runInventoryDetailDiscovery(options: { maxRunMs?: number } = {}) {
   if (process.env.CATALOG_REQUESTED_RUNNER !== '1') throw new Error('REFRESH_RUNNER_REQUIRED');
   const client = getServerSupabaseServiceClient();
   if (!client) throw new Error('REFRESH_DATABASE_UNAVAILABLE');
-  const token = randomUUID(), started = Date.now(), signal = AbortSignal.timeout(3 * 60000);
+  const token = randomUUID(), started = Date.now(), signal = AbortSignal.timeout(Math.max(1, Math.min(INVENTORY_DETAIL_MAX_MS, options.maxRunMs ?? INVENTORY_DETAIL_MAX_MS)));
   const claimed = await client.rpc('claim_catalog_inventory_details', { p_token: token, p_limit: 48 });
   if (claimed.error) return { status: 'failed', code: 'REFRESH_DETAIL_CLAIM_FAILED', attempted: 0, imported: 0 };
   let attempted = 0, imported = 0, failures = 0;
