@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { resolveAdminAccessFromToken } from '@/lib/server/admin-auth';
 import { isTrustedInternalRefreshRequest } from '@/lib/server/internal-refresh-auth';
 import { buildRateLimitHeaders, checkRateLimit, getRequestIp } from '@/lib/server/rate-limit';
@@ -45,6 +45,24 @@ import type { ProductPageResult } from '@/lib/persistence/product-read-types';
 
 type SearchDatabaseRead = { page: ProductPageResult; cacheWrite?: Promise<void> };
 const readPendingSearchPage = createCoalescedRead<SearchDatabaseRead>();
+
+async function scheduleCatalogRefreshDemand(input: Parameters<typeof recordCatalogRefreshDemand>[0]): Promise<void> {
+  const record = async () => {
+    try {
+      await recordCatalogRefreshDemand(input);
+    } catch {
+      // La intención es auxiliar: una falla no invalida la página de precios leída.
+      logger.warn('Catalog refresh demand write skipped', { stage: 'after-response' });
+    }
+  };
+  try {
+    // Next conserva el trabajo mediante waitUntil; no abandonar una promesa al responder.
+    after(record);
+  } catch {
+    // Lectores directos o adapters sin contexto conservan la escritura esperada.
+    await record();
+  }
+}
 
 function buildPayloadFromProducts(products: Product[], page: number): SearchApiResponse {
   const pageSlice = paginateProducts(products, page, SEARCH_PAGE_SIZE);
@@ -205,13 +223,11 @@ export async function GET(request: NextRequest) {
     const cached = await cachedRead;
     if (cached) {
       const staleCache = hasStaleProducts(cached.products, DB_STALE_AFTER_MS);
-      if (staleCache && !isRefreshRequest) {
-        // En runtimes serverless un trabajo lanzado sin esperar puede cortarse
-        // al enviar la respuesta. Esta escritura sólo ocurre en datos vencidos.
-        await recordCatalogRefreshDemand({ query: query || undefined, category: effectiveCategory });
-        if (query) scheduleBackgroundSearchRefresh(request, cacheKey);
+      if (staleCache || cached.pagination.total === 0) {
+        await scheduleCatalogRefreshDemand({ query: query || undefined, category: effectiveCategory });
+        if (staleCache && query) scheduleBackgroundSearchRefresh(request, cacheKey);
       }
-      // La escritura de demanda puede atravesar el límite de frescura de una oferta.
+      // Revalidar también si el adapter tuvo que esperar la escritura de demanda.
       if (includeUnavailable || hasCurrentSearchPagePrices(cached.products)) {
         return respond(cached, { headers: { 'X-Search-Cache': staleCache ? 'HIT-STALE' : 'HIT' } }, { success: true, resultCount: cached.products.length, note: staleCache ? 'HIT_STALE' : 'HIT' });
       }
@@ -264,7 +280,7 @@ export async function GET(request: NextRequest) {
         }
         const staleDatabase = hasStaleProducts(databasePage.products, DB_STALE_AFTER_MS);
         if (!demandRecorded && ((staleDatabase && !isRefreshRequest) || databasePage.total === 0)) {
-          await recordCatalogRefreshDemand({ query: query || undefined, category: effectiveCategory });
+          await scheduleCatalogRefreshDemand({ query: query || undefined, category: effectiveCategory });
           demandRecorded = true;
         }
         if (staleDatabase && !isRefreshRequest && query && !backgroundScheduled) {

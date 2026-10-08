@@ -3,6 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Product } from '@/lib/types';
 import type { ProductPageResult } from '@/lib/persistence/product-read-types';
 
+const { mockAfter } = vi.hoisted(() => ({ mockAfter: vi.fn() }));
+vi.mock('next/server', async (importOriginal) => ({
+  ...await importOriginal<typeof import('next/server')>(),
+  after: mockAfter,
+}));
+
 vi.mock('server-only', () => ({}));
 
 const mockGetSharedCache = vi.fn();
@@ -130,6 +136,9 @@ describe('/api/search route', () => {
     mockLoggerError.mockReset();
     mockLoggerWarn.mockReset();
     mockRecordCatalogRefreshDemand.mockReset();
+    // Los lectores directos carecen del contexto HTTP de Next; conservar esa vía.
+    mockAfter.mockReset();
+    mockAfter.mockImplementation(() => { throw new Error('fixture request context unavailable'); });
 
     mockCheckRateLimit.mockResolvedValue({
       allowed: true,
@@ -416,6 +425,71 @@ describe('/api/search route', () => {
   function currentPage(item = currentMouse()): ProductPageResult {
     return { products: [item], total: 40, totalPages: 4, page: 2, pageSize: 12 };
   }
+
+  it.each(['cache', 'database', 'empty'])('responde sin esperar la escritura auxiliar en %s, y conserva la tarea posterior', async (source) => {
+    vi.stubEnv('DISABLE_LIVE_SCRAPING', '1');
+    const callbacks: (() => Promise<void>)[] = [];
+    mockAfter.mockImplementation((callback) => { callbacks.push(callback); });
+    let release!: () => void;
+    mockRecordCatalogRefreshDemand.mockReturnValue(new Promise<void>((resolve) => { release = resolve; }));
+    const item = currentMouse();
+    item.updatedAt = new Date(Date.now() - 60 * 60 * 1000);
+    if (source === 'cache') mockGetSharedCache.mockResolvedValue(cachedPage(item));
+    if (source === 'database') mockReadProductsFromDatabase.mockResolvedValue(currentPage(item));
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest('http://localhost/api/search?q=mouse&page=2'));
+    const payload = await response.json();
+    expect(response.status).toBe(200);
+    expect(payload.products.map((product: Product) => product.id)).toEqual(source === 'empty' ? [] : ['mouse']);
+    if (source !== 'empty') expect(payload.products[0].prices[0].lastUpdated).toBe(item.prices[0].lastUpdated.toISOString());
+    expect(mockRecordCatalogRefreshDemand).not.toHaveBeenCalled();
+    expect(callbacks).toHaveLength(1);
+    expect(mockRecordEndpointRequestEvent).toHaveBeenCalledTimes(1);
+    const background = callbacks[0]();
+    expect(mockRecordCatalogRefreshDemand).toHaveBeenCalledExactlyOnceWith({ query: 'mouse', category: 'perifericos' });
+    release();
+    await background;
+    expect(response.status).toBe(200);
+  });
+
+  it('una falla posterior conserva el resultado y registra un mensaje saneado', async () => {
+    const callbacks: (() => Promise<void>)[] = [];
+    mockAfter.mockImplementation((callback) => { callbacks.push(callback); });
+    mockRecordCatalogRefreshDemand.mockRejectedValue(new Error('fixture confidential response'));
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest('http://localhost/api/search?q=mouse'));
+    expect(response.status).toBe(200);
+    await callbacks[0]();
+    expect(mockLoggerWarn).toHaveBeenCalledWith('Catalog refresh demand write skipped', { stage: 'after-response' });
+    expect(JSON.stringify(mockLoggerWarn.mock.calls)).not.toContain('confidential');
+    expect(mockRecordEndpointRequestEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it('un vacío SQL genuino guardado por SSR conserva demanda en el HIT posterior sin repetir SQL', async () => {
+    const callbacks: (() => Promise<void>)[] = [];
+    mockAfter.mockImplementation((callback) => { callbacks.push(callback); });
+    mockGetSharedCache.mockResolvedValue({ products: [],
+      pagination: { limit: 0, offset: 0, total: 0, totalPages: 0, page: 1, pageSize: 12 },
+      facets: { categories: [], brands: [], stores: [] } });
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest('http://localhost/api/search?q=mouse'));
+    expect(response.headers.get('X-Search-Cache')).toBe('HIT');
+    expect((await response.json()).pagination.total).toBe(0);
+    expect(mockReadProductsFromDatabase).not.toHaveBeenCalled();
+    expect(callbacks).toHaveLength(1);
+    await callbacks[0]();
+    expect(mockRecordCatalogRefreshDemand).toHaveBeenCalledExactlyOnceWith({ query: 'mouse', category: 'perifericos' });
+  });
+
+  it('sin contexto del adapter conserva la escritura sin duplicarla ni fallar la página', async () => {
+    mockRecordCatalogRefreshDemand.mockRejectedValue(new Error('fixture transport failure'));
+    const { GET } = await import('./route');
+    const response = await GET(new NextRequest('http://localhost/api/search?q=mouse'));
+    expect(response.status).toBe(200);
+    expect(mockAfter).toHaveBeenCalledTimes(1);
+    expect(mockRecordCatalogRefreshDemand).toHaveBeenCalledTimes(1);
+    expect(mockLoggerWarn).toHaveBeenCalledWith('Catalog refresh demand write skipped', { stage: 'after-response' });
+  });
 
   it('diez requests comparten lector/cache-write conservando respuestas, rate checks y demanda individual', async () => {
     vi.stubEnv('DISABLE_LIVE_SCRAPING', '1');
