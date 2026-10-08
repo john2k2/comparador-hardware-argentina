@@ -37,6 +37,8 @@ test('la guardia del job excluye reintentos del diario y eventos a pedido', () =
     ['schedule','2','5 5 * * *','priority',false],
     ['schedule','3','5 5 * * *','priority',false],
     ['workflow_dispatch','1','5 5 * * *','priority',false],
+    ['workflow_dispatch','1','5 5 * * *','guides',false],
+    ['workflow_dispatch','2','17 0-4,6-23 * * *','guides',false],
     ['schedule','1','17 0-4,6-23 * * *','guides',false],
     ['schedule','1','17 0-4,6-23 * * *','priority',false],
     ['schedule','1','5 5 * * *','guides',false],
@@ -44,6 +46,17 @@ test('la guardia del job excluye reintentos del diario y eventos a pedido', () =
     const context={ github:{event_name:event,run_attempt:attempt,event:{schedule:cron}},needs:{refresh:{outputs:{mode}}}};
     assert.equal(allows(context),expected,`${event}/${attempt}/${cron}/${mode}`);
   }
+});
+test('el respaldo de guías registra origen sin crear crons ni mantenimiento adicional', () => {
+  const input = workflow.on.workflow_dispatch.inputs.trigger;
+  assert.deepEqual(input.options, ['manual', 'cloudflare-fallback']);
+  assert.equal(input.default, 'manual');
+  assert.ok(workflow['run-name'].includes('inputs.mode'));
+  assert.ok(workflow['run-name'].includes('inputs.trigger'));
+  const refresh = workflow.jobs.refresh.steps.find(step => step.name === 'Run catalog refresh');
+  assert.equal(refresh.env.CATALOG_RUN_TRIGGER,
+    "${{ github.event_name == 'schedule' && 'github-schedule' || github.event.inputs.trigger || 'manual' }}");
+  assert.deepEqual(Object.keys(workflow.jobs), ['refresh', 'telemetry-maintenance']);
 });
 test('los límites del workflow parsean y sólo preserva el resumen agregado, incluso en error', () => {
   const job = workflow.jobs['telemetry-maintenance'];

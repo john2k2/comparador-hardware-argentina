@@ -1,4 +1,5 @@
 name: Catalog refresh scheduler
+run-name: Catalog ${{ github.event_name == 'schedule' && (github.event.schedule == '5 5 * * *' && 'priority' || 'guides') || inputs.mode || 'tracked' }} / ${{ github.event_name == 'schedule' && 'github-schedule' || inputs.trigger || 'manual' }}
 
 on:
   workflow_dispatch:
@@ -17,6 +18,11 @@ on:
           - demand
           - guides
           - priority
+      trigger:
+        description: Origen de la solicitud (para evidencia operativa)
+        type: choice
+        options: [manual, cloudflare-fallback]
+        default: manual
       query:
         description: Query opcional para mode=custom
         required: false
@@ -206,6 +212,7 @@ jobs:
           CRON_SECRET: ${{ secrets.CATALOG_REFRESH_CRON_SECRET }}
           REQUEST_PATH: ${{ steps.resolve.outputs.request_path }}
           MODE: ${{ steps.resolve.outputs.mode }}
+          CATALOG_RUN_TRIGGER: ${{ github.event_name == 'schedule' && 'github-schedule' || github.event.inputs.trigger || 'manual' }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}

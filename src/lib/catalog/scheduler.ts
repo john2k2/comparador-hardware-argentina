@@ -1,6 +1,13 @@
 import { logger } from '@/lib/logger';
 
-const WORKFLOW_URL = 'https://api.github.com/repos/john2k2/comparador-hardware-argentina/actions/workflows/catalog-adaptive-refresh.yml';
+const WORKFLOW_BASE = 'https://api.github.com/repos/john2k2/comparador-hardware-argentina/actions/workflows/';
+const WORKFLOWS = [
+  { file: 'catalog-adaptive-refresh.yml', target: 'adaptive', inputs: { max_offers: '2500', trigger: 'cloudflare-fallback' } },
+  { file: 'catalog-refresh.yml', target: 'guides', inputs: { mode: 'guides', trigger: 'cloudflare-fallback' } },
+] as const;
+const COOLDOWN_MS = 75 * 60_000;
+const GUIDES_URGENT_MS = 120 * 60_000;
+const RUN_STATUSES = new Set(['completed', 'queued', 'in_progress', 'waiting', 'pending', 'requested']);
 export type CatalogSchedulerEnv = {
   CATALOG_SCHEDULER_ENABLED?: string;
   GITHUB_ACTIONS_DISPATCH_TOKEN?: string;
@@ -31,6 +38,28 @@ async function readJson(stage: 'READ' | 'GATE', response: Response): Promise<unk
   catch { throw new Error(`CATALOG_SCHEDULER_${stage}_JSON_FAILED`); }
 }
 
+function parseRuns(data: unknown, now: number): { busy: boolean; latestStart: number } {
+  if (!data || typeof data !== 'object' || !('workflow_runs' in data) || !Array.isArray(data.workflow_runs)
+    || data.workflow_runs.length > 10) throw new Error('CATALOG_SCHEDULER_INVALID_RESPONSE');
+  let busy = false, latestStart = -Infinity;
+  for (const run of data.workflow_runs) {
+    if (!run || typeof run !== 'object' || typeof run.status !== 'string' || !RUN_STATUSES.has(run.status)
+      || typeof run.event !== 'string' || !/^[a-z_]{1,64}$/.test(run.event))
+      throw new Error('CATALOG_SCHEDULER_INVALID_RESPONSE');
+    const dates = [run.created_at, run.run_started_at];
+    if (dates.some(date => typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(date)
+      || !Number.isFinite(Date.parse(date)) || Date.parse(date) > now
+      || new Date(Date.parse(date)).toISOString().slice(0, 19) + 'Z' !== date))
+      throw new Error('CATALOG_SCHEDULER_INVALID_RESPONSE');
+    const requested = Date.parse(run.created_at), started = Date.parse(run.run_started_at);
+    if (started < requested) throw new Error('CATALOG_SCHEDULER_INVALID_RESPONSE');
+    // Una solicitud manual/fallida o un rerun reciente también frena reintentos.
+    latestStart = Math.max(latestStart, requested, started);
+    busy ||= run.status !== 'completed';
+  }
+  return { busy, latestStart };
+}
+
 // Respaldo del cron de GitHub. Sólo despacha: nunca consulta tiendas ni precios.
 export async function runCatalogScheduler(env: CatalogSchedulerEnv, now = Date.now(), fetcher: typeof fetch = globalThis.fetch, recovery: SchedulerRecovery = {}): Promise<SchedulerResult> {
   if (env.CATALOG_SCHEDULER_ENABLED !== '1') return 'disabled';
@@ -50,21 +79,25 @@ export async function runCatalogScheduler(env: CatalogSchedulerEnv, now = Date.n
   let waited = false;
   for (;;) {
     if (remaining() <= 0) return 'deferred';
-    const listed = await request('READ', fetcher, `${WORKFLOW_URL}/runs?branch=main&per_page=10`, {
-      headers, redirect: 'manual',
-    }, remaining());
-    if (!listed.ok) throw new Error('CATALOG_SCHEDULER_READ_FAILED');
-    const data = await readJson('READ', listed);
-    if (!data || typeof data !== 'object' || !('workflow_runs' in data) || !Array.isArray(data.workflow_runs))
-      throw new Error('CATALOG_SCHEDULER_INVALID_RESPONSE');
-    for (const run of data.workflow_runs) {
-      if (!run || typeof run !== 'object' || !('status' in run) || !('created_at' in run)
-        || typeof run.created_at !== 'string' || !Number.isFinite(Date.parse(run.created_at)))
-        throw new Error('CATALOG_SCHEDULER_INVALID_RESPONSE');
-      if (run.status !== 'completed') return 'busy';
-      // El último inicio, incluso manual o fallido, evita una ráfaga de reintentos.
-      if (now + elapsed() - Date.parse(run.created_at) < 75 * 60000) return 'recent';
+    const snapshots = [];
+    for (const workflow of WORKFLOWS) {
+      if (remaining() <= 0) return 'deferred';
+      const listed = await request('READ', fetcher, `${WORKFLOW_BASE}${workflow.file}/runs?branch=main&per_page=10`, {
+        headers, redirect: 'manual',
+      }, remaining());
+      if (!listed.ok) throw new Error('CATALOG_SCHEDULER_READ_FAILED');
+      snapshots.push({ workflow, ...parseRuns(await readJson('READ', listed), now + elapsed()) });
     }
+    // Validar ambos listados completos antes de decidir, incluso si uno está ocupado.
+    if (snapshots.some(snapshot => snapshot.busy)) return 'busy';
+    const current = now + elapsed();
+    const eligible = snapshots.filter(snapshot => current - snapshot.latestStart >= COOLDOWN_MS);
+    if (!eligible.length) return 'recent';
+    const urgentGuides = eligible.find(snapshot => snapshot.workflow.target === 'guides'
+      && current - snapshot.latestStart >= GUIDES_URGENT_MS);
+    // Ventana de guías: dar oportunidad antes de 3 h; GitHub aún puede demorarla.
+    const selected = urgentGuides ?? eligible.sort((a, b) => a.latestStart - b.latestStart
+      || (a.workflow.target === 'guides' ? -1 : 1))[0];
     if (remaining() <= 0) return 'deferred';
     // El límite distribuido también cubre reentregas del mismo evento de Cloudflare.
     const gate = await request('GATE', fetcher, new URL('/rest/v1/rpc/check_api_rate_limit', database), {
@@ -88,10 +121,10 @@ export async function runCatalogScheduler(env: CatalogSchedulerEnv, now = Date.n
     }
     if (remaining() <= 0) return 'deferred';
     // Un rechazo o una respuesta perdida conserva la guarda: jamás repetir este POST.
-    const sent = await request('DISPATCH', fetcher, `${WORKFLOW_URL}/dispatches`, {
+    const sent = await request('DISPATCH', fetcher, `${WORKFLOW_BASE}${selected.workflow.file}/dispatches`, {
       method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
       redirect: 'manual',
-      body: JSON.stringify({ ref: 'main', inputs: { max_offers: '2500', trigger: 'cloudflare-fallback' } }),
+      body: JSON.stringify({ ref: 'main', inputs: selected.workflow.inputs }),
     }, remaining());
     if (sent.status !== 200 && sent.status !== 204) throw new Error('CATALOG_SCHEDULER_DISPATCH_FAILED');
     return 'sent';

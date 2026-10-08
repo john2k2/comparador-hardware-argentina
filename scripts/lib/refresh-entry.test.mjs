@@ -8,7 +8,7 @@ import { build } from 'esbuild';
 
 // Ejecuta el entrypoint real y su serialización. Sólo los runners y el transporte
 // se sustituyen: esta prueba nunca adquiere lotes ni visita tiendas o Supabase.
-async function runArtifact(mode, scenario) {
+async function runArtifact(mode, scenario, trigger = 'manual') {
   const directory = await mkdtemp(join(tmpdir(), 'refresh-artifact-'));
   const outfile = join(directory, 'entry.mjs');
   const artifact = join(directory, 'result.json');
@@ -25,7 +25,10 @@ async function runArtifact(mode, scenario) {
           }
           return { loader: 'ts', resolveDir: process.cwd(), contents: `
             import { createRefreshClaimError, extractRefreshClaimDiagnostic } from ${helper};
-            async function run() {
+            async function run(includeSample) {
+              if (process.env.REFRESH_TEST_SCENARIO === 'priority-success') {
+                return { source: 'priority-known-offers', includeSample, attempted: 2, observed: 1, comparable: 1 };
+              }
               if (process.env.REFRESH_TEST_SCENARIO === 'partial') {
                 return { processed: true, jobId: 'fixture-job', status: 'partial',
                   attempted: 2, observed: 1, comparable: 1, failures: { 'no-observation': 1 } };
@@ -55,7 +58,8 @@ async function runArtifact(mode, scenario) {
     const env = Object.fromEntries(Object.entries(process.env).filter(([key]) =>
       !['SUPABASE_SECRET_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'CRON_SECRET', 'CATALOG_REFRESH_CRON_SECRET'].includes(key)));
     const child = spawnSync(process.execPath, [outfile, mode, artifact], {
-      env: { ...env, CATALOG_REQUESTED_RUNNER: '1', REFRESH_TEST_MODE: mode, REFRESH_TEST_SCENARIO: scenario },
+      env: { ...env, CATALOG_REQUESTED_RUNNER: '1', CATALOG_RUN_TRIGGER: trigger,
+        REFRESH_TEST_MODE: mode, REFRESH_TEST_SCENARIO: scenario },
       encoding: 'utf8', timeout: 10_000,
     });
     assert.equal(child.error, undefined);
@@ -82,13 +86,13 @@ for (const mode of ['adaptive', 'requested']) {
 test('un error desconocido no se convierte en diagnóstico ni filtra su mensaje', async () => {
   const result = await runArtifact('requested', 'unknown');
   assert.equal(result.status, 1);
-  assert.deepEqual(result.payload, { error: 'REFRESH_FAILED', sourceHttp: { fixture: { requests: 3 } } });
+  assert.deepEqual(result.payload, { error: 'REFRESH_FAILED', trigger: 'manual', sourceHttp: { fixture: { requests: 3 } } });
 });
 
 test('un retorno adaptativo fallido conserva acumulados y diagnóstico en el artefacto con salida 1', async () => {
   const result = await runArtifact('adaptive', 'adaptive-failed');
   assert.equal(result.status, 1);
-  assert.deepEqual(result.payload, { status: 'failed', failureCode: 'REFRESH_CLAIM_FAILED',
+  assert.deepEqual(result.payload, { status: 'failed', trigger: 'manual', failureCode: 'REFRESH_CLAIM_FAILED',
     attempted: 24, observed: 12, comparable: 8,
     claimDiagnostic: { rpc: 'claim_catalog_refresh', phase: 'rotation', batchIndex: 51,
       limit: 24, elapsedMs: 17, code: '57014' }, sourceHttp: { fixture: { requests: 3 } } });
@@ -97,6 +101,28 @@ test('un retorno adaptativo fallido conserva acumulados y diagnóstico en el art
 test('el artefacto solicitado parcial conserva conteos de observaciones y motivos de fallo', async () => {
   const result = await runArtifact('requested', 'partial');
   assert.equal(result.status, 0);
-  assert.deepEqual(result.payload, { processed: true, jobId: 'fixture-job', status: 'partial',
+  assert.deepEqual(result.payload, { processed: true, jobId: 'fixture-job', status: 'partial', trigger: 'manual',
     attempted: 2, observed: 1, comparable: 1, failures: { 'no-observation': 1 }, sourceHttp: { fixture: { requests: 3 } } });
+});
+
+test('guides fallback conserva origen y excluye la muestra diaria', async () => {
+  const result = await runArtifact('guides', 'priority-success', 'cloudflare-fallback');
+  assert.equal(result.status, 0);
+  assert.deepEqual(result.payload, { source: 'priority-known-offers', includeSample: false,
+    attempted: 2, observed: 1, comparable: 1, trigger: 'cloudflare-fallback', sourceHttp: { fixture: { requests: 3 } } });
+});
+
+test('el diario conserva muestra y origen del schedule sin convertirlo en fallback', async () => {
+  const result = await runArtifact('priority', 'priority-success', 'github-schedule');
+  assert.equal(result.status, 0);
+  assert.equal(result.payload.includeSample, true);
+  assert.equal(result.payload.trigger, 'github-schedule');
+});
+
+test('un fallo conserva origen permitido y sanea un origen desconocido', async () => {
+  for (const [requested, expected] of [['cloudflare-fallback', 'cloudflare-fallback'], ['private-response', 'manual']]) {
+    const result = await runArtifact('guides', 'unknown', requested);
+    assert.equal(result.status, 1);
+    assert.deepEqual(result.payload, { error: 'REFRESH_FAILED', trigger: expected, sourceHttp: { fixture: { requests: 3 } } });
+  }
 });
