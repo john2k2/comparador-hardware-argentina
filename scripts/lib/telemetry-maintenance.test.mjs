@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createHash } from 'node:crypto';
+import { gunzipSync } from 'node:zlib';
+import { telemetryObjectPlan } from './telemetry-backup-storage.mjs';
 import { processTelemetryMaintenance, buildTelemetryMaintenanceArchive, validateTelemetryMaintenanceOptions } from './telemetry-maintenance.mjs';
 
 const options = { projectId: 'fixture-project', cutoff: '2026-10-07T20:00:00.000000Z', now: '2026-10-07T20:10:00.000000Z' };
@@ -64,7 +66,7 @@ test('retiro conserva payload textual y verifica selección privada hash antes R
     assert.deepEqual(Object.keys(selection), ['projectId', 'cutoff', 'rows']);
     assert.deepEqual(selection.rows, [metadata(row())]);
     assert.equal(createHash('sha256').update(archive.selectionBytes).digest('hex'), archive.backup.manifest.selectionSha256);
-    assert.match(archive.selectionKey, /^telemetry\/v1\/[a-f0-9]{64}\/selection\.json$/);
+    assert.match(archive.selectionKey, /^telemetry\/v1\/[a-f0-9]{64}\/selection\.json\.gz$/);
   }, beforeRetire(_state, values) { snapshot = values; } });
   const result = await processTelemetryMaintenance(f.callbacks, apply);
   assert.equal(snapshot[0].payload_text, row().payload_text); assert.deepEqual(snapshot[0], row());
@@ -183,6 +185,22 @@ test('no confía en mutación de callback de selección entregada a custodia', a
 test('plan limita bytes JSON del snapshot y conserva esquema público de selección privada', () => {
   const config = validateTelemetryMaintenanceOptions(apply);
   const archive = buildTelemetryMaintenanceArchive([row()], config);
-  assert.ok(archive.storedBytes > archive.backup.gzipBytes.length + archive.selectionBytes.length);
+  assert.equal(archive.storedBytes, telemetryObjectPlan(archive.backup).storedBytes + archive.selectionGzipBytes.length);
+  assert.ok(gunzipSync(archive.selectionGzipBytes).equals(archive.selectionBytes));
   assert.equal(archive.snapshot[0].updated_at, row().updated_at);
+});
+
+test('presupuesto usa los tres objetos comprimidos exactos y rechaza un byte menos antes de Storage', async () => {
+  const rows = Array.from({ length: 250 }, (_, id) => row(id));
+  const archive = buildTelemetryMaintenanceArchive(rows, validateTelemetryMaintenanceOptions(apply));
+  assert.ok(archive.selectionGzipBytes.length < archive.selectionBytes.length);
+  const storedBytes = telemetryObjectPlan(archive.backup).storedBytes + archive.selectionGzipBytes.length;
+  const accepted = fixture(rows);
+  const result = await processTelemetryMaintenance(accepted.callbacks, { ...apply, maxStoredBytes: storedBytes });
+  assert.equal(result.success, true); assert.equal(result.removed, 250);
+  assert.equal(result.storedBytes, storedBytes); assert.equal(result.batches[0].storedBytes, storedBytes);
+  const rejected = fixture(rows);
+  const bounded = await processTelemetryMaintenance(rejected.callbacks, { ...apply, maxStoredBytes: storedBytes - 1 });
+  assert.equal(bounded.reason, 'TELEMETRY_MAINTENANCE_STORAGE_BUDGET');
+  assert.deepEqual(rejected.calls, ['select']);
 });

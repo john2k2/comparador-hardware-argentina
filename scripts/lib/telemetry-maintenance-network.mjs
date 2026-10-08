@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto';
 import { createTelemetryStorageFetch, TELEMETRY_BUCKET, uploadTelemetryBackup, downloadTelemetryBackup, telemetryManifestPlan } from './telemetry-backup-storage.mjs';
 import { TELEMETRY_METADATA_FIELDS, TELEMETRY_SCOPES, telemetryUtc } from './telemetry-maintenance.mjs';
+import { decodeTelemetrySelection } from './telemetry-selection-codec.mjs';
 
 export const TELEMETRY_SELECT_RPC = 'select_backed_telemetry_candidates';
 export const TELEMETRY_RETIRE_RPC = 'retire_backed_telemetry';
@@ -77,18 +78,21 @@ export function createTelemetryMaintenanceDataFetch(origin, { allowRetire = fals
 }
 
 export function createTelemetryMaintenanceStorageFetch(origin, keys, { allowUpload = false, transport = globalThis.fetch, signal } = {}) {
-  requireValue(Array.isArray(keys) && keys.length === 3 && new Set(keys).size === 3, 'STORAGE_KEYS');
-  const selectionKey = keys.find(key => /^telemetry\/v1\/[a-f0-9]{64}\/selection\.json$/.test(key));
-  requireValue(selectionKey && keys.every(key => key.startsWith(selectionKey.slice(0, -'selection.json'.length))), 'STORAGE_PREFIX');
+  requireValue(Array.isArray(keys) && [3, 4].includes(keys.length) && new Set(keys).size === keys.length, 'STORAGE_KEYS');
+  const selectionKeys = keys.filter(key => /^telemetry\/v1\/[a-f0-9]{64}\/selection\.json(?:\.gz)?$/.test(key));
+  const prefix = selectionKeys[0]?.slice(0, selectionKeys[0].lastIndexOf('/') + 1);
+  requireValue(selectionKeys.length === keys.length - 2 && prefix && keys.every(key => key.startsWith(prefix))
+    && (keys.length === 3 || allowUpload === false), 'STORAGE_PREFIX');
   const send = onceTransport(transport, signal);
-  const oldGuard = createTelemetryStorageFetch(origin, keys.filter(key => key !== selectionKey), { allowUpload, transport: send });
-  const selectionPath = `/storage/v1/object/${TELEMETRY_BUCKET}/${selectionKey}`;
+  const oldGuard = createTelemetryStorageFetch(origin, keys.filter(key => !selectionKeys.includes(key)), { allowUpload, transport: send });
+  const selectionPaths = new Set(selectionKeys.map(key => `/storage/v1/object/${TELEMETRY_BUCKET}/${key}`));
   return (target, init = {}) => {
     const url = new URL(String(target));
-    if (url.pathname !== selectionPath) return oldGuard(target, init);
+    if (!selectionPaths.has(url.pathname)) return oldGuard(target, init);
     const method = (init.method || 'GET').toUpperCase();
     const headers = new Headers(init.headers);
     const insert = allowUpload === true && method === 'POST' && headers.get('x-upsert') === 'false'
+      && url.pathname.endsWith('/selection.json.gz') && headers.get('content-type') === 'application/gzip'
       && Buffer.isBuffer(init.body) && init.body.length > 0 && init.body.length <= FILE_LIMIT;
     requireValue(url.origin === origin && !url.username && !url.password && !url.search && !url.hash
       && (method === 'GET' || insert), 'SELECTION_OBJECT');
@@ -117,11 +121,13 @@ export async function storeTelemetryMaintenanceArchive(storage, archive) {
   // El helper existente valida el bucket y descarga los otros dos objetos antes de continuar.
   await uploadTelemetryBackup(storage, archive.backup, archive.expected);
   const files = storage.from(TELEMETRY_BUCKET);
-  try { await files.upload(archive.selectionKey, archive.selectionBytes, { upsert: false, contentType: 'application/json', cacheControl: '3600' }); }
+  try { await files.upload(archive.selectionKey, archive.selectionGzipBytes, { upsert: false, contentType: 'application/gzip', cacheControl: '3600' }); }
   catch { /* Sólo una descarga exacta permite conciliar una respuesta perdida. */ }
   const response = await files.download(archive.selectionKey);
-  requireValue(!response?.error && response?.data?.size === archive.selectionBytes.length && response.data.size <= FILE_LIMIT, 'SELECTION_DOWNLOAD');
-  const selectionBytes = Buffer.from(await response.data.arrayBuffer());
+  requireValue(!response?.error && response?.data?.size === archive.selectionGzipBytes.length && response.data.size <= FILE_LIMIT, 'SELECTION_DOWNLOAD');
+  const selectionGzipBytes = Buffer.from(await response.data.arrayBuffer());
+  requireValue(selectionGzipBytes.equals(archive.selectionGzipBytes), 'SELECTION_READBACK');
+  const selectionBytes = decodeTelemetrySelection(selectionGzipBytes);
   requireValue(selectionBytes.equals(archive.selectionBytes) && hash(selectionBytes) === archive.expected.selectionSha256, 'SELECTION_READBACK');
   const downloaded = await downloadTelemetryBackup(storage, archive.backup.manifest, archive.expected);
   return { manifest: downloaded.manifest, gzipBytes: downloaded.gzipBytes, selectionBytes };
@@ -132,12 +138,24 @@ export function telemetryMaintenanceObjectKeys(archive) {
   return [...telemetryManifestPlan(archive.backup.manifest).keys, archive.selectionKey];
 }
 
+// Recuperación permite cuatro rutas exactas de lectura; ninguna admite subida.
+export function telemetryMaintenanceRecoveryObjectKeys(manifestSha256) {
+  requireValue(typeof manifestSha256 === 'string' && /^[a-f0-9]{64}$/.test(manifestSha256), 'TRUSTED_HASH');
+  const prefix = `telemetry/v1/${manifestSha256}`;
+  return ['telemetry.json.gz', 'manifest.json', 'selection.json.gz', 'selection.json'].map(name => `${prefix}/${name}`);
+}
+
 export async function downloadTelemetryMaintenanceArchive(storage, manifestSha256, projectId) {
   requireValue(typeof manifestSha256 === 'string' && /^[a-f0-9]{64}$/.test(manifestSha256), 'TRUSTED_HASH');
   const prefix = `telemetry/v1/${manifestSha256}`;
+  const bucketResponse = await storage.getBucket(TELEMETRY_BUCKET);
+  const bucket = bucketResponse?.data;
+  requireValue(!bucketResponse?.error && bucket?.id === TELEMETRY_BUCKET && bucket.public === false
+    && Number(bucket.file_size_limit) === FILE_LIMIT
+    && JSON.stringify([...(bucket.allowed_mime_types || [])].sort()) === JSON.stringify(['application/gzip', 'application/json']), 'RECOVERY_BUCKET');
   const files = storage.from(TELEMETRY_BUCKET);
-  async function bytesFor(name) {
-    const response = await files.download(`${prefix}/${name}`);
+  async function bytesFor(name, response) {
+    if (arguments.length === 1) response = await files.download(`${prefix}/${name}`);
     requireValue(!response?.error && response?.data?.size > 0 && response.data.size <= FILE_LIMIT, 'RECOVERY_DOWNLOAD');
     const bytes = Buffer.from(await response.data.arrayBuffer());
     requireValue(bytes.length === response.data.size, 'RECOVERY_BYTES');
@@ -146,7 +164,17 @@ export async function downloadTelemetryMaintenanceArchive(storage, manifestSha25
   const manifestBytes = await bytesFor('manifest.json');
   requireValue(hash(manifestBytes) === manifestSha256, 'RECOVERY_MANIFEST_HASH');
   const manifest = JSON.parse(manifestBytes.toString('utf8'));
-  const selectionBytes = await bytesFor('selection.json');
+  const compressedResponse = await files.download(`${prefix}/selection.json.gz`);
+  // Sólo el status HTTP 404 explícito, sin datos, prueba ausencia. Un statusCode
+  // aislado, timeout, corrupción o respuesta contradictoria nunca habilita fallback.
+  const downloadError = compressedResponse?.error;
+  // storage-js conserva la Response original en StorageUnknownError para descargas.
+  const originalResponse = downloadError?.name === 'StorageUnknownError' && downloadError.originalError instanceof Response
+    ? downloadError.originalError : null;
+  const missingCompressed = compressedResponse?.data == null
+    && (downloadError?.status === 404 || (originalResponse?.status === 404 && originalResponse.ok === false));
+  const selectionBytes = missingCompressed ? await bytesFor('selection.json')
+    : decodeTelemetrySelection(await bytesFor('selection.json.gz', compressedResponse));
   requireValue(hash(selectionBytes) === manifest.selectionSha256, 'RECOVERY_SELECTION_HASH');
   const selection = JSON.parse(selectionBytes.toString('utf8'));
   requireValue(exact(selection, ['projectId', 'cutoff', 'rows']) && selection.projectId === projectId

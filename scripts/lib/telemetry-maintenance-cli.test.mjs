@@ -28,7 +28,7 @@ function harness({ lostRetire = false, corruptSelection = false, initial = [even
       const body = JSON.parse(init.body);
       assert.equal(body.p_snapshot[0].payload_text, event.payload_text);
       assert.ok(objects.size >= 3 && objects.size % 3 === 0);
-      assert.ok(calls.some(value => value.url.pathname.endsWith('/selection.json') && (value.init.method || 'GET') === 'GET'));
+      assert.ok(calls.some(value => value.url.pathname.endsWith('/selection.json.gz') && (value.init.method || 'GET') === 'GET'));
       const removed = body.p_snapshot.filter(row => state.has(row.cache_key));
       for (const row of removed) state.delete(row.cache_key);
       if (lostRetire) throw new Error('private server detail');
@@ -45,7 +45,7 @@ function harness({ lostRetire = false, corruptSelection = false, initial = [even
       }
       const bytes = objects.get(url.pathname);
       assert.ok(bytes);
-      return new Response(corruptSelection && url.pathname.endsWith('/selection.json') ? Buffer.alloc(bytes.length) : bytes);
+      return new Response(corruptSelection && url.pathname.endsWith('/selection.json.gz') ? Buffer.alloc(bytes.length) : bytes);
     }
     throw new Error('unexpected route');
   };
@@ -68,6 +68,9 @@ test('CLI archive-retire custodia tres objetos privados y ACK+GET antes de éxit
   const result = await runTelemetryMaintenanceCli(['archive-retire', '--approval-id', 'fixture-only', '--out', '/fixture/summary.json'], h.deps);
   assert.equal(result.success, true); assert.equal(result.removed, 1); assert.equal(result.archived, 1);
   assert.equal(h.objects.size, 3);
+  assert.equal(result.storedBytes, [...h.objects.values()].reduce((total, bytes) => total + bytes.length, 0));
+  const selectionUpload = h.calls.find(value => value.url.pathname.endsWith('/selection.json.gz') && value.init.method === 'POST');
+  assert.equal(new Headers(selectionUpload.init.headers).get('content-type'), 'application/gzip');
   const retireIndex = h.calls.findIndex(value => value.url.pathname.endsWith('/retire_backed_telemetry'));
   assert.ok(retireIndex > 0); assert.equal(h.calls.at(-1).url.pathname, '/rest/v1/api_cache_entries');
   assert.ok(h.calls.slice(0, retireIndex).filter(value => value.url.pathname.includes('/object/') && (value.init.method || 'GET') === 'GET').length >= 3);

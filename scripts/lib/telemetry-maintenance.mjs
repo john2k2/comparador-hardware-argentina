@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto';
 import { buildTelemetryBackup, verifyTelemetryBackup } from './telemetry-backup.mjs';
 import { telemetryObjectPlan } from './telemetry-backup-storage.mjs';
+import { encodeTelemetrySelection } from './telemetry-selection-codec.mjs';
 
 export const TELEMETRY_MAINTENANCE_LIMITS = Object.freeze({ batchSize: 250, maxBatches: 4, deadlineMs: 120000, maxStoredBytes: 5 * 1024 ** 2 });
 export const TELEMETRY_METADATA_FIELDS = Object.freeze(['cache_key', 'scope', 'expires_at', 'updated_at']);
@@ -63,6 +64,7 @@ export function buildTelemetryMaintenanceArchive(snapshot, config) {
     .sort((a, b) => a.cache_key < b.cache_key ? -1 : a.cache_key > b.cache_key ? 1 : 0);
   const selectionBytes = Buffer.from(JSON.stringify({ projectId: config.projectId, cutoff: config.cutoff, rows: selection }) + '\n');
   requireValue(selectionBytes.length <= 1024 ** 2, 'SELECTION_BYTES');
+  const selectionGzipBytes = encodeTelemetrySelection(selectionBytes);
   const expected = { projectId: config.projectId, cutoff: config.cutoff, selectionSha256: hash(selectionBytes), selection };
   const backup = buildTelemetryBackup(rows, expected);
   const verified = verifyTelemetryBackup(backup.manifest, backup.gzipBytes, expected);
@@ -70,8 +72,8 @@ export function buildTelemetryMaintenanceArchive(snapshot, config) {
   const canonicalSnapshot = verified.map(({ payload, ...row }) => ({ cache_key: row.cache_key, scope: row.scope, payload_text: payload,
     expires_at: row.expires_at, created_at: row.created_at, updated_at: row.updated_at }));
   requireValue(Buffer.byteLength(JSON.stringify(canonicalSnapshot)) <= 4 * 1024 ** 2, 'SNAPSHOT_BYTES');
-  return { backup, expected, selectionBytes, selectionKey: `${plan.prefix}/selection.json`, snapshot: canonicalSnapshot,
-    storedBytes: plan.storedBytes + selectionBytes.length, manifestSha256: plan.manifestSha256 };
+  return { backup, expected, selectionBytes, selectionGzipBytes, selectionKey: `${plan.prefix}/selection.json.gz`, snapshot: canonicalSnapshot,
+    storedBytes: plan.storedBytes + selectionGzipBytes.length, manifestSha256: plan.manifestSha256 };
 }
 
 function acknowledgedKeys(ack, snapshot) {
@@ -121,7 +123,8 @@ export async function processTelemetryMaintenance(callbacks, options, clock = ()
       requireValue(result.storedBytes + archive.storedBytes <= config.maxStoredBytes, 'STORAGE_BUDGET');
       const downloaded = await callbacks.storeArchive({ ...archive, snapshot: structuredClone(archive.snapshot),
         backup: { manifest: structuredClone(archive.backup.manifest), gzipBytes: Buffer.from(archive.backup.gzipBytes) },
-        expected: structuredClone(archive.expected), selectionBytes: Buffer.from(archive.selectionBytes) });
+        expected: structuredClone(archive.expected), selectionBytes: Buffer.from(archive.selectionBytes),
+        selectionGzipBytes: Buffer.from(archive.selectionGzipBytes) });
       checkDeadline();
       requireValue(Buffer.isBuffer(downloaded?.selectionBytes) && downloaded.selectionBytes.equals(archive.selectionBytes), 'SELECTION_READBACK');
       verifyTelemetryBackup(downloaded.manifest, downloaded.gzipBytes, archive.expected);
