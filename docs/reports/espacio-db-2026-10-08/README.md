@@ -1,5 +1,20 @@
 # Espacio de la base: borradores para caché, amplificación de escritura e índices
 
+## Estado al 08/10/2026 23:20 UTC: aplicado en producción
+
+Autorizado por Jonathan («podes aplicar las cosas que quedan pendientes?»). Cada paso se verificó contra producción antes de seguir.
+
+| Paso | Registro en producción | Archivo en el repo | Verificación |
+|---|---|---|---|
+| Ola 1: `DROP INDEX CONCURRENTLY products_updated_at_idx` | fuera de `schema_migrations` (no admite transacción) | `20261008231500_drop_duplicate_products_updated_at_idx.sql` | índice ausente; `products_updated_at_desc_idx` intacto; −1,4 MB |
+| Barrido de caché vencida (01) | `20261008231557` | `20261008231557_sweep_expired_shared_cache.sql` | 3 llamadas de 1.000: 2.176 filas borradas, sin telemetría; sólo `service_role` ejecuta |
+| Guardas de resúmenes (02) | `20261008231711` | `20261008231711_summary_trigger_guards.sql` | md5 de funciones y triggers idénticos a la base local probada |
+| Límite de `last_scraped_at` (03) | `20261008231730` | `20261008231730_products_last_scraped_throttle.sql` | md5 idénticos; prueba con rollback en producción: el resumen comparable se actualiza y un avance de 1 min se omite |
+
+Tamaño: 943.950.995 B antes; 934.202.515 B después. La ola 1b (`price_history_product_store_idx`, 853 scans, último uso 07/10) **no** era elegible y no se tocó. La ola 2 necesita una segunda lectura de uso a 7 días o más.
+
+Las reversiones de [`sql/`](sql/) siguen siendo válidas contra este estado. [`espacio_db_drafts.sql`](espacio_db_drafts.sql) queda como evidencia de la validación previa: aplica los borradores sobre las definiciones originales, así que corre sólo sobre una base con migraciones hasta `20261008231520`.
+
 **Preparación local, sin conexión a Supabase remoto.** Rama `codex/optimizacion-scraping-web`, worktree `comparador-optimizacion`. No se aplicó nada en producción, no se publicó, no se tocó `src/**` ni `supabase/migrations`. Los SQL viven en [`sql/`](sql/) porque el proyecto mantiene fuera de migraciones los cambios de base no aprobados. Las cifras de producción son **cortes anteriores** (07/10/2026), citados con su fuente; ninguna es una medición nueva.
 
 ## TL;DR
@@ -30,7 +45,7 @@ La palanca grande sigue siendo `api_cache_entries` (245,4 MB al 07/10, 343.489 e
 
 Clúster nuevo en un directorio temporal privado, TCP sólo en `127.0.0.1:55432`. Se aplicaron `bootstrap-local.sql` y las 77 migraciones, igual que `verify.yml`. Al terminar, se detuvo y se borró el directorio.
 
-- [`supabase/tests/espacio_db_drafts.sql`](../../../supabase/tests/espacio_db_drafts.sql): aplica los borradores 01–03, prueba su comportamiento y revierte. Corre el mismo escenario de diez pasos con las definiciones originales y con los borradores, y exige resúmenes iguales **después de cada paso**. Al final comprueba que las reversiones restauran exactamente las funciones y los triggers originales (por md5). Resultado: `espacio_db_drafts: OK`.
+- [`espacio_db_drafts.sql`](espacio_db_drafts.sql): aplica los borradores 01–03, prueba su comportamiento y revierte. Corre el mismo escenario de diez pasos con las definiciones originales y con los borradores, y exige resúmenes iguales **después de cada paso**. Al final comprueba que las reversiones restauran exactamente las funciones y los triggers originales (por md5). Resultado: `espacio_db_drafts: OK`.
 - **Sensibilidad del test:** si se quita `last_updated` del WHEN histórico, el test falla en el paso de desempate. También falla si se quita `source_identity` del WHEN comparable.
 - **Regresiones del proyecto con los borradores aplicados:** las 13 suites SQL de CI, `scripts/test-current-catalog-prices.mjs` y las dos pruebas de concurrencia de dos sesiones (`catalog-concurrency.test.mjs`) aprobadas. `search_usable_offers` y `prepared_catalog_matching` también aprobaron. Otras tres suites exigen otro entorno (base vacía con un flag, `storage.objects`, permisos de fixture) y no son evidencia ni a favor ni en contra.
 - **Amplificación medida en una sola transacción:** 20 observaciones `persist_verified_priority_offer`, dos tiendas × diez minutos, mismo precio. Las cifras son de laboratorio, con páginas recién creadas; no son tasas de producción.

@@ -1,6 +1,7 @@
--- Exclusivamente para una base PostgreSQL LOCAL desechable con bootstrap-local.sql y
--- todas las migraciones aplicadas. Ejecutar desde la raíz del repo:
---   psql -X -v ON_ERROR_STOP=1 -f supabase/tests/espacio_db_drafts.sql
+-- Evidencia de la validación previa a 20261008231557. Exclusivamente para una base
+-- PostgreSQL LOCAL desechable con bootstrap-local.sql y migraciones hasta 20261008231520.
+-- Ejecutar desde la raíz del repo:
+--   psql -X -v ON_ERROR_STOP=1 -f docs/reports/espacio-db-2026-10-08/espacio_db_drafts.sql
 -- Aplica los borradores de docs/reports/espacio-db-2026-10-08/sql, verifica su
 -- comportamiento, compara resúmenes contra las definiciones originales y revierte.
 -- Deja la base con las definiciones originales y sin fixtures.
