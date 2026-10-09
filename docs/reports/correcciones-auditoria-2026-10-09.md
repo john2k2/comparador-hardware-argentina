@@ -5,6 +5,20 @@ Candidata local sobre `5ef6a9dfbb5b5dbeba59901fc76bb9202823f89a`, rama
 conservó intacto. Este documento registra correcciones y pruebas de la candidata;
 no acredita recuperación de producción.
 
+La implementación está cerrada localmente en nueve commits, con revisión
+independiente y pruebas completadas. La publicación está pendiente de aprobación.
+
+| Hallazgo | Corrección preparada | Límite que sigue abierto |
+| --- | --- | --- |
+| A01 · ofertas de otro producto | Guard de almacenamiento y exclusión visible sin caída de búsqueda | No se reparó la contaminación guardada en la base |
+| A02 · falso éxito del armador | Estados honestos, conservación de selección y reintento | La corrección no genera ofertas nuevas |
+| A03 · guías sin candidatas | Modelo completo antes del límite de ocho filas | Falta comprobar siete ofertas elegibles en el ciclo real |
+| A04 · portada vacía | Lector requerido y guardado tras el ciclo existente | Falta observar el próximo corte publicado |
+| A05 · contacto incoherente | Correo tomado en ejecución y cabeceras preservadas | Pendiente verificación con configuración productiva |
+| A06 · sitemap incompleto ante fallos | Error temporal explícito, conteo válido y límites de espera | No modifica el rendimiento de la consulta SQL |
+| A07 · CPU duplicadas | Dedupe conservador de variantes y mínimos | Sólo dentro de cada página |
+| A08 · promoción antes de utilidad | Comparar y armar primero; afiliación después | No es un rediseño general |
+
 ## A04 — Guardado de la selección pública
 
 El proceso de medición configuraba al escritor de Supabase, pero no al lector
@@ -169,7 +183,7 @@ Validación: fixture pública original con fechas intactas, tests de variantes y
 alias revisados. Tanda final del especialista: siete archivos y 65 pruebas
 aprobadas. API, caché y SSR conservan vigencia, total SQL 40 y offset 12 en la
 fixture paginada. El caso adicional es contractual, no una incidencia productiva
-observada. La inspección independiente vuelve a verificarlo antes del cierre.
+observada. La inspección independiente lo verificó nuevamente antes del cierre.
 
 Reversión: las reglas CPU en `search-dedupe.ts` y sus tests; el puente público
 descrito a continuación depende del nuevo dedupe. La fixture JSON reproduce
@@ -197,3 +211,70 @@ propagación API/SSR/caché, con la visualización del contador y sus tests. El 
 de dominio de almacenamiento puede permanecer. No hay migraciones. Para evaluar
 una PR, mantener este conjunto coherente aunque exceda 400 líneas; dividir sólo
 si se conserva el contrato completo, sin borrar evidencia para reducir el diff.
+
+## Verificación final y candidata
+
+- `npm run verify`: lint y tipos aprobados; **2.196 tests unitarios aprobados,
+  2 omitidos**, en 224 archivos aprobados y 2 omitidos; **199 tests operativos
+  aprobados**. Recibo: `outputs/correcciones-auditoria/verify-final-cierre.log`.
+- Chrome: matriz de 31 escenarios sobre armador, home, contacto, identidad, CSP,
+  filtros y paginación; 30 pasaron en la corrida integrada. La nueva prueba de
+  reintento tenía URLs de ejemplo insuficientes para la comprobación positiva del
+  modelo. Se corrigió exclusivamente su fixture y la del caso RAM vencida;
+  **ambos escenarios pasaron al repetirlos**. Quedan 31 escenarios distintos
+  comprobados, con esa secuencia explícita en `e2e-cierre.log` y `e2e-reintento.log`.
+  No se cambió la regla de producto para hacer pasar la prueba.
+- Inspección visual de portada y armador en escritorio y 390 px; filtros también
+  verificados a 320 px. Capturas guardadas. Detector Impeccable: sin hallazgos.
+- Build Next.js aprobado. `opennextjs-cloudflare build` completo aprobado, con
+  `worker.js` generado. El intento de reutilizar el build E2E mediante
+  `--skipNextBuild` falló por falta del trace de middleware; la reconstrucción
+  completa creó el trace y resolvió el empaquetado sin modificar código.
+- Worker **local**: portada y las dos variantes de contacto respondieron 200 con
+  CSP, HSTS y Permissions-Policy. Ambas páginas de contacto ofrecieron tres enlaces
+  a `qa@example.test`. El proceso local se detuvo al terminar. No se enviaron correos.
+- Siete documentos prefabricados contienen las cabeceras esperadas y no existe
+  `contacto.json`. El paquete de QA no se reutiliza para publicar; se reconstruye
+  con la configuración productiva.
+- Revisión independiente: cerró los defectos de concurrencia del reintento, filtro
+  de guías y contexto de dictámenes CPU. El último corte reprodujo API/caché/SSR y
+  pasó 53 pruebas focales. No quedaron defectos materiales confirmados dentro del
+  alcance revisado. No equivale a auditoría completa de seguridad o cobertura global.
+
+Commits de implementación, en orden:
+
+| Commit | Unidad |
+| --- | --- |
+| `f32c81d` | Guardado de la portada y workflows |
+| `336a060` | Contacto y cabeceras de documentos |
+| `b994fcc` | Disponibilidad del sitemap |
+| `253dcff` | Selección de candidatas para guías |
+| `97d2136` | Identidad de almacenamiento |
+| `847131d` | Armador y recuperación |
+| `bdefbb2` | Prioridad visual de la portada |
+| `6bfaa3a` | Reglas de agrupación CPU y fixture de evidencia |
+| `27853c6` | Integración pública de identidad, dedupe y caché |
+
+La unidad CPU suma 740 líneas cambiadas, de las cuales 549 corresponden a la
+fixture JSON de la captura pública. El puente público suma 459 líneas; se
+conservó unido con sus regresiones API/SSR/caché. Si se abre PR, este exceso debe
+quedar visible para el revisor; se recomienda conservar la unidad o dividirla
+sólo si se mantiene el contrato. No se comprimieron tests ni evidencia para
+aparentar menor tamaño.
+
+El remoto `main` seguía en `5ef6a9d` al cierre. Los cambios de aplicación están
+commiteados; sólo quedan evidencias locales sin seguimiento en
+`outputs/correcciones-auditoria/`. Sin push, despliegue, migraciones, limpieza de
+datos, cambios de cuentas ni ejecución manual de refresh.
+
+## Comprobación posterior a una publicación aprobada
+
+1. Construir y desplegar esta candidata con las variables reales; conservar el
+   identificador de la versión previa para volver atrás si hay regresión.
+2. Verificar las fichas contaminadas, búsqueda CPU, filtros/paginación, armador
+   sin datos y reintento, contacto limpio y con parámetros, portada y sitemaps.
+3. Observar el siguiente ciclo natural de guías y el corte público guardado.
+   Contrastar siete ofertas elegibles por guía y sus fechas individuales; si no
+   están, mantener el estado incompleto y tratar la recuperación como pendiente.
+4. Separar una reparación de datos o dedupe global de esta publicación. Requieren
+   candidata propia y evidencia; no se deducen de que este build haya pasado.
