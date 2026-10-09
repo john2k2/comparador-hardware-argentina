@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { getBudgetGuideBySlug } from '@/lib/seo/budget-guides-data';
-import { getComparisonBySlug } from '@/lib/seo/comparisons-data';
+import { BUDGET_GUIDES, getBudgetGuideBySlug } from '@/lib/seo/budget-guides-data';
+import { COMPARISONS, getComparisonBySlug } from '@/lib/seo/comparisons-data';
 import { parseBuilderBudgetPesos } from '@/lib/seo/budget-query';
 import {
   DEFAULT_OG_IMAGE,
@@ -17,6 +17,7 @@ import { resolveCategoryFromLandingSlug } from '@/lib/seo/category-landing-route
 import { buildCategoryLandingState } from '@/lib/search/category-landing-state';
 import { resolveSearchMetadata } from '@/lib/search/search-page-metadata';
 import { EDITORIAL_UPDATED_AT } from './editorial-freshness';
+import { getEditorialReviewDate, getLatestEditorialReviewDate } from './editorial-dates';
 
 function buildArticleMetadata(input: {
   path: string;
@@ -24,6 +25,7 @@ function buildArticleMetadata(input: {
   absoluteTitle?: string;
   description: string;
   keywords: string[];
+  reviewedAt?: string;
 }): Metadata {
   const url = `${SITE_URL}${input.path}`;
   return {
@@ -39,7 +41,7 @@ function buildArticleMetadata(input: {
       title: input.title,
       description: input.description,
       images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: input.title }],
-      modifiedTime: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
+      modifiedTime: `${input.reviewedAt ?? EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
     },
     twitter: {
       card: 'summary_large_image',
@@ -53,6 +55,7 @@ function buildArticleMetadata(input: {
 export function resolveComparativasHubMetadata(): Metadata {
   return buildArticleMetadata({
     path: '/comparativa',
+    reviewedAt: getLatestEditorialReviewDate(COMPARISONS.map((comparison) => comparison.slug)),
     title: 'Comparaciones Hardware',
     description:
       'Comparaciones de hardware en Argentina: GPUs, CPUs y más. Encontrá el mejor componente al mejor costo entre 20+ locales.',
@@ -68,6 +71,7 @@ export function resolveComparativasHubMetadata(): Metadata {
 export function resolveGuiasHubMetadata(): Metadata {
   return buildArticleMetadata({
     path: '/guia',
+    reviewedAt: getLatestEditorialReviewDate(BUDGET_GUIDES.map((guide) => guide.slug)),
     title: 'Guías PC Gamer Argentina',
     description:
       'Explorá armados de PC según presupuesto objetivo desde $1.000.000. Las guías distinguen ofertas observadas recientemente de piezas sin precio comprobable.',
@@ -117,6 +121,7 @@ export function resolveGuidePageMetadata(slug: string): Metadata {
 
   return buildArticleMetadata({
     path: `/guia/${slug}`,
+    reviewedAt: getEditorialReviewDate(slug),
     title: guide.title,
     absoluteTitle: guide.metadataTitle,
     description: guide.description,
@@ -135,6 +140,7 @@ export function resolveComparisonPageMetadata(slug: string): Metadata {
 
   return buildArticleMetadata({
     path: `/comparativa/${slug}`,
+    reviewedAt: getEditorialReviewDate(slug),
     title: comparison.title,
     absoluteTitle: comparison.metadataTitle,
     description: comparison.description,

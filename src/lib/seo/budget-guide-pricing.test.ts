@@ -41,6 +41,103 @@ const cpuSpec = {
   estimatedPrice: 350_000,
 };
 
+describe('cooler incluido exigido por la selección editorial', () => {
+  const now = new Date('2026-10-09T21:35:00.000Z');
+  const guide = BUDGET_GUIDES.find((guide) => guide.slug === 'pc-gamer-2-millones')!;
+  const cpu = (suffix: string, amount = 100_000, overrides: Partial<ProductPrice> = {}) => product({
+    id: `5700-${suffix || 'unknown'}`, name: `Procesador AMD Ryzen 7 5700 AM4 ${suffix}`.trim(),
+    category: 'procesadores', prices: [price({ storeId: 'shop', storeName: 'Shop', price: amount,
+      url: 'https://example.com/cpu', lastUpdated: now, ...overrides })],
+  });
+
+  it('las tres guías declaran el requisito y las tarjetas de fuente muestran el cable ausente', () => {
+    expect(BUDGET_GUIDES).toHaveLength(3);
+    expect(BUDGET_GUIDES.every((guide) => guide.components.cpu.requiresIncludedCooler === true)).toBe(true);
+    for (const guide of BUDGET_GUIDES.filter((guide) => guide.budget >= 2_000_000)) {
+      expect(guide.components.psu.description).toContain('Cable a 220 V no incluido');
+    }
+  });
+
+  it.each(['', 'BOX', 'sin cooler', 'S-cooler', 'no incluye cooler', 'Wraith Stealth sin cooler',
+    'con cooler no incluye cooler', 'Wraith Stealth cooler no incluido', 'no incluye Wraith Stealth'])
+  ('no acredita la presentación %s para compra, referencia ni refresh de 2M', (suffix) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    const candidate = cpu(suffix);
+    const before = structuredClone(candidate);
+    expect(resolveGuideComponent(guide.components.cpu, [candidate]).priceSource).toBe('estimate');
+    expect(resolveGuideReferenceOffer(guide.components.cpu, [candidate])).toBeNull();
+    expect(resolveGuideRefreshOffers(guide.components.cpu, [candidate])).toEqual([]);
+    expect(candidate).toEqual(before);
+  });
+
+  it.each(['con cooler', 'C/cooler', 'cooler incluido', '+ Wraith Stealth Cooler'])
+  ('elige 5700 %s sobre CPU barato sin cooler o desconocido sin cambiar fechas', (suffix) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    const valid = cpu(suffix, 294_245, { lastUpdated: new Date('2026-10-09T19:26:25.748Z') });
+    const catalog = [cpu('sin cooler'), cpu('', 150_000), valid];
+    const before = structuredClone(catalog);
+    expect(resolveGuideComponent(guide.components.cpu, catalog)).toMatchObject({ productId: valid.id,
+      price: 294_245, offers: [{ lastUpdated: '2026-10-09T19:26:25.748Z' }] });
+    expect(resolveGuideComponent(guide.components.cpu, catalog.slice(0, 2)).priceSource).toBe('estimate');
+    expect(catalog).toEqual(before);
+  });
+
+  it.each(['sin-cooler', 's-cooler', 'no-incluye-cooler', 'wraith-stealth-sin-cooler', 'cooler-no-incluido'])
+  ('rechaza slug %s incluso con título positivo en compra, referencia y destinos', (slug) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    const candidate = cpu('con cooler', 100_000, { url: `https://example.com/procesador-amd-ryzen-7-5700-am4-con-cooler-${slug}` });
+    expect(resolveGuideComponent(guide.components.cpu, [candidate]).priceSource).toBe('estimate');
+    expect(resolveGuideReferenceOffer(guide.components.cpu, [candidate])).toBeNull();
+    expect(resolveGuideRefreshOffers(guide.components.cpu, [candidate])).toEqual([]);
+  });
+
+  it('filtra título fuente desconocido antes de resumir por tienda y conserva su siguiente oferta válida', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    const candidate = cpu('con cooler', 294_245);
+    const known = { ...candidate.prices[0], sourceIdentity: { title: candidate.name, listingRef: 'store:2' } };
+    const unknown = { ...known, price: 100_000, sourceIdentity: { title: 'AMD Ryzen 7 5700 AM4', listingRef: 'store:1' } };
+    candidate.prices = [unknown, known];
+    expect(resolveGuideComponent(guide.components.cpu, [candidate])).toMatchObject({ price: 294_245,
+      offers: [{ price: 294_245 }] });
+    expect(resolveGuideRefreshOffers(guide.components.cpu, [candidate])).toMatchObject([{ price: 294_245 }]);
+  });
+
+  it.each(['', 'sin cooler', 'no incluye cooler', 'Wraith Stealth sin cooler'])
+  ('3M rechaza 7600 %s conservando el matcher Wraith', (suffix) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    const spec = BUDGET_GUIDES.find((guide) => guide.slug === 'pc-gamer-3-millones')!.components.cpu;
+    const candidate = product({ id: '7600', name: `AMD Ryzen 5 7600 AM5 ${suffix}`, category: 'procesadores',
+      prices: [price({ storeId: 'shop', storeName: 'Shop', price: 200_000, lastUpdated: now })] });
+    expect(resolveGuideComponent(spec, [candidate]).priceSource).toBe('estimate');
+    expect(resolveGuideRefreshOffers(spec, [candidate])).toEqual([]);
+  });
+
+  it('conserva Rocket C/cooler y CompraGamer Wraith, y una fecha vencida solo queda como referencia', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    const rocket = product({ id: 'rocket-5700', name: 'Procesador Amd Ryzen 7 5700 S/video Integrado C/cooler Am4',
+      category: 'procesadores', prices: [price({ storeId: 'rockethard', storeName: 'Rocket Hard', price: 294_245,
+        url: 'https://rockethard.com.ar/hardware/procesador-amd/procesador-amd-ryzen-7-5700-s-video-integrado-c-cooler-am4-161776.html',
+        lastUpdated: new Date('2026-10-09T19:26:25.748Z') })] });
+    expect(resolveGuideComponent(guide.components.cpu, [rocket]).productId).toBe('rocket-5700');
+    const cg = product({ id: 'cg-7600', name: 'Procesador AMD Ryzen 5 7600 5.1GHz Turbo AM5 + Wraith Stealth Cooler',
+      category: 'procesadores', prices: [price({ storeId: 'compragamer', storeName: 'CompraGamer', price: 362_500,
+        url: 'https://compragamer.com/producto/Procesador_AMD_Ryzen_5_7600_5_1GHz_Turbo_AM5_Wraith_Stealth_Cooler_14309', lastUpdated: now })] });
+    const spec = BUDGET_GUIDES.find((guide) => guide.slug === 'pc-gamer-3-millones')!.components.cpu;
+    expect(resolveGuideComponent(spec, [cg]).productId).toBe('cg-7600');
+    rocket.prices[0].lastUpdated = new Date(now.getTime() - 4 * 60 * 60_000);
+    const before = structuredClone(rocket);
+    expect(resolveGuideComponent(guide.components.cpu, [rocket]).priceSource).toBe('estimate');
+    expect(resolveGuideReferenceOffer(guide.components.cpu, [rocket])).toMatchObject({ lastUpdated: rocket.prices[0].lastUpdated.toISOString() });
+    expect(rocket).toEqual(before);
+  });
+});
+
 describe('latencia de la variante RAM editorial', () => {
   const guide = BUDGET_GUIDES.find((guide) => guide.slug === 'pc-gamer-3-millones')!;
   const spec = guide.components.ram;

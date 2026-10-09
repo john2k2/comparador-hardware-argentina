@@ -11,7 +11,7 @@ import {
   type ComparisonDefinition 
 } from '@/lib/seo/comparisons-data';
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
-import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
+import { getEditorialReviewDate } from '@/lib/seo/editorial-dates';
 import { SITE_NAME, SITE_URL } from '@/lib/site-config';
 import { ComparisonBenchSources } from '@/components/seo/ComparisonBenchSources';
 import { BuilderCta } from '@/components/seo/BuilderCta';
@@ -75,7 +75,7 @@ export default async function ComparisonPage({ params }: Props) {
   const p1BestPrice = pricing.side1.bestPrice ?? 0;
   const p2BestPrice = pricing.side2.bestPrice ?? 0;
   const methodology = getEditorialMethodology(slug);
-  const editorialDate = methodology?.updatedAt ?? EDITORIAL_UPDATED_AT;
+  const editorialDate = getEditorialReviewDate(slug);
 
   return (
     <div className="container mx-auto px-4 py-8">

@@ -15,11 +15,20 @@ describe('rtx-4060-vs-rx-7600 specs', () => {
 });
 
 describe('comparativa benches de terceros', () => {
+  it('no promete precio ganador ni disponibilidad desde fichas estáticas', () => {
+    for (const comparison of COMPARISONS) {
+      const cards = [comparison.product1, comparison.product2]
+        .flatMap((product) => [product.specs, ...product.pros, ...product.cons])
+        .join(' ');
+      expect(cards, comparison.slug).not.toMatch(/mejor precio|precio más (?:bajo|alto)|stock (?:estable|limitado)|mucho stock|más caras/i);
+    }
+  });
+
   it('cita TechPowerUp en cada comparativa y no deja cifras sueltas', () => {
     for (const comparison of COMPARISONS) {
       expect(comparison.sources.length, comparison.slug).toBeGreaterThan(0);
       expect(
-        comparison.sources.every((source) => source.url.includes('techpowerup.com/review/')),
+        comparison.sources.some((source) => source.url.includes('techpowerup.com/review/')),
         comparison.slug,
       ).toBe(true);
 

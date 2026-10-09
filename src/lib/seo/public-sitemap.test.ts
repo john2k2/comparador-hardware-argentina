@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildPublicSitemapEntries } from './public-sitemap';
-import { EDITORIAL_UPDATED_AT } from './editorial-freshness';
+import { getEditorialReviewDate } from './editorial-dates';
 
 describe('public sitemap surface', () => {
   it('publica el comparador abierto y no promociona páginas de tiendas', () => {
@@ -29,7 +29,7 @@ describe('public sitemap surface', () => {
     const comparison = entries.find((entry) => entry.url.endsWith('/comparativa/rtx-4060-vs-rx-7600'));
     const guide = entries.find((entry) => entry.url.endsWith('/guia/pc-gamer-1-millon'));
 
-    expect(comparison?.lastModified).toEqual(new Date(`${EDITORIAL_UPDATED_AT}T00:00:00.000Z`));
-    expect(guide?.lastModified).toEqual(new Date(`${EDITORIAL_UPDATED_AT}T00:00:00.000Z`));
+    expect(comparison?.lastModified).toEqual(new Date(`${getEditorialReviewDate('rtx-4060-vs-rx-7600')}T00:00:00.000Z`));
+    expect(guide?.lastModified).toEqual(new Date(`${getEditorialReviewDate('pc-gamer-1-millon')}T00:00:00.000Z`));
   });
 });

@@ -2,7 +2,8 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import GuiasIndexPage from './page';
-import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
+import { getLatestEditorialReviewDate } from '@/lib/seo/editorial-dates';
+import { BUDGET_GUIDES } from '@/lib/seo/budget-guides-data';
 
 describe('GuiasIndexPage', () => {
   it('no publica chips de keywords ni FPS sin fuente', () => {
@@ -14,6 +15,6 @@ describe('GuiasIndexPage', () => {
     expect(markup).toContain('disponibilidad informada');
     expect(markup).toContain('no garantiza una cantidad de FPS');
     expect(markup).toContain('/guia/armar');
-    expect(markup).toContain(`Actualizado: ${EDITORIAL_UPDATED_AT}`);
+    expect(markup).toContain(`Actualizado: ${getLatestEditorialReviewDate(BUDGET_GUIDES.map((guide) => guide.slug))}`);
   });
 });

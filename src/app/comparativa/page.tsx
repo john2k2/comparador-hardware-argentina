@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { COMPARISONS } from '@/lib/seo/comparisons-data';
-import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
+import { getLatestEditorialReviewDate } from '@/lib/seo/editorial-dates';
 import { resolveComparativasHubMetadata } from '@/lib/seo/landing-metadata';
 import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
 import { EditorialLinkCard } from '@/components/seo/EditorialLinkCard';
@@ -22,7 +22,7 @@ export default function ComparativasIndexPage() {
           Encontrá la mejor opción para tu presupuesto.
         </p>
         <div className="mt-3">
-          <EditorialUpdatedStamp isoDate={EDITORIAL_UPDATED_AT} />
+          <EditorialUpdatedStamp isoDate={getLatestEditorialReviewDate(COMPARISONS.map((comparison) => comparison.slug))} />
         </div>
       </header>
 

@@ -1,7 +1,8 @@
 import { isBundleLikeTitle, isCompleteComputerTitle, parseCpuModelSignature, parseGpuChipSignature } from '@/lib/product-identity';
 import { computeComparableStorePriceStats } from '@/lib/price-utils';
 import type { HardwareCategory, Product, ProductPrice } from '@/lib/types';
-import { needsIdentityReview } from '@/lib/quality/offer-identity';
+import { buildIdentityEvidence, needsIdentityReview } from '@/lib/quality/offer-identity';
+import { cpuVariantAttributes } from '@/lib/quality/offer-attribute-proof';
 import { isOfferFresh } from '@/lib/price-freshness';
 import { MAX_GUIDE_REFRESH_ROUNDS } from '@/lib/catalog/on-demand/contracts';
 
@@ -9,6 +10,7 @@ export type GuideSlotSpec = {
   name: string;
   // Fija una pieza editorial comprobada sin confundirla con otra variante del catálogo.
   exactModel?: string;
+  requiresIncludedCooler?: boolean;
   description: string;
   estimatedPrice: number;
   searchTerms?: string[];
@@ -180,6 +182,7 @@ function productMatchesGuideSpec(product: Product, spec: GuideSlotSpec): boolean
       chip.family === actualChip.family && chip.number === actualChip.number
       && chip.suffixes.join(',') === actualChip.suffixes.join(',')))) return false;
     if (/\bwraith\b/.test(requested) && !/\bwraith\b/.test(actual)) return false;
+    if (spec.requiresIncludedCooler && !hasIncludedCpuCooler(product.name)) return false;
   }
   if (spec.category === 'tarjetas-graficas') {
     const actualChip = parseGpuChipSignature(product.name);
@@ -213,6 +216,28 @@ function productMatchesGuideSpec(product: Product, spec: GuideSlotSpec): boolean
     }
   }
   return true;
+}
+
+function excludesCpuCooler(text: string): boolean {
+  const cooler = cpuVariantAttributes(text).cooler;
+  // El helper compartido cubre sin/S-cooler y contradicciones. Estas negaciones
+  // también pueden acompañar un nombre Wraith sin acreditar que se entregue.
+  return cooler === 'excluded' || cooler === 'conflict'
+    || /\b(?:cooler|disipador) no incluid[oa]\b|\b(?:sin|no|s|no incluye) (?:amd )?wraith\b/.test(normalizeSearchText(text));
+}
+
+function hasIncludedCpuCooler(text: string): boolean {
+  return cpuVariantAttributes(text).cooler === 'included' && !excludesCpuCooler(text);
+}
+
+function offerMatchesCoolerRequirement(spec: GuideSlotSpec, product: Product, offer: ProductPrice): boolean {
+  if (!spec.requiresIncludedCooler || product.category !== 'procesadores') return true;
+  const sourceTitle = offer.sourceIdentity?.title ?? offer.identityReview?.sourceIdentity?.title;
+  if (sourceTitle && !hasIncludedCpuCooler(sourceTitle)) return false;
+  const evidence = buildIdentityEvidence(product.name, product.category, offer.url);
+  // La omisión en un slug no contradice el título; una negación sí. Nunca se
+  // usa otro producto o dictamen para completar la presentación desconocida.
+  return Boolean(evidence && !excludesCpuCooler(evidence.offerText));
 }
 
 export function isBuyableGuideStock(stock: ProductPrice['stock']): stock is 'in-stock' | 'low-stock' {
@@ -313,7 +338,7 @@ function offerAgreesWithProductName(product: Product, offer: ProductPrice): bool
   return modelTokens.every((token) => urlHaystack.includes(` ${token} `));
 }
 
-function buyableOffers(product: Product): ProductPrice[] {
+function buyableOffers(product: Product, spec?: GuideSlotSpec): ProductPrice[] {
   const inStock = product.prices.filter((offer) => (
     offer.price > 0
     && isOfferFresh(offer.lastUpdated)
@@ -321,6 +346,7 @@ function buyableOffers(product: Product): ProductPrice[] {
     && isBuyableGuideStock(offer.stock)
     && !offerConflictsWithGuide(offer)
     && offerAgreesWithProductName(product, offer)
+    && (!spec || offerMatchesCoolerRequirement(spec, product, offer))
   ));
   if (inStock.length === 0) return [];
 
@@ -360,6 +386,7 @@ function collectGuideReferenceOffers(
       if (!Number.isFinite(offer.price) || offer.price <= 0 || (requireBuyableStock && !isBuyableGuideStock(offer.stock))
         || (needsIdentityReview(offer, product) && !retryableReview)) return false;
       if (offerConflictsWithGuide(offer) || !offerAgreesWithProductName(product, offer)) return false;
+      if (!offerMatchesCoolerRequirement(spec, product, offer)) return false;
       try {
         const url = new URL(offer.url);
         return url.protocol === 'https:' && !url.username && !url.password;
@@ -503,7 +530,7 @@ export function resolveGuideComponent(
 
   const ranked = matches
     .map((product) => {
-      const offers = buyableOffers(product);
+      const offers = buyableOffers(product, spec);
       return { product, offers, bestPrice: offers[0]?.price ?? Number.POSITIVE_INFINITY };
     })
     .filter((candidate) => candidate.offers.length > 0)

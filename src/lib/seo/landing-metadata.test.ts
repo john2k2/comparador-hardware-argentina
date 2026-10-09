@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { EDITORIAL_UPDATED_AT } from './editorial-freshness';
+import { getEditorialReviewDate, getLatestEditorialReviewDate } from './editorial-dates';
+import { BUDGET_GUIDES } from './budget-guides-data';
+import { COMPARISONS } from './comparisons-data';
 import {
   resolveArmarPcMetadata,
   resolveComparativasHubMetadata,
@@ -15,22 +17,22 @@ describe('landing metadata dates', () => {
 
     expect(comparison.openGraph).toMatchObject({
       type: 'article',
-      modifiedTime: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
+      modifiedTime: `${getEditorialReviewDate('rtx-4060-vs-rx-7600')}T00:00:00.000Z`,
     });
     expect(guide.openGraph).toMatchObject({
       type: 'article',
-      modifiedTime: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
+      modifiedTime: `${getEditorialReviewDate('pc-gamer-1-millon')}T00:00:00.000Z`,
     });
   });
 
   it('usa og:article en los hubs para poder publicar modifiedTime', () => {
     expect(resolveComparativasHubMetadata().openGraph).toMatchObject({
       type: 'article',
-      modifiedTime: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
+      modifiedTime: `${getLatestEditorialReviewDate(COMPARISONS.map((comparison) => comparison.slug))}T00:00:00.000Z`,
     });
     expect(resolveGuiasHubMetadata().openGraph).toMatchObject({
       type: 'article',
-      modifiedTime: `${EDITORIAL_UPDATED_AT}T00:00:00.000Z`,
+      modifiedTime: `${getLatestEditorialReviewDate(BUDGET_GUIDES.map((guide) => guide.slug))}T00:00:00.000Z`,
     });
   });
 

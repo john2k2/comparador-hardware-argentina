@@ -5,6 +5,7 @@ import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
 import { COMPARISONS } from '@/lib/seo/comparisons-data';
 import { BUDGET_GUIDES } from '@/lib/seo/budget-guides-data';
 import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
+import { getEditorialReviewDate, getLatestEditorialReviewDate } from '@/lib/seo/editorial-dates';
 
 const EDITORIAL_LAST_MODIFIED = new Date(`${EDITORIAL_UPDATED_AT}T00:00:00.000Z`);
 
@@ -37,7 +38,7 @@ export function buildPublicSitemapEntries(): MetadataRoute.Sitemap {
     },
     {
       url: toAbsoluteUrl('/comparativa'),
-      lastModified: EDITORIAL_LAST_MODIFIED,
+      lastModified: new Date(`${getLatestEditorialReviewDate(COMPARISONS.map((comparison) => comparison.slug))}T00:00:00.000Z`),
       changeFrequency: 'daily',
       priority: 0.9,
     },
@@ -48,7 +49,7 @@ export function buildPublicSitemapEntries(): MetadataRoute.Sitemap {
     },
     {
       url: toAbsoluteUrl('/guia'),
-      lastModified: EDITORIAL_LAST_MODIFIED,
+      lastModified: new Date(`${getLatestEditorialReviewDate(BUDGET_GUIDES.map((guide) => guide.slug))}T00:00:00.000Z`),
       changeFrequency: 'daily',
       priority: 0.9,
     },
@@ -69,14 +70,14 @@ export function buildPublicSitemapEntries(): MetadataRoute.Sitemap {
 
   const comparisonEntries: MetadataRoute.Sitemap = COMPARISONS.map((comparison) => ({
     url: toAbsoluteUrl(`/comparativa/${comparison.slug}`),
-    lastModified: EDITORIAL_LAST_MODIFIED,
+    lastModified: new Date(`${getEditorialReviewDate(comparison.slug)}T00:00:00.000Z`),
     changeFrequency: 'daily',
     priority: 0.85,
   }));
 
   const budgetGuideEntries: MetadataRoute.Sitemap = BUDGET_GUIDES.map((guide) => ({
     url: toAbsoluteUrl(`/guia/${guide.slug}`),
-    lastModified: EDITORIAL_LAST_MODIFIED,
+    lastModified: new Date(`${getEditorialReviewDate(guide.slug)}T00:00:00.000Z`),
     changeFrequency: 'daily',
     priority: 0.85,
   }));

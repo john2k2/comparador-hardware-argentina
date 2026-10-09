@@ -78,7 +78,10 @@ describe('priority SEO landings', () => {
     expect(guide?.metadataTitle).toBe(
       `${slug.includes('-2-') ? 'PC gamer de 2 millones' : 'PC gamer de 3 millones'}: componentes y precios | Comparador Hardware Argentina`,
     );
-    expect(guide?.description).toContain('Compará componentes');
+    expect(guide?.description).toMatch(/componentes/i);
+    expect(guide?.description).toContain(`$${guide!.budget / 1_000_000} millones`);
+    expect(guide?.description).toMatch(/ofertas recientes/i);
+    expect(guide?.description).toContain(guide!.components.cpu.exactModel!);
   });
 
   it('pone precios en el title de las comparativas que ya tienen impresiones', () => {

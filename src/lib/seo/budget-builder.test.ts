@@ -45,14 +45,15 @@ function listed(
 }
 
 function reviewedGuideCatalog(gpuPrice: number): Product[] {
+  // Selección 2M del 09/10 como fixture contractual; no acredita precios actuales.
   return [
-    listed('cpu', 'Procesador AMD Ryzen 5 7600 AM5 + Wraith Stealth Cooler', 'procesadores', 354_700),
-    listed('gpu', 'Asrock Radeon RX 7600 Challenger 8GB', 'tarjetas-graficas', gpuPrice),
-    listed('ram', 'Memoria Adata DDR5 16GB 5600MHz XPG Lancer Blade White RGB CL46', 'memoria-ram', 436_400),
-    listed('ssd', 'SSD Kingston 1TB NV3 NVMe Gen4', 'almacenamiento', 290_950),
-    listed('mother', 'Mother MSI PRO B650M-B AM5 DDR5', 'motherboards', 146_200),
-    listed('psu', 'Fuente MSI MAG 650W 80 Plus Gold A650GN II', 'fuentes-alimentacion', 100_829),
-    listed('case', 'Gabinete Mid Tower Cooler Master Elite 302', 'gabinetes', 71_999),
+    listed('cpu', 'Procesador AMD Ryzen 7 5700 AM4 con cooler', 'procesadores', 294_245),
+    listed('gpu', 'Placa de Video Asrock Radeon RX 9060 XT 16GB GDDR6 Challenger OC', 'tarjetas-graficas', gpuPrice),
+    listed('ram', 'Memoria Mancer DDR4 16GB 3200MHz Vant S Black CL19', 'memoria-ram', 191_250),
+    listed('ssd', 'SSD Kingston 1TB NV3 NVMe Gen4', 'almacenamiento', 277_869),
+    listed('mother', 'Mother Asrock B550M-HDV DDR4 AM4', 'motherboards', 124_966),
+    listed('psu', 'Fuente Asrock 750W 80 Plus Gold Steel Legend Full Modular ATX 3.1 PCIe 5.1 Cybenetics Platinum', 'fuentes-alimentacion', 130_850),
+    listed('case', 'Gabinete Antec VX310 RGB Black 4x120mm Vidrio Templado', 'gabinetes', 59_990),
   ];
 }
 
@@ -312,7 +313,7 @@ describe('resolveLiveGuideSlots', () => {
   });
 
   it('no presenta un CPU AM4 como reemplazo de un Ryzen AM5 especificado', () => {
-    const guide = getBudgetGuideBySlug('pc-gamer-2-millones');
+    const guide = getBudgetGuideBySlug('pc-gamer-3-millones');
     if (!guide) throw new Error('missing guide');
 
     const resolved = resolveLiveGuideSlots(guide, [
@@ -383,19 +384,24 @@ describe('resolveLiveGuideSlots', () => {
 
   it('resuelve el presupuesto revisado dentro de dos millones con cooler y siete piezas compatibles', () => {
     const guide = getBudgetGuideBySlug('pc-gamer-2-millones')!;
-    const catalog = reviewedGuideCatalog(533_350);
+    const catalog = reviewedGuideCatalog(900_000);
     const resolved = resolveLiveGuideSlots(guide, catalog);
     expect(resolved.inStockSlots).toBe(7);
     expect(resolved.hasEstimates).toBe(false);
-    expect(resolved.catalogTotal).toBe(1_934_428);
+    expect(resolved.catalogTotal).toBe(1_979_170);
     expect(resolved.catalogTotal).toBeLessThan(guide.budget);
+    expect(resolved.fitsBudget).toBe(true);
+    expect(resolved.cpu.name).toMatch(/5700.*cooler/i);
+    expect(resolved.motherboard.name).toContain('B550M-HDV');
+    expect(resolved.ram.name).toContain('DDR4');
+    expect(resolved.gpu.name).toContain('16GB');
   });
 
   it.each([
-    { gpuPrice: 198_922, total: 1_600_000, fitsBudget: true },
-    { gpuPrice: 598_922, total: 2_000_000, fitsBudget: true },
-    { gpuPrice: 798_922, total: 2_200_000, fitsBudget: true },
-    { gpuPrice: 798_923, total: 2_200_001, fitsBudget: false },
+    { gpuPrice: 520_830, total: 1_600_000, fitsBudget: true },
+    { gpuPrice: 920_830, total: 2_000_000, fitsBudget: true },
+    { gpuPrice: 1_120_830, total: 2_200_000, fitsBudget: true },
+    { gpuPrice: 1_120_831, total: 2_200_001, fitsBudget: false },
   ])('trata dos millones como techo editorial para $total', ({ gpuPrice, total, fitsBudget }) => {
     const guide = getBudgetGuideBySlug('pc-gamer-2-millones')!;
     const resolved = resolveLiveGuideSlots(guide, reviewedGuideCatalog(gpuPrice));

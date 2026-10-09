@@ -9,6 +9,7 @@ export type ComparisonSource = {
 
 export type ComparisonDefinition = {
   slug: string;
+  reviewedAt?: string;
   title: string;
   metadataTitle?: string;
   description: string;
@@ -37,6 +38,7 @@ export type ComparisonDefinition = {
 export const COMPARISONS: ComparisonDefinition[] = [
   {
     slug: 'rtx-4060-vs-rx-7600',
+    reviewedAt: '2026-10-09',
     title: 'RTX 4060 vs RX 7600',
     metadataTitle: `RTX 4060 vs RX 7600: precios | ${SITE_NAME}`,
     description: 'Compará precios de RTX 4060 vs RX 7600 en tiendas de Argentina. Encontrá la mejor placa de video para gaming 1080p al mejor precio.',
@@ -53,7 +55,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
       name: 'RX 7600',
       searchTerms: ['rx 7600'],
       category: 'tarjetas-graficas',
-      specs: '8GB GDDR6 | 128-bit | 165W TDP | FSR 3 | Mejor precio',
+      specs: '8GB GDDR6 | 128-bit | 165W TBP | FSR según juego y versión',
       pros: ['Alternativa de 8 GB para comparar según precio final', 'Compatibilidad FSR según juego y versión'],
       cons: ['Sin DLSS 3', 'Ray Tracing inferior', 'Mayor consumo energético'],
     },
@@ -88,6 +90,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
   },
   {
     slug: 'ryzen-5-7600x-vs-ryzen-7-5700x',
+    reviewedAt: '2026-10-09',
     title: 'Ryzen 5 7600X vs Ryzen 7 5700X: precios',
     metadataTitle: `Ryzen 5 7600X vs Ryzen 7 5700X: precios | ${SITE_NAME}`,
     description: 'Compará Ryzen 5 7600X vs Ryzen 7 5700X, sus precios y plataformas para decidir si conviene armar en AM5 o actualizar una PC AM4.',
@@ -98,7 +101,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
       category: 'procesadores',
       specs: '6 núcleos / 12 hilos | 4.7-5.3 GHz | AM5 | DDR5 | 105W',
       pros: ['Plataforma AM5 con DDR5', 'Soporte sujeto a motherboard y BIOS exactas'],
-      cons: ['No incluye cooler stock', 'Motherboards AM5 más caras', 'RAM DDR5 más cara'],
+      cons: ['No incluye cooler stock', 'Requiere motherboard AM5 y memoria DDR5; comparar el costo completo'],
     },
     product2: {
       name: 'Ryzen 7 5700X',
@@ -106,7 +109,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
       category: 'procesadores',
       specs: '8 núcleos / 16 hilos | 3.4-4.6 GHz | AM4 | DDR4 | 65W',
       pros: ['Más núcleos (8 vs 6)', 'Posible reutilización de AM4 y DDR4 con soporte de BIOS'],
-      cons: ['Menor IPC', 'Plataforma sin futuro upgrades', 'Frecuencia más baja'],
+      cons: ['No incluye cooler stock', 'Las actualizaciones AM4 dependen de la lista de CPU y BIOS de la motherboard'],
     },
     conclusion:
       'Si ya tenés AM4 y DDR4, compará el costo de actualizar frente a una plataforma AM5 completa para el 7600X. TechPowerUp aporta una review del 7600X; sus resultados contra otro CPU no prueban esta comparación. No hay una recomendación universal sin uso, compatibilidad y presupuesto completo.',
@@ -135,6 +138,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
   },
   {
     slug: 'rtx-5070-vs-rtx-4070',
+    reviewedAt: '2026-10-09',
     title: 'RTX 5070 vs RTX 4070',
     metadataTitle: `RTX 5070 vs RTX 4070: precios | ${SITE_NAME}`,
     description: 'Comparativa RTX 5070 vs RTX 4070. Precios actualizados, rendimiento en juegos y análisis de valor para elegir la mejor GPU en Argentina.',
@@ -143,20 +147,20 @@ export const COMPARISONS: ComparisonDefinition[] = [
       name: 'RTX 5070',
       searchTerms: ['rtx 5070'],
       category: 'tarjetas-graficas',
-      specs: '12GB GDDR7 | 250W TDP | DLSS 4 | Frame Generation 2',
-      pros: ['DLSS 4 con mejor calidad', 'GDDR7 más rápida', 'Mejor Ray Tracing', 'Frame Generation 2'],
-      cons: ['Precio más alto', 'Mayor consumo energético', 'Stock limitado inicialmente'],
+      specs: '12GB GDDR7 | 250W TGP de referencia | DLSS | Multi Frame Generation',
+      pros: ['Multi Frame Generation en juegos compatibles', 'Memoria GDDR7', 'Ventaja en las pruebas externas citadas, variable según juego'],
+      cons: ['Mayor TGP de referencia que la RTX 4070', 'Multi Frame Generation no equivale a FPS renderizados ni elimina la latencia'],
     },
     product2: {
       name: 'RTX 4070',
       searchTerms: ['rtx 4070'],
       category: 'tarjetas-graficas',
-      specs: '12GB GDDR6X | 200W TDP | DLSS 3 | Buena relación precio',
-      pros: ['Mejor precio actual', 'Menor consumo energético', 'Stock estable', 'Suficiente para 1440p'],
-      cons: ['Sin DLSS 4', 'GDDR6X más lenta', 'Menor performance en RT'],
+      specs: '12GB | 200W TGP de referencia | DLSS con Frame Generation',
+      pros: ['Menor TGP de referencia', 'Compatible con mejoras de DLSS 4 en Super Resolution, Ray Reconstruction y Frame Generation'],
+      cons: ['Sin Multi Frame Generation de RTX 50', 'Revisar la variante de memoria y las funciones disponibles en cada juego y driver'],
     },
     conclusion:
-      'Hoy en Argentina compará el precio en stock: si la diferencia es chica, la 5070 suma generación. TechPowerUp midió a la RTX 5070 Founders ~22% por encima de la 4070 en raster 1440p y ~25% en 4K; con ray tracing a 1440p el salto baja a ~15%. No es un salto uniforme en todos los escenarios. Si ya tenés 4070, el upgrade es chico.',
+      'TechPowerUp midió a la RTX 5070 Founders ~22% por encima de la 4070 en raster 1440p y ~25% en 4K; con ray tracing a 1440p el salto baja a ~15%. Son resultados de esa prueba, no FPS garantizados. NVIDIA distingue Multi Frame Generation de RTX 50 de otras mejoras de DLSS compatibles con RTX 40. Sin dos ofertas recientes comparables no declaramos una ganadora de precio ni aseguramos stock.',
     faqs: [
       {
         question: '¿Cuánto más rápida es la RTX 5070 vs 4070?',
@@ -166,12 +170,12 @@ export const COMPARISONS: ComparisonDefinition[] = [
       {
         question: '¿Vale la pena upgradear de 4070 a 5070?',
         answer:
-          'Con esos deltas de TechPowerUp, no es un cambio de generación grande. Si la 4070 te cierra, esperá o mirá 5080/5090. Si armás de cero, compará el precio local de ambas.',
+          'Compará el costo del cambio con las pruebas de los juegos y aplicaciones que usás. La RTX 4070 recibe varias mejoras de DLSS 4; lo exclusivo de RTX 50 en esa generación es Multi Frame Generation. Confirmá soporte del juego y driver. No hay una recomendación universal de recambio.',
       },
       {
         question: '¿La RTX 5070 sirve para 4K?',
         answer:
-          'TechPowerUp la pone ~25% arriba de la 4070 en raster 4K. Para nativo ultra en todo, sigue siendo territorio 5080/5090. DLSS 4 ayuda; no lo medimos nosotros.',
+          'TechPowerUp la pone ~25% arriba de la 4070 en raster 4K en esa prueba. Revisá FPS, memoria y ajustes de tus juegos: esa media no garantiza jugar todo en ultra. Separá renderizado nativo, reescalado y cuadros generados al comparar resultados.',
       },
     ],
     sources: [
@@ -179,46 +183,55 @@ export const COMPARISONS: ComparisonDefinition[] = [
         name: 'TechPowerUp — NVIDIA GeForce RTX 5070 Founders Edition (conclusión)',
         url: 'https://www.techpowerup.com/review/nvidia-geforce-rtx-5070-founders-edition/46.html',
       },
+      {
+        name: 'NVIDIA — DLSS 4 y compatibilidad de sus funciones',
+        url: 'https://www.nvidia.com/en-us/geforce/news/dlss4-multi-frame-generation-ai-innovations/',
+      },
+      {
+        name: 'NVIDIA — especificaciones RTX 5070',
+        url: 'https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5070-family/',
+      },
     ],
   },
   {
     slug: 'ryzen-7-9800x3d-vs-i9-14900k',
+    reviewedAt: '2026-10-09',
     title: 'Ryzen 7 9800X3D vs i9-14900K',
     metadataTitle: `Ryzen 7 9800X3D vs i9-14900K: precios | ${SITE_NAME}`,
-    description: 'Comparativa definitiva: Ryzen 7 9800X3D vs Intel i9-14900K. Precios actualizados en Argentina, rendimiento gaming y productividad.',
+    description: 'Compará Ryzen 7 9800X3D vs Intel i9-14900K: plataformas, pruebas externas de gaming y productividad, y ofertas relevadas en Argentina.',
     keywords: ['9800x3d vs 14900k', 'ryzen vs intel gaming', 'mejor procesador 2026 argentina', '9800x3d precio'],
     product1: {
       name: 'Ryzen 7 9800X3D',
       searchTerms: ['ryzen 7 9800x3d', '9800x3d'],
       category: 'procesadores',
       specs: '8 núcleos / 16 hilos | 4.7-5.2 GHz | 104MB Cache | AM5 | 120W',
-      pros: ['Mejor procesador para gaming', 'X3D V-Cache enorme', 'Eficiencia energética', 'Temperaturas controladas'],
-      cons: ['Precio muy alto', 'Menor performance en productividad', 'Stock limitado'],
+      pros: ['3D V-Cache', 'Ventaja gaming en la prueba citada de TechPowerUp', 'Plataforma AM5 con DDR5'],
+      cons: ['Requiere refrigeración por separado', 'La ventaja gaming no se traslada a todas las aplicaciones'],
     },
     product2: {
       name: 'Intel Core i9-14900K',
       searchTerms: ['i9-14900k', '14900k', 'intel core i9'],
       category: 'procesadores',
-      specs: '24 núcleos / 32 hilos | 3.2-6.0 GHz | 36MB Cache | LGA1700 | 253W',
-      pros: ['Mejor en productividad', 'Más núcleos', 'Overclocking extremo', 'Precio más bajo'],
-      cons: ['Consumo energético muy alto', 'Temperaturas altas', 'Necesita cooler premium', 'Menor performance en gaming vs 9800X3D'],
+      specs: '24 núcleos (8P + 16E) / 32 hilos | Hasta 6.0 GHz | LGA1700 | 253W turbo máximo',
+      pros: ['Ventaja en el conjunto de aplicaciones de la prueba citada', 'Más núcleos, con arquitectura híbrida'],
+      cons: ['Dimensionar cooler, alimentación y límites de potencia', 'Actualizar BIOS y revisar las recomendaciones vigentes de Intel'],
     },
     conclusion:
-      'En Argentina el precio de plataforma (cooler, mother, consumo) suele decidir más que un puñado de FPS. TechPowerUp titula al 9800X3D como el mejor CPU gaming de esa review: ~7% sobre Raptor Lake a 1080p. En apps, el 14900K sale ~20% adelante. Juegos → 9800X3D. Renders y muchos hilos → 14900K.',
+      'Compará el costo completo de CPU, motherboard, RAM y cooler. En la review citada de TechPowerUp, el 9800X3D encabeza el conjunto gaming y el 14900K tiene ventaja en aplicaciones. Eso no convierte a uno en ganador de todos los juegos, renders o tareas de streaming. Revisá las cargas concretas y ofertas recientes con la misma condición de pago.',
     faqs: [
       {
         question: '¿El 9800X3D es el mejor procesador para gaming?',
         answer:
-          'Según TechPowerUp, el 9800X3D gana el ranking gaming de esa prueba (~7% vs Raptor Lake a 1080p). El 3D V-Cache se nota. El 14900K recupera terreno en productividad.',
+          'Encabeza el conjunto gaming de la review citada de TechPowerUp. Es un resultado de esa selección de juegos, GPU y ajustes, no una garantía ni un ranking permanente del mercado.',
       },
       {
         question: '¿Cuánto cuesta el 9800X3D en Argentina?',
-        answer: 'Es de los procesadores más caros. Compará procesadores del mismo modelo para ver el precio publicado hoy en Argentina.',
+        answer: 'Consultá las ofertas del mismo modelo, su fecha y condición de pago. Sumá motherboard, memoria y cooler antes de comparar el costo de plataforma.',
       },
       {
         question: '¿El i9-14900K es mejor para streaming?',
         answer:
-          'Los 24 núcleos ayudan a jugar y streamear a la vez. TechPowerUp marca al 14900K ~20% arriba del 9800X3D en apps; el costo es watts y cooler. Confirmá el precio local de ambos.',
+          'Depende del codificador y la carga simultánea. Una media de aplicaciones de TechPowerUp no prueba el rendimiento de tu transmisión. Si codificás por GPU, sus funciones también importan; buscá pruebas con el juego y codificador que vas a usar.',
       },
     ],
     sources: [
@@ -230,6 +243,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
   },
   {
     slug: 'i5-14600k-vs-ryzen-5-7600x',
+    reviewedAt: '2026-10-09',
     title: 'i5-14600K vs Ryzen 5 7600X',
     description: '¿Intel o AMD para gaming? Compará precios de i5-14600K vs Ryzen 5 7600X en tiendas argentinas y elegí el mejor procesador.',
     keywords: ['14600k vs 7600x', 'intel vs amd', 'mejor procesador gaming 2026', 'i5 14600k precio argentina'],
@@ -237,25 +251,25 @@ export const COMPARISONS: ComparisonDefinition[] = [
       name: 'Intel Core i5-14600K',
       searchTerms: ['i5-14600k', '14600k', 'intel core i5'],
       category: 'procesadores',
-      specs: '14 núcleos / 20 hilos | 3.5-5.3 GHz | LGA1700 | DDR4/DDR5 | 125W',
-      pros: ['Más núcleos (14 vs 6)', 'Compatible DDR4', 'Mejor en productividad', 'Precio competitivo'],
-      cons: ['Mayor consumo energético', 'Temperaturas altas', 'Plataforma sin futuro'],
+      specs: '14 núcleos (6P + 8E) / 20 hilos | Hasta 5.3 GHz | LGA1700 | 125W base / 181W turbo máximo',
+      pros: ['DDR4 o DDR5 según la motherboard', 'Ventaja en el conjunto de aplicaciones de la prueba citada'],
+      cons: ['Necesita cooler por separado y límites de potencia adecuados', 'No permite instalar DDR4 en una placa DDR5 ni al revés'],
     },
     product2: {
       name: 'Ryzen 5 7600X',
       searchTerms: ['ryzen 5 7600x', '7600x'],
       category: 'procesadores',
       specs: '6 núcleos / 12 hilos | 4.7-5.3 GHz | AM5 | DDR5 | 105W',
-      pros: ['Arquitectura Zen 4 más nueva', 'Plataforma AM5 futura', 'Eficiencia energética', 'PCIe 5.0'],
-      cons: ['Menos núcleos', 'Solo DDR5', 'Motherboards más caras'],
+      pros: ['Plataforma AM5 con DDR5', 'Posibles actualizaciones según el soporte de CPU y BIOS de la placa'],
+      cons: ['Solo DDR5', 'Necesita cooler por separado', 'Comparar el costo de motherboard y memoria además del CPU'],
     },
     conclusion:
-      'TechPowerUp, en apps, deja al 7600X cerca de 25% detrás del i5-14600K. En el wrap-up gaming de esa review, el 14600K le gana a los Ryzen sin 3D V-Cache. El 7600X sigue siendo AM5. No invertimos el ranking de FPS a favor del Ryzen. Precio de plataforma, acá.',
+      'TechPowerUp, en el conjunto de aplicaciones de la review citada, deja al 7600X cerca de 25% detrás del i5-14600K. El porcentaje usa al Intel como referencia; no equivale a decir que Intel está 25% delante. Para elegir, contrastá las pruebas de tu tarea y el costo de motherboard, memoria y cooler. El 14600K admite DDR4 o DDR5 según la placa; el 7600X requiere AM5 y DDR5.',
     faqs: [
       {
         question: '¿i5-14600K o Ryzen 5 7600X para gaming?',
         answer:
-          'TechPowerUp no respalda un empate o una ventaja gaming del 7600X. En esa review el 14600K queda adelante de los Ryzen no-X3D en juegos, y ~25% adelante del 7600X en apps. Si te importa el socket a futuro, AM5 pesa más que un puñado de FPS.',
+          'Revisá las pruebas gaming de TechPowerUp y de los títulos que usás, con la misma GPU y ajustes. El dato de aplicaciones citado —7600X cerca de 25% detrás del 14600K— no es una predicción de FPS. La plataforma y su costo también forman parte de la decisión.',
       },
       {
         question: '¿Cuánto cuesta el i5-14600K en Argentina?',
@@ -264,7 +278,7 @@ export const COMPARISONS: ComparisonDefinition[] = [
       {
         question: '¿El i5-14600K se calienta mucho?',
         answer:
-          'Puede irse alto bajo carga (90-100 °C no es raro sin un cooler serio). TechPowerUp también marca consumo alto en esa generación. AIO 240 o torre premium, y mirá el precio local del cooler.',
+          'Intel especifica 125 W de potencia base y 181 W de turbo máximo. La temperatura depende del cooler, gabinete, ambiente y límites configurados. Presupuestá refrigeración compatible y revisá una prueba de ese cooler; no garantizamos una temperatura por su tamaño o precio.',
       },
     ],
     sources: [
@@ -276,10 +290,15 @@ export const COMPARISONS: ComparisonDefinition[] = [
         name: 'TechPowerUp — AMD Ryzen 5 7600X (conclusión)',
         url: 'https://www.techpowerup.com/review/amd-ryzen-5-7600x/28.html',
       },
+      {
+        name: 'Intel — Core i5-14600K, memoria y potencia',
+        url: 'https://www.intel.com/content/www/us/en/products/sku/236799/intel-core-i5-processor-14600k-24m-cache-up-to-5-30-ghz/specifications.html',
+      },
     ],
   },
   {
     slug: 'rtx-5090-vs-rx-9070-xt',
+    reviewedAt: '2026-10-09',
     title: 'RTX 5090 vs RX 9070 XT',
     metadataTitle: `RTX 5090 vs RX 9070 XT: precios | ${SITE_NAME}`,
     description: 'Compará precios de RTX 5090 vs RX 9070 XT en tiendas de Argentina. Rendimiento 4K, ray tracing, DLSS 4 vs FSR 4 y cuál elegir.',
@@ -288,34 +307,34 @@ export const COMPARISONS: ComparisonDefinition[] = [
       name: 'RTX 5090',
       searchTerms: ['rtx 5090', '5090'],
       category: 'tarjetas-graficas',
-      specs: '32GB GDDR7 | 575W TDP | DLSS 4 | Frame Generation 2',
-      pros: ['Mejor performance del mercado', 'DLSS 4 con mejor calidad', '32GB VRAM para 4K/8K', 'Ray Tracing de nueva generación'],
-      cons: ['Precio extremadamente alto', 'Consumo energético muy alto', 'Requiere fuente 1000W+', 'Stock muy limitado'],
+      specs: '32GB GDDR7 | 575W TGP de referencia | DLSS | Multi Frame Generation',
+      pros: ['32 GB de VRAM', 'Multi Frame Generation en juegos compatibles', 'Referencia de rendimiento 4K en la review citada'],
+      cons: ['TGP elevado; revisar fuente y conectores del modelo exacto', 'Verificar espacio de gabinete y holgura de cables'],
     },
     product2: {
       name: 'RX 9070 XT',
       searchTerms: ['rx 9070 xt', '9070 xt', 'rx 9070'],
       category: 'tarjetas-graficas',
-      specs: '16GB GDDR6 | 256-bit | 350W TDP | FSR 4 | Ray Tracing mejorado',
-      pros: ['Mejor relación precio/performance', 'FSR 4 funciona en más juegos', 'Consumo energético moderado', '16GB GDDR6 para 1440p/4K'],
-      cons: ['Sin DLSS 4', 'Ray Tracing inferior a NVIDIA', 'Menor performance bruta', 'Stock limitado inicialmente'],
+      specs: '16GB GDDR6 | 256-bit | 304W TBP en Sapphire Pulse | FSR según juego y versión',
+      pros: ['16 GB de VRAM', 'Menor potencia de placa en el modelo Pulse citado frente a la RTX 5090 de referencia'],
+      cons: ['Las funciones de reescalado dependen del juego y driver', 'Consumo, dimensiones y conectores varían entre ensambladores'],
     },
     conclusion:
-      'En Argentina la 9070 XT suele costar una fracción de la 5090. No son el mismo segmento. TechPowerUp midió a la 5090 ~35% sobre la 4090 en raster 4K (~32% con RT). La 9070 XT, en reviews TPU, pelea con 5070 / 5070 Ti, no con la flagship. El dato propio es si el precio ARS de cada una cierra.',
+      'Son alternativas de distinto segmento y costo de plataforma. Las reviews de TechPowerUp permiten revisar resolución, ajustes y consumo; un porcentaje de la RTX 5090 frente a la 4090 no demuestra esta comparación con la RX 9070 XT. Compará resultados de ambas en el mismo juego y precio final de ofertas recientes. Sin esas ofertas no declaramos una ganadora de valor.',
     faqs: [
       {
         question: '¿RTX 5090 o RX 9070 XT para gaming 4K?',
         answer:
-          'La 5090 es el techo de NVIDIA según TechPowerUp (salto grande vs 4090 en 4K). La 9070 XT es high-end de AMD contra 5070/5070 Ti, con 16 GB GDDR6. Compararlas como si fueran pares infla un porcentaje que no está en esas reviews.',
+          'Consultá las reviews de TechPowerUp con los juegos y ajustes que querés usar. Separá rasterizado, ray tracing, reescalado y cuadros generados. Los 32 GB de la 5090 y 16 GB de la 9070 XT son una diferencia de capacidad, no un porcentaje de FPS.',
       },
       {
         question: '¿Cuánto cuesta la RTX 5090 en Argentina?',
-        answer: 'Es la placa más cara del mercado. Compará placas de video del mismo modelo para ver el precio publicado hoy.',
+        answer: 'Consultá ofertas recientes del modelo exacto y confirmá pago, envío y garantía. Incluí cualquier cambio necesario de fuente o gabinete en el costo de compra.',
       },
       {
         question: '¿La RX 9070 XT sirve para 4K?',
         answer:
-          'TechPowerUp la mide en el rango 5070/5070 Ti: 4K se puede, no es 5090. 16 GB, no 24. FSR 4 ayuda; el stock y el precio en Argentina deciden más que un ranking de techo.',
+          'La review de TechPowerUp incluye pruebas en 4K. Revisá los FPS de tus títulos y ajustes; tener 16 GB no garantiza una calidad o tasa de cuadros. La Sapphire Pulse usada como referencia consume 304 W de potencia típica de placa según su fabricante; otras versiones pueden diferir.',
       },
     ],
     sources: [
@@ -327,10 +346,19 @@ export const COMPARISONS: ComparisonDefinition[] = [
         name: 'TechPowerUp — Sapphire Radeon RX 9070 XT Pulse (conclusión)',
         url: 'https://www.techpowerup.com/review/sapphire-radeon-rx-9070-xt-pulse/35.html',
       },
+      {
+        name: 'Sapphire — Pulse RX 9070 XT, SKU 11348-03-20G',
+        url: 'https://www.sapphiretech.com/en/consumer/pulse-radeon-rx-9070-xt-16g-gddr6',
+      },
+      {
+        name: 'NVIDIA — especificaciones RTX 5090 de referencia',
+        url: 'https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/',
+      },
     ],
   },
   {
     slug: 'ddr5-vs-ddr4',
+    reviewedAt: '2026-10-09',
     title: 'DDR5 vs DDR4',
     description: 'Comparativa DDR5 vs DDR4. Diferencias de precio, rendimiento y compatibilidad. Encontrá el mejor precio en tiendas argentinas.',
     keywords: ['ddr5 vs ddr4', 'memoria ddr5 precio argentina', 'ddr5 vale la pena', 'memoria ram gaming'],
@@ -338,39 +366,47 @@ export const COMPARISONS: ComparisonDefinition[] = [
       name: 'DDR5',
       searchTerms: ['ddr5', 'memoria ddr5'],
       category: 'memoria-ram',
-      specs: '4800-6400 MHz | Menor latencia | Más eficiente | AM5/LGA1700',
-      pros: ['Mayor ancho de banda', 'Mejor eficiencia energética', 'Futuro del mercado', 'Mejor para integrados'],
-      cons: ['Precio más alto', 'Requiere plataforma nueva', 'Latencia inicial más alta'],
+      specs: 'Velocidad en MT/s y latencia según kit | AM5 y placas Intel compatibles con DDR5',
+      pros: ['Mayores tasas de transferencia del estándar frente a DDR4', 'Memoria requerida por AM5'],
+      cons: ['No se instala en una ranura DDR4', 'Perfiles de velocidad sujetos al CPU, motherboard, BIOS y kit'],
     },
     product2: {
       name: 'DDR4',
       searchTerms: ['ddr4', 'memoria ddr4'],
       category: 'memoria-ram',
-      specs: '3200-3600 MHz | Latencia baja | Madura | AM4/LGA1200',
-      pros: ['Precio más bajo', 'Plataformas maduras', 'Mucho stock', 'Latencia optimizada'],
-      cons: ['Ancho de banda limitado', 'Sin futuro upgrades', 'Obsoleta en 2-3 años'],
+      specs: 'Velocidad en MT/s y latencia según kit | AM4 y placas Intel compatibles con DDR4',
+      pros: ['Permite reutilizar memoria existente en una plataforma compatible', 'También disponible en motherboards LGA1700 específicas'],
+      cons: ['No se instala en una ranura DDR5', 'La capacidad y velocidad admitidas dependen de la placa y CPU'],
     },
     conclusion:
-      'Si armás AM5 o Intel 12va+, DDR5 es lo que pide el socket. Si ya tenés AM4 o LGA1200, DDR4 sigue. TechPowerUp comparó DDR4 vs DDR5 en un 12900K: en juegos el salto suele ser chico frente a cambiar de plataforma. El precio del kit en Argentina es el dato nuestro.',
+      'AM5 requiere DDR5. Intel Core de 12.ª a 14.ª generación en LGA1700 admite DDR4 o DDR5 según la motherboard: el socket por sí solo no decide y las ranuras no son intercambiables. Revisá el modelo exacto de CPU, placa y kit. TechPowerUp comparó DDR4 y DDR5 con un 12900K; ese resultado no se traslada automáticamente a otros equipos o juegos. Compará el costo total y ofertas recientes de kits equivalentes.',
     faqs: [
       {
         question: '¿Vale la pena upgradear de DDR4 a DDR5?',
-        answer: 'Solo si cambiás de plataforma (AM4→AM5 o LGA1200→LGA1700). No vale la pena cambiar motherboard solo por RAM.',
+        answer: 'Necesitás una motherboard que admita DDR5. En LGA1700 puede ser posible conservar el CPU al cambiar de placa DDR4 a DDR5, pero hay que comprobar soporte y BIOS. Compará el costo de placa y memoria con una mejora medida en tus tareas; no hay una conveniencia universal.',
       },
       {
         question: '¿Cuánto cuesta la DDR5 en Argentina?',
-        answer: 'Suele salir más cara que un kit DDR4 equivalente. Compará memoria RAM del mismo kit y frecuencia para ver el precio actual.',
+        answer: 'Compará capacidad total, cantidad de módulos, MT/s, latencias y condición de pago. Un módulo de 16 GB no equivale a un kit de 2×16 GB. Confirmá precio, stock y compatibilidad en la publicación de la tienda.',
       },
       {
         question: '¿DDR5 mejora el FPS en juegos?',
         answer:
-          'TechPowerUp, en su prueba 12900K DDR4 vs DDR5, encontró un delta de gaming chico/marginal, no un salto de generación. El cuello de botella suele ser GPU o CPU, no el estándar de RAM solo.',
+          'Depende del juego, CPU, GPU, configuración y kit. La prueba de TechPowerUp con 12900K es una referencia concreta, no una promesa. Tampoco un CL menor garantiza menor demora: Kingston explica que la latencia CAS en nanosegundos depende de CL y MT/s, calculada como CL × 2000 / MT/s.',
       },
     ],
     sources: [
       {
         name: 'TechPowerUp — Intel Core i9-12900K Alder Lake DDR4 vs DDR5',
         url: 'https://www.techpowerup.com/review/intel-core-i9-12900k-alder-lake-ddr4-vs-ddr5/',
+      },
+      {
+        name: 'Intel — Core i5-14600K, soporte DDR4 y DDR5',
+        url: 'https://www.intel.com/content/www/us/en/products/sku/236799/intel-core-i5-processor-14600k-24m-cache-up-to-5-30-ghz/specifications.html',
+      },
+      {
+        name: 'Kingston — latencia CAS, CL y tasa de transferencia',
+        url: 'https://www.kingston.com/en/blog/gaming/cas-latency-cl-ram-timing-explained',
       },
     ],
   },

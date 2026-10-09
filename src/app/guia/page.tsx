@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { BUDGET_GUIDES } from '@/lib/seo/budget-guides-data';
-import { EDITORIAL_UPDATED_AT } from '@/lib/seo/editorial-freshness';
+import { getLatestEditorialReviewDate } from '@/lib/seo/editorial-dates';
 import { formatPriceARS } from '@/lib/price-utils';
 import { resolveGuiasHubMetadata } from '@/lib/seo/landing-metadata';
 import { EditorialUpdatedStamp } from '@/components/seo/EditorialUpdatedStamp';
@@ -22,7 +22,7 @@ export default function GuiasIndexPage() {
           Elegí componentes según tu presupuesto y compará los precios registrados de tiendas argentinas.
         </p>
         <div className="mt-3">
-          <EditorialUpdatedStamp isoDate={EDITORIAL_UPDATED_AT} />
+          <EditorialUpdatedStamp isoDate={getLatestEditorialReviewDate(BUDGET_GUIDES.map((guide) => guide.slug))} />
         </div>
       </header>
 

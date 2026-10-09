@@ -3,7 +3,7 @@ import { AnalyticsPreferencesButton } from '@/components/functional/AnalyticsPre
 import { headers } from 'next/headers';
 import { RetroPageShell } from '@/components/layout/RetroPageShell';
 import { buildPublicPageMetadata } from '@/lib/seo/metadata';
-import { SITE_NAME, SUPPORT_EMAIL } from '@/lib/site-config';
+import { SITE_NAME } from '@/lib/site-config';
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import { PRIVACIDAD_FAQ } from '@/lib/seo/faq-schema';
 
@@ -25,7 +25,7 @@ export default async function PrivacidadPage() {
       />
     <RetroPageShell
       title="POLITICA DE PRIVACIDAD"
-      subtitle="Actualizada el 5 de octubre de 2026. Cuentas, analítica opcional y controles para tu navegador."
+      subtitle="Actualizada el 9 de octubre de 2026. Cuentas, analítica opcional y controles para tu navegador."
     >
       <div className="space-y-4 text-[12px] uppercase text-foreground">
         <div className="border-2 border-border p-4 bg-muted/30">
@@ -60,9 +60,9 @@ export default async function PrivacidadPage() {
           <div className="border-2 border-border p-4 bg-muted/30">
             <h2 className="text-secondary font-bold mb-2">[ CONSULTAS ]</h2>
             <p className="leading-relaxed normal-case text-[12px] tracking-normal font-mono">
-              {SUPPORT_EMAIL
-                ? `Para privacidad o datos, puedes escribir a ${SUPPORT_EMAIL}.`
-                : 'Para consultas de privacidad, antes del lanzamiento conviene definir un canal de contacto publico y verificable.'}
+              Para consultar, rectificar o solicitar la eliminación de tus datos, usá el{' '}
+              <a href="/contacto" className="underline underline-offset-4">canal de contacto del sitio</a>.
+              {' '}Incluí solo la información necesaria para identificar tu consulta; no envíes contraseñas ni códigos de acceso.
             </p>
           </div>
         </div>
