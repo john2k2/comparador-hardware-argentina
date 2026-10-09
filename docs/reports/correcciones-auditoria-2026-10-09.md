@@ -134,3 +134,18 @@ El resultado final de navegador se registra al final de este documento.
 Reversión: componentes y modelo del armador, helper de fusión en `client.ts`, tests
 unitarios y escenarios añadidos a `pc-builder.spec.ts`. No cambia datos remotos.
 Límite: arreglar el mensaje y el reintento no produce stock ni precios nuevos.
+
+## A08 — Prioridad de la portada
+
+La búsqueda ofrece accesos directos a comparar un componente y armar una PC.
+La promoción afiliada pasa después de ofertas, guías y comparativas. Se conserva
+la dirección visual retro existente, sin convertir esto en un rediseño general.
+
+Validación: E2E con el piloto afiliado encendido, orden de bloques, destinos de
+los accesos y ancho de 390 px sin desborde. Capturas de escritorio y móvil bajo
+`outputs/correcciones-auditoria/capturas/`. Las imágenes remotas están bloqueadas
+por el harness; las capturas acreditan estructura, no entrega de portadas externas.
+Impeccable sobre los cuatro componentes cambiados: `[]`, sin hallazgos del detector.
+
+Reversión: posición del bloque afiliado y accesos directos en `HomePageClient.tsx`,
+junto con el escenario añadido a `home-page.spec.ts`.

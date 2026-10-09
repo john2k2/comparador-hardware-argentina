@@ -29,6 +29,35 @@ test.describe('Home Page', () => {
     expect(errors).toEqual([]);
   });
 
+  test('comparar y armar tienen acceso directo antes de ofertas y publicidad', async ({ page }, testInfo) => {
+    await page.goto('/');
+    const tasks = page.getByRole('navigation', { name: 'Comparar y armar hardware' });
+    await expect(tasks.getByRole('link', { name: 'Comparar un componente' })).toHaveAttribute('href', '/comparativa/comparar');
+    await expect(tasks.getByRole('link', { name: 'Armar una PC' })).toHaveAttribute('href', '/guia/armar');
+    if (process.env.ENEBA_AFFILIATE_PILOT_ENABLED === '1') {
+      await expect(page.getByRole('complementary', { name: 'Juegos para PC en Eneba' })).toBeVisible();
+    }
+    const order = await page.evaluate(() => {
+      const tasks = document.querySelector('[aria-label="Comparar y armar hardware"]')!;
+      const offers = document.querySelector('[aria-label="Últimas ofertas"]')!;
+      const promotion = document.querySelector('[aria-label="Juegos para PC en Eneba"]');
+      return {
+        tasksBeforeOffers: Boolean(tasks.compareDocumentPosition(offers) & Node.DOCUMENT_POSITION_FOLLOWING),
+        offersBeforePromotion: !promotion || Boolean(offers.compareDocumentPosition(promotion) & Node.DOCUMENT_POSITION_FOLLOWING),
+      };
+    });
+    expect(order).toEqual({ tasksBeforeOffers: true, offersBeforePromotion: true });
+    await page.getByRole('button', { name: 'Rechazar analítica', exact: true }).click();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: testInfo.outputPath('home-desktop.png'), fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath('home-desktop-inicio.png') });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(tasks.getByRole('link', { name: 'Armar una PC' })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath('home-mobile.png'), fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath('home-mobile-inicio.png') });
+  });
+
   test('las herramientas secundarias siguen accesibles con teclado desde Más', async ({ page }) => {
     await page.goto('/');
     const navigation = page.getByRole('navigation', { name: 'Navegación principal', exact: true });

@@ -59,6 +59,10 @@ export function HomePageClient({ latestOffersSection, priceDropSection, showGame
           Compará precios de hardware
         </h1>
         <SearchBar onSearch={handleSearch} placeholder="[ BUSCAR PRODUCTO... ]" />
+        <nav aria-label="Comparar y armar hardware" className="mt-4 flex flex-wrap gap-3">
+          <Link href="/comparativa/comparar" prefetch={false} className="pixel-button inline-flex min-h-11 items-center justify-center text-xs">Comparar un componente</Link>
+          <Link href="/guia/armar" prefetch={false} className="pixel-button inline-flex min-h-11 items-center justify-center text-xs">Armar una PC</Link>
+        </nav>
       </section>
 
       <div className={hasSponsoredStores ? 'grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_320px]' : ''}>
@@ -77,8 +81,6 @@ export function HomePageClient({ latestOffersSection, priceDropSection, showGame
               </div>
             </details>
           </nav>
-
-          {showGamesPromotion && <EnebaPromotion />}
 
           {recentProducts.length > 0 && (
             <>
@@ -120,6 +122,8 @@ export function HomePageClient({ latestOffersSection, priceDropSection, showGame
           </section>
 
           {priceDropSection}
+
+          {showGamesPromotion && <EnebaPromotion />}
         </div>
         {hasSponsoredStores && (
           <div className="min-w-0 xl:sticky xl:top-28 xl:self-start">
