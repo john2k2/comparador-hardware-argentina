@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { HardwareCategory, Product, ProductPrice } from '@/lib/types';
 import { resolveGuideComponent, resolveGuideReferenceOffer, resolveGuideRefreshOffers, resolveGuideSlots } from '@/lib/seo/budget-guide-pricing';
+import { BUDGET_GUIDES } from '@/lib/seo/budget-guides-data';
+import { planGuideGroups } from '@/lib/catalog/priority-planning';
+
+afterEach(() => vi.useRealTimers());
 
 function price(overrides: Partial<ProductPrice> & Pick<ProductPrice, 'storeId' | 'storeName' | 'price'>): ProductPrice {
   return {
@@ -36,6 +40,95 @@ const cpuSpec = {
   description: '6 nucleos',
   estimatedPrice: 350_000,
 };
+
+describe('latencia de la variante RAM editorial', () => {
+  const guide = BUDGET_GUIDES.find((guide) => guide.slug === 'pc-gamer-3-millones')!;
+  const spec = guide.components.ram;
+  const now = new Date('2026-10-09T20:15:00.000Z');
+  const ram = (latency: string, overrides: Partial<ProductPrice> = {}) => product({
+    id: `ram-${latency || 'unknown'}`, brand: 'Patriot',
+    name: `Memoria Patriot Viper Venom 32GB DDR5 6000MHz ${latency} (2x16GB)`,
+    category: 'memoria-ram', prices: [price({ storeId: 'shop', storeName: 'Shop', price: 190_000,
+      url: `https://example.com/memoria-patriot-viper-venom-32gb-ddr5-6000mhz-${latency.replaceAll(' ', '-')}-2x16gb`,
+      lastUpdated: now, ...overrides })],
+  });
+
+  it.each(['CL30', '', 'CL36 CL30', 'CL360'])('rechaza %s sin convertirlo en compra ni destino de la guía CL36', (latency) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    const candidate = ram(latency);
+    const original = structuredClone(candidate);
+    expect(resolveGuideComponent(spec, [candidate]).priceSource).toBe('estimate');
+    expect(resolveGuideReferenceOffer(spec, [candidate])).toBeNull();
+    expect(resolveGuideRefreshOffers(spec, [candidate])).toEqual([]);
+    expect(planGuideGroups(guide, [candidate], now.getTime()).find((group) => group.key.endsWith('/ram')))
+      .toEqual({ key: `${guide.slug}/ram`, covered: false, targets: [] });
+    expect(candidate).toEqual(original);
+  });
+
+  it.each(['CL36', 'CL 36'])('elige %s después de una variante CL30 más barata y conserva la fecha real', (latency) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    const correct = ram(latency);
+    const wrong = ram('CL30', { price: 100_000 });
+    expect(resolveGuideComponent(spec, [wrong, correct])).toMatchObject({ priceSource: 'catalog', productId: correct.id,
+      price: 190_000, offers: [{ lastUpdated: now.toISOString() }] });
+    expect(planGuideGroups(guide, [wrong, correct], now.getTime()).find((group) => group.key.endsWith('/ram')))
+      .toMatchObject({ covered: true, targets: [{ productId: correct.id }] });
+  });
+
+  it('conserva una referencia CL36 vencida para comprobarla sin contarla como oferta comprable', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    const observed = new Date(now.getTime() - 4 * 60 * 60_000);
+    const correct = ram('CL36', { lastUpdated: observed });
+    const wrong = ram('CL30');
+    const original = structuredClone(correct);
+    expect(resolveGuideComponent(spec, [wrong, correct]).priceSource).toBe('estimate');
+    expect(resolveGuideRefreshOffers(spec, [wrong, correct], now.getTime()))
+      .toMatchObject([{ productId: correct.id, lastUpdated: observed.toISOString() }]);
+    expect(planGuideGroups(guide, [wrong, correct], now.getTime()).find((group) => group.key.endsWith('/ram')))
+      .toEqual({ key: `${guide.slug}/ram`, covered: false,
+        targets: [{ productId: correct.id, storeId: 'shop', url: correct.prices[0].url }] });
+    expect(correct).toEqual(original);
+  });
+
+  it.each(['out-of-stock', 'unknown'] as const)('una CL36 con stock %s no se vuelve comprable', (stock) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    const candidate = ram('CL36', { stock });
+    expect(resolveGuideComponent(spec, [candidate]).priceSource).toBe('estimate');
+    expect(resolveGuideReferenceOffer(spec, [candidate])).toBeNull();
+  });
+
+  it('mantiene el rechazo de identidad y URL contradictorias aunque el título indique CL36', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    const candidate = ram('CL36', { url: 'https://example.com/memoria-patriot-viper-venom-32gb-ddr5-6000mhz-cl30-2x16gb',
+      identityReview: { version: 1, status: 'needs-review', reason: 'explicit-conflict', reviewedAt: now.toISOString(),
+        model: null, confidence: null, subject: { name: 'memoria patriot viper venom 32gb ddr5 6000mhz cl36 (2x16gb)',
+          category: 'memoria-ram', url: 'https://example.com/memoria-patriot-viper-venom-32gb-ddr5-6000mhz-cl30-2x16gb' } } });
+    const original = structuredClone(candidate);
+    expect(resolveGuideComponent(spec, [candidate]).priceSource).toBe('estimate');
+    expect(resolveGuideRefreshOffers(spec, [candidate], now.getTime())).toEqual([]);
+    expect(candidate).toEqual(original);
+  });
+
+  it('el rechazo de una revisión temporal pendiente no desaparece al encontrar la CL correcta', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    const candidate = ram('CL36');
+    candidate.prices[0].identityReview = { version: 1, status: 'needs-review', reason: 'provider-unavailable',
+      reviewedAt: null, model: null, confidence: null,
+      subject: { name: candidate.name.toLowerCase(), category: 'memoria-ram', url: candidate.prices[0].url } };
+    const original = structuredClone(candidate);
+    expect(resolveGuideComponent(spec, [candidate]).priceSource).toBe('estimate');
+    // El reintento ya permitido conserva el dictamen pendiente y la fecha original.
+    expect(resolveGuideRefreshOffers(spec, [candidate], now.getTime())).toMatchObject([{ productId: candidate.id,
+      lastUpdated: now.toISOString() }]);
+    expect(candidate).toEqual(original);
+  });
+});
 
 describe('resolveGuideComponent', () => {
   it('permite reintentar una revisión temporal fallida sin habilitar la compra', () => {

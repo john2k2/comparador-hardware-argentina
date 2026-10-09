@@ -200,6 +200,10 @@ function productMatchesGuideSpec(product: Product, spec: GuideSlotSpec): boolean
     const kit = requested.match(/\b2x(?:8|16|32)gb\b/)?.[0];
     if (speed && !new RegExp(`\\b${speed}(?:\\s*mhz)?\\b`).test(actual)) return false;
     if (kit && !actual.includes(kit)) return false;
+    const latency = requested.match(/\bcl\s*(\d{2,3})\b/)?.[1];
+    const actualLatencies = new Set([...actual.matchAll(/\bcl\s*(\d{2,3})\b/g)].map((match) => match[1]));
+    // Una latencia ausente o ambigua no acredita la variante editorial declarada.
+    if (latency && (actualLatencies.size !== 1 || !actualLatencies.has(latency))) return false;
   }
   // Una coincidencia de capacidad o watts no convierte SATA en NVMe ni Bronze en Gold.
   if (spec.category === 'almacenamiento' && /\bnvme\b/.test(requested) && !/\bnvme\b/.test(actual)) return false;

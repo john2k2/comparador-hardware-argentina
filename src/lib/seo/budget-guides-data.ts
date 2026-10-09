@@ -171,7 +171,7 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
       },
       psu: {
         name: '650W 80 Plus Gold',
-        searchTerms: ['650w'],
+        searchTerms: ['650w gold'],
         category: 'fuentes-alimentacion',
         description: '650 W | Revisar conectores y garantía del modelo elegido',
         estimatedPrice: 100000,
