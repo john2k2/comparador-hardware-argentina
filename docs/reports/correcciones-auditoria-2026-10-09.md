@@ -149,3 +149,29 @@ Impeccable sobre los cuatro componentes cambiados: `[]`, sin hallazgos del detec
 
 Reversión: posición del bloque afiliado y accesos directos en `HomePageClient.tsx`,
 junto con el escenario añadido a `home-page.spec.ts`.
+
+## A07 — Duplicados de CPU sin perder variantes ni ofertas válidas
+
+La muestra pública de cuatro filas Ryzen 5600 queda en dos tarjetas: tres nombres
+sin presentación se reúnen con mínimo de $233.700; BOX $287.270,10 queda separado.
+BOX, TRAY, cooler incluido, ausente y desconocido no se equiparan por omisión.
+Se preservan publicaciones alternativas de una misma tienda y las observaciones
+históricas, que no pueden ganar el mínimo vigente.
+
+La revisión independiente reprodujo un caso adicional: dictámenes válidos ligados
+a nombres distintos podían perder validez al cambiar el título tras fusionar.
+Se conservan los sujetos originales y se rechaza la fusión de páginas si cambia
+el mínimo vigente de las entradas o viola el rango pedido. Así, las ofertas
+contractuales de $233.700 y $250.000 siguen visibles por separado; una tercera CPU
+de $240.000 queda ordenada entre ambas. No se transfiere una aprobación de identidad.
+
+Validación: fixture pública original con fechas intactas, tests de variantes y
+alias revisados. Tanda final del especialista: siete archivos y 65 pruebas
+aprobadas. API, caché y SSR conservan vigencia, total SQL 40 y offset 12 en la
+fixture paginada. El caso adicional es contractual, no una incidencia productiva
+observada. La inspección independiente vuelve a verificarlo antes del cierre.
+
+Reversión: las reglas CPU en `search-dedupe.ts` y sus tests; el puente público
+descrito a continuación depende del nuevo dedupe. La fixture JSON reproduce
+evidencia y no contiene credenciales. Límite: dedupe y orden sólo dentro de la
+página recibida, sin prometer unicidad u orden global entre páginas.

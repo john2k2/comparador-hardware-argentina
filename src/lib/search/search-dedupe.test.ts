@@ -52,7 +52,7 @@ describe('search-dedupe', () => {
   it.each([undefined, '', '/pixel-box.svg'])('rescata una foto real al agrupar cuando la primera es %s', (missing) => {
     const first = buildProduct('AMD Ryzen 5 7600', { id: 'first', category: 'procesadores' });
     first.image = missing;
-    const second = buildProduct('AMD Ryzen 5 7600 Box', { id: 'second', category: 'procesadores' });
+    const second = buildProduct('Procesador AMD Ryzen 5 7600', { id: 'second', category: 'procesadores' });
     second.image = 'https://mexx-img-2019.s3.amazonaws.com/7600.jpg';
 
     for (const result of [groupSearchProducts([first, second], new Map(), [], '', 'procesadores'), dedupeNearDuplicates([first, second])]) {
@@ -62,6 +62,14 @@ describe('search-dedupe', () => {
   });
 
   describe('dedupeNearDuplicates', () => {
+    it('conserva el ID original de categorías ajenas a CPU al preferir un título más completo', () => {
+      const first = buildProduct('Mouse Logitech G502', { id: 'first', brand: 'Logitech' });
+      const second = buildProduct('Mouse Logitech G502 Gaming', { id: 'second', brand: 'Logitech', model: first.model });
+      const result = dedupeNearDuplicates([first, second]);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('first');
+      expect(result[0].name).toBe(second.name);
+    });
     it('retorna el mismo array si hay 0 o 1 producto', () => {
       const empty: Product[] = [];
       expect(dedupeNearDuplicates(empty)).toEqual([]);

@@ -1,4 +1,4 @@
-import { computeComparableStorePriceStats, preferStorePrice } from '@/lib/price-utils';
+import { computeComparableStorePriceStats, computeCurrentStorePriceStats, preferStorePrice } from '@/lib/price-utils';
 import { pickProductImage } from '@/lib/product-images';
 import {
   buildProductFamilyKey,
@@ -11,6 +11,7 @@ import {
 } from '@/lib/product-identity';
 import { normalizeSearchText, scoreProductRelevance } from '@/lib/search/search-ranking';
 import { resolveHardwareCategoryForProduct } from '@/lib/catalog/hardware-categories';
+import { cpuVariantAttributes } from '@/lib/quality/offer-attribute-proof';
 import type { HardwareCategory, Product } from '@/lib/types';
 
 const DEDUPE_STOPWORDS = new Set([
@@ -56,6 +57,11 @@ function buildCanonicalGroupKey(product: Product, normalizedTitle: string): stri
   return buildProductIdentityKey(product.category, normalizedTitle, buildIdentityFallback(product));
 }
 
+function cpuVariantKey(product: Product): string {
+  // Desconocido no equivale a BOX ni acredita refrigeración incluida.
+  return JSON.stringify(cpuVariantAttributes(product.name));
+}
+
 function mergePriceOptions(
   current: Product['prices'],
   incoming: Product['prices'],
@@ -72,6 +78,20 @@ function mergePriceOptions(
     merged[existingIndex] = preferStorePrice(merged[existingIndex], candidate);
   }
 
+  return merged;
+}
+
+function mergeCpuPriceOptions(current: Product['prices'], incoming: Product['prices']): Product['prices'] {
+  const merged = [...current];
+  for (const offer of incoming) {
+    // Mismo destino no transfiere un dictamen ligado a otro título/SKU. Se
+    // conservan ambos sujetos; el guard del producto final elegirá el válido.
+    const index = merged.findIndex(existing => existing.storeId === offer.storeId && existing.url === offer.url
+      && JSON.stringify(existing.identityReview ?? null) === JSON.stringify(offer.identityReview ?? null)
+      && JSON.stringify(existing.sourceIdentity ?? null) === JSON.stringify(offer.sourceIdentity ?? null));
+    if (index < 0) merged.push(offer);
+    else merged[index] = preferStorePrice(merged[index], offer);
+  }
   return merged;
 }
 
@@ -119,6 +139,8 @@ function isSubset(first: Set<string>, second: Set<string>): boolean {
 
 function canMergeNearDuplicate(existing: Product, candidate: Product): boolean {
   if (existing.category !== candidate.category) return false;
+  if (existing.category === 'procesadores' && (cpuVariantKey(existing) !== cpuVariantKey(candidate)
+    || cpuVariantAttributes(existing.name).cooler === 'conflict')) return false;
 
   const existingExactModel = extractExactModelIdentity(existing.category, existing.name);
   const candidateExactModel = extractExactModelIdentity(candidate.category, candidate.name);
@@ -142,20 +164,29 @@ function canMergeNearDuplicate(existing: Product, candidate: Product): boolean {
 }
 
 function mergeProductEntries(existing: Product, candidate: Product): Product {
-  const mergedPrices = mergePriceOptions(existing.prices, candidate.prices);
-  const stats = computeComparableStorePriceStats(mergedPrices);
+  const isCpu = existing.category === 'procesadores';
+  const mergedPrices = isCpu ? mergeCpuPriceOptions(existing.prices, candidate.prices)
+    : mergePriceOptions(existing.prices, candidate.prices);
   const existingTokens = tokenizeForDedupe(existing.name).length;
   const candidateTokens = tokenizeForDedupe(candidate.name).length;
-  const preferred = candidateTokens > existingTokens ? candidate : existing;
+  // Mantener el destino canónico ya existente; un alias antiguo no debe ganar
+  // sólo por tener un título más largo que la ficha a la que redirige.
+  const canonicalIdPrefix = `agrupado-${existing.category}-`;
+  const preferred = existing.category === 'procesadores'
+    && existing.id.startsWith(canonicalIdPrefix) !== candidate.id.startsWith(canonicalIdPrefix)
+    ? (existing.id.startsWith(canonicalIdPrefix) ? existing : candidate)
+    : candidateTokens > existingTokens ? candidate : existing;
   const mergedImage = pickProductImage(existing.image, candidate.image);
+  const stats = isCpu ? computeCurrentStorePriceStats(mergedPrices, preferred)
+    : computeComparableStorePriceStats(mergedPrices);
 
   return {
-    ...existing,
+    ...(isCpu ? preferred : existing),
     name: preferred.name,
     model: preferred.model,
     brand: preferred.brand,
     image: mergedImage,
-    prices: stats.comparablePrices,
+    prices: isCpu ? mergedPrices : stats.comparablePrices,
     lowestPrice: stats.lowest,
     highestPrice: stats.highest,
     averagePrice: stats.average,
@@ -177,6 +208,32 @@ export function dedupeNearDuplicates(products: Product[]): Product[] {
     deduped[index] = mergeProductEntries(deduped[index], candidate);
   }
 
+  return deduped;
+}
+
+/** Agrupar sólo CPUs en respuestas ya paginadas; conservar el orden restante. */
+export function dedupeCpuSearchProducts(products: Product[], bounds: { minPrice?: number; maxPrice?: number } = {}): Product[] {
+  const deduped: Product[] = [];
+  for (const product of products) {
+    const index = product.category === 'procesadores'
+      ? deduped.findIndex(existing => canMergeNearDuplicate(existing, product)) : -1;
+    if (index < 0) deduped.push(product);
+    else {
+      const merged = mergeProductEntries(deduped[index], product);
+      const originalMinimum = Math.min(...[
+        computeCurrentStorePriceStats(deduped[index].prices, deduped[index]).lowest,
+        computeCurrentStorePriceStats(product.prices, product).lowest,
+      ].filter(price => price > 0));
+      // Una fusión no puede cambiar la elegibilidad ya exigida a estas filas.
+      // Cada dictamen sigue ligado a su contexto original: no se oculta una
+      // oferta vigente más barata ni se habilita otra antes no elegible.
+      if (merged.lowestPrice <= 0
+        || merged.lowestPrice !== originalMinimum
+        || (bounds.minPrice !== undefined && merged.lowestPrice < bounds.minPrice)
+        || (bounds.maxPrice !== undefined && merged.lowestPrice > bounds.maxPrice)) deduped.push(product);
+      else deduped[index] = merged;
+    }
+  }
   return deduped;
 }
 
@@ -213,17 +270,23 @@ export function groupSearchProducts(
       category: resolveHardwareCategoryForProduct(normalizedName, namedCategory),
     };
     const groupKey = buildCanonicalGroupKey(categorizedProduct, normalizedName);
+    const mergeKey = categorizedProduct.category === 'procesadores'
+      ? `${groupKey}|${cpuVariantKey(categorizedProduct)}` : groupKey;
     const identityFallback = buildIdentityFallback(categorizedProduct);
     const familyKey = buildProductFamilyKey(categorizedProduct.category, normalizedName, identityFallback) ?? undefined;
     const variantKey = buildProductVariantKey(categorizedProduct.category, normalizedName, identityFallback);
 
-    if (!uniqueMap.has(groupKey)) {
-      const stats = computeComparableStorePriceStats(categorizedProduct.prices);
+    if (!uniqueMap.has(mergeKey)) {
+      const stats = categorizedProduct.category === 'procesadores'
+        ? computeCurrentStorePriceStats(categorizedProduct.prices, categorizedProduct)
+        : computeComparableStorePriceStats(categorizedProduct.prices);
 
-      uniqueMap.set(groupKey, {
+      uniqueMap.set(mergeKey, {
         ...categorizedProduct,
-        id: buildGroupedProductId(categorizedProduct, normalizedName, groupKey),
-        prices: stats.comparablePrices,
+        id: buildGroupedProductId(categorizedProduct, normalizedName,
+          categorizedProduct.category === 'procesadores' && Object.values(cpuVariantAttributes(categorizedProduct.name)).some(Boolean)
+            ? mergeKey : groupKey),
+        prices: categorizedProduct.category === 'procesadores' ? categorizedProduct.prices : stats.comparablePrices,
         lowestPrice: stats.lowest,
         highestPrice: stats.highest,
         averagePrice: stats.average,
@@ -235,19 +298,23 @@ export function groupSearchProducts(
       continue;
     }
 
-    const existingProduct = uniqueMap.get(groupKey)!;
-    const mergedPrices = mergePriceOptions(existingProduct.prices, product.prices);
-    const stats = computeComparableStorePriceStats(mergedPrices);
+    const existingProduct = uniqueMap.get(mergeKey)!;
+    const mergedPrices = categorizedProduct.category === 'procesadores'
+      ? mergeCpuPriceOptions(existingProduct.prices, product.prices)
+      : mergePriceOptions(existingProduct.prices, product.prices);
 
     const finalImage = pickProductImage(existingProduct.image, product.image);
 
     const existingScore = scoreProductRelevance(existingProduct, queryWords, query, category);
     const incomingScore = scoreProductRelevance(product, queryWords, query, category);
     const shouldReplaceDisplay = incomingScore > existingScore;
+    const display = shouldReplaceDisplay ? categorizedProduct : existingProduct;
+    const stats = categorizedProduct.category === 'procesadores' ? computeCurrentStorePriceStats(mergedPrices, display)
+      : computeComparableStorePriceStats(mergedPrices);
 
-    uniqueMap.set(groupKey, {
+    uniqueMap.set(mergeKey, {
       ...existingProduct,
-      prices: stats.comparablePrices,
+      prices: categorizedProduct.category === 'procesadores' ? mergedPrices : stats.comparablePrices,
       lowestPrice: stats.lowest,
       highestPrice: stats.highest,
       averagePrice: stats.average,
