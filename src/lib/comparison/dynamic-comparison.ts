@@ -1,6 +1,5 @@
 import type { HardwareCategory, Product } from '@/lib/types';
-import { getComparableStorePrices } from '@/lib/price-utils';
-import { needsIdentityReview } from '@/lib/quality/offer-identity';
+import { getComparableStorePrices, isComparableStoreOffer } from '@/lib/price-utils';
 import { isCatalogOfferFresh, isOfferFresh } from '@/lib/price-freshness';
 import { findPerformanceBenchmark, type PerformanceBenchmark } from './performance-benchmarks';
 
@@ -51,7 +50,7 @@ export type DynamicComparison = {
 
 function comparableOffers(product: Product, now: number) {
   return getComparableStorePrices(
-    product.prices.filter((offer) => !needsIdentityReview(offer) && isCatalogOfferFresh(offer.lastUpdated, now)),
+    product.prices.filter((offer) => isComparableStoreOffer(offer, product) && isCatalogOfferFresh(offer.lastUpdated, now)),
   )
     .filter((offer) => offer.price > 0 && (offer.stock === 'in-stock' || offer.stock === 'low-stock'))
     .sort((a, b) => a.price - b.price);

@@ -7,7 +7,7 @@ function product(id: string, price: number, specs: Record<string, string> = {}, 
   const now = new Date();
   return {
     id, name: id, category, brand: 'Marca', model: id, specs,
-    prices: [{ storeId: 'store', storeName: 'Store', url: 'https://store.example/product', price, stock: 'in-stock', installment: null, lastUpdated: now }],
+    prices: [{ storeId: 'mexx', storeName: 'Mexx', url: `https://www.mexx.com.ar/product/${id.toLowerCase().replaceAll(' ', '-')}`, price, stock: 'in-stock', installment: null, lastUpdated: now }],
     lowestPrice: price, highestPrice: price, averagePrice: price, createdAt: now, updatedAt: now,
   };
 }
@@ -34,10 +34,41 @@ describe('compareProducts', () => {
     expect(result.recommendation).toContain('no prueba mejor rendimiento por peso');
   });
 
+  it('no usa el puntaje de RTX 3050 8 GB para recomendar la variante de 6 GB', () => {
+    const result = compareProducts(product('RTX 3050 6GB', 100_000, {}, 'tarjetas-graficas'),
+      product('RTX 4060 8GB', 300_000, {}, 'tarjetas-graficas'), 'gaming');
+    expect(result.leftPrice).toBe(100_000);
+    expect(result.leftBenchmark).toBeNull();
+    expect(result.leftMetricScore).toBeNull();
+    expect(result.valueWinnerProductId).toBeNull();
+    expect(result.recommendation).not.toContain('conviene más');
+    expect(result.evidence.join(' ')).toContain('No hay benchmarks compatibles');
+  });
+
+  it('descarta una presentación contradictoria antes de elegir la oferta de cada tienda', () => {
+    const left = product('AMD Ryzen 5 5500 con Wraith Stealth', 100_000);
+    left.prices[0].url = 'https://www.mexx.com.ar/product/ryzen-5-5500-sin-cooler';
+    left.prices.push({ ...left.prices[0], price: 300_000, url: 'https://www.mexx.com.ar/product/ryzen-5-5500-con-wraith-stealth' });
+    const right = product('AMD Ryzen 5 5600 con Wraith Stealth', 200_000);
+    const result = compareProducts(left, right, 'gaming');
+    expect(result.leftPrice).toBe(300_000);
+    expect(result.leftOffers).toEqual([{ store: 'Mexx', price: 300_000 }]);
+    expect(result.cheaperProductId).toBe(right.id);
+    expect(left.prices).toHaveLength(2);
+  });
+
   it('expone diferencias de plataforma para CPUs', () => {
     const result = compareProducts(product('CPU A', 100_000, { socket: 'AM4' }), product('CPU B', 120_000, { socket: 'AM5' }));
     expect(result.evidence.join(' ')).toContain('sockets distintos');
     expect(result.specificationRows).toContainEqual({ label: 'Socket', left: 'AM4', right: 'AM5' });
+  });
+
+  it('no recomienda por rendimiento cuando el modelo CPU contradice el nombre', () => {
+    const left = { ...product('AMD Ryzen 5 5600', 200_000), model: 'Ryzen 5 7600' };
+    const result = compareProducts(left, product('AMD Ryzen 5 5500', 200_000), 'productividad');
+    expect(result.leftBenchmark).toBeNull();
+    expect(result.valueWinnerProductId).toBeNull();
+    expect(result.recommendation).not.toContain('conviene más');
   });
 
   it('ignora ofertas pendientes de validar identidad', () => {

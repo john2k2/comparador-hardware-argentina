@@ -1,4 +1,5 @@
 import type { HardwareCategory, Product } from '@/lib/types';
+import { compactGpuChip, normalizeIdentityText, parseCpuModelSignature, parseGpuChipSignature } from '@/lib/product-identity';
 
 export type PerformanceBenchmark = {
   model: string;
@@ -88,12 +89,44 @@ const GPU_BENCHMARKS: BenchmarkEntry[] = [
   gpu('RTX 3050 8GB', /\brtx[ -]?3050(?:\s+8\s?gb)?\b/i, 53), gpu('RX 580', /\brx[ -]?580\b/i, 45),
 ];
 
+// Estas familias tienen variantes de memoria. Sin una variante declarada en
+// el dato de rendimiento, no trasladar su puntaje a cualquiera de ellas.
+const MEMORY_VARIANT_CHIPS = new Set(['rtx3050', 'rtx3060', 'rtx4060ti', 'rtx5060ti', 'rx9060xt', 'rx580']);
+
+function matchesCpuVariant(product: Pick<Product, 'name' | 'model'>, entry: BenchmarkEntry): boolean {
+  const expected = parseCpuModelSignature(entry.model);
+  const declared = [parseCpuModelSignature(product.name), parseCpuModelSignature(product.model)].filter(value => value !== null);
+  if (!expected || declared.length === 0) return false;
+  return declared.every(chip => chip.number === expected.number
+    && chip.suffixes.join('') === expected.suffixes.join('')
+    && (chip.family === 'unknown' || chip.family === expected.family
+      || (chip.family === 'ryzen' && expected.family.startsWith('ryzen'))));
+}
+
+function matchesGpuVariant(product: Pick<Product, 'name' | 'model'>, entry: BenchmarkEntry): boolean {
+  const text = normalizeIdentityText(`${product.name} ${product.model}`);
+  if (/\b(laptop|notebook|mobile|movil|max\s*q|maxq|2048sp)\b/.test(text)
+    || /\b(?:rtx|gtx)\s*\d{3,4}\s+d\b/.test(text)) return false;
+  const namedChip = parseGpuChipSignature(product.name);
+  const modelChip = parseGpuChipSignature(product.model);
+  const chip = namedChip ?? modelChip;
+  const expected = parseGpuChipSignature(entry.model);
+  if (!chip || !expected || compactGpuChip(chip) !== compactGpuChip(expected)) return false;
+  if (namedChip && modelChip && compactGpuChip(namedChip) !== compactGpuChip(modelChip)) return false;
+  const memory = [...new Set([...text.matchAll(/\b(\d{1,3})\s*gb\b/g)].map(match => Number(match[1])))];
+  if (memory.length > 1) return false;
+  const expectedMemory = entry.model.match(/\b(\d{1,3})\s*gb\b/i)?.[1];
+  if (expectedMemory) return memory.length === 1 && memory[0] === Number(expectedMemory);
+  return !MEMORY_VARIANT_CHIPS.has(compactGpuChip(chip));
+}
+
 export function findPerformanceBenchmark(product: Pick<Product, 'name' | 'model' | 'category'>): PerformanceBenchmark | null {
   const entries = product.category === 'procesadores'
     ? CPU_BENCHMARKS
     : product.category === 'tarjetas-graficas' ? GPU_BENCHMARKS : [];
   const haystack = `${product.name} ${product.model}`;
-  const match = entries.find((entry) => entry.pattern.test(haystack));
+  const match = entries.find((entry) => entry.pattern.test(haystack)
+    && (product.category === 'tarjetas-graficas' ? matchesGpuVariant(product, entry) : matchesCpuVariant(product, entry)));
   if (!match) return null;
   const { pattern, ...benchmark } = match;
   void pattern;

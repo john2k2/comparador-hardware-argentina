@@ -7,7 +7,7 @@ async function seedComparison(page: Page) {
   });
 }
 
-test('el comparador conserva los dos productos al visitar una ficha y regresar', async ({ page }) => {
+test('el comparador conserva los dos productos al visitar una ficha y regresar', async ({ page }, testInfo) => {
   await page.goto('/comparativa/comparar');
   for (const [side, query, title] of [
     ['A', '5600', 'AMD Ryzen 5 5600 6-Core 12-Thread AM4'],
@@ -28,7 +28,7 @@ test('el comparador conserva los dos productos al visitar una ficha y regresar',
   await page.getByRole('button', { name: 'Rechazar analítica', exact: true }).click();
   await page.getByRole('button', { name: 'Cerrar preferencias', exact: true }).click();
   await page.evaluate(() => window.scrollTo(0, 0));
-  await page.screenshot({ path: 'docs/reports/confianza-2026-10-06/comparador-regreso.png', fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('comparador-regreso.png'), fullPage: true });
 });
 
 test('un error al recuperar B conserva A sin inventar el producto faltante', async ({ page }) => {
