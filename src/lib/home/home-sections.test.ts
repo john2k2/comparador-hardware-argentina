@@ -1,13 +1,23 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildOfferIdentity, resolveBaselineFromHistory } from './price-drop-baseline';
 import { getHomeSectionsData, pickFeaturedProducts, resolveOfferHistory, selectCurrentPricePoints } from './home-sections';
 import { getSharedCache } from '@/lib/server/shared-cache';
 import { readProductsFromDatabase } from '@/lib/persistence/product-read';
+import { readRecentOfferProducts } from '@/lib/persistence/recent-offer-products';
 import type { Product } from '@/lib/types';
 
 vi.mock('server-only', () => ({}), { virtual: true });
 vi.mock('@/lib/server/shared-cache', () => ({ getSharedCache: vi.fn(), setSharedCache: vi.fn() }));
 vi.mock('@/lib/persistence/product-read', () => ({ readProductsFromDatabase: vi.fn() }));
+vi.mock('@/lib/persistence/recent-offer-products', () => ({ readRecentOfferProducts: vi.fn() }));
+vi.mock('@/lib/server/supabase-server', () => ({ getServerSupabaseServiceClient: () => null }));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(getSharedCache).mockResolvedValue(null);
+  vi.mocked(readProductsFromDatabase).mockResolvedValue([]);
+  vi.mocked(readRecentOfferProducts).mockResolvedValue([]);
+});
 
 afterEach(() => vi.useRealTimers());
 
@@ -29,7 +39,7 @@ describe('evidencia actual de portada', () => {
     const unknown = makeProduct(new Date(), 'unknown');
     expect(selectCurrentPricePoints([invalid, unknown], Date.now() - 24 * 3600000)).toEqual([]);
   });
-  it('rehidrata la fecha almacenada y retira una última oferta que vence dentro del caché', async () => {
+  it('rehidrata la fecha y busca reemplazo cuando vence una oferta dentro del caché', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-10-03T01:00:00Z'));
     const source = makeProduct(new Date(Date.now() - 2.99 * 3600000));
@@ -44,8 +54,21 @@ describe('evidencia actual de portada', () => {
     expect(first.latestOfferProducts[0].prices[0].lastUpdated).toBeInstanceOf(Date);
     vi.setSystemTime(new Date(Date.now() + 2 * 60000));
     expect((await getHomeSectionsData()).latestOfferProducts).toEqual([]);
-    expect(readProductsFromDatabase).not.toHaveBeenCalled();
+    expect(readRecentOfferProducts).toHaveBeenCalledOnce();
     expect(cached.latestOfferProducts).toHaveLength(1);
+  });
+  it('recupera una oferta reciente fuera de las primeras fichas y no la inventa como baja', async () => {
+    const fresh = makeProduct(new Date());
+    vi.mocked(readRecentOfferProducts).mockResolvedValue([fresh]);
+    const result = await getHomeSectionsData();
+    expect(result.latestOfferProducts.map(product => product.id)).toEqual([fresh.id]);
+    expect(result.priceDropProducts).toEqual([]);
+    expect(getSharedCache).toHaveBeenCalledWith('home-sections', 'homepage-v5');
+  });
+  it('reconsulta un vacío cacheado y no oculta un fallo de lectura como ausencia de ofertas', async () => {
+    vi.mocked(getSharedCache).mockResolvedValue({ latestOfferProducts: [], featuredProducts: [], priceDropProducts: [], featuredFallbackUsed: false, priceDropFallbackUsed: false });
+    vi.mocked(readRecentOfferProducts).mockRejectedValue(new Error('RECENT_CATALOG_UNAVAILABLE'));
+    await expect(getHomeSectionsData()).rejects.toThrow('RECENT_CATALOG_UNAVAILABLE');
   });
 });
 

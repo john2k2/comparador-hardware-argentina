@@ -6,6 +6,7 @@ import type { DbProductRow } from '@/lib/persistence/product-read-types';
 import { SLOT_CATEGORIES, type BuildSlot } from './types';
 import { isStableRuntimeMode } from '@/lib/server/runtime-flags';
 import { getStableFixtureProducts } from '@/lib/server/stable-search-fixtures';
+import { readRecentOfferProducts } from '@/lib/persistence/recent-offer-products';
 
 export async function readBuilderCatalog(input: { slot?: BuildSlot; ids?: string[]; query?: string }) {
   if (isStableRuntimeMode()) {
@@ -17,6 +18,11 @@ export async function readBuilderCatalog(input: { slot?: BuildSlot; ids?: string
   }
   const supabase = getServerSupabaseReadClient();
   if (!supabase) throw new Error('CATALOG_UNAVAILABLE');
+  // Los precios se renuevan sin modificar products.updated_at. También hay
+  // publicaciones válidas de tiendas que todavía no tienen una fila agrupada.
+  if (!input.ids && input.slot && !input.query) {
+    return readRecentOfferProducts({ category: SLOT_CATEGORIES[input.slot] });
+  }
   let query = supabase.from('products').select(PRODUCT_SELECT_FIELDS);
   if (input.ids) query = query.in('id', input.ids);
   else if (input.slot) {

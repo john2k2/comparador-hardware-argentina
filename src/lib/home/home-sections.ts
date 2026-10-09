@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { readProductsFromDatabase } from '@/lib/persistence/product-read';
+import { readRecentOfferProducts } from '@/lib/persistence/recent-offer-products';
 import { hydrateProducts } from '@/lib/product-serialization';
 import { getSharedCache, setSharedCache } from '@/lib/server/shared-cache';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
@@ -65,6 +66,7 @@ const PRICE_DROP_MIN_AMOUNT_ARS = 10_000;
 const DB_PRODUCTS_LIMIT = 200;
 const MAX_HISTORY_ROWS = 5_000;
 const HOME_SECTIONS_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min fresh + 2.5 min stale-while-revalidate
+const HOME_SECTIONS_CACHE_KEY = 'homepage-v5';
 
 function toNumber(value: number | string | null | undefined, fallback = 0): number {
   if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;
@@ -312,23 +314,24 @@ async function readRecentHistoryRows(sinceIso: string): Promise<HistoryRow[]> {
 }
 
 async function readHomeSectionsData(): Promise<HomeSectionsData> {
-  const cached = await getSharedCache<HomeSectionsData>('home-sections', 'homepage-v4');
+  const cached = await getSharedCache<HomeSectionsData>('home-sections', HOME_SECTIONS_CACHE_KEY);
   if (cached) {
     const featuredProducts = hydrateProducts(cached.featuredProducts ?? []);
     const priceDropProducts = hydrateProducts(cached.priceDropProducts ?? []);
+    const latestOfferProducts = pickLatestOfferProducts(hydrateProducts(cached.latestOfferProducts ?? []));
     // La vigencia del caché no prolonga la ventana de las ofertas destacadas.
-    if ((cached.featuredFallbackUsed || featuredProducts.every(product => isFreshProduct(product, FEATURED_MAX_AGE_MS)))
+    if (latestOfferProducts.length > 0 && latestOfferProducts.length === cached.latestOfferProducts?.length
+      && (cached.featuredFallbackUsed || featuredProducts.every(product => isFreshProduct(product, FEATURED_MAX_AGE_MS)))
       && (cached.priceDropFallbackUsed || priceDropProducts.every(product => isFreshProduct(product, PRICE_DROP_WINDOW_MS))))
-      return { ...cached, featuredProducts, priceDropProducts,
-        latestOfferProducts: pickLatestOfferProducts(hydrateProducts(cached.latestOfferProducts ?? [])) };
+      return { ...cached, featuredProducts, priceDropProducts, latestOfferProducts };
   }
 
   const dropWindowStartMs = Date.now() - PRICE_DROP_WINDOW_MS;
   const dropWindowStartIso = new Date(dropWindowStartMs).toISOString();
-  const products = await readProductsFromDatabase({
-    sortBy: 'newest',
-    limit: DB_PRODUCTS_LIMIT,
-  });
+  const [products, recentProducts] = await Promise.all([
+    readProductsFromDatabase({ sortBy: 'newest', limit: DB_PRODUCTS_LIMIT }),
+    readRecentOfferProducts(),
+  ]);
 
   const featuredPrimary = pickFeaturedProducts(products, FEATURED_PRODUCTS_LIMIT);
   const featuredFallback = featuredPrimary.length === 0
@@ -366,7 +369,7 @@ async function readHomeSectionsData(): Promise<HomeSectionsData> {
   }
 
   const payload: HomeSectionsData = {
-    latestOfferProducts: pickLatestOfferProducts(products, LATEST_OFFERS_LIMIT),
+    latestOfferProducts: pickLatestOfferProducts(recentProducts, LATEST_OFFERS_LIMIT),
     featuredProducts,
     priceDropProducts,
     featuredFallbackUsed,
@@ -389,7 +392,7 @@ async function readHomeSectionsData(): Promise<HomeSectionsData> {
     },
   };
 
-  await setSharedCache('home-sections', 'homepage-v4', payload, HOME_SECTIONS_CACHE_TTL_MS);
+  await setSharedCache('home-sections', HOME_SECTIONS_CACHE_KEY, payload, HOME_SECTIONS_CACHE_TTL_MS);
   return payload;
 }
 
