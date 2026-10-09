@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { loadGuideCatalogProducts } from '@/lib/seo/guide-catalog';
+import { loadGuideCatalogSnapshot } from '@/lib/seo/guide-catalog';
 import { formatPriceARS } from '@/lib/price-utils';
 import { GUIDE_SLOT_KEYS, publishedGuideBudgetLimit, resolveLiveGuideSlots } from '@/lib/seo/budget-builder';
 import { getBudgetGuideBySlug } from '@/lib/seo/budget-guides-data';
@@ -48,7 +48,8 @@ export default async function BudgetGuidePage({ params }: Props) {
     notFound();
   }
 
-  const catalogProducts = await loadGuideCatalogProducts(guide);
+  const { products: catalogProducts, unavailableSlots } = await loadGuideCatalogSnapshot(guide);
+  const hasReadErrors = unavailableSlots.length > 0;
   const nonce = (await headers()).get('x-content-security-policy-nonce') ?? undefined;
   const resolved = resolveLiveGuideSlots(guide, catalogProducts);
   const refreshGroups = GUIDE_SLOT_KEYS.flatMap((key): RefreshTarget[][] => {
@@ -94,6 +95,14 @@ export default async function BudgetGuidePage({ params }: Props) {
         <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">
           [ PRESUPUESTO Y STOCK ]
         </h2>
+
+        {hasReadErrors && (
+          <p role="alert" className="mb-4 font-body text-sm leading-relaxed">
+            No pudimos consultar todas las ofertas. Conservamos los precios que pudimos leer con su fecha original;
+            que falte una pieza en esta lista no significa que esté agotada.{' '}
+            <a href={`/guia/${slug}`} className="underline underline-offset-4">Volver a consultar</a>.
+          </p>
+        )}
         
         <div className="grid md:grid-cols-2 gap-4">
           <div className="border-2 border-border p-4 text-center">
@@ -111,7 +120,7 @@ export default async function BudgetGuidePage({ params }: Props) {
           </div>
           
         </div>
-        {resolved.hasEstimates && resolved.fitsBudget && (
+        {resolved.hasEstimates && resolved.fitsBudget && !hasReadErrors && (
           <p className="mt-4 text-[12px] md:text-[12px] uppercase text-muted-foreground font-mono leading-relaxed">
             {slotCount - resolved.inStockSlots === 1
               ? 'Estamos buscando una oferta disponible para la pieza que falta.'
@@ -151,7 +160,7 @@ export default async function BudgetGuidePage({ params }: Props) {
 
       <BuilderCta budget={guide.budget} />
       {methodology && <EditorialMethodology content={methodology} />}
-      <EditorialAdPreview pathname={`/guia/${slug}`} contentReady={Boolean(methodology) && resolved.fitsBudget && resolved.inStockSlots === slotCount} />
+      <EditorialAdPreview pathname={`/guia/${slug}`} contentReady={!hasReadErrors && Boolean(methodology) && resolved.fitsBudget && resolved.inStockSlots === slotCount} />
 
       <div className="mb-8">
         <AdvisoryCta surface="budget_guide" />

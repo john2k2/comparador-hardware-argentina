@@ -89,7 +89,14 @@ export function buildGuideSearchOrFilter(searchTerm: string): string | null {
   // Cada término puede estar en cualquiera de los campos del resolver de guías;
   // la marca no siempre se repite en el título. Todos los términos son exigidos.
   // Sólo caracteres alfanuméricos entran a la sintaxis PostgREST.
-  return `and(${tokens.map((token) => `or(${fields.map((field) => `${field}.ilike.%${token}%`).join(',')})`).join(',')})`;
+  const clauses = tokens.map((token) => `or(${fields.map((field) => `${field}.ilike.%${token}%`).join(',')})`);
+  // catalog_document es generado desde estos campos y tiene un índice GIN.
+  // Un término alfanumérico con dígitos no cambia por sus reemplazos de sinónimos.
+  // El prefiltro reduce la lectura; todos los requisitos originales permanecen.
+  const indexedToken = tokens.filter((token) => token.length >= 3 && /\d/.test(token))
+    .sort((first, second) => second.length - first.length)[0];
+  if (indexedToken) clauses.unshift(`catalog_document.ilike.%${indexedToken}%`);
+  return `and(${clauses.join(',')})`;
 }
 
 export function applySharedProductFilters<TQuery>(queryBuilder: TQuery, filters: SharedProductQueryFilters): TQuery {

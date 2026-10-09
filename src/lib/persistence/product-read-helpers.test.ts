@@ -2,11 +2,29 @@ import { describe, expect, it } from 'vitest';
 import {
   applySharedProductFilters,
   buildSearchOrFilter,
+  buildGuideSearchOrFilter,
   clampLimit,
   sanitizeSearchTerm,
 } from '@/lib/persistence/product-read-helpers';
 
 describe('product-read-helpers', () => {
+  it.each([
+    ['procesador 5500', '5500'],
+    ['memoria ram ddr4', 'ddr4'],
+    ['disco solido nv3', 'nv3'],
+    ['asrock b550m hdv', 'b550m'],
+    ['ryzen 5', null],
+    ['procesadores amd', null],
+  ])('prefiltra %s sin depender de sinónimos alfabéticos', (query, token) => {
+    const filter = buildGuideSearchOrFilter(query)!;
+    if (token) expect(filter).toContain(`catalog_document.ilike.%${token}%`);
+    else expect(filter).not.toContain('catalog_document');
+    for (const term of query.split(' ')) {
+      expect(filter).toContain(`canonical_product_key.ilike.%${term}%`);
+      expect(filter).toContain(`name.ilike.%${term}%`);
+    }
+  });
+
   it('clamps limits and sanitizes search text', () => {
     expect(clampLimit()).toBe(240);
     expect(clampLimit(99999)).toBe(1200);

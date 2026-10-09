@@ -191,7 +191,7 @@ export async function readGuideCatalogCandidatesFromDatabase(
   query?: string,
 ): Promise<Product[]> {
   const supabase = getServerSupabaseReadClient();
-  if (!supabase) return [];
+  if (!supabase) throw new Error('Guide catalog database unavailable');
 
   const requestedLimit = Math.min(48, Math.max(1, Math.trunc(limit) || 1));
   const searchTerm = query ? sanitizeSearchTerm(query) : '';
@@ -214,7 +214,6 @@ export async function readGuideCatalogCandidatesFromDatabase(
   const { data, error } = await queryBuilder;
 
   if (error) {
-    if (EMPTY_RESULT_ERROR_CODES.has(error.code ?? '')) return [];
     throw new Error(`readGuideCatalogCandidatesFromDatabase: ${error.message}`);
   }
 

@@ -11,7 +11,59 @@ import { loadGuideCatalogProducts, loadGuidePriorityProducts } from './guide-cat
 import { getBudgetGuideBySlug } from './budget-guides-data';
 
 describe('modelos prioritarios de la guía', () => {
+  it('reintenta la próxima consulta tras un error, sin esperar el TTL ni cambiar fechas', async () => {
+    vi.resetModules();
+    const fresh = await import('./guide-catalog');
+    const product = { id: 'recoverable-cpu', updatedAt: new Date('2026-10-01T00:00:00Z') } as Product;
+    mocks.readGuideCatalogCandidatesFromDatabase.mockReset()
+      .mockRejectedValueOnce(new Error('database timeout'))
+      .mockResolvedValueOnce([product]);
+
+    await expect(fresh.loadGuidePriorityProducts('procesadores', ['ryzen 5500'])).rejects.toThrow('GUIDE_CATALOG_UNAVAILABLE');
+    expect(await fresh.loadGuidePriorityProducts('procesadores', ['ryzen 5500'])).toEqual([product]);
+    expect(mocks.readGuideCatalogCandidatesFromDatabase).toHaveBeenCalledTimes(2);
+    expect(product.updatedAt.toISOString()).toBe('2026-10-01T00:00:00.000Z');
+  });
+
+  it('conserva las lecturas válidas y separa un fallo de RAM de una GPU sin coincidencias', async () => {
+    vi.resetModules();
+    const fresh = await import('./guide-catalog');
+    const guide = getBudgetGuideBySlug('pc-gamer-1-millon')!;
+    mocks.readGuideCatalogCandidatesFromDatabase.mockReset().mockImplementation(async (category: string) => {
+      if (category === 'memoria-ram') throw new Error('database timeout');
+      if (category === 'tarjetas-graficas') return [];
+      return [{ id: category }] as Product[];
+    });
+
+    const first = await fresh.loadGuideCatalogSnapshot(guide);
+    expect(first.unavailableSlots).toEqual(['ram']);
+    expect(first.products).toHaveLength(5);
+    await expect(fresh.loadGuideCatalogProducts(guide)).rejects.toThrow('GUIDE_CATALOG_UNAVAILABLE');
+
+    mocks.readGuideCatalogCandidatesFromDatabase.mockImplementation(async (category: string) => [{ id: category }] as Product[]);
+    const recovered = await fresh.loadGuideCatalogSnapshot(guide);
+    expect(recovered.unavailableSlots).toEqual([]);
+    expect(recovered.products).toHaveLength(6);
+    expect(recovered.products.some((product) => product.id === 'memoria-ram')).toBe(true);
+    // La respuesta vacía de GPU sí fue válida y conserva su caché.
+    expect(recovered.products.some((product) => product.id === 'tarjetas-graficas')).toBe(false);
+  });
+
+  it('no memoriza como completa una consulta de dos modelos cuando falla uno', async () => {
+    vi.resetModules();
+    const fresh = await import('./guide-catalog');
+    mocks.readGuideCatalogCandidatesFromDatabase.mockReset().mockImplementation(async (_category: string, _limit: number, query: string) => {
+      if (query === 'second') throw new Error('database timeout');
+      return [{ id: query }] as Product[];
+    });
+    await expect(fresh.loadGuidePriorityProducts('tarjetas-graficas', ['first', 'second'])).rejects.toThrow('GUIDE_CATALOG_UNAVAILABLE');
+    mocks.readGuideCatalogCandidatesFromDatabase.mockImplementation(async (_category: string, _limit: number, query: string) => [{ id: query }] as Product[]);
+    expect(await fresh.loadGuidePriorityProducts('tarjetas-graficas', ['first', 'second'])).toEqual([{ id: 'first' }, { id: 'second' }]);
+    expect(mocks.readGuideCatalogCandidatesFromDatabase).toHaveBeenCalledTimes(4);
+  });
+
   it('rescata GPUs específicas fuera del top general sin repetir consultas en el TTL', async () => {
+    mocks.readGuideCatalogCandidatesFromDatabase.mockReset();
     mocks.readGuideCatalogCandidatesFromDatabase.mockImplementation(async (_category: string, _limit: number, query: string) => [
       { id: `gpu-${query}`, name: query },
     ] as Product[]);

@@ -14,6 +14,11 @@ export const GUIDE_COMPONENT_CONCURRENCY = 3;
 let catalogMemo: { at: number; products: Product[] } | null = null;
 const priorityMemo = new Map<string, { at: number; products: Product[] }>();
 
+export type GuideCatalogSnapshot = {
+  products: Product[];
+  unavailableSlots: (keyof BudgetGuideDefinition['components'])[];
+};
+
 async function mapWithConcurrency<T, R>(
   items: readonly T[],
   concurrency: number,
@@ -41,7 +46,7 @@ async function readCategoryCatalog(category: HardwareCategory): Promise<Product[
     return await readGuideCatalogCandidatesFromDatabase(category, CATEGORY_LIMIT);
   } catch (error) {
     logger.warn('No se pudo leer una categoria del catalogo de guia', { category, error });
-    return [];
+    throw error;
   }
 }
 
@@ -56,9 +61,10 @@ async function fetchGuideCatalogProducts(): Promise<Product[]> {
 
 export async function loadGuideCatalogProducts(guide?: BudgetGuideDefinition): Promise<Product[]> {
   if (guide) {
-    const batches = await mapWithConcurrency(Object.values(guide.components), GUIDE_COMPONENT_CONCURRENCY,
-      (spec) => loadGuidePriorityProducts(spec.category, spec.searchTerms));
-    return [...new Map(batches.flat().map((product) => [product.id, product])).values()];
+    const snapshot = await loadGuideCatalogSnapshot(guide);
+    // El planificador no puede interpretar un fallo como una pieza sin destinos.
+    if (snapshot.unavailableSlots.length) throw new Error('GUIDE_CATALOG_UNAVAILABLE');
+    return snapshot.products;
   }
   const now = Date.now();
   if (catalogMemo && now - catalogMemo.at < CATALOG_TTL_MS && catalogMemo.products.length > 0) {
@@ -72,24 +78,47 @@ export async function loadGuideCatalogProducts(guide?: BudgetGuideDefinition): P
   return products;
 }
 
+/** Conserva las lecturas válidas y distingue una consulta fallida de una consulta vacía. */
+export async function loadGuideCatalogSnapshot(guide: BudgetGuideDefinition): Promise<GuideCatalogSnapshot> {
+  const entries = Object.entries(guide.components) as [keyof BudgetGuideDefinition['components'], BudgetGuideDefinition['components'][keyof BudgetGuideDefinition['components']]][];
+  const batches = await mapWithConcurrency(entries, GUIDE_COMPONENT_CONCURRENCY, async ([slot, spec]) => {
+    const result = await loadGuidePrioritySnapshot(spec.category, spec.searchTerms);
+    return { slot, ...result };
+  });
+  return {
+    products: [...new Map(batches.flatMap((batch) => batch.products).map((product) => [product.id, product])).values()],
+    unavailableSlots: batches.filter((batch) => !batch.available).map((batch) => batch.slot),
+  };
+}
+
 /** Amplía una guía con modelos concretos que pueden quedar fuera del top 24 general. */
 export async function loadGuidePriorityProducts(category: HardwareCategory, terms: string[]): Promise<Product[]> {
+  const result = await loadGuidePrioritySnapshot(category, terms);
+  if (!result.available) throw new Error('GUIDE_CATALOG_UNAVAILABLE');
+  return result.products;
+}
+
+async function loadGuidePrioritySnapshot(category: HardwareCategory, terms: string[]): Promise<{ products: Product[]; available: boolean }> {
   const queries = [...new Set(terms.map((term) => term.trim()).filter(Boolean))].slice(0, PRIORITY_QUERIES_PER_COMPONENT);
-  if (queries.length === 0) return [];
+  if (queries.length === 0) return { products: [], available: true };
   const cacheKey = `${category}:${queries.join('|')}`;
   const now = Date.now();
   const cached = priorityMemo.get(cacheKey);
-  if (cached && now - cached.at < CATALOG_TTL_MS) return cached.products;
+  if (cached && now - cached.at < CATALOG_TTL_MS) return { products: cached.products, available: true };
 
+  let available = true;
   const batches = await mapWithConcurrency(queries, PRIORITY_QUERIES_PER_COMPONENT, async (query) => {
     try {
       return await readGuideCatalogCandidatesFromDatabase(category, 8, query);
     } catch (error) {
       logger.warn('No se pudo leer un modelo prioritario de la guia', { category, query, error });
+      available = false;
       return [];
     }
   });
   const products = [...new Map(batches.flat().map((product) => [product.id, product])).values()];
-  priorityMemo.set(cacheKey, { at: now, products });
-  return products;
+  // Nunca memorizar una respuesta vacía o parcial causada por un error.
+  // La próxima petición puede recuperar el servicio sin esperar cinco minutos.
+  if (available) priorityMemo.set(cacheKey, { at: now, products });
+  return { products, available };
 }
