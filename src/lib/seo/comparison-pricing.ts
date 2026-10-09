@@ -2,6 +2,7 @@ import { getComparableStorePrices } from '@/lib/price-utils';
 import type { ProductPrice } from '@/lib/types';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
 import { isCatalogOfferFresh, isOfferFresh } from '@/lib/price-freshness';
+import { resolveHardwareCategoryForProduct } from '@/lib/catalog/hardware-categories';
 
 export type ComparisonSidePricing = {
   prices: ProductPrice[];
@@ -19,9 +20,10 @@ export type ComparisonPricing = {
   storeCoverageCopy: string;
 };
 
-function inStockComparable(prices: ProductPrice[] | undefined): ProductPrice[] {
+function inStockComparable(prices: ProductPrice[] | undefined, name: string): ProductPrice[] {
+  const product = { name, category: resolveHardwareCategoryForProduct(name) };
   // Filtrar antes de deduplicar: una oferta pendiente más barata no debe ocultar otra válida.
-  return getComparableStorePrices((prices ?? []).filter((price) => !needsIdentityReview(price) && isCatalogOfferFresh(price.lastUpdated)))
+  return getComparableStorePrices((prices ?? []).filter((price) => !needsIdentityReview(price, product) && isCatalogOfferFresh(price.lastUpdated)))
     .filter((price) => price.price > 0 && (price.stock === 'in-stock' || price.stock === 'low-stock'))
     .sort((a, b) => a.price - b.price);
 }
@@ -54,8 +56,8 @@ export function resolveComparisonPricing(input: {
   product1Prices?: ProductPrice[];
   product2Prices?: ProductPrice[];
 }): ComparisonPricing {
-  const side1Prices = inStockComparable(input.product1Prices);
-  const side2Prices = inStockComparable(input.product2Prices);
+  const side1Prices = inStockComparable(input.product1Prices, input.product1Name);
+  const side2Prices = inStockComparable(input.product2Prices, input.product2Name);
   const side1 = toSide(side1Prices);
   const side2 = toSide(side2Prices);
   const storeCount = uniqueStoreCount(side1Prices, side2Prices);

@@ -93,3 +93,17 @@ describe('resolveComparisonPricing', () => {
     expect(pricing.side2.offerCount).toBe(2);
   });
 });
+
+it('una oferta histórica sin dictamen tampoco compara HDD como SSD en una comparativa', () => {
+  const pricing = resolveComparisonPricing({
+    product1Name: 'Disco Solido SSD WD Green 1TB', product2Name: 'SSD Kingston NV3 1TB',
+    product1Prices: [offer({ storeId: 'maxtecno', price: 254647.83,
+      url: 'https://maxtecno.com.ar/producto/disco-externo-hdd-western-digital-elements-1tb-usb/' })],
+    product2Prices: [offer({ storeId: 'mexx', price: 277869,
+      url: 'https://mexx.com.ar/ssd-kingston-nv3-1tb' })],
+  });
+  expect(pricing.side1.bestPrice).toBeNull();
+  expect(pricing.side1.offerCount).toBe(0);
+  expect(pricing.canDeclareWinner).toBe(false);
+  expect(pricing.side2.bestPrice).toBe(277869);
+});

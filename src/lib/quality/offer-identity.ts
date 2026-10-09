@@ -1,6 +1,7 @@
 import { extractGpuBoardAttributes, normalizeIdentityText, parseCpuModelSignature, parseGpuChipSignature } from '@/lib/product-identity';
 import type { HardwareCategory, OfferSourceIdentity } from '@/lib/types';
 import { attributeProofMatches, cpuVariantAttributes, type OfferAttributeProof } from './offer-attribute-proof';
+import { hasExplicitStorageConflict } from './storage-identity';
 
 export const IDENTITY_REVIEW_MIN_CONFIDENCE = 0.8;
 
@@ -119,6 +120,7 @@ export function buildIdentityEvidence(name: string, category: HardwareCategory, 
 export function hasExplicitIdentityConflict(evidence: IdentityEvidence): boolean {
   if (/\b(outlet|reacondicionado|usado|refurbished)\b/i.test(evidence.offerText) && !/\b(outlet|reacondicionado|usado|refurbished)\b/i.test(evidence.name)) return true;
   if (evidence.sourceTitle && hasExplicitIdentityConflict({ name: evidence.name, category: evidence.category, offerText: evidence.sourceTitle })) return true;
+  if (evidence.category === 'almacenamiento' && hasExplicitStorageConflict(evidence.name, evidence.offerText)) return true;
   if (['fuentes-alimentacion', 'gabinetes', 'perifericos', 'almacenamiento', 'motherboards', 'memoria-ram'].includes(evidence.category)) {
     const explicitColor = (value: string) => {
       const colors = new Set([...value.matchAll(/\b(white|blanc[oa]|black|negr[oa]|blue|azul|red|roj[oa])\b/gi)]

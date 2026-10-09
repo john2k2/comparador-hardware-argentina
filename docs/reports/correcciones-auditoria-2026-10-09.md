@@ -90,3 +90,24 @@ Reversión: retirar `buildGuideSearchOrFilter`, su uso exclusivo en el lector de
 guías y la regresión correspondiente. No revertir el guard de identidad del lector
 general. Pendiente: observar las ofertas guardadas por el próximo ciclo normal;
 no se lanzó una comprobación manual ni se cambió la selección editorial.
+
+## A01 — Identidad de almacenamiento
+
+El guard compartido detecta contradicciones explícitas de medio, interfaz,
+formato, ubicación interna/externa, marca, modelo y capacidad. La ficha de WD Green
+auditada ya no puede usar un HDD WD Elements, una microSD Kingston o un SSD ADATA
+como oferta de ese producto. La restricción alcanza ficha, mínimo vigente,
+JSON-LD, guías, comparativas y armador. Una omisión de atributos no acredita
+equivalencia. Un dictamen antiguo no prevalece sobre una contradicción explícita.
+
+Validación: `storage-identity.test.ts` reproduce las tres URLs de la ficha pública,
+incluye ofertas con fecha renovada sólo dentro de la fixture para aislar identidad,
+y comprueba una siguiente oferta exacta. Verifica que datos y fechas originales
+no cambien. `comparison-pricing.test.ts` cubre el consumidor de comparativas.
+Ambos pasaron dentro de `npm run verify` y en revisión focal independiente.
+
+Reversión: retirar el helper de almacenamiento y su llamada en `offer-identity`,
+con la propagación de contexto a `comparison-pricing` y sus tests. El guard de
+páginas descrito más adelante depende de esta protección para almacenamiento.
+No se borró ni reescribió el catálogo: la contaminación almacenada sigue siendo
+deuda a reparar por una operación posterior revisable.
