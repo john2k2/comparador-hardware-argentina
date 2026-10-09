@@ -15,6 +15,9 @@ test('CSP permite hidratar Next.js y cambiar el formulario de cuenta', async ({ 
   const policy = response?.headers()['content-security-policy'];
   const nonce = policy?.match(/'nonce-([^']+)'/)?.[1];
   expect(nonce).toBeTruthy();
+  expect(response?.headers()['x-frame-options']).toBe('DENY');
+  expect(response?.headers()['x-content-type-options']).toBe('nosniff');
+  expect(response?.headers()['referrer-policy']).toBe('strict-origin-when-cross-origin');
 
   // Estos scripts los genera Next.js, no el layout de la aplicación.
   const flightNonces = await page.locator('script').evaluateAll((scripts) => scripts

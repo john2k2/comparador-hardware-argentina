@@ -198,14 +198,19 @@ export function getStableFixtureProducts(input: {
   const normalizedQuery = input.query ? normalizeText(input.query) : '';
   const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
 
-  let products = STABLE_PRODUCTS.filter((product) => {
+  const storeProducts = STABLE_PRODUCTS.flatMap((product) => {
+    if (!input.selectedStoreIds?.size) return [product];
+    const prices = product.prices.filter((price) => input.selectedStoreIds!.has(price.storeId));
+    if (!prices.length) return [];
+    const values = prices.map((price) => price.price);
+    return [{ ...product, prices, lowestPrice: Math.min(...values), highestPrice: Math.max(...values),
+      averagePrice: Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) }];
+  });
+  // Filtrar y ordenar con los precios de las tiendas elegidas, igual que la API.
+  let products = storeProducts.filter((product) => {
     if (input.category && product.category !== input.category) return false;
     if (input.minPrice !== undefined && product.lowestPrice < input.minPrice) return false;
     if (input.maxPrice !== undefined && product.lowestPrice > input.maxPrice) return false;
-    if (input.selectedStoreIds && input.selectedStoreIds.size > 0) {
-      const hasMatchingStore = product.prices.some((price) => input.selectedStoreIds!.has(price.storeId));
-      if (!hasMatchingStore) return false;
-    }
     if (!normalizedQuery) return true;
 
     const haystack = normalizeText(`${product.name} ${product.brand} ${product.model} ${product.description ?? ''}`);

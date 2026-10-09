@@ -82,10 +82,8 @@ export function proxy(request: NextRequest) {
   });
   response.headers.set('Content-Security-Policy', cspPolicy);
   response.headers.set('x-content-security-policy-nonce', nonce);
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('X-XSS-Protection', '1; mode=block');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  // Las cabeceras fijas provienen de next.config.ts. Repetirlas aquí hace que
+  // OpenNext las concatene (por ejemplo, "nosniff, nosniff").
   return response;
 }
 

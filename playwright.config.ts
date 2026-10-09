@@ -22,6 +22,11 @@ export default defineConfig({
       DISABLE_INTERNAL_BACKGROUND_REFRESH: '1',
       DISABLE_LIVE_SCRAPING: '1',
       ENABLE_ON_DEMAND_REFRESH: '0',
+      // Las rutas de autenticación se simulan en cada prueba, sin cuentas reales.
+      NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:55440',
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'e2e-public-key',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'e2e-public-key',
+      SUPABASE_URL: 'http://127.0.0.1:55440',
       SUPABASE_SECRET_KEY: '',
       SUPABASE_SERVICE_ROLE_KEY: '',
       CRON_SECRET: '',

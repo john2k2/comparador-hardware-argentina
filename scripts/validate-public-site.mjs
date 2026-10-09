@@ -12,6 +12,7 @@ const fixtures = process.env.PUBLIC_QA_FIXTURES === '1';
 const workerRuntime = process.env.PUBLIC_QA_WORKER === '1';
 const results = [];
 const observations = [];
+let publisherId;
 await mkdir(output, { recursive: true });
 async function check(path, verify) {
   if (results.length) await pause(1000);
@@ -51,11 +52,25 @@ for (const query of searches) await check(`/api/search${query}`, (response, body
     expectedEmpty: !params.get('q')?.includes('inexistente') || (products.length === 0 && data.pagination?.total === 0),
   }, { count: products.length, total: data.pagination?.total, page: data.pagination?.page, prices, ids: products.map(product => product.id) });
 });
-for (const path of ['/', '/comparar/procesadores', '/comparar/placas-de-video', '/search?q=ryzen', '/guia', '/guia/pc-gamer-1-millon', '/comparativa/rtx-4060-vs-rx-7600', '/acerca', '/contacto', '/privacidad', '/terminos', '/auth']) {
+for (const path of ['/', '/comparar/procesadores', '/comparar/placas-de-video', '/search?q=ryzen', '/guia',
+  '/guia/pc-gamer-1-millon', '/guia/pc-gamer-2-millones', '/guia/pc-gamer-3-millones',
+  '/comparativa/rtx-4060-vs-rx-7600', '/comparativa/ryzen-5-7600x-vs-ryzen-7-5700x',
+  '/comparativa/rtx-5070-vs-rtx-4070', '/comparativa/ryzen-7-9800x3d-vs-i9-14900k',
+  '/comparativa/i5-14600k-vs-ryzen-5-7600x', '/comparativa/rtx-5090-vs-rx-9070-xt', '/comparativa/ddr5-vs-ddr4',
+  '/acerca', '/contacto', '/privacidad', '/terminos', '/auth']) {
   await check(path, (response, body) => {
     const $ = load(body);
     const schemas = $('script[type="application/ld+json"]').map((_, element) => { try { return JSON.parse($(element).text())['@type']; } catch { return 'invalid'; } }).get();
     const canonical = $('link[rel="canonical"]').attr('href');
+    if (path === '/') publisherId = $('meta[name="google-adsense-account"]').attr('content')?.replace(/^ca-/, '');
+    if (path.startsWith('/guia/pc-gamer-')) {
+      const summary = $('main section').first().text();
+      observations.push({ kind: 'guide-availability', path,
+        recentParts: Number(summary.match(/(\d) de 7 partes con oferta observada/)?.[1] ?? 0),
+        readUnavailable: summary.includes('No pudimos consultar todas las ofertas'),
+        overBudget: summary.includes('exceden el límite'),
+        note: 'Un HTTP 200 no acredita siete ofertas ni compatibilidad; comprobar publicaciones y fechas antes de renovar la guía.' });
+    }
     return verdict({
       status: response.status === 200, heading: $('h1').length === 1, title: $('title').text().length > 0,
       schemas: !schemas.includes('invalid'), canonical: !!canonical && new URL(canonical).origin === canonicalOrigin,
@@ -64,6 +79,14 @@ for (const path of ['/', '/comparar/procesadores', '/comparar/placas-de-video', 
     }, { h1: $('h1').text(), canonical, schemas, robots: $('meta[name="robots"]').attr('content') });
   });
 }
+await check('/ads.txt', (response, body) => verdict({
+  status: response.status === 200,
+  contentType: /text\/plain/i.test(response.headers.get('content-type') ?? ''),
+  publisher: /^pub-\d{16}$/.test(publisherId ?? '') && body.split(/\r?\n/).some(line => {
+    const fields = line.split(',').map(value => value.trim());
+    return fields[0] === 'google.com' && fields[1] === publisherId && fields[2] === 'DIRECT' && fields[3] === 'f08c47fec0942fa0';
+  }),
+}, { publisherId, note: 'Verifica el archivo servido y su relación con la metadata. La detección y aprobación de Google se comprueban en AdSense.' }));
 for (const path of ['/product/testsprite-nonexistent-9382', '/indice-precios-hardware', '/indice-precios-hardware/datos.csv']) {
   await check(path, (response, body) => {
     const $ = load(body);
@@ -72,7 +95,11 @@ for (const path of ['/product/testsprite-nonexistent-9382', '/indice-precios-har
   });
 }
 for (const path of ['/sitemap.xml', '/llms.txt']) await check(path, (response, body) => verdict({ status: response.status === 200, retiredIndexAbsent: !body.includes('/indice-precios-hardware') }));
-await check('/robots.txt', (response, body) => verdict({ status: response.status === 200, crawlerPolicy: fixtures ? /Disallow:\s*\/\s*$/m.test(body) : /sitemap/i.test(body) }));
+await check('/robots.txt', (response, body) => verdict({
+  status: response.status === 200,
+  crawlerPolicy: /Sitemap:\s*https:\/\/www\.comparador-hardware\.com\.ar\/sitemap\.xml/i.test(body)
+    && ['/admin', '/api', '/auth'].every(path => body.split(/\r?\n/).some(line => line.trim() === `Disallow: ${path}`)),
+}));
 await check('/api/juegos-digitales', (response, body) => {
   const data = JSON.parse(body);
   const offers = Array.isArray(data.offers) ? data.offers : [];
