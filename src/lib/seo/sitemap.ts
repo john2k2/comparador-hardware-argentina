@@ -1,4 +1,6 @@
 import { getServerSupabaseReadClient } from '@/lib/server/supabase-server';
+import { logger } from '@/lib/logger';
+import { isIndexableProductId } from './product-indexing';
 
 // Supabase limita las respuestas REST a 1.000 filas. El índice debe usar el
 // mismo tamaño para que cada página listada contenga todas sus URLs.
@@ -18,6 +20,11 @@ export type ProductSitemapCountResult = {
 
 const PRODUCT_COUNT_MAX_ATTEMPTS = 2;
 const PRODUCT_COUNT_RETRY_DELAY_MS = 75;
+const SITEMAP_READ_TIMEOUT_MS = 2_500;
+
+export type ProductSitemapPageResult =
+  | { status: 'available'; rows: ProductSitemapRow[] }
+  | { status: 'unavailable' };
 
 let lastKnownIndexedProductCount: number | null = null;
 
@@ -33,49 +40,50 @@ export async function readIndexedProductCount(): Promise<ProductSitemapCountResu
       : { count: lastKnownIndexedProductCount, source: 'memory' };
   }
 
-  let lastErrorMessage = 'respuesta invalida';
-
   for (let attempt = 1; attempt <= PRODUCT_COUNT_MAX_ATTEMPTS; attempt += 1) {
-    const { data, error } = await supabase.rpc('count_indexable_sitemap_products');
-    const parsedCount = Number(data);
-
-    if (!error && Number.isFinite(parsedCount)) {
-      const count = Math.max(0, parsedCount);
-      lastKnownIndexedProductCount = count;
-      return { count, source: 'database' };
-    }
-
-    lastErrorMessage = error?.message ?? 'respuesta invalida';
+    try {
+      const { data, error } = await supabase.rpc('count_indexable_sitemap_products')
+        .abortSignal(AbortSignal.timeout(SITEMAP_READ_TIMEOUT_MS));
+      // Number(null) y Number('') son cero: no acreditan un catálogo vacío.
+      const count = typeof data === 'number' || (typeof data === 'string' && /^\d+$/.test(data)) ? Number(data) : NaN;
+      if (!error && Number.isSafeInteger(count) && count >= 0) {
+        lastKnownIndexedProductCount = count;
+        return { count, source: 'database' };
+      }
+    } catch { /* El último conteo confirmado puede sostener el índice. */ }
     if (attempt < PRODUCT_COUNT_MAX_ATTEMPTS) {
       await waitBeforeCountRetry();
     }
   }
 
-  console.warn('[sitemap] grouped product count unavailable:', lastErrorMessage);
+  logger.warn('Conteo de productos del sitemap no disponible');
   return lastKnownIndexedProductCount === null
     ? { count: null, source: 'unavailable' }
     : { count: lastKnownIndexedProductCount, source: 'memory' };
 }
 
-export async function countIndexedProducts(): Promise<number> {
-  return (await readIndexedProductCount()).count ?? 0;
+export async function countIndexedProducts(): Promise<number | null> {
+  return (await readIndexedProductCount()).count;
 }
 
-export async function readProductSitemapPage(page: number, pageSize = PRODUCT_SITEMAP_PAGE_SIZE): Promise<ProductSitemapRow[]> {
+export async function readProductSitemapPage(page: number, pageSize = PRODUCT_SITEMAP_PAGE_SIZE): Promise<ProductSitemapPageResult> {
   const safePageSize = Math.min(PRODUCT_SITEMAP_PAGE_SIZE, Math.max(1, pageSize));
   const safePage = Math.max(0, Math.trunc(page));
   const supabase = getServerSupabaseReadClient();
-  if (!supabase) return [];
+  if (!supabase) return { status: 'unavailable' };
 
-  const { data, error } = await supabase.rpc('read_indexable_sitemap_products', {
-    p_page: safePage,
-    p_page_size: safePageSize,
-  });
-
-  if (error) {
-    console.warn('[sitemap] grouped product page unavailable:', error.message);
-    return [];
-  }
-
-  return (data ?? []) as ProductSitemapRow[];
+  try {
+    const { data, error } = await supabase.rpc('read_indexable_sitemap_products', {
+      p_page: safePage,
+      p_page_size: safePageSize,
+    }).abortSignal(AbortSignal.timeout(SITEMAP_READ_TIMEOUT_MS));
+    if (!error && Array.isArray(data) && data.length <= safePageSize && data.every((row) =>
+      row && typeof row.id === 'string' && isIndexableProductId(row.id)
+      && (row.updated_at === null || typeof row.updated_at === 'string')
+      && (row.canonical_product_key === null || typeof row.canonical_product_key === 'string'))) {
+      return { status: 'available', rows: data as ProductSitemapRow[] };
+    }
+  } catch { /* Una excepción de transporte tampoco demuestra ausencia de URLs. */ }
+  logger.warn('Página de productos del sitemap no disponible', { page: safePage });
+  return { status: 'unavailable' };
 }

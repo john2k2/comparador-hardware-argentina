@@ -33,15 +33,28 @@ describe('sitemap index route', () => {
     expect(readProductSitemapPageMock).not.toHaveBeenCalled();
   });
 
-  it('does not cache a transient count failure as a catalog-free sitemap', async () => {
+  it('no publica un índice vacío ni sólo la primera página cuando falla el conteo', async () => {
     readIndexedProductCountMock.mockResolvedValue({ count: null, source: 'unavailable' });
-    readProductSitemapPageMock.mockResolvedValue([{ id: 'agrupado-cpu-1' }]);
-
     const response = await GET();
-    const body = await response.text();
-
-    expect(body).toContain('/product-sitemap/0.xml');
+    expect(response.status).toBe(503);
     expect(response.headers.get('cache-control')).toBe('no-store');
-    expect(readProductSitemapPageMock).toHaveBeenCalledWith(0, 1);
+    expect(response.headers.get('retry-after')).toBe('300');
+    expect(await response.text()).not.toContain('<sitemapindex');
+    expect(readProductSitemapPageMock).not.toHaveBeenCalled();
+  });
+  it('mantiene todas las páginas del último conteo confirmado sin cachear el fallback', async () => {
+    readIndexedProductCountMock.mockResolvedValue({ count: 2001, source: 'memory' });
+    const response = await GET();
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('/product-sitemap/2.xml');
+    expect(response.headers.get('cache-control')).toBe('no-store');
+  });
+  it('un catálogo confirmado sin productos conserva el sitemap editorial', async () => {
+    readIndexedProductCountMock.mockResolvedValue({ count: 0, source: 'database' });
+    const response = await GET();
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    expect(body).toContain('/sitemap.xml');
+    expect(body).not.toContain('product-sitemap');
   });
 });

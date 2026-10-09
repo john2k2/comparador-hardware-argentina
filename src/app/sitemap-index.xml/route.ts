@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import {
   PRODUCT_SITEMAP_PAGE_SIZE,
   readIndexedProductCount,
-  readProductSitemapPage,
 } from '@/lib/seo/sitemap';
 import { toAbsoluteUrl } from '@/lib/seo/url-utils';
 
@@ -16,12 +15,14 @@ function escapeXml(value: string): string {
 
 export async function GET() {
   const countResult = await readIndexedProductCount();
-  const fallbackHasProducts = countResult.count === null
-    ? (await readProductSitemapPage(0, 1)).length > 0
-    : false;
-  const totalPages = countResult.count === null
-    ? (fallbackHasProducts ? 1 : 0)
-    : (countResult.count > 0 ? Math.ceil(countResult.count / PRODUCT_SITEMAP_PAGE_SIZE) : 0);
+  if (countResult.count === null) {
+    // Una muestra de la página cero tampoco prueba cuántas páginas existen.
+    return new NextResponse('Sitemap temporalmente no disponible', {
+      status: 503,
+      headers: { 'Cache-Control': 'no-store', 'Retry-After': '300' },
+    });
+  }
+  const totalPages = Math.ceil(countResult.count / PRODUCT_SITEMAP_PAGE_SIZE);
   const urls = [
     toAbsoluteUrl('/sitemap.xml'),
     ...Array.from({ length: totalPages }, (_, index) => toAbsoluteUrl(`/product-sitemap/${index}.xml`)),

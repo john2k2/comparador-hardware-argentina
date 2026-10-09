@@ -16,11 +16,18 @@ export async function GET(
 ) {
   const { page } = await context.params;
   const pageIndex = Number(page.replace(/\.xml$/i, ''));
-  if (!Number.isFinite(pageIndex) || pageIndex < 0) {
+  if (!/^\d+(?:\.xml)?$/i.test(page) || !Number.isSafeInteger(pageIndex) || pageIndex < 0) {
     return new NextResponse('Not Found', { status: 404 });
   }
 
-  const rows = await readProductSitemapPage(pageIndex);
+  const result = await readProductSitemapPage(pageIndex);
+  if (result.status === 'unavailable') {
+    return new NextResponse('Sitemap temporalmente no disponible', {
+      status: 503,
+      headers: { 'Cache-Control': 'no-store', 'Retry-After': '300' },
+    });
+  }
+  const rows = result.rows;
   if (rows.length === 0) {
     return new NextResponse('Not Found', { status: 404 });
   }
