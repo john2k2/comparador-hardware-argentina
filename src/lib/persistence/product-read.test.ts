@@ -184,3 +184,28 @@ describe('guide listing preservation from database rows to resolution', () => {
     expect(resolveGuideComponent(spec, products).priceSource).toBe('estimate');
   });
 });
+
+it('la lectura de guía busca el modelo completo antes de limitar ocho candidatas', async () => {
+  const query = {
+    select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),
+    like: vi.fn().mockReturnThis(), gt: vi.fn().mockReturnThis(), or: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(), limit: vi.fn().mockReturnThis(),
+    then: (resolve: (result: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(resolve),
+  };
+  getServerSupabaseReadClientMock.mockReturnValue({ from: vi.fn(() => query) });
+  await readGuideCatalogCandidatesFromDatabase('memoria-ram', 8, 'mancer 16gb ddr4 3200 vant');
+  expect(query.limit).toHaveBeenCalledWith(8);
+  const filter = query.or.mock.calls[0][0] as string;
+  // El AND externo exige cada término; su OR admite los campos del resolver.
+  const branches = filter.match(/or\([^)]+\)/g)!;
+  expect(filter.startsWith('and(')).toBe(true);
+  expect(branches).toHaveLength(5);
+  for (const [index, token] of ['mancer', '16gb', 'ddr4', '3200', 'vant'].entries()) {
+    for (const field of ['name', 'brand', 'model', 'normalized_title', 'canonical_product_key']) {
+      expect(branches[index]).toContain(`${field}.ilike.%${token}%`);
+    }
+  }
+  query.or.mockClear();
+  await readGuideCatalogCandidatesFromDatabase('memoria-ram', 8, '%,()');
+  expect(query.or).not.toHaveBeenCalled();
+});

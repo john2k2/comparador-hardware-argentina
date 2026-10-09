@@ -79,6 +79,19 @@ export function buildSearchOrFilter(searchTerm: string): string {
   return `name.ilike.%${databaseCandidate}%,brand.ilike.%${databaseCandidate}%,model.ilike.%${databaseCandidate}%,normalized_title.ilike.%${databaseCandidate}%,family_key.ilike.%${databaseCandidate}%,variant_key.ilike.%${databaseCandidate}%`;
 }
 
+/** Las guías consultan modelos concretos antes de aplicar su ventana de ocho
+ * resultados. Usar sólo «3200» dejaba afuera Mancer Vant entre RAM sin relación. */
+export function buildGuideSearchOrFilter(searchTerm: string): string | null {
+  const tokens = [...new Set(searchTerm.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .match(/[a-z0-9]+/g) ?? [])];
+  if (!tokens.length) return null;
+  const fields = ['name', 'brand', 'model', 'normalized_title', 'canonical_product_key'];
+  // Cada término puede estar en cualquiera de los campos del resolver de guías;
+  // la marca no siempre se repite en el título. Todos los términos son exigidos.
+  // Sólo caracteres alfanuméricos entran a la sintaxis PostgREST.
+  return `and(${tokens.map((token) => `or(${fields.map((field) => `${field}.ilike.%${token}%`).join(',')})`).join(',')})`;
+}
+
 export function applySharedProductFilters<TQuery>(queryBuilder: TQuery, filters: SharedProductQueryFilters): TQuery {
   let next = queryBuilder as TQuery & {
     eq: (column: string, value: string) => TQuery;

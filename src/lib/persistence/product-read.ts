@@ -3,6 +3,7 @@ import { getServerSupabaseReadClient } from '@/lib/server/supabase-server';
 import { applyDatabaseReadTransforms } from '@/lib/persistence/product-read-grouping';
 import {
   applySharedProductFilters,
+  buildGuideSearchOrFilter,
   clampLimit,
   EMPTY_RESULT_ERROR_CODES,
   PRODUCT_SELECT_FIELDS,
@@ -202,7 +203,11 @@ export async function readGuideCatalogCandidatesFromDatabase(
   // Las consultas por modelo también admiten una oferta individual recién
   // observada, aunque todavía no se haya persistido su agrupación canónica.
   if (!searchTerm) queryBuilder = queryBuilder.like('id', 'agrupado-%');
-  else queryBuilder = applySharedProductFilters(queryBuilder, { searchTerm });
+  else {
+    const filter = buildGuideSearchOrFilter(searchTerm);
+    if (!filter) return [];
+    queryBuilder = queryBuilder.or(filter);
+  }
   const { data, error } = await queryBuilder;
 
   if (error) {

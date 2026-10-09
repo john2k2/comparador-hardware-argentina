@@ -66,3 +66,27 @@ invoca los handlers y verifica estado, cabeceras y XML; no precisa navegador.
 Reversión: `src/lib/seo/sitemap.ts`, ambos handlers y sus tests. No hay cambios SQL.
 Límite: esto corrige la respuesta ante el fallo; no acelera por sí solo la consulta
 productiva ni garantiza que Google ya haya vuelto a procesar el sitemap.
+
+## A03 — Candidatas de las guías antes del límite
+
+La búsqueda de una memoria Mancer Vant elegía «3200» como término de consulta y
+agotaba la ventana de ocho filas con otros modelos. Se exigen los términos del
+modelo antes de aplicar ese límite; cada término puede estar en título, marca,
+modelo, título normalizado o clave canónica. La marca puede estar fuera del título.
+
+La lectura productiva de diagnóstico encontró la Mancer almacenada; su oferta
+estaba vencida y pendiente de revisión. Encontrar la fila no la vuelve comprable.
+Se mantienen identidad, stock, tres horas por oferta y margen editorial del 10%.
+El [ciclo de guías observado](https://github.com/john2k2/comparador-hardware-argentina/actions/runs/37957708442)
+no probó recuperación de las siete piezas de cada guía.
+
+Validación: contrato del lector en `product-read.test.ts`, incluyendo términos
+repartidos entre campos y entrada vacía después de sanitizar. Tanda integrada
+`npx vitest run src/lib/persistence/product-read.test.ts src/lib/search/read-initial-search-page.test.ts`:
+30 pruebas aprobadas en el corte de integración, más la revisión independiente
+del filtro corregido. El RPC se simula; la lectura de diagnóstico fue sólo lectura.
+
+Reversión: retirar `buildGuideSearchOrFilter`, su uso exclusivo en el lector de
+guías y la regresión correspondiente. No revertir el guard de identidad del lector
+general. Pendiente: observar las ofertas guardadas por el próximo ciclo normal;
+no se lanzó una comprobación manual ni se cambió la selección editorial.
