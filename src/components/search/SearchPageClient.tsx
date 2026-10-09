@@ -239,6 +239,7 @@ function SearchPageClientInner({
     <SearchPageView
       products={baseProducts}
       categoryExcludedOnPage={pagination.categoryExcludedOnPage}
+      identityExcludedOnPage={pagination.identityExcludedOnPage}
       filters={filters}
       searchQuery={searchQuery}
       isBusy={isBusy}

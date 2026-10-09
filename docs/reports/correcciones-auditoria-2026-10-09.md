@@ -175,3 +175,25 @@ Reversión: las reglas CPU en `search-dedupe.ts` y sus tests; el puente público
 descrito a continuación depende del nuevo dedupe. La fixture JSON reproduce
 evidencia y no contiene credenciales. Límite: dedupe y orden sólo dentro de la
 página recibida, sin prometer unicidad u orden global entre páginas.
+
+## A01/A07 — Integración pública, caché y render inicial
+
+La página recibida de SQL aparta fichas con contradicción explícita y sin otra
+oferta vigente utilizable; cuando existe alternativa válida, recalcula el precio
+y reevalúa min/max. La caché aplica el mismo guard con los filtros de la consulta.
+Después de la deduplicación se reordena la página por precio.
+
+Se conserva el conteo SQL y se informa `identityExcludedOnPage` al usuario. Sólo
+se recalcula el total de duplicados cuando la respuesta contiene todo el conjunto
+y no hubo exclusiones. Una ficha contaminada no hace fallar las demás.
+
+Validación: regresiones del loader SQL, helper de página, API, caché y SSR; E2E
+comprueba una tarjeta válida y el aviso de exclusión. La integración del loader
+simula la respuesta del RPC, y los demás tests conservan los módulos reales de
+guard y dedupe. No presentan mocks como recuperación de la base productiva.
+
+Reversión: retirar en conjunto el puente en `product-read`, los tipos y la
+propagación API/SSR/caché, con la visualización del contador y sus tests. El guard
+de dominio de almacenamiento puede permanecer. No hay migraciones. Para evaluar
+una PR, mantener este conjunto coherente aunque exceda 400 líneas; dividir sólo
+si se conserva el contrato completo, sin borrar evidencia para reducir el diff.

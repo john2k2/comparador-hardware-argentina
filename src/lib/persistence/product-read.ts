@@ -22,6 +22,7 @@ import { toNumber } from './product-read-helpers';
 import type { Product } from '@/lib/types';
 import { mergeCanonicalDetailOffers, shareExactProductVariant } from './product-detail-offers';
 import { guardCategoryPage } from '@/lib/search/category-page-guard';
+import { guardIdentityPage } from '@/lib/search/identity-page-guard';
 
 export type { ProductSort } from '@/lib/persistence/product-read-types';
 
@@ -155,7 +156,9 @@ export async function readProductsPageFromDatabase(params: ReadProductsPageParam
     || !Number.isInteger(data.pageSize)) throw new Error('Invalid catalog page response');
   const result = data as DbCatalogPage;
   const guarded = guardCategoryPage(result.products.map(mapCatalogProduct), requestedCategory);
-  return { ...result, products: guarded.products, categoryExcludedOnPage: guarded.excluded };
+  const identity = guardIdentityPage(guarded.products, params);
+  return { ...result, products: identity.products, categoryExcludedOnPage: guarded.excluded,
+    identityExcludedOnPage: identity.identityExcludedOnPage };
 }
 
 // SQL decide selección, estadísticas y orden. El mapper conserva sanitización y

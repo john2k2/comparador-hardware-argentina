@@ -40,13 +40,13 @@ export async function readInitialSearchPage(state: SearchPageState): Promise<Ini
     const products = filterCurrentCatalogProducts(getStableFixtureProducts({ ...state, selectedStoreIds: storeIds }), state.includeUnavailable);
     const slice = paginateProducts(products, state.page, SEARCH_PAGE_SIZE);
     return catalogPageResponse({ products: slice.paginatedProducts, total: products.length,
-      totalPages: slice.totalPages, page: slice.currentPage, pageSize: SEARCH_PAGE_SIZE });
+      totalPages: slice.totalPages, page: slice.currentPage, pageSize: SEARCH_PAGE_SIZE }, state);
   }
   const cacheKey = buildSearchCacheKey({ ...state, stores: storeIds });
   const stillCurrent = (payload: SearchApiResponse) => state.includeUnavailable || hasCurrentSearchPagePrices(payload.products);
   const read = async (): Promise<SearchApiResponse> => {
     // SSR reutiliza el mismo resultado público validado que la API, sin otra cuota/TTL.
-    const cached = await getCachedSearchResponse(cacheKey, state.includeUnavailable).catch(() => {
+    const cached = await getCachedSearchResponse(cacheKey, state.includeUnavailable, state).catch(() => {
       logger.warn('Initial catalog cache read skipped');
       return null;
     });
@@ -57,7 +57,7 @@ export async function readInitialSearchPage(state: SearchPageState): Promise<Ini
       query: state.query, category: state.category, minPrice: state.minPrice, maxPrice: state.maxPrice,
       storeIds, sortBy: state.sortBy, page: state.page, pageSize: SEARCH_PAGE_SIZE,
       onlyCurrentOffers: !state.includeUnavailable,
-    }));
+    }), state);
     if (stillCurrent(payload)) await scheduleInitialCacheWrite(cacheKey, payload);
     return payload;
   };

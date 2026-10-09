@@ -8,6 +8,7 @@ export type SearchResponsePagination = {
   page: number;
   pageSize: number;
   categoryExcludedOnPage?: number;
+  identityExcludedOnPage?: number;
 };
 
 export type SearchApiResponse = {

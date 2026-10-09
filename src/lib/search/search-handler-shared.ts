@@ -7,17 +7,39 @@ import type { SearchApiResponse } from '@/lib/search/search-api';
 import { SEARCH_PAGE_SIZE } from '@/lib/search/search-pagination';
 import type { ProductPageResult } from '@/lib/persistence/product-read-types';
 import { getRecentProductOffers } from '@/lib/product/product-page-metadata';
+import { dedupeCpuSearchProducts } from '@/lib/search/search-dedupe';
+import { guardIdentityPage, type IdentityPageOptions } from '@/lib/search/identity-page-guard';
 
-export function catalogPageResponse(result: ProductPageResult): SearchApiResponse {
-  return {
-    products: result.products,
+function dedupeSearchResponse(payload: SearchApiResponse, options: IdentityPageOptions = {}): SearchApiResponse {
+  const products = dedupeCpuSearchProducts(payload.products, options);
+  // El mínimo puede subir al invalidarse un dictamen de alias para el título
+  // final. SQL ordenó las filas originales: se ordena de nuevo esta página.
+  if (options.sortBy === 'price-asc' || options.sortBy === 'price-desc') {
+    products.sort((a, b) => options.sortBy === 'price-asc' ? a.lowestPrice - b.lowestPrice : b.lowestPrice - a.lowestPrice);
+  }
+  // Sólo podemos recalcular el total si esta página contiene el conjunto entero.
+  // En páginas parciales se conserva el conteo SQL; no inventamos cobertura global.
+  const complete = payload.pagination.page === 1 && payload.pagination.total === payload.products.length
+    && !payload.pagination.categoryExcludedOnPage && !payload.pagination.identityExcludedOnPage;
+  return { ...payload, products, pagination: {
+    ...payload.pagination, limit: products.length,
+    ...(complete ? { total: products.length, totalPages: products.length ? 1 : 0 } : {}),
+  } };
+}
+
+export function catalogPageResponse(result: ProductPageResult, options: IdentityPageOptions = {}): SearchApiResponse {
+  const guarded = guardIdentityPage(result.products, options);
+  const identityExcludedOnPage = (result.identityExcludedOnPage ?? 0) + guarded.identityExcludedOnPage;
+  return dedupeSearchResponse({
+    products: guarded.products,
     pagination: {
-      limit: result.products.length, offset: (result.page - 1) * result.pageSize,
+      limit: guarded.products.length, offset: (result.page - 1) * result.pageSize,
       total: result.total, totalPages: result.totalPages, page: result.page, pageSize: result.pageSize,
       ...(result.categoryExcludedOnPage ? { categoryExcludedOnPage: result.categoryExcludedOnPage } : {}),
+      ...(identityExcludedOnPage ? { identityExcludedOnPage } : {}),
     },
     facets: { categories: [], brands: [], stores: [] },
-  };
+  }, options);
 }
 
 export type SortBy = 'relevance' | 'price-asc' | 'price-desc' | 'name' | 'newest';
@@ -161,17 +183,22 @@ export function hasCurrentSearchPagePrices(products: Product[]): boolean {
   });
 }
 
-export async function getCachedSearchResponse(cacheKey: string, includeUnavailable = false): Promise<SearchApiResponse | null> {
+export async function getCachedSearchResponse(cacheKey: string, includeUnavailable = false, options?: IdentityPageOptions): Promise<SearchApiResponse | null> {
   const cached = await getSharedCache<SearchApiResponse>('search-response-v2', cacheKey);
   if (!cached) return null;
   const products = hydrateProducts(cached.products ?? []);
+  const guarded = guardIdentityPage(products, options);
+  // Sin contexto de filtros, una caché antigua corregida debe releer SQL.
+  if (options === undefined && guarded.products !== products) return null;
+  const identityExcludedOnPage = (cached.pagination.identityExcludedOnPage ?? 0) + guarded.identityExcludedOnPage;
   // Releer SQL si venció el mínimo o la última oferta: no filtrar una página ya paginada.
-  if (!includeUnavailable && !hasCurrentSearchPagePrices(products)) return null;
+  if (!includeUnavailable && !hasCurrentSearchPagePrices(guarded.products)) return null;
 
-  return {
+  return dedupeSearchResponse({
     ...cached,
-    products,
-  };
+    products: guarded.products,
+    pagination: { ...cached.pagination, ...(identityExcludedOnPage ? { identityExcludedOnPage } : {}) },
+  }, options);
 }
 
 export async function setCachedSearchResponse(cacheKey: string, payload: SearchApiResponse): Promise<void> {

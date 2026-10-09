@@ -190,7 +190,7 @@ export async function GET(request: NextRequest) {
   const stableRuntimeMode = isStableRuntimeMode();
   // La caché se lee junto al rate limit, pero sólo se usa después de admitir la solicitud.
   const cachedRead = hasSearchIntent && !stableRuntimeMode && !bypassDb && !isRefreshRequest
-    ? getCachedSearchResponse(cacheKey, includeUnavailable)
+    ? getCachedSearchResponse(cacheKey, includeUnavailable, { minPrice, maxPrice, sortBy })
     : null;
   cachedRead?.catch(() => undefined);
 
@@ -288,7 +288,7 @@ export async function GET(request: NextRequest) {
           backgroundScheduled = true;
         }
 
-        const payload = catalogPageResponse(databasePage);
+        const payload = catalogPageResponse(databasePage, { minPrice, maxPrice, sortBy });
         if (normalRead) {
           if (!stillCurrent()) {
             await reread();
@@ -332,7 +332,7 @@ export async function GET(request: NextRequest) {
       });
 
       if (refreshedDatabasePage && refreshedDatabasePage.total > 0) {
-        const payload = catalogPageResponse(refreshedDatabasePage);
+        const payload = catalogPageResponse(refreshedDatabasePage, { minPrice, maxPrice, sortBy });
         if (!bypassDb) await setCachedSearchResponse(cacheKey, payload);
         return respond(payload, { headers: { 'X-Search-Cache': isRefreshRequest ? 'CATEGORY-REFRESH-DB' : 'CATEGORY-MISS-DB' } }, { success: true, resultCount: payload.products.length, note: isRefreshRequest ? 'CATEGORY_REFRESH_DB' : 'CATEGORY_MISS_DB' });
       }
@@ -381,7 +381,7 @@ export async function GET(request: NextRequest) {
         onlyCurrentOffers: !includeUnavailable,
       }).catch(() => null);
       if (!refreshedPage) return result;
-      const payload = catalogPageResponse(refreshedPage);
+      const payload = catalogPageResponse(refreshedPage, { minPrice, maxPrice, sortBy });
       await setCachedSearchResponse(cacheKey, payload);
       return { ...result, payload };
     });

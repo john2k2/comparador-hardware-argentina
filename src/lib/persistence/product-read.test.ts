@@ -209,3 +209,22 @@ it('la lectura de guía busca el modelo completo antes de limitar ocho candidata
   await readGuideCatalogCandidatesFromDatabase('memoria-ram', 8, '%,()');
   expect(query.or).not.toHaveBeenCalled();
 });
+
+it('aparta identidad contradictoria después de mapear SQL sin hacer fallar toda la categoría', async () => {
+  const date = new Date().toISOString();
+  const mixed = { ...row, id: 'agrupado-almacenamiento-wd-green', name: 'SSD WD Green 1TB', model: 'WD Green',
+    category: 'almacenamiento', canonical_product_key: 'almacenamiento::wdgreen1tb', lowest_price: 254647.83,
+    product_prices: [{ ...row.product_prices[0], store_id: 'maxtecno', price: 254647.83, last_updated: date,
+      url: 'https://maxtecno.com.ar/producto/disco-externo-hdd-western-digital-elements-1tb-usb-3-0/' }] };
+  const valid = { ...mixed, id: 'agrupado-almacenamiento-kingston-nv3', name: 'SSD Kingston NV3 1TB', model: 'NV3',
+    canonical_product_key: 'almacenamiento::kingstonnv31tb', lowest_price: 400000, highest_price: 400000, average_price: 400000,
+    product_prices: [{ ...mixed.product_prices[0], price: 400000, url: 'https://maxtecno.com.ar/producto/ssd-kingston-nv3-1tb/' }] };
+  getServerSupabaseReadClientMock.mockReturnValue({ rpc: rangeMock });
+  rangeMock.mockResolvedValueOnce({ data: { products: [mixed, valid], total: 2, totalPages: 1, page: 1, pageSize: 12 }, error: null });
+  const result = await readProductsPageFromDatabase({ category: 'almacenamiento', page: 1, pageSize: 12, onlyCurrentOffers: true });
+  expect(result.products.map(({ id }) => id)).toEqual([valid.id]);
+  expect(result).toMatchObject({ total: 2, totalPages: 1, identityExcludedOnPage: 1 });
+  expect(result.products[0].lowestPrice).toBe(400000);
+  expect(result.products[0].prices[0].lastUpdated.toISOString()).toBe(date);
+  expect(mixed.product_prices[0].price).toBe(254647.83);
+});

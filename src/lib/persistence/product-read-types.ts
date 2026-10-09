@@ -23,6 +23,7 @@ export type DbCatalogPage = Omit<ProductPageResult, 'products'> & { products: Db
 export type ProductPageResult = {
   products: import('@/lib/types').Product[];
   categoryExcludedOnPage?: number;
+  identityExcludedOnPage?: number;
   total: number;
   totalPages: number;
   page: number;

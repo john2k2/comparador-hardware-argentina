@@ -10,6 +10,7 @@ import { buildSearchPaginationHref, toSearchFilters } from '@/lib/search/search-
 type SearchPageViewProps = {
   products: Product[];
   categoryExcludedOnPage?: number;
+  identityExcludedOnPage?: number;
   filters: ReturnType<typeof toSearchFilters>;
   searchQuery: string;
   isBusy: boolean;
@@ -33,6 +34,7 @@ type SearchPageViewProps = {
 export function SearchPageView({
   products,
   categoryExcludedOnPage = 0,
+  identityExcludedOnPage = 0,
   filters,
   searchQuery,
   isBusy,
@@ -103,8 +105,11 @@ export function SearchPageView({
               <span>Mostrar también productos sin oferta reciente</span>
             </label>
           </div>
-          {categoryExcludedOnPage > 0 && <p className="mb-4 border-l-4 border-accent bg-card px-4 py-3 font-body text-sm leading-relaxed">
+          {categoryExcludedOnPage > 0 && <p className="mb-4 border-2 border-border bg-card px-4 py-3 font-body text-sm leading-relaxed">
             {categoryExcludedOnPage === 1 ? 'Una publicación pendiente de clasificación no se muestra' : `${categoryExcludedOnPage} publicaciones pendientes de clasificación no se muestran`} en esta página. El total todavía las incluye.
+          </p>}
+          {identityExcludedOnPage > 0 && <p role="status" className="mb-4 border-2 border-border bg-card px-4 py-3 font-body text-sm leading-relaxed">
+            Apartamos {identityExcludedOnPage === 1 ? 'una ficha con ofertas de otro producto' : `${identityExcludedOnPage} fichas con ofertas de otros productos`} de esta página. El total del catálogo todavía las incluye mientras revisamos su identidad.
           </p>}
           {!isBusy && totalResults > 0 && products.length === 0 && <p className="mb-4 font-body text-base text-muted-foreground">Esta página no contiene productos verificables de la categoría elegida. Probá la página siguiente o ampliá los filtros.</p>}
           {isBusy && <LoadingState searchQuery={searchQuery} />}
