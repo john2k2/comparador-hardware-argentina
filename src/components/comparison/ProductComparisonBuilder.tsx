@@ -256,8 +256,8 @@ export function ProductComparisonBuilder() {
             </ul>
           </section>
 
-          <section className="border-4 border-border bg-card p-5 pixel-shadow overflow-x-auto">
-            <h2 className="mb-4 text-[12px] font-bold text-primary">[ PRECIO Y ESPECIFICACIONES ]</h2>
+          <section aria-labelledby="comparison-specs-heading" tabIndex={0} className="border-4 border-border bg-card p-5 pixel-shadow overflow-x-auto">
+            <h2 id="comparison-specs-heading" className="mb-4 text-[12px] font-bold text-primary">[ PRECIO Y ESPECIFICACIONES ]</h2>
             <table className="w-full min-w-[620px] text-[12px] font-mono">
               <thead><tr className="border-b-2 border-border"><th className="p-2 text-left">Dato</th><th className="p-2 text-left">{left.name}</th><th className="p-2 text-left">{right.name}</th></tr></thead>
               <tbody>
