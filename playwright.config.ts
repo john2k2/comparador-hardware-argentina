@@ -29,6 +29,7 @@ export default defineConfig({
       NEXT_PUBLIC_GA4_MEASUREMENT_ID: 'G-QA123456',
       E2E_STABLE_MODE: '1',
       CI_E2E: '1',
+      SUPPORT_EMAIL: 'qa@example.test',
       ENEBA_AFFILIATE_PILOT_ENABLED: process.env.ENEBA_AFFILIATE_PILOT_ENABLED ?? '0',
     },
   },

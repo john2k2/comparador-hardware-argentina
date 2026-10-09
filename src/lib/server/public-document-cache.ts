@@ -7,7 +7,9 @@ type FetchHandler = (request: Request, env: DocumentCacheEnv, context: DocumentC
 type DocumentCacheEnv = { CF_VERSION_METADATA?: { id: string }; ASSETS?: { fetch(request: Request): Promise<Response> } };
 type DocumentCacheContext = { waitUntil(promise: Promise<unknown>): void };
 type CacheStore = Pick<Cache, 'match' | 'put'>;
-const STATIC_ROUTES = new Set(['/', '/comparativa/comparar', '/guia/armar', '/acerca', '/contacto', '/privacidad', '/terminos']);
+// Contacto depende del correo configurado en el Worker. Un documento generado
+// sin esa variable publicaba un canal deshabilitado aunque el runtime lo tuviera.
+const STATIC_ROUTES = new Set(['/', '/comparativa/comparar', '/guia/armar', '/acerca', '/privacidad', '/terminos']);
 
 function eligible(request: Request, allowStaticSession = false) {
   const url = new URL(request.url);

@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
-const routes = ['/', '/comparativa/comparar', '/guia/armar', '/acerca', '/contacto', '/privacidad', '/terminos', '/measurement-shell-build'];
+const routes = ['/', '/comparativa/comparar', '/guia/armar', '/acerca', '/privacidad', '/terminos', '/measurement-shell-build'];
 const folder = path.join(root, 'public/__public-documents');
 // Conservar el enlace del piloto público con el mismo flag del Worker.
 const workerConfig = await fs.readFile(path.join(root, 'wrangler.jsonc'), 'utf8');
@@ -40,7 +40,7 @@ try {
     const nonce = response.headers.get('x-content-security-policy-nonce');
     const policy = response.headers.get('content-security-policy');
     if (response.status !== 200 || response.headers.has('set-cookie') || !nonce || !/^[a-f0-9]{32}$/.test(nonce) || !policy?.includes(`'nonce-${nonce}'`) || html.length > 512_000 || /id=["']__next_error__|NEXT_HTTP_ERROR_FALLBACK/.test(html)) throw new Error(`Documento público no verificado: ${route}`);
-    const headers = Object.fromEntries(['content-type', 'content-security-policy', 'x-content-security-policy-nonce', 'x-content-type-options', 'x-frame-options', 'referrer-policy'].flatMap((name) => {
+    const headers = Object.fromEntries(['content-type', 'content-security-policy', 'x-content-security-policy-nonce', 'x-content-type-options', 'x-frame-options', 'referrer-policy', 'strict-transport-security', 'permissions-policy'].flatMap((name) => {
       const value = response.headers.get(name);
       return value ? [[name, value.replaceAll(nonce, 'COMPARADOR_DOCUMENT_NONCE')]] : [];
     }));

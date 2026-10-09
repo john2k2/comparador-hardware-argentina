@@ -71,6 +71,25 @@ describe('documentos públicos en el Worker', () => {
     expect((await s.handler(new Request(`${root}/__public-documents/privacidad.json`), env, s.context)).status).toBe(404);
   });
 
+  it('contacto usa el correo del runtime tanto en URL limpia como con parámetros o navegación interna', async () => {
+    const runtime = document();
+    const html = `${await runtime.text()}<a href="mailto:contacto@example.test">Contacto</a>`;
+    const s = setup(new Response(html, { headers: runtime.headers }));
+    const assets = vi.fn(async () => Response.json({ version: 1, route: '/contacto', html: 'Canal pendiente de configuración' }));
+    const env = { ...s.env, ASSETS: { fetch: assets } };
+    for (const request of [new Request(`${root}/contacto`), new Request(`${root}/contacto?intent=pc_advisory`),
+      new Request(`${root}/contacto?_rsc=navigation`, { headers: { RSC: '1' } })]) {
+      const response = await s.handler(request, env, s.context);
+      expect(await response.text()).toContain('mailto:contacto@example.test');
+      expect(response.headers.get('x-comparador-render')).not.toBe('static-document');
+    }
+    expect(assets).not.toHaveBeenCalled();
+    await s.finish();
+    const cached = await s.handler(new Request(`${root}/contacto`), env, s.context);
+    expect(cached.headers.get('x-comparador-render')).toBe('document-cache');
+    expect(await cached.text()).toContain('mailto:contacto@example.test');
+  });
+
   it('la portada fija sin datos personales funciona con sesión, pero su fallback nunca comparte el documento de una cuenta', async () => {
     const s = setup(); const source = document();
     const html = (await source.text()).replaceAll(nonce, 'COMPARADOR_DOCUMENT_NONCE');
