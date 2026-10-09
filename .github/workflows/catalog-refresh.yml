@@ -316,6 +316,20 @@ jobs:
                   sys.exit(1)
           PY
 
+      # La portada usa la observación recién persistida; no depende sólo del
+      # cron de medición ni hace otra comprobación contra las tiendas.
+      - name: Guardar selección pública después de actualizar ofertas
+        if: success() && (steps.resolve.outputs.mode == 'guides' || steps.resolve.outputs.mode == 'priority')
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          MEASUREMENT_TASK: home
+          DISABLE_LIVE_SCRAPING: '1'
+          DISABLE_INTERNAL_BACKGROUND_REFRESH: '1'
+          LOG_LEVEL: silent
+        run: node scripts/measurement-collect.mjs
+
       - name: Record omitted global report for guides
         if: always() && steps.resolve.outputs.mode == 'guides'
         run: |

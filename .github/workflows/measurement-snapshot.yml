@@ -36,6 +36,7 @@ jobs:
       - name: Guardar la lectura correspondiente fuera de la web
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           MEASUREMENT_CREDENTIAL_ENCRYPTION_KEY: ${{ secrets.MEASUREMENT_CREDENTIAL_ENCRYPTION_KEY }}
           MEASUREMENT_GOOGLE_CLIENT_ID: ${{ vars.MEASUREMENT_GOOGLE_CLIENT_ID }}
