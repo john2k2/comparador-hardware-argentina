@@ -15,3 +15,12 @@ export async function fetchBuilderProducts(input: { slot?: BuildSlot; ids?: stri
 export function mergeCatalog(existing: Product[], incoming: Product[]): Product[] {
   return [...new Map([...existing, ...incoming].map((product) => [product.id, product])).values()];
 }
+
+/** Un reintento sólo reemplaza las filas que nadie cambió mientras esperaba.
+ * Conserva búsquedas, restauraciones y lecturas de ofertas posteriores, incluso
+ * cuando una lectura posterior retiró un producto del catálogo de la selección. */
+export function mergeRetriedCatalog(current: Product[], beforeRetry: Product[], recovered: Product[]): Product[] {
+  const before = new Map(beforeRetry.map((product) => [product.id, product]));
+  const live = new Map(current.map((product) => [product.id, product]));
+  return mergeCatalog(current, recovered.filter((product) => live.get(product.id) === before.get(product.id)));
+}

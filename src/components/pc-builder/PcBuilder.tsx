@@ -6,9 +6,9 @@ import type { Product } from '@/lib/types';
 import { formatPriceARS } from '@/lib/price-utils';
 import { parseBuilderBudgetPesos, BUILDER_BUDGET_MIN, BUILDER_BUDGET_MAX } from '@/lib/seo/budget-query';
 import { BUILD_SLOTS, SLOT_LABELS, emptyBuild, type BuildDraft, type BuildSlot } from '@/lib/pc-builder/types';
-import { candidatesForSlot, eligibleOffers, quoteBuild, selectProduct, suggestBuild } from '@/lib/pc-builder/model';
+import { candidatesForSlot, describeBuildSuggestion, eligibleOffers, quoteBuild, selectProduct, suggestBuild } from '@/lib/pc-builder/model';
 import { BUILD_STORAGE_KEY, createBuildShareUrl, createWhatsAppShareUrl, decodeBuild, exportBuildText, parseBuildDraft, trimBuildShipping } from '@/lib/pc-builder/persistence';
-import { fetchBuilderProducts, mergeCatalog } from '@/lib/pc-builder/client';
+import { fetchBuilderProducts, mergeCatalog, mergeRetriedCatalog } from '@/lib/pc-builder/client';
 import { trackBudgetBuilder, trackPcBuilderAction, trackStoreClick, type PcBuilderAction } from '@/lib/analytics/ga4';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
 import { isOfferFresh, OFFER_FRESH_MS } from '@/lib/price-freshness';
@@ -30,6 +30,8 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
   const [budgetInput, setBudgetInput] = useState(String(initialBudget ?? 1_500_000));
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failedSlots, setFailedSlots] = useState<BuildSlot[]>([]);
+  const [catalogErrors, setCatalogErrors] = useState<Partial<Record<BuildSlot, string>>>({});
   const [notice, setNotice] = useState(invalidBudget ? `Usá un presupuesto entre ${formatPriceARS(BUILDER_BUDGET_MIN)} y ${formatPriceARS(BUILDER_BUDGET_MAX)}.` : '');
   const [saved, setSaved] = useState<BuildDraft | null>(null);
   const [queries, setQueries] = useState<Partial<Record<BuildSlot, string>>>({});
@@ -78,11 +80,16 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
   useEffect(() => {
     const controller = new AbortController();
     async function load() {
-      let collected: Product[] = []; const failures: string[] = [];
+      let collected: Product[] = []; const failures: string[] = []; const catalogFailures: BuildSlot[] = []; const loadErrors: Partial<Record<BuildSlot, string>> = {};
       for (let index = 0; index < BUILD_SLOTS.length; index += 2) {
         await Promise.all(BUILD_SLOTS.slice(index, index + 2).map(async (slot) => {
           try { const incoming = await fetchBuilderProducts({ slot }, controller.signal); collected = mergeCatalog(collected, incoming); }
-          catch { if (!controller.signal.aborted) failures.push(SLOT_LABELS[slot]); }
+          catch (error) {
+            if (!controller.signal.aborted) {
+              catalogFailures.push(slot);
+              loadErrors[slot] = error instanceof Error ? error.message : 'No se pudo consultar el catálogo.';
+            }
+          }
         }));
       }
       if (controller.signal.aborted) return;
@@ -99,12 +106,15 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
         trackPcBuilderAction({ action: 'shared_opened', componentCount: Object.keys(restored.selections).length,
           complete: restoredQuote.complete && restoredQuote.unquoted === 0 && restoredQuote.missingShipping.length === 0 });
       } else if (initialBudget && !hash) {
-        setDraft(suggestBuild(collected, initialBudget));
-        trackBudgetBuilder({ source: 'preset', budget: initialBudget });
+        const suggestion = suggestBuild(collected, initialBudget);
+        setDraft(suggestion);
+        const result = describeBuildSuggestion(suggestion, collected);
+        setNotice(result.message);
+        if (result.status !== 'empty') trackBudgetBuilder({ source: 'preset', budget: initialBudget });
       }
       setShareOrigin(window.location.origin);
-      setProducts(collected); setLoading(false);
-      if (failures.length) setNotice(`No se pudo cargar: ${failures.join(', ')}. Podés buscar las piezas o volver a cargar la página.`);
+      setProducts(collected); setFailedSlots(catalogFailures); setCatalogErrors(loadErrors); setLoading(false);
+      if (failures.length) setNotice(`No se pudo cargar: ${failures.join(', ')}. Podés buscar las piezas o revisar el enlace.`);
     }
     void load();
     return () => controller.abort();
@@ -121,10 +131,27 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
     trackAction('component_selected', { slot }, nextDraft);
   }
   async function search(slot: BuildSlot) {
+    if (loading || searching !== null) return;
     setSearching(slot); setNotice('');
     try { const found = await fetchBuilderProducts({ slot, query: queries[slot] }); setProducts((current) => mergeCatalog(current, found)); if (!found.length) setNotice(`No encontramos coincidencias para ${SLOT_LABELS[slot].toLowerCase()}. Probá otro modelo.`); }
     catch (error) { setNotice(error instanceof Error ? error.message : 'No se pudo buscar.'); }
     finally { setSearching(null); }
+  }
+  async function retryCatalogs() {
+    setLoading(true);
+    const remaining: BuildSlot[] = []; const retryErrors: Partial<Record<BuildSlot, string>> = {};
+    const beforeRetry = products;
+    let recovered: Product[] = [];
+    for (let index = 0; index < failedSlots.length; index += 2) {
+      await Promise.all(failedSlots.slice(index, index + 2).map(async (slot) => {
+        try { recovered = mergeCatalog(recovered, await fetchBuilderProducts({ slot })); }
+        catch (error) { remaining.push(slot); retryErrors[slot] = error instanceof Error ? error.message : 'No se pudo consultar el catálogo.'; }
+      }));
+    }
+    setProducts((current) => mergeRetriedCatalog(current, beforeRetry, recovered));
+    setFailedSlots(remaining); setCatalogErrors(retryErrors); setLoading(false);
+    setNotice(remaining.length ? 'Todavía faltan catálogos. Podés volver a intentar o buscar otras piezas.'
+      : 'Catálogos cargados. Volvé a pulsar Armar PC para evaluar las ofertas disponibles; conservamos tu selección.');
   }
   async function reloadSelection() {
     const ids = Object.values(draft.selections).map((item) => item.productId);
@@ -160,8 +187,14 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
     <form className="border-4 border-border bg-card p-4 md:p-5 mb-6 flex flex-wrap gap-4 items-end" onSubmit={(event) => {
       event.preventDefault(); const budget = parseBuilderBudgetPesos(budgetInput);
       if (!budget) { setNotice(`Usá un presupuesto entre ${formatPriceARS(BUILDER_BUDGET_MIN)} y ${formatPriceARS(BUILDER_BUDGET_MAX)}.`); return; }
-      setDraft(suggestBuild(products, budget)); setShareUrl(''); setNotice('Sugerencia de piezas generada. Los precios antiguos quedan como referencia y no se suman al total hasta actualizarse.');
-      trackBudgetBuilder({ source: 'manual', budget });
+      const suggestion = suggestBuild(products, budget);
+      const result = describeBuildSuggestion(suggestion, products);
+      if (result.status === 'empty') {
+        setNotice(`${result.message}${componentCount ? ' Conservamos las piezas que ya elegiste.' : ''}`);
+      } else {
+        setDraft(suggestion); setShareUrl(''); setNotice(result.message);
+        trackBudgetBuilder({ source: 'manual', budget });
+      }
     }}>
       <label className="flex-1 min-w-48 font-body text-sm">Presupuesto en pesos argentinos<input className={`${control} mt-1`} name="pesos" inputMode="numeric" value={budgetInput} onChange={(event) => {
         setBudgetInput(event.target.value); const budget = parseBuilderBudgetPesos(event.target.value); if (budget) setDraft((current) => ({ ...current, budget }));
@@ -169,6 +202,11 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
       <button className="pixel-button text-xs" disabled={loading} type="submit">{loading ? 'Cargando catálogo…' : 'Armar PC'}</button>
       <button className={button} type="button" onClick={() => { const empty = emptyBuild(draft.budget); setDraft(empty); setShareUrl(''); trackAction('reset', {}, empty); }}>Empezar de cero</button>
     </form>
+    {failedSlots.length > 0 && <div role="alert" className="border-2 border-border bg-card p-3 mb-5 font-body text-sm">
+      <p>No se pudieron cargar estos catálogos. Las piezas cargadas siguen disponibles.</p>
+      <ul className="mt-2 space-y-1">{failedSlots.map((slot) => <li key={slot}><strong>{SLOT_LABELS[slot]}: </strong>{catalogErrors[slot]}</li>)}</ul>
+      <button className={`${button} mt-3`} type="button" disabled={loading || searching !== null} onClick={() => void retryCatalogs()}>{loading ? 'Reintentando…' : 'Reintentar catálogos pendientes'}</button>
+    </div>}
     {notice && <p role="status" className="border-2 border-border bg-card p-3 mb-5 font-body text-sm"><strong>Aviso: </strong>{notice}</p>}
     <div className="grid lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,1fr)] gap-6 items-start">
       <section aria-label="Componentes de tu PC" className="space-y-4 min-w-0">

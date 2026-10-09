@@ -52,18 +52,24 @@ export function selectProduct(product: Product, offer = eligibleOffers(product)[
 }
 export function suggestBuild(products: Product[], budget: number): BuildDraft {
   const draft = emptyBuild(budget);
-  const eligibleProducts = BUILD_SLOTS.flatMap((slot) => candidatesForSlot(products, slot));
+  // El selector editorial sólo puede usar ofertas recientes; no le pasamos
+  // referencias ni ofertas rechazadas por las reglas del armador.
+  const eligibleProducts = BUILD_SLOTS.flatMap((slot) => candidatesForSlot(products, slot))
+    .map((product) => ({ ...product, prices: eligibleOffers(product).filter((offer) => isOfferFresh(offer.lastUpdated)) }))
+    .filter((product) => product.prices.length > 0);
   const built = buildBudgetFromCatalog({ budget, products: eligibleProducts, preferComplete: true });
   for (const [slot, component] of Object.entries(built.slots)) {
     const product = products.find((item) => item.id === component.productId);
     const selection = product && selectProduct(product);
     if (selection) draft.selections[slot as BuildSlot] = selection;
   }
-  const cpu = products.find((product) => product.id === draft.selections.cpu?.productId);
+  const selectedCpu = products.find((product) => product.id === draft.selections.cpu?.productId);
+  const cpuOffer = selectedCpu?.prices.find((offer) => offer.storeId === draft.selections.cpu?.storeId && offer.url === draft.selections.cpu?.url);
+  const cpu = selectedCpu && cpuOffer ? { ...selectedCpu, prices: [cpuOffer] } : selectedCpu;
   const motherboard = products.find((product) => product.id === draft.selections.motherboard?.productId);
   const chassis = products.find((product) => product.id === draft.selections.case?.productId);
   if (cpu && includesCpuCooler(cpu) !== true) {
-    const cooler = candidatesForSlot(products, 'cooler').find((product) =>
+    const cooler = candidatesForSlot(eligibleProducts, 'cooler').find((product) =>
       Boolean(spec(product, 'sockets compatibles', 'socket', 'compatibilidad'))
       && !checkBuildCompatibility({ cpu, motherboard, case: chassis, cooler: product }, draft)
         .some((issue) => ['cooler-socket', 'cooler-height'].includes(issue.code) && issue.severity === 'error')
@@ -71,6 +77,26 @@ export function suggestBuild(products: Product[], budget: number): BuildDraft {
     if (cooler) draft.selections.cooler = selectProduct(cooler);
   }
   return draft;
+}
+export function describeBuildSuggestion(draft: BuildDraft, products: Product[]): {
+  status: 'empty' | 'partial' | 'complete'; message: string;
+} {
+  const quote = quoteBuild(draft, products);
+  const count = Object.keys(draft.selections).length;
+  if (!count) {
+    // Un catálogo cargado no acredita cobertura reciente ni una plataforma posible.
+    const missingRecent = BUILD_SLOTS.filter((slot) => slot !== 'cooler' && !candidatesForSlot(products, slot)
+      .some((product) => eligibleOffers(product).some((offer) => isOfferFresh(offer.lastUpdated))));
+    return { status: 'empty', message: missingRecent.length
+      ? `No pudimos sugerir piezas. Sin ofertas elegibles observadas en las últimas 3 horas para: ${missingRecent.map((slot) => SLOT_LABELS[slot]).join(', ')}. Podés buscar otros modelos; los precios anteriores siguen como referencia.`
+      : 'No pudimos sugerir piezas compatibles dentro de este máximo con las ofertas recientes disponibles. Probá buscar otros modelos o revisá el presupuesto.' };
+  }
+  const missing = quote.issues.filter((issue) => issue.code.startsWith('missing-')).map((issue) => issue.message);
+  const cooling = quote.issues.find((issue) => issue.code === 'cooler-required');
+  if (!quote.complete || quote.unquoted || quote.overBudget) return { status: 'partial', message:
+    `Sugerencia parcial: ${count} piezas seleccionadas. ${missing.join(' ')}${cooling ? ` ${cooling.message}` : ''} Revisá compatibilidad y ofertas pendientes; el subtotal no es una PC completa.` };
+  const cpu = quote.lines.find((line) => line.slot === 'cpu')?.product;
+  return { status: 'complete', message: `Piezas seleccionadas con precio reciente dentro de tu máximo.${!draft.selections.gpu && hasIntegratedGraphics(cpu ?? undefined) ? ' La CPU tiene gráficos integrados; no se agregó una placa de video dedicada.' : ''} Revisá las comprobaciones de compatibilidad y sumá el envío antes de comprar.` };
 }
 export function quoteBuild(draft: BuildDraft, products: Product[], now = Date.now()): BuildQuote {
   const parts: Partial<Record<BuildSlot, Product>> = {};

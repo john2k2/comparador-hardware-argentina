@@ -111,3 +111,26 @@ con la propagación de contexto a `comparison-pricing` y sus tests. El guard de
 páginas descrito más adelante depende de esta protección para almacenamiento.
 No se borró ni reescribió el catálogo: la contaminación almacenada sigue siendo
 deuda a reparar por una operación posterior revisable.
+
+## A02 — Armador y catálogos incompletos
+
+La sugerencia distingue vacío, parcial y piezas seleccionadas dentro del máximo.
+Usa ofertas elegibles de hasta tres horas y refrigeración vigente cuando corresponde.
+Un resultado vacío conserva la selección manual y no emite `generate_pc_budget`.
+Una PC con gráficos integrados conocidos puede prescindir de GPU dedicada; eso
+se informa explícitamente y no se inventa compatibilidad certificada.
+
+Los catálogos fallidos conservan su aviso y tienen un reintento específico. La
+recuperación no pisa productos o fechas obtenidos mientras esperaba ni resucita
+filas retiradas por una lectura posterior. Se bloquea también Enter durante carga.
+
+Validación: `model.test.ts` y `client.test.ts` cubren frescura, stock desconocido,
+máximo exacto, refrigeración, vacío/parcial/completo y actualización concurrente;
+forman parte de la tanda focal de 83 pruebas. El harness de navegador incluye RAM
+vencida con selección manual y ausencia de evento, GPU con primer `503`, reintento,
+presupuesto, envío, cuotas, guardado, enlace y actualización parcial de ofertas.
+El resultado final de navegador se registra al final de este documento.
+
+Reversión: componentes y modelo del armador, helper de fusión en `client.ts`, tests
+unitarios y escenarios añadidos a `pc-builder.spec.ts`. No cambia datos remotos.
+Límite: arreglar el mensaje y el reintento no produce stock ni precios nuevos.

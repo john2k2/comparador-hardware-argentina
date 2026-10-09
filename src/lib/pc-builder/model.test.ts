@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Product, ProductPrice } from '@/lib/types';
 import { checkBuildCompatibility } from './compatibility';
 import { emptyBuild, type BuildDraft } from './types';
-import { candidatesForSlot, eligibleOffers, quoteBuild, selectProduct } from './model';
+import { candidatesForSlot, describeBuildSuggestion, eligibleOffers, quoteBuild, selectProduct, suggestBuild } from './model';
 
 function product(overrides: Partial<Product> & Pick<Product, 'id' | 'name' | 'category'>): Product {
   const prices = overrides.prices ?? [];
@@ -315,5 +315,105 @@ describe('quoteBuild', () => {
     expect(quoteBuild(draft, [cpu]).total).toBe(0);
     draft.selections.cpu = { productId: 'cpu', storeId: 'recent', url: recent.url, quantity: 1 };
     expect(quoteBuild(draft, [cpu]).subtotal).toBe(100_000);
+  });
+});
+
+// Fixtures sintéticas: reproducen elegibilidad, no disponibilidad de una tienda.
+function suggestionCatalog(): Product[] {
+  const definitions = [
+    ['cpu', 'AMD Ryzen 5 5600 AM4', 'procesadores'],
+    ['motherboard', 'ASUS B550 AM4 DDR4', 'motherboards'],
+    ['ram', 'Kingston Fury 16GB DDR4 3200', 'memoria-ram'],
+    ['gpu', 'MSI GeForce RTX 4060 8GB', 'tarjetas-graficas'],
+    ['ssd', 'SSD NVMe 1TB', 'almacenamiento'],
+    ['psu', 'Fuente 650W 80 Plus Gold', 'fuentes-alimentacion'],
+    ['case', 'Gabinete ATX Mesh', 'gabinetes'],
+  ] as const;
+  return definitions.map(([id, name, category]) => product({ id, name, category,
+    specs: id === 'cpu' ? { 'cooler incluido': 'sí' } : {},
+    prices: [price({ storeId: 'store', storeName: 'Store', price: 100_000, url: `https://store.example/${id}` })] }));
+}
+
+describe('suggestBuild y resultado comunicado', () => {
+  it('reproduce cero selecciones con catálogos cargados pero RAM sin oferta de hasta 3 horas', () => {
+    const products = suggestionCatalog();
+    products.find((item) => item.id === 'ram')!.prices[0].lastUpdated = new Date(Date.now() - 3 * 60 * 60 * 1000 - 1);
+    expect(candidatesForSlot(products, 'ram')).toHaveLength(1);
+    const draft = suggestBuild(products, 1_500_000);
+    expect(draft.selections).toEqual({});
+    expect(describeBuildSuggestion(draft, products)).toMatchObject({ status: 'empty' });
+    expect(describeBuildSuggestion(draft, products).message).toContain('Memoria RAM');
+    expect(describeBuildSuggestion(draft, products).message).toContain('últimas 3 horas');
+  });
+
+  it('identifica falta de solución por presupuesto sin afirmar falta de stock', () => {
+    const products = suggestionCatalog();
+    const result = describeBuildSuggestion(suggestBuild(products, 200_000), products);
+    expect(result.status).toBe('empty');
+    expect(result.message).toContain('dentro de este máximo');
+    expect(result.message).not.toContain('stock');
+  });
+
+  it('selecciona siete ofertas recientes con el máximo exacto y anuncia piezas con compatibilidad pendiente', () => {
+    const products = suggestionCatalog();
+    const draft = suggestBuild(products, 700_000);
+    expect(Object.keys(draft.selections)).toHaveLength(7);
+    expect(quoteBuild(draft, products).total).toBe(700_000);
+    expect(describeBuildSuggestion(draft, products).status).toBe('complete');
+    expect(describeBuildSuggestion(draft, products).message).toContain('sumá el envío');
+    const lower = suggestBuild(products, 699_999);
+    expect(quoteBuild(lower, products).total).toBeLessThanOrEqual(699_999);
+    expect(describeBuildSuggestion(lower, products).status).not.toBe('complete');
+  });
+
+  it('describe el armado parcial con GPU faltante sin llamar PC completa al subtotal', () => {
+    const products = suggestionCatalog().filter((item) => item.id !== 'gpu');
+    const draft = suggestBuild(products, 1_500_000);
+    const result = describeBuildSuggestion(draft, products);
+    expect(Object.keys(draft.selections).length).toBeGreaterThan(0);
+    expect(result.status).toBe('partial');
+    expect(result.message).toContain('Falta elegir placa de video');
+    expect(result.message).toContain('el subtotal no es una PC completa');
+  });
+
+  it('no agrega una refrigeración antigua aunque quepa en el presupuesto', () => {
+    const products = suggestionCatalog();
+    products[0].specs = { 'cooler incluido': 'no' };
+    products.push(product({ id: 'cooler', name: 'Cooler CPU AM4', category: 'refrigeracion', specs: { 'sockets compatibles': 'AM4' },
+      prices: [price({ storeId: 'store', storeName: 'Store', price: 20_000, lastUpdated: new Date(Date.now() - 4 * 60 * 60 * 1000) })] }));
+    const draft = suggestBuild(products, 720_000);
+    expect(draft.selections.cooler).toBeUndefined();
+    expect(describeBuildSuggestion(draft, products).status).toBe('partial');
+    expect(describeBuildSuggestion(draft, products).message).toContain('no incluye disipador');
+  });
+
+  it('presupuesta refrigeración reciente sin exceder el máximo', () => {
+    const products = suggestionCatalog();
+    products[0].specs = { 'cooler incluido': 'no' };
+    products.push(product({ id: 'cooler', name: 'Cooler CPU AM4', category: 'refrigeracion', specs: { 'sockets compatibles': 'AM4' },
+      prices: [price({ storeId: 'store', storeName: 'Store', price: 20_000 })] }));
+    const draft = suggestBuild(products, 720_000);
+    expect(draft.selections.cooler).toBeDefined();
+    expect(quoteBuild(draft, products).total).toBe(720_000);
+    expect(describeBuildSuggestion(draft, products).status).toBe('complete');
+    expect(suggestBuild(products, 719_999).selections.cooler).toBeUndefined();
+  });
+
+  it('conserva una PC con gráficos integrados y refrigeración incluida sin exigir GPU dedicada', () => {
+    const products = suggestionCatalog().filter((item) => item.id !== 'gpu');
+    products[0].name = 'AMD Ryzen 5 5600G AM4';
+    const draft = emptyBuild(600_000);
+    for (const item of products) draft.selections[item.id as keyof typeof draft.selections] = selectProduct(item)!;
+    expect(describeBuildSuggestion(draft, products)).toMatchObject({ status: 'complete' });
+    expect(describeBuildSuggestion(draft, products).message).toContain('gráficos integrados');
+  });
+
+  it('mantiene fuera de sugerencias stock desconocido y mezcla de variante', () => {
+    const products = suggestionCatalog();
+    products.find((item) => item.id === 'ram')!.prices[0].stock = 'unknown';
+    expect(suggestBuild(products, 1_500_000).selections).toEqual({});
+    const gpu = products.find((item) => item.id === 'gpu')!;
+    gpu.prices[0].url = 'https://store.example/geforce-rtx-4060-ti-8gb';
+    expect(eligibleOffers(gpu)).toEqual([]);
   });
 });

@@ -70,14 +70,27 @@ function fixtureProducts(): Product[] {
   }));
 }
 
-async function installCatalogRoute(page: Page, options: { reviewCpuAfterRefresh?: boolean } = {}) {
+async function installCatalogRoute(page: Page, options: { reviewCpuAfterRefresh?: boolean; staleRam?: boolean; failGpuOnce?: boolean; modelUrls?: boolean } = {}) {
   const products = fixtureProducts();
+  // La sugerencia usa la comprobación positiva de modelo en la URL del selector
+  // de guías; los enlaces abreviados de la prueba manual no la acreditan.
+  if (options.modelUrls) for (const product of products) for (const offer of product.prices) {
+    const slug = product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    offer.url = `https://store.example/${slug}-${offer.storeId}`;
+  }
+  if (options.staleRam) for (const offer of products.find((product) => product.id === 'ram-16')!.prices) offer.lastUpdated = new Date('2026-09-20T10:00:00.000Z');
+  let gpuFailed = false;
   const state = { refreshed: false };
   let releaseCpu: () => void;
   const motherboardResponded = new Promise<void>((resolve) => { releaseCpu = resolve; });
   await page.route('**/api/pc-builder/catalog**', async (route) => {
     const url = new URL(route.request().url());
     const ids = url.searchParams.getAll('id');
+    if (options.failGpuOnce && !gpuFailed && url.searchParams.get('slot') === 'gpu') {
+      gpuFailed = true;
+      await route.fulfill({ status: 503, json: { error: 'Catálogo de GPU temporalmente no disponible' } });
+      return;
+    }
     const catalog = products.map((product) => {
       if (!state.refreshed || product.id !== 'cpu-5600') return product;
       return {
@@ -139,6 +152,42 @@ async function choose(page: Page, label: typeof slotLabels[number]) {
 test.describe('armador de PC', () => {
   test.beforeEach(async ({ page }) => { await page.clock.setFixedTime(browserNow); });
 
+  test('catálogos cargados con RAM antigua no anuncian éxito ni borran una selección manual', async ({ page }) => {
+    await installCatalogRoute(page, { staleRam: true, modelUrls: true });
+    await page.route(/https:\/\/www\.googletagmanager\.com\/gtag\/js/, route => route.fulfill({ contentType: 'application/javascript', body: '' }));
+    await loadBuilder(page);
+    await page.getByRole('button', { name: 'Aceptar analítica' }).click();
+    await choose(page, 'Procesador');
+    await page.getByRole('button', { name: 'Armar PC', exact: true }).click();
+    await expect(page.getByTestId('pc-builder').locator('p[role="status"]')).toContainText('No pudimos sugerir piezas');
+    await expect(page.getByTestId('pc-builder').locator('p[role="status"]')).toContainText('Memoria RAM');
+    await expect(page.getByTestId('pc-builder').locator('p[role="status"]')).toContainText('Conservamos las piezas');
+    await expect(page.getByLabel('Elegir Procesador')).toHaveValue('cpu-5600');
+    const generated = await page.evaluate(() => (window.dataLayer ?? []).map((entry) => Array.from(entry as ArrayLike<unknown>))
+      .filter((entry) => entry[0] === 'event' && entry[1] === 'generate_pc_budget'));
+    expect(generated).toHaveLength(0);
+  });
+
+  test('un catálogo fallido sigue visible tras un resultado parcial y se puede reintentar', async ({ page }) => {
+    await installCatalogRoute(page, { failGpuOnce: true, modelUrls: true });
+    await loadBuilder(page);
+    await expect(page.getByTestId('pc-builder').getByRole('alert')).toContainText('Placa de video');
+    await expect(page.getByTestId('pc-builder').getByRole('alert')).toContainText('Catálogo de GPU temporalmente no disponible');
+    await page.getByRole('button', { name: 'Armar PC', exact: true }).click();
+    await expect(page.getByTestId('pc-builder').locator('p[role="status"]')).toContainText('Sugerencia parcial');
+    await expect(page.getByTestId('pc-builder').locator('p[role="status"]')).toContainText('Falta elegir placa de video');
+    await expect(page.getByLabel('Elegir Procesador')).toHaveValue('cpu-5600');
+    await expect(page.getByTestId('pc-builder').getByRole('alert')).toContainText('Placa de video');
+    await expect(page.getByTestId('pc-builder').getByRole('alert')).toContainText('Catálogo de GPU temporalmente no disponible');
+    await page.getByRole('button', { name: 'Reintentar catálogos pendientes' }).click();
+    await expect(page.getByTestId('pc-builder').getByRole('alert')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Armar PC', exact: true }).click();
+    await expect(page.getByLabel('Elegir Placa de video')).toHaveValue('gpu-4060');
+    await expect(page.getByLabel('Elegir Refrigeración del procesador')).toHaveValue('cooler-am4');
+    await expect(page.getByTestId('pc-builder').locator('p[role="status"]')).toContainText('precio reciente dentro de tu máximo');
+    await expect(page.getByTestId('build-total')).toContainText('720.000');
+  });
+
   test('expired offers remain references and are excluded from the total', async ({ page }) => {
     await page.clock.setFixedTime(new Date('2026-09-21T13:00:01.000Z'));
     await installCatalogRoute(page);
@@ -168,7 +217,10 @@ test.describe('armador de PC', () => {
 
     for (const label of slotLabels) await expect(page.getByLabel(`Elegir ${label}`)).not.toHaveValue('');
     await expect(page.getByTestId('build-total')).toContainText('825.000');
+    await page.getByRole('button', { name: 'Rechazar analítica', exact: true }).click();
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: testInfo.outputPath('pc-builder-desktop.png'), fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath('pc-builder-desktop-inicio.png') });
     await page.getByLabel('Forma de pago').selectOption('installments');
     await expect(page.getByText('Piezas con precio reciente').locator('..').locator('dd')).toContainText(/\$\s*0/);
     await expect(page.getByTestId('build-total')).not.toContainText('800.000');
@@ -182,7 +234,7 @@ test.describe('armador de PC', () => {
     await choose(page, 'Procesador');
 
     await page.getByRole('button', { name: 'Guardar armado' }).click();
-    await expect(page.locator('p[role="status"]')).toContainText('Armado guardado');
+    await expect(page.getByTestId('pc-builder').locator('p[role="status"]')).toContainText('Armado guardado');
     await page.getByRole('button', { name: 'Quitar Procesador' }).click();
     await expect(page.getByLabel('Elegir Procesador')).toHaveValue('');
     await page.getByRole('button', { name: 'Recuperar guardado' }).click();
@@ -322,6 +374,9 @@ test.describe('armador de PC', () => {
       clientWidth: document.documentElement.clientWidth,
     }));
     expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 5);
+    await page.getByRole('button', { name: 'Rechazar analítica', exact: true }).click();
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: testInfo.outputPath('pc-builder-mobile.png'), fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath('pc-builder-mobile-inicio.png') });
   });
 });
