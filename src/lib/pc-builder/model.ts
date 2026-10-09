@@ -51,12 +51,27 @@ export function selectProduct(product: Product, offer = eligibleOffers(product)[
   return offer ? { productId: product.id, storeId: offer.storeId, url: offer.url, quantity: 1 } : undefined;
 }
 export function suggestBuild(products: Product[], budget: number): BuildDraft {
-  const draft = emptyBuild(budget);
   // El selector editorial sólo puede usar ofertas recientes; no le pasamos
   // referencias ni ofertas rechazadas por las reglas del armador.
   const eligibleProducts = BUILD_SLOTS.flatMap((slot) => candidatesForSlot(products, slot))
     .map((product) => ({ ...product, prices: eligibleOffers(product).filter((offer) => isOfferFresh(offer.lastUpdated)) }))
     .filter((product) => product.prices.length > 0);
+  const draft = assembleSuggestion(products, eligibleProducts, budget);
+  if (quoteBuild(draft, products).complete) return draft;
+  // Si la propuesta con GPU queda incompleta, comprobamos una alternativa
+  // con video integrado. Sólo la reemplaza una cotización completa y válida.
+  const integratedProducts = eligibleProducts.filter((product) => product.category !== 'tarjetas-graficas'
+    && (product.category !== 'procesadores' || hasIntegratedGraphics(product)));
+  if (integratedProducts.some((product) => product.category === 'procesadores')) {
+    const alternative = assembleSuggestion(products, integratedProducts, budget);
+    const quote = quoteBuild(alternative, products);
+    if (quote.complete && !quote.unquoted && !quote.overBudget) return alternative;
+  }
+  return draft;
+}
+
+function assembleSuggestion(products: Product[], eligibleProducts: Product[], budget: number): BuildDraft {
+  const draft = emptyBuild(budget);
   const built = buildBudgetFromCatalog({ budget, products: eligibleProducts, preferComplete: true });
   for (const [slot, component] of Object.entries(built.slots)) {
     const product = products.find((item) => item.id === component.productId);

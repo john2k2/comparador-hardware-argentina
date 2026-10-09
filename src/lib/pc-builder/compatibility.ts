@@ -1,5 +1,6 @@
 import type { Product } from '@/lib/types';
 import { parseListingFlags } from '@/lib/product/listing-flags';
+import { hasIntegratedGraphics } from '@/lib/product/cpu-graphics';
 import { inferCpuSocket, inferMotherboardPlatform, inferPsuWatts, requiredPsuWatts } from '@/lib/seo/budget-build-compat';
 import type { BuildDraft, BuildIssue, BuildSlot } from './types';
 
@@ -29,12 +30,7 @@ function formFactor(value: string): string | null {
   if (/\be[ -]?atx/i.test(value)) return 'e-atx';
   return /\batx\b/i.test(value) ? 'atx' : null;
 }
-export function hasIntegratedGraphics(cpu: Product | undefined): boolean {
-  const value = spec(cpu, 'gráficos integrados', 'gpu integrada', 'gráficos').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  if (/\b(no|sin|ninguno)\b/i.test(value)) return false;
-  return /\b(si|sí|radeon|uhd|iris|intel graphics)\b/i.test(value)
-    || /\bryzen\b.*\b\d{4}g(?:t|e)?\b/i.test(cpu?.name ?? '');
-}
+export { hasIntegratedGraphics };
 export function includesCpuCooler(cpu: Product | undefined): boolean | null {
   if (!cpu) return null;
   // El título agrupado puede describir otra presentación comercial del mismo chip.

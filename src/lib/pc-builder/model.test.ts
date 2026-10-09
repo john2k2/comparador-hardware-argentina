@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Product, ProductPrice } from '@/lib/types';
-import { checkBuildCompatibility } from './compatibility';
+import { checkBuildCompatibility, hasIntegratedGraphics } from './compatibility';
 import { emptyBuild, type BuildDraft } from './types';
 import { candidatesForSlot, describeBuildSuggestion, eligibleOffers, quoteBuild, selectProduct, suggestBuild } from './model';
 
@@ -36,6 +36,22 @@ function draftWithSelections(selections: BuildDraft['selections'], payment: Buil
 }
 
 describe('checkBuildCompatibility', () => {
+  it.each([
+    ['AMD Ryzen 5 9600 RADEON GRAPHICS AM5 DDR5 C/Cooler', {}, true],
+    ['AMD Ryzen 5 9600 AM5', {}, false],
+    ['AMD Ryzen 5 5600G AM4', {}, true],
+    ['AMD Ryzen 5 5600G sin video AM4', {}, false],
+    ['AMD Ryzen 7 8700F RADEON GRAPHICS', {}, false],
+    ['Intel Core i5 12400-F', { 'gráficos integrados': 'Intel UHD Graphics' }, false],
+    ['Intel Core i5 12400 F', { 'gráficos integrados': 'Intel UHD Graphics' }, false],
+    ['Intel Core i5 14600-KF', { 'gráficos integrados': 'sí' }, false],
+    ['Intel Core Ultra 5 225F', { 'gráficos integrados': 'sí' }, false],
+    ['Intel Core Ultra 5 225 F', { 'gráficos integrados': 'sí' }, false],
+    ['AMD Ryzen 5 9600 RADEON GRAPHICS', { 'gráficos integrados': 'no' }, false],
+    ['AMD Ryzen 5 9600 no cuenta con gráficos integrados', {}, false],
+  ] as const)('usa sólo evidencia positiva de video: %s', (name, specs, expected) => {
+    expect(hasIntegratedGraphics(product({ id: 'cpu', category: 'procesadores', name, specs }))).toBe(expected);
+  });
   it('excluye una notebook abreviada del slot de GPU aunque la categoría histórica sea incorrecta', () => {
     const notebook = product({ id: 'notebook-gpu', category: 'tarjetas-graficas',
       name: 'NB ASUS 15.6 R7-170 16GB 512GB RTX3050',
@@ -335,6 +351,63 @@ function suggestionCatalog(): Product[] {
 }
 
 describe('suggestBuild y resultado comunicado', () => {
+  it('no anuncia PC completa para CPU F aunque una especificación contradictoria diga video integrado', () => {
+    const products = suggestionCatalog().filter((item) => item.id !== 'gpu');
+    products[0].name = 'Intel Core i5 12400-F LGA1700';
+    products[0].specs['gráficos integrados'] = 'Intel UHD Graphics';
+    products.find((item) => item.id === 'motherboard')!.name = 'ASUS B660 LGA1700 DDR4';
+    const draft = suggestBuild(products, 600_000);
+    expect(quoteBuild(draft, products).complete).toBe(false);
+    expect(quoteBuild(draft, products).issues).toContainEqual(expect.objectContaining({ code: 'missing-gpu', severity: 'error' }));
+    expect(describeBuildSuggestion(draft, products).status).toBe('partial');
+  });
+
+  it('reserva la fuente antes de mejorar almacenamiento aunque falte GPU', () => {
+    const products = suggestionCatalog().filter((item) => item.id !== 'gpu');
+    products.push(product({ id: 'ssd-upgrade', name: 'SSD NVMe 2TB', category: 'almacenamiento',
+      prices: [price({ storeId: 'store', storeName: 'Store', price: 200_000 })] }));
+    const draft = suggestBuild(products, 600_000);
+    expect(draft.selections.psu?.productId).toBe('psu');
+    expect(draft.selections.ssd?.productId).toBe('ssd');
+    expect(quoteBuild(draft, products).total).toBe(600_000);
+    expect(describeBuildSuggestion(draft, products).status).toBe('partial');
+    expect(describeBuildSuggestion(draft, products).message).toContain('Falta elegir placa de video');
+  });
+
+  it('elige una CPU con video confirmado y fuente dentro del máximo sin una GPU dedicada', () => {
+    const products = suggestionCatalog().filter((item) => item.id !== 'gpu');
+    products.push(product({ id: 'cpu-integrated', name: 'AMD Ryzen 5 5600G AM4 CON COOLER', category: 'procesadores',
+      prices: [price({ storeId: 'store', storeName: 'Store', price: 120_000 })] }));
+    const draft = suggestBuild(products, 620_000);
+    expect(draft.selections.cpu?.productId).toBe('cpu-integrated');
+    expect(draft.selections.psu?.productId).toBe('psu');
+    expect(draft.selections.gpu).toBeUndefined();
+    expect(quoteBuild(draft, products).total).toBe(620_000);
+    expect(describeBuildSuggestion(draft, products).status).toBe('complete');
+    expect(describeBuildSuggestion(draft, products).message).toContain('gráficos integrados');
+  });
+
+  it('prueba una alternativa completa con video integrado si la dedicada deja refrigeración pendiente', () => {
+    const products = suggestionCatalog();
+    products[0].specs = {};
+    products.push(product({ id: 'cpu-integrated', name: 'AMD Ryzen 5 5600G AM4 CON COOLER', category: 'procesadores',
+      prices: [price({ storeId: 'store', storeName: 'Store', price: 150_000 })] }));
+    const draft = suggestBuild(products, 700_000);
+    expect(draft.selections.cpu?.productId).toBe('cpu-integrated');
+    expect(draft.selections.gpu).toBeUndefined();
+    expect(describeBuildSuggestion(draft, products).status).toBe('complete');
+    expect(quoteBuild(draft, products).total).toBe(650_000);
+  });
+
+  it('conserva la dedicada cuando el conjunto ya está completo', () => {
+    const products = suggestionCatalog();
+    products.push(product({ id: 'cpu-integrated', name: 'AMD Ryzen 5 5600G AM4 CON COOLER', category: 'procesadores',
+      prices: [price({ storeId: 'store', storeName: 'Store', price: 150_000 })] }));
+    const draft = suggestBuild(products, 700_000);
+    expect(draft.selections.gpu?.productId).toBe('gpu');
+    expect(describeBuildSuggestion(draft, products).status).toBe('complete');
+  });
+
   it('reproduce cero selecciones con catálogos cargados pero RAM sin oferta de hasta 3 horas', () => {
     const products = suggestionCatalog();
     products.find((item) => item.id === 'ram')!.prices[0].lastUpdated = new Date(Date.now() - 3 * 60 * 60 * 1000 - 1);

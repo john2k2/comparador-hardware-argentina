@@ -1,5 +1,6 @@
 import type { Product } from '@/lib/types';
 import { parseListingFlags } from '@/lib/product/listing-flags';
+import { hasIntegratedGraphics } from '@/lib/product/cpu-graphics';
 import type { BudgetGuideDefinition } from '@/lib/seo/budget-guides-data';
 import {
   compactGpuFromName,
@@ -248,7 +249,13 @@ function assemblePlatform(
 
   if (!pickedGpu || !pickedPsu) {
     if (minCpu.price > remainingForCpuGpuPsu) return null;
-    pickedCpu = cpuRanked.find((cpu) => cpu.price <= remainingForCpuGpuPsu) ?? minCpu;
+    // El armador reserva la fuente antes de mejorar RAM/SSD. Si no alcanza
+    // para una GPU, prioriza una CPU con video declarado dentro del máximo.
+    const psu = preferComplete ? cheapest(index.psus.filter((item) => (item.watts ?? 0) >= 450)) : undefined;
+    const withPower = psu ? cpuRanked.filter((cpu) => cpu.price + psu.price <= remainingForCpuGpuPsu) : [];
+    const poweredCpu = withPower.find((cpu) => hasIntegratedGraphics(cpu.product)) ?? withPower[0];
+    pickedCpu = poweredCpu ?? cpuRanked.find((cpu) => cpu.price <= remainingForCpuGpuPsu) ?? minCpu;
+    if (poweredCpu) pickedPsu = psu;
     if (pickedCpu.price > remainingForCpuGpuPsu) return null;
   }
 
