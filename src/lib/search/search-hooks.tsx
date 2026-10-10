@@ -9,6 +9,9 @@ import type { SearchApiResponse } from './search-api';
 import { resolveSearchMetadata } from './search-page-metadata';
 import { isCategoryCanonicalLanding } from './search-seo';
 import { SITE_NAME } from '@/lib/site-config';
+import { getRecentProductOffers } from '@/lib/product/product-page-metadata';
+import { CATALOG_OFFER_FRESH_MS } from '@/lib/price-freshness';
+import { hasCurrentSearchPagePrices } from './search-availability';
 import {
   readStoredSearch,
   writeStoredSearch,
@@ -199,6 +202,28 @@ export function useProductLoader({
     const controller = new AbortController();
     // Capturar el requestKey al inicio del efecto para detectar races
     const snapshotKey = requestKey;
+    const needsCurrentPrices = !currentState.includeUnavailable || currentState.minPrice !== undefined || currentState.maxPrice !== undefined;
+    const hasValidPrices = (payload: SearchApiResponse) => !needsCurrentPrices || hasCurrentSearchPagePrices(payload.products);
+    let expiryTimer: number | undefined;
+    let nextOfferExpiry = Infinity;
+    let refreshing = false;
+
+    // Releer sólo al vencer una oferta visible, no hacer polling cada TTL.
+    // El +1 conserva la inclusión exacta en el límite de 24 horas.
+    const scheduleOfferExpiry = (payload: SearchApiResponse) => {
+      if (expiryTimer !== undefined) window.clearTimeout(expiryTimer);
+      nextOfferExpiry = Math.min(...payload.products.flatMap(product =>
+        getRecentProductOffers(product).map(offer => new Date(offer.lastUpdated).getTime() + CATALOG_OFFER_FRESH_MS + 1)));
+      if (Number.isFinite(nextOfferExpiry)) {
+        expiryTimer = window.setTimeout(recheckExpiredOffers, Math.max(1, nextOfferExpiry - Date.now()));
+      }
+    };
+    const recheckExpiredOffers = () => {
+      if (controller.signal.aborted || refreshing || Date.now() < nextOfferExpiry || document.visibilityState === 'hidden') return;
+      refreshing = true;
+      nextOfferExpiry = Infinity;
+      void loadProducts().finally(() => { refreshing = false; });
+    };
 
     const loadProducts = async () => {
       if (!hasSearchIntent) {
@@ -217,7 +242,8 @@ export function useProductLoader({
 
       // Check memory cache
       const cached = getCached(snapshotKey);
-      if (cached) {
+      if (cached && hasValidPrices(cached)) {
+        scheduleOfferExpiry(cached);
         onProductsLoaded(cached.products, cached.pagination);
         onLoadingChange(false);
         onResolvedRequestKey(snapshotKey);
@@ -226,7 +252,8 @@ export function useProductLoader({
 
       // Check sessionStorage cache
       const stored = checkStored(snapshotKey);
-      if (stored) {
+      if (stored && hasValidPrices(stored)) {
+        scheduleOfferExpiry(stored);
         onProductsLoaded(stored.products, stored.pagination);
         onLoadingChange(false);
         onResolvedRequestKey(snapshotKey);
@@ -237,14 +264,22 @@ export function useProductLoader({
       onLoadingChange(true);
       try {
         const endpoint = buildSearchRoute(currentState).replace('/search', '/api/search');
-        const res = await fetch(endpoint, { signal: controller.signal });
-        if (!res.ok) throw new Error(`Search request failed: ${res.status}`);
-        const data = await res.json() as SearchApiResponse;
-        setCached(snapshotKey, data);
-
-        // P1: Guardia de race condition — verificar que el requestKey no cambió
-        if (controller.signal.aborted) return;
-        onProductsLoaded(data.products, data.pagination);
+        // Una respuesta puede cruzar el vencimiento mientras viaja. Releer una
+        // sola vez; nunca filtrar una página parcial ni inventar su total.
+        for (let attempt = 0; attempt < 2; attempt++) {
+          const res = await fetch(endpoint, { signal: controller.signal });
+          if (!res.ok) throw new Error(`Search request failed: ${res.status}`);
+          const data = await res.json() as SearchApiResponse;
+          if (controller.signal.aborted) return;
+          if (!hasValidPrices(data)) {
+            if (attempt === 0) continue;
+            throw new Error('Vencieron ofertas durante la consulta. Reintentá la búsqueda para obtener precios recientes.');
+          }
+          setCached(snapshotKey, data);
+          scheduleOfferExpiry(data);
+          onProductsLoaded(data.products, data.pagination);
+          break;
+        }
       } catch (error) {
         if (!controller.signal.aborted && (error as Error).name !== 'AbortError') {
           const errorMessage = (error as Error).message || 'Error al buscar productos';
@@ -266,8 +301,17 @@ export function useProductLoader({
       }
     };
 
+    window.addEventListener('focus', recheckExpiredOffers);
+    window.addEventListener('pageshow', recheckExpiredOffers);
+    document.addEventListener('visibilitychange', recheckExpiredOffers);
     void loadProducts();
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      if (expiryTimer !== undefined) window.clearTimeout(expiryTimer);
+      window.removeEventListener('focus', recheckExpiredOffers);
+      window.removeEventListener('pageshow', recheckExpiredOffers);
+      document.removeEventListener('visibilitychange', recheckExpiredOffers);
+    };
   }, [
     currentState,
     hasSearchIntent,

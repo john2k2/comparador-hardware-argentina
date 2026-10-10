@@ -8,6 +8,7 @@ import {
   type GuideCandidateConstraints,
   clampLimit,
   EMPTY_RESULT_ERROR_CODES,
+  prepareCatalogQuery,
   PRODUCT_SELECT_FIELDS,
   sanitizeSearchTerm,
 } from '@/lib/persistence/product-read-helpers';
@@ -141,7 +142,7 @@ export async function readProductsPageFromDatabase(params: ReadProductsPageParam
   const query = params.query?.trim() ?? '';
   const requestedCategory = params.category ?? inferHardwareCategoryFromName(query);
   const { data, error } = await supabase.rpc('search_catalog_page', {
-    p_query: query,
+    p_query: prepareCatalogQuery(query, requestedCategory),
     p_category: requestedCategory ?? null,
     p_stores: [...new Set([...params.storeIds ?? []].map((id) => id.trim().toLowerCase()).filter(Boolean))].sort(),
     // A non-null floor activates the RPC's current comparable-offer filter

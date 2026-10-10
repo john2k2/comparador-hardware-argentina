@@ -104,6 +104,23 @@ describe('readCategoryLandingPageFromDatabase', () => {
     expect(rangeMock).toHaveBeenLastCalledWith('search_catalog_page', expect.objectContaining({ p_min_price: null }));
   });
 
+  it.each(['Procesador', 'Procesadores', 'Microprocesador', 'Microprocesadores', 'Micro', 'CPU'])(
+    'busca el mismo modelo de CPU independientemente del descriptor %s',
+    async (descriptor) => {
+      await readProductsPageFromDatabase({ query: `${descriptor} Ryzen 7 5700X`, category: 'procesadores', page: 1, pageSize: 12 });
+      expect(rangeMock).toHaveBeenLastCalledWith('search_catalog_page', expect.objectContaining({
+        p_query: 'Ryzen 7 5700X', p_category: 'procesadores',
+      }));
+    },
+  );
+
+  it('mantiene la categoría cuando la consulta sólo describe un CPU y conserva el término CPU fuera de ella', async () => {
+    await readProductsPageFromDatabase({ query: 'procesadores', category: 'procesadores', page: 1, pageSize: 12 });
+    expect(rangeMock).toHaveBeenLastCalledWith('search_catalog_page', expect.objectContaining({ p_query: '', p_category: 'procesadores' }));
+    await readProductsPageFromDatabase({ query: 'Cooler CPU Intel', category: 'refrigeracion', page: 1, pageSize: 12 });
+    expect(rangeMock).toHaveBeenLastCalledWith('search_catalog_page', expect.objectContaining({ p_query: 'Cooler CPU Intel', p_category: 'refrigeracion' }));
+  });
+
   it('accepts genuine empty pages but throws for unavailable, failed and malformed RPC responses', async () => {
     const params = { page: 99, pageSize: 12 };
     rangeMock.mockResolvedValue({ data: { products: [], total: 0, totalPages: 0, page: 1, pageSize: 12 }, error: null });

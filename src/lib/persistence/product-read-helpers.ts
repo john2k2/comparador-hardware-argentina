@@ -3,6 +3,14 @@ import type { HardwareCategory, StockStatus } from '@/lib/types';
 export const DEFAULT_LIMIT = 240;
 export const MAX_LIMIT = 1200;
 export const EMPTY_RESULT_ERROR_CODES = new Set(['PGRST116']);
+
+// La categoría ya exige que sea un CPU. Su descriptor comercial no debe
+// recortar modelos según que la tienda los titule Procesador, Micro o CPU.
+export function prepareCatalogQuery(query: string, category?: HardwareCategory): string {
+  if (category !== 'procesadores') return query;
+  return query.replace(/\b(?:procesador(?:es)?|microprocesador(?:es)?|micro|cpu)\b/gi, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
 // El mapper expone campos explícitos; el comodín anidado permite desplegar antes
 // de agregar identity_review sin romper las lecturas del catálogo existente.
 export const PRODUCT_SELECT_FIELDS = `

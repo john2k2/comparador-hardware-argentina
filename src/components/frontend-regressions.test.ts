@@ -142,7 +142,11 @@ async function resolveRequest(page: Page, index: number, products: object[] = []
   }, { index, products, status });
 }
 
-const cpu = { id: 'cpu', category: 'procesadores', name: 'CPU fixture', brand: 'Fixture', model: 'CPU fixture', specs: {}, prices: [], lowestPrice: 0 };
+// La respuesta autoritativa representa una oferta elegible: los casos de
+// navegación no deben simular una ficha sin precio como resultado actual.
+const cpu = { id: 'cpu', category: 'procesadores', name: 'CPU fixture', brand: 'Fixture', model: 'CPU fixture', specs: {},
+  prices: [{ storeId: 'fixture', storeName: 'Fixture', url: 'https://store.example/fixture', price: 100,
+    stock: 'in-stock', installment: null, lastUpdated: new Date().toISOString() }], lowestPrice: 100 };
 const gpu = { ...cpu, id: 'gpu', category: 'tarjetas-graficas', name: 'GPU fixture', model: 'GPU fixture' };
 
 describe('frontend interaction regressions', () => {

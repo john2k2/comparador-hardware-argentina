@@ -100,7 +100,7 @@ describe('/api/search rate limit, caché y escrituras', () => {
     mocks.getSharedCache.mockResolvedValue(catalogPageResponse(catalogPage([freshProduct('cached-hit')])));
 
     const responsePromise = GET(searchRequest());
-    await vi.waitFor(() => expect(mocks.getSharedCache).toHaveBeenCalledWith('search-response-v2', expect.any(String)));
+    await vi.waitFor(() => expect(mocks.getSharedCache).toHaveBeenCalledWith('search-response-v3', expect.any(String)));
     expect(mocks.checkRateLimit).toHaveBeenCalledTimes(1);
 
     pendingLimit.resolve(rateLimit(true));
@@ -124,6 +124,19 @@ describe('/api/search rate limit, caché y escrituras', () => {
     expect(mocks.setSharedCache).toHaveBeenCalledTimes(1);
   });
 
+  it('conserva una búsqueda admitida si falla la caché y SQL puede responder', async () => {
+    mocks.checkRateLimit.mockResolvedValue(rateLimit(true));
+    mocks.getSharedCache.mockRejectedValue(new Error('cache transport down'));
+    mocks.readProductsPageFromDatabase.mockResolvedValue(catalogPage([freshProduct('available-from-db')]));
+
+    const response = await GET(searchRequest('ryzen 7700'));
+
+    expect(response.status).toBe(200);
+    expect((await response.json()).products[0].id).toBe('available-from-db');
+    expect(mocks.readProductsPageFromDatabase).toHaveBeenCalledTimes(1);
+    expect(response.headers.get('X-Search-Cache')).toBe('DB');
+  });
+
   it('no lee la caché en un refresh explícito', async () => {
     mocks.checkRateLimit.mockResolvedValue(rateLimit(true));
     mocks.readProductsPageFromDatabase.mockResolvedValue(catalogPage([freshProduct('refreshed')]));
@@ -133,5 +146,15 @@ describe('/api/search rate limit, caché y escrituras', () => {
     expect(response.status).toBe(200);
     expect(mocks.getSharedCache).not.toHaveBeenCalled();
     expect(mocks.setSharedCache).toHaveBeenCalledTimes(1);
+  });
+
+  it('mantiene un error visible si fallan la caché auxiliar y la lectura SQL', async () => {
+    mocks.checkRateLimit.mockResolvedValue(rateLimit(true));
+    mocks.getSharedCache.mockRejectedValue(new Error('cache transport down'));
+    mocks.readProductsPageFromDatabase.mockRejectedValue(new Error('database unavailable'));
+    const response = await GET(searchRequest('ryzen 7900'));
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({ error: expect.any(String) });
+    expect(mocks.setSharedCache).not.toHaveBeenCalled();
   });
 });

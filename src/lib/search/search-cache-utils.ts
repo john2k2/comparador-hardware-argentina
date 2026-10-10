@@ -8,7 +8,7 @@ import { getRecentProductOffers } from '@/lib/product/product-page-metadata';
 import { CATALOG_OFFER_FRESH_MS } from '@/lib/price-freshness';
 
 const CLIENT_SEARCH_CACHE_TTL_MS = 90 * 1000;
-const CLIENT_SEARCH_STORAGE_PREFIX = 'search-cache:v7:';
+const CLIENT_SEARCH_STORAGE_PREFIX = 'search-cache:v8:';
 const SEARCH_SCROLL_STORAGE_PREFIX = 'search-scroll:v1:';
 const SEARCH_SCROLL_TTL_MS = 10 * 60 * 1000;
 
@@ -54,10 +54,11 @@ export function writeStoredSearch(cacheKey: string, value: { expiresAt: number; 
 }
 
 export function createSearchCacheEntry(payload: SearchApiResponse) {
-  // A product remains displayable while at least one accepted offer is fresh.
+  // Una oferta que vence puede cambiar precio, filtros, orden o comparación.
+  // Invalidar la página antes de ese cambio, aunque otra oferta siga vigente.
   const offerExpiries = payload.products.flatMap((product) => {
     const current = getRecentProductOffers(product);
-    return current.length ? [Math.max(...current.map((offer) => new Date(offer.lastUpdated).getTime())) + CATALOG_OFFER_FRESH_MS] : [];
+    return current.map((offer) => new Date(offer.lastUpdated).getTime() + CATALOG_OFFER_FRESH_MS);
   });
   return {
     payload,

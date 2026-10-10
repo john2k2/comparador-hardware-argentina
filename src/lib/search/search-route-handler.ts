@@ -190,9 +190,11 @@ export async function GET(request: NextRequest) {
   const stableRuntimeMode = isStableRuntimeMode();
   // La caché se lee junto al rate limit, pero sólo se usa después de admitir la solicitud.
   const cachedRead = hasSearchIntent && !stableRuntimeMode && !bypassDb && !isRefreshRequest
-    ? getCachedSearchResponse(cacheKey, includeUnavailable, { minPrice, maxPrice, sortBy })
+    ? getCachedSearchResponse(cacheKey, includeUnavailable, { minPrice, maxPrice, sortBy }).catch(() => {
+      logger.warn('Search catalog cache read skipped');
+      return null;
+    })
     : null;
-  cachedRead?.catch(() => undefined);
 
   const rateResult = await checkRateLimit(`/api/search:${getRequestIp(request)}`, SEARCH_RATE_LIMIT);
   defaultRateLimitHeaders = buildRateLimitHeaders(rateResult);

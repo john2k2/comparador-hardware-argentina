@@ -97,7 +97,7 @@ describe('initial catalog page', () => {
     expect(results.every(result => result.products[0].id === 'target50' && result.pagination.total === 1501)).toBe(true);
     expect(getCache).toHaveBeenCalledTimes(1);
     expect(setCache).toHaveBeenCalledTimes(1);
-    expect(setCache).toHaveBeenCalledWith('search-response-v2', cacheKey(), expect.any(Object), SEARCH_CACHE_TTL_MS);
+    expect(setCache).toHaveBeenCalledWith('search-response-v3', cacheKey(), expect.any(Object), SEARCH_CACHE_TTL_MS);
     await readInitialSearchPage(parseSearchState({ q: 'ryzen 5600' }));
     expect(readPage).toHaveBeenCalledTimes(1);
   });

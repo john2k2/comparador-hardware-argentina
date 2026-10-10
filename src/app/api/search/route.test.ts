@@ -260,7 +260,7 @@ describe('/api/search route', () => {
     const { GET } = await import('./route');
     await GET(new NextRequest('http://localhost/api/search?q=rtx+5090&includeUnavailable=1'));
     expect(mockReadProductsFromDatabase).toHaveBeenCalledWith(expect.objectContaining({ onlyCurrentOffers: false }));
-    expect(mockGetSharedCache).toHaveBeenCalledWith('search-response-v2', expect.stringContaining('references=1'));
+    expect(mockGetSharedCache).toHaveBeenCalledWith('search-response-v3', expect.stringContaining('references=1'));
   });
 
   it('habilita revisión de ofertas sólo al propagar un refresh autenticado', async () => {
@@ -312,7 +312,7 @@ describe('/api/search route', () => {
     expect(payload.pagination).toMatchObject({ total: 1501, page: 2, offset: 12, totalPages: 126 });
     expect(payload.products.map((p: { id: string }) => p.id)).toEqual(['target50']);
     expect(mockReadProductsFromDatabase).toHaveBeenCalledWith(expect.objectContaining({ page: 2, storeIds: new Set(['mexx']) }));
-    expect(mockSetSharedCache).toHaveBeenCalledWith('search-response-v2', expect.any(String), expect.any(Object), expect.any(Number));
+    expect(mockSetSharedCache).toHaveBeenCalledWith('search-response-v3', expect.any(String), expect.any(Object), expect.any(Number));
   });
 
   it('returns 503 without scraping or caching when catalog RPC fails', async () => {

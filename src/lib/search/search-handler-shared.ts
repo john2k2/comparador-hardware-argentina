@@ -6,9 +6,10 @@ import { getSharedCache, setSharedCache } from '@/lib/server/shared-cache';
 import type { SearchApiResponse } from '@/lib/search/search-api';
 import { SEARCH_PAGE_SIZE } from '@/lib/search/search-pagination';
 import type { ProductPageResult } from '@/lib/persistence/product-read-types';
-import { getRecentProductOffers } from '@/lib/product/product-page-metadata';
 import { dedupeCpuSearchProducts } from '@/lib/search/search-dedupe';
 import { guardIdentityPage, type IdentityPageOptions } from '@/lib/search/identity-page-guard';
+import { hasCurrentSearchPagePrices } from './search-availability';
+export { hasCurrentSearchPagePrices } from './search-availability';
 
 function dedupeSearchResponse(payload: SearchApiResponse, options: IdentityPageOptions = {}): SearchApiResponse {
   const products = dedupeCpuSearchProducts(payload.products, options);
@@ -176,15 +177,8 @@ export function buildSearchCacheKey(input: {
   ].join('|');
 }
 
-export function hasCurrentSearchPagePrices(products: Product[]): boolean {
-  return products.every((product) => {
-    const offers = getRecentProductOffers(product);
-    return offers.length > 0 && Math.min(...offers.map((offer) => offer.price)) === product.lowestPrice;
-  });
-}
-
 export async function getCachedSearchResponse(cacheKey: string, includeUnavailable = false, options?: IdentityPageOptions): Promise<SearchApiResponse | null> {
-  const cached = await getSharedCache<SearchApiResponse>('search-response-v2', cacheKey);
+  const cached = await getSharedCache<SearchApiResponse>('search-response-v3', cacheKey);
   if (!cached) return null;
   const products = hydrateProducts(cached.products ?? []);
   const guarded = guardIdentityPage(products, options);
@@ -202,5 +196,5 @@ export async function getCachedSearchResponse(cacheKey: string, includeUnavailab
 }
 
 export async function setCachedSearchResponse(cacheKey: string, payload: SearchApiResponse): Promise<void> {
-  await setSharedCache('search-response-v2', cacheKey, payload, SEARCH_CACHE_TTL_MS);
+  await setSharedCache('search-response-v3', cacheKey, payload, SEARCH_CACHE_TTL_MS);
 }
