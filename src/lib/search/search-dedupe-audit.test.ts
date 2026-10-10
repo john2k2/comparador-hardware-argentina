@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Product } from '@/lib/types';
 import { hydrateProducts } from '@/lib/product-serialization';
 import { getRecentProductOffers } from '@/lib/product/product-page-metadata';
+import { isComparableStoreOffer } from '@/lib/price-utils';
+import { isCatalogOfferFresh } from '@/lib/price-freshness';
 import auditRows from './search-dedupe-audit.fixture.json';
 import { dedupeCpuSearchProducts, dedupeNearDuplicates, groupSearchProducts } from './search-dedupe';
 
@@ -13,19 +15,33 @@ beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-09T16:
 afterEach(() => vi.useRealTimers());
 
 describe('regresión de la búsqueda pública Ryzen 5600', () => {
-  it.each([false, true])('agrupa tres títulos sin presentación y conserva BOX aparte, reversed=%s', (reverse) => {
+  it.each([false, true])('conserva cuatro filas y sus sujetos vigentes originales en la página, reversed=%s', (reverse) => {
     const input = reverse ? rows().reverse() : rows(); const snapshot = JSON.stringify(input);
-    for (const dedupe of [dedupeCpuSearchProducts, dedupeNearDuplicates]) {
-      const result = dedupe(input);
-      expect(result).toHaveLength(2);
-      const canonical = result.find(product => product.id === canonicalId)!;
-      expect(canonical.name).toBe('Procesador Amd Ryzen 5 5600 6C/12T Sin Video');
-      expect(canonical.lowestPrice).toBe(233700);
-      expect(canonical.lowestPrice).toBe(getRecentProductOffers(canonical)[0].price);
-      expect(canonical.prices.some(offer => offer.price === 229000)).toBe(true);
-      expect(canonical.prices.find(offer => offer.price === 229000)!.lastUpdated.toISOString()).toContain('2026-09-22');
-      expect(result.find(product => /BOX/.test(product.name))!.prices[0].price).toBe(287270.1);
-    }
+    const subjects = (products: Product[]) => products.flatMap(product => product.prices
+      .filter(offer => isComparableStoreOffer(offer, product) && isCatalogOfferFresh(offer.lastUpdated))
+      .map(offer => JSON.stringify({ name: product.name, category: product.category, offer }))).sort();
+    const before = subjects(input);
+    expect(before).toHaveLength(5);
+    const result = dedupeCpuSearchProducts(input);
+    expect(result).toHaveLength(4);
+    expect(subjects(result)).toEqual(before);
+    // Preserva también dictámenes, sourceIdentity y fechas de cada oferta,
+    // incluidos los datos históricos que no acreditan un mínimo vigente.
+    expect(result).toEqual(input);
+    expect(result.find(product => product.id === canonicalId)!.lowestPrice).toBe(233700);
+    expect(JSON.stringify(input)).toBe(snapshot);
+  });
+  it.each([false, true])('conserva el contrato legacy de agrupación fuera de la página CPU, reversed=%s', (reverse) => {
+    const input = reverse ? rows().reverse() : rows(); const snapshot = JSON.stringify(input);
+    const result = dedupeNearDuplicates(input);
+    expect(result).toHaveLength(2);
+    const canonical = result.find(product => product.id === canonicalId)!;
+    expect(canonical.name).toBe('Procesador Amd Ryzen 5 5600 6C/12T Sin Video');
+    expect(canonical.lowestPrice).toBe(233700);
+    expect(canonical.lowestPrice).toBe(getRecentProductOffers(canonical)[0].price);
+    expect(canonical.prices.some(offer => offer.price === 229000)).toBe(true);
+    expect(canonical.prices.find(offer => offer.price === 229000)!.lastUpdated.toISOString()).toContain('2026-09-22');
+    expect(result.find(product => /BOX/.test(product.name))!.prices[0].price).toBe(287270.1);
     expect(JSON.stringify(input)).toBe(snapshot);
   });
   it('no fusiona BOX/TRAY, refrigeración distinta ni presentación desconocida', () => {

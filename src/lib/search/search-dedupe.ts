@@ -1,4 +1,5 @@
-import { computeComparableStorePriceStats, computeCurrentStorePriceStats, preferStorePrice } from '@/lib/price-utils';
+import { computeComparableStorePriceStats, computeCurrentStorePriceStats, isComparableStoreOffer, preferStorePrice } from '@/lib/price-utils';
+import { isCatalogOfferFresh } from '@/lib/price-freshness';
 import { pickProductImage } from '@/lib/product-images';
 import {
   buildProductFamilyKey,
@@ -211,30 +212,57 @@ export function dedupeNearDuplicates(products: Product[]): Product[] {
   return deduped;
 }
 
-/** Agrupar sólo CPUs en respuestas ya paginadas; conservar el orden restante. */
+function currentOfferSubjects(product: Product, now: number): Set<string> {
+  return new Set(product.prices
+    .filter(offer => isComparableStoreOffer(offer, product) && isCatalogOfferFresh(offer.lastUpdated, now))
+    .map(offer => JSON.stringify([offer.storeId, offer.url, offer.price, offer.priceCondition ?? null,
+      offer.identityReview ?? null, offer.sourceIdentity ?? null])));
+}
+
+function preservesCurrentOfferSubjects(first: Product, second: Product, merged: Product, now: number): boolean {
+  const before = new Set([...currentOfferSubjects(first, now), ...currentOfferSubjects(second, now)]);
+  const after = currentOfferSubjects(merged, now);
+  return before.size === after.size && [...before].every(subject => after.has(subject));
+}
+
+function compareCpuMergeOrder(first: Product, second: Product): number {
+  const prefix = 'agrupado-procesadores-';
+  return Number(second.id.startsWith(prefix)) - Number(first.id.startsWith(prefix))
+    || tokenizeForDedupe(second.name).length - tokenizeForDedupe(first.name).length
+    || first.id.localeCompare(second.id);
+}
+
+/** Agrupar sólo CPUs en respuestas ya paginadas; conservar la posición del grupo. */
 export function dedupeCpuSearchProducts(products: Product[], bounds: { minPrice?: number; maxPrice?: number } = {}): Product[] {
-  const deduped: Product[] = [];
-  for (const product of products) {
-    const index = product.category === 'procesadores'
-      ? deduped.findIndex(existing => canMergeNearDuplicate(existing, product)) : -1;
-    if (index < 0) deduped.push(product);
+  const now = Date.now();
+  const entries = products.map((product, position) => ({ product, position }));
+  const deduped = entries.filter(entry => entry.product.category !== 'procesadores');
+  // La admisión de una fusión no debe depender del orden de precio/relevancia.
+  const cpus = entries.filter(entry => entry.product.category === 'procesadores')
+    .sort((a, b) => compareCpuMergeOrder(a.product, b.product));
+  for (const entry of cpus) {
+    const { product } = entry;
+    const index = deduped.findIndex(existing => canMergeNearDuplicate(existing.product, product));
+    if (index < 0) deduped.push(entry);
     else {
-      const merged = mergeProductEntries(deduped[index], product);
+      const existing = deduped[index];
+      const merged = mergeProductEntries(existing.product, product);
       const originalMinimum = Math.min(...[
-        computeCurrentStorePriceStats(deduped[index].prices, deduped[index]).lowest,
-        computeCurrentStorePriceStats(product.prices, product).lowest,
+        computeCurrentStorePriceStats(existing.product.prices, existing.product, now).lowest,
+        computeCurrentStorePriceStats(product.prices, product, now).lowest,
       ].filter(price => price > 0));
       // Una fusión no puede cambiar la elegibilidad ya exigida a estas filas.
       // Cada dictamen sigue ligado a su contexto original: no se oculta una
       // oferta vigente más barata ni se habilita otra antes no elegible.
       if (merged.lowestPrice <= 0
         || merged.lowestPrice !== originalMinimum
+        || !preservesCurrentOfferSubjects(existing.product, product, merged, now)
         || (bounds.minPrice !== undefined && merged.lowestPrice < bounds.minPrice)
-        || (bounds.maxPrice !== undefined && merged.lowestPrice > bounds.maxPrice)) deduped.push(product);
-      else deduped[index] = merged;
+        || (bounds.maxPrice !== undefined && merged.lowestPrice > bounds.maxPrice)) deduped.push(entry);
+      else deduped[index] = { product: merged, position: Math.min(existing.position, entry.position) };
     }
   }
-  return deduped;
+  return deduped.sort((a, b) => a.position - b.position).map(entry => entry.product);
 }
 
 export function filterProductStores(product: Product, selectedStoreIds: Set<string>): Product | null {
