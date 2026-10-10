@@ -20,6 +20,19 @@ function buildRawProduct(overrides: Partial<CompraGamerProductResponse> = {}): C
 }
 
 describe('compragamer-mapper', () => {
+  it.each(['visible_solo_en_ATPC', 'visible_solo_en_combo'] as const)(
+    'excluye venta restringida por %s aunque haya precio, stock y vendible', flag => {
+      for (const value of [true, 1, '1', 'true']) {
+        expect(mapCompraGamerProduct({ item: buildRawProduct({ [flag]: value }),
+          subcategoryMap: new Map(), brandMap: new Map() })).toBeNull();
+      }
+      for (const value of [false, 0, '0', 'false', undefined]) {
+        const observedAt = new Date('2026-10-10T12:00:00Z');
+        const mapped = mapCompraGamerProduct({ item: buildRawProduct({ [flag]: value, observedAt }),
+          subcategoryMap: new Map(), brandMap: new Map() });
+        expect(mapped?.prices[0]).toMatchObject({ price: 1249999, stock: 'low-stock', lastUpdated: observedAt });
+      }
+    });
   it.each([
     ['Notebook HP Core i7 16GB DDR4', 'computadoras'],
     ['Memoria notebook DDR4 16GB', 'memoria-ram'],

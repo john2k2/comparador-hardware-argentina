@@ -254,6 +254,10 @@ export function mapCompraGamerProduct(input: {
   subcategoryMap: Map<number, HardwareCategory>;
   brandMap: Map<number, string>;
 }): Product | null {
+  // Stock y vendible no acreditan venta suelta si la fuente la restringe.
+  const restricted = [input.item.visible_solo_en_ATPC, input.item.visible_solo_en_combo]
+    .some(value => value === true || value === 1 || value === '1' || value === 'true');
+  if (restricted) return null;
   const productId = toPositiveInteger(input.item.id_producto);
   const name = String(input.item.nombre ?? '').trim();
   const specialPrice = parseScrapedArsPrice(input.item.precioEspecial);

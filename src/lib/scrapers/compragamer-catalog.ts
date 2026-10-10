@@ -28,6 +28,8 @@ export interface CompraGamerProductResponse {
   precioLista?: number | string;
   stock?: number | string;
   vendible?: number | boolean;
+  visible_solo_en_ATPC?: boolean | number | string;
+  visible_solo_en_combo?: boolean | number | string;
   id_subcategoria?: number | string;
   id_marca?: number | string;
   codigo_principal?: unknown;
