@@ -8,14 +8,20 @@ export async function readRunnerEvidence(path) {
   let result;
   try { result = JSON.parse(await readFile(path, 'utf8')); }
   catch (error) { return unavailable(error.code === 'ENOENT' ? 'runner-receipt-missing' : 'runner-receipt-invalid'); }
-  if (result?.source !== 'priority-known-offers'
-    || ['attempted', 'observed', 'comparable'].some(key => !Number.isSafeInteger(result[key]) || result[key] < 0)
-    || result.observed > result.attempted || result.comparable > result.observed
+  if (result?.source === 'priority-known-offers' && result.status === 'deferred'
+    && result.reason === 'PRIORITY_REFRESH_DEFERRED'
+    && !['attempted', 'observed', 'comparable', 'missingGuideSlots'].some(key => key in result)) {
+    return { status: 'deferred', reason: result.reason, artifact: basename(path) };
+  }
+  const counts = result?.critical ?? result;
+  if (result?.source !== 'priority-known-offers' || (result.demand && !result.critical)
+    || ['attempted', 'observed', 'comparable'].some(key => !Number.isSafeInteger(counts?.[key]) || counts[key] < 0)
+    || counts.observed > counts.attempted || counts.comparable > counts.observed
     || !Array.isArray(result.missingGuideSlots) || result.missingGuideSlots.some(slot => typeof slot !== 'string')) {
     return unavailable('runner-receipt-invalid');
   }
   return { status: 'available', artifact: basename(path), source: result.source,
-    attempted: result.attempted, observed: result.observed, comparable: result.comparable,
+    attempted: counts.attempted, observed: counts.observed, comparable: counts.comparable,
     missingGuideSlots: result.missingGuideSlots };
 }
 

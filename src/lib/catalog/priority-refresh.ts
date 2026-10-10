@@ -12,10 +12,14 @@ import { fetchKnownOffer, createKnownOfferContext } from './on-demand/worker';
 import type { RefreshItemResult, RefreshTarget } from './on-demand/contracts';
 import { nextPriorityTargets, planGuideGroups, planSampleTargets, targetKey, PRIORITY_MAX_GUIDE_OFFERS, PRIORITY_MAX_SAMPLE_OFFERS, type PriorityGroup } from './priority-planning';
 import type { Product } from '@/lib/types';
+import { loadPriorityDemandPlan, PRIORITY_MAX_DEMAND_OFFERS, PRIORITY_DEMAND_MAX_MS, PRIORITY_DEMAND_REQUEST_RESERVE_MS } from './demand-planning';
 import sample from '../../../docs/reports/crecimiento-2026-09-12/G02-MUESTRA-PRIORITARIA.json';
 
 const MAX_RUN_MS = 18 * 60_000;
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+type DemandSummary = { source: 'search-request-signal'; status: 'completed' | 'deferred' | 'failed';
+  demands: number; products: string[]; groups: number; attempted: number; observed: number; comparable: number;
+  limitReached: boolean; failureCode?: string };
 
 export async function runPriorityRefresh(includeSample: boolean) {
   const client = getServerSupabaseServiceClient();
@@ -25,7 +29,12 @@ export async function runPriorityRefresh(includeSample: boolean) {
   const gate = await supabase.rpc('check_api_rate_limit', {
     p_bucket_key: 'catalog-priority-refresh-30m', p_limit: 1, p_window_seconds: 1800,
   });
-  if (gate.error || !gate.data?.allowed) throw new Error('PRIORITY_REFRESH_DEFERRED');
+  if (gate.error) throw new Error('PRIORITY_GATE_FAILED');
+  if (typeof gate.data?.allowed !== 'boolean') throw new Error('PRIORITY_GATE_INVALID_RESPONSE');
+  if (!gate.data.allowed) return { source: 'priority-known-offers', status: 'deferred', includeSample,
+    reason: 'PRIORITY_REFRESH_DEFERRED', finishedAt: new Date().toISOString(),
+    ...(Number.isSafeInteger(gate.data.retryAfterSeconds) && gate.data.retryAfterSeconds > 0
+      && gate.data.retryAfterSeconds <= 1800 ? { retryAfterSeconds: gate.data.retryAfterSeconds } : {}) };
   const started = Date.now();
   const startedAt = new Date(started).toISOString();
   const products = new Map<string, Product>();
@@ -39,12 +48,15 @@ export async function runPriorityRefresh(includeSample: boolean) {
   const attempted = new Set<string>();
   const results: RefreshItemResult[] = [];
   let deadlineReached = false;
+  let demandBudgetReached = false;
 
-  async function refreshBatch(targets: RefreshTarget[]) {
+  async function refreshBatch(targets: RefreshTarget[], demandDeadline?: number) {
     const observations = [];
     for (const target of targets) {
-      if (Date.now() - started >= MAX_RUN_MS) { deadlineReached = true; break; }
       if (attempted.has(targetKey(target))) continue;
+      if (demandDeadline !== undefined) {
+        if (Date.now() + PRIORITY_DEMAND_REQUEST_RESERVE_MS > demandDeadline) { demandBudgetReached = true; break; }
+      } else if (Date.now() - started >= MAX_RUN_MS) { deadlineReached = true; break; }
       attempted.add(targetKey(target));
       const product = products.get(target.productId);
       const observed = product ? await fetchKnownOffer(product, target, started, context).catch(() => null) : null;
@@ -100,9 +112,47 @@ export async function runPriorityRefresh(includeSample: boolean) {
       await refreshBatch(candidates.slice(offset, Math.min(offset + 8, PRIORITY_MAX_SAMPLE_OFFERS)));
     }
   }
+  // Guías y muestra conservan su presupuesto: la señal pública sólo usa remanente.
+  const demand: DemandSummary = { source: 'search-request-signal', status: 'deferred', demands: 0,
+    products: [], groups: 0, attempted: 0, observed: 0, comparable: 0, limitReached: false };
+  const demandDeadline = Math.min(started + MAX_RUN_MS, Date.now() + PRIORITY_DEMAND_MAX_MS);
+  const demandResultStart = results.length;
+  const demandAttemptStart = attempted.size;
+  const critical = { attempted: attempted.size, observed: results.filter(result => result.observedAt).length,
+    comparable: results.filter(result => result.comparable).length };
+  if (!deadlineReached && Date.now() + PRIORITY_DEMAND_REQUEST_RESERVE_MS <= demandDeadline) {
+    let stage: 'read' | 'refresh' = 'read';
+    try {
+      const plan = await loadPriorityDemandPlan(Date.now(), () => Date.now() + PRIORITY_DEMAND_REQUEST_RESERVE_MS <= demandDeadline);
+      plan.products.forEach(product => products.set(product.id, product));
+      demand.demands = plan.demands; demand.products = plan.products.map(product => product.id); demand.groups = plan.groups.length;
+      stage = 'refresh';
+      for (let round = 0; round < 3 && !demandBudgetReached; round++) {
+        const remaining = PRIORITY_MAX_DEMAND_OFFERS - (attempted.size - demandAttemptStart);
+        const next = nextPriorityTargets(plan.groups, attempted, results).slice(0, remaining);
+        if (!next.length) break;
+        // Guardar cada observación antes de admitir otro destino; no acumular ocho ACK.
+        for (const target of next) {
+          if (demandBudgetReached) break;
+          await refreshBatch([target], demandDeadline);
+          if (Date.now() >= demandDeadline) demandBudgetReached = true;
+        }
+      }
+      demand.limitReached = attempted.size - demandAttemptStart >= PRIORITY_MAX_DEMAND_OFFERS;
+      demand.status = plan.deferred || demandBudgetReached || demand.limitReached ? 'deferred' : 'completed';
+    } catch {
+      // Error DB/revisión/guardado no es cola vacía; conservar lo ya confirmado.
+      demand.status = 'failed'; demand.failureCode = stage === 'read' ? 'PRIORITY_DEMAND_READ_FAILED' : 'PRIORITY_DEMAND_REFRESH_FAILED';
+    }
+  }
+  const demandResults = results.slice(demandResultStart);
+  demand.attempted = attempted.size - demandAttemptStart;
+  demand.observed = demandResults.filter(result => result.observedAt).length;
+  demand.comparable = demandResults.filter(result => result.comparable).length;
   const missingGuideSlots = groups.filter(group => !group.covered && !results.some(result => result.comparable
     && group.targets.some(target => targetKey(target) === targetKey(result)))).map(group => group.key);
-  return { source: 'priority-known-offers', startedAt, finishedAt: new Date().toISOString(), includeSample,
+  return { source: 'priority-known-offers', status: demand.status === 'failed' ? 'failed' : 'completed',
+    startedAt, finishedAt: new Date().toISOString(), includeSample, demand, critical,
     attempted: attempted.size, observed: results.filter(result => result.observedAt).length,
     comparable: results.filter(result => result.comparable).length, missingGuideSlots, sampleRequested,
     sampleTruncated, deadlineReached, results, sourceHttp: sourceHttpMetrics(), sharedListingReads: context.sharedReads };

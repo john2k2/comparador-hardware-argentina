@@ -207,6 +207,7 @@ jobs:
           exit 1
 
       - name: Run catalog refresh
+        id: refresh
         shell: bash
         env:
           CRON_SECRET: ${{ secrets.CATALOG_REFRESH_CRON_SECRET }}
@@ -281,12 +282,24 @@ jobs:
           if mode in ('priority', 'guides'):
               if payload.get('source') != 'priority-known-offers':
                   sys.exit('Respuesta prioritaria inválida')
-              print(f"Priority: attempted={payload.get('attempted')} observed={payload.get('observed')} comparable={payload.get('comparable')}")
+              if payload.get('status') == 'deferred':
+                  if payload.get('reason') != 'PRIORITY_REFRESH_DEFERRED' or any(key in payload for key in ('attempted', 'observed', 'comparable', 'missingGuideSlots')):
+                      sys.exit('Diferimiento prioritario inválido')
+                  with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+                      output.write('status=deferred\n')
+                  print('::warning::Refresh diferido por guarda distribuida; no se ejecutaron guías ni muestra en este intento.')
+                  sys.exit(0)
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+                  output.write('status=completed\n')
+              critical = payload.get('critical') or payload
+              print(f"Priority critical: attempted={critical.get('attempted')} observed={critical.get('observed')} comparable={critical.get('comparable')}")
               if payload.get('deadlineReached') or payload.get('sampleTruncated'):
                   sys.exit('Cobertura incompleta por límite; conservar evidencia y revisar el alcance')
               if payload.get('missingGuideSlots'):
                   print('::warning::Hay piezas de guías sin oferta comparable: ' + ', '.join(payload['missingGuideSlots']))
-              if payload.get('attempted', 0) > 0 and payload.get('observed', 0) == 0:
+              if (payload.get('demand') or {}).get('status') == 'deferred':
+                  print('::warning::Parte de la señal de búsqueda espera otro ciclo por el presupuesto acotado; revisar el recibo de demanda.')
+              if critical.get('attempted', 0) > 0 and critical.get('observed', 0) == 0:
                   sys.exit('No se persistió ninguna observación prioritaria')
               sys.exit(0)
 
@@ -319,7 +332,7 @@ jobs:
       # La portada usa la observación recién persistida; no depende sólo del
       # cron de medición ni hace otra comprobación contra las tiendas.
       - name: Guardar selección pública después de actualizar ofertas
-        if: success() && (steps.resolve.outputs.mode == 'guides' || steps.resolve.outputs.mode == 'priority')
+        if: success() && steps.refresh.outputs.status != 'deferred' && (steps.resolve.outputs.mode == 'guides' || steps.resolve.outputs.mode == 'priority')
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
@@ -338,7 +351,7 @@ jobs:
             "$RUNNER_TEMP/catalog-freshness.json"
 
       - name: Measure global window updates and store freshness
-        if: always() && steps.resolve.outputs.mode != 'guides' && steps.resolve.outputs.mode != 'cleanup-history' && env.REFRESH_WINDOW_START != ''
+        if: always() && steps.refresh.outputs.status != 'deferred' && steps.resolve.outputs.mode != 'guides' && steps.resolve.outputs.mode != 'cleanup-history' && env.REFRESH_WINDOW_START != ''
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}

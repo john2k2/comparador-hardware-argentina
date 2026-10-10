@@ -29,6 +29,15 @@ async function runArtifact(mode, scenario, trigger = 'manual') {
               if (process.env.REFRESH_TEST_SCENARIO === 'priority-success') {
                 return { source: 'priority-known-offers', includeSample, attempted: 2, observed: 1, comparable: 1 };
               }
+              if (process.env.REFRESH_TEST_SCENARIO === 'priority-deferred') {
+                return { source: 'priority-known-offers', status: 'deferred', includeSample,
+                  reason: 'PRIORITY_REFRESH_DEFERRED', retryAfterSeconds: 180 };
+              }
+              if (process.env.REFRESH_TEST_SCENARIO === 'priority-gate-failed') throw new Error('PRIORITY_GATE_FAILED');
+              if (process.env.REFRESH_TEST_SCENARIO === 'priority-demand-failed') {
+                return { source: 'priority-known-offers', status: 'failed', attempted: 2, observed: 1, comparable: 1,
+                  demand: { status: 'failed', failureCode: 'PRIORITY_DEMAND_READ_FAILED', attempted: 0 } };
+              }
               if (process.env.REFRESH_TEST_SCENARIO === 'partial') {
                 return { processed: true, jobId: 'fixture-job', status: 'partial',
                   attempted: 2, observed: 1, comparable: 1, failures: { 'no-observation': 1 } };
@@ -110,6 +119,21 @@ test('guides fallback conserva origen y excluye la muestra diaria', async () => 
   assert.equal(result.status, 0);
   assert.deepEqual(result.payload, { source: 'priority-known-offers', includeSample: false,
     attempted: 2, observed: 1, comparable: 1, trigger: 'cloudflare-fallback', sourceHttp: { fixture: { requests: 3 } } });
+});
+
+test('el recibo diferido conserva origen sin contadores inventados y el error RPC sigue fallando', async () => {
+  const deferred = await runArtifact('guides', 'priority-deferred', 'cloudflare-fallback');
+  assert.equal(deferred.status, 0); assert.equal(deferred.payload.status, 'deferred');
+  assert.equal(deferred.payload.trigger, 'cloudflare-fallback'); assert.equal(deferred.payload.includeSample, false);
+  assert.equal(Object.hasOwn(deferred.payload, 'observed'), false);
+  const failed = await runArtifact('priority', 'priority-gate-failed');
+  assert.equal(failed.status, 1); assert.equal(failed.payload.error, 'PRIORITY_GATE_FAILED');
+});
+
+test('la falla DB de demanda conserva guardados críticos en el artefacto fallido', async () => {
+  const failed = await runArtifact('priority', 'priority-demand-failed');
+  assert.equal(failed.status, 1); assert.equal(failed.payload.observed, 1);
+  assert.equal(failed.payload.demand.failureCode, 'PRIORITY_DEMAND_READ_FAILED');
 });
 
 test('el diario conserva muestra y origen del schedule sin convertirlo en fallback', async () => {

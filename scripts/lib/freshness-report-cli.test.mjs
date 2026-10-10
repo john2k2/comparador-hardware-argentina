@@ -94,13 +94,13 @@ test('el CLI informa una tienda actualizada sin ofertas disponibles y productos 
 });
 
 // Ejecuta los comandos y las condiciones reales del workflow contra el transporte local.
-async function reportingSteps(env, mode) {
+async function reportingSteps(env, mode, status = 'completed') {
   const yaml = await readFile('.github/workflows/catalog-refresh.yml', 'utf8');
   const steps = yaml.split(/^      - name: /m).filter(step => /^(?:Record omitted global report|Measure global window updates)/.test(step));
   assert.equal(steps.length, 2);
   for (const step of steps) {
     const condition = step.match(/^        if: (.+)$/m)[1];
-    const contexts = { always: () => true, steps: { resolve: { outputs: { mode } } }, env };
+    const contexts = { always: () => true, steps: { resolve: { outputs: { mode } }, refresh: { outputs: { status } } }, env };
     if (!runInNewContext(condition, contexts, { timeout: 100 })) continue;
     const command = step.split('        run: |\n')[1].split('\n').filter(line => /^          |^$/.test(line)).map(line => line.slice(10)).join('\n');
     await execute('bash', ['-e', '-c', command], { env: { PATH: process.env.PATH, ...env, MODE: mode }, timeout: 5000 });
@@ -133,6 +133,33 @@ test('el workflow guides omite todo diagnóstico global, conserva recibo y no fa
     assert.equal(raw.includes('fixture-private-not-reportable'), false);
     assert.equal(await readFile(join(fixture.folder, 'catalog-refresh-result.json'), 'utf8'), fixture.raw);
     assert.equal(evaluateG02Readiness([], report, Array.from({ length: 9 }, (_, i) => `p${i}`)).status, 'not-ready');
+  });
+});
+
+test('guides representa diferimiento y priority omite lectura global sin inventar observaciones', async () => {
+  await withFakeCatalog(false, async (env, requests) => {
+    const fixture = await runnerFixture(env, { status: 'deferred', reason: 'PRIORITY_REFRESH_DEFERRED',
+      attempted: undefined, observed: undefined, comparable: undefined, missingGuideSlots: undefined });
+    await reportingSteps(fixture.reportEnv, 'priority', 'deferred');
+    await assert.rejects(readFile(join(fixture.folder, 'catalog-freshness.json')), { code: 'ENOENT' });
+    await reportingSteps(fixture.reportEnv, 'guides', 'deferred');
+    const report = JSON.parse(await readFile(join(fixture.folder, 'catalog-freshness.json'), 'utf8'));
+    assert.deepEqual(report.runnerEvidence, { status: 'deferred', reason: 'PRIORITY_REFRESH_DEFERRED', artifact: 'catalog-refresh-result.json' });
+    assert.equal('observed' in report.runnerEvidence, false); assert.equal(requests.length, 0);
+  });
+});
+
+test('nueve guardados sólo de demanda no acreditan productividad crítica ni un día útil G02', async () => {
+  await withFakeCatalog(false, async env => {
+    const fixture = await runnerFixture(env, { attempted: 10, observed: 9, comparable: 9,
+      critical: { attempted: 1, observed: 0, comparable: 0 }, demand: { attempted: 9, observed: 9, comparable: 9 } });
+    await reportingSteps(fixture.reportEnv, 'priority');
+    const report = JSON.parse(await readFile(join(fixture.folder, 'catalog-freshness.json'), 'utf8'));
+    assert.equal(report.runnerEvidence.attempted, 1); assert.equal(report.runnerEvidence.observed, 0);
+    assert.equal(report.runnerEvidence.comparable, 0);
+    const cycle = { event: 'schedule', ciclo_util: 'si', run_id: '123', inicio_ciclo: report.measuredAt,
+      fuente: 'priority', observaciones: String(report.runnerEvidence.observed), productos: '9', tiendas_observadas: '1' };
+    assert.equal(evaluateG02Readiness([cycle], report, Array.from({ length: 9 }, (_, i) => `p${i}`)).usefulDailyCycles, 0);
   });
 });
 
