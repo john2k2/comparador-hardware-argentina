@@ -62,7 +62,7 @@ test.describe('Search error and empty states', () => {
   test('a genuinely empty catalog shows no results, not an idle or error state', async ({ page }) => {
     await searchFromIdle(page, 'no-fixture-matches');
     await expect(page.getByText('[ SIN RESULTADOS ]', { exact: true })).toBeVisible();
-    await expect(page.getByText('RESULTADOS: 0 ITEMS', { exact: true })).toBeVisible();
+    await expect(page.getByText('OFERTAS RECIENTES: 0', { exact: true })).toBeVisible();
     await expect(page.getByText('[ LISTO PARA BUSCAR ]', { exact: true })).toHaveCount(0);
     await expect(page.getByRole('main').getByRole('alert')).toHaveCount(0);
     await expect(page.locator('#product-grid-start article')).toHaveCount(0);

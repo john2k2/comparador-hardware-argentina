@@ -12,7 +12,7 @@
     "test:ops": "node --test scripts/lib/*.test.mjs scripts/pilots/*.test.mjs",
     "typecheck": "tsc --noEmit --incremental false",
     "verify": "npm run lint && npm run typecheck && npm test && npm run test:ops",
-    "test:e2e:critical": "cross-env ENEBA_AFFILIATE_PILOT_ENABLED=1 playwright test e2e/csp-hydration.spec.ts e2e/pc-builder.spec.ts e2e/search-pagination.spec.ts e2e/search-filters.spec.ts e2e/auth-flow.spec.ts e2e/auth-session.spec.ts e2e/analytics-consent.spec.ts e2e/error-handling.spec.ts e2e/eneba-pilot.spec.ts e2e/comparison-freshness.spec.ts e2e/comparison-return.spec.ts e2e/comparison-identity.spec.ts",
+    "test:e2e:critical": "cross-env ENEBA_AFFILIATE_PILOT_ENABLED=1 playwright test e2e/csp-hydration.spec.ts e2e/pc-builder.spec.ts e2e/search-pagination.spec.ts e2e/search-filters.spec.ts e2e/search-reference-recovery.spec.ts e2e/search-category-transition.spec.ts e2e/auth-flow.spec.ts e2e/auth-session.spec.ts e2e/analytics-consent.spec.ts e2e/error-handling.spec.ts e2e/eneba-pilot.spec.ts e2e/comparison-freshness.spec.ts e2e/comparison-return.spec.ts e2e/comparison-identity.spec.ts",
     "test:e2e:eneba": "playwright test --config=playwright.eneba.config.ts",
     "test:e2e": "playwright test",
     "test:e2e:public": "playwright test --config=playwright.public.config.ts",

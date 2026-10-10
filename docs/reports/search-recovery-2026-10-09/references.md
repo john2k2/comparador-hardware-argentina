@@ -25,3 +25,9 @@ Los lectores públicos de CompraGamer, Dinobyte y MaxTecno no encontraron una 50
 Reversión: retirar sólo `SearchEmptyState`, su integración en `SearchPageView`, la nueva suite de referencias y este documento. No afecta datos remotos ni otras unidades. Se conservaron los cambios anteriores de medición y mapper CompraGamer fuera de esta unidad.
 
 Evidencia completa: `/Users/johnortiz/.codex/.chatgpt-projects/g-p-6ac68be47f5481918948c30ea16ffd6b/work/rtx5090-fix-2026-10-09/`.
+
+## Integración con la verificación de publicación
+
+La publicación fue autorizada con «si hacelo». La candidata aprobó 41 controles HTTP públicos y el recorrido real de siete consultas, móvil, filtros y ficha/regreso. Después de conciliar la fixture de categoría automática, el segundo Verify aprobó código y SQL aislado, y 75/76 E2E: el caso de catálogo vacío todavía esperaba el encabezado anterior `RESULTADOS: 0 ITEMS`.
+
+Se ajusta esa expectativa al encabezado aprobado `OFERTAS RECIENTES: 0`, conservando la exigencia de cero artículos y la ausencia de error/estado inicial. Las suites nuevas de referencias y transición se incluyen en `test:e2e:critical`, para ejecutarse en Verify junto a las regresiones existentes. No cambia la implementación publicada ni se desactiva una comprobación. La revisión independiente confirmó la expectativa. La matriz crítica completa, incluidas ambas suites nuevas, aprobó 88/88 casos en una exportación aislada de la aplicación publicada antes de publicar el ajuste de tests.
