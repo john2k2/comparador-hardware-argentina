@@ -1,5 +1,5 @@
 import { GUIDE_CATALOG_CATEGORIES, type GuideSlotSpec } from '@/lib/seo/budget-guide-pricing';
-import { readGuideCatalogCandidatesFromDatabase } from '@/lib/persistence/product-read';
+import { readGuideCatalogCandidatesFromDatabase, readProductByIdFromDatabase } from '@/lib/persistence/product-read';
 import type { BudgetGuideDefinition } from '@/lib/seo/budget-guides-data';
 import { logger } from '@/lib/logger';
 import type { HardwareCategory, Product } from '@/lib/types';
@@ -8,6 +8,7 @@ const CATALOG_TTL_MS = 5 * 60 * 1000;
 const CATEGORY_LIMIT = 24;
 const FETCH_CONCURRENCY = 2;
 const PRIORITY_QUERIES_PER_COMPONENT = 2;
+const REFERENCE_PRODUCTS_PER_COMPONENT = 3;
 // Piezas × consultas por pieza no supera las seis conexiones simultáneas del Worker.
 export const GUIDE_COMPONENT_CONCURRENCY = 3;
 
@@ -100,9 +101,10 @@ export async function loadGuidePriorityProducts(category: HardwareCategory, term
 
 async function loadGuidePrioritySnapshot(category: HardwareCategory, terms: string[], spec?: GuideSlotSpec): Promise<{ products: Product[]; available: boolean }> {
   const queries = [...new Set(terms.map((term) => term.trim()).filter(Boolean))].slice(0, PRIORITY_QUERIES_PER_COMPONENT);
-  if (queries.length === 0) return { products: [], available: true };
+  const referenceIds = [...new Set((spec?.referenceProductIds ?? []).map((id) => id.trim()).filter(Boolean))].slice(0, REFERENCE_PRODUCTS_PER_COMPONENT);
+  if (queries.length === 0 && referenceIds.length === 0) return { products: [], available: true };
   const constraints = spec ? { name: spec.name, exactModel: spec.exactModel, requiresIncludedCooler: spec.requiresIncludedCooler } : undefined;
-  const cacheKey = JSON.stringify([category, queries, constraints]);
+  const cacheKey = JSON.stringify([category, queries, constraints, referenceIds]);
   const now = Date.now();
   const cached = priorityMemo.get(cacheKey);
   if (cached && now - cached.at < CATALOG_TTL_MS) return { products: cached.products, available: true };
@@ -119,7 +121,22 @@ async function loadGuidePrioritySnapshot(category: HardwareCategory, terms: stri
       return [];
     }
   });
-  const products = [...new Map(batches.flat().map((product) => [product.id, product])).values()];
+  // Las variantes y duplicados recientes pueden desplazar una publicación
+  // editorial fuera del top ocho y dejar al runner sin destino conocido.
+  // Leer por ID evita ese ciclo; el resolver conserva todos sus filtros.
+  const references = await mapWithConcurrency(referenceIds, PRIORITY_QUERIES_PER_COMPONENT, async (id) => {
+    try {
+      const product = await readProductByIdFromDatabase(id);
+      return product?.category === category ? [product] : [];
+    } catch (error) {
+      logger.warn('No se pudo leer una referencia editorial de la guia', { category, id, error });
+      available = false;
+      return [];
+    }
+  });
+  // Conservar primero el candidato: su mapper de guía retiene alternativas
+  // de una tienda que la lectura individual puede resumir.
+  const products = [...new Map([...references.flat(), ...batches.flat()].map((product) => [product.id, product])).values()];
   // Nunca memorizar una respuesta vacía o parcial causada por un error.
   // La próxima petición puede recuperar el servicio sin esperar cinco minutos.
   if (available) priorityMemo.set(cacheKey, { at: now, products });
