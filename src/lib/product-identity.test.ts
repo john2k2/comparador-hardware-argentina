@@ -4,11 +4,21 @@ import {
   buildProductVariantKey,
   extractExactModelIdentity,
   extractGpuModelKey,
+  extractGpuBoardAttributes,
   isBundleLikeTitle,
   isCompleteComputerTitle,
 } from './product-identity';
 
 describe('product identity', () => {
+  it('reconoce AERO para identidad sin cambiar la clave histórica de la publicación', () => {
+    const name = 'PLACA DE VIDEO GIGABYTE RTX 5070 AERO OC 12GB';
+    expect(extractGpuBoardAttributes(name)).toMatchObject({ brand: 'gigabyte', series: 'aero', edition: 'aero', clock: 'oc' });
+    expect(extractGpuModelKey(name)).toBe('gpu:rtx5070:12gb:gigabyte:base:aero:oc');
+    expect(buildProductIdentityKey('tarjetas-graficas', name)).toBe('tarjetas-graficas::gpu:rtx5070:12gb:gigabyte:base:aero:oc');
+    expect(extractGpuModelKey(name.replace('AERO', 'GAMING'))).not.toBe(extractGpuModelKey(name));
+    expect(extractGpuModelKey(name.replace('AERO', 'WINDFORCE'))).not.toBe(extractGpuModelKey(name));
+    expect(extractGpuModelKey(name.replace('AERO', 'GAMING AERO'))).toBe('gpu:rtx5070:12gb:gigabyte:gaming:aero:oc');
+  });
   it.each([
     'NB HP 15.6 VICTUS I5-12450 8G 512G W11H RTX3050 CD',
     'NB ASUS 15.6 R7-170 16GB 512GB RTX3050',

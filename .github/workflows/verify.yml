@@ -66,6 +66,7 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f supabase/tests/paginated_catalog.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/numeric_catalog_search.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/ram_catalog_search.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/aero_offer_attributes.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/peripheral_reclassification.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/adaptive_payment_conditions.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/complete_computer_categories.sql

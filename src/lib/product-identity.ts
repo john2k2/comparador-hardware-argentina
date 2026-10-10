@@ -21,7 +21,7 @@ export type ChipSignature = {
 const GPU_VARIANTS = [
   'aorus', 'strix', 'tuf', 'dual', 'prime', 'proart', 'eagle', 'windforce',
   'gaming', 'ventus', 'shadow', 'suprim', 'trinity', 'phoenix', 'pulse',
-  'nitro', 'challenger', 'hellhound', 'red devil',
+  'nitro', 'challenger', 'hellhound', 'red devil', 'aero',
 ];
 const MB_VARIANTS = [
   'aorus', 'strix', 'tuf', 'prime', 'tomahawk', 'mortar',
@@ -367,7 +367,9 @@ export function extractGpuModelKey(value: string): string | null {
   const memory = firstMatch(/\b(\d{1,2}\s*gb)\b/, normalized) ?? 'na';
   const board = extractGpuBoardAttributes(normalized);
   const brand = board.brand ?? firstMatch(/\b(intel|amd)\b/, normalized) ?? 'na';
-  const variant = board.series ?? 'base';
+  // AERO ya formaba parte de edition en las claves persistidas. Reconocer su
+  // serie para verificar ofertas no debe crear una segunda clave del producto.
+  const variant = board.series === 'aero' ? 'base' : board.series ?? 'base';
   const details = [board.edition, board.fans, board.color, board.memoryType, board.clock].filter(Boolean);
 
   return `gpu:${compactGpuChip(chip)}:${memory}:${brand}:${variant}${details.length ? `:${details.join(':')}` : ''}`;

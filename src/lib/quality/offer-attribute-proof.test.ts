@@ -3,6 +3,14 @@ import { attributeProofMatches, proveOfferAttributes } from './offer-attribute-p
 import { readIdentityReview } from './offer-identity';
 
 describe('prueba de atributos exactos independiente de Jev', () => {
+  it('corrobora la serie AERO y conserva marca, chip, memoria y condición OC', () => {
+    const name = 'PLACA DE VIDEO GeForce RTX 5070 12GB GIGABYTE AERO OC';
+    const source = 'PLACA DE VIDEO GIGABYTE RTX 5070 AERO OC 12GB';
+    expect(proveOfferAttributes(name, 'tarjetas-graficas', source)).toMatchObject({ attributes: { series: 'aero', edition: 'aero', clock: 'oc', memory: '12' } });
+    for (const changed of [source.replace('AERO', 'GAMING'), source.replace('AERO', 'WINDFORCE'), source.replace('5070', '5070 Ti'), source.replace('12GB', '16GB'), source.replace('GIGABYTE', 'ASUS'), source.replace('OC', 'SIN OC'), source.replace(' OC', ''), source.replace(' AERO', '')]) {
+      expect(proveOfferAttributes(name, 'tarjetas-graficas', changed)).toBeNull();
+    }
+  });
   it('corrobora el mismo CPU sin depender del orden comercial o la frecuencia de reloj', () => {
     const proof = proveOfferAttributes('AMD Ryzen 5 5600 6C/12T', 'procesadores', 'Microprocesador AMD Ryzen 5 5600 4.4GHz');
     expect(proof).toMatchObject({ method: 'exact-attributes', attributes: { family: 'ryzen5', model: '5600' } });

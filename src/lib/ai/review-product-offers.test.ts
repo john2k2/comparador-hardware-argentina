@@ -120,6 +120,23 @@ describe('reviewProductOffers', () => {
     expect(mocks.evaluateOfferIdentity).not.toHaveBeenCalled();
   });
 
+  it('reverifica AERO sin proveedor, conservando observación y variantes incompatibles pendientes', async () => {
+    delete process.env.TYPESAFE_API_KEY;
+    const input = product(1, 'tarjetas-graficas');
+    input.name = 'PLACA DE VIDEO GeForce RTX 5070 12GB GIGABYTE AERO OC';
+    input.prices[0].url = 'https://goldentechstore.com.ar/producto/placa-de-video-gigabyte-rtx-5070-aero-oc-12gb/';
+    input.prices[0].sourceIdentity = { listingRef: 'goldentechstore:url:https://goldentechstore.com.ar/producto/placa-de-video-gigabyte-rtx-5070-aero-oc-12gb', sourceId: '121118', storeSku: 'VGA455', title: 'PLACA DE VIDEO GIGABYTE RTX 5070 AERO OC 12GB' };
+    const original = structuredClone(input);
+    const result = await reviewProductOffers([input], { authorizedRefresh: true });
+    expect(result[0].prices[0]).toMatchObject({ price: input.prices[0].price, stock: input.prices[0].stock, lastUpdated: input.prices[0].lastUpdated, sourceIdentity: input.prices[0].sourceIdentity, identityReview: { status: 'consistent', reason: 'exact-attributes', proof: { attributes: { series: 'aero', edition: 'aero' } } } });
+    expect(input).toEqual(original);
+    for (const changed of ['GAMING', 'WINDFORCE']) {
+      const invalid = { ...input, prices: [{ ...input.prices[0], sourceIdentity: { ...input.prices[0].sourceIdentity!, title: input.prices[0].sourceIdentity!.title.replace('AERO', changed) } }] };
+      expect((await reviewProductOffers([invalid], { authorizedRefresh: true }))[0].prices[0].identityReview?.status).toBe('needs-review');
+    }
+    expect(mocks.evaluateOfferIdentity).not.toHaveBeenCalled();
+  });
+
   it('excludes deterministic conflicts before Jev and preserves the source objects and price fields', async () => {
     const valid = product(1);
     const conflict = product(2, 'procesadores', price(2, 'https://store.example/amd-ryzen-9-7950x3d'));
