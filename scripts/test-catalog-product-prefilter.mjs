@@ -21,6 +21,7 @@ const args = ['-X', '-h', socket, '-p', '55503', '-U', 'postgres', '-d', 'catalo
 const query = sql => run('psql', args, sql);
 const read = name => fs.readFileSync(path.join(root, name), 'utf8');
 const migration = '20261010212131_prefilter_catalog_products.sql';
+const lookupMigration = '20261010222700_narrow_catalog_search_seed.sql';
 const signatures = "'public.search_catalog_page(text,text,text[],numeric,numeric,text,integer,integer)'::regprocedure,'public.catalog_matches_prepared(text,text,text,text,text[],text[],text,text,boolean)'::regprocedure,'public.catalog_matches_query(text,text,text,text)'::regprocedure";
 const snapshotSql = `select jsonb_agg(jsonb_build_object('oid',oid,'body',prosrc,'acl',proacl,'config',proconfig,'invoker',not prosecdef,'defaultArgs',pronargdefaults,'parallel',proparallel,'volatile',provolatile) order by oid) from pg_proc where oid in (${signatures});`;
 let started = false;
@@ -40,6 +41,7 @@ try {
   const baseline = query("select pg_get_functiondef('public.search_catalog_page(text,text,text[],numeric,numeric,text,integer,integer)'::regprocedure);");
   query(baseline.replace('public.search_catalog_page(', 'public.search_catalog_page_baseline('));
   query(read('supabase/migrations/' + migration));
+  query(read('supabase/migrations/' + lookupMigration));
   const after = JSON.parse(query(snapshotSql));
   const prior = JSON.parse(before);
   for (let index = 0; index < prior.length; index++) {
@@ -95,13 +97,17 @@ try {
   console.log(JSON.stringify({ test: 'catalog_current_seed.sql', passed: true, baselineAbsent: true, semanticAssertions: 5 }));
   query(read('supabase/tests/catalog_product_prefilter.sql'));
   console.log(JSON.stringify({ test: 'catalog_product_prefilter.sql', passed: true, necessaryConditionCases: 48 }));
+  query(read('supabase/tests/catalog_search_lookup.sql'));
+  console.log(JSON.stringify({ test: 'catalog_search_lookup.sql', passed: true }));
   console.log(JSON.stringify({ candidateHash: query("select md5(prosrc) from pg_proc where oid='public.search_catalog_page(text,text,text[],numeric,numeric,text,integer,integer)'::regprocedure;").trim() }));
   // La guarda rechaza re-aplicar y rechaza revertir si otro cambio intervino.
-  assert.throws(() => query(read('supabase/migrations/' + migration)), /antes de optimizar/);
+  assert.throws(() => query(read('supabase/migrations/' + lookupMigration)), /antes de optimizar/);
   const candidate = query("select pg_get_functiondef('public.search_catalog_page(text,text,text[],numeric,numeric,text,integer,integer)'::regprocedure);");
   query(candidate.replace('begin', 'begin\n  -- Drift local de prueba.'));
-  assert.throws(() => query(read('supabase/tests/catalog_product_prefilter.rollback.sql')), /antes de revertir/);
+  assert.throws(() => query(read('supabase/tests/catalog_search_lookup.rollback.sql')), /antes de revertir/);
   query(candidate);
+  query(read('supabase/tests/catalog_search_lookup.rollback.sql'));
+  assert.equal(query("select to_regclass('public.products_search_lookup') is null and to_regprocedure('public.sync_products_search_lookup()') is null;").trim(), 't');
   query(read('supabase/tests/catalog_product_prefilter.rollback.sql'));
   assert.equal(query(snapshotSql).trim(), before, 'Rollback exacto de cuerpo/OID/ACL/configuración');
   console.log(JSON.stringify({ localOnly: true, noTcp: true, rollbackExact: true, productionWrites: false, postgres: query('SHOW server_version;').trim() }));
