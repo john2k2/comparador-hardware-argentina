@@ -6,6 +6,7 @@ import { getCategorySeoCopy } from '@/lib/search/search-seo';
 import { categories, stores as defaultStores } from '@/lib/scrapers/static-data';
 import { type Product, type SearchFilters } from '@/lib/types';
 import { buildSearchPaginationHref, toSearchFilters } from '@/lib/search/search-state';
+import { SearchEmptyState } from './SearchEmptyState';
 
 type SearchPageViewProps = {
   products: Product[];
@@ -92,7 +93,7 @@ export function SearchPageView({
         </aside>
 
         <div className="flex-1 min-w-0 order-2">
-          <SearchHeader totalResults={totalResults} searchQuery={searchQuery} isBusy={isBusy} />
+          <SearchHeader totalResults={totalResults} searchQuery={searchQuery} isBusy={isBusy} emptyCurrentSearch={showNoResultsState && !filters.includeUnavailable} />
           <div className="mb-4 min-w-0 font-body text-sm leading-relaxed">
             <p className="text-muted-foreground">{filters.includeUnavailable
               ? filters.minPrice !== undefined || filters.maxPrice !== undefined
@@ -115,7 +116,7 @@ export function SearchPageView({
           {isBusy && <LoadingState searchQuery={searchQuery} />}
           <div id="product-grid-start" className="min-w-0 scroll-mt-24 bg-muted p-3 sm:p-4 border-4 border-border relative overflow-hidden">
             {searchError && <SearchErrorState error={searchError} onRetry={() => onSearch(searchQuery)} />}
-            {showNoResultsState && <NoResultsState searchQuery={searchQuery} includeUnavailable={filters.includeUnavailable} hasActiveFilters={hasActiveFilters} onClearFilters={onClearFilters} onRetry={() => onSearch(searchQuery)} />}
+            {showNoResultsState && <SearchEmptyState key={searchRoute} searchRoute={searchRoute} hasActiveFilters={hasActiveFilters} onClearFilters={onClearFilters} onRetry={() => onSearch(searchQuery)} onShowReferences={() => onFiltersChange({ includeUnavailable: true })} />}
             {showIdleState && <IdleState />}
             {!searchError && !showNoResultsState && !showIdleState && (
               <ProductGrid
@@ -201,11 +202,11 @@ function FiltersPanel({ filters, stores, onChange }: { filters: ReturnType<typeo
   );
 }
 
-function SearchHeader({ totalResults, searchQuery, isBusy }: { totalResults: number; searchQuery: string; isBusy: boolean }) {
+function SearchHeader({ totalResults, searchQuery, isBusy, emptyCurrentSearch }: { totalResults: number; searchQuery: string; isBusy: boolean; emptyCurrentSearch: boolean }) {
   return (
     <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div className="bg-primary text-primary-foreground p-2 inline-block border-2 border-border">
-        <p className="text-[12px] uppercase font-bold" aria-live="polite">{isBusy ? 'BUSCANDO...' : `RESULTADOS: ${totalResults} ITEMS`}</p>
+        <p className="text-[12px] uppercase font-bold" aria-live="polite">{isBusy ? 'BUSCANDO...' : emptyCurrentSearch ? 'OFERTAS RECIENTES: 0' : `RESULTADOS: ${totalResults} ITEMS`}</p>
       </div>
       {searchQuery && (
         <div className="min-w-0 text-[12px] uppercase font-bold text-foreground/80 break-words">
@@ -225,26 +226,6 @@ function LoadingState({ searchQuery }: { searchQuery: string }) {
       <p className="text-[12px] uppercase text-foreground/80 mt-1 tracking-wide">
         Espera a que termine la busqueda antes de asumir que no hay stock o resultados.
       </p>
-    </div>
-  );
-}
-
-function NoResultsState({ searchQuery, includeUnavailable, hasActiveFilters, onClearFilters, onRetry }: { searchQuery: string; includeUnavailable?: boolean; hasActiveFilters: boolean; onClearFilters: () => void; onRetry: () => void }) {
-  return (
-    <div className="border-4 border-primary bg-card p-6 md:p-8 text-center pixel-shadow">
-      <p className="text-[12px] uppercase font-bold text-primary">[ SIN RESULTADOS ]</p>
-      <p className="text-[12px] uppercase text-foreground/80 mt-2 leading-relaxed">
-        {includeUnavailable
-          ? searchQuery ? `No encontramos coincidencias para "${searchQuery}".` : 'No encontramos coincidencias con los filtros actuales.'
-          : 'No tenemos ofertas recientes aptas para comparar con esta búsqueda y estos filtros.'}
-      </p>
-      <p className="font-body text-sm text-foreground/80 mt-2 leading-relaxed">{includeUnavailable
-        ? 'Probá otra palabra, una marca o modelo más corto, o ampliá los filtros.'
-        : 'Esto no confirma que el producto esté agotado. Podés consultar las referencias anteriores activando la opción de arriba.'}</p>
-      <div className="mt-4 flex flex-wrap justify-center gap-2">
-        {hasActiveFilters && <button onClick={onClearFilters} className="pixel-button text-[12px] px-4 py-3 min-h-11">LIMPIAR FILTROS</button>}
-        <button onClick={onRetry} className="pixel-button text-[12px] px-4 py-3 min-h-11">REINTENTAR BUSQUEDA</button>
-      </div>
     </div>
   );
 }
