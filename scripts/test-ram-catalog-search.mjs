@@ -28,7 +28,7 @@ try {
   assert.equal(query('SHOW listen_addresses;').trim(), '');
   assert.equal(query('SHOW data_directory;').trim(), data);
   query(read('supabase/tests/bootstrap-local.sql'));
-  for (const name of fs.readdirSync(path.join(root, 'supabase/migrations')).filter(name => name.endsWith('.sql') && name !== migration).sort()) {
+  for (const name of fs.readdirSync(path.join(root, 'supabase/migrations')).filter(name => name.endsWith('.sql') && name < migration).sort()) {
     query(read('supabase/migrations/' + name));
   }
   const before = query(snapshotSql).trim();
