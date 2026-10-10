@@ -58,7 +58,7 @@ describe('cooler incluido exigido por la selección editorial', () => {
     const spec = BUDGET_GUIDES.find((guide) => guide.slug === 'pc-gamer-3-millones')!.components.cpu;
     const purchaseUrl = 'https://compragamer.com/producto/Procesador_AMD_Ryzen_5_7600_5_1GHz_Turbo_AM5_Wraith_Stealth_Cooler_14309';
     expect(resolveGuideComponent(spec, [candidate])).toMatchObject({ priceSource: 'catalog', price: 362_500,
-      bestStoreUrl: purchaseUrl, offers: [{ url: purchaseUrl }] });
+      bestStoreUrl: purchaseUrl, offers: [{ url: purchaseUrl, refreshUrl: url }] });
     expect(resolveGuideRefreshOffers(spec, [candidate])).toMatchObject([{ url }]);
     expect(candidate).toEqual(before);
     const rejected = [
