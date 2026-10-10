@@ -253,12 +253,27 @@ describe('frontend interaction regressions', () => {
   });
 
   it('delegates canonical category landings to Next without starting a competing API request', async () => {
-    const page = await open('search', {}, [cpu]);
+    const page = await open('search', { category: 'procesadores' }, [cpu]);
     try {
       await page.getByRole('button', { name: 'Empty search', exact: true }).click();
       await expect.poll(() => page.evaluate(() => (window as unknown as { routerRoutes: string[] }).routerRoutes.length)).toBe(1);
       expect(await requestCount(page)).toBe(0);
       expect(await page.evaluate(() => (window as unknown as { routerRoutes: string[] }).routerRoutes[0])).toBe('/search?category=procesadores');
+    } finally { await page.close(); }
+  });
+
+  it('clears an inferred category with its query without entering a category landing', async () => {
+    const page = await open('search', {}, [cpu]);
+    try {
+      await expect.poll(() => page.locator('output').textContent()).toBe(cpu.name);
+      await page.getByRole('button', { name: 'Empty search', exact: true }).click();
+      await expect.poll(() => new URL(page.url()).pathname + new URL(page.url()).search).toBe('/search');
+      await expect.poll(() => page.locator('output').textContent()).toBe('');
+      expect(await requestCount(page)).toBe(0);
+      expect(await page.evaluate(() => (window as unknown as { routerRoutes: string[] }).routerRoutes)).toEqual([]);
+      expect(await page.title()).not.toContain('ryzen');
+      expect(await page.locator('meta[name="robots"]').getAttribute('content')).toBe('noindex, follow');
+      expect(await page.locator('link[rel="canonical"]').getAttribute('href')).toMatch(/\/search$/);
     } finally { await page.close(); }
   });
 

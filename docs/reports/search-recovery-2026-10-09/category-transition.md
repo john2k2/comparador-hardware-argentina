@@ -18,3 +18,11 @@ Las URL antiguas que contienen `category=` se consideran explícitas; su origen 
 Comando E2E: `npx playwright test --config=tmp/playwright-search-recovery.config.ts e2e/search-category-transition.spec.ts`.
 
 Reversión: revertir sólo los cambios en `search-state.ts`, `SearchPageClient.tsx`, la regresión de estado, `search-category-transition.spec.ts` y este documento. No exige cambiar DB ni scrapers y puede revertirse sin retirar el acceso a referencias.
+
+## Ajuste de regresión durante la publicación autorizada
+
+Jonathan autorizó publicar con «si hacelo». `f6b0164` fue publicado por Workers Builds como Worker 209; las siete consultas reales y 41 controles HTTP pasaron. El primer Verify (`38008845558`) encontró una expectativa anterior en `frontend-regressions.test.ts`: el caso de entrada a landing montaba `q=ryzen` sin categoría explícita y esperaba conservar procesadores al borrar el texto. Esa fixture ya no representaba una categoría manual.
+
+Se conserva la prueba de landing con categoría explícita, el destino exacto `/search?category=procesadores`, una sola navegación Next y cero peticiones API competidoras. Un caso nuevo exige que borrar el texto con categoría deducida vuelva a `/search`, vacíe resultados y conserve canonical genérico/noindex, sin navegación Next ni petición API. El código de aplicación no cambió en este ajuste.
+
+Validación focal: 30/30 pruebas de estado e interacción, lint y revisión independiente del diff aprobados. Verify completo se vuelve a ejecutar sobre el commit del ajuste; su resultado final se registra con la evidencia de publicación, sin presentar el primer ciclo fallido como aprobado.
