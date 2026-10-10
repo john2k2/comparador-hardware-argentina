@@ -2,10 +2,18 @@ import type { Product } from '@/lib/types';
 import { normalizeIdentityText } from '@/lib/product-identity';
 import { proveOfferAttributes } from '@/lib/quality/offer-attribute-proof';
 import { hasExplicitIdentityConflict } from '@/lib/quality/offer-identity';
-import { computeComparableStorePriceStats } from '@/lib/price-utils';
+import { computeComparableStorePriceStats, isComparableStoreOffer } from '@/lib/price-utils';
 import { listingReference } from '@/lib/scrapers/listing-reference';
 
 type ProductVariant=Pick<Product,'name'|'category'|'canonicalProductKey'>;
+
+/** Una redirección no puede volver pendiente una oferta válida de la tarjeta.
+ * Los dictámenes conservan su título original incluso si el chip es el mismo. */
+export function canRedirectToCanonicalProduct(product: ProductVariant & Pick<Product,'prices'>, candidate: ProductVariant): boolean {
+  return shareExactProductVariant(product, candidate)
+    && product.prices.filter(offer => isComparableStoreOffer(offer, product))
+      .every(offer => isComparableStoreOffer(offer, candidate));
+}
 export function shareExactProductVariant(product:ProductVariant,candidate:ProductVariant):boolean {
   if(candidate.category!==product.category||candidate.canonicalProductKey!==product.canonicalProductKey) return false;
   if(hasExplicitIdentityConflict({name:product.name,category:product.category,offerText:candidate.name})

@@ -67,7 +67,7 @@ it('no elige una redirección outlet por la clave de un CPU normal y busca una c
   {id:'agrupado-outlet',name:'AMD Ryzen 3 4100 OEM sin cooler OUTLET',category:'procesadores'},
  ],error:null}))};
  getServerSupabaseReadClientMock.mockReturnValue({from:()=>chain});
- const target={name:'AMD Ryzen 3 4100 sin cooler OEM OUTLET',category:'procesadores' as const,canonicalProductKey:'legacy-4100'};
+ const target={name:'AMD Ryzen 3 4100 sin cooler OEM OUTLET',category:'procesadores' as const,canonicalProductKey:'legacy-4100',prices:[]};
  expect(await readCanonicalProductIdByKey('legacy-4100',target)).toBe('agrupado-outlet');
  chain.limit.mockResolvedValueOnce({data:[{id:'agrupado-normal',name:'AMD Ryzen 3 4100 con cooler',category:'procesadores'}],error:null});
  expect(await readCanonicalProductIdByKey('legacy-4100',target)).toBeNull();

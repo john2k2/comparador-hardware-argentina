@@ -23,7 +23,7 @@ import { inferHardwareCategoryFromName } from '@/lib/catalog/hardware-categories
 import type { DbCatalogPage } from './product-read-types';
 import { toNumber } from './product-read-helpers';
 import type { Product } from '@/lib/types';
-import { mergeCanonicalDetailOffers, shareExactProductVariant } from './product-detail-offers';
+import { canRedirectToCanonicalProduct, mergeCanonicalDetailOffers } from './product-detail-offers';
 import { guardCategoryPage } from '@/lib/search/category-page-guard';
 import { guardIdentityPage } from '@/lib/search/identity-page-guard';
 
@@ -48,7 +48,7 @@ export async function readProductByIdFromDatabase(id: string) {
   return mapDbProduct(data as DbProductRow);
 }
 
-export async function readCanonicalProductIdByKey(canonicalProductKey: string, product?: Pick<Product,'name'|'category'|'canonicalProductKey'>) {
+export async function readCanonicalProductIdByKey(canonicalProductKey: string, product?: Pick<Product,'name'|'category'|'canonicalProductKey'|'prices'>) {
   const supabase = getServerSupabaseReadClient();
   if (!supabase || !canonicalProductKey || !product) return null;
 
@@ -67,7 +67,7 @@ export async function readCanonicalProductIdByKey(canonicalProductKey: string, p
   }
 
   if(!Array.isArray(data)) throw new Error('Invalid canonical product candidates');
-  return data.find(candidate=>shareExactProductVariant(product,{...candidate,canonicalProductKey}))?.id??null;
+  return data.find(candidate=>canRedirectToCanonicalProduct(product,{...candidate,canonicalProductKey}))?.id??null;
 }
 
 // Fuera de un render de Server Components React cache no memoriza: cada request lee de nuevo.

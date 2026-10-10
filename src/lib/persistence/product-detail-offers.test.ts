@@ -1,8 +1,28 @@
 import {afterEach,expect,it,vi} from 'vitest';
 import type {Product} from '@/lib/types';
-import {mergeCanonicalDetailOffers,shareExactProductVariant} from './product-detail-offers';
+import {canRedirectToCanonicalProduct,mergeCanonicalDetailOffers,shareExactProductVariant} from './product-detail-offers';
+import {normalizeIdentityText} from '@/lib/product-identity';
 const make=(id:string,name='Extensor Tp-Link WA850RE',storeId='dinobyte',date='2026-07-28T12:00:00Z',price=47612):Product=>({id,name,category:'perifericos',canonicalProductKey:'perifericos::wa850re',prices:[{storeId,storeName:storeId,url:`https://${storeId}.example/producto/wa850re`,price,stock:'in-stock',lastUpdated:new Date(date)}],createdAt:new Date(date),updatedAt:new Date(date)} as Product);
 afterEach(()=>vi.useRealTimers());
+it('la tarjeta mantiene su ficha cuando el título canónico invalidaría su oferta aprobada',()=>{
+ const name='MICRO AMD RYZEN 7 5700X SIN PACKAGING S/VIDEO S/COOLER AM4';
+ const product={...make('goldentechstore-api-187462',name,'goldentechstore',new Date().toISOString(),300077),
+   category:'procesadores' as const,canonicalProductKey:'procesadores::5700x'};
+ const offer=product.prices[0];offer.url='https://goldentechstore.com.ar/producto/micro-amd-ryzen-7-5700x-tray-s-video-s-cooler-am4/';
+ offer.identityReview={version:1,status:'consistent',reason:'consistent-text',reviewedAt:new Date().toISOString(),
+   model:'jev-fixture',confidence:.95,subject:{name:normalizeIdentityText(name),category:product.category,url:offer.url}};
+ const canonical={name:'MICRO AMD RYZEN 7 5700X S/VIDEO S/COOLER',category:product.category,canonicalProductKey:product.canonicalProductKey};
+ expect(shareExactProductVariant(product,canonical)).toBe(true);
+ expect(canRedirectToCanonicalProduct(product,canonical)).toBe(false);
+ expect(canRedirectToCanonicalProduct(product,{...canonical,name:name.toLowerCase()})).toBe(true);
+ expect(product.prices[0]).toBe(offer);
+});
+it('conserva redirecciones equivalentes cuando no transfieren un dictamen ligado a otro título',()=>{
+ const product={...make('cpu','AMD Ryzen 5 7600','mexx'),category:'procesadores' as const,canonicalProductKey:'procesadores::7600'};
+ product.prices[0].url='https://www.mexx.com.ar/amd-ryzen-5-7600';
+ expect(canRedirectToCanonicalProduct(product,{...product,name:'Procesador AMD Ryzen 5 7600'})).toBe(true);
+ expect(canRedirectToCanonicalProduct(product,{...product,name:'AMD Ryzen 5 7600X'})).toBe(false);
+});
 it.each([
  ['MOUSE GAMER CORSAIR M75 WIRELESS RGB BLANCO', 'Mouse Corsair M75 Wireless Lightweight RGB Call of Duty Black OPS6 Edition', 'perifericos'],
  ['Disco SSD WD Green 1TB SATA', 'Disco SSD Sandisk Plus 1TB SATA III', 'almacenamiento'],
