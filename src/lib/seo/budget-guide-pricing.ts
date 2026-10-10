@@ -27,6 +27,8 @@ export type GuideStoreOffer = {
   price: number;
   stock: 'in-stock' | 'low-stock';
   url: string;
+  // Identidad literal de la fila observada; el enlace de compra puede llevar un slug.
+  refreshUrl?: string;
   lastUpdated?: string | null;
 };
 
@@ -455,6 +457,7 @@ function toGuideOffers(product: Product, offers: ProductPrice[]): GuideStoreOffe
       price: offer.price,
       stock: offer.stock,
       url: guidePurchaseUrl(product, offer),
+      refreshUrl: offer.url,
       lastUpdated: Number.isFinite(new Date(offer.lastUpdated).getTime()) ? new Date(offer.lastUpdated).toISOString() : null,
     }];
   });

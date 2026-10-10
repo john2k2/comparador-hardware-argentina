@@ -57,7 +57,7 @@ export default async function BudgetGuidePage({ params }: Props) {
     const offer = current.offers[0];
     const candidates = resolveGuideRefreshOffers(guide.components[key], catalogProducts)
       .map(reference => ({ productId: reference.productId, storeId: reference.storeId, url: reference.url }));
-    if (current.productId && offer) candidates.unshift({ productId: current.productId, storeId: offer.storeId, url: offer.url });
+    if (current.productId && offer) candidates.unshift({ productId: current.productId, storeId: offer.storeId, url: offer.refreshUrl ?? offer.url });
     const group = [...new Map(candidates.map(target => [JSON.stringify(target), target])).values()].slice(0, MAX_GUIDE_REFRESH_ROUNDS);
     return group.length ? [group] : [];
   });
