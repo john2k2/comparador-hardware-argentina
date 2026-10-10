@@ -1,0 +1,149 @@
+{
+  "provenance": {
+    "kind": "captura pública y persistencia PostgreSQL local",
+    "liveObservedAt": "2026-10-10T01:18:02.752Z",
+    "controlFetchedAt": "2026-10-10T01:22:19.638Z",
+    "asOf": "2026-10-10T01:23:19.638Z",
+    "productionWrites": 0
+  },
+  "saved": {
+    "id": "maximus-local",
+    "name": "Micro AMD Ryzen 5 7600X 4.7 Ghz AM5",
+    "category": "procesadores",
+    "brand": "AMD",
+    "model": "7600X",
+    "description": "Micro AMD Ryzen 5 7600X 4.7 Ghz AM5",
+    "image": "/pixel-box.svg",
+    "normalizedTitle": "Micro AMD Ryzen 5 7600X 4.7 Ghz AM5",
+    "refreshPriority": "normal",
+    "lastScrapedAt": "2026-10-10T01:21:05.961Z",
+    "lastNormalizedAt": null,
+    "specs": {},
+    "prices": [
+      {
+        "storeId": "maximus",
+        "storeName": "Maximus",
+        "url": "https://www.maximus.com.ar/Producto/Micro-AMD-Ryzen-5-7600X-47-Ghz-AM5/ITEM=12032/maximus.aspx?PN=100-100000593WOF",
+        "price": 339300,
+        "stock": "in-stock",
+        "sourceIdentity": {
+          "title": "Micro AMD Ryzen 5 7600X 4.7 Ghz AM5",
+          "sourceId": "12032",
+          "storeSku": "100-100000593WOF",
+          "listingRef": "maximus:id:12032"
+        },
+        "priceCondition": "special",
+        "installment": null,
+        "lastUpdated": "2026-10-10T01:18:02.752Z"
+      }
+    ],
+    "lowestPrice": 339300,
+    "highestPrice": 339300,
+    "averagePrice": 339300,
+    "createdAt": "2026-10-10T01:21:05.961Z",
+    "updatedAt": "2026-10-10T01:21:05.961Z"
+  },
+  "rejected": {
+    "id": "maximus-local",
+    "name": "Micro AMD Ryzen 5 7600X 4.7 Ghz AM5",
+    "category": "procesadores",
+    "brand": "AMD",
+    "model": "7600X",
+    "description": "Micro AMD Ryzen 5 7600X 4.7 Ghz AM5",
+    "image": "/pixel-box.svg",
+    "normalizedTitle": "Micro AMD Ryzen 5 7600X 4.7 Ghz AM5",
+    "refreshPriority": "normal",
+    "lastScrapedAt": "2026-10-10T01:21:05.961Z",
+    "lastNormalizedAt": null,
+    "specs": {},
+    "prices": [
+      {
+        "storeId": "maximus",
+        "storeName": "Maximus",
+        "url": "https://www.maximus.com.ar/Producto/Micro-AMD-Ryzen-5-7600X-47-Ghz-AM5/ITEM=12032/maximus.aspx?PN=100-100000593WOF",
+        "price": 1,
+        "stock": "out-of-stock",
+        "installment": null,
+        "lastUpdated": "2026-10-08T01:21:05.965Z"
+      }
+    ],
+    "lowestPrice": 1,
+    "highestPrice": 1,
+    "averagePrice": 1,
+    "createdAt": "2026-10-10T01:21:05.961Z",
+    "updatedAt": "2026-10-10T01:21:05.961Z"
+  },
+  "control": {
+    "id": "agrupado-procesadores-combo-amd-ryzen-5-7600-am5-1t9ctq",
+    "name": "Procesador AMD Ryzen 5 7600 5.1GHz Turbo AM5 + Wraith Stealth Cooler",
+    "category": "procesadores",
+    "brand": "AMD",
+    "model": "Procesador AMD Ryzen 5 7600 5.1GHz Turbo AM5 + Wraith Stealth Cooler",
+    "description": "Ficha CompraGamer: SKU 100-100001015BOX | Garantia 36 meses | Disponibilidad en stock",
+    "image": "https://imagenes.compragamer.com/productos/compragamer_Imganen_general_35682_Procesador_AMD_Ryzen_5_7600_5.1GHz_Turbo_AM5___Wraith_Stealth_Cooler_cf9f2211-med.jpg",
+    "normalizedTitle": "COMBO AMD RYZEN 5 7600 AM5",
+    "canonicalProductKey": "procesadores::bundle:combo-amd-ryzen-5-7600-am5-amd-procesador-amd-ryzen-5-7600-5-1ghz-turbo-am5-wraith-stealth-cooler-procesador-amd-ryzen-5-7600-5-1ghz-turbo-am5-wraith-stealth-cooler",
+    "variantKey": "procesadores::bundle",
+    "refreshPriority": "normal",
+    "lastScrapedAt": "2026-10-09T23:11:53.048Z",
+    "lastNormalizedAt": "2026-09-04T17:23:41.989Z",
+    "specs": {
+      "SKU": "100-100001015BOX",
+      "Stock": "10",
+      "Garantia": "36 meses",
+      "Disponibilidad": "en stock"
+    },
+    "prices": [
+      {
+        "storeId": "compragamer",
+        "storeName": "CompraGamer",
+        "url": "https://compragamer.com/producto/Procesador_AMD_Ryzen_5_7600_5_1GHz_Turbo_AM5_Wraith_Stealth_Cooler_14309",
+        "price": 362500,
+        "stock": "in-stock",
+        "sourceIdentity": {
+          "title": "Procesador AMD Ryzen 5 7600 5.1GHz Turbo AM5 + Wraith Stealth Cooler",
+          "storeSku": "100-100001015BOX",
+          "listingRef": "compragamer:id:14309"
+        },
+        "priceCondition": "special",
+        "installment": null,
+        "lastUpdated": "2026-10-10T01:12:14.820Z",
+        "identityReview": {
+          "model": null,
+          "proof": {
+            "method": "exact-attributes",
+            "version": 1,
+            "attributes": {
+              "model": "7600",
+              "cooler": "included",
+              "family": "ryzen5",
+              "suffixes": "",
+              "condition": "",
+              "packaging": ""
+            }
+          },
+          "reason": "exact-attributes",
+          "status": "consistent",
+          "subject": {
+            "url": "https://compragamer.com/producto/Procesador_AMD_Ryzen_5_7600_5_1GHz_Turbo_AM5_Wraith_Stealth_Cooler_14309",
+            "name": "procesador amd ryzen 5 7600 5 1ghz turbo am5 + wraith stealth cooler",
+            "category": "procesadores"
+          },
+          "version": 1,
+          "confidence": null,
+          "reviewedAt": "2026-10-10T01:14:12.367Z",
+          "sourceIdentity": {
+            "title": "Procesador AMD Ryzen 5 7600 5.1GHz Turbo AM5 + Wraith Stealth Cooler",
+            "storeSku": "100-100001015BOX",
+            "listingRef": "compragamer:id:14309"
+          }
+        }
+      }
+    ],
+    "lowestPrice": 362500,
+    "highestPrice": 362500,
+    "averagePrice": 362500,
+    "createdAt": "2026-04-23T23:20:25.383Z",
+    "updatedAt": "2026-08-28T13:09:45.596Z"
+  }
+}

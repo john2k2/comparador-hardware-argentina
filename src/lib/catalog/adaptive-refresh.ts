@@ -17,6 +17,9 @@ import { createKnownOfferContext, fetchKnownOffer, prepareKnownOfferBatch } from
 import { createRefreshClaimError, extractRefreshClaimDiagnostic, createRefreshSeedAttempt,
   sanitizeRefreshSeedDiagnostic, type RefreshClaimDiagnostic, type RefreshSeedAttempt } from './refresh-diagnostics';
 
+import { createPersistenceDiagnostic, createPersistenceObservation, observePersistenceError,
+  observePersistenceResponse, recordPersistenceDiagnostic, snapshotPersistenceDiagnostic } from './persistence-diagnostics';
+
 type Target = { offer_id: string; product_id: string; store_id: string; url: string; interval_hours: number; reason: string };
 type Outcome = 'observed' | 'no-observation' | 'source-failed' | 'persist-failed' | 'unsupported';
 type Counts = { attempted: number; observed: number; comparable: number; failures: Record<string, number> };
@@ -79,6 +82,7 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   if (run.error || !run.data) throw new Error('REFRESH_RUN_CREATE_FAILED');
   const counts = emptyCounts(), groups: Record<string, Counts> = {}, context = createKnownOfferContext(true);
   // Se serializa cada tienda incluso para adaptadores antiguos que aún no usan sourceFetch.
+  const persistenceDiagnostic = createPersistenceDiagnostic();
   const lanes = createStoreLanes({ concurrency, spacingMs: ADAPTIVE_STORE_SPACING_MS, isExempt: isSharedReadStore });
   const previousSourceConcurrency = setSourceFetchConcurrency(concurrency);
   // Una tienda pausada por 403/429/5xx no recibe más solicitudes en esta ejecución.
@@ -239,27 +243,37 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
           const item = batch[index], price = reviewed[index].prices[0];
           const state = { price: price.price, original_price: price.originalPrice ?? null, stock: price.stock,
             installment_count: price.installment?.count ?? null, installment_amount: price.installment?.amount ?? null };
-          const persist = () => client.rpc('persist_adaptive_offer', {
-            p_offer_id: item.target.offer_id, p_token: token,
-            p_price: state.price, p_original_price: state.original_price, p_stock: state.stock,
-            p_installment_count: state.installment_count, p_installment_amount: state.installment_amount,
-            p_run_started_at: startedAt, p_observed_at: new Date(price.lastUpdated).toISOString(),
-            p_review: price.identityReview ?? null, p_signature: buildPriceStateSignature(state),
-            p_source_identity: price.sourceIdentity ?? null, p_price_condition: price.priceCondition ?? (price.storeId === 'compragamer' ? 'special' : 'unspecified'),
-          });
-          let persisted=await persist();
-          // Repetir la misma observación no inserta otro historial; su fecha se conserva.
-          for (let retry=0; persisted.error && retry<2; retry++) {
-            await new Promise(resolve=>setTimeout(resolve,300 * (retry+1)));
+          const observation = createPersistenceObservation();
+          const persist = async () => {
+            try {
+              const response = await client.rpc('persist_adaptive_offer', {
+                p_offer_id: item.target.offer_id, p_token: token,
+                p_price: state.price, p_original_price: state.original_price, p_stock: state.stock,
+                p_installment_count: state.installment_count, p_installment_amount: state.installment_amount,
+                p_run_started_at: startedAt, p_observed_at: new Date(price.lastUpdated).toISOString(),
+                p_review: price.identityReview ?? null, p_signature: buildPriceStateSignature(state),
+                p_source_identity: price.sourceIdentity ?? null, p_price_condition: price.priceCondition ?? (price.storeId === 'compragamer' ? 'special' : 'unspecified'),
+              });
+              observePersistenceResponse(observation, response);
+              return response;
+            } catch (error) { observePersistenceError(observation, error); throw error; }
+          };
+          let persisted: Awaited<ReturnType<typeof persist>>;
+          try {
             persisted=await persist();
-          }
+            // Repetir la misma observación no inserta otro historial; su fecha se conserva.
+            for (let retry=0; persisted.error && retry<2; retry++) {
+              await new Promise(resolve=>setTimeout(resolve,300 * (retry+1)));
+              persisted=await persist();
+            }
+          } finally { recordPersistenceDiagnostic(persistenceDiagnostic, item.target.store_id, observation); }
           const saved = !persisted.error && persisted.data === true;
           await finish(item.target, saved ? 'observed' : 'persist-failed', saved && isCatalogOfferFresh(price.lastUpdated) && isComparableStoreOffer(price, item.product));
         }
       }
       phaseMs[sharedBatch ? 'shared' : 'rotation'] += Date.now() - batchStarted;
       // El avance persiste por lote aunque el runner se interrumpa luego.
-      const progress = await client.from('catalog_refresh_runs').update({ summary: { ...counts, groups, deferred, deferredStores, seed: seedSummary, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads } }).eq('id', run.data.id);
+      const progress = await client.from('catalog_refresh_runs').update({ summary: { ...counts, groups, persistenceDiagnostic: snapshotPersistenceDiagnostic(persistenceDiagnostic), deferred, deferredStores, seed: seedSummary, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads } }).eq('id', run.data.id);
       if (progress.error) throw new Error('REFRESH_PROGRESS_FAILED');
     }
     if (Date.now() - started >= deadline) status = 'deadline';
@@ -303,7 +317,7 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
   const seedDiagnostic = sanitizeRefreshSeedDiagnostic({ attempts: seedAttempts });
   const summary = { source: 'adaptive-catalog', trigger: ['github-schedule','cloudflare-fallback'].includes(process.env.CATALOG_RUN_TRIGGER ?? '') ? process.env.CATALOG_RUN_TRIGGER : 'manual', runId: run.data.id, startedAt, finishedAt: new Date().toISOString(),
     status, failureCode, ...(claimDiagnostic ? { claimDiagnostic } : {}), ...(seedDiagnostic ? { seedDiagnostic } : {}),
-    ...(hasFailureDiagnostic() ? { closure: { failureCodes: closureFailureCodes } } : {}), inventory, inventoryDetails, feedClaimed, sourceFailureReasons, limitReached: counts.attempted + deferred >= maxOffers, ...counts, groups, deferred, deferredStores, seeded, seed: seedSummary, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads, coverage: coverageData };
+    ...(hasFailureDiagnostic() ? { closure: { failureCodes: closureFailureCodes } } : {}), inventory, inventoryDetails, feedClaimed, sourceFailureReasons, limitReached: counts.attempted + deferred >= maxOffers, ...counts, groups, persistenceDiagnostic: snapshotPersistenceDiagnostic(persistenceDiagnostic), deferred, deferredStores, seeded, seed: seedSummary, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads, coverage: coverageData };
   let summaryPersistence: 'confirmed' | 'unconfirmed' = 'unconfirmed';
   try {
     const completed = await client.from('catalog_refresh_runs').update({ status, finished_at: summary.finishedAt, summary }).eq('id', run.data.id);

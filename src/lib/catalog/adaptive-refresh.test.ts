@@ -1,6 +1,6 @@
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
 import type { Product } from '@/lib/types';
-const mocks=vi.hoisted(()=>({rpc:vi.fn(),from:vi.fn(),fetch:vi.fn(),map:vi.fn(),inventory:vi.fn(),details:vi.fn()}));
+const mocks=vi.hoisted(()=>({rpc:vi.fn(),from:vi.fn(),update:vi.fn(),fetch:vi.fn(),map:vi.fn(),inventory:vi.fn(),details:vi.fn()}));
 vi.mock('server-only',()=>({}));
 vi.mock('@/lib/server/supabase-server',()=>({getServerSupabaseServiceClient:()=>({rpc:mocks.rpc,from:mocks.from})}));
 vi.mock('@/lib/persistence/product-read-mapper',()=>({mapDbProduct:mocks.map}));
@@ -15,7 +15,8 @@ const price={storeId:'compragamer',storeName:'CompraGamer',url:target.url,price:
 const product={id:'cpu',name:'AMD Ryzen 5 5600',category:'procesadores',prices:[price]} as Product;
 beforeEach(()=>{
  vi.resetAllMocks();vi.useFakeTimers();vi.setSystemTime(new Date('2026-10-01T22:00:00Z'));vi.stubEnv('CATALOG_REQUESTED_RUNNER','1');vi.stubEnv('CATALOG_INVENTORY_DISCOVERY','0');vi.stubEnv('CATALOG_ADAPTIVE_SEED','always');
- const chain={delete:()=>chain,lt:async()=>({error:null}),update:()=>chain,eq:()=>chain,then:(resolve:(value:{error:null})=>void)=>resolve({error:null}),insert:()=>chain,select:()=>chain,gte:()=>chain,order:()=>chain,single:async()=>({data:{id:'run'},error:null}),in:()=>chain,limit:async()=>({data:[{}],error:null})};
+ const chain={delete:()=>chain,lt:async()=>({error:null}),update:mocks.update,eq:()=>chain,then:(resolve:(value:{error:null})=>void)=>resolve({error:null}),insert:()=>chain,select:()=>chain,gte:()=>chain,order:()=>chain,single:async()=>({data:{id:'run'},error:null}),in:()=>chain,limit:async()=>({data:[{}],error:null})};
+ mocks.update.mockReturnValue(chain);
  mocks.from.mockReturnValue(chain);mocks.map.mockReturnValue(product);mocks.fetch.mockResolvedValue({product,price,sourceTitle:product.name});
  mocks.rpc.mockImplementation(async(name:string)=>({error:null,data:name==='seed_catalog_refresh_queue'?0:name==='catalog_refresh_coverage'?[]:name==='claim_catalog_feed_refresh'||name==='claim_catalog_refresh'?[]:true}));
 });
@@ -520,4 +521,105 @@ it('acota el detalle de inventario y lo omite si el descubrimiento consumió la 
   const result = await runAdaptiveRefresh({ maxOffers: 24 });
   expect(mocks.details).not.toHaveBeenCalled();
   expect(result.inventoryDetails).toBeUndefined();
+});
+
+it.each([
+ { label: 'false sin error', responses: [{ data: false, error: null }], outcome: 'returnedFalse', observed: 0 },
+ { label: 'error seguido de false', responses: [{ data: null, error: { code: '57014', message: 'secreto-no-retener' } }, { data: false, error: null }], outcome: 'ackUnconfirmed', observed: 0 },
+ { label: 'tres errores iguales', responses: Array.from({ length: 3 }, () => ({ data: null, error: { code: '57014', message: 'secreto-no-retener' } })), outcome: 'ackUnconfirmed', observed: 0 },
+ { label: 'ACK inválido', responses: [{ data: 'true', error: null }], outcome: 'invalidResponse', observed: 0 },
+ { label: 'error seguido de ACK inválido', responses: [{ data: null, error: { code: '57014' } }, { data: { saved: true }, error: null }], outcome: 'ackUnconfirmed', observed: 0 },
+ { label: 'true después de error', responses: [{ data: null, error: { code: '57014' } }, { data: true, error: null }], outcome: 'confirmed', observed: 1 },
+])('retiene diagnóstico lógico global/tienda y progresivo/final para $label sin cambiar reintentos', async ({ responses, outcome, observed }) => {
+ let claimed = false, persists = 0;
+ const update = mocks.update;
+ mocks.rpc.mockImplementation(async (name: string) => {
+  if (name === 'claim_catalog_feed_refresh') return { data: claimed ? [] : (claimed = true, [target]), error: null };
+  if (name === 'persist_adaptive_offer') return responses[persists++];
+  return { data: name === 'seed_catalog_refresh_queue' ? 0 : name === 'catalog_refresh_coverage' ? [] : name === 'claim_catalog_refresh' ? [] : true, error: null };
+ });
+ const promise = runAdaptiveRefresh({ maxOffers: 2 }); await vi.runAllTimersAsync();
+ const result = await promise;
+ expect(result).toMatchObject({ attempted: 1, observed, comparable: observed, failures: observed ? {} : { 'persist-failed': 1 },
+  persistenceDiagnostic: { version: 1, logicalObservations: 1, global: { [outcome]: 1 }, byStore: { compragamer: { [outcome]: 1 } } } });
+ const calls = mocks.rpc.mock.calls.filter(([name]) => name === 'persist_adaptive_offer');
+ expect(calls).toHaveLength(responses.length);
+ expect(calls.every(([, args]) => JSON.stringify(args) === JSON.stringify(calls[0][1]))).toBe(true);
+ expect(mocks.rpc.mock.calls.filter(([name]) => name === 'finish_catalog_refresh')).toHaveLength(1);
+ const summaries = update.mock.calls.map(([payload]) => (payload as { summary?: unknown }).summary).filter(Boolean);
+ expect(summaries).toHaveLength(2);
+ for (const summary of summaries) {
+  expect(summary).toMatchObject({ persistenceDiagnostic: result.persistenceDiagnostic });
+  expect(JSON.stringify((summary as { persistenceDiagnostic: unknown }).persistenceDiagnostic)).not.toContain('secreto-no-retener');
+ }
+ if (responses.some(response => response.error)) {
+  expect(result.persistenceDiagnostic.global.errorCodes).toEqual({ '57014': 1 });
+ }
+});
+it('conserva el avance de dos tiendas y el orden de persistencia sin duplicar observaciones', async () => {
+ let shared = false, rotation = false;
+ const maximus = { ...target, offer_id: 'maximus-offer', store_id: 'maximus', url: 'https://www.maximus.com.ar/Producto/fixture/ITEM=13444/maximus.aspx' };
+ mocks.rpc.mockImplementation(async (name: string, args?: { p_offer_id?: string }) => {
+  if (name === 'claim_catalog_feed_refresh') return { data: shared ? [] : (shared = true, [target]), error: null };
+  if (name === 'claim_catalog_refresh') return { data: rotation ? [] : (rotation = true, [maximus]), error: null };
+  return { data: name === 'persist_adaptive_offer' ? args?.p_offer_id !== maximus.offer_id : name === 'seed_catalog_refresh_queue' ? 0 : name === 'catalog_refresh_coverage' ? [] : true, error: null };
+ });
+ mocks.fetch.mockImplementation(async (_product: Product, offer: { storeId: string; url: string }) => {
+  const offerPrice = { ...price, storeId: offer.storeId, url: offer.url };
+  return { product: { ...product, prices: [offerPrice] }, price: offerPrice, sourceTitle: product.name };
+ });
+ const promise = runAdaptiveRefresh({ maxOffers: 2 }); await vi.runAllTimersAsync();
+ const result = await promise;
+ expect(result).toMatchObject({ attempted: 2, observed: 1, comparable: 1, failures: { 'persist-failed': 1 },
+  persistenceDiagnostic: { logicalObservations: 2, global: { confirmed: 1, returnedFalse: 1 },
+   byStore: { compragamer: { confirmed: 1 }, maximus: { returnedFalse: 1 } } } });
+ expect(mocks.rpc.mock.calls.filter(([name]) => name === 'persist_adaptive_offer').map(([, args]) => args.p_offer_id)).toEqual(['offer', 'maximus-offer']);
+ const summaries = mocks.update.mock.calls.map(([payload]) => payload.summary).filter(Boolean);
+ expect(summaries).toHaveLength(3);
+ expect(summaries[0].persistenceDiagnostic).toMatchObject({ logicalObservations: 1, global: { confirmed: 1, returnedFalse: 0 } });
+ expect(summaries[0].persistenceDiagnostic.byStore.maximus).toBeUndefined();
+ expect(summaries[1].persistenceDiagnostic).toEqual(result.persistenceDiagnostic);
+ expect(summaries[2].persistenceDiagnostic).toEqual(result.persistenceDiagnostic);
+});
+it('retiene el error lanzado como ACK incierto sin añadir reintentos ni inventar un finish', async () => {
+ let claimed = false;
+ mocks.rpc.mockImplementation(async (name: string) => {
+  if (name === 'claim_catalog_feed_refresh') return { data: claimed ? [] : (claimed = true, [target]), error: null };
+  if (name === 'persist_adaptive_offer') throw { code: '57014', message: 'secreto-no-retener' };
+  return { data: name === 'seed_catalog_refresh_queue' ? 0 : name === 'catalog_refresh_coverage' ? [] : true, error: null };
+ });
+ const result = await runAdaptiveRefresh({ maxOffers: 2 });
+ expect(result).toMatchObject({ status: 'failed', attempted: 0, observed: 0, failureCode: 'REFRESH_UNEXPECTED_ERROR',
+  persistenceDiagnostic: { logicalObservations: 1, global: { ackUnconfirmed: 1, errorCodes: { '57014': 1 } } } });
+ expect(mocks.rpc.mock.calls.filter(([name]) => name === 'persist_adaptive_offer')).toHaveLength(1);
+ expect(mocks.rpc.mock.calls.some(([name]) => name === 'finish_catalog_refresh')).toBe(false);
+ expect(JSON.stringify(result.persistenceDiagnostic)).not.toContain('secreto-no-retener');
+ expect(mocks.update.mock.calls.find(([payload]) => payload.summary)?.[0].summary.persistenceDiagnostic).toEqual(result.persistenceDiagnostic);
+});
+
+it.each([
+ { condition: 'special', stock: 'in-stock', comparable: 1 },
+ { condition: 'unspecified', stock: 'low-stock', comparable: 1 },
+ { condition: 'special', stock: 'unknown', comparable: 0 },
+ { condition: 'special', stock: 'out-of-stock', comparable: 0 },
+] as const)('completa ACK true para Maximus $condition/$stock con stock e identidad literales', async ({ condition, stock, comparable }) => {
+ const maximus = { ...target, store_id: 'maximus', url: 'https://www.maximus.com.ar/Producto/Micro-AMD-Ryzen-5-8600G/ITEM=13444/maximus.aspx?PN=100-100001237BOX' };
+ const identity = { listingRef: 'maximus:id:13444', sourceId: '13444', storeSku: '100-100001237BOX', title: 'Micro AMD Ryzen 5 8600G' };
+ const offerPrice = { ...price, storeId: 'maximus', storeName: 'Maximus', url: maximus.url, stock, priceCondition: condition, sourceIdentity: identity };
+ const source = { ...product, name: identity.title, prices: [offerPrice] } as Product;
+ mocks.map.mockReturnValue(source); mocks.fetch.mockResolvedValue({ product: source, price: offerPrice, sourceTitle: identity.title });
+ let claimed = false;
+ mocks.rpc.mockImplementation(async (name: string) => {
+  if (name === 'claim_catalog_refresh') return { data: claimed ? [] : (claimed = true, [maximus]), error: null };
+  return { data: name === 'seed_catalog_refresh_queue' ? 0 : name === 'catalog_refresh_coverage' || name === 'claim_catalog_feed_refresh' ? [] : true, error: null };
+ });
+ const result = await runAdaptiveRefresh({ maxOffers: 2 });
+ expect(result).toMatchObject({ status: 'completed', attempted: 1, observed: 1, comparable,
+  persistenceDiagnostic: { global: { confirmed: 1 }, byStore: { maximus: { confirmed: 1 } } } });
+ const persisted = mocks.rpc.mock.calls.find(([name]) => name === 'persist_adaptive_offer')!;
+ expect(persisted[1]).toMatchObject({ p_stock: stock, p_price_condition: condition, p_source_identity: identity,
+  p_observed_at: offerPrice.lastUpdated.toISOString(), p_price: offerPrice.price });
+ expect(mocks.rpc.mock.calls.filter(([name]) => name === 'finish_catalog_refresh')).toEqual([
+  ['finish_catalog_refresh', expect.objectContaining({ p_result: 'observed' })],
+ ]);
 });
