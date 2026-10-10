@@ -62,6 +62,12 @@ export function getServerSupabaseReadClient(): SupabaseClient | null {
   return cachedReadClient;
 }
 
+/** Cliente de lectura aislado: el fetch de diagnóstico nunca modifica el singleton. */
+export function createServerSupabaseReadClientForFetch(fetch: typeof globalThis.fetch): SupabaseClient | null {
+  if (!supabaseUrl || !supabasePublishableKey) return null;
+  return createClient(supabaseUrl, supabasePublishableKey, { ...baseClientOptions(), global: { fetch } });
+}
+
 export function getServerSupabaseServiceClient(): SupabaseClient | null {
   if (cachedServiceClient !== undefined) return cachedServiceClient;
 

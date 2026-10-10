@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest, NextResponse } from 'next/server';
 import type { RateLimitResult } from '@/lib/server/rate-limit';
+import type { CatalogPageReadDiagnostics } from '@/lib/persistence/product-read';
 import type { Product } from '@/lib/types';
 
 const mocks = vi.hoisted(() => ({
@@ -180,7 +181,14 @@ describe('Server-Timing de búsqueda pública', () => {
   function timings(response: Response) {
     const header = response.headers.get('Server-Timing')!;
     const names = ['rate_limit', 'cache_read', 'database', 'cache_write', 'response', 'total'];
-    const values = Object.fromEntries(header.split(', ').map(entry => {
+    const entries = header.split(', ');
+    expect(entries.filter(entry => entry.includes(';desc='))).toEqual(expect.arrayContaining([
+      expect.stringMatching(/^catalog_calls;desc="\d+"$/), expect.stringMatching(/^catalog_reads;desc="\d+"$/),
+      expect.stringMatching(/^catalog_rereads;desc="\d+"$/), expect.stringMatching(/^catalog_coalesced;desc="\d+"$/),
+    ]));
+    expect(entries.filter(entry => entry.startsWith('catalog_') && entry.includes(';dur=')).map(entry => entry.split(';')[0]))
+      .toEqual(['catalog_rpc', 'catalog_headers', 'catalog_body', 'catalog_transform']);
+    const values = Object.fromEntries(entries.filter(entry => names.includes(entry.split(';')[0])).map(entry => {
       expect(entry).toMatch(/^[a-z_]+;dur=\d+\.\d{2}$/);
       const [name, duration] = entry.split(';dur=');
       return [name, Number(duration)];
@@ -248,7 +256,10 @@ describe('Server-Timing de búsqueda pública', () => {
   it('mide espera por consumidor sin duplicar lectura ni escritura coalescidas', async () => {
     const database = deferred<ReturnType<typeof catalogPage>>();
     const page = catalogPage([freshProduct('timed-shared')]);
-    mocks.readProductsPageFromDatabase.mockReturnValue(database.promise);
+    mocks.readProductsPageFromDatabase.mockImplementation((_params, report) => database.promise.then(page => {
+      report?.({ rpcCalls: 1, rpcMs: 20, headersMs: 18, bodyMs: 2, transformMs: 0 });
+      return page;
+    }));
     const first = GET(searchRequest('timed-shared-query'));
     await new Promise(resolve => setImmediate(resolve));
     expect(mocks.readProductsPageFromDatabase).toHaveBeenCalledTimes(1);
@@ -263,6 +274,13 @@ describe('Server-Timing de búsqueda pública', () => {
     expect(secondResponse.status).toBe(200);
     expect(timings(firstResponse).database).toBe(20);
     expect(timings(secondResponse).database).toBe(15);
+    expect(firstResponse.headers.get('Server-Timing')).toContain('catalog_coalesced;desc="0"');
+    expect(secondResponse.headers.get('Server-Timing')).toContain('catalog_coalesced;desc="1"');
+    for (const response of [firstResponse, secondResponse]) {
+      expect(response.headers.get('Server-Timing')).toContain('catalog_calls;desc="1"');
+      expect(response.headers.get('Server-Timing')).toContain('catalog_reads;desc="1"');
+      expect(response.headers.get('Server-Timing')).toContain('catalog_rpc;dur=20.00');
+    }
     expect(await firstResponse.json()).toEqual(await secondResponse.json());
     expect(mocks.checkRateLimit).toHaveBeenCalledTimes(2);
     expect(mocks.setSharedCache).toHaveBeenCalledTimes(1);
@@ -298,4 +316,61 @@ describe('Server-Timing de búsqueda pública', () => {
     await new Promise(resolve => setImmediate(resolve));
     expect(response.headers.get('Server-Timing')).toBe(snapshot);
   });
+  it('publica etapas fijas y counts en MISS/error; callback conserva diagnóstico de RPC fallido', async () => {
+    const diagnostic: CatalogPageReadDiagnostics = { rpcCalls: 1, rpcMs: 19, headersMs: 12, bodyMs: 4, transformMs: 3 };
+    mocks.readProductsPageFromDatabase.mockImplementation(async (_params, report) => {
+      clock += 22; report(diagnostic); return catalogPage([freshProduct('phase-page')]);
+    });
+    const success = await GET(searchRequest('private-phase-page'));
+    expect(success.status).toBe(200);
+    expect(success.headers.get('Server-Timing')).toContain('catalog_rpc;dur=19.00, catalog_headers;dur=12.00, catalog_body;dur=4.00, catalog_transform;dur=3.00');
+    expect(success.headers.get('Server-Timing')).toContain('catalog_calls;desc="1", catalog_reads;desc="1", catalog_rereads;desc="0", catalog_coalesced;desc="0"');
+    mocks.readProductsPageFromDatabase.mockImplementation(async (_params, report) => {
+      clock += 19; report({ ...diagnostic, bodyMs: 0, transformMs: 0 }); throw new Error('private SQL https://secret.invalid Bearer token');
+    });
+    const error = await GET(searchRequest('private-phase-error'));
+    expect(error.status).toBe(503);
+    expect(error.headers.get('Server-Timing')).toContain('catalog_calls;desc="1"');
+    expect(error.headers.get('Server-Timing')).not.toMatch(/private|SQL|https|Bearer|token/);
+  });
+
+  it('cuenta una relectura por vigencia sin mezclar llamadas ni datos de la primera página', async () => {
+    const expired = freshProduct('expired-read');
+    expired.prices = expired.prices.map(offer => ({ ...offer, lastUpdated: new Date(Date.now() - 25 * 60 * 60 * 1000) }));
+    let reads = 0;
+    mocks.readProductsPageFromDatabase.mockImplementation(async (_params, report) => {
+      report({ rpcCalls: 1, rpcMs: 7, headersMs: 5, bodyMs: 2, transformMs: 0 });
+      return catalogPage([reads++ === 0 ? expired : freshProduct('fresh-reread')]);
+    });
+    const response = await GET(searchRequest('timed-reread'));
+    expect(response.status).toBe(200);
+    expect(mocks.readProductsPageFromDatabase).toHaveBeenCalledTimes(2);
+    expect(response.headers.get('Server-Timing')).toContain('catalog_rpc;dur=14.00');
+    expect(response.headers.get('Server-Timing')).toContain('catalog_calls;desc="2", catalog_reads;desc="2", catalog_rereads;desc="1", catalog_coalesced;desc="0"');
+    expect((await response.json()).products.map((product: Product) => product.id)).toEqual(['fresh-reread']);
+  });
+
+  it('fallo compartido mantiene ambos 503 y métricas sin repetir RPC ni exponer error', async () => {
+    const gate = deferred<void>();
+    mocks.readProductsPageFromDatabase.mockImplementation(async (_params, report) => {
+      await gate.promise;
+      report({ rpcCalls: 1, rpcMs: 20, headersMs: 20, bodyMs: 0, transformMs: 0 });
+      throw new Error('private shared SQL https://secret.invalid');
+    });
+    const first = GET(searchRequest('private-shared-error'));
+    await new Promise(resolve => setImmediate(resolve));
+    const second = GET(searchRequest('private-shared-error'));
+    await new Promise(resolve => setImmediate(resolve));
+    gate.resolve();
+    const responses = await Promise.all([first, second]);
+    expect(mocks.readProductsPageFromDatabase).toHaveBeenCalledTimes(1);
+    expect(responses.map(response => response.status)).toEqual([503, 503]);
+    expect(responses[1].headers.get('Server-Timing')).toContain('catalog_coalesced;desc="1"');
+    for (const response of responses) {
+      expect(response.headers.get('Server-Timing')).toContain('catalog_rpc;dur=20.00');
+      expect(response.headers.get('Server-Timing')).toContain('catalog_calls;desc="1"');
+      expect(response.headers.get('Server-Timing')).not.toMatch(/private|SQL|https|secret/);
+    }
+  });
+
 });

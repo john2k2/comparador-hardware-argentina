@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { getServerSupabaseReadClient } from '@/lib/server/supabase-server';
+import { createServerSupabaseReadClientForFetch, getServerSupabaseReadClient } from '@/lib/server/supabase-server';
 import { applyDatabaseReadTransforms } from '@/lib/persistence/product-read-grouping';
 import {
   applySharedProductFilters,
@@ -134,34 +134,78 @@ export async function readProductsFromDatabase(params: ReadProductsParams) {
   );
 }
 
-export async function readProductsPageFromDatabase(params: ReadProductsPageParams): Promise<ProductPageResult> {
-  const pageSize = Math.min(48, Math.max(1, Math.trunc(params.pageSize) || 12));
-  const requestedPage = Math.max(1, Math.trunc(params.page) || 1);
-  const supabase = getServerSupabaseReadClient();
-  if (!supabase) throw new Error('Catalog database unavailable');
-  const query = params.query?.trim() ?? '';
-  const requestedCategory = params.category ?? inferHardwareCategoryFromName(query);
-  const { data, error } = await supabase.rpc('search_catalog_page', {
-    p_query: prepareCatalogQuery(query, requestedCategory),
-    p_category: requestedCategory ?? null,
-    p_stores: [...new Set([...params.storeIds ?? []].map((id) => id.trim().toLowerCase()).filter(Boolean))].sort(),
-    // A non-null floor activates the RPC's current comparable-offer filter
-    // before totals and pagination. Zero adds no artificial price minimum.
-    p_min_price: params.minPrice ?? (params.onlyCurrentOffers ? 0 : null),
-    p_max_price: params.maxPrice ?? null,
-    p_sort: params.sortBy ?? 'relevance',
-    p_page: requestedPage,
-    p_page_size: pageSize,
-  });
-  if (error) throw new Error(`readProductsPageFromDatabase: ${error.message}`);
-  if (!data || !Array.isArray(data.products) || !Number.isInteger(data.total)
-    || !Number.isInteger(data.totalPages) || !Number.isInteger(data.page)
-    || !Number.isInteger(data.pageSize)) throw new Error('Invalid catalog page response');
-  const result = data as DbCatalogPage;
-  const guarded = guardCategoryPage(result.products.map(mapCatalogProduct), requestedCategory);
-  const identity = guardIdentityPage(guarded.products, params);
-  return { ...result, products: identity.products, categoryExcludedOnPage: guarded.excluded,
-    identityExcludedOnPage: identity.identityExcludedOnPage };
+export type CatalogPageReadDiagnostics = {
+  rpcCalls: number; rpcMs: number; headersMs: number; bodyMs: number; transformMs: number;
+};
+
+function elapsed(startedAt: number): number { return Math.max(0, performance.now() - startedAt); }
+
+function timedCatalogFetch(diagnostic: CatalogPageReadDiagnostics): typeof globalThis.fetch {
+  const fetch = globalThis.fetch.bind(globalThis);
+  return async (input, init) => {
+    const startedAt = performance.now();
+    let response: Response;
+    try { response = await fetch(input, init); }
+    finally { diagnostic.headersMs += elapsed(startedAt); }
+    // El SDK consume .text(): conservar getters nativos y el receptor de métodos.
+    return new Proxy(response, { get(target, property) {
+      if (property === 'text') return async () => {
+        const bodyStartedAt = performance.now();
+        try { return await target.text(); }
+        finally { diagnostic.bodyMs += elapsed(bodyStartedAt); }
+      };
+      const value = Reflect.get(target, property, target);
+      return typeof value === 'function' ? value.bind(target) : value;
+    } });
+  };
+}
+
+export async function readProductsPageFromDatabase(
+  params: ReadProductsPageParams,
+  onDiagnostics?: (diagnostic: Readonly<CatalogPageReadDiagnostics>) => void,
+): Promise<ProductPageResult> {
+  const diagnostic: CatalogPageReadDiagnostics = { rpcCalls: 0, rpcMs: 0, headersMs: 0, bodyMs: 0, transformMs: 0 };
+  let transformStartedAt: number | undefined;
+  try {
+    const pageSize = Math.min(48, Math.max(1, Math.trunc(params.pageSize) || 12));
+    const requestedPage = Math.max(1, Math.trunc(params.page) || 1);
+    const supabase = onDiagnostics
+      ? createServerSupabaseReadClientForFetch(timedCatalogFetch(diagnostic))
+      : getServerSupabaseReadClient();
+    if (!supabase) throw new Error('Catalog database unavailable');
+    const query = params.query?.trim() ?? '';
+    const requestedCategory = params.category ?? inferHardwareCategoryFromName(query);
+    diagnostic.rpcCalls++;
+    const rpcStartedAt = performance.now();
+    const response = await Promise.resolve().then(() => supabase.rpc('search_catalog_page', {
+      p_query: prepareCatalogQuery(query, requestedCategory),
+      p_category: requestedCategory ?? null,
+      p_stores: [...new Set([...params.storeIds ?? []].map((id) => id.trim().toLowerCase()).filter(Boolean))].sort(),
+      // A non-null floor activates the RPC's current comparable-offer filter
+      // before totals and pagination. Zero adds no artificial price minimum.
+      p_min_price: params.minPrice ?? (params.onlyCurrentOffers ? 0 : null),
+      p_max_price: params.maxPrice ?? null,
+      p_sort: params.sortBy ?? 'relevance',
+      p_page: requestedPage,
+      p_page_size: pageSize,
+    })).finally(() => { diagnostic.rpcMs += elapsed(rpcStartedAt); });
+    const { data, error } = response;
+    transformStartedAt = performance.now();
+    if (error) throw new Error(`readProductsPageFromDatabase: ${error.message}`);
+    if (!data || !Array.isArray(data.products) || !Number.isInteger(data.total)
+      || !Number.isInteger(data.totalPages) || !Number.isInteger(data.page)
+      || !Number.isInteger(data.pageSize)) throw new Error('Invalid catalog page response');
+    const result = data as DbCatalogPage;
+    const guarded = guardCategoryPage(result.products.map(mapCatalogProduct), requestedCategory);
+    const identity = guardIdentityPage(guarded.products, params);
+    return { ...result, products: identity.products, categoryExcludedOnPage: guarded.excluded,
+      identityExcludedOnPage: identity.identityExcludedOnPage };
+  } finally {
+    if (transformStartedAt !== undefined) diagnostic.transformMs += elapsed(transformStartedAt);
+    // La observabilidad auxiliar no cambia el resultado ni el rechazo de lectura.
+    try { if (onDiagnostics) void Promise.resolve(onDiagnostics(Object.freeze({ ...diagnostic }))).catch(() => undefined); }
+    catch { /* Un callback defectuoso no invalida la página. */ }
+  }
 }
 
 // SQL decide selección, estadísticas y orden. El mapper conserva sanitización y

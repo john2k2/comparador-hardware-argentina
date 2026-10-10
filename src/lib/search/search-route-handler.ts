@@ -41,10 +41,13 @@ import { isStableRuntimeMode, shouldSkipLiveScraping } from '@/lib/server/runtim
 import { getStableFixtureProducts } from '@/lib/server/stable-search-fixtures';
 import { filterCurrentCatalogProducts } from './search-availability';
 import { createCoalescedRead } from '@/lib/server/coalesced-read';
+import type { CatalogPageReadDiagnostics } from '@/lib/persistence/product-read';
 import type { ProductPageResult } from '@/lib/persistence/product-read-types';
 
-type SearchDatabaseRead = { page: ProductPageResult; cacheWrite?: Promise<void> };
-const readPendingSearchPage = createCoalescedRead<SearchDatabaseRead>();
+type SearchDatabaseRead = { page: ProductPageResult; cacheWrite?: Promise<void>; diagnostic: CatalogPageReadDiagnostics; failed?: false };
+type SearchDatabaseAttempt = SearchDatabaseRead | { failed: true; error: unknown; diagnostic: CatalogPageReadDiagnostics };
+const readPendingSearchPage = createCoalescedRead<SearchDatabaseAttempt>();
+const emptyCatalogDiagnostic = (): CatalogPageReadDiagnostics => ({ rpcCalls: 0, rpcMs: 0, headersMs: 0, bodyMs: 0, transformMs: 0 });
 
 async function scheduleCatalogRefreshDemand(input: Parameters<typeof recordCatalogRefreshDemand>[0]): Promise<void> {
   const record = async () => {
@@ -149,6 +152,21 @@ export async function GET(request: NextRequest) {
       activeTimings.delete(phase);
     }
   };
+  const catalogTimings = { catalog_rpc: 0, catalog_headers: 0, catalog_body: 0, catalog_transform: 0 };
+  const catalogCounts = { catalog_calls: 0, catalog_reads: 0, catalog_rereads: 0, catalog_coalesced: 0 };
+  const collectCatalogDiagnostic = (diagnostic: CatalogPageReadDiagnostics) => {
+    catalogCounts.catalog_calls += diagnostic.rpcCalls;
+    catalogTimings.catalog_rpc += diagnostic.rpcMs;
+    catalogTimings.catalog_headers += diagnostic.headersMs;
+    catalogTimings.catalog_body += diagnostic.bodyMs;
+    catalogTimings.catalog_transform += diagnostic.transformMs;
+  };
+  const readCatalogPage = async (params: Parameters<typeof readProductsPageFromDatabase>[0]) => {
+    let diagnostic = emptyCatalogDiagnostic();
+    catalogCounts.catalog_reads++;
+    try { return await measure('database', () => readProductsPageFromDatabase(params, value => { diagnostic = value; })); }
+    finally { collectCatalogDiagnostic(diagnostic); }
+  };
   const searchParams = request.nextUrl.searchParams;
   const query = (searchParams.get('q') ?? '').trim();
   const bypassDb = searchParams.get('bypassDb') === '1';
@@ -196,6 +214,10 @@ export async function GET(request: NextRequest) {
       const elapsed = duration + (activeAt === undefined ? 0 : Math.max(0, finishedAt - activeAt));
       return `${phase};dur=${elapsed.toFixed(2)}`;
     });
+    // RPC describe el trabajo subyacente compartido; database es espera de este
+    // consumidor. Headers incluye transporte/servidor; body excluye JSON.parse.
+    for (const [phase, duration] of Object.entries(catalogTimings)) phases.push(`${phase};dur=${duration.toFixed(2)}`);
+    for (const [phase, count] of Object.entries(catalogCounts)) phases.push(`${phase};desc="${count}"`);
     phases.push(`total;dur=${Math.max(0, finishedAt - timingStartedAt).toFixed(2)}`);
     response.headers.set('Server-Timing', phases.join(', '));
     return response;
@@ -277,7 +299,6 @@ export async function GET(request: NextRequest) {
         onlyCurrentOffers: !includeUnavailable,
       };
       const normalRead = !bypassDb && !isRefreshRequest && !internalRefreshRequest;
-      const read = async (): Promise<SearchDatabaseRead> => ({ page: await readProductsPageFromDatabase(databaseParams) });
       const readKey = JSON.stringify(['search-db-first-v1', query, effectiveCategory ?? null,
         sortBy, page, SEARCH_PAGE_SIZE, minPrice ?? null, maxPrice ?? null,
         [...selectedStoreIds].sort(), includeUnavailable, searchParams.get('preferDb') === '1']);
@@ -291,14 +312,31 @@ export async function GET(request: NextRequest) {
         if (catalogOnlyMode) throw databaseError;
         return null;
       };
-      let databaseRead = await measure('database', () => normalRead ? readPendingSearchPage(readKey, read) : read()).catch(handleReadError);
+      const load = async (coalesce: boolean): Promise<SearchDatabaseRead | null> => {
+        let producer = false;
+        const read = async (): Promise<SearchDatabaseAttempt> => {
+          producer = true;
+          let diagnostic = emptyCatalogDiagnostic();
+          try {
+            const page = await readProductsPageFromDatabase(databaseParams, value => { diagnostic = value; });
+            return { page, diagnostic };
+          } catch (error) { return { failed: true, error, diagnostic }; }
+        };
+        catalogCounts.catalog_reads++;
+        const attempt = await measure('database', () => coalesce ? readPendingSearchPage(readKey, read) : read());
+        if (!producer) catalogCounts.catalog_coalesced++;
+        collectCatalogDiagnostic(attempt.diagnostic);
+        return attempt.failed ? handleReadError(attempt.error) : attempt;
+      };
+      let databaseRead = await load(normalRead);
       let rereads = 0;
       let demandRecorded = false;
       let backgroundScheduled = false;
       const reread = async () => {
         if (rereads >= 1) throw new Error('SEARCH_PAGE_NO_LONGER_CURRENT');
         rereads++;
-        databaseRead = await measure('database', read).catch(handleReadError);
+        catalogCounts.catalog_rereads++;
+        databaseRead = await load(false);
       };
 
       while (databaseRead) {
@@ -343,7 +381,7 @@ export async function GET(request: NextRequest) {
     if (!query && effectiveCategory) {
       const observeSource = createObservedProductsSourceRunner(runObservedStoreScrape);
       const liveCategoryProducts = await resolveLiveProductsList(effectiveCategory, undefined, observeSource, internalRefreshRequest || privilegedBypass, selectedStoreIds);
-      const refreshedDatabasePage = await measure('database', () => readProductsPageFromDatabase({
+      const refreshedDatabasePage = await readCatalogPage({
         query: undefined,
         category: effectiveCategory,
         minPrice,
@@ -352,7 +390,7 @@ export async function GET(request: NextRequest) {
         sortBy,
         page, pageSize: SEARCH_PAGE_SIZE,
         onlyCurrentOffers: !includeUnavailable,
-      })).catch((databaseError) => {
+      }).catch((databaseError) => {
         logger.warn('DB category reread after live refresh skipped', {
           endpoint: '/api/search',
           category: effectiveCategory,
@@ -405,11 +443,11 @@ export async function GET(request: NextRequest) {
       authorizedRefresh: internalRefreshRequest || privilegedBypass,
       includeUnavailable,
     }).then(async (result) => {
-      const refreshedPage = await measure('database', () => readProductsPageFromDatabase({
+      const refreshedPage = await readCatalogPage({
         query, category: effectiveCategory, storeIds: selectedStoreIds, minPrice, maxPrice,
         sortBy, page, pageSize: SEARCH_PAGE_SIZE,
         onlyCurrentOffers: !includeUnavailable,
-      })).catch(() => null);
+      }).catch(() => null);
       if (!refreshedPage) return result;
       const payload = catalogPageResponse(refreshedPage, { minPrice, maxPrice, sortBy });
       await measure('cache_write', () => setCachedSearchResponse(cacheKey, payload));
