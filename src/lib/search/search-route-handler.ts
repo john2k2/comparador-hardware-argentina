@@ -135,6 +135,20 @@ async function buildStableSearchFallback(input: {
 
 export async function GET(request: NextRequest) {
   const requestStartedAtMs = Date.now();
+  const timingStartedAt = performance.now();
+  const timings = { rate_limit: 0, cache_read: 0, database: 0, cache_write: 0, response: 0 };
+  type TimingPhase = keyof typeof timings;
+  const activeTimings = new Map<TimingPhase, number>();
+  const measure = async <T>(phase: TimingPhase, operation: () => Promise<T>): Promise<T> => {
+    const startedAt = performance.now();
+    activeTimings.set(phase, startedAt);
+    try {
+      return await operation();
+    } finally {
+      timings[phase] += Math.max(0, performance.now() - startedAt);
+      activeTimings.delete(phase);
+    }
+  };
   const searchParams = request.nextUrl.searchParams;
   const query = (searchParams.get('q') ?? '').trim();
   const bypassDb = searchParams.get('bypassDb') === '1';
@@ -157,6 +171,7 @@ export async function GET(request: NextRequest) {
   let privilegedBypass = false;
 
   const respond = <T>(body: T, init?: ResponseInit, meta?: { success?: boolean; resultCount?: number; note?: string }) => {
+    const responseStartedAt = performance.now();
     const statusCode = init?.status ?? 200;
     recordEndpointRequestEvent({
       endpoint: '/api/search',
@@ -170,7 +185,20 @@ export async function GET(request: NextRequest) {
     if (defaultRateLimitHeaders) {
       for (const [header, value] of Object.entries(defaultRateLimitHeaders)) headers.set(header, value);
     }
-    return NextResponse.json(body, { ...init, headers });
+    const response = NextResponse.json(body, { ...init, headers });
+    const finishedAt = performance.now();
+    timings.response += Math.max(0, finishedAt - responseStartedAt);
+    // Duraciones por consumidor, no tiempo SQL. Caché/cuota se solapan;
+    // una caché aún pendiente en 429 se mide sólo hasta responder, sin esperarla.
+    // El total incluye trabajo fuera de estas fases y no equivale a su suma.
+    const phases = Object.entries(timings).map(([phase, duration]) => {
+      const activeAt = activeTimings.get(phase as TimingPhase);
+      const elapsed = duration + (activeAt === undefined ? 0 : Math.max(0, finishedAt - activeAt));
+      return `${phase};dur=${elapsed.toFixed(2)}`;
+    });
+    phases.push(`total;dur=${Math.max(0, finishedAt - timingStartedAt).toFixed(2)}`);
+    response.headers.set('Server-Timing', phases.join(', '));
+    return response;
   };
 
   if (bypassDb && !internalRefreshRequest) {
@@ -190,13 +218,13 @@ export async function GET(request: NextRequest) {
   const stableRuntimeMode = isStableRuntimeMode();
   // La caché se lee junto al rate limit, pero sólo se usa después de admitir la solicitud.
   const cachedRead = hasSearchIntent && !stableRuntimeMode && !bypassDb && !isRefreshRequest
-    ? getCachedSearchResponse(cacheKey, includeUnavailable, { minPrice, maxPrice, sortBy }).catch(() => {
+    ? measure('cache_read', () => getCachedSearchResponse(cacheKey, includeUnavailable, { minPrice, maxPrice, sortBy })).catch(() => {
       logger.warn('Search catalog cache read skipped');
       return null;
     })
     : null;
 
-  const rateResult = await checkRateLimit(`/api/search:${getRequestIp(request)}`, SEARCH_RATE_LIMIT);
+  const rateResult = await measure('rate_limit', () => checkRateLimit(`/api/search:${getRequestIp(request)}`, SEARCH_RATE_LIMIT));
   defaultRateLimitHeaders = buildRateLimitHeaders(rateResult);
   if (!rateResult.allowed) {
     return respond(
@@ -263,14 +291,14 @@ export async function GET(request: NextRequest) {
         if (catalogOnlyMode) throw databaseError;
         return null;
       };
-      let databaseRead = await (normalRead ? readPendingSearchPage(readKey, read) : read()).catch(handleReadError);
+      let databaseRead = await measure('database', () => normalRead ? readPendingSearchPage(readKey, read) : read()).catch(handleReadError);
       let rereads = 0;
       let demandRecorded = false;
       let backgroundScheduled = false;
       const reread = async () => {
         if (rereads >= 1) throw new Error('SEARCH_PAGE_NO_LONGER_CURRENT');
         rereads++;
-        databaseRead = await read().catch(handleReadError);
+        databaseRead = await measure('database', read).catch(handleReadError);
       };
 
       while (databaseRead) {
@@ -297,16 +325,16 @@ export async function GET(request: NextRequest) {
             continue;
           }
           // Cada consumidor valida; sólo el primero reclama esta escritura del resultado.
-          databaseRead.cacheWrite ??= Promise.resolve().then(async () => {
+          const cacheWrite = databaseRead.cacheWrite ??= Promise.resolve().then(async () => {
             if (stillCurrent()) await setCachedSearchResponse(cacheKey, payload);
           });
-          await databaseRead.cacheWrite;
+          await measure('cache_write', () => cacheWrite);
           if (!stillCurrent()) {
             await reread();
             continue;
           }
         } else {
-          await setCachedSearchResponse(cacheKey, payload);
+          await measure('cache_write', () => setCachedSearchResponse(cacheKey, payload));
         }
         return respond(payload, { headers: { 'X-Search-Cache': databasePage.total === 0 ? 'CATALOG-PENDING' : staleDatabase ? 'DB-STALE' : 'DB' } }, { success: true, resultCount: payload.products.length, note: staleDatabase ? 'DB_STALE' : 'DB_HIT' });
       }
@@ -315,7 +343,7 @@ export async function GET(request: NextRequest) {
     if (!query && effectiveCategory) {
       const observeSource = createObservedProductsSourceRunner(runObservedStoreScrape);
       const liveCategoryProducts = await resolveLiveProductsList(effectiveCategory, undefined, observeSource, internalRefreshRequest || privilegedBypass, selectedStoreIds);
-      const refreshedDatabasePage = await readProductsPageFromDatabase({
+      const refreshedDatabasePage = await measure('database', () => readProductsPageFromDatabase({
         query: undefined,
         category: effectiveCategory,
         minPrice,
@@ -324,7 +352,7 @@ export async function GET(request: NextRequest) {
         sortBy,
         page, pageSize: SEARCH_PAGE_SIZE,
         onlyCurrentOffers: !includeUnavailable,
-      }).catch((databaseError) => {
+      })).catch((databaseError) => {
         logger.warn('DB category reread after live refresh skipped', {
           endpoint: '/api/search',
           category: effectiveCategory,
@@ -335,7 +363,7 @@ export async function GET(request: NextRequest) {
 
       if (refreshedDatabasePage && refreshedDatabasePage.total > 0) {
         const payload = catalogPageResponse(refreshedDatabasePage, { minPrice, maxPrice, sortBy });
-        if (!bypassDb) await setCachedSearchResponse(cacheKey, payload);
+        if (!bypassDb) await measure('cache_write', () => setCachedSearchResponse(cacheKey, payload));
         return respond(payload, { headers: { 'X-Search-Cache': isRefreshRequest ? 'CATEGORY-REFRESH-DB' : 'CATEGORY-MISS-DB' } }, { success: true, resultCount: payload.products.length, note: isRefreshRequest ? 'CATEGORY_REFRESH_DB' : 'CATEGORY_MISS_DB' });
       }
 
@@ -349,7 +377,7 @@ export async function GET(request: NextRequest) {
       });
       const payload = buildPayloadFromProducts(fallbackProducts, page);
 
-      if (!bypassDb && payload.pagination.total > 0) await setCachedSearchResponse(cacheKey, payload);
+      if (!bypassDb && payload.pagination.total > 0) await measure('cache_write', () => setCachedSearchResponse(cacheKey, payload));
       return respond(payload, { headers: { 'X-Search-Cache': isRefreshRequest ? 'CATEGORY-REFRESH-LIVE' : 'CATEGORY-MISS-LIVE' } }, { success: true, resultCount: payload.products.length, note: isRefreshRequest ? 'CATEGORY_REFRESH_LIVE' : 'CATEGORY_MISS_LIVE' });
     }
 
@@ -377,14 +405,14 @@ export async function GET(request: NextRequest) {
       authorizedRefresh: internalRefreshRequest || privilegedBypass,
       includeUnavailable,
     }).then(async (result) => {
-      const refreshedPage = await readProductsPageFromDatabase({
+      const refreshedPage = await measure('database', () => readProductsPageFromDatabase({
         query, category: effectiveCategory, storeIds: selectedStoreIds, minPrice, maxPrice,
         sortBy, page, pageSize: SEARCH_PAGE_SIZE,
         onlyCurrentOffers: !includeUnavailable,
-      }).catch(() => null);
+      })).catch(() => null);
       if (!refreshedPage) return result;
       const payload = catalogPageResponse(refreshedPage, { minPrice, maxPrice, sortBy });
-      await setCachedSearchResponse(cacheKey, payload);
+      await measure('cache_write', () => setCachedSearchResponse(cacheKey, payload));
       return { ...result, payload };
     });
 
