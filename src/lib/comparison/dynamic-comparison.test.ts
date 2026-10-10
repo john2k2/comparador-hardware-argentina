@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as benchmarks from './performance-benchmarks';
+
+afterEach(() => vi.restoreAllMocks());
 import type { HardwareCategory, Product } from '@/lib/types';
 import { CATALOG_OFFER_FRESH_MS, OFFER_FRESH_MS } from '@/lib/price-freshness';
 import { compareProducts } from './dynamic-comparison';
@@ -79,15 +82,44 @@ describe('compareProducts', () => {
     expect(result.cheaperProductId).toBeNull();
   });
 
-  it('recomienda por rendimiento por peso cuando hay evidencia para ambos modelos', () => {
-    const result = compareProducts(
-      { ...product('RTX 4060', 400_000, {}, 'tarjetas-graficas'), model: 'RTX 4060' },
-      { ...product('RX 7600', 300_000, {}, 'tarjetas-graficas'), model: 'RX 7600' },
-    );
-    expect(result.leftBenchmark?.primaryScore).toBe(100);
-    expect(result.rightBenchmark?.primaryScore).toBe(94);
-    expect(result.valueWinnerProductId).toBe('RX 7600');
-    expect(result.recommendation).toContain('rendimiento gráfico relativo por peso');
+  it('conserva precio y especificaciones sin usar el antiguo índice GPU como evidencia', () => {
+    const result = compareProducts(product('RTX 4060 8GB', 400_000, { vram: '8 GB' }, 'tarjetas-graficas'),
+      product('RX 7600 8GB', 300_000, { vram: '8 GB' }, 'tarjetas-graficas'), 'gaming');
+    expect(result.cheaperProductId).toBe('RX 7600 8GB');
+    expect(result.leftBenchmark).toBeNull();
+    expect(result.rightBenchmark).toBeNull();
+    expect(result.leftMetricScore).toBeNull();
+    expect(result.rightMetricScore).toBeNull();
+    expect(result.valueWinnerProductId).toBeNull();
+    expect(result.valueDifferencePercent).toBeNull();
+    expect(result.specificationRows).toContainEqual({ label: 'Vram', left: '8 GB', right: '8 GB' });
+    expect(result.recommendation).not.toContain('conviene más');
+  });
+
+  it('recomienda por puntaje por peso con dos CPUs del mismo corte Geekbench 7', () => {
+    const result = compareProducts(product('AMD Ryzen 5 7600', 400_000), product('AMD Ryzen 5 5600', 300_000), 'productividad');
+    expect(result.leftBenchmark?.primaryScore).toBe(12979);
+    expect(result.rightBenchmark?.primaryScore).toBe(9167);
+    expect(result.valueWinnerProductId).toBe('AMD Ryzen 5 7600');
+    expect(result.valueDifferencePercent).toBe(6);
+    expect(result.recommendation).toContain('puntaje Geekbench 7 multinúcleo por peso');
+  });
+
+  it.each(['benchmarkVersion', 'comparisonGroup'] as const)('no compara por peso dos fuentes con %s diferente', field => {
+    const left = product('AMD Ryzen 5 7600', 400_000);
+    const right = product('AMD Ryzen 5 5600', 300_000);
+    const leftBenchmark = benchmarks.findPerformanceBenchmark(left)!;
+    const rightBenchmark = benchmarks.findPerformanceBenchmark(right)!;
+    // Inyección de contrato incompatible, no una nueva fuente de datos real.
+    vi.spyOn(benchmarks, 'findPerformanceBenchmark').mockReturnValueOnce(leftBenchmark)
+      .mockReturnValueOnce({ ...rightBenchmark, [field]: 'otra versión o metodología' });
+    const result = compareProducts(left, right, 'productividad');
+    expect(result.valueWinnerProductId).toBeNull();
+    expect(result.valueDifferencePercent).toBeNull();
+    expect(result.leftMetricScore).toBeNull();
+    expect(result.rightMetricScore).toBeNull();
+    expect(result.metricLabel).toBeNull();
+    expect(result.cheaperProductId).toBe(right.id);
   });
 
   it('cambia la métrica según el uso y evita tratar Geekbench como FPS', () => {
@@ -96,7 +128,7 @@ describe('compareProducts', () => {
     const daily = compareProducts(left, right, 'uso-diario');
     const gaming = compareProducts(left, right, 'gaming');
 
-    expect(daily.metricLabel).toBe('rendimiento de un núcleo');
+    expect(daily.metricLabel).toBe('puntaje Geekbench 7 de un núcleo');
     expect(daily.valueWinnerProductId).not.toBeNull();
     expect(gaming.metricLabel).toBeNull();
     expect(gaming.valueWinnerProductId).toBeNull();

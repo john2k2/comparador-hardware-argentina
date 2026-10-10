@@ -30,12 +30,13 @@ for (const ageHours of [1,4]) {
     const decision = page.locator('section').filter({has:page.getByRole('heading',{name:'[ ¿CUÁL CONVIENE? ]',exact:true})});
     const prices = page.locator('table').filter({hasText:'Mejor precio reciente (24 h)'});
     const ratios = page.getByText(/puntos de .* por cada \$100.000/);
+    await expect(page.getByText('Todavía no tenemos un benchmark verificable', { exact: false })).toBeVisible();
     await expect(prices).toContainText('400.000');
     await expect(prices).toContainText('300.000');
     if (ageHours === 1) {
-      await expect(decision).toContainText('RX 7600 conviene más');
+      await expect(decision).toContainText('RX 7600 es la opción de menor precio');
       await expect(decision).toContainText('últimas tres horas');
-      await expect(ratios).toHaveCount(2);
+      await expect(ratios).toHaveCount(0);
       await page.clock.fastForward(2*60*60*1000+1);
       await expect(decision).toContainText('No hay dos precios recientes');
       await expect(prices).toContainText('300.000');
@@ -45,7 +46,7 @@ for (const ageHours of [1,4]) {
       await expect(decision).toContainText('No hay dos precios recientes');
       await expect(decision).not.toContainText('RX 7600 conviene más');
       await expect(decision).toContainText('referencias del catálogo');
-      await expect(ratios).toHaveCount(1);
+      await expect(ratios).toHaveCount(0);
     }
   });
 }

@@ -109,15 +109,15 @@ function scoreForUseCase(benchmark: PerformanceBenchmark, category: HardwareCate
   if (category === 'procesadores') {
     if (useCase === 'gaming') return null;
     if (useCase === 'uso-diario' && benchmark.secondaryScore != null) {
-      return { score: benchmark.secondaryScore, label: 'rendimiento de un núcleo' };
+      return { score: benchmark.secondaryScore, label: `puntaje ${benchmark.benchmarkVersion} de un núcleo` };
     }
     if (useCase === 'equilibrado' && benchmark.secondaryScore != null) {
       return {
         score: ((benchmark.secondaryScore / 2500) + (benchmark.primaryScore / 15000)) * 50,
-        label: 'índice mixto de uno y varios núcleos',
+        label: 'índice editorial mixto de uno y varios núcleos',
       };
     }
-    return { score: benchmark.primaryScore, label: 'rendimiento multinúcleo' };
+    return { score: benchmark.primaryScore, label: `puntaje ${benchmark.benchmarkVersion} multinúcleo` };
   }
   return null;
 }
@@ -151,7 +151,10 @@ export function compareProducts(left: Product, right: Product, useCase: Comparis
   const rightBenchmark = findPerformanceBenchmark(right);
   const leftMetric = leftBenchmark ? scoreForUseCase(leftBenchmark, left.category, useCase) : null;
   const rightMetric = rightBenchmark ? scoreForUseCase(rightBenchmark, right.category, useCase) : null;
-  const bothBenchmarked = bothFreshlyPriced && leftMetric && rightMetric && leftPrice && rightPrice;
+  const benchmarksComparable = leftBenchmark && rightBenchmark
+    && leftBenchmark.benchmarkVersion === rightBenchmark.benchmarkVersion
+    && leftBenchmark.comparisonGroup === rightBenchmark.comparisonGroup;
+  const bothBenchmarked = bothFreshlyPriced && benchmarksComparable && leftMetric && rightMetric && leftPrice && rightPrice;
   const leftValue = bothBenchmarked ? leftMetric.score / leftPrice : null;
   const rightValue = bothBenchmarked ? rightMetric.score / rightPrice : null;
   const valueWinnerProductId = leftValue && rightValue && leftValue !== rightValue
@@ -184,6 +187,8 @@ export function compareProducts(left: Product, right: Product, useCase: Comparis
     recommendation,
     evidence: [
       ...compatibilityEvidence(left.category, left, right),
+      ...(left.category === 'procesadores' && useCase === 'equilibrado' && benchmarksComparable
+        ? ['El índice mixto es editorial: 50 × (puntaje de un núcleo / 2500 + puntaje multinúcleo / 15000). No es una medición adicional ni una predicción de FPS.'] : []),
       ...(buildUseCaseCaveat(left.category, useCase) ? [buildUseCaseCaveat(left.category, useCase)!] : []),
       !bothFreshlyPriced
         ? 'La recomendación por precio exige dos observaciones de hasta tres horas; las referencias del catálogo se conservan hasta 24 horas.'
@@ -198,9 +203,9 @@ export function compareProducts(left: Product, right: Product, useCase: Comparis
     valueWinnerProductId,
     valueDifferencePercent,
     useCase,
-    metricLabel: leftMetric?.label ?? null,
-    leftMetricScore: leftMetric?.score ?? null,
-    rightMetricScore: rightMetric?.score ?? null,
+    metricLabel: benchmarksComparable ? leftMetric?.label ?? null : null,
+    leftMetricScore: benchmarksComparable ? leftMetric?.score ?? null : null,
+    rightMetricScore: benchmarksComparable ? rightMetric?.score ?? null : null,
     specificationRows: buildSpecificationRows(left, right),
   };
 }

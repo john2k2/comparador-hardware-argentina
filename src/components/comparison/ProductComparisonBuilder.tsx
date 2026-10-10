@@ -286,8 +286,8 @@ export function ProductComparisonBuilder() {
                   </div>
                   <p className="mt-4 text-[12px] font-mono leading-relaxed text-muted-foreground">{comparison.leftBenchmark.methodology}</p>
                   <div className="mt-3 space-y-1 text-[12px] font-mono">
-                    {Array.from(new Map([comparison.leftBenchmark, comparison.rightBenchmark].map((benchmark) => [benchmark.sourceUrl, benchmark])).values()).map((benchmark) => (
-                      <p key={benchmark.sourceUrl}>Fuente: <a href={benchmark.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{benchmark.sourceName}</a> · consulta {benchmark.measuredAt}</p>
+                    {[comparison.leftBenchmark, comparison.rightBenchmark].map((benchmark, index) => (
+                      <p key={`${index}-${benchmark.model}-${benchmark.sourceUrl}`}>Fuente: <a href={benchmark.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{benchmark.sourceName}</a> · {benchmark.benchmarkVersion} · consulta {benchmark.consultedAt}</p>
                     ))}
                   </div>
                 </>
