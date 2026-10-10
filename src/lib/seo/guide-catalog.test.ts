@@ -81,8 +81,8 @@ describe('modelos prioritarios de la guía', () => {
     mocks.readGuideCatalogCandidatesFromDatabase.mockClear();
     const guide = getBudgetGuideBySlug('pc-gamer-1-millon')!;
     await loadGuideCatalogProducts(guide);
-    expect(mocks.readGuideCatalogCandidatesFromDatabase).toHaveBeenCalledWith('memoria-ram', 8, 'mancer 16gb ddr4 3200 vant');
-    expect(mocks.readGuideCatalogCandidatesFromDatabase).toHaveBeenCalledWith('gabinetes', 8, 'antec vx310');
+    expect(mocks.readGuideCatalogCandidatesFromDatabase).toHaveBeenCalledWith('memoria-ram', 8, 'mancer 16gb ddr4 3200 vant', expect.objectContaining({ exactModel: 'Vant S' }));
+    expect(mocks.readGuideCatalogCandidatesFromDatabase).toHaveBeenCalledWith('gabinetes', 8, 'antec vx310', expect.objectContaining({ exactModel: 'VX310' }));
     expect(mocks.readGuideCatalogCandidatesFromDatabase.mock.calls.every((call) => call[1] === 8 && call[2])).toBe(true);
     expect(new Set(mocks.readGuideCatalogCandidatesFromDatabase.mock.calls.map((call) => call[0])).size).toBe(7);
   });
@@ -109,4 +109,19 @@ describe('modelos prioritarios de la guía', () => {
     expect(peak).toBeLessThanOrEqual(6);
     expect(new Set(products.map((product) => product.id)).size).toBe(mocks.readGuideCatalogCandidatesFromDatabase.mock.calls.length);
   });
+});
+
+
+it('separa caché por presentación editorial aunque los términos no cambien', async () => {
+  vi.resetModules();
+  const fresh = await import('./guide-catalog');
+  const guide = structuredClone(getBudgetGuideBySlug('pc-gamer-2-millones')!);
+  mocks.readGuideCatalogCandidatesFromDatabase.mockReset().mockResolvedValue([]);
+  await fresh.loadGuideCatalogProducts(guide);
+  mocks.readGuideCatalogCandidatesFromDatabase.mockClear();
+  guide.components.cpu.requiresIncludedCooler = false;
+  await fresh.loadGuideCatalogProducts(guide);
+  expect(mocks.readGuideCatalogCandidatesFromDatabase).toHaveBeenCalledTimes(1);
+  expect(mocks.readGuideCatalogCandidatesFromDatabase).toHaveBeenCalledWith('procesadores', 8, 'ryzen 7 5700',
+    expect.objectContaining({ requiresIncludedCooler: false }));
 });

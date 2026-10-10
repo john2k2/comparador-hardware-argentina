@@ -19,7 +19,7 @@ describe('consulta de la selección editorial de guías', () => {
     await loadGuideCatalogProducts(guide);
 
     for (const spec of Object.values(guide.components)) {
-      expect(mocks.readGuideCatalogCandidatesFromDatabase).toHaveBeenCalledWith(spec.category, 8, spec.searchTerms[0]);
+      expect(mocks.readGuideCatalogCandidatesFromDatabase).toHaveBeenCalledWith(spec.category, 8, spec.searchTerms[0], expect.objectContaining({ name: spec.name, exactModel: spec.exactModel }));
       expect(spec.exactModel).toBeTruthy();
     }
     expect(guide.components.cpu).toMatchObject({ exactModel: 'Ryzen 7 5700', searchTerms: ['ryzen 7 5700'] });

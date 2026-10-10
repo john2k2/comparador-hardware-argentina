@@ -11,7 +11,8 @@ vi.mock('@/lib/server/supabase-server', () => ({
 
 import { readCategoryLandingPageFromDatabase, readProductsPageFromDatabase, readGuideCatalogCandidatesFromDatabase,readProductDetailByIdFromDatabase, readCanonicalProductIdByKey } from './product-read';
 import { mapDbProduct } from './product-read-mapper';
-import { resolveGuideComponent } from '@/lib/seo/budget-guide-pricing';
+import { buildGuideNameFilters } from './product-read-helpers';
+import { resolveGuideRefreshOffers, resolveGuideComponent } from '@/lib/seo/budget-guide-pricing';
 import { loadGuideCatalogProducts, loadGuidePriorityProducts } from '@/lib/seo/guide-catalog';
 
 const row = {
@@ -227,4 +228,99 @@ it('aparta identidad contradictoria después de mapear SQL sin hacer fallar toda
   expect(result.products[0].lowestPrice).toBe(400000);
   expect(result.products[0].prices[0].lastUpdated.toISOString()).toBe(date);
   expect(mixed.product_prices[0].price).toBe(254647.83);
+});
+
+
+describe('destinos editoriales antes del límite de candidatas', () => {
+  const now = '2026-10-10T19:00:00.000Z';
+  beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date(now)); });
+  afterEach(() => vi.useRealTimers());
+
+  // El doble aplica filtros y ORDER/LIMIT como una lectura SQL, pero conserva
+  // el reader, mapper y resolvers reales. No consulta ni escribe una cuenta.
+  function simulateDatabase(rows: typeof row[]) {
+    const patterns: Array<{ value: string; negate: boolean }> = [];
+    let limit = 0;
+    const query = {
+      select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),
+      like: vi.fn().mockReturnThis(), gt: vi.fn().mockReturnThis(), or: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      filter: vi.fn((_column: string, operator: string, value: string) => {
+        expect(operator).toBe('imatch'); patterns.push({ value, negate: false }); return query;
+      }),
+      not: vi.fn((_column: string, operator: string, value: string) => {
+        expect(operator).toBe('imatch'); patterns.push({ value, negate: true }); return query;
+      }),
+      limit: vi.fn((value: number) => { limit = value; return query; }),
+      then: (resolve: (result: unknown) => unknown) => Promise.resolve({
+        data: rows.filter((candidate) => patterns.every(({ value, negate }) =>
+          new RegExp(value, 'i').test(candidate.name) !== negate))
+          .sort((a, b) => Date.parse(b.last_scraped_at!) - Date.parse(a.last_scraped_at!)).slice(0, limit),
+        error: null,
+      }).then(resolve),
+    };
+    getServerSupabaseReadClientMock.mockReturnValue({ from: vi.fn(() => query) });
+    return query;
+  }
+
+  function candidate(id: string, name: string, category = 'procesadores', date = '2026-10-10T18:45:00.000Z') {
+    return { ...row, id, name, category, model: name, canonical_product_key: null,
+      last_scraped_at: date, updated_at: date,
+      product_prices: [{ ...row.product_prices[0], url: `https://www.mexx.com.ar/${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+        last_updated: date }],
+    };
+  }
+
+  it.each([
+    ['AMD Ryzen 5 5500 con Wraith Stealth', 'Ryzen 5 5500', 'AMD Ryzen 5 5500X3D sin cooler'],
+    ['AMD Ryzen 7 5700 con cooler', 'Ryzen 7 5700', 'AMD Ryzen 7 5700GE con cooler'],
+    ['AMD Ryzen 5 7600 con Wraith Stealth', 'Ryzen 5 7600', 'AMD Ryzen 5 7600X sin cooler'],
+  ])('rescata %s detrás de ocho variantes más nuevas sin volver comprable una oferta vencida', async (name, exactModel, other) => {
+    const spec = { name, exactModel, requiresIncludedCooler: true, category: 'procesadores' as const,
+      searchTerms: [exactModel.toLowerCase()], estimatedPrice: 250_000, description: '' };
+    const target = candidate('editorial-target', name, 'procesadores', '2026-10-10T13:45:00.000Z');
+    const distractors = Array.from({ length: 8 }, (_, i) => candidate(`distractor-${i}`,
+      i % 2 ? other : `${exactModel} sin cooler`));
+    simulateDatabase([...distractors, target]);
+    const before = await readGuideCatalogCandidatesFromDatabase('procesadores', 8, spec.searchTerms[0]);
+    expect(before).toHaveLength(8);
+    expect(resolveGuideRefreshOffers(spec, before)).toEqual([]);
+    const query = simulateDatabase([...distractors, target]);
+    const after = await readGuideCatalogCandidatesFromDatabase('procesadores', 8, spec.searchTerms[0], spec);
+    expect(query.limit).toHaveBeenCalledWith(8);
+    expect(after.map((product) => product.id)).toEqual(['editorial-target']);
+    expect(resolveGuideRefreshOffers(spec, after)).toEqual([expect.objectContaining({ productId: 'editorial-target', lastUpdated: target.product_prices[0].last_updated })]);
+    expect(resolveGuideComponent(spec, after).priceSource).toBe('estimate');
+    expect(after[0].prices[0].stock).toBe('in-stock');
+    expect(after[0].prices[0].lastUpdated.toISOString()).toBe(target.product_prices[0].last_updated);
+  });
+
+  it('exige CL36 y kit 2x16GB antes de limitar RAM del mismo modelo', async () => {
+    const spec = { name: 'Patriot Viper Venom 32GB DDR5 6000MHz CL36 (2x16GB)', exactModel: 'Viper Venom',
+      category: 'memoria-ram' as const, searchTerms: ['patriot 32gb ddr5 6000 viper venom'], estimatedPrice: 860_000, description: '' };
+    const target = candidate('editorial-ram', spec.name, spec.category);
+    const distractors = Array.from({ length: 8 }, (_, i) => candidate(`ram-${i}`,
+      i % 2 ? 'Patriot Viper Venom 32GB DDR5 6000MHz CL30 (2x16GB)' : 'Patriot Viper Venom 32GB DDR5 6000MHz CL36 (1x32GB)',
+      spec.category, '2026-10-10T18:50:00.000Z'));
+    simulateDatabase([...distractors, target]);
+    expect(resolveGuideRefreshOffers(spec, await readGuideCatalogCandidatesFromDatabase(spec.category, 8, spec.searchTerms[0]))).toEqual([]);
+    simulateDatabase([...distractors, target]);
+    const after = await readGuideCatalogCandidatesFromDatabase(spec.category, 8, spec.searchTerms[0], spec);
+    expect(after.map((product) => product.id)).toEqual(['editorial-ram']);
+    expect(resolveGuideComponent(spec, after).priceSource).toBe('catalog');
+  });
+});
+
+
+it('el prefiltro no acepta negaciones, sufijos ni sintaxis editorial como regex', () => {
+  const spec = { name: 'AMD Ryzen 7 5700 con cooler', exactModel: 'Ryzen 7 5700', requiresIncludedCooler: true };
+  const filters = buildGuideNameFilters('procesadores', spec);
+  const accepts = (name: string) => filters.include.every((pattern) => new RegExp(pattern, 'i').test(name))
+    && filters.exclude.every((pattern) => !new RegExp(pattern, 'i').test(name));
+  for (const name of ['AMD Ryzen 7 5700 C/Cooler', 'AMD Ryzen 7 5700 cooler incluido', 'AMD Ryzen 7 5700 Wraith Stealth']) expect(accepts(name)).toBe(true);
+  for (const name of ['AMD Ryzen 7 5700G con cooler', 'AMD Ryzen 7 5700GE con cooler', 'AMD Ryzen 7 5700X3D con cooler',
+    'AMD Ryzen 7 5700 sin cooler Wraith Stealth', 'AMD Ryzen 7 5700 Wraith Stealth cooler no incluido',
+    'AMD Ryzen 7 5700 sin Wraith Stealth', 'AMD Ryzen 7 5700 no incluye AMD Wraith Stealth', 'AMD Ryzen 7 5700 BOX']) expect(accepts(name)).toBe(false);
+  const unsafe = buildGuideNameFilters('procesadores', { name: 'CPU', exactModel: 'Ryzen 7 5700%),or(name.*)' });
+  expect(unsafe.include[0]).toBe('(^|[^a-z0-9])(ryzen[^a-z0-9]+7[^a-z0-9]+5700[^a-z0-9]+or[^a-z0-9]+name)([^a-z0-9]|$)');
 });

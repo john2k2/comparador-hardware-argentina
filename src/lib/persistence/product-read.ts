@@ -4,6 +4,8 @@ import { applyDatabaseReadTransforms } from '@/lib/persistence/product-read-grou
 import {
   applySharedProductFilters,
   buildGuideSearchOrFilter,
+  buildGuideNameFilters,
+  type GuideCandidateConstraints,
   clampLimit,
   EMPTY_RESULT_ERROR_CODES,
   PRODUCT_SELECT_FIELDS,
@@ -189,6 +191,7 @@ export async function readGuideCatalogCandidatesFromDatabase(
   category: NonNullable<ReadProductsParams['category']>,
   limit: number = 24,
   query?: string,
+  constraints?: GuideCandidateConstraints,
 ): Promise<Product[]> {
   const supabase = getServerSupabaseReadClient();
   if (!supabase) throw new Error('Guide catalog database unavailable');
@@ -210,6 +213,11 @@ export async function readGuideCatalogCandidatesFromDatabase(
     const filter = buildGuideSearchOrFilter(searchTerm);
     if (!filter) return [];
     queryBuilder = queryBuilder.or(filter);
+  }
+  if (constraints) {
+    const filters = buildGuideNameFilters(category, constraints);
+    for (const pattern of filters.include) queryBuilder = queryBuilder.filter('name', 'imatch', pattern);
+    for (const pattern of filters.exclude) queryBuilder = queryBuilder.not('name', 'imatch', pattern);
   }
   const { data, error } = await queryBuilder;
 

@@ -122,3 +122,49 @@ export function applySharedProductFilters<TQuery>(queryBuilder: TQuery, filters:
 
   return next;
 }
+
+
+export type GuideCandidateConstraints = {
+  name: string;
+  exactModel?: string;
+  requiresIncludedCooler?: boolean;
+};
+
+/** Prefiltros de presentación editorial. No acreditan precio, stock ni identidad
+ * de una oferta: el resolver sigue comprobándolos después de la lectura. */
+export function buildGuideNameFilters(category: HardwareCategory, spec: GuideCandidateConstraints): {
+  include: string[];
+  exclude: string[];
+} {
+  const normalize = (value: string) => value.toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  const boundary = (pattern: string) => `(^|[^a-z0-9])(${pattern})([^a-z0-9]|$)`;
+  const include: string[] = [];
+  const exclude: string[] = [];
+  // El texto editorial sólo aporta tokens alfanuméricos, nunca sintaxis regex
+  // ni operadores PostgREST. Los separadores se generan aquí.
+  const model = normalize(spec.exactModel ?? '').split(' ').filter(Boolean);
+  if (model.length) include.push(boundary(model.join('[^a-z0-9]+')));
+  const requested = normalize(spec.name);
+  if (category === 'procesadores') {
+    if (/\bwraith\b/.test(requested)) include.push(boundary('wraith'));
+    if (spec.requiresIncludedCooler) {
+      include.push(boundary('(con|c)[^a-z0-9]+(cooler|disipador)|(cooler|disipador)[^a-z0-9]+incluid[oa]|wraith[^a-z0-9]+(stealth|spire|prism)'));
+      exclude.push(boundary('(sin|no|s)[^a-z0-9]+(cooler|disipador)|no[^a-z0-9]+incluye[^a-z0-9]+(cooler|disipador)|(cooler|disipador)[^a-z0-9]+no[^a-z0-9]+incluid[oa]|(sin|no|s|no[^a-z0-9]+incluye)[^a-z0-9]+(amd[^a-z0-9]+)?wraith'));
+    }
+  }
+  if (category === 'memoria-ram') {
+    const generation = requested.match(/\bddr[45]\b/)?.[0];
+    const capacity = requested.match(/\b(\d+)gb\b/)?.[1];
+    const speed = requested.match(/\b([2-9]\d{3})\s*mhz\b/)?.[1];
+    const kit = requested.match(/\b2x(?:8|16|32)gb\b/)?.[0];
+    const latency = requested.match(/\bcl\s*(\d{2,3})\b/)?.[1];
+    if (generation) include.push(boundary(generation));
+    if (capacity) include.push(boundary(`${capacity}gb`));
+    if (speed) include.push(boundary(`${speed}([^a-z0-9]*mhz)?`));
+    if (kit) include.push(boundary(kit));
+    if (latency) include.push(boundary(`cl[^a-z0-9]*${latency}`));
+    if (/\b1 modulo\b/.test(requested)) exclude.push(boundary('[24][^a-z0-9]*x[^a-z0-9]*[0-9]+[^a-z0-9]*gb'));
+  }
+  return { include, exclude };
+}

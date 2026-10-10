@@ -1,4 +1,4 @@
-import { GUIDE_CATALOG_CATEGORIES } from '@/lib/seo/budget-guide-pricing';
+import { GUIDE_CATALOG_CATEGORIES, type GuideSlotSpec } from '@/lib/seo/budget-guide-pricing';
 import { readGuideCatalogCandidatesFromDatabase } from '@/lib/persistence/product-read';
 import type { BudgetGuideDefinition } from '@/lib/seo/budget-guides-data';
 import { logger } from '@/lib/logger';
@@ -82,7 +82,7 @@ export async function loadGuideCatalogProducts(guide?: BudgetGuideDefinition): P
 export async function loadGuideCatalogSnapshot(guide: BudgetGuideDefinition): Promise<GuideCatalogSnapshot> {
   const entries = Object.entries(guide.components) as [keyof BudgetGuideDefinition['components'], BudgetGuideDefinition['components'][keyof BudgetGuideDefinition['components']]][];
   const batches = await mapWithConcurrency(entries, GUIDE_COMPONENT_CONCURRENCY, async ([slot, spec]) => {
-    const result = await loadGuidePrioritySnapshot(spec.category, spec.searchTerms);
+    const result = await loadGuidePrioritySnapshot(spec.category, spec.searchTerms, spec);
     return { slot, ...result };
   });
   return {
@@ -98,10 +98,11 @@ export async function loadGuidePriorityProducts(category: HardwareCategory, term
   return result.products;
 }
 
-async function loadGuidePrioritySnapshot(category: HardwareCategory, terms: string[]): Promise<{ products: Product[]; available: boolean }> {
+async function loadGuidePrioritySnapshot(category: HardwareCategory, terms: string[], spec?: GuideSlotSpec): Promise<{ products: Product[]; available: boolean }> {
   const queries = [...new Set(terms.map((term) => term.trim()).filter(Boolean))].slice(0, PRIORITY_QUERIES_PER_COMPONENT);
   if (queries.length === 0) return { products: [], available: true };
-  const cacheKey = `${category}:${queries.join('|')}`;
+  const constraints = spec ? { name: spec.name, exactModel: spec.exactModel, requiresIncludedCooler: spec.requiresIncludedCooler } : undefined;
+  const cacheKey = JSON.stringify([category, queries, constraints]);
   const now = Date.now();
   const cached = priorityMemo.get(cacheKey);
   if (cached && now - cached.at < CATALOG_TTL_MS) return { products: cached.products, available: true };
@@ -109,7 +110,9 @@ async function loadGuidePrioritySnapshot(category: HardwareCategory, terms: stri
   let available = true;
   const batches = await mapWithConcurrency(queries, PRIORITY_QUERIES_PER_COMPONENT, async (query) => {
     try {
-      return await readGuideCatalogCandidatesFromDatabase(category, 8, query);
+      return constraints
+        ? await readGuideCatalogCandidatesFromDatabase(category, 8, query, constraints)
+        : await readGuideCatalogCandidatesFromDatabase(category, 8, query);
     } catch (error) {
       logger.warn('No se pudo leer un modelo prioritario de la guia', { category, query, error });
       available = false;
