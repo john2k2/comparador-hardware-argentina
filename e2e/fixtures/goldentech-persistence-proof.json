@@ -1,0 +1,186 @@
+{
+  "provenance": {
+    "kind": "captured-source-local-sql-real-mapper",
+    "asOf": "2026-10-10T02:29:39.016Z",
+    "observedAt": "2026-10-10T02:19:20.920Z",
+    "apiSha256": "6aa3bc5d074b16eb6d03f8ad7aeeb4dd4a4eb7f58cd40b13c30599efe0621002",
+    "productionWrites": 0,
+    "limits": [
+      "Functional SQL calls use the database owner because the unmodified local bootstrap lacks Supabase service_role table grants; function ACL preservation is tested separately.",
+      "GPU is saved but remains ineligible pending identity review; no review or timestamp is fabricated."
+    ]
+  },
+  "saved": {
+    "id": "goldentech-local-184160",
+    "name": "Disco duro int 4TB SATA 6 Gb/s 64MB SkyHawk",
+    "category": "almacenamiento",
+    "brand": "Generica",
+    "model": "Disco duro int 4TB SATA 6 Gb/s 64MB SkyHawk",
+    "description": "Disco duro int 4TB SATA 6 Gb/s 64MB SkyHawk",
+    "image": "/pixel-box.svg",
+    "normalizedTitle": "Disco duro int 4TB SATA 6 Gb/s 64MB SkyHawk",
+    "refreshPriority": "normal",
+    "lastScrapedAt": "2026-10-10T02:29:38.654Z",
+    "lastNormalizedAt": null,
+    "specs": {
+      "SKU": "EL_SEAHDSKY4TVX016",
+      "SourceListingId": "184160"
+    },
+    "prices": [
+      {
+        "storeId": "goldentechstore",
+        "storeName": "Golden Tech",
+        "url": "https://goldentechstore.com.ar/producto/disco-duro-int-4tb-sata-6-gb-s-64mb-skyhawk/",
+        "price": 423813.07,
+        "stock": "in-stock",
+        "sourceIdentity": {
+          "title": "Disco duro int 4TB SATA 6 Gb/s 64MB SkyHawk",
+          "sourceId": "184160",
+          "storeSku": "EL_SEAHDSKY4TVX016",
+          "listingRef": "goldentechstore:url:https://goldentechstore.com.ar/producto/disco-duro-int-4tb-sata-6-gb-s-64mb-skyhawk"
+        },
+        "priceCondition": "special",
+        "installment": null,
+        "lastUpdated": "2026-10-10T02:19:20.920Z"
+      }
+    ],
+    "lowestPrice": 423813.07,
+    "highestPrice": 423813.07,
+    "averagePrice": 423813,
+    "createdAt": "2026-10-10T02:29:38.654Z",
+    "updatedAt": "2026-10-10T02:29:38.654Z"
+  },
+  "rejected": {
+    "id": "goldentech-local-184160",
+    "name": "Disco duro int 4TB SATA 6 Gb/s 64MB SkyHawk",
+    "category": "almacenamiento",
+    "brand": "Generica",
+    "model": "Disco duro int 4TB SATA 6 Gb/s 64MB SkyHawk",
+    "description": "Disco duro int 4TB SATA 6 Gb/s 64MB SkyHawk",
+    "image": "/pixel-box.svg",
+    "normalizedTitle": "Disco duro int 4TB SATA 6 Gb/s 64MB SkyHawk",
+    "refreshPriority": "normal",
+    "lastScrapedAt": "2026-10-10T02:29:38.654Z",
+    "lastNormalizedAt": null,
+    "specs": {
+      "SKU": "EL_SEAHDSKY4TVX016",
+      "SourceListingId": "184160"
+    },
+    "prices": [
+      {
+        "storeId": "goldentechstore",
+        "storeName": "Golden Tech",
+        "url": "https://goldentechstore.com.ar/producto/disco-duro-int-4tb-sata-6-gb-s-64mb-skyhawk/",
+        "price": 1,
+        "stock": "out-of-stock",
+        "installment": null,
+        "lastUpdated": "2026-10-08T02:29:38.654Z"
+      }
+    ],
+    "lowestPrice": 1,
+    "highestPrice": 1,
+    "averagePrice": 1,
+    "createdAt": "2026-10-10T02:29:38.654Z",
+    "updatedAt": "2026-10-10T02:29:38.654Z"
+  },
+  "unknown": {
+    "id": "goldentech-local-184160",
+    "name": "Disco duro int 4TB SATA 6 Gb/s 64MB SkyHawk",
+    "category": "almacenamiento",
+    "brand": "Generica",
+    "model": "Disco duro int 4TB SATA 6 Gb/s 64MB SkyHawk",
+    "description": "Disco duro int 4TB SATA 6 Gb/s 64MB SkyHawk",
+    "image": "/pixel-box.svg",
+    "normalizedTitle": "Disco duro int 4TB SATA 6 Gb/s 64MB SkyHawk",
+    "refreshPriority": "normal",
+    "lastScrapedAt": "2026-10-10T02:29:38.654Z",
+    "lastNormalizedAt": null,
+    "specs": {
+      "SKU": "EL_SEAHDSKY4TVX016",
+      "SourceListingId": "184160"
+    },
+    "prices": [
+      {
+        "storeId": "goldentechstore",
+        "storeName": "Golden Tech",
+        "url": "https://goldentechstore.com.ar/producto/disco-duro-int-4tb-sata-6-gb-s-64mb-skyhawk/",
+        "price": 423813.07,
+        "stock": "unknown",
+        "sourceIdentity": {
+          "title": "Disco duro int 4TB SATA 6 Gb/s 64MB SkyHawk",
+          "sourceId": "184160",
+          "storeSku": "EL_SEAHDSKY4TVX016",
+          "listingRef": "goldentechstore:url:https://goldentechstore.com.ar/producto/disco-duro-int-4tb-sata-6-gb-s-64mb-skyhawk"
+        },
+        "priceCondition": "special",
+        "installment": null,
+        "lastUpdated": "2026-10-10T02:19:20.920Z"
+      }
+    ],
+    "lowestPrice": 423813.07,
+    "highestPrice": 423813.07,
+    "averagePrice": 423813,
+    "createdAt": "2026-10-10T02:29:38.654Z",
+    "updatedAt": "2026-10-10T02:29:38.654Z"
+  },
+  "pendingIdentity": {
+    "id": "goldentech-local-185476",
+    "name": "Placa de Video GIGABYTE AMD Radeon RX 9070 GAMING 16G",
+    "category": "tarjetas-graficas",
+    "brand": "AMD",
+    "model": "Placa de Video GIGABYTE AMD Radeon RX 9070 GAMING 16G",
+    "description": "Placa de Video GIGABYTE AMD Radeon RX 9070 GAMING 16G",
+    "image": "/pixel-box.svg",
+    "normalizedTitle": "Placa de Video GIGABYTE AMD Radeon RX 9070 GAMING 16G",
+    "canonicalProductKey": "tarjetas-graficas::gpu:rx9070:na:gigabyte:gaming",
+    "refreshPriority": "normal",
+    "lastScrapedAt": "2026-10-10T02:29:38.581Z",
+    "lastNormalizedAt": null,
+    "specs": {
+      "SKU": "EL_GIGPDV9070G16",
+      "SourceListingId": "185476"
+    },
+    "prices": [
+      {
+        "storeId": "goldentechstore",
+        "storeName": "Golden Tech",
+        "url": "https://goldentechstore.com.ar/producto/placa-de-video-gigabyte-amd-radeon-rx-9070-gaming-16g/",
+        "price": 1460226.88,
+        "stock": "in-stock",
+        "sourceIdentity": {
+          "title": "Placa de Video GIGABYTE AMD Radeon RX 9070 GAMING 16G",
+          "sourceId": "185476",
+          "storeSku": "EL_GIGPDV9070G16",
+          "listingRef": "goldentechstore:url:https://goldentechstore.com.ar/producto/placa-de-video-gigabyte-amd-radeon-rx-9070-gaming-16g"
+        },
+        "priceCondition": "special",
+        "installment": null,
+        "lastUpdated": "2026-10-10T02:19:20.920Z",
+        "identityReview": {
+          "model": null,
+          "reason": "provider-unavailable",
+          "status": "needs-review",
+          "subject": {
+            "url": "https://goldentechstore.com.ar/producto/placa-de-video-gigabyte-amd-radeon-rx-9070-gaming-16g/",
+            "name": "placa de video gigabyte amd radeon rx 9070 gaming 16g",
+            "category": "tarjetas-graficas"
+          },
+          "version": 1,
+          "confidence": null,
+          "reviewedAt": "2026-10-10T02:29:38.607Z",
+          "sourceIdentity": {
+            "title": "Placa de Video GIGABYTE AMD Radeon RX 9070 GAMING 16G",
+            "sourceId": "185476",
+            "storeSku": "EL_GIGPDV9070G16",
+            "listingRef": "goldentechstore:url:https://goldentechstore.com.ar/producto/placa-de-video-gigabyte-amd-radeon-rx-9070-gaming-16g"
+          }
+        }
+      }
+    ],
+    "lowestPrice": 1460226.88,
+    "highestPrice": 1460226.88,
+    "averagePrice": 1460227,
+    "createdAt": "2026-10-10T02:29:38.581Z",
+    "updatedAt": "2026-10-10T02:29:38.581Z"
+  }
+}

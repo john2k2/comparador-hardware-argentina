@@ -41,7 +41,8 @@ export function parseWooStoreKnownProducts(data: unknown,storeId: string,targets
   product.prices[0].price=price;
   product.lowestPrice=price;product.highestPrice=price;product.averagePrice=price;
   product.prices[0].lastUpdated=observedAt;
-  product.prices[0].priceCondition=storeId==='maxtecno'?'special':'unspecified';
+  // GoldenTech corrobora este importe con transferencia/efectivo del principal.
+  product.prices[0].priceCondition=storeId==='maxtecno' || storeId==='goldentechstore'?'special':'unspecified';
   product.specs.SourceListingId=String(item.id);
   if(Array.isArray(item.images) && object(item.images[0]) && typeof item.images[0].src==='string') {
    try { const image=new URL(item.images[0].src); if(image.protocol==='https:' && !image.username && !image.password) product.image=image.href; } catch { /* Una imagen inválida no invalida la oferta. */ }
@@ -83,7 +84,9 @@ export async function verifyWooStoreProducts(storeId:string,products:Product[],s
    || Math.abs(observed.price-price.price)>1
    || (price.stock!=='unknown' && observed.stock!==price.stock
      && !(['in-stock','low-stock'].includes(price.stock) && ['in-stock','low-stock'].includes(observed.stock)))
-   || (visible.specs.SKU && probe.specs.SKU && visible.specs.SKU!==probe.specs.SKU)) throw new SourceHttpError('inconsistent-source');
+   || (visible.specs.SKU && probe.specs.SKU && visible.specs.SKU!==probe.specs.SKU)
+   || (storeId==='goldentechstore' && visible.specs.SourceListingId && probe.specs.SourceListingId
+     && visible.specs.SourceListingId!==probe.specs.SourceListingId)) throw new SourceHttpError('inconsistent-source');
   verifiedStores.add(storeId);
  }
 }

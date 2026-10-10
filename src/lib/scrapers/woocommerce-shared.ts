@@ -227,6 +227,21 @@ function parseWooPrice(text: string): number {
   return parseScrapedArsPrice(normalized);
 }
 
+function explicitlyHidden($: cheerio.CheerioAPI, element: ReturnType<cheerio.CheerioAPI>): boolean {
+  return element.add(element.parents()).toArray().some(node => {
+    const candidate = $(node);
+    const style = (candidate.attr('style') ?? '').replace(/\/\*[\s\S]*?\*\//g, '');
+    return candidate.attr('hidden') !== undefined || candidate.attr('aria-hidden')?.trim().toLowerCase() === 'true'
+      || /(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*hidden)\s*(?:!important\s*)?(?:;|$)/i.test(style);
+  });
+}
+
+function goldenVisibleText($: cheerio.CheerioAPI, element: ReturnType<cheerio.CheerioAPI>): string {
+  const copy = element.clone();
+  copy.find('*').filter((_, node) => explicitlyHidden($, $(node))).remove();
+  return copy.text().trim();
+}
+
 function foreignWooCurrency($: cheerio.CheerioAPI, pageUrl: string, storeId: string): boolean {
   const excluded = '.related, .up-sells, .upsells, .cross-sells, .products, .w-grid-item';
   const metaConflict = $('meta[property="product:price:currency"], meta[itemprop="priceCurrency"]').toArray()
@@ -284,19 +299,36 @@ export function parseWooProductDetail(
   // Una publicación con variantes necesita observar la opción exacta.
   if ($('form.variations_form, table.variations').length > 0 || foreignWooCurrency($, pageUrl, store.id)) return null;
 
-  const name =
+  // GoldenTech sirve también una ficha propia según la representación HTTP.
+  // Su control debe leer el principal visible, no sanar ausencias con metadata.
+  const goldenDetail = store.id === 'goldentechstore' && $('.gt-ficha').length > 0;
+  const excluded = '.related, .up-sells, .upsells, .cross-sells, .products, .w-grid-item, .gt-ficha-related';
+  const primary = (selector: string) => $(selector).filter((_, element) => (
+    $(element).parents(excluded).length === 0
+    && (!goldenDetail || ($(element).closest('.gt-ficha__buy').length > 0 && !explicitlyHidden($, $(element))))
+  ));
+  const canonicals = $('link[rel~="canonical"]').toArray().map(element => $(element).attr('href')?.trim() ?? '');
+  const canonicalMatches = (canonical: string) => {
+    try { return Boolean(canonical) && sameListing(store.id, new URL(canonical, pageUrl).href, pageUrl); }
+    catch { return false; }
+  };
+  if (goldenDetail && (primary('.gt-ficha__buy').length !== 1
+    || primary('h1.gt-ficha__title').length !== 1 || primary('.gt-ficha-cash__now').length !== 1
+    || canonicals.length === 0 || !canonicals.every(canonicalMatches))) return null;
+
+  const name = goldenDetail ? goldenVisibleText($, primary('h1.gt-ficha__title')) : (
     $('h1.product_title').first().text().trim() ||
     $('h1.entry-title').first().text().trim() ||
     (store.id === 'scphardstore' ? $('h1.scp-single-product__title').first().text().trim() : '') ||
     $('h1[itemprop="name"]').first().text().trim() ||
     (store.id === 'maxtecno' ? $('main.product h1.product-title').first().text().trim() : '') ||
     (store.id === 'liontech' && $('body.single-product').length ? $('h1').first().text().trim() : '') ||
-    $('body.single-product h1.post_title').first().text().trim();
+    $('body.single-product h1.post_title').first().text().trim()
+  );
   if (!name) return null;
 
   // Las recomendaciones pueden contener un precio rebajado antes del importe
   // principal. Nunca usar sus montos como precio de la publicación consultada.
-  const primary = (selector: string) => $(selector).filter((_, element) => $(element).parents('.related, .up-sells, .upsells, .cross-sells, .products, .w-grid-item').length === 0);
   const primaryPrices = $('.summary, p.price, .product_field.price').filter((_, element) => (
     $(element).parents('.related, .up-sells, .upsells, .cross-sells, .products, .w-grid-item').length === 0
   ));
@@ -306,9 +338,10 @@ export function parseWooProductDetail(
   const metaPrice = $('meta[property="product:price:currency"]').attr('content') === 'ARS'
     ? $('meta[property="product:price:amount"]').attr('content') || '' : '';
   // El importe sin impuestos de SCP también usa las clases estándar de Woo.
-  const storePrice = store.id === 'scphardstore' ? primary('.scp-price-main__current').first().text().trim()
+  const storePrice = goldenDetail ? goldenVisibleText($, primary('.gt-ficha-cash__now'))
+    : store.id === 'scphardstore' ? primary('.scp-price-main__current').first().text().trim()
     : store.id === 'maxtecno' ? primary('main.product .price-showcase-box .price-main').first().text().trim() : '';
-  const price = parseWooPrice(storePrice || productFieldPrice || insPrice || anyPrice || metaPrice);
+  const price = parseWooPrice(goldenDetail ? storePrice : storePrice || productFieldPrice || insPrice || anyPrice || metaPrice);
   if (price <= 0) return null;
 
   const imageRaw =
@@ -320,7 +353,7 @@ export function parseWooProductDetail(
   const image = imageRaw ? normalizeAbsoluteUrl(store.baseUrl, imageRaw) : undefined;
 
   const primaryStock = primary('.stock');
-  const stockText = primaryStock.first().text().toLowerCase();
+  const stockText = (goldenDetail ? goldenVisibleText($, primaryStock.first()) : primaryStock.first().text()).toLowerCase();
   const primaryProduct = primary('[id^=product-].product, main.product');
   const hasOutOfStockClass = primary('.stock.out-of-stock, .out-of-stock').length > 0 || primaryProduct.hasClass('outofstock');
   const hasLowStockText = stockText.includes('ultim') || stockText.includes('pocas');
@@ -328,7 +361,9 @@ export function parseWooProductDetail(
   // Una reserva puede permitir añadir al carrito y conservar la clase instock.
   // Sus señales primarias prevalecen sobre disponibilidad o pocas unidades.
   const hasBackorder = primaryStock.is('.available-on-backorder, .on-backorder') || primaryProduct.hasClass('onbackorder')
-    || primaryStock.toArray().some(element => /\b(?:reservas?|back[\s-]?orders?|bajo\s+pedido)\b/i.test($(element).text()));
+    || primaryStock.toArray().some(element => /\b(?:reservas?|back[\s-]?orders?|bajo\s+pedido)\b/i.test(
+      goldenDetail ? goldenVisibleText($, $(element)) : $(element).text(),
+    ));
   const stock = hasOutOfStockClass || hasOutOfStockText
     ? 'out-of-stock'
     : hasBackorder
@@ -338,7 +373,7 @@ export function parseWooProductDetail(
         : primaryProduct.hasClass('instock') || primary('.stock.in-stock, button.single_add_to_cart_button:not([disabled]), input[name=add-to-cart]:not([disabled])').length > 0 || /(?:hay existencias|disponible|in stock)/i.test(stockText)
           ? 'in-stock' : 'unknown';
 
-  const canonical = $('link[rel="canonical"]').attr('href') || pageUrl;
+  const canonical = goldenDetail ? new URL(canonicals[0], pageUrl).href : $('link[rel="canonical"]').attr('href') || pageUrl;
   const productUrl = normalizeAbsoluteUrl(store.baseUrl, canonical);
   const slugPart = slugFromScrapedUrl(productUrl) || fallbackSlug;
   const detailDescription =
@@ -371,11 +406,13 @@ export function parseWooProductDetail(
     if (value) sourceIds.add(value);
   });
   // Un ID contradictorio no se resuelve eligiendo el primer botón del HTML.
-  if (sourceIds.size > 1) return null;
+  if (sourceIds.size > 1 || (goldenDetail && sourceIds.size !== 1)) return null;
   if (product && sourceIds.size === 1) product.specs.SourceListingId = [...sourceIds][0];
-  const sku = primary('.sku').first().text().replace(/^sku\s*:\s*/i, '').trim();
+  const skuNode = primary(goldenDetail ? '.gt-ficha__sku' : '.sku').first();
+  const sku = (goldenDetail ? goldenVisibleText($, skuNode) : skuNode.text()).replace(/^sku\s*:\s*/i, '').trim();
   if (product && sku && sku !== 'N/A') product.specs.SKU = sku;
   if (product && store.id === 'maxtecno' && storePrice) product.prices[0].priceCondition = 'special';
+  if (product && goldenDetail) product.prices[0].priceCondition = 'special';
   return product;
 }
 
@@ -428,9 +465,13 @@ export async function fetchWooCommerceKnownOffer(storeId: string, rawUrl: string
   if (url.protocol !== 'https:' || url.username || url.password || url.port || host(rawUrl) !== host(store.baseUrl)) return null;
   const response = await sourceFetch(store.id, url.href, { headers: SCRAPE_HEADERS, signal },8_000_000,[host(store.baseUrl)]);
   const html = await response.text();
-  if (foreignWooCurrency(cheerio.load(html), url.href, store.id)) throw new SourceHttpError('inconsistent-source');
+  const $ = cheerio.load(html);
+  if (foreignWooCurrency($, url.href, store.id)) throw new SourceHttpError('inconsistent-source');
+  // Una ficha GoldenTech presente pero rechazada conserva ese rechazo. El
+  // JSON-LD puede seguir válido mientras el principal falta o contradice IDs.
+  const goldenDetail = store.id === 'goldentechstore' && $('.gt-ficha').length > 0;
   const product = parseWooProductDetail(html, url.href, store, category, slugFromScrapedUrl(url.href))
-    ?? (cheerio.load(html)('form.variations_form, table.variations').length === 0
+    ?? (!goldenDetail && $('form.variations_form, table.variations').length === 0
       ? parseKnownProductDetail(html, url.href, store, category) : null);
   if (!product || host(product.prices[0].url) !== host(store.baseUrl)) return null;
   return product;
