@@ -99,25 +99,36 @@ export async function recordCatalogRefreshDemand(input: {
   }
 }
 
-export async function loadCatalogRefreshDemands(limit: number): Promise<CatalogRefreshDemand[] | null> {
+export async function loadCatalogRefreshDemands(limit: number, options: {
+  since?: string;
+  strict?: boolean;
+  maxRows?: number;
+} = {}): Promise<CatalogRefreshDemand[] | null> {
   const supabase = getServerSupabaseServiceClient();
-  if (!supabase) return null;
+  if (!supabase) {
+    if (options.strict) throw new Error('PRIORITY_DEMAND_DATABASE_UNAVAILABLE');
+    return null;
+  }
 
-  const { data, error } = await supabase
+  let read = supabase
     .from('api_cache_entries')
     .select('cache_key,payload')
     .eq('scope', CATALOG_REFRESH_DEMAND_SCOPE)
     .gt('expires_at', new Date().toISOString())
     .order('updated_at', { ascending: false })
-    .limit(Math.max(limit * 4, 20));
+    .limit(options.maxRows ?? Math.max(limit * 4, 20));
+  if (options.since) read = read.gte('updated_at', options.since);
+  const { data, error } = await read;
 
   if (error) {
+    if (options.strict) throw new Error('PRIORITY_DEMAND_READ_FAILED');
     logger.warn('Catalog refresh demand load skipped', {
       endpoint: '/api/admin/catalog-refresh',
       error: error.message,
     });
     return null;
   }
+  if (options.strict && !Array.isArray(data)) throw new Error('PRIORITY_DEMAND_INVALID_RESPONSE');
 
   return (data ?? [])
     .map((row) => toDemand(row.payload, String(row.cache_key ?? '')))

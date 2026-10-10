@@ -24,3 +24,21 @@ Una corrección de selección no basta para presentar siete piezas comprables.
 La evidencia detallada está en `outputs/actualizacion-ofertas-2026-10-10/`:
 `guide-reader-runtime.json`, `fuentes-guia-lectura.json` y
 `fuentes-restantes-lectura.json`. Es un corte, no una garantía futura.
+
+## Lectura acotada de solicitudes de búsqueda
+
+El plan consulta como máximo veinte señales agregadas de las últimas 24 horas
+y selecciona hasta tres consultas elegibles después de validar texto y fecha.
+Los contadores son solicitudes, no usuarios únicos ni demanda humana acreditada.
+
+Cada consulta selecciona hasta cinco IDs mediante el documento indexado y
+después hidrata sólo esas filas. Se usan la normalización de búsqueda existente,
+prefiltros de chip/variante y kit explícito antes del límite, y los controles
+finales de intención y categoría. Las referencias antiguas conservan su fecha;
+permiten intentar comprobar una publicación, no acreditan que sea comprable.
+
+La consulta general con totales agotó el tiempo SQL en la prueba real de
+`ryzen`. La lectura separada de IDs y ofertas completó el plan de tres consultas
+en 1999 ms en el corte previo a los últimos controles de variante. Un error de
+DB es explícito; no se convierte en una lista vacía. La selección es acotada,
+no representa toda la demanda ni toda la cobertura del mercado.
