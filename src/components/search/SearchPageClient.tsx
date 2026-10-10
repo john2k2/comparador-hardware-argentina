@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { useRouter } from 'next/navigation';
 import type { SearchApiResponse } from '@/lib/search/search-api';
 import { hydrateProducts } from '@/lib/product-serialization';
-import { buildApiSearchKey, buildSearchRoute, parseSearchState, toSearchFilters, type SearchPageState } from '@/lib/search/search-state';
+import { buildApiSearchKey, buildSearchRoute, parseSearchState, toSearchFilters, withSearchQuery, type SearchPageState } from '@/lib/search/search-state';
 import { getCategorySeoCopy, isCategoryCanonicalLanding, isIndexableCategoryLanding } from '@/lib/search/search-seo';
 import { stores as defaultStores } from '@/lib/scrapers/static-data';
 import type { Product, SearchFilters } from '@/lib/types';
@@ -118,13 +118,14 @@ function SearchPageClientInner({
   const buildStateFromFilters = useCallback((nextFilters: SearchFilters, page = 1): SearchPageState => ({
     query: nextFilters.query.trim(),
     category: nextFilters.category,
+    ...(currentState.categoryInferred && nextFilters.category === currentState.category ? { categoryInferred: true } : {}),
     minPrice: nextFilters.minPrice,
     maxPrice: nextFilters.maxPrice,
     includeUnavailable: nextFilters.includeUnavailable,
     stores: (nextFilters.stores ?? []).map((store) => store.trim()).filter(Boolean).sort(),
     sortBy: nextFilters.sortBy,
     page,
-  }), []);
+  }), [currentState.category, currentState.categoryInferred]);
 
   const cancelFilterDebounce = useCallback(() => {
     if (filterDebounceRef.current !== null) {
@@ -171,8 +172,7 @@ function SearchPageClientInner({
   }, [cancelFilterDebounce]);
 
   const handleSearch = useCallback((query: string) => {
-    const nextQuery = query.trim();
-    commitState(buildStateFromFilters({ ...filters, query: nextQuery }, 1));
+    commitState(withSearchQuery(buildStateFromFilters(filters, 1), query));
   }, [filters, buildStateFromFilters, commitState]);
 
   const handleFiltersChange = useCallback((newFilters: Partial<SearchFilters>) => {
@@ -204,7 +204,9 @@ function SearchPageClientInner({
     }
     filterDebounceRef.current = window.setTimeout(() => {
       filterDebounceRef.current = null;
-      commitState(buildStateFromFilters(nextFilters, 1));
+      const nextState = buildStateFromFilters(nextFilters, 1);
+      if (newFilters.category !== undefined) delete nextState.categoryInferred;
+      commitState(nextState);
     }, 250);
   }, [filters, searchQuery, buildStateFromFilters, commitState]);
 

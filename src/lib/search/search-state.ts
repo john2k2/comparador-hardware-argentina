@@ -25,6 +25,8 @@ const VALID_SORTS = new Set<SearchFilters['sortBy']>([
 export type SearchPageState = {
   query: string;
   category?: HardwareCategory;
+  /** La categoría deducida acompaña al texto; una selección explícita se conserva. */
+  categoryInferred?: boolean;
   minPrice?: number;
   maxPrice?: number;
   stores: string[];
@@ -81,6 +83,7 @@ export function parseSearchState(params: Record<string, string | string[] | unde
   return {
     query,
     category,
+    ...(!explicitCategory && category ? { categoryInferred: true } : {}),
     minPrice,
     maxPrice,
     stores: parseStores(getSingleParam(params.stores)),
@@ -98,6 +101,17 @@ export function hasSearchIntent(state: SearchPageState): boolean {
     || state.maxPrice !== undefined
     || state.stores.length > 0,
   );
+}
+
+export function withSearchQuery(state: SearchPageState, query: string): SearchPageState {
+  const nextQuery = query.trim();
+  const inferCategory = state.categoryInferred || !state.category;
+  return {
+    ...state,
+    query: nextQuery,
+    page: 1,
+    ...(inferCategory ? { category: inferHardwareCategoryFromName(nextQuery), categoryInferred: true } : {}),
+  };
 }
 
 export function buildApiSearchKey(state: SearchPageState): string | null {
@@ -119,7 +133,8 @@ export function buildSearchPageParams(state: SearchPageState): URLSearchParams {
   const params = new URLSearchParams();
 
   if (state.query) params.set('q', state.query);
-  if (state.category) params.set('category', state.category);
+  // No convertir una deducción en filtro manual al navegar, recargar o volver atrás.
+  if (state.category && !state.categoryInferred) params.set('category', state.category);
   if (state.minPrice !== undefined) params.set('minPrice', String(state.minPrice));
   if (state.maxPrice !== undefined) params.set('maxPrice', String(state.maxPrice));
   if (state.stores.length > 0) params.set('stores', state.stores.join(','));

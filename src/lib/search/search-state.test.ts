@@ -6,6 +6,7 @@ import {
   hasSearchIntent,
   parseSearchState,
   toSearchFilters,
+  withSearchQuery,
 } from './search-state';
 
 describe('search state', () => {
@@ -98,5 +99,29 @@ describe('search state', () => {
     expect(hasSearchIntent(state)).toBe(false);
     expect(buildApiSearchKey(state)).toBeNull();
     expect(buildSearchRoute(state)).toBe('/search');
+  });
+
+  it('cambia la categoría automática con el producto y mantiene los demás filtros', () => {
+    let state = parseSearchState({ q: 'RTX 5090', stores: 'compragamer', minPrice: '100000', sortBy: 'price-asc', page: '2' });
+    for (const [query, category] of [['Ryzen 7600', 'procesadores'], ['Memoria DDR5 32GB', 'memoria-ram'], ['SSD NVMe', 'almacenamiento'], ['producto desconocido', undefined]] as const) {
+      state = withSearchQuery(state, query);
+      expect(state).toMatchObject({ query, category, categoryInferred: true, stores: ['compragamer'], minPrice: 100000, sortBy: 'price-asc', page: 1 });
+      expect(buildSearchRoute(state)).not.toContain('category=');
+    }
+  });
+
+  it('conserva la categoría elegida explícitamente, incluso si coincide con la inferencia', () => {
+    const explicit = parseSearchState({ q: 'RTX 5090', category: 'tarjetas-graficas' });
+    expect(withSearchQuery(explicit, 'Ryzen 7600').category).toBe('tarjetas-graficas');
+    expect(buildSearchRoute(withSearchQuery(explicit, 'Ryzen 7600'))).toContain('category=tarjetas-graficas');
+  });
+
+  it('no vuelve manual una categoría automática al recargar o paginar', () => {
+    const initial = parseSearchState({ q: 'RTX 5090' });
+    const route = buildSearchPaginationHref(buildSearchRoute(initial), 2);
+    const restored = parseSearchState(Object.fromEntries(new URLSearchParams(route.split('?')[1])));
+    expect(restored.categoryInferred).toBe(true);
+    expect(withSearchQuery(restored, 'Ryzen 7600').category).toBe('procesadores');
+    expect(buildApiSearchKey(initial)).toBe(buildApiSearchKey(parseSearchState({ q: 'RTX 5090', category: 'tarjetas-graficas' })));
   });
 });
