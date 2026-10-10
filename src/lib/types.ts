@@ -65,7 +65,13 @@ export interface Product {
   updatedAt: Date;
 }
 
-export type OfferSourceIdentity = { listingRef: string; title: string; storeSku?: string; sourceId?: string };
+export type OfferSourceIdentity = {
+  listingRef: string;
+  title: string;
+  storeSku?: string;
+  sourceId?: string;
+  purchaseRestriction?: 'build-only' | 'combo-only';
+};
 
 export interface ProductPrice {
   storeId: string;

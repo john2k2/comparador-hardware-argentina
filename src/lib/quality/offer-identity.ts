@@ -33,6 +33,11 @@ const REASONS = new Set<IdentityReviewReason>([
   'low-confidence', 'provider-unavailable', 'invalid-response',
 ]);
 
+/** Una oferta condicionada a armado/combo no acredita compra individual. */
+export function hasPurchaseRestriction(source?: OfferSourceIdentity): boolean {
+  return source?.purchaseRestriction === 'build-only' || source?.purchaseRestriction === 'combo-only';
+}
+
 export function readSourceIdentity(value: unknown): OfferSourceIdentity | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
   const source = value as Partial<OfferSourceIdentity>;
@@ -40,6 +45,7 @@ export function readSourceIdentity(value: unknown): OfferSourceIdentity | undefi
     && typeof source.listingRef === 'string' && source.listingRef.length > 0 && source.listingRef.length <= 2048
     && (source.storeSku === undefined || typeof source.storeSku === 'string' && source.storeSku.length <= 160)
     && (source.sourceId === undefined || typeof source.sourceId === 'string' && /^[1-9]\d{0,14}$/.test(source.sourceId))
+    && (source.purchaseRestriction === undefined || hasPurchaseRestriction(source as OfferSourceIdentity))
     ? source as OfferSourceIdentity : undefined;
 }
 
@@ -92,7 +98,8 @@ export function sameSourceIdentity(first?: OfferSourceIdentity, second?: OfferSo
   return Boolean(readSourceIdentity(first) && readSourceIdentity(second) && first && second && first.listingRef === second.listingRef
     && normalizeIdentityText(first.title) === normalizeIdentityText(second.title)
     && (first.storeSku ?? '') === (second.storeSku ?? '')
-    && (first.sourceId ?? '') === (second.sourceId ?? ''));
+    && (first.sourceId ?? '') === (second.sourceId ?? '')
+    && first.purchaseRestriction === second.purchaseRestriction);
 }
 
 export function bindReviewToSource(review: OfferIdentityReview | undefined, sourceIdentity: OfferSourceIdentity | undefined, product: { name: string; category: string }, url: string): OfferIdentityReview | undefined {

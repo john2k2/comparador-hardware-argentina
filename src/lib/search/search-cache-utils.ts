@@ -8,7 +8,7 @@ import { getRecentProductOffers } from '@/lib/product/product-page-metadata';
 import { CATALOG_OFFER_FRESH_MS } from '@/lib/price-freshness';
 
 const CLIENT_SEARCH_CACHE_TTL_MS = 90 * 1000;
-const CLIENT_SEARCH_STORAGE_PREFIX = 'search-cache:v8:';
+const CLIENT_SEARCH_STORAGE_PREFIX = 'search-cache:v9:';
 const SEARCH_SCROLL_STORAGE_PREFIX = 'search-scroll:v1:';
 const SEARCH_SCROLL_TTL_MS = 10 * 60 * 1000;
 

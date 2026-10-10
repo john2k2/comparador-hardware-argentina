@@ -36,6 +36,21 @@ describe('current catalog results', () => {
     expect(filterCurrentCatalogProducts(all, true)).toEqual(all);
   });
 
+  it('ignores entries from before purchase restrictions while retaining new session results', () => {
+    const payload = { products: [product('legacy')],
+      pagination: { limit: 1, offset: 0, total: 1, totalPages: 1, page: 1, pageSize: 12 },
+      facets: { categories: [], brands: [], stores: [] } };
+    const entry = createSearchCacheEntry(payload);
+    const key = 'q=mouse|page=1';
+    const storage = new Map<string, string>([['search-cache:v8:' + key, JSON.stringify(entry)]]);
+    vi.stubGlobal('window', { sessionStorage: { getItem: (key: string) => storage.get(key),
+      setItem: (key: string, value: string) => storage.set(key, value), removeItem: (key: string) => storage.delete(key) } });
+    expect(readStoredSearch(key)).toBeNull();
+    writeStoredSearch(key, entry);
+    expect(storage.has('search-cache:v9:' + key)).toBe(true);
+    expect(readStoredSearch(key)?.payload.products[0].id).toBe('legacy');
+  });
+
   it('expires the client cache when any comparable offer expires even while another remains current', () => {
     const item = product('expiring', { lastUpdated: new Date(now.getTime() - 24 * 60 * 60 * 1000 + 15_000) });
     const payload = { products: [item], pagination: { limit: 1, offset: 0, total: 1, totalPages: 1, page: 1, pageSize: 12 },
