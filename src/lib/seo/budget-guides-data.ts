@@ -138,6 +138,11 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
         name: 'AMD Ryzen 7 5700 con cooler',
         exactModel: 'Ryzen 7 5700',
         requiresIncludedCooler: true,
+        referenceProductIds: [
+          'rockethard-161776-procesador-amd-ryzen-7-5700-s-video-integrado-c-cooler-am4-161776',
+          'cg-15474',
+          'goldentechstore-procesador-amd-ryzen-7-5700-sin-video-con-cooler-am4',
+        ],
         searchTerms: ['ryzen 7 5700'],
         category: 'procesadores',
         description: '8 núcleos / 16 hilos | AM4 y PCIe 3.0 | Cooler incluido en la publicación elegida',
@@ -234,6 +239,10 @@ export const BUDGET_GUIDES: BudgetGuideDefinition[] = [
         name: 'AMD Ryzen 5 7600 con Wraith Stealth',
         exactModel: 'Ryzen 5 7600',
         requiresIncludedCooler: true,
+        referenceProductIds: [
+          'cg-14309',
+          'agrupado-procesadores-procesador-amd-ryzen-5-7600-5-1ghz-turbo-am5-wraith-stealth-cooler',
+        ],
         searchTerms: ['ryzen 5 7600'],
         category: 'procesadores',
         description: '6 núcleos / 12 hilos | AM5 | Cooler incluido en la publicación elegida',

@@ -1,7 +1,9 @@
 import { isBundleLikeTitle, isCompleteComputerTitle, parseCpuModelSignature, parseGpuChipSignature } from '@/lib/product-identity';
 import { computeComparableStorePriceStats } from '@/lib/price-utils';
 import type { HardwareCategory, Product, ProductPrice } from '@/lib/types';
-import { buildIdentityEvidence, needsIdentityReview } from '@/lib/quality/offer-identity';
+import { buildIdentityEvidence, needsIdentityReview, readIdentityReview } from '@/lib/quality/offer-identity';
+import { listingReference } from '@/lib/scrapers/listing-reference';
+import { buildCompraGamerProductUrl } from '@/lib/scrapers/compragamer-mapper';
 import { cpuVariantAttributes } from '@/lib/quality/offer-attribute-proof';
 import { isOfferFresh } from '@/lib/price-freshness';
 import { MAX_GUIDE_REFRESH_ROUNDS } from '@/lib/catalog/on-demand/contracts';
@@ -11,6 +13,8 @@ export type GuideSlotSpec = {
   // Fija una pieza editorial comprobada sin confundirla con otra variante del catálogo.
   exactModel?: string;
   requiresIncludedCooler?: boolean;
+  // Publicaciones editoriales conocidas: sólo amplían la lectura, nunca su elegibilidad.
+  referenceProductIds?: string[];
   description: string;
   estimatedPrice: number;
   searchTerms?: string[];
@@ -288,8 +292,27 @@ function offerConflictsWithGuide(offer: ProductPrice): boolean {
   return EXCLUDED_OFFER_TERMS.some((term) => haystack.includes(term));
 }
 
+function provedCpuSourceTitle(product: Product, offer: ProductPrice): string | null {
+  const review = product.category === 'procesadores' ? readIdentityReview(offer.identityReview) : undefined;
+  const source = offer.sourceIdentity ?? review?.sourceIdentity;
+  // Una URL con ID puede omitir el modelo. Sólo una prueba exacta validada,
+  // vinculada al sujeto y a esa publicación de la tienda, aporta su título.
+  // El validador central conserva conflictos de URL, modelo, cooler y SKU.
+  return review?.reason === 'exact-attributes' && source
+    && !needsIdentityReview(offer, product)
+    && listingReference(offer.storeId, offer.url) === source.listingRef ? source.title : null;
+}
+
+/** La tienda necesita un slug para navegar; el ID original sigue siendo el destino del runner. */
+function guidePurchaseUrl(product: Product, offer: ProductPrice): string {
+  const title = provedCpuSourceTitle(product, offer);
+  if (offer.storeId !== 'compragamer' || !title) return offer.url;
+  const id = new URL(offer.url).pathname.match(/^\/producto\/([1-9]\d*)\/?$/)?.[1];
+  return id && Number.isSafeInteger(Number(id)) ? buildCompraGamerProductUrl(Number(id), title) : offer.url;
+}
+
 function offerAgreesWithProductName(product: Product, offer: ProductPrice): boolean {
-  const urlTokens = normalizeSearchText(offer.url).split(' ').filter((token) => token.length > 2);
+  const urlTokens = normalizeSearchText(provedCpuSourceTitle(product, offer) ?? offer.url).split(' ').filter((token) => token.length > 2);
   if (urlTokens.length < 5) return true;
   if (product.category === 'motherboards') {
     // Las generaciones admitidas y códigos internos del catálogo no son el
@@ -423,7 +446,7 @@ export function resolveGuideRefreshOffers(spec: GuideSlotSpec, products: Product
   return [...unique.values()].slice(0, MAX_GUIDE_REFRESH_ROUNDS);
 }
 
-function toGuideOffers(offers: ProductPrice[]): GuideStoreOffer[] {
+function toGuideOffers(product: Product, offers: ProductPrice[]): GuideStoreOffer[] {
   return offers.flatMap((offer) => {
     if (!isBuyableGuideStock(offer.stock)) return [];
     return [{
@@ -431,7 +454,7 @@ function toGuideOffers(offers: ProductPrice[]): GuideStoreOffer[] {
       storeName: offer.storeName,
       price: offer.price,
       stock: offer.stock,
-      url: offer.url,
+      url: guidePurchaseUrl(product, offer),
       lastUpdated: Number.isFinite(new Date(offer.lastUpdated).getTime()) ? new Date(offer.lastUpdated).toISOString() : null,
     }];
   });
@@ -465,10 +488,10 @@ export function toResolvedCatalogComponent(
     price: best?.price ?? 0,
     priceSource: 'catalog',
     bestStoreName: best?.storeName ?? null,
-    bestStoreUrl: best?.url ?? null,
+    bestStoreUrl: best ? guidePurchaseUrl(product, best) : null,
     storeCount: storeNames.length,
     storeNames,
-    offers: toGuideOffers(offers),
+    offers: toGuideOffers(product, offers),
     productId: product.id,
   };
 }

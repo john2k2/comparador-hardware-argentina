@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { HardwareCategory, Product, ProductPrice } from '@/lib/types';
-import { resolveGuideComponent, resolveGuideReferenceOffer, resolveGuideRefreshOffers, resolveGuideSlots } from '@/lib/seo/budget-guide-pricing';
+import { resolveGuideComponent, resolveGuideReferenceOffer, resolveGuideRefreshOffers, resolveGuideSlots, toResolvedCatalogComponent } from '@/lib/seo/budget-guide-pricing';
 import { BUDGET_GUIDES } from '@/lib/seo/budget-guides-data';
 import { planGuideGroups } from '@/lib/catalog/priority-planning';
+import { proveOfferAttributes } from '@/lib/quality/offer-attribute-proof';
+import { normalizeIdentityText } from '@/lib/product-identity';
 
 afterEach(() => vi.useRealTimers());
 
@@ -42,6 +44,43 @@ const cpuSpec = {
 };
 
 describe('cooler incluido exigido por la selección editorial', () => {
+  it('admite la URL numérica CompraGamer14309 sólo con prueba CPU exacta vinculada a la publicación', () => {
+    const name = 'Procesador AMD Ryzen 5 7600 5.1GHz Turbo AM5 + Wraith Stealth Cooler';
+    const url = 'https://compragamer.com/producto/14309';
+    const sourceIdentity = { title: name, listingRef: 'compragamer:id:14309', storeSku: '100-100001015BOX' };
+    const offer = price({ storeId: 'compragamer', storeName: 'CompraGamer', price: 362_500, url,
+      sourceIdentity, identityReview: { version: 1, status: 'consistent', reason: 'exact-attributes',
+        reviewedAt: new Date().toISOString(), model: null, confidence: null, sourceIdentity,
+        subject: { name: normalizeIdentityText(name), category: 'procesadores', url },
+        proof: proveOfferAttributes(name, 'procesadores', name)! } });
+    const candidate = product({ id: 'verified-14309', name, category: 'procesadores', prices: [offer] });
+    const before = structuredClone(candidate);
+    const spec = BUDGET_GUIDES.find((guide) => guide.slug === 'pc-gamer-3-millones')!.components.cpu;
+    const purchaseUrl = 'https://compragamer.com/producto/Procesador_AMD_Ryzen_5_7600_5_1GHz_Turbo_AM5_Wraith_Stealth_Cooler_14309';
+    expect(resolveGuideComponent(spec, [candidate])).toMatchObject({ priceSource: 'catalog', price: 362_500,
+      bestStoreUrl: purchaseUrl, offers: [{ url: purchaseUrl }] });
+    expect(resolveGuideRefreshOffers(spec, [candidate])).toMatchObject([{ url }]);
+    expect(candidate).toEqual(before);
+    const rejected = [
+      { ...offer, identityReview: undefined },
+      { ...offer, identityReview: { ...offer.identityReview!, status: 'needs-review' as const, reason: 'insufficient-evidence' as const } },
+      { ...offer, identityReview: { ...offer.identityReview!, proof: undefined } },
+      { ...offer, identityReview: { ...offer.identityReview!, subject: { ...offer.identityReview!.subject, name: normalizeIdentityText(name.replace('7600', '7600X')) } } },
+      { ...offer, sourceIdentity: undefined, identityReview: { ...offer.identityReview!, sourceIdentity: undefined } },
+      { ...offer, url: 'https://compragamer.com/producto/15474' },
+      { ...offer, url: 'https://other-store.example/producto/14309', identityReview: { ...offer.identityReview!, subject: { ...offer.identityReview!.subject, url: 'https://other-store.example/producto/14309' } } },
+      { ...offer, sourceIdentity: { ...sourceIdentity, storeSku: 'different-sku' } },
+      { ...offer, sourceIdentity: { ...sourceIdentity, title: name.replace('7600', '7600X') } },
+      { ...offer, sourceIdentity: { ...sourceIdentity, title: name.replace('+ Wraith Stealth Cooler', 'tray sin cooler') } },
+      { ...offer, url: 'https://compragamer.com/producto/amd-ryzen-5-7600x-sin-cooler' },
+    ];
+    for (const invalid of rejected) {
+      expect(resolveGuideComponent(spec, [{ ...candidate, prices: [invalid] }]).offers).toEqual([]);
+      expect(resolveGuideRefreshOffers(spec, [{ ...candidate, prices: [invalid] }])).toEqual([]);
+      expect(toResolvedCatalogComponent(candidate, [invalid]).bestStoreUrl).toBe(invalid.url);
+    }
+  });
+
   const now = new Date('2026-10-09T21:35:00.000Z');
   const guide = BUDGET_GUIDES.find((guide) => guide.slug === 'pc-gamer-2-millones')!;
   const cpu = (suffix: string, amount = 100_000, overrides: Partial<ProductPrice> = {}) => product({

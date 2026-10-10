@@ -1,16 +1,101 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Product } from '@/lib/types';
 
-const mocks = vi.hoisted(() => ({ readGuideCatalogCandidatesFromDatabase: vi.fn() }));
+const mocks = vi.hoisted(() => ({ readGuideCatalogCandidatesFromDatabase: vi.fn(), readProductByIdFromDatabase: vi.fn() }));
 vi.mock('@/lib/persistence/product-read', () => ({
   readGuideCatalogCandidatesFromDatabase: mocks.readGuideCatalogCandidatesFromDatabase,
+  readProductByIdFromDatabase: mocks.readProductByIdFromDatabase,
 }));
 vi.mock('@/lib/logger', () => ({ logger: { warn: vi.fn() } }));
 
 import { loadGuideCatalogProducts, loadGuidePriorityProducts } from './guide-catalog';
 import { getBudgetGuideBySlug } from './budget-guides-data';
+import { resolveGuideComponent } from './budget-guide-pricing';
+import { planGuideGroups } from '@/lib/catalog/priority-planning';
 
 describe('modelos prioritarios de la guía', () => {
+  it('distingue el error de una referencia editorial y vuelve a leer sin memorizar el corte parcial', async () => {
+    vi.resetModules();
+    const fresh = await import('./guide-catalog');
+    const guide = structuredClone(getBudgetGuideBySlug('pc-gamer-1-millon')!);
+    guide.components.cpu.referenceProductIds = ['reference'];
+    const reference = { id: 'reference', category: 'procesadores', updatedAt: new Date('2026-10-01T00:00:00Z') } as Product;
+    mocks.readGuideCatalogCandidatesFromDatabase.mockReset().mockResolvedValue([]);
+    mocks.readProductByIdFromDatabase.mockReset().mockRejectedValueOnce(new Error('database timeout')).mockResolvedValue(reference);
+    expect(await fresh.loadGuideCatalogSnapshot(guide)).toEqual({ products: [], unavailableSlots: ['cpu'] });
+    expect(await fresh.loadGuideCatalogSnapshot(guide)).toEqual({ products: [reference], unavailableSlots: [] });
+    expect(mocks.readProductByIdFromDatabase).toHaveBeenCalledTimes(2);
+    expect(reference.updatedAt.toISOString()).toBe('2026-10-01T00:00:00.000Z');
+  });
+
+  it('conserva las alternativas del mapper de guía y rechaza una referencia con otra categoría', async () => {
+    vi.resetModules();
+    const fresh = await import('./guide-catalog');
+    const guide = structuredClone(getBudgetGuideBySlug('pc-gamer-1-millon')!);
+    guide.components.cpu.referenceProductIds = ['same', 'wrong-category', 'missing'];
+    const candidate = { id: 'same', category: 'procesadores', prices: [{ price: 100 }, { price: 200 }] } as Product;
+    mocks.readGuideCatalogCandidatesFromDatabase.mockReset().mockImplementation(async (category: string) => category === 'procesadores' ? [candidate] : []);
+    mocks.readProductByIdFromDatabase.mockReset().mockImplementation(async (id: string) => id === 'same'
+      ? { ...candidate, prices: candidate.prices.slice(0, 1) } : id === 'missing' ? null : { id, category: 'motherboards' } as Product);
+    expect(await fresh.loadGuideCatalogSnapshot(guide)).toEqual({ products: [candidate], unavailableSlots: [] });
+  });
+
+  it('limita y memoriza referencias sin superar seis lecturas simultáneas entre piezas', async () => {
+    vi.resetModules();
+    const fresh = await import('./guide-catalog');
+    const guide = structuredClone(getBudgetGuideBySlug('pc-gamer-1-millon')!);
+    for (const spec of Object.values(guide.components)) {
+      spec.referenceProductIds = Array.from({ length: 5 }, (_, index) => `${spec.category}:${index}`);
+    }
+    let inFlight = 0;
+    let peak = 0;
+    const wait = async () => { inFlight += 1; peak = Math.max(peak, inFlight); await new Promise((resolve) => setTimeout(resolve, 5)); inFlight -= 1; };
+    mocks.readGuideCatalogCandidatesFromDatabase.mockReset().mockImplementation(async () => { await wait(); return []; });
+    mocks.readProductByIdFromDatabase.mockReset().mockImplementation(async (id: string) => { await wait(); return { id, category: id.split(':')[0] } as Product; });
+    const first = await fresh.loadGuideCatalogSnapshot(guide);
+    expect(first.products).toHaveLength(21);
+    expect(await fresh.loadGuideCatalogSnapshot(guide)).toEqual(first);
+    expect(mocks.readProductByIdFromDatabase).toHaveBeenCalledTimes(21);
+    expect(peak).toBeGreaterThan(2);
+    expect(peak).toBeLessThanOrEqual(6);
+  });
+
+  it.each(['pc-gamer-2-millones', 'pc-gamer-3-millones'])('rescata la referencia CPU de %s desplazada por ocho variantes recientes', async (slug) => {
+    vi.resetModules();
+    const fresh = await import('./guide-catalog');
+    const guide = getBudgetGuideBySlug(slug)!;
+    const number = slug === 'pc-gamer-2-millones' ? '5700' : '7600';
+    const family = number === '5700' ? '7' : '5';
+    const now = new Date();
+    const cpu = (id: string, name: string, date = now): Product => ({
+      id, name, category: 'procesadores', brand: 'AMD', model: name, specs: {},
+      lowestPrice: 300_000, highestPrice: 300_000, averagePrice: 300_000, createdAt: now, updatedAt: now,
+      prices: [{ storeId: 'compragamer', storeName: 'CompraGamer', price: 300_000, stock: 'in-stock', installment: null,
+        url: `https://compragamer.com/producto/Procesador_AMD_Ryzen_${family}_${number}_AM${number === '5700' ? '4' : '5'}_Wraith_Stealth_Cooler_${number === '5700' ? '15474' : '14309'}`,
+        lastUpdated: date }],
+    });
+    const truncated = Array.from({ length: 8 }, (_, index) => cpu(`wrong-${index}`, `AMD Ryzen ${family} ${number}X sin cooler`));
+    const reference = cpu('known-cpu', `AMD Ryzen ${family} ${number} + Wraith Stealth Cooler`);
+    const custom = { ...guide, components: { ...guide.components, cpu: { ...guide.components.cpu, referenceProductIds: [reference.id] } } };
+    mocks.readGuideCatalogCandidatesFromDatabase.mockReset().mockImplementation(async (category: string) => category === 'procesadores' ? truncated : []);
+    mocks.readProductByIdFromDatabase.mockReset().mockResolvedValue(reference);
+    expect(resolveGuideComponent(guide.components.cpu, truncated).offers).toEqual([]);
+    expect(planGuideGroups(guide, truncated).find((group) => group.key.endsWith('/cpu'))?.targets).toEqual([]);
+
+    const snapshot = await fresh.loadGuideCatalogSnapshot(custom);
+    expect(snapshot.unavailableSlots).toEqual([]);
+    expect(resolveGuideComponent(custom.components.cpu, snapshot.products).productId).toBe(reference.id);
+    expect(mocks.readProductByIdFromDatabase).toHaveBeenCalledWith(reference.id);
+    expect(mocks.readGuideCatalogCandidatesFromDatabase).toHaveBeenCalledWith('procesadores', 8, guide.components.cpu.searchTerms[0]);
+
+    const observedAt = new Date(now.getTime() - 4 * 60 * 60_000);
+    reference.prices[0].lastUpdated = observedAt;
+    expect(resolveGuideComponent(custom.components.cpu, snapshot.products).offers).toEqual([]);
+    expect(planGuideGroups(custom, snapshot.products).find((group) => group.key.endsWith('/cpu')))
+      .toMatchObject({ covered: false, targets: [{ productId: reference.id, storeId: 'compragamer', url: reference.prices[0].url }] });
+    expect(reference.prices[0].lastUpdated).toEqual(observedAt);
+  });
+
   it('reintenta la próxima consulta tras un error, sin esperar el TTL ni cambiar fechas', async () => {
     vi.resetModules();
     const fresh = await import('./guide-catalog');

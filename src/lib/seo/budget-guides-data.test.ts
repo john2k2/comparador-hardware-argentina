@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ readGuideCatalogCandidatesFromDatabase: vi.fn(async () => []) }));
+const mocks = vi.hoisted(() => ({ readGuideCatalogCandidatesFromDatabase: vi.fn(async () => []), readProductByIdFromDatabase: vi.fn<(id: string) => Promise<Product | null>>(async () => null) }));
 vi.mock('@/lib/persistence/product-read', () => ({
   readGuideCatalogCandidatesFromDatabase: mocks.readGuideCatalogCandidatesFromDatabase,
+  readProductByIdFromDatabase: mocks.readProductByIdFromDatabase,
 }));
 vi.mock('@/lib/logger', () => ({ logger: { warn: vi.fn() } }));
 
@@ -23,6 +24,7 @@ describe('consulta de la selección editorial de guías', () => {
       expect(spec.exactModel).toBeTruthy();
     }
     expect(guide.components.cpu).toMatchObject({ exactModel: 'Ryzen 7 5700', searchTerms: ['ryzen 7 5700'] });
+    expect(mocks.readProductByIdFromDatabase.mock.calls.map(([id]) => id)).toEqual(guide.components.cpu.referenceProductIds);
     expect(guide.components.ram.name).toContain('DDR4 3200MHz CL19 (1 módulo)');
     expect(guide.components.motherboard.exactModel).toBe('B550M-HDV');
     expect(guide.components.psu).toMatchObject({ exactModel: 'Steel Legend', searchTerms: ['asrock 750w steel legend'] });
