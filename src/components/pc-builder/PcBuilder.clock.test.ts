@@ -85,7 +85,9 @@ async function open(width: number): Promise<Page> {
   await page.route('**/*', route => route.abort());
   await page.route('http://builder.fixture/**', route => route.fulfill({ contentType: 'text/html', body: '<div id="root"></div>' }));
   await page.goto('http://builder.fixture/guia/armar');
-  await page.clock.install({ time: start });
+  // Instalar antes del corte evita que el tiempo real entre las dos llamadas
+  // convierta pauseAt(start) en un intento de retroceder el reloj.
+  await page.clock.install({ time: new Date(start.getTime() - 60_000) });
   await page.clock.pauseAt(start);
   await page.addScriptTag({ content: script });
   await expect.poll(() => page.getByLabel('Elegir Procesador').isEnabled()).toBe(true);
