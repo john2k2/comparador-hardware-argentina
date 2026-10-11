@@ -52,7 +52,7 @@ export function enqueueKnownProducts(db: DatabaseSync, options: EnqueueRefreshOp
   truncated: boolean; offers: string[];
 };
 export function claimRefreshBatch(db: DatabaseSync, options?: {
-  now?: number; limit?: number; leaseMs?: number; storeIds?: string[]; productIds?: string[];
+  now?: number; limit?: number; leaseMs?: number; storeIds?: string[]; productIds?: string[]; offerIds?: string[];
 }): RefreshLease[];
 export function acknowledgeRefresh(db: DatabaseSync, options: RefreshAckOptions):
   { status: 'observed'; observedAt: string; comparable: boolean } |
