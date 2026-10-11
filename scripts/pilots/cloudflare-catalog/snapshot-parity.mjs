@@ -11,7 +11,7 @@ const root=path.resolve(import.meta.dirname,'../../..');
 const directory=path.resolve(process.argv[2]??path.join(root,'outputs/catalogo-local-cloudflare-2026-10-11'));
 const state=JSON.parse(fs.readFileSync(path.join(directory,'public-snapshot/postgres-state.json')));
 if(!state.ready||!state.noTcp||!state.socket.includes('/comparador-catalog-')) throw new Error('Oráculo local no listo');
-const database=new DatabaseSync(path.join(directory,'catalog-search-compact.sqlite'),{readOnly:true});
+const database=new DatabaseSync(process.env.CATALOG_PARITY_SQLITE??path.join(directory,'catalog-search-compact.sqlite'),{readOnly:true});
 const environment={...process.env};for(const key of Object.keys(environment)) if(key.startsWith('PG')) delete environment[key];
 const run=promisify(execFile);
 const literal=value=>value===null||value===undefined?'NULL':typeof value==='number'?String(value):"'"+String(value).replaceAll("'","''")+"'";
@@ -32,6 +32,10 @@ const cases=[
  {p_query:'rtx 4060',p_page:9999,p_page_size:3},
  {p_query:'ddr5',p_category:'memoria-ram',p_min_price:50000,p_max_price:200000,p_sort:'price-asc'},
  {p_query:'',p_min_price:50000,p_max_price:100000,p_sort:'price-asc'},
+ {p_query:'',p_min_price:100000,p_max_price:500000,p_sort:'price-asc'},
+ {p_query:'',p_min_price:0,p_sort:'price-desc',p_page:3},
+ {p_query:'rtx',p_category:'tarjetas-graficas',p_min_price:0,p_sort:'price-asc',p_page:2},
+ {p_query:'logitech',p_min_price:0,p_sort:'relevance'},
  {p_query:"x'; DROP TABLE products; --"},
  {p_query:Array(60).fill('rtx').join(' '),p_category:'tarjetas-graficas',p_min_price:0},
  {p_query:'aa '.repeat(80)},
@@ -65,6 +69,6 @@ for(const input of cases) {
 }
 database.close();
 const report={localOnly:true,referenceNow:state.referenceNow,sourceCaptureAtomic:false,passed:results.filter(r=>r.pass).length,total:results.length,results};
-fs.writeFileSync(path.join(directory,'parity-report.json'),JSON.stringify(report,null,2));
+fs.writeFileSync(process.env.CATALOG_PARITY_REPORT??path.join(directory,'parity-report.json'),JSON.stringify(report,null,2));
 console.log(JSON.stringify({passed:report.passed,total:report.total}));
 process.exitCode=report.passed===report.total?0:1;

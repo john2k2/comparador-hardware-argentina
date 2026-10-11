@@ -4,6 +4,11 @@ Estado: piloto local ejecutable con datos públicos reales. No se creó D1 remot
 no se publicó un Worker y la página pública conserva su implementación existente.
 Este documento no constituye una decisión de migración.
 
+**Etapa posterior, 11/10/2026:** caché de respuestas, proyección de lectura,
+sincronización de una segunda captura real y presupuesto diario local en
+[BUSQUEDA_GRATIS_VALIDACION_LOCAL.md](BUSQUEDA_GRATIS_VALIDACION_LOCAL.md).
+Los tiempos y tamaños de esta primera etapa son antecedentes.
+
 ## Datos y contrato
 
 La captura pública terminó entre 05:06:55 y 05:10:51 UTC: 59.692 productos,
@@ -31,7 +36,7 @@ solicita ofertas actuales antes de totales/paginación.
 
 El prefiltro FTS5 trigram respeta subcadenas, incluido `6000` dentro de `6000mhz`.
 Cada bloque de texto procesa hasta 2.000 candidatas y sigue hasta agotarlas. No
-devuelve un total truncado. El presupuesto de 44 bloques reserva las demás
+devuelve un total truncado. El presupuesto actual de 42 bloques reserva las demás
 lecturas para mantenerse dentro de 50 consultas por invocación; si no completa
 la búsqueda devuelve 503 `CATALOG_CANDIDATE_BUDGET_EXCEEDED`.
 
