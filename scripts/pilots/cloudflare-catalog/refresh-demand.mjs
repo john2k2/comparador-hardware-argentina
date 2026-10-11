@@ -51,6 +51,30 @@ export function offerFromRow(row) {
 }
 export function initializeRefreshDemand(db) { db.exec(SCHEMA); }
 
+/** Compartir salud de tienda entre copias locales antes de leer; nunca acorta un bloqueo. */
+export function shareRefreshPauses(databases, { now = Date.now() } = {}) {
+  clock(now);
+  if (!Array.isArray(databases) || databases.length < 2 || databases.length > 3
+    || new Set(databases).size !== databases.length || databases.some(db => db.isTransaction)) throw new Error('REFRESH_PAUSE_DATABASES');
+  const pauses = new Map();
+  // Validar todas las fuentes antes de modificar cualquiera de las copias.
+  for (const db of databases) for (const row of db.prepare('SELECT * FROM pilot_cycle_store_pause').all()) {
+    if (typeof row.store_id !== 'string' || !/^[-a-z0-9]{1,80}$/.test(row.store_id)
+      || !Number.isSafeInteger(row.until_at) || row.until_at > now + 24 * HOUR
+      || !['http-403', 'http-429'].includes(row.reason)) throw new Error('REFRESH_PAUSE_ROW');
+    if (row.until_at <= now) continue;
+    const prior = pauses.get(row.store_id);
+    if (!prior || row.until_at > prior.until_at) pauses.set(row.store_id, row);
+  }
+  let writes = 0;
+  for (const db of databases) transaction(db, () => {
+    for (const row of pauses.values()) writes += Number(db.prepare(`INSERT INTO pilot_cycle_store_pause VALUES(?,?,?)
+      ON CONFLICT(store_id) DO UPDATE SET until_at=excluded.until_at,reason=excluded.reason
+      WHERE excluded.until_at>pilot_cycle_store_pause.until_at`).run(row.store_id, row.until_at, row.reason).changes);
+  });
+  return { stores: pauses.size, writes, localOnly: true };
+}
+
 /** Sólo demanda sobre productos ya guardados. La cola jamás renueva precio/stock/fecha. */
 export function enqueueKnownProducts(db, { productIds, now = Date.now(), freshMs = 24 * HOUR,
   refreshAheadMs = 90 * 60000, demandTtlMs = 48 * HOUR, storeIds, offerIds, withinTransaction = false } = {}) {

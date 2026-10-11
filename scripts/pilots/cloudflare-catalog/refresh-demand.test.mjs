@@ -4,7 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { initializeRefreshDemand, enqueueKnownProducts, claimRefreshBatch, acknowledgeRefresh } from './refresh-demand.mjs';
+import { initializeRefreshDemand, enqueueKnownProducts, claimRefreshBatch, acknowledgeRefresh, shareRefreshPauses } from './refresh-demand.mjs';
 const now = Date.parse('2026-10-11T12:00:00Z');
 function fixture(path = ':memory:') {
   const db = new DatabaseSync(path);
@@ -145,4 +145,26 @@ test('encolado admite transacción externa explícita y rollback revierte todas 
   const f=fixture();f.add('a');assert.throws(()=>f.enqueue({withinTransaction:true}),/TRANSACTION_REQUIRED/);
   f.db.exec('BEGIN IMMEDIATE');assert.equal(f.enqueue({withinTransaction:true,offerIds:['a']}).inserted,1);
   f.db.exec('ROLLBACK');assert.equal(f.db.prepare('SELECT COUNT(*) n FROM pilot_refresh_demand').get().n,0);f.db.close();
+});
+test('las copias comparten la pausa máxima y otra reclamación no la saltea',()=>{
+  const a=fixture(),b=fixture();a.add('a');b.add('a');a.enqueue();b.enqueue();
+  a.db.prepare('INSERT INTO pilot_cycle_store_pause VALUES(?,?,?)').run('shop',now+6*3600000,'http-403');
+  b.db.prepare('INSERT INTO pilot_cycle_store_pause VALUES(?,?,?)').run('shop',now+9*3600000,'http-429');
+  const raw=a.db.prepare('SELECT row_json FROM product_prices').get().row_json;
+  const result=shareRefreshPauses([a.db,b.db],{now});assert.equal(result.writes,1);
+  assert.deepEqual({...a.db.prepare('SELECT * FROM pilot_cycle_store_pause').get()},{store_id:'shop',until_at:now+9*3600000,reason:'http-429'});
+  assert.equal(a.claim().length,0);assert.equal(b.claim().length,0);
+  assert.equal(shareRefreshPauses([a.db,b.db],{now}).writes,0);
+  assert.equal(a.db.prepare('SELECT row_json FROM product_prices').get().row_json,raw);a.db.close();b.db.close();
+});
+test('una pausa inválida se rechaza antes de escribir cualquier copia; vencida no se propaga',()=>{
+  const a=fixture(),b=fixture();
+  a.db.prepare('INSERT INTO pilot_cycle_store_pause VALUES(?,?,?)').run('shop',now+6*3600000,'http-403');
+  b.db.prepare('INSERT INTO pilot_cycle_store_pause VALUES(?,?,?)').run('bad',now+25*3600000,'http-403');
+  assert.throws(()=>shareRefreshPauses([a.db,b.db],{now}),/PAUSE_ROW/);
+  assert.equal(b.db.prepare("SELECT COUNT(*) n FROM pilot_cycle_store_pause WHERE store_id='shop'").get().n,0);
+  b.db.exec('DELETE FROM pilot_cycle_store_pause');
+  assert.equal(shareRefreshPauses([a.db,b.db],{now:now+6*3600000}).stores,0);
+  assert.equal(b.db.prepare('SELECT COUNT(*) n FROM pilot_cycle_store_pause').get().n,0);
+  assert.throws(()=>shareRefreshPauses([a.db,a.db],{now}),/DATABASES/);a.db.close();b.db.close();
 });

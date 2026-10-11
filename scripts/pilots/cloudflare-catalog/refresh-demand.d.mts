@@ -47,6 +47,8 @@ export type RefreshAckOptions = {
 };
 export function offerFromRow(row: Record<string, unknown> | undefined): Pick<RefreshLease, 'offerId' | 'productId' | 'storeId' | 'url' | 'observedAt' | 'price' | 'stock'> | null;
 export function initializeRefreshDemand(db: DatabaseSync): void;
+export function shareRefreshPauses(databases: DatabaseSync[], options?: { now?: number }):
+  { stores: number; writes: number; localOnly: boolean };
 export function enqueueKnownProducts(db: DatabaseSync, options: EnqueueRefreshOptions): {
   inserted: number; updated: number; coalesced: number; rejected: number;
   truncated: boolean; offers: string[];
