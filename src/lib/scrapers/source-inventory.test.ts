@@ -41,6 +41,28 @@ it('Katech aporta presencia completa sin usar los precios contradictorios de su 
   const result = await fetchSourceInventory('katech', new AbortController().signal);
   expect(result.listings).toHaveLength(1); expect(result.listings[0].product).toBeUndefined();
   expect(result.rejectedProducts).toBe(1); expect(mocks.verify).not.toHaveBeenCalled();
+  expect(new URL(mocks.fetch.mock.calls[0][1]).searchParams.get('_fields')).toBe('id,name,permalink');
+});
+it('Katech puede registrar presencia sin recibir precio ni disponibilidad', async () => {
+  mocks.fetch.mockResolvedValueOnce(response([{ id: 1, name: 'Memoria RAM Kingston DDR4 16GB', permalink: 'https://katech.com.ar/producto/ram-1/' }]));
+  const result = await fetchSourceInventory('katech', new AbortController().signal);
+  expect(result.listings).toEqual([{ sourceId: '1', title: 'Memoria RAM Kingston DDR4 16GB', url: 'https://katech.com.ar/producto/ram-1/', product: undefined }]);
+  expect(result.rejectedProducts).toBe(1);
+  expect(mocks.verify).not.toHaveBeenCalled();
+});
+it('un bloqueo de Katech interrumpe el inventario sin devolver presencia ni probar rutas alternativas', async () => {
+  const { SourceHttpError } = await import('./source-http');
+  mocks.fetch.mockRejectedValueOnce(new SourceHttpError('blocked', 403));
+  await expect(fetchSourceInventory('katech', new AbortController().signal)).rejects.toMatchObject({ reason: 'blocked', status: 403 });
+  expect(mocks.fetch).toHaveBeenCalledTimes(1);
+  expect(mocks.verify).not.toHaveBeenCalled();
+});
+it('las fuentes con precios contrastados conservan sus campos de precio y stock', async () => {
+  mocks.fetch.mockResolvedValueOnce(response([item(1)]));
+  await fetchSourceInventory('maxtecno', new AbortController().signal);
+  const fields = new URL(mocks.fetch.mock.calls[0][1]).searchParams.get('_fields')!.split(',');
+  expect(fields).toEqual(expect.arrayContaining(['prices', 'is_in_stock', 'is_purchasable', 'stock_availability']));
+  expect(mocks.verify).toHaveBeenCalledTimes(1);
 });
 it('CompraGamer conserva también los registros que no producen una oferta clasificable', async () => {
   mocks.rawCG.mockResolvedValue([{ id_producto: 1, nombre: 'Memoria RAM DDR4 16GB' }, { id_producto: 2, nombre: 'Servicio sin precio comprable' }]);

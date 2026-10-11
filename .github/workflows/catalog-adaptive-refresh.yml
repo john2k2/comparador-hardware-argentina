@@ -44,6 +44,9 @@ jobs:
           ENABLE_JEV_OFFER_REVIEW: '0'
           LOG_LEVEL: warn
         run: node scripts/run-catalog-refresh.mjs adaptive "$RUNNER_TEMP/catalog-adaptive-result.json"
+      - name: Explain complete or partial catalog result
+        if: always()
+        run: node scripts/lib/catalog-run-summary.mjs "$RUNNER_TEMP/catalog-adaptive-result.json"
       - name: Preserve measured coverage
         if: always()
         uses: actions/upload-artifact@v4

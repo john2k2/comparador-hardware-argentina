@@ -55,7 +55,10 @@ export async function fetchSourceInventory(storeId: string, signal: AbortSignal)
     signal.throwIfAborted();
     const url = new URL('/wp-json/wc/store/v1/products', store.baseUrl.replace('://www.', '://'));
     url.searchParams.set('per_page', '100'); url.searchParams.set('page', String(page));
-    url.searchParams.set('_fields', 'id,name,permalink,type,has_options,is_password_protected,is_in_stock,is_purchasable,is_on_backorder,stock_availability,prices,sku,images');
+    // Katech sólo acredita presencia: su precio/stock requieren una lectura visible.
+    url.searchParams.set('_fields', WOO_BATCH_STORES.has(storeId)
+      ? 'id,name,permalink,type,has_options,is_password_protected,is_in_stock,is_purchasable,is_on_backorder,stock_availability,prices,sku,images'
+      : 'id,name,permalink');
     const response = await sourceFetch(storeId, url.href, { signal, headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' } }, 8000000, [host]);
     const countHeader = response.headers.get('x-wp-total'), pagesHeader = response.headers.get('x-wp-totalpages');
     const count = Number(countHeader), pageCount = Number(pagesHeader);
