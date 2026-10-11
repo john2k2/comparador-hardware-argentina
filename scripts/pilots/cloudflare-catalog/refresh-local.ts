@@ -153,9 +153,12 @@ export async function runLocalRefresh(db:DatabaseSync,{limit=3,storeIds,productI
   const beforeHttp=sourceHttpMetrics();
   const selectedStores=selectedLocalStores(storeIds);
   const clock=dependencies.clock??Date.now,reader=dependencies.reader??createLocalOfferReader();
-  const leases=claimRefreshBatch(db,{now:clock(),limit,leaseMs:300000,storeIds:selectedStores,productIds});
   const results=[];
-  for(const lease of leases as Lease[]) {
+  let attempted=0;
+  for(let index=0;index<limit;index++) {
+    const lease=claimRefreshBatch(db,{now:clock(),limit:1,leaseMs:300000,storeIds:selectedStores,productIds})[0] as Lease|undefined;
+    if(!lease)break;
+    attempted++;
     let readSource:Product|null=null;
     try {
       if(!validateLocalTarget(lease.storeId,lease.url))throw new Error('REFRESH_LOCAL_IDENTITY');
@@ -182,7 +185,7 @@ export async function runLocalRefresh(db:DatabaseSync,{limit=3,storeIds,productI
         code:error instanceof Error&&/^REFRESH_LOCAL_[A-Z_]+$/.test(error.message)?error.message:outcome});
     }
   }
-  return {localOnly:true,attempted:leases.length,observed:results.filter(item=>item.status==='observed').length,results,sourceHttp:Object.fromEntries(Object.entries(sourceHttpMetrics()).map(([store,metric])=>[store,{
+  return {localOnly:true,attempted,observed:results.filter(item=>item.status==='observed').length,results,sourceHttp:Object.fromEntries(Object.entries(sourceHttpMetrics()).map(([store,metric])=>[store,{
     requests:metric.requests-(beforeHttp[store]?.requests??0),bytes:metric.bytes-(beforeHttp[store]?.bytes??0)
   }]))};
 }

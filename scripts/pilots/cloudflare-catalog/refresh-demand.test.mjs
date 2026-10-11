@@ -49,13 +49,13 @@ test('lease durable excluye otro consumidor y se recupera tras vencimiento', () 
 test('429 aplica retry-after y búsquedas adicionales no lo saltean ni renuevan fecha', () => {
   const f=fixture();f.add('a');const before=f.db.prepare('SELECT row_json FROM product_prices').get().row_json;f.enqueue();
   const claim=f.claim()[0];const failed=acknowledgeRefresh(f.db,{...claim,now:now+1,outcome:'http-429',retryAfterMs:3600000});
-  assert.equal(failed.dueAt,now+3600001);f.enqueue({now:now+60001});assert.equal(f.claim({now:now+60002}).length,0);
+  assert.equal(failed.dueAt,now+6*3600000+1);f.enqueue({now:now+60001});assert.equal(f.claim({now:now+60002}).length,0);
   assert.equal(f.claim({now:failed.dueAt}).length,1);assert.equal(f.db.prepare('SELECT row_json FROM product_prices').get().row_json,before);f.db.close();
 });
 test('fallos reiterados duplican backoff y conservan observación real', () => {
   const f=fixture();const raw=f.add('a');f.enqueue();let claim=f.claim()[0];
   let failed=acknowledgeRefresh(f.db,{...claim,now:now+1,outcome:'no-observation'});assert.equal(failed.dueAt,now+30001);assert.equal(failed.observedAt,raw.last_updated);
-  claim=f.claim({now:failed.dueAt})[0];failed=acknowledgeRefresh(f.db,{...claim,now:failed.dueAt+1,outcome:'http-403'});assert.equal(failed.dueAt,now+90002);f.db.close();
+  claim=f.claim({now:failed.dueAt})[0];failed=acknowledgeRefresh(f.db,{...claim,now:failed.dueAt+1,outcome:'http-403'});assert.equal(failed.dueAt,now+30002+6*3600000);f.db.close();
 });
 test('ACK observado exige evidencia y persistencia externa posterior al intento', () => {
   const f=fixture();const raw=f.add('a');f.enqueue();const claim=f.claim()[0];

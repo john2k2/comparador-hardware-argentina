@@ -155,8 +155,7 @@ export async function runAutomaticCycle(config,dependencies={}){
               projection:rebuildProjection,estimateIndexes:estimateIndexMaintenance,...(dependencies.reader?{reader:dependencies.reader}:{}),clock});
             db.prepare('INSERT INTO pilot_cycle_store_cursor VALUES(?,?) ON CONFLICT(store_id) DO UPDATE SET category_index=excluded.category_index').run(store,target.nextIndex);
             attempted+=result.attempted;report.results.push(...result.results);for(const [storeId,metric] of Object.entries(result.sourceHttp)){const previous=report.sourceHttp[storeId]??{requests:0,bytes:0};report.sourceHttp[storeId]={requests:previous.requests+(metric.requests??0),bytes:previous.bytes+(metric.bytes??0)};}
-            for(const failed of result.results.filter(row=>['http-403','http-429'].includes(row.outcome)))
-              db.prepare('INSERT INTO pilot_cycle_store_pause VALUES(?,?,?) ON CONFLICT(store_id) DO UPDATE SET until_at=excluded.until_at,reason=excluded.reason').run(failed.storeId,clock()+6*HOUR,failed.outcome);
+            // La cola confirma el ACK y la pausa por tienda en una sola transacción.
           }
           sourceComplete=true;
           db.prepare('UPDATE pilot_cycle_state SET next_store=? WHERE id=1').run((stores.indexOf(selected.at(-1))+1)%stores.length);

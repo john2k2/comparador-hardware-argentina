@@ -8,7 +8,8 @@ const SCHEMA = `CREATE TABLE IF NOT EXISTS pilot_refresh_demand(
  attempts INTEGER NOT NULL DEFAULT 0, lease_token TEXT, leased_at INTEGER, lease_until INTEGER,
  last_error TEXT, last_observed_at TEXT
 );
-CREATE INDEX IF NOT EXISTS pilot_refresh_due ON pilot_refresh_demand(status,due_at,priority DESC);`;
+CREATE INDEX IF NOT EXISTS pilot_refresh_due ON pilot_refresh_demand(status,due_at,priority DESC);
+CREATE TABLE IF NOT EXISTS pilot_cycle_store_pause(store_id TEXT PRIMARY KEY,until_at INTEGER NOT NULL,reason TEXT NOT NULL);`;
 const failures = new Set(['http-403','http-429','http-error','network-error','no-observation','identity-mismatch','persistence-error']);
 
 function clock(now) {
@@ -119,10 +120,11 @@ export function claimRefreshBatch(db, { now = Date.now(), limit = 10, leaseMs = 
     if (stores?.length === 0 || products?.length === 0 || offers?.length === 0) return [];
     const rows = db.prepare(`SELECT * FROM pilot_refresh_demand WHERE expires_at>? AND due_at<=?
       AND (status IN ('pending','backoff') OR (status='leased' AND lease_until<=?))
+      AND NOT EXISTS(SELECT 1 FROM pilot_cycle_store_pause s WHERE s.store_id=pilot_refresh_demand.store_id AND s.until_at>?)
       ${stores ? 'AND store_id IN('+stores.map(()=>'?').join(',')+')' : ''}
       ${products ? 'AND product_id IN('+products.map(()=>'?').join(',')+')' : ''}
       ${offers ? 'AND offer_id IN('+offers.map(()=>'?').join(',')+')' : ''}
-      ORDER BY priority DESC,due_at,requested_at,offer_id LIMIT ?`).all(now,now,now,...(stores??[]),...(products??[]),...(offers??[]),limit);
+      ORDER BY priority DESC,due_at,requested_at,offer_id LIMIT ?`).all(now,now,now,now,...(stores??[]),...(products??[]),...(offers??[]),limit);
     const leases = [];
     for (const queued of rows) {
       const offer = offerFromRow(db.prepare('SELECT * FROM product_prices WHERE id=?').get(queued.offer_id));
@@ -160,7 +162,13 @@ export function acknowledgeRefresh(db, { offerId, leaseToken, now = Date.now(), 
       return { status: 'observed', observedAt: offer.observedAt,
         comparable: receipt.comparableVerified === true && Number.isFinite(offer.price) && offer.price > 0 && ['in-stock','low-stock'].includes(offer.stock) };
     }
-    const backoff = Math.max(retryAfterMs, Math.min(6 * HOUR, 30000 * 2 ** Math.min(row.attempts - 1, 12)));
+    const blockedSource = outcome === 'http-403' || outcome === 'http-429';
+    const backoff = Math.max(retryAfterMs, blockedSource ? 6 * HOUR : Math.min(6 * HOUR, 30000 * 2 ** Math.min(row.attempts - 1, 12)));
+    if (blockedSource) {
+      // ACK y pausa durable se confirman juntos; otro producto no saltea el bloqueo.
+      db.prepare(`INSERT INTO pilot_cycle_store_pause VALUES(?,?,?) ON CONFLICT(store_id) DO UPDATE SET
+        until_at=MAX(pilot_cycle_store_pause.until_at,excluded.until_at),reason=excluded.reason`).run(row.store_id,now+backoff,outcome);
+    }
     db.prepare("UPDATE pilot_refresh_demand SET status='backoff',due_at=?,last_error=?,lease_token=NULL,lease_until=NULL WHERE offer_id=?")
       .run(now + backoff,outcome,offerId);
     return { status: 'backoff', dueAt: now + backoff, observedAt: row.observed_before };
