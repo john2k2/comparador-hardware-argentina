@@ -49,6 +49,17 @@ test('canonical ajeno se rechaza aunque el hash del nuevo artefacto sea correcto
  assert.throws(()=>applyAssociationPlan(f.db,f.plan,f.deps,{now}),/UNVERIFIED_EVIDENCE/);
  assert.equal(f.db.prepare('SELECT product_id FROM product_prices').get()?.product_id,'old');
 });
+test('títulos primarios idénticos de desktop/móvil no se confunden con encabezados del pie',t=>{
+ const f=fixture(t),html=`<h1 class="product-title">${name}</h1><h1 class="product-title">${name}</h1><footer><h1>SOPORTE</h1></footer>`;
+ writeFileSync(f.file,html);f.plan.evidence.contentSha256=createHash('sha256').update(html).digest('hex');
+ assert.equal(applyAssociationPlan(f.db,f.plan,f.deps,{now}).status,'applied');
+});
+test('dos títulos primarios distintos rechazan la reparación, aunque el pie coincida',t=>{
+ const f=fixture(t),html=`<h1 class="product-title">${name}</h1><h1 class="product-title">Procesador AMD Ryzen 7 7700</h1><footer><h1>${name}</h1></footer>`;
+ writeFileSync(f.file,html);f.plan.evidence.contentSha256=createHash('sha256').update(html).digest('hex');
+ assert.throws(()=>applyAssociationPlan(f.db,f.plan,f.deps,{now}),/UNVERIFIED_EVIDENCE/);
+ assert.equal(f.db.prepare('SELECT product_id FROM product_prices').get()?.product_id,'old');
+});
 function catalogFixture(t:TestContext) {
  const f=fixture(t),sourceUrl='https://compragamer.com/producto/Procesador_AMD_Ryzen_5_7600_12345';
  const raw={...f.raw,store_id:'compragamer',url:sourceUrl};

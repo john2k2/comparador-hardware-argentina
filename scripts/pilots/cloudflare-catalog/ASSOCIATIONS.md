@@ -12,6 +12,8 @@ Los callbacks son síncronos y no pueden llamar la red. Deben reconstruir ambos 
 
 El adaptador admite una captura `public-catalog` de CompraGamer como evidencia de identidad. Exige categoría, ID público `cg-N`, referencia de la oferta, título, tienda, fecha real de captura y SHA256 coherentes. No acredita una nueva observación de precio: después del movimiento hay que ejecutar el lector otra vez.
 
+En capturas HTML se prefieren `h1.product-title` y `h1.product_title`. Algunas tiendas repiten el mismo título en escritorio/móvil y agregan H1 en el pie: sólo se admite un título primario único después de eliminar copias idénticas. Títulos primarios contradictorios o un canonical ajeno siguen rechazándose. Prueba focal 12/12 Node; ejecución real del 11/10 a las 22:09 UTC: tres asociaciones RAM corregidas hacia dos destinos canónicos existentes, sin cambiar precio/stock/fecha. La consulta posterior de las dos publicaciones produjo tres registros comparables; ambas fichas aparecieron en búsqueda con precio mínimo cero.
+
 Verificación del núcleo:
 
 ```bash

@@ -33,7 +33,11 @@ export function associationSqliteDependencies({artifacts,projection}:{artifacts:
         }catch{return false;}
       }
       const $=cheerio.load(bytes.toString('utf8'));
-      const titles=$('h1').map((_,element)=>$(element).text().replace(/\s+/g,' ').trim()).get().filter(Boolean);
+      // Algunas tiendas repiten el H1 de producto en escritorio/móvil y usan
+      // otros H1 en el pie. Sólo admitir copias idénticas de títulos primarios.
+      const primary=$('h1.product-title,h1.product_title');
+      const headings=primary.length?primary:$('h1');
+      const titles=[...new Set(headings.map((_,element)=>$(element).text().replace(/\s+/g,' ').trim()).get().filter(Boolean))];
       if(titles.length!==1||titles[0]!==sourceTitle)return false;
       const canonical=$('link[rel="canonical"]').attr('href');
       if(canonical) {
