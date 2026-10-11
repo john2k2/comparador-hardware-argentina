@@ -1,0 +1,176 @@
+// Consumidor explícito de prueba: sólo SQLite sample.sqlite y fichas Woo públicas.
+import { DatabaseSync } from 'node:sqlite';
+import { createHash } from 'node:crypto';
+import { realpathSync, statSync } from 'node:fs';
+import { basename, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { fetchWooCommerceKnownOffer, WOOCOMMERCE_STORES } from '@/lib/scrapers/woocommerce-shared';
+import { SourceHttpError, sourceHttpMetrics, sourceBlockedUntil } from '@/lib/scrapers/source-http';
+import { proveOfferAttributes, attributeProofMatches } from '@/lib/quality/offer-attribute-proof';
+import { hasExplicitIdentityConflict, type OfferIdentityReview } from '@/lib/quality/offer-identity';
+import { normalizeIdentityText } from '@/lib/product-identity';
+import { listingReference, sameListing } from '@/lib/scrapers/listing-reference';
+import { isComparableStoreOffer } from '@/lib/price-utils';
+import { buildPriceStateSignature } from '@/lib/persistence/product-write-dedupe';
+import type { HardwareCategory, Product, ProductPrice } from '@/lib/types';
+import { initializeRefreshDemand, enqueueKnownProducts, claimRefreshBatch, acknowledgeRefresh } from './refresh-demand.mjs';
+import { chargeDailyBudget } from './daily-budget.mjs';
+
+type Lease = { offerId:string; productId:string; storeId:string; url:string; observedAt:string|null; leaseToken:string; leasedAt:number; leaseUntil:number };
+type Reader = typeof fetchWooCommerceKnownOffer;
+type Projection = (db:DatabaseSync, options:{now:number;generation:string;affectedProductIds:string[]}) => {
+  statements:Array<{sql:string;values:unknown[]}>;baseRowsWritten:number;changedProjectionRows:number;cache:unknown;
+};
+type Statement = { sql:string;values:unknown[];expectedRows:number };
+type Dependencies = { reader?:Reader; clock?:()=>number; projection:Projection; estimateIndexes:(db:DatabaseSync,statements:Statement[])=>number };
+const historySchema = `CREATE TABLE IF NOT EXISTS pilot_offer_observations(
+ offer_id TEXT NOT NULL,observed_at TEXT NOT NULL,row_json TEXT NOT NULL,
+ PRIMARY KEY(offer_id,observed_at));`;
+const localStoreIds = ['maxtecno','dinobyte','goldentechstore'];
+
+export function validateLocalTarget(storeId:string, url:string): boolean {
+  const store=WOOCOMMERCE_STORES.find(item=>item.id===storeId);
+  if(!store) return false;
+  try {
+    const parsed=new URL(url),host=(value:string)=>new URL(value).hostname.replace(/^www\./,'');
+    return parsed.protocol==='https:'&&!parsed.username&&!parsed.password&&!parsed.port&&!parsed.search&&!parsed.hash
+      &&host(url)===host(store.baseUrl)&&listingReference(storeId,url)!==null;
+  } catch {return false;}
+}
+
+/** Prueba local estricta de CPU/GPU/RAM; no usa proveedores ni revisiones remotas. */
+export function reviewLocalObservation(product:{name:string;category:HardwareCategory},lease:Lease,source:Product,now:number):ProductPrice {
+  if(!validateLocalTarget(lease.storeId,lease.url)||source.category!==product.category) throw new Error('REFRESH_LOCAL_IDENTITY');
+  const price=source.prices.find(offer=>offer.storeId===lease.storeId&&sameListing(lease.storeId,offer.url,lease.url));
+  const observed=price?new Date(price.lastUpdated).valueOf():NaN;
+  if(!price||!Number.isFinite(price.price)||price.price<=0||!Number.isFinite(observed)||observed<lease.leasedAt||observed>now
+    ||(lease.observedAt&&observed<=Date.parse(lease.observedAt))) throw new Error('REFRESH_LOCAL_NO_OBSERVATION');
+  const proof=proveOfferAttributes(product.name,product.category,source.name);
+  if(!proof||hasExplicitIdentityConflict({name:product.name,category:product.category,offerText:source.name})) throw new Error('REFRESH_LOCAL_IDENTITY');
+  const reference=listingReference(lease.storeId,lease.url)!;
+  const sourceIdentity={...price.sourceIdentity,listingRef:reference,title:source.name.slice(0,400),
+    ...(source.specs.SKU?{storeSku:source.specs.SKU.slice(0,160)}:{}),
+    ...(source.specs.SourceListingId?{sourceId:source.specs.SourceListingId}:{}),
+  };
+  const identityReview:OfferIdentityReview={version:1,status:'consistent',reason:'exact-attributes',reviewedAt:new Date(now).toISOString(),
+    model:null,confidence:null,subject:{name:normalizeIdentityText(product.name),category:product.category,url:lease.url},sourceIdentity,proof};
+  return {...price,url:lease.url,lastUpdated:new Date(observed),sourceIdentity,identityReview};
+}
+
+export function persistLocalObservation(db:DatabaseSync,lease:Lease,price:ProductPrice,{projection,estimateIndexes}:Dependencies,now:number) {
+  if(db.isTransaction) throw new Error('REFRESH_LOCAL_TRANSACTION');
+  db.exec('BEGIN IMMEDIATE');
+  try {
+  const queued=db.prepare('SELECT * FROM pilot_refresh_demand WHERE offer_id=?').get(lease.offerId) as {
+    status:string;lease_token:string;lease_until:number;leased_at:number;product_id:string;store_id:string;url:string;
+  }|undefined;
+  if(!queued||queued.status!=='leased'||queued.lease_token!==lease.leaseToken||queued.lease_until<=now||queued.leased_at>now
+    ||queued.product_id!==lease.productId||queued.store_id!==lease.storeId||queued.url!==lease.url)throw new Error('REFRESH_LOCAL_LEASE_CONFLICT');
+  const row=db.prepare('SELECT * FROM product_prices WHERE id=?').get(lease.offerId) as {product_id:string;store_id:string;url:string;row_json:string}|undefined;
+  const productRow=db.prepare('SELECT row_json,category FROM products WHERE id=?').get(lease.productId) as {row_json:string;category:HardwareCategory}|undefined;
+  if(!row||!productRow||row.product_id!==lease.productId||row.store_id!==lease.storeId||row.url!==lease.url) throw new Error('REFRESH_LOCAL_DESTINATION_CHANGED');
+  const before=JSON.parse(row.row_json),product={...JSON.parse(productRow.row_json),category:productRow.category};
+  const marker=db.prepare("SELECT value FROM pilot_meta WHERE key='snapshot'").get() as {value:string}|undefined;
+  if(!marker) throw new Error('REFRESH_LOCAL_SNAPSHOT');
+  const observedMs=price.lastUpdated.valueOf();
+  if(!Number.isFinite(observedMs)||observedMs<queued.leased_at||observedMs>now||price.url!==lease.url||price.storeId!==lease.storeId
+    ||!price.sourceIdentity||!attributeProofMatches(price.identityReview?.proof,product.name,product.category,price.sourceIdentity.title)
+    ||hasExplicitIdentityConflict({name:product.name,category:product.category,offerText:price.sourceIdentity.title}))throw new Error('REFRESH_LOCAL_IDENTITY');
+  if(before.last_updated&&price.lastUpdated.valueOf()<=Date.parse(before.last_updated)) throw new Error('REFRESH_LOCAL_OBSERVATION_REGRESSION');
+  const observed=price.lastUpdated.toISOString(),comparable=isComparableStoreOffer(price,product);
+  const state={price:price.price,original_price:price.originalPrice??null,stock:price.stock,
+    installment_count:price.installment?.count??null,installment_amount:price.installment?.amount??null,identity_review:price.identityReview};
+  const next={...before,...state,last_updated:observed,updated_at:new Date(now).toISOString(),
+    source_identity:price.sourceIdentity,price_condition:price.priceCondition??'unspecified',state_signature:buildPriceStateSignature(state)};
+  const statements:Statement[]=[];
+  const write=(sql:string,values:unknown[])=>{
+    const count=Number(db.prepare(sql).run(...values as never[]).changes);
+    if(count)statements.push({sql,values,expectedRows:count});return count;
+  };
+    // Registro privado de antes/después. No exportarlo como D1 ni modificar historia remota.
+    db.exec(historySchema);
+    if(before.last_updated)write('INSERT OR IGNORE INTO pilot_offer_observations VALUES(?,?,?)',[lease.offerId,before.last_updated,row.row_json]);
+    write('INSERT INTO pilot_offer_observations VALUES(?,?,?)',[lease.offerId,observed,JSON.stringify(next)]);
+    write('UPDATE product_prices SET price=?,row_json=? WHERE id=?',[price.price,JSON.stringify(next),lease.offerId]);
+    write("DELETE FROM price_basis WHERE kind='current' AND id=? AND product_id=?",[lease.offerId,lease.productId]);
+    if(comparable)write("INSERT INTO price_basis(product_id,kind,id,store_id,price,stock,url,observed_at) VALUES(?,'current',?,?,?,?,?,?)",
+      [lease.productId,lease.offerId,lease.storeId,price.price,price.stock,lease.url,observed]);
+    // El resumen comparable precalculado anterior ya no describe esta observación.
+    write("UPDATE summaries SET comparable_stats_json=NULL,comparable_valid_until=NULL,comparable_latest_observed_at=(SELECT MAX(observed_at) FROM price_basis WHERE product_id=? AND kind='current') WHERE product_id=?",[lease.productId,lease.productId]);
+    const generation=createHash('sha256').update(marker.value).update(JSON.stringify(next)).digest('hex');
+    const rebuilt=projection(db,{now,generation,affectedProductIds:[lease.productId]});
+    for(const statement of rebuilt.statements)statements.push({...statement,expectedRows:1});
+    const ack=acknowledgeRefresh(db,{...lease,now,withinTransaction:true,outcome:'observed',receipt:{offerId:lease.offerId,url:lease.url,observedAt:observed,
+      source:'public-page',persisted:true,identityVerified:true,priceVerified:true,stockVerified:true,comparableVerified:comparable}});
+    statements.push({sql:"UPDATE pilot_refresh_demand SET status='observed',last_observed_at=?,last_error=NULL,lease_token=NULL,lease_until=NULL,attempts=0 WHERE offer_id=?",values:[observed,lease.offerId],expectedRows:1});
+    const baseRowsWritten=statements.reduce((sum,statement)=>sum+statement.expectedRows,0);
+    const estimatedRowsWritten=baseRowsWritten+estimateIndexes(db,statements);
+    const budget=chargeDailyBudget(db,{now,estimatedRowsWritten});
+    db.exec('COMMIT');
+    return {observedAt:observed,comparable,baseRowsWritten,estimatedRowsWritten,budget,
+      projectionChanged:rebuilt.changedProjectionRows,generation,ack,localOnly:true,remotePublishSafe:false};
+  }catch(error){db.exec('ROLLBACK');throw error;}
+}
+
+export async function runLocalRefresh(db:DatabaseSync,{limit=3,...dependencies}:Dependencies&{limit?:number}) {
+  if(!Number.isSafeInteger(limit)||limit<1||limit>3)throw new Error('REFRESH_LOCAL_LIMIT');
+  const clock=dependencies.clock??Date.now,reader=dependencies.reader??fetchWooCommerceKnownOffer;
+  const leases=claimRefreshBatch(db,{now:clock(),limit,leaseMs:300000,storeIds:localStoreIds});
+  const results=[];
+  for(const lease of leases as Lease[]) {
+    try {
+      if(!validateLocalTarget(lease.storeId,lease.url))throw new Error('REFRESH_LOCAL_IDENTITY');
+      const row=db.prepare('SELECT row_json,category FROM products WHERE id=?').get(lease.productId) as {row_json:string;category:HardwareCategory};
+      const product={...JSON.parse(row.row_json),category:row.category};
+      const source=await reader(lease.storeId,lease.url,product.category,AbortSignal.timeout(25000));
+      if(!source)throw new Error('REFRESH_LOCAL_NO_OBSERVATION');
+      const price=reviewLocalObservation(product,lease,source,clock());
+      const saved=persistLocalObservation(db,lease,price,dependencies,clock());
+      results.push({offerId:lease.offerId,storeId:lease.storeId,url:lease.url,status:'observed',...saved,sourceTitle:source.name,price:price.price,stock:price.stock,
+        sourceIdentity:price.sourceIdentity,identityProof:price.identityReview?.proof});
+    } catch(error) {
+      const outcome=error instanceof SourceHttpError?(error.reason==='rate-limited'?'http-429':error.reason==='blocked'?'http-403':'http-error')
+        :error instanceof Error&&error.message==='REFRESH_LOCAL_IDENTITY'?'identity-mismatch'
+        :error instanceof Error&&error.message==='REFRESH_LOCAL_NO_OBSERVATION'?'no-observation':'persistence-error';
+      const retryAfterMs=Math.min(86400000,Math.max(0,sourceBlockedUntil(lease.storeId)-clock()));
+      let acknowledged=false;
+      try{acknowledgeRefresh(db,{...lease,now:clock(),outcome,retryAfterMs});acknowledged=true;}catch{/* Lease vencido conserva su estado; no imprimir SDK. */}
+      results.push({offerId:lease.offerId,storeId:lease.storeId,url:lease.url,status:'failed',outcome,acknowledged,
+        code:error instanceof Error&&/^REFRESH_LOCAL_[A-Z_]+$/.test(error.message)?error.message:outcome});
+    }
+  }
+  return {localOnly:true,attempted:leases.length,observed:results.filter(item=>item.status==='observed').length,results,sourceHttp:sourceHttpMetrics()};
+}
+
+export async function refreshLocalCli(args:string[]) {
+  const mode=args[0],path=args[1];
+  if(!['--dry-run','--execute'].includes(mode)||!path)throw new Error('REFRESH_LOCAL_USAGE');
+  const file=realpathSync(resolve(path));
+  if(basename(file)!=='sample.sqlite'||!statSync(file).isFile())throw new Error('REFRESH_LOCAL_SAMPLE_REQUIRED');
+  const productIds:string[]=[];let freshMs=86400000;
+  for(let i=2;i<args.length;i++) {
+    if(args[i]==='--product-id'&&args[i+1])productIds.push(args[++i]);
+    else if(args[i]==='--fresh-hours'&&['3','24'].includes(args[i+1]))freshMs=Number(args[++i])*3600000;
+    else throw new Error('REFRESH_LOCAL_USAGE');
+  }
+  if(productIds.length>20)throw new Error('REFRESH_LOCAL_LIMIT');
+  const db=new DatabaseSync(file,{readOnly:mode==='--dry-run'});
+  try{
+    const queueExists=Boolean(db.prepare("SELECT name FROM sqlite_schema WHERE type='table' AND name='pilot_refresh_demand'").get());
+    const rows=(productIds.length?db.prepare(`SELECT pp.id,pp.product_id,pp.store_id,pp.url,p.category FROM product_prices pp JOIN products p ON p.id=pp.product_id WHERE pp.product_id IN(${productIds.map(()=>'?').join(',')}) ORDER BY pp.id LIMIT 100`).all(...productIds)
+      :queueExists?db.prepare("SELECT pp.id,pp.product_id,pp.store_id,pp.url,p.category FROM pilot_refresh_demand q JOIN product_prices pp ON pp.id=q.offer_id JOIN products p ON p.id=pp.product_id WHERE q.expires_at>? AND q.due_at<=? AND q.status IN('pending','backoff') ORDER BY q.priority DESC,q.due_at LIMIT 100").all(Date.now(),Date.now()):[]) as Array<{store_id:string;url:string}>;
+    if(mode==='--dry-run')return {localOnly:true,dryRun:true,writes:0,httpRequests:0,limit:3,knownSupported:rows.filter(row=>localStoreIds.includes(row.store_id)&&validateLocalTarget(row.store_id,row.url)).slice(0,3)};
+    initializeRefreshDemand(db);
+    if(productIds.length)enqueueKnownProducts(db,{productIds,now:Date.now(),freshMs,refreshAheadMs:90*60000,storeIds:localStoreIds});
+    // Imports dinámicos conservan el URL original de projection.sql tras esbuild.
+    const modules=resolve('scripts/pilots/cloudflare-catalog');
+    const {rebuildProjection}=await import(pathToFileURL(resolve(modules,'projection.mjs')).href);
+    const {estimateIndexMaintenance}=await import(pathToFileURL(resolve(modules,'incremental-sync.mjs')).href);
+    return await runLocalRefresh(db,{projection:rebuildProjection,estimateIndexes:estimateIndexMaintenance});
+  }finally{db.close();}
+}
+// Esbuild usa el nombre de salida explícito del consumidor. Al importar en tests no ejecutar CLI.
+if(process.argv[1]&&/(?:^|\/)refresh-local(?:\.bundle)?\.(?:mjs|ts)$/.test(process.argv[1])) {
+  refreshLocalCli(process.argv.slice(2)).then(result=>console.log(JSON.stringify(result,null,2)))
+    .catch(()=>{console.error('REFRESH_LOCAL_FAILED');process.exitCode=1;});
+}
