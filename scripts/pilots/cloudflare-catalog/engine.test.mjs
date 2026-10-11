@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
-import { searchCatalog,validateParams } from './engine.mjs';
+import { searchCatalog,validateParams,MAX_TEXT_BATCHES,MAX_TEXT_CANDIDATES } from './engine.mjs';
 import { sqliteAdapter } from './sqlite-adapter.mjs';
 import { searchText } from './catalog-matchers.mjs';
 const now=Date.parse('2026-10-11T03:00:00Z');
@@ -55,4 +55,59 @@ test('240 caracteres y 80 términos admitidos no superan los 100 bindings de D1'
     const result=await searchCatalog(checked,{p_query:query,p_sort:'relevance',p_min_price:0},{now});assert.equal(result.total,0);
   }
   assert.ok(Math.max(...lengths)<25);f.db.close();
+});
+test('una lectura final conserva vacío, total y página solicitada fuera del rango',async()=>{
+  const f=fixture();f.add({id:'a'});f.add({id:'b'});f.add({id:'c'});
+  for(const [params,expected] of [
+    [{p_category:'inexistente',p_page:999},{total:0,totalPages:0,page:1,ids:[]}],
+    [{p_sort:'name',p_page:999,p_page_size:2},{total:3,totalPages:2,page:2,ids:['c']}],
+    [{p_page:Number.MAX_VALUE,p_page_size:2},{total:3,totalPages:2,page:2,ids:['c']}],
+  ]) {
+    const adapter=sqliteAdapter(f.db),result=await searchCatalog(adapter,params,{now,forceOriginal:true});
+    assert.deepEqual({total:result.total,totalPages:result.totalPages,page:result.page,ids:result.products.map(p=>p.id)},expected);
+    assert.equal(adapter.metrics.queries,1);
+  }
+  f.db.close();
+});
+test('ofertas hidratadas conservan orden, JSON y filtro por tienda tras descartar outlier',async()=>{
+  const f=fixture();f.add({id:'a',price:100000});
+  const stamp=new Date(now-3600000).toISOString();
+  for(const [store,price] of [['venex',800000],['katech',120000]]) {
+    const offer={id:'offer-'+store,product_id:'a',store_id:store,price,stock:'in-stock',url:'https://'+store+'.example/a',last_updated:stamp};
+    f.db.prepare('INSERT INTO product_prices VALUES(?,?,?,?,?,?)').run(offer.id,'a',store,price,offer.url,JSON.stringify(offer));
+    f.db.prepare('INSERT INTO price_basis VALUES(?,?,?,?,?,?,?,?)').run('a','current',offer.id,store,price,offer.stock,offer.url,stamp);
+  }
+  f.db.prepare('UPDATE summaries SET store_ids_json=?').run('["mexx","venex","katech"]');
+  const result=await f.search({p_min_price:0});
+  assert.equal(result.products[0].highest_price,120000);
+  assert.deepEqual(result.products[0].product_prices.map(o=>o.price),[100000,120000,800000]);
+  const filtered=await f.search({p_min_price:0,p_stores:['katech']});
+  assert.equal(filtered.products[0].lowest_price,120000);
+  assert.deepEqual(filtered.products[0].product_prices.map(o=>o.id),['offer-katech']);
+  assert.equal(filtered.products[0].product_prices[0].last_updated,stamp);f.db.close();
+});
+test('límite de 42 lotes falla sin entregar totales o fichas truncadas',async()=>{
+  let calls=0;
+  const rows=Array.from({length:MAX_TEXT_CANDIDATES},(_,i)=>({id:String(i),name:'RTX 4060 8GB',catalog_name:'rtx 4060 8gb',catalog_document:'rtx 4060 8gb',urls:''}));
+  const db={all:async(sql)=>{calls++;assert.match(sql,/SELECT id,catalog_name/);return rows;},first:()=>assert.fail('No debe contar ni hidratar después de truncar candidatos')};
+  await assert.rejects(searchCatalog(db,{p_query:'rtx 4060'},{now,forceOriginal:true}),{code:'CATALOG_CANDIDATE_BUDGET_EXCEEDED'});
+  assert.equal(calls,MAX_TEXT_BATCHES);
+});
+test('ficha sin filas de oferta conserva product_prices null e hidratación limitada a la página',async()=>{
+  const f=fixture();for(const id of ['a','b','c']) f.add({id});
+  f.db.prepare('DELETE FROM product_prices WHERE product_id=?').run('b');
+  const adapter=sqliteAdapter(f.db),result=await searchCatalog(adapter,{p_sort:'name',p_page:2,p_page_size:1},{now,forceOriginal:true});
+  assert.equal(result.total,3);assert.equal(result.products.length,1);
+  assert.equal(result.products[0].id,'b');assert.equal(result.products[0].product_prices,null);
+  assert.deepEqual(adapter.metrics,{queries:1,rowsReturned:1});f.db.close();
+});
+test('matcher inspecciona el lote siguiente antes de contar la variante exacta',async()=>{
+  const f=fixture();f.add({id:'late',name:'RTX 4060 Ti 8GB'});
+  const adapter=sqliteAdapter(f.db);let batches=0;
+  const row={id:'late',name:'RTX 4060 Ti 8GB',catalog_name:'rtx 4060 ti 8gb',catalog_document:'rtx 4060 ti 8gb',urls:''};
+  const candidates=Array.from({length:MAX_TEXT_CANDIDATES},(_,i)=>({...row,id:'noise-'+i,name:'RTX 4060 8GB',catalog_name:'rtx 4060 8gb',catalog_document:'rtx 4060 8gb'}));
+  const db={...adapter,all:async(sql,values)=>sql.includes('SELECT id,catalog_name')?(batches++===0?candidates:[row]):adapter.all(sql,values)};
+  const result=await searchCatalog(db,{p_query:'rtx 4060 ti'},{now,forceOriginal:true});
+  assert.equal(batches,2);assert.equal(result.total,1);assert.equal(result.products[0].id,'late');
+  assert.equal(adapter.metrics.queries,1);f.db.close();
 });
