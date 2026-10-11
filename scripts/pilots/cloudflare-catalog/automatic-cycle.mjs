@@ -79,7 +79,8 @@ export async function runAutomaticCycle(config,dependencies={}){
   try{
     if(clock()>=config.expiresAt)throw new Error('CYCLE_PILOT_STOPPED');
     const local=dependencies.consumer??await import(pathToFileURL(config.consumerBundle).href);
-    const capabilities={storeIds:local.localStoreIds,categories:local.localCategories,
+    // FullH4rd pendiente por decisión del usuario; su cola no autoriza otra lectura.
+    const capabilities={storeIds:local.localStoreIds.filter(id=>id!=='fullh4rd'),categories:local.localCategories,
       validateTarget:(storeId,url,category,name)=>local.canRefreshLocalTarget(storeId,url,category,name)};
     const token=dependencies.token??readFileSync(config.tokenFile,'utf8').trim();
     const state=await (dependencies.state??pilotState)(token);

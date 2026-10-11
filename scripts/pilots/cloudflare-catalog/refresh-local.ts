@@ -30,11 +30,12 @@ type Dependencies = { reader?:Reader; clock?:()=>number; projection:Projection; 
 const historySchema = `CREATE TABLE IF NOT EXISTS pilot_offer_observations(
  offer_id TEXT NOT NULL,observed_at TEXT NOT NULL,row_json TEXT NOT NULL,
  PRIMARY KEY(offer_id,observed_at));`;
-export const localStoreIds = [...WOO_PUBLIC_STORE_IDS,'fullh4rd','mexx','xtpc','gamingcity','compugarden','compragamer'];
-export const localCategories = ['procesadores','tarjetas-graficas','memoria-ram'];
+export const localStoreIds = [...WOO_PUBLIC_STORE_IDS,'fullh4rd','mexx','xtpc','gamingcity','compugarden','compragamer','37bytes'];
+export const localCategories = ['procesadores','tarjetas-graficas','memoria-ram','almacenamiento'];
 
 export function canRefreshLocalTarget(storeId:string,url:string,category:string,name:string):boolean {
-  return localCategories.includes(category)&&validateLocalTarget(storeId,url)&&exactOfferAttributes(name,category)!==null;
+  return localCategories.includes(category)&&(storeId!=='37bytes'||category==='almacenamiento')
+    &&validateLocalTarget(storeId,url)&&exactOfferAttributes(name,category)!==null;
 }
 
 function selectedLocalStores(storeIds:string[]=localStoreIds):string[] {
@@ -69,11 +70,12 @@ export function validateLocalTarget(storeId:string, url:string): boolean {
     const parsed=new URL(url);
     return parsed.protocol==='https:'&&!parsed.username&&!parsed.password&&!parsed.port&&!parsed.search&&!parsed.hash
       &&parsed.hostname.replace(/^www\./,'')===store.host&&listingReference(storeId,url)!==null
-      &&(storeId!=='fullh4rd'||/^\/prod\/\d+\/[^/]+\/?$/.test(parsed.pathname));
+      &&(storeId!=='fullh4rd'||/^\/prod\/\d+\/[^/]+\/?$/.test(parsed.pathname))
+      &&(storeId!=='37bytes'||/^\/productos\/[^/]+\/?$/.test(parsed.pathname));
   } catch {return false;}
 }
 
-/** Prueba local estricta de CPU/GPU/RAM; no usa proveedores ni revisiones remotas. */
+/** Prueba local estricta; SSD conserva además el título completo de ambas fuentes. */
 export function reviewLocalObservation(product:{name:string;category:HardwareCategory},lease:Lease,source:Product,now:number):ProductPrice {
   if(!validateLocalTarget(lease.storeId,lease.url)||source.category!==product.category) throw new Error('REFRESH_LOCAL_IDENTITY');
   const price=source.prices.find(offer=>offer.storeId===lease.storeId&&sameListing(lease.storeId,offer.url,lease.url));

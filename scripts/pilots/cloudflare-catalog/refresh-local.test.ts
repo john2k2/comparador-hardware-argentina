@@ -119,18 +119,30 @@ test('allowlist local admite lectores Woo y DOM registrados; rechaza categorías
     assert.equal(validateLocalTarget('fullh4rd',url),false);
   assert.equal(validateLocalTarget('liontech','https://liontech.com.ar/producto/ram/'),true);
   assert.equal(validateLocalTarget('37bytes','https://37bytes.com.ar/producto/ram/'),false);
+  assert.equal(validateLocalTarget('37bytes','https://www.37bytes.com.ar/productos/ssd-kingston-nv3/'),true);
+  assert.equal(canRefreshLocalTarget('37bytes','https://www.37bytes.com.ar/productos/cpu/','procesadores','AMD Ryzen 5 5500'),false);
 });
 test('selección acotada no reserva otras tiendas y rechaza selección ajena antes de lector',async()=>{
   const f=fixture('katech');let calls=0;
   const reader=async()=>{calls++;return null;};
   assert.equal((await runLocalRefresh(f.db,{...f.dependencies,reader,storeIds:['fullh4rd']})).attempted,0);
-  await assert.rejects(runLocalRefresh(f.db,{...f.dependencies,reader,storeIds:['37bytes']}),/STORES/);
+  await assert.rejects(runLocalRefresh(f.db,{...f.dependencies,reader,storeIds:['unknown']}),/STORES/);
   assert.equal(calls,0);assert.equal(f.db.prepare('SELECT status FROM pilot_refresh_demand').get()!.status,'pending');f.db.close();
 });
 test('capacidad exige atributos completos y no amplía familias por tener lector',()=>{
   assert.equal(canRefreshLocalTarget('katech','https://katech.com.ar/producto/cpu/','procesadores','AMD Ryzen 7 8700G AM5'),true);
   assert.equal(canRefreshLocalTarget('katech','https://katech.com.ar/producto/ssd/','almacenamiento','SSD Kingston 1TB NV3'),false);
+  assert.equal(canRefreshLocalTarget('katech','https://katech.com.ar/producto/ssd/','almacenamiento','SSD Kingston NV3 1TB M.2 NVMe PCIe 4.0'),true);
   assert.equal(canRefreshLocalTarget('katech','https://katech.com.ar/producto/ram/','memoria-ram','Memoria DDR5 32GB'),false);
+});
+test('observación SSD requiere título completo y no acredita misma capacidad de otro modelo',()=>{
+  const name='SSD Kingston NV3 1TB M.2 NVMe PCIe 4.0';
+  const url='https://maxtecno.com.ar/producto/ssd-kingston-nv3-1tb/';
+  const lease={offerId:'o',productId:'p',storeId:'maxtecno',url,observedAt:null,leaseToken:'lease',leasedAt:now,leaseUntil:now+60000};
+  const source={name,category:'almacenamiento',specs:{},prices:[{storeId:'maxtecno',url,price:100000,stock:'in-stock',lastUpdated:new Date(now+1)}]} as unknown as Product;
+  assert.equal(reviewLocalObservation({name,category:'almacenamiento'},lease,source,now+2).price,100000);
+  assert.throws(()=>reviewLocalObservation({name,category:'almacenamiento'},lease,{...source,name:name.replace('NV3','NV2')},now+2),/IDENTITY/);
+  assert.throws(()=>reviewLocalObservation({name,category:'almacenamiento'},lease,{...source,name:name.replace(' PCIe 4.0','')},now+2),/IDENTITY/);
 });
 test('lectores Woo y DOM ampliados mantienen destino exacto y no invocan descubrimiento',async()=>{
   const calls:string[]=[];

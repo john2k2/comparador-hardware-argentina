@@ -4,7 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { readFileSync,mkdtempSync,rmSync,existsSync,unlinkSync,writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { initializeRefreshDemand,claimRefreshBatch,acknowledgeRefresh } from './refresh-demand.mjs';
+import { initializeRefreshDemand,enqueueKnownProducts,claimRefreshBatch,acknowledgeRefresh } from './refresh-demand.mjs';
 import { rebuildProjection } from './projection.mjs';
 import { runAutomaticCycle,acquireCycleLease,validateCycleConfig } from './automatic-cycle.mjs';
 import { schedulerPlist } from './mac-scheduler.mjs';
@@ -17,7 +17,7 @@ function fixture(){
  const db=new DatabaseSync(sqlite);db.exec(readFileSync(new URL('./schema.sql',import.meta.url),'utf8'));
  db.prepare('INSERT INTO pilot_meta VALUES(?,?)').run('snapshot',JSON.stringify({counts:{},hashes:{}}));
  const old=new Date(now-2*86400000).toISOString();
- for(const [i,store] of ['katech','fullh4rd','maxtecno'].entries()){
+ for(const [i,store] of ['katech','dinobyte','maxtecno'].entries()){
   const id='p'+i,url='https://'+store+'.com.ar/producto/cpu/';
   const raw={id:'o'+i,product_id:id,store_id:store,url,price:100000,stock:'in-stock',last_updated:old};
   db.prepare('INSERT INTO products VALUES(?,?,?,?,?,?,?,?,?,?)').run(id,'procesadores',id,'amd ryzen 5 5500','amd ryzen 5 5500',1,0,old,old,JSON.stringify({id,name:'AMD Ryzen 5 5500',category:'procesadores'}));
@@ -28,7 +28,7 @@ function fixture(){
  }
  rebuildProjection(db,{now,generation:'fixture'});initializeRefreshDemand(db);let remote=db.prepare("SELECT value FROM pilot_meta WHERE key='snapshot'").get().value;db.close();
  let time=now,calls=0,syncs=0,sourceRequests=0;
- const consumer={localStoreIds:['katech','fullh4rd','maxtecno'],localCategories:['procesadores'],canRefreshLocalTarget:()=>true,
+ const consumer={localStoreIds:['katech','dinobyte','maxtecno'],localCategories:['procesadores'],canRefreshLocalTarget:()=>true,
   async runLocalRefresh(db,options){
     calls++;const leases=claimRefreshBatch(db,{now:time,limit:options.limit,storeIds:options.storeIds,productIds:options.productIds});const results=[];
     for(const lease of leases){
@@ -56,6 +56,24 @@ test('tick rota, observa tres destinos y sincroniza; siguiente tick fresco no le
 });
 test('presupuesto HTTP reserva doce solicitudes antes de cualquier fuente/redirección',async()=>{
  const f=fixture();try{f.config.maxDailyHttp=6;const result=await runAutomaticCycle(f.config,f.deps);assert.equal(result.status,'daily-budget');assert.equal(f.stats().calls,0);assert.equal(result.budget.http_requests,0);}finally{f.cleanup();}
+});
+test('FullH4rd pendiente conserva denominador y oferta sin despachar demanda ya encolada',async()=>{
+ const f=fixture();try{
+  const db=new DatabaseSync(f.config.sqlite);
+  const before=db.prepare('SELECT * FROM product_prices WHERE id=?').get('o1');
+  const raw={...JSON.parse(before.row_json),store_id:'fullh4rd',url:'https://fullh4rd.com.ar/prod/12345/cpu'};
+  db.prepare('UPDATE product_prices SET store_id=?,url=?,row_json=? WHERE id=?').run(raw.store_id,raw.url,JSON.stringify(raw),'o1');
+  enqueueKnownProducts(db,{productIds:['p1'],storeIds:['fullh4rd'],now:f.config.startedAt});
+  const unchanged=db.prepare('SELECT * FROM product_prices WHERE id=?').get('o1');db.close();
+  const result=await runAutomaticCycle(f.config,{...f.deps,consumer:{...f.consumer,localStoreIds:[...f.consumer.localStoreIds,'fullh4rd']}});
+  assert.equal(result.status,'completed');assert.equal(result.results.length,2);
+  assert.ok(result.results.every(r=>r.storeId!=='fullh4rd'));
+  assert.equal(result.coverage.totals.total,3);assert.equal(result.coverage.totals.unsupported,1);
+  const after=new DatabaseSync(f.config.sqlite,{readOnly:true});
+  try{assert.deepEqual(after.prepare('SELECT * FROM product_prices WHERE id=?').get('o1'),unchanged);
+   assert.equal(after.prepare('SELECT attempts FROM pilot_refresh_demand WHERE offer_id=?').get('o1').attempts,0);
+  }finally{after.close();}
+ }finally{f.cleanup();}
 });
 test('proceso solapado o vencido no consulta estado remoto ni fuentes',async()=>{
  const f=fixture();try{

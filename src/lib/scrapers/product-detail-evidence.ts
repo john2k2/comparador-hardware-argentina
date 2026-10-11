@@ -237,8 +237,12 @@ export function readProductDetailEvidence($: cheerio.CheerioAPI, url: string, st
   const price = number(offer.price);
   if (price === undefined || price <= 0) return conflict;
   const domPrice = visiblePrice($);
+  // 37 Bytes: metadata sola no prueba un precio actual de esta ficha TiendaNube.
+  if (storeId === '37bytes' && domPrice.state === 'absent') return absent;
   if (domPrice.state === 'conflict' || (domPrice.state === 'value' && Math.abs(domPrice.value - price) > priceEpsilon)) return conflict;
-  const stock = mergeStock(mergeStock(schemaStock(offer), visibleStock($)), variantEvidence($, node, offer, price));
+  const selectedStock = variantEvidence($, node, offer, price);
+  if (storeId === '37bytes' && selectedStock.state === 'absent') return absent;
+  const stock = mergeStock(mergeStock(schemaStock(offer), visibleStock($)), selectedStock);
   if (stock.state === 'conflict') return conflict;
   return { state: 'value', value: { name, price, stock: stock.state === 'value' ? stock.value : 'unknown', node } };
 }

@@ -21,3 +21,7 @@ Verificación: 52/52 pruebas Vitest de FullH4rd/Katech y 21/21 del consumidor lo
 Segunda tanda: 115/115 Vitest de WooCommerce, detalle GoldenTech y DOM conocido. Lectura real GoldenTech posterior al arreglo: $454.586, stock desconocido, no comparable. Las tres lecturas Mexx devolvieron ausencia de observación correctamente. Artefactos privados en `outputs/recuperacion-asociaciones-2026-10-11/` y `outputs/mexx-reader-2026-10-11/`.
 
 Reversión: restaurar los lectores y el bundle del consumidor anterior. Los cambios de lectores no requieren migración ni publicación de la página. Restaurar código no revierte observaciones ya guardadas en una copia privada.
+
+FullH4rd queda diferido por decisión del usuario: el selector automático lo excluye incluso si conserva una oferta pendiente.
+
+37Bytes: sólo SSD con prueba estricta y URL `/productos/`. Precio principal visible, metadata consistente y variante seleccionada o única con stock son obligatorios. El precio condicional por transferencia permanece separado. Ensayo real: NV3 1 TB a $384.145, stock bajo; sincronización y búsqueda acreditadas en `docs/direccion/TERCERA_RECUPERACION_CATALOGO_2026-10-11.md`.

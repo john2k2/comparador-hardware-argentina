@@ -16,7 +16,7 @@ node outputs/base-completa-mac-2026-10-11/shared-catalog-cli.mjs --dry-run outpu
 node outputs/base-completa-mac-2026-10-11/shared-catalog-cli.mjs --refresh outputs/base-completa-mac-2026-10-11/catalog-all.sqlite
 ```
 
-`--stage` obtiene tres fuentes públicas y guarda publicaciones con hash y fecha real. No modifica `product_prices`. `--refresh` reclama hasta 25 ofertas seleccionadas **antes** de obtener otra captura. Sólo admite CPU/GPU/RAM con prueba estricta. Ofertas recientes, en backoff o con fuente alterada no se fuerzan. Cada invocación inicia otro proceso para no reutilizar una captura anterior al lease.
+`--stage` obtiene tres fuentes públicas y guarda publicaciones con hash y fecha real. No modifica `product_prices`. `--refresh` reclama hasta 25 ofertas seleccionadas **antes** de obtener otra captura. Admite CPU/GPU/RAM y SSD con prueba estricta; para SSD conserva el título normalizado completo, además de modelo, capacidad, interfaz y formato. Ofertas recientes, en backoff o con fuente alterada no se fuerzan. Cada invocación inicia otro proceso para no reutilizar una captura anterior al lease.
 
 Un tercer argumento opcional guarda un recibo nuevo; se rechaza sobrescribirlo. El marcador y el recuento de ofertas deben coincidir con el snapshot. No acepta una URL de Supabase ni envía datos a D1.
 
@@ -25,3 +25,5 @@ Ensayo del 11/10/2026: 357/357 ofertas observadas, 15 lotes y 45 solicitudes HTT
 Esta herramienta local no está programada para toda la base. El LaunchAgent existente sigue renovando y enviando **la muestra del piloto** con vencimiento y presupuesto. No confundir ambos alcances.
 
 Reversión: detener consumidores, restaurar una copia SQLite anterior y retirar estas herramientas. No revertir fechas mediante actualizaciones SQL parciales. Detalle y recibos en `docs/direccion/PILOTO_ASOCIACIONES_2026-10-11.md`.
+
+Tercera tanda del 11/10: 48 SSD de 26 publicaciones renovados en dos lotes y seis solicitudes; todas comparables. No acredita cobertura completa de almacenamiento. Corte y consumo en `docs/direccion/TERCERA_RECUPERACION_CATALOGO_2026-10-11.md`.

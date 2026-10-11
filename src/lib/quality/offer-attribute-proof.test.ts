@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { attributeProofMatches, proveOfferAttributes } from './offer-attribute-proof';
+import { attributeProofMatches, exactOfferAttributes, proveOfferAttributes } from './offer-attribute-proof';
 import { readIdentityReview } from './offer-identity';
 
 describe('prueba de atributos exactos independiente de Jev', () => {
@@ -31,6 +31,35 @@ describe('prueba de atributos exactos independiente de Jev', () => {
     expect(proveOfferAttributes(name, 'memoria-ram', name)).not.toBeNull();
     expect(proveOfferAttributes(name, 'memoria-ram', name.replace('(1x16GB)', ''))).toBeNull();
     expect(proveOfferAttributes(name, 'memoria-ram', name.replace('LPX', 'RS RGB'))).toBeNull();
+  });
+  it('acredita SSD sólo con título completo idéntico tras normalizar mayúsculas y espacios', () => {
+    const name = 'SSD Kingston NV3 1TB NVMe M.2';
+    const proof = proveOfferAttributes(name, 'almacenamiento', ' SSD  KINGSTON NV3 1TB NVME M.2 ');
+    expect(proof).toMatchObject({ attributes: { model: 'nv3', capacity: '1000', interface: 'pcie', form: 'm2',
+      title: 'ssd kingston nv3 1tb nvme m 2' } });
+    expect(attributeProofMatches(proof!, name, 'almacenamiento', name)).toBe(true);
+    for (const source of [name.replace('Kingston', 'Samsung'), name.replace('NV3', 'NV2'),
+      name.replace('1TB', '2TB'), name.replace('NVMe', 'SATA'), name.replace('M.2', '2.5'),
+      name.replace('NVMe ', ''), name.replace('1TB', '1000GB'), `${name} Plus`, `${name} Gen4`,
+      `${name} con disipador`, `${name} OUTLET`, `${name} OEM`, `${name} Black`, name.replace('NVMe', 'PCIe')]) {
+      expect(proveOfferAttributes(name, 'almacenamiento', source)).toBeNull();
+    }
+  });
+  it('no convierte el detector sin contradicciones en prueba de equivalencia', () => {
+    const name = 'SSD Samsung 970 EVO Plus 1TB NVMe M.2 Gen3 con disipador';
+    expect(exactOfferAttributes(name, 'almacenamiento')).not.toBeNull();
+    for (const marker of ['Plus ', 'Gen3 ', 'con disipador', 'M.2 ', 'NVMe ']) {
+      expect(proveOfferAttributes(name, 'almacenamiento', name.replace(marker, ''))).toBeNull();
+    }
+    expect(proveOfferAttributes(name, 'almacenamiento', name.replace('Gen3', 'Gen4'))).toBeNull();
+    expect(proveOfferAttributes('SSD Kingston NV3 1TB', 'almacenamiento', 'SSD Kingston NV3 1TB')).toBeNull();
+  });
+  it('revalida el título SSD completo almacenado y rechaza una prueba de otra condición', () => {
+    const name = 'SSD Kingston NV3 1TB NVMe M.2', proof = proveOfferAttributes(name, 'almacenamiento', name)!;
+    expect(attributeProofMatches(proof, name, 'almacenamiento', `${name} OUTLET`)).toBe(false);
+    const incomplete = { ...proof.attributes };
+    delete incomplete.title;
+    expect(attributeProofMatches({ ...proof, attributes: incomplete }, name, 'almacenamiento', name)).toBe(false);
   });
   it('revalida evidencia al leer JSONB sin depender del orden de claves ni inventar confianza', () => {
     const name = 'amd ryzen 5 5600', proof = proveOfferAttributes(name, 'procesadores', name)!;

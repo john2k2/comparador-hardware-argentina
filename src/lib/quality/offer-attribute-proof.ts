@@ -1,4 +1,5 @@
 import { extractGpuBoardAttributes, extractRamModelKey, normalizeIdentityText, parseCpuModelSignature, parseGpuChipSignature } from '@/lib/product-identity';
+import { exactSsdAttributes } from './storage-identity';
 
 export type OfferAttributeProof = { version: 1; method: 'exact-attributes'; attributes: Record<string, string> };
 
@@ -37,6 +38,7 @@ export function exactOfferAttributes(name: string, category: string): Record<str
     if (!key || /(?:^|:)(?:na|unk|unknown-kit)(?:$|:)/.test(key)) return null;
     return { model: key };
   }
+  if (category === 'almacenamiento') return exactSsdAttributes(name);
   return null;
 }
 

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Product, ProductPrice } from '@/lib/types';
-import { hasExplicitStorageConflict } from './storage-identity';
+import { exactSsdAttributes, hasExplicitStorageConflict } from './storage-identity';
 import { needsIdentityReview } from './offer-identity';
 import { computeCurrentStorePriceStats } from '@/lib/price-utils';
 import { buildProductJsonLd, getRecentProductOffers } from '@/lib/product/product-page-metadata';
@@ -23,6 +23,48 @@ function product(prices = mixedOffers): Product {
     createdAt: new Date('2026-08-01Z'), updatedAt: new Date('2026-10-09T16:00:00Z') };
 }
 afterEach(() => vi.useRealTimers());
+
+describe('prueba conservadora de SSD individual', () => {
+  it.each([
+    ['SSD Kingston NV3 1TB NVMe M.2', 'kingston', 'nv3', '1000', 'pcie', 'm2'],
+    ['Disco sólido ADATA SU650 480GB SATA III 2.5', 'adata', 'su650', '480', 'sata', '2.5'],
+    ['SSD Samsung 970 EVO Plus 2TB PCIe M2', 'samsung', '970evoplus', '2000', 'pcie', 'm2'],
+    ['SSD Crucial MX500 1TB SATA III 2.5', 'crucial', 'mx500', '1000', 'sata', '2.5'],
+  ])('exige atributos explícitos completos: %s', (name, brand, model, capacity, bus, form) => {
+    expect(exactSsdAttributes(name)).toMatchObject({ media: 'ssd', brand, model, capacity, interface: bus, form });
+  });
+  it.each(['Gen4x4', 'Gen4 x4', 'PCIe 4.0 x4', 'PCIe x4'])('conserva carriles explícitos %s', lanes => {
+    expect(exactSsdAttributes(`SSD Kingston NV3 1TB NVMe M.2 ${lanes}`)).not.toBeNull();
+  });
+  it.each(['7GB/s', '7GBps', '7000 MB/s'])('no trata transferencia %s como capacidad', speed => {
+    expect(exactSsdAttributes(`SSD Kingston NV3 1TB NVMe M.2 ${speed}`)?.capacity).toBe('1000');
+    expect(exactSsdAttributes(`SSD Kingston NV3 NVMe M.2 ${speed}`)).toBeNull();
+  });
+  it.each([
+    'SSD NV3 1TB NVMe M.2', 'SSD Kingston 1TB NVMe M.2', 'SSD Kingston NV3 NVMe M.2',
+    'SSD Kingston NV3 1TB M.2', 'SSD Kingston NV3 1TB NVMe',
+    'HDD Kingston NV3 1TB SATA 2.5', 'SSD Kingston NV3 0GB NVMe M.2',
+    'SSD Kingston NV3 1TB NVMe M.2 SATA', 'SSD Kingston NV3 1TB NVMe M.2 2.5',
+    'SSD Kingston NV3 1TB 2TB NVMe M.2', 'SSD Kingston NV3 NV2 1TB NVMe M.2',
+    'SSD Kingston Samsung NV3 1TB NVMe M.2', 'SSD Kingston NV3 1TB PCIe 2.5',
+    'SSD Kingston NV3 1TB NVMe M.2 USB externo', 'Adaptador SSD Kingston NV3 1TB NVMe M.2',
+    'Carcasa SSD Kingston NV3 1TB NVMe M.2', 'Disipador para SSD Kingston NV3 1TB NVMe M.2',
+    'Combo SSD Kingston NV3 1TB NVMe M.2', 'Bundle SSD Kingston NV3 1TB NVMe M.2',
+    'Kit SSD Kingston NV3 2x1TB NVMe M.2', 'SSD Kingston NV3 1TB x2 NVMe M.2',
+    '2 SSD Kingston NV3 1TB NVMe M.2', 'Dos SSD Kingston NV3 1TB NVMe M.2',
+    'SSD Kingston NV3 1TB NVMe M.2 2 unidades', 'SSD Kingston NV3 1TB NVMe M.2 + cooler',
+    'SSD Kingston NV3 1TB NVMe M.2 Gen4 Gen5', 'SSD Kingston NV3 1TB NVMe M.2 Gen4/5',
+    'SSD Kingston NV3 1TB NVMe M.2 PCIe 4.0 PCIe 5.0',
+    'SSD Kingston NV3 1TB NVMe M.2 con disipador sin disipador',
+    'SSD Kingston NV3 1TB NVMe M.2 OUTLET usado',
+    '2x SSD Kingston NV3 1TB NVMe M.2', '2 × SSD Kingston NV3 1TB NVMe M.2',
+    '2x Disco SSD Kingston NV3 1TB NVMe M.2', '2 × Disco sólido Kingston NV3 1TB NVMe M.2',
+    'SSD Kingston NV3 1TB NVMe M.2 x2', 'SSD Kingston NV3 1TB NVMe M.2 × 2',
+    'SSD Kingston NV3 1TB NVMe M.2 Gen4 x4 x2',
+  ])('no acredita evidencia incompleta, múltiple o accesorio: %s', name => {
+    expect(exactSsdAttributes(name)).toBeNull();
+  });
+});
 
 describe('contradicciones explícitas de almacenamiento', () => {
   it.each([

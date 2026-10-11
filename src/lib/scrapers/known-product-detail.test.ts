@@ -47,6 +47,20 @@ function parse(html: string) {
 afterEach(() => vi.resetAllMocks());
 
 describe('parseKnownProductDetail', () => {
+  it('37 Bytes exige precio visible y variante seleccionada, sin tomar relacionados u oferta de transferencia', () => {
+    const url='https://www.37bytes.com.ar/productos/ssd-kingston-nv3/';
+    const store37={id:'37bytes',name:'37 Bytes',baseUrl:'https://www.37bytes.com.ar'};
+    const base=detailHtml().replaceAll(pageUrl,url);
+    const variant=JSON.stringify([{id:1,sku:'ASUS-RTX5060-8G',price:500000,stock:3,available:true}]);
+    const primary=`<div class="js-product-detail" data-variants='${variant}'><span class="js-price-display">$500.000</span></div>`;
+    const read=(html:string)=>parseKnownProductDetail(html,url,store37,'almacenamiento');
+    expect(read(base)).toBeNull();
+    expect(read(base+'<span class="js-price-display">$500.000</span>')).toBeNull();
+    expect(read(base+primary)?.prices[0]).toMatchObject({price:500000,stock:'low-stock'});
+    expect(read(base+primary+'<div class="js-item-product"><span class="js-price-display">$1</span><span class="stock">Sin stock</span></div>')?.prices[0].price).toBe(500000);
+    expect(read(base+primary.replace('$500.000','$400.000'))).toBeNull();
+    expect(read(base+primary.replace('"stock":3','"stock":0'))).toBeNull();
+  });
   it('acepta un unico Product coincidente, precio ARS positivo y SKU principal', () => {
     const product = parse(detailHtml());
 
