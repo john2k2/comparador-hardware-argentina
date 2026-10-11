@@ -132,3 +132,17 @@ test('filtro de productos inválido no toca leases ni cola', () => {
     assert.throws(()=>f.claim({productIds}),/INVALID_PRODUCTS/);
   assert.deepEqual(f.db.prepare('SELECT * FROM pilot_refresh_demand').all(),before);f.db.close();
 });
+test('offerIds filtra antes del tope100 y no encola otras ofertas del mismo producto',()=>{
+  const f=fixture();for(let i=0;i<105;i++)f.add(String(i).padStart(3,'0'));
+  assert.equal(f.enqueue({offerIds:['104']}).inserted,1);
+  assert.deepEqual(f.db.prepare('SELECT offer_id FROM pilot_refresh_demand').all().map(r=>r.offer_id),['104']);
+  assert.equal(f.enqueue({offerIds:[]}).inserted,0);
+  for(const offerIds of ['104',null,[''],Array(101).fill('104')])assert.throws(()=>f.enqueue({offerIds}),/INVALID_OFFERS/);
+  f.add('null');f.db.prepare("UPDATE product_prices SET row_json='null' WHERE id='null'").run();
+  assert.equal(f.enqueue({offerIds:['null']}).rejected,1);f.db.close();
+});
+test('encolado admite transacción externa explícita y rollback revierte todas las ofertas',()=>{
+  const f=fixture();f.add('a');assert.throws(()=>f.enqueue({withinTransaction:true}),/TRANSACTION_REQUIRED/);
+  f.db.exec('BEGIN IMMEDIATE');assert.equal(f.enqueue({withinTransaction:true,offerIds:['a']}).inserted,1);
+  f.db.exec('ROLLBACK');assert.equal(f.db.prepare('SELECT COUNT(*) n FROM pilot_refresh_demand').get().n,0);f.db.close();
+});

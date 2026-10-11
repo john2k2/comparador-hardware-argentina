@@ -20,6 +20,8 @@ export type EnqueueRefreshOptions = {
   refreshAheadMs?: number;
   demandTtlMs?: number;
   storeIds?: string[];
+  offerIds?: string[];
+  withinTransaction?: boolean;
 };
 export type RefreshReceipt = {
   offerId: string;
@@ -43,6 +45,7 @@ export type RefreshAckOptions = {
   retryAfterMs?: number;
   withinTransaction?: boolean;
 };
+export function offerFromRow(row: Record<string, unknown> | undefined): Pick<RefreshLease, 'offerId' | 'productId' | 'storeId' | 'url' | 'observedAt' | 'price' | 'stock'> | null;
 export function initializeRefreshDemand(db: DatabaseSync): void;
 export function enqueueKnownProducts(db: DatabaseSync, options: EnqueueRefreshOptions): {
   inserted: number; updated: number; coalesced: number; rejected: number;

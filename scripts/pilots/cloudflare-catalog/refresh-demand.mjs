@@ -24,18 +24,23 @@ function allowedProducts(productIds) {
   if (!Array.isArray(productIds) || productIds.length > 20 || productIds.some(id => typeof id !== 'string' || !id || id.length > 200)) throw new Error('REFRESH_INVALID_PRODUCTS');
   return [...new Set(productIds)];
 }
+function allowedOffers(offerIds) {
+  if (offerIds === undefined) return null;
+  if (!Array.isArray(offerIds) || offerIds.length > 100 || offerIds.some(id => typeof id !== 'string' || !id || id.length > 200)) throw new Error('REFRESH_INVALID_OFFERS');
+  return [...new Set(offerIds)];
+}
 function transaction(db, operation) {
   if (db.isTransaction) throw new Error('REFRESH_OWN_TRANSACTION_REQUIRED');
   db.exec('BEGIN IMMEDIATE');
   try { const result = operation(); db.exec('COMMIT'); return result; }
   catch (error) { db.exec('ROLLBACK'); throw error; }
 }
-function offerFromRow(row) {
+export function offerFromRow(row) {
   if (!row) return null;
   let raw;
   try { raw = JSON.parse(row.row_json); } catch { return null; }
   // No aceptar IDs ni destinos reconstruidos por similitud.
-  if (raw.id !== row.id || raw.product_id !== row.product_id || raw.store_id !== row.store_id || raw.url !== row.url || raw.price !== row.price) return null;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw) || raw.id !== row.id || raw.product_id !== row.product_id || raw.store_id !== row.store_id || raw.url !== row.url || raw.price !== row.price) return null;
   try { const url = new URL(row.url); if (!['http:','https:'].includes(url.protocol) || url.username || url.password) return null; }
   catch { return null; }
   const time = Date.parse(raw.last_updated);
@@ -47,20 +52,22 @@ export function initializeRefreshDemand(db) { db.exec(SCHEMA); }
 
 /** Sólo demanda sobre productos ya guardados. La cola jamás renueva precio/stock/fecha. */
 export function enqueueKnownProducts(db, { productIds, now = Date.now(), freshMs = 24 * HOUR,
-  refreshAheadMs = 90 * 60000, demandTtlMs = 48 * HOUR, storeIds } = {}) {
+  refreshAheadMs = 90 * 60000, demandTtlMs = 48 * HOUR, storeIds, offerIds, withinTransaction = false } = {}) {
   clock(now);
   const stores = allowedStores(storeIds);
+  const offers = allowedOffers(offerIds);
   if (!Array.isArray(productIds) || productIds.length > 20 || productIds.some(id => typeof id !== 'string' || !id || id.length > 200)) throw new Error('REFRESH_INVALID_PRODUCTS');
   if (!Number.isSafeInteger(freshMs) || freshMs <= 0 || freshMs > 24 * HOUR ||
     !Number.isSafeInteger(refreshAheadMs) || refreshAheadMs < 0 || refreshAheadMs >= freshMs ||
     !Number.isSafeInteger(demandTtlMs) || demandTtlMs < freshMs || demandTtlMs > 7 * 24 * HOUR) throw new Error('REFRESH_INVALID_WINDOWS');
-  return transaction(db, () => {
+  const operation = () => {
     const report = { inserted: 0, updated: 0, coalesced: 0, rejected: 0, truncated: false, offers: [] };
     const ids = [...new Set(productIds)];
-    if (!ids.length || stores?.length === 0) return report;
+    if (!ids.length || stores?.length === 0 || offers?.length === 0) return report;
     const rows = db.prepare(`SELECT pp.* FROM product_prices pp JOIN products p ON p.id=pp.product_id
       WHERE pp.product_id IN (${ids.map(() => '?').join(',')}) ${stores ? 'AND pp.store_id IN('+stores.map(()=>'?').join(',')+')' : ''}
-      ORDER BY pp.product_id,pp.id LIMIT 101`).all(...ids,...(stores??[]));
+      ${offers ? 'AND pp.id IN('+offers.map(()=>'?').join(',')+')' : ''}
+      ORDER BY pp.product_id,pp.id LIMIT 101`).all(...ids,...(stores??[]),...(offers??[]));
     report.truncated = rows.length > 100;
     for (const row of rows.slice(0, 100)) {
       const offer = offerFromRow(row);
@@ -94,7 +101,12 @@ export function enqueueKnownProducts(db, { productIds, now = Date.now(), freshMs
       existing ? report.updated++ : report.inserted++; report.offers.push(offer.offerId);
     }
     return report;
-  });
+  };
+  if (withinTransaction) {
+    if (!db.isTransaction) throw new Error('REFRESH_TRANSACTION_REQUIRED');
+    return operation();
+  }
+  return transaction(db, operation);
 }
 
 export function claimRefreshBatch(db, { now = Date.now(), limit = 10, leaseMs = 5 * 60000, storeIds, productIds } = {}) {
