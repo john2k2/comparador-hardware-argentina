@@ -59,6 +59,13 @@ test('source sin observación conserva fecha y generación; demanda entra en bac
   assert.equal(f.db.prepare("SELECT value FROM pilot_meta WHERE key='snapshot'").get()!.value,marker);
   assert.equal(f.db.prepare('SELECT status FROM pilot_refresh_demand').get()!.status,'backoff');f.db.close();
 });
+test('el lector recibe la reserva real como mínimo de observación, sin exigir otra fecha artificial',async()=>{
+  const f=fixture();let calls=0;
+  const result=await runLocalRefresh(f.db,{...f.dependencies,reader:async(_store,_url,_category,_signal,context)=>{
+    calls++;assert.equal(context?.observedAfter,now);f.advance();return f.source({lastUpdated:new Date(now+5)});
+  }});
+  assert.equal(calls,1);assert.equal(result.observed,1);f.db.close();
+});
 test('variante incorrecta de la fuente no modifica precio ni renueva frescura',async()=>{
   const f=fixture();const result=await runLocalRefresh(f.db,{...f.dependencies,reader:async()=>{const source=f.source();source.name='MSI GeForce RTX 5070 Ti Ventus 2X 16GB';f.advance();return source;}});
   assert.equal(result.observed,0);assert.equal(result.results[0].outcome,'identity-mismatch');

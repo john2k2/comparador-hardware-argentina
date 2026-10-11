@@ -69,7 +69,8 @@ export async function runGroupedLocalRefresh(db: DatabaseSync, options: Dependen
     let source: Product | null;
     try {
       source = await reader(first.storeId, first.url, group.category,
-        AbortSignal.timeout(Math.min(25000, Math.max(1, deadline - clock()))));
+        AbortSignal.timeout(Math.min(25000, Math.max(1, deadline - clock()))),
+        {observedAfter:Math.max(...leases.map(lease=>lease.leasedAt))});
       if (!source) throw new Error('REFRESH_LOCAL_NO_OBSERVATION');
     } catch (error) { for (const lease of group.leases) failed(lease, error); sharePauses(); continue; }
     for (const lease of group.leases) {

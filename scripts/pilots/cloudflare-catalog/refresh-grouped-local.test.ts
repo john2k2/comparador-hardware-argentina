@@ -33,8 +33,9 @@ function fixture({ differentUrls = false, store = 'maxtecno' } = {}) {
 }
 test('dos destinos reclaman antes de una lectura compartida y guardan la misma observación', async () => {
   const f = fixture(); let calls = 0;
-  const r = await runGroupedLocalRefresh(f.db, { ...f.deps, reader: async (_store, url) => {
+  const r = await runGroupedLocalRefresh(f.db, { ...f.deps, reader: async (_store, url, _category, _signal, context) => {
     calls++; assert.equal(f.db.prepare("SELECT COUNT(*) n FROM pilot_refresh_demand WHERE status='leased'").get()!.n, 2);
+    assert.equal(context?.observedAfter,now);
     f.advance(5); return f.source(url);
   } });
   assert.equal(calls, 1); assert.equal(r.observed, 2); assert.equal(r.publications, 1);

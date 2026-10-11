@@ -52,7 +52,7 @@ type CacheEntry<T> = {
   value: T;
 };
 
-let catalogCache: CacheEntry<CompraGamerProductResponse[]> | null = null;
+let catalogCache: (CacheEntry<CompraGamerProductResponse[]> & { observedAt: number }) | null = null;
 let subcategoryMapCache: CacheEntry<Map<number, HardwareCategory>> | null = null;
 let brandMapCache: CacheEntry<Map<number, string>> | null = null;
 
@@ -131,12 +131,25 @@ async function fetchJsonArray<T>(url: string, signal?: AbortSignal): Promise<T[]
   return data as T[];
 }
 
-export async function getCompraGamerCatalog(signal?: AbortSignal): Promise<CompraGamerProductResponse[]> {
-  if (catalogCache && catalogCache.expiresAt > nowMs()) {
+export async function getCompraGamerCatalog(
+  signal?: AbortSignal,
+  { observedAfter }: { observedAfter?: number } = {},
+): Promise<CompraGamerProductResponse[]> {
+  if (observedAfter !== undefined && (!Number.isSafeInteger(observedAfter) || observedAfter < 0 || observedAfter > nowMs())) {
+    throw new SourceHttpError('invalid-response');
+  }
+  if (catalogCache && catalogCache.expiresAt > nowMs()
+    && (observedAfter === undefined || catalogCache.observedAt >= observedAfter)) {
     return catalogCache.value;
   }
 
-  if (inFlightCatalogRequest) return inFlightCatalogRequest;
+  if (inFlightCatalogRequest) {
+    const items = await inFlightCatalogRequest;
+    // Una petición compartida sólo cumple el lease si la lectura real terminó
+    // después de su reserva. Devolver caché nunca modifica esa hora.
+    if (observedAfter === undefined || catalogCache && catalogCache.observedAt >= observedAfter) return items;
+    return getCompraGamerCatalog(signal, { observedAfter });
+  }
 
   inFlightCatalogRequest = fetchJsonArray<CompraGamerProductResponse>(COMPRAGAMER_PRODUCTS_URL, signal)
     .then((items) => {
@@ -144,6 +157,7 @@ export async function getCompraGamerCatalog(signal?: AbortSignal): Promise<Compr
       const observedItems = items.map(item => ({ ...item, observedAt }));
       catalogCache = {
         value: observedItems,
+        observedAt: observedAt.valueOf(),
         expiresAt: nowMs() + STATIC_CACHE_TTL_MS,
       };
       return observedItems;

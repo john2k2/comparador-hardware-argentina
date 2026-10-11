@@ -17,7 +17,8 @@ export async function runSharedRefresh(db:DatabaseSync,dependencies:Dependencies
       const product={...JSON.parse(row.row_json),category:row.category};
       if(!canRefreshLocalTarget(lease.storeId,lease.url,product.category,product.name))throw new Error('REFRESH_LOCAL_IDENTITY');
       if(sharedFailure)throw sharedFailure;
-      const source=await reader(lease.storeId,lease.url,product.category,AbortSignal.timeout(25000));
+      const source=await reader(lease.storeId,lease.url,product.category,AbortSignal.timeout(25000),
+        {observedAfter:Math.max(...leases.map(item=>item.leasedAt))});
       if(!source)throw new Error('REFRESH_LOCAL_NO_OBSERVATION');
       const price=reviewLocalObservation(product,lease,source,clock());
       const receipt=persistLocalObservation(db,lease,price,dependencies,clock());

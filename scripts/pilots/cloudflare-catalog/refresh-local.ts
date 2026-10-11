@@ -21,7 +21,8 @@ import { initializeRefreshDemand, enqueueKnownProducts, claimRefreshBatch, ackno
 import { chargeDailyBudget } from './daily-budget.mjs';
 
 type Lease = { offerId:string; productId:string; storeId:string; url:string; observedAt:string|null; leaseToken:string; leasedAt:number; leaseUntil:number };
-type Reader = typeof fetchWooCommerceKnownOffer;
+type Reader = (storeId:string,url:string,category:HardwareCategory,signal?:AbortSignal,
+  context?:{observedAfter:number})=>ReturnType<typeof fetchWooCommerceKnownOffer>;
 type Projection = (db:DatabaseSync, options:{now:number;generation:string;affectedProductIds:string[]}) => {
   statements:Array<{sql:string;values:unknown[]}>;baseRowsWritten:number;changedProjectionRows:number;cache:unknown;
 };
@@ -46,11 +47,11 @@ function selectedLocalStores(storeIds:string[]=localStoreIds):string[] {
 
 /** Selección explícita: Katech conserva precio HTML, sin API ni búsqueda alternativa. */
 export function createLocalOfferReader({wooReader=fetchWooCommerceKnownOffer,detailReader=fetchKnownProductDetail}={}):Reader {
-  return async(storeId,url,category,signal)=>{
+  return async(storeId,url,category,signal,context)=>{
     if(!validateLocalTarget(storeId,url))throw new Error('REFRESH_LOCAL_IDENTITY');
     if(storeId==='compragamer') {
       const reference=listingReference(storeId,url)!;
-      const catalog=await getCompraGamerCatalog(signal);
+      const catalog=await getCompraGamerCatalog(signal,context);
       const item=catalog.find(row=>`${storeId}:id:${row.id_producto}`===reference);
       if(!item)return null;
       const subcategoryMap=await getCompraGamerSubcategoryMap(signal),brandMap=await getCompraGamerBrandMap(signal);
@@ -167,7 +168,7 @@ export async function runLocalRefresh(db:DatabaseSync,{limit=3,storeIds,productI
       const row=db.prepare('SELECT row_json,category FROM products WHERE id=?').get(lease.productId) as {row_json:string;category:HardwareCategory};
       const product={...JSON.parse(row.row_json),category:row.category};
       if(!canRefreshLocalTarget(lease.storeId,lease.url,product.category,product.name))throw new Error('REFRESH_LOCAL_IDENTITY');
-      const source=await reader(lease.storeId,lease.url,product.category,AbortSignal.timeout(25000));
+      const source=await reader(lease.storeId,lease.url,product.category,AbortSignal.timeout(25000),{observedAfter:lease.leasedAt});
       readSource=source;
       if(!source)throw new Error('REFRESH_LOCAL_NO_OBSERVATION');
       const price=reviewLocalObservation(product,lease,source,clock());

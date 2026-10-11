@@ -16,6 +16,8 @@ Mexx: tres fichas públicas sin precio principal y con «NO DISPONIBLE» devuelv
 
 CompraGamer usa catálogo, subcategorías y marcas públicos. La fecha viene de la recepción real del catálogo. El consumidor exige publicación, categoría y atributos exactos antes de persistir. Una caché anterior al lease no renueva frescura.
 
+El consumidor envía `observedAfter` con la hora de reserva: una caché anterior obliga a revalidar el JSON mediante HTTP, incluido ETag/304. Un lote agrupado o compartido usa el máximo de sus reservas para reutilizar una sola lectura posterior. Los errores conservan la fecha anterior. Pruebas del lector: 6/6 Vitest; consumidores: 35/35 Node (23 individual, 8 agrupado, 4 compartido). Ensayo real del 11/10 a las 22:16 UTC: seis ofertas de seis publicaciones observadas y comparables con una revalidación HTTP posterior al lote; el staging previo hizo otras tres solicitudes y no modificó precios.
+
 Verificación: 52/52 pruebas Vitest de FullH4rd/Katech y 21/21 del consumidor local. Evidencia de ejecución y límites en `docs/direccion/PILOTO_ASOCIACIONES_2026-10-11.md`.
 
 Segunda tanda: 115/115 Vitest de WooCommerce, detalle GoldenTech y DOM conocido. Lectura real GoldenTech posterior al arreglo: $454.586, stock desconocido, no comparable. Las tres lecturas Mexx devolvieron ausencia de observación correctamente. Artefactos privados en `outputs/recuperacion-asociaciones-2026-10-11/` y `outputs/mexx-reader-2026-10-11/`.
