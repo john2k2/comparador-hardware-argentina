@@ -7,7 +7,11 @@ import { once } from 'node:events';
 import { verifySnapshot } from './snapshot-verify.mjs';
 
 const root = path.resolve(import.meta.dirname, '../../..');
-const snapshot = path.resolve(process.argv[2] ?? path.join(root, 'outputs/catalogo-local-cloudflare-2026-10-11/public-snapshot'));
+const cliArgs = process.argv.slice(2);
+if (cliArgs.some(arg => arg.startsWith('--') && !['--start', '--stop'].includes(arg))
+  || cliArgs.filter(arg => !arg.startsWith('--')).length > 1
+  || (cliArgs.includes('--start') && cliArgs.includes('--stop'))) throw new Error('Usar [snapshot] [--start | --stop]');
+const snapshot = path.resolve(cliArgs.find(arg => !arg.startsWith('--')) ?? path.join(root, 'outputs/catalogo-local-cloudflare-2026-10-11/public-snapshot'));
 const statePath = path.join(snapshot, 'postgres-state.json');
 const pg = '/opt/homebrew/opt/postgresql@17/bin/';
 const environment = { PATH: '/usr/bin:/bin', LANG: 'en_US.UTF-8', ...process.env };
