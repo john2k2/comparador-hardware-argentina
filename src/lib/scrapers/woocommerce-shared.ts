@@ -288,6 +288,25 @@ function foreignWooCurrency($: cheerio.CheerioAPI, pageUrl: string, storeId: str
   return metaConflict || visibleConflict || schemaConflict;
 }
 
+/** Etiqueta e importe del mismo bloque principal; no inferir pago por tienda. */
+function katechSpecialPriceMatches($: cheerio.CheerioAPI, prices: ReturnType<cheerio.CheerioAPI>, price: number): boolean {
+  const amounts: number[] = [];
+  for (const element of prices.filter('.product_field.price').toArray()) {
+    const node = $(element), block = node.parent();
+    if (!block.is('.w-vwrapper') || explicitlyHidden($, node)) continue;
+    const label = block.contents().filter((_, child) => child.type === 'text'
+      || (child.type === 'tag' && /^h[1-6]$/i.test(child.name) && !explicitlyHidden($, $(child))))
+      .map((_, child) => $(child).text()).get().join(' ').replace(/\s+/g, ' ').trim();
+    if (!/\bprecio\s+especial\s+efectivo\s*\/\s*transferencia\b/i.test(label)) continue;
+    // Un segundo importe directo o representaciones discrepantes impiden
+    // atribuir esta condición al monto que el lector devuelve.
+    if (block.children('.product_field.price').length !== 1) return false;
+    const current = node.find('ins .woocommerce-Price-amount bdi, ins bdi').first().text().trim() || node.text().trim();
+    amounts.push(parseWooPrice(current));
+  }
+  return amounts.length > 0 && amounts.every(amount => amount > 0 && Math.abs(amount - price) < 0.005);
+}
+
 export function parseWooProductDetail(
   html: string,
   pageUrl: string,
@@ -413,6 +432,7 @@ export function parseWooProductDetail(
   if (product && sku && sku !== 'N/A') product.specs.SKU = sku;
   if (product && store.id === 'maxtecno' && storePrice) product.prices[0].priceCondition = 'special';
   if (product && goldenDetail) product.prices[0].priceCondition = 'special';
+  if (product && store.id === 'katech' && katechSpecialPriceMatches($, primaryPrices, price)) product.prices[0].priceCondition = 'special';
   return product;
 }
 

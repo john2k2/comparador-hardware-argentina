@@ -112,3 +112,23 @@ test('demanda de 24h nunca posterga pendiente 3h y 3h adelanta inmediatamente au
   assert.equal(g.enqueue({now:now+1,freshMs:3*3600000,refreshAheadMs:1800000}).updated,1);
   assert.equal(g.db.prepare('SELECT due_at FROM pilot_refresh_demand').get().due_at,early);g.db.close();
 });
+
+test('producto solicitado filtra antes de prioridad/límite y no reserva pendiente ajena', () => {
+  const f=fixture();f.add('requested');f.add('outside',{productId:'outside-p'});
+  f.enqueue({productIds:['p','outside-p']});
+  f.db.prepare("UPDATE pilot_refresh_demand SET priority=200 WHERE offer_id='outside'").run();
+  const outside=f.db.prepare("SELECT * FROM pilot_refresh_demand WHERE offer_id='outside'").get();
+  assert.deepEqual(f.claim({productIds:[],limit:1}),[]);
+  assert.deepEqual(f.claim({productIds:['p'],storeIds:['other'],limit:1}),[]);
+  const claims=f.claim({productIds:['p','p'],storeIds:['shop'],limit:1});
+  assert.equal(claims.length,1);assert.equal(claims[0].offerId,'requested');
+  assert.deepEqual(f.db.prepare("SELECT * FROM pilot_refresh_demand WHERE offer_id='outside'").get(),outside);
+  // Omitir el filtro conserva el contrato anterior de consumidor general.
+  assert.equal(f.claim()[0].offerId,'outside');f.db.close();
+});
+test('filtro de productos inválido no toca leases ni cola', () => {
+  const f=fixture();f.add('a');f.enqueue();const before=f.db.prepare('SELECT * FROM pilot_refresh_demand').all();
+  for(const productIds of ['p',null,[''],[1],Array(21).fill('p'),['p'.repeat(201)]])
+    assert.throws(()=>f.claim({productIds}),/INVALID_PRODUCTS/);
+  assert.deepEqual(f.db.prepare('SELECT * FROM pilot_refresh_demand').all(),before);f.db.close();
+});

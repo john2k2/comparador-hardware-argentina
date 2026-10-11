@@ -178,6 +178,28 @@ describe('woocommerce-shared', () => {
     expect(product?.prices[0].stock).toBe('in-stock');
   });
 
+  it('Katech reconoce special sólo con etiqueta e importe del mismo bloque principal', () => {
+    // Estructura del HTML de Katech leído el 11/10/2026 a las 14:19 UTC.
+    const block = (label: string, price = '$428.250,00') => `<div class="w-vwrapper"><h5>${label}</h5><p class="product_field price"><bdi>${price}</bdi></p></div>`;
+    const body = (content: string) => `<body class="single-product"><h1 class="post_title">PROCESADOR AMD RYZEN 7 8700G AM5</h1>${content}<p class="stock in-stock">Hay stock disponible!</p></body>`;
+    const url = 'https://katech.com.ar/producto/procesador-amd-ryzen-7-8700g-am5/';
+    const store = {id:'katech',name:'Katech',baseUrl:'https://katech.com.ar'};
+    const parse = (content: string, selectedStore = store) => parseWooProductDetail(body(content), url, selectedStore, 'procesadores', 'cpu');
+    const label = 'Precio especial EFECTIVO/TRANSFERENCIA';
+    expect(parse(block(label))?.prices[0]).toMatchObject({price:428250,priceCondition:'special'});
+    // La representación móvil incluye texto directo en lugar de h5.
+    expect(parse(block(label).replace(`<h5>${label}</h5>`, label))?.prices[0].priceCondition).toBe('special');
+    expect(parse(block(label) + block(label))?.prices[0].priceCondition).toBe('special');
+    expect(parse(block('Precio de lista'))?.prices[0].priceCondition).toBeUndefined();
+    expect(parse(`<h5>${label}</h5>` + block('Precio de lista'))?.prices[0].priceCondition).toBeUndefined();
+    expect(parse(block(label), {id:'dinobyte',name:'Dinobyte',baseUrl:'https://dinobyte.ar'})?.prices[0].priceCondition).toBeUndefined();
+    expect(parse(block(label) + block(label, '$500.000,00'))?.prices[0].priceCondition).toBeUndefined();
+    expect(parse(block('Precio de lista') + `<section class="related products">${block(label)}</section>`)?.prices[0].priceCondition).toBeUndefined();
+    expect(parse(block(label).replace('w-vwrapper', 'w-vwrapper" style="display:none'))?.prices[0].priceCondition).toBeUndefined();
+    expect(parse(block(label).replace('<h5>', '<h5 hidden>'))?.prices[0].priceCondition).toBeUndefined();
+    expect(parse(block(label).replace('</div>', '<p class="product_field price">$500.000,00</p></div>'))?.prices[0].priceCondition).toBeUndefined();
+  });
+
   it('no inventa un precio de detalle cuando solo hay precios en recomendaciones', () => {
     const product = parseWooProductDetail(`
       <h1 class="product_title">NVIDIA RTX 5060</h1>

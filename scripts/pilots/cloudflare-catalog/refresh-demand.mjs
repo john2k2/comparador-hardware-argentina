@@ -19,6 +19,11 @@ function allowedStores(storeIds) {
   if (!Array.isArray(storeIds) || storeIds.length > 34 || storeIds.some(id => typeof id !== 'string' || !/^[a-z0-9-]{1,80}$/.test(id))) throw new Error('REFRESH_INVALID_STORES');
   return [...new Set(storeIds)];
 }
+function allowedProducts(productIds) {
+  if (productIds === undefined) return null;
+  if (!Array.isArray(productIds) || productIds.length > 20 || productIds.some(id => typeof id !== 'string' || !id || id.length > 200)) throw new Error('REFRESH_INVALID_PRODUCTS');
+  return [...new Set(productIds)];
+}
 function transaction(db, operation) {
   if (db.isTransaction) throw new Error('REFRESH_OWN_TRANSACTION_REQUIRED');
   db.exec('BEGIN IMMEDIATE');
@@ -92,16 +97,18 @@ export function enqueueKnownProducts(db, { productIds, now = Date.now(), freshMs
   });
 }
 
-export function claimRefreshBatch(db, { now = Date.now(), limit = 10, leaseMs = 5 * 60000, storeIds } = {}) {
+export function claimRefreshBatch(db, { now = Date.now(), limit = 10, leaseMs = 5 * 60000, storeIds, productIds } = {}) {
   clock(now);
   const stores = allowedStores(storeIds);
+  const products = allowedProducts(productIds);
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 25 || !Number.isSafeInteger(leaseMs) || leaseMs < 1000 || leaseMs > 10 * 60000) throw new Error('REFRESH_INVALID_BATCH');
   return transaction(db, () => {
-    if (stores?.length === 0) return [];
+    if (stores?.length === 0 || products?.length === 0) return [];
     const rows = db.prepare(`SELECT * FROM pilot_refresh_demand WHERE expires_at>? AND due_at<=?
       AND (status IN ('pending','backoff') OR (status='leased' AND lease_until<=?))
       ${stores ? 'AND store_id IN('+stores.map(()=>'?').join(',')+')' : ''}
-      ORDER BY priority DESC,due_at,requested_at,offer_id LIMIT ?`).all(now,now,now,...(stores??[]),limit);
+      ${products ? 'AND product_id IN('+products.map(()=>'?').join(',')+')' : ''}
+      ORDER BY priority DESC,due_at,requested_at,offer_id LIMIT ?`).all(now,now,now,...(stores??[]),...(products??[]),limit);
     const leases = [];
     for (const queued of rows) {
       const offer = offerFromRow(db.prepare('SELECT * FROM product_prices WHERE id=?').get(queued.offer_id));

@@ -21,7 +21,7 @@ const server = createServer(async (request,response) => {
     for(const key of ['content-type','x-pilot-cache','x-pilot-d1-rows-read','x-pilot-d1-queries','server-timing'])if(remote.headers.has(key))headers[key]=remote.headers.get(key);
     if(remote.ok&&url.pathname==='/api/search') {
       const data=JSON.parse(body),ids=data.products.map(p=>p.id).slice(0,20);
-      const demand=enqueueKnownProducts(db,{productIds:ids,now:Date.now(),freshMs:3*3600000,refreshAheadMs:90*60000,storeIds:['maxtecno','dinobyte','goldentechstore']});
+      const demand=enqueueKnownProducts(db,{productIds:ids,now:Date.now(),freshMs:3*3600000,refreshAheadMs:90*60000,storeIds:['maxtecno','dinobyte','goldentechstore','katech','fullh4rd']});
       appendFileSync(logFile,JSON.stringify({at:new Date().toISOString(),productIds:ids,demand})+'\n',{mode:0o600});
       headers['x-pilot-local-demand']='queued';
     }

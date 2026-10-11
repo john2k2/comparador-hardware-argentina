@@ -1,9 +1,10 @@
-// Consumidor explícito de prueba: sólo SQLite sample.sqlite y fichas Woo públicas.
+// Consumidor explícito de prueba: sólo SQLite sample.sqlite y fichas públicas conocidas.
 import { DatabaseSync } from 'node:sqlite';
 import { createHash } from 'node:crypto';
 import { realpathSync, statSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { fetchKnownProductDetail } from '@/lib/scrapers/known-product-detail';
 import { fetchWooCommerceKnownOffer, WOOCOMMERCE_STORES } from '@/lib/scrapers/woocommerce-shared';
 import { SourceHttpError, sourceHttpMetrics, sourceBlockedUntil } from '@/lib/scrapers/source-http';
 import { proveOfferAttributes, attributeProofMatches } from '@/lib/quality/offer-attribute-proof';
@@ -26,15 +27,32 @@ type Dependencies = { reader?:Reader; clock?:()=>number; projection:Projection; 
 const historySchema = `CREATE TABLE IF NOT EXISTS pilot_offer_observations(
  offer_id TEXT NOT NULL,observed_at TEXT NOT NULL,row_json TEXT NOT NULL,
  PRIMARY KEY(offer_id,observed_at));`;
-const localStoreIds = ['maxtecno','dinobyte','goldentechstore'];
+const localStoreIds = ['maxtecno','dinobyte','goldentechstore','katech','fullh4rd'];
+const fullh4rdStore = {id:'fullh4rd',name:'FullH4rd',baseUrl:'https://www.fullh4rd.com.ar'};
+
+function selectedLocalStores(storeIds:string[]=localStoreIds):string[] {
+  if(!Array.isArray(storeIds)||!storeIds.length||storeIds.length>localStoreIds.length
+    ||storeIds.some(id=>!localStoreIds.includes(id)))throw new Error('REFRESH_LOCAL_STORES');
+  return [...new Set(storeIds)];
+}
+
+/** Selección explícita: Katech conserva precio HTML, sin API ni búsqueda alternativa. */
+export function createLocalOfferReader({wooReader=fetchWooCommerceKnownOffer,detailReader=fetchKnownProductDetail}={}):Reader {
+  return async(storeId,url,category,signal)=>{
+    if(!validateLocalTarget(storeId,url))throw new Error('REFRESH_LOCAL_IDENTITY');
+    return storeId==='fullh4rd'?detailReader(url,fullh4rdStore,category,signal):wooReader(storeId,url,category,signal);
+  };
+}
 
 export function validateLocalTarget(storeId:string, url:string): boolean {
-  const store=WOOCOMMERCE_STORES.find(item=>item.id===storeId);
+  if(!localStoreIds.includes(storeId))return false;
+  const store=storeId==='fullh4rd'?fullh4rdStore:WOOCOMMERCE_STORES.find(item=>item.id===storeId);
   if(!store) return false;
   try {
     const parsed=new URL(url),host=(value:string)=>new URL(value).hostname.replace(/^www\./,'');
     return parsed.protocol==='https:'&&!parsed.username&&!parsed.password&&!parsed.port&&!parsed.search&&!parsed.hash
-      &&host(url)===host(store.baseUrl)&&listingReference(storeId,url)!==null;
+      &&host(url)===host(store.baseUrl)&&listingReference(storeId,url)!==null
+      &&(storeId!=='fullh4rd'||/^\/prod\/\d+\/[^/]+\/?$/.test(parsed.pathname));
   } catch {return false;}
 }
 
@@ -112,10 +130,11 @@ export function persistLocalObservation(db:DatabaseSync,lease:Lease,price:Produc
   }catch(error){db.exec('ROLLBACK');throw error;}
 }
 
-export async function runLocalRefresh(db:DatabaseSync,{limit=3,...dependencies}:Dependencies&{limit?:number}) {
+export async function runLocalRefresh(db:DatabaseSync,{limit=3,storeIds,productIds,...dependencies}:Dependencies&{limit?:number;storeIds?:string[];productIds?:string[]}) {
   if(!Number.isSafeInteger(limit)||limit<1||limit>3)throw new Error('REFRESH_LOCAL_LIMIT');
-  const clock=dependencies.clock??Date.now,reader=dependencies.reader??fetchWooCommerceKnownOffer;
-  const leases=claimRefreshBatch(db,{now:clock(),limit,leaseMs:300000,storeIds:localStoreIds});
+  const selectedStores=selectedLocalStores(storeIds);
+  const clock=dependencies.clock??Date.now,reader=dependencies.reader??createLocalOfferReader();
+  const leases=claimRefreshBatch(db,{now:clock(),limit,leaseMs:300000,storeIds:selectedStores,productIds});
   const results=[];
   for(const lease of leases as Lease[]) {
     try {
@@ -147,26 +166,29 @@ export async function refreshLocalCli(args:string[]) {
   if(!['--dry-run','--execute'].includes(mode)||!path)throw new Error('REFRESH_LOCAL_USAGE');
   const file=realpathSync(resolve(path));
   if(basename(file)!=='sample.sqlite'||!statSync(file).isFile())throw new Error('REFRESH_LOCAL_SAMPLE_REQUIRED');
-  const productIds:string[]=[];let freshMs=86400000;
+  const productIds:string[]=[],requestedStores:string[]=[];let freshMs=86400000;
   for(let i=2;i<args.length;i++) {
     if(args[i]==='--product-id'&&args[i+1])productIds.push(args[++i]);
+    else if(args[i]==='--store-id'&&args[i+1])requestedStores.push(args[++i]);
     else if(args[i]==='--fresh-hours'&&['3','24'].includes(args[i+1]))freshMs=Number(args[++i])*3600000;
     else throw new Error('REFRESH_LOCAL_USAGE');
   }
   if(productIds.length>20)throw new Error('REFRESH_LOCAL_LIMIT');
+  const selectedStores=selectedLocalStores(requestedStores.length?requestedStores:undefined);
   const db=new DatabaseSync(file,{readOnly:mode==='--dry-run'});
   try{
     const queueExists=Boolean(db.prepare("SELECT name FROM sqlite_schema WHERE type='table' AND name='pilot_refresh_demand'").get());
-    const rows=(productIds.length?db.prepare(`SELECT pp.id,pp.product_id,pp.store_id,pp.url,p.category FROM product_prices pp JOIN products p ON p.id=pp.product_id WHERE pp.product_id IN(${productIds.map(()=>'?').join(',')}) ORDER BY pp.id LIMIT 100`).all(...productIds)
-      :queueExists?db.prepare("SELECT pp.id,pp.product_id,pp.store_id,pp.url,p.category FROM pilot_refresh_demand q JOIN product_prices pp ON pp.id=q.offer_id JOIN products p ON p.id=pp.product_id WHERE q.expires_at>? AND q.due_at<=? AND q.status IN('pending','backoff') ORDER BY q.priority DESC,q.due_at LIMIT 100").all(Date.now(),Date.now()):[]) as Array<{store_id:string;url:string}>;
-    if(mode==='--dry-run')return {localOnly:true,dryRun:true,writes:0,httpRequests:0,limit:3,knownSupported:rows.filter(row=>localStoreIds.includes(row.store_id)&&validateLocalTarget(row.store_id,row.url)).slice(0,3)};
+    const storeFilter=selectedStores.map(()=>'?').join(',');
+    const rows=(productIds.length?db.prepare(`SELECT pp.id,pp.product_id,pp.store_id,pp.url,p.category FROM product_prices pp JOIN products p ON p.id=pp.product_id WHERE pp.product_id IN(${productIds.map(()=>'?').join(',')}) AND pp.store_id IN(${storeFilter}) ORDER BY pp.id LIMIT 100`).all(...productIds,...selectedStores)
+      :queueExists?db.prepare(`SELECT pp.id,pp.product_id,pp.store_id,pp.url,p.category FROM pilot_refresh_demand q JOIN product_prices pp ON pp.id=q.offer_id JOIN products p ON p.id=pp.product_id WHERE q.expires_at>? AND q.due_at<=? AND q.status IN('pending','backoff') AND pp.store_id IN(${storeFilter}) ORDER BY q.priority DESC,q.due_at LIMIT 100`).all(Date.now(),Date.now(),...selectedStores):[]) as Array<{store_id:string;url:string}>;
+    if(mode==='--dry-run')return {localOnly:true,dryRun:true,writes:0,httpRequests:0,limit:3,storeIds:selectedStores,productIds:productIds.length?productIds:null,knownSupported:rows.filter(row=>selectedStores.includes(row.store_id)&&validateLocalTarget(row.store_id,row.url)).slice(0,3)};
     initializeRefreshDemand(db);
-    if(productIds.length)enqueueKnownProducts(db,{productIds,now:Date.now(),freshMs,refreshAheadMs:90*60000,storeIds:localStoreIds});
+    if(productIds.length)enqueueKnownProducts(db,{productIds,now:Date.now(),freshMs,refreshAheadMs:90*60000,storeIds:selectedStores});
     // Imports dinámicos conservan el URL original de projection.sql tras esbuild.
     const modules=resolve('scripts/pilots/cloudflare-catalog');
     const {rebuildProjection}=await import(pathToFileURL(resolve(modules,'projection.mjs')).href);
     const {estimateIndexMaintenance}=await import(pathToFileURL(resolve(modules,'incremental-sync.mjs')).href);
-    return await runLocalRefresh(db,{projection:rebuildProjection,estimateIndexes:estimateIndexMaintenance});
+    return await runLocalRefresh(db,{storeIds:selectedStores,productIds:productIds.length?productIds:undefined,projection:rebuildProjection,estimateIndexes:estimateIndexMaintenance});
   }finally{db.close();}
 }
 // Esbuild usa el nombre de salida explícito del consumidor. Al importar en tests no ejecutar CLI.
