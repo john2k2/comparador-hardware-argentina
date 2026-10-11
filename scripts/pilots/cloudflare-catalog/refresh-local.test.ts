@@ -245,3 +245,10 @@ test('CLI --product-id conserva una demanda ajena vencida y no hace HTTP si el s
     finally{check.close();}
   } finally {globalThis.fetch=originalFetch;f.db.close();rmSync(directory,{recursive:true});}
 });
+
+test('404 preserva causa de transporte separada de outcome y no cambia observación guardada',async()=>{
+  const f=fixture('katech');const result=await runLocalRefresh(f.db,{...f.dependencies,storeIds:['katech'],reader:async()=>{throw new SourceHttpError('not-found',404);}});
+  assert.equal(result.observed,0);assert.equal(result.results[0].outcome,'http-error');
+  assert.ok('sourceFailure' in result.results[0]);assert.equal(result.results[0].sourceFailure,'not-found');assert.equal(result.results[0].httpStatus,404);
+  assert.deepEqual(JSON.parse(f.db.prepare('SELECT row_json FROM product_prices').get()!.row_json as string),f.raw);f.db.close();
+});

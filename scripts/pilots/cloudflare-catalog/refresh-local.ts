@@ -12,6 +12,8 @@ import { sourceContract, WOO_PUBLIC_STORE_IDS } from '@/lib/scrapers/source-cont
 import { hasExplicitIdentityConflict, type OfferIdentityReview } from '@/lib/quality/offer-identity';
 import { normalizeIdentityText } from '@/lib/product-identity';
 import { listingReference, sameListing } from '@/lib/scrapers/listing-reference';
+import { getCompraGamerCatalog, getCompraGamerSubcategoryMap, getCompraGamerBrandMap } from '@/lib/scrapers/compragamer-catalog';
+import { mapCompraGamerProduct } from '@/lib/scrapers/compragamer-mapper';
 import { isComparableStoreOffer } from '@/lib/price-utils';
 import { buildPriceStateSignature } from '@/lib/persistence/product-write-dedupe';
 import type { HardwareCategory, Product, ProductPrice } from '@/lib/types';
@@ -28,7 +30,7 @@ type Dependencies = { reader?:Reader; clock?:()=>number; projection:Projection; 
 const historySchema = `CREATE TABLE IF NOT EXISTS pilot_offer_observations(
  offer_id TEXT NOT NULL,observed_at TEXT NOT NULL,row_json TEXT NOT NULL,
  PRIMARY KEY(offer_id,observed_at));`;
-export const localStoreIds = [...WOO_PUBLIC_STORE_IDS,'fullh4rd','mexx','xtpc','gamingcity','compugarden'];
+export const localStoreIds = [...WOO_PUBLIC_STORE_IDS,'fullh4rd','mexx','xtpc','gamingcity','compugarden','compragamer'];
 export const localCategories = ['procesadores','tarjetas-graficas','memoria-ram'];
 
 export function canRefreshLocalTarget(storeId:string,url:string,category:string,name:string):boolean {
@@ -45,6 +47,14 @@ function selectedLocalStores(storeIds:string[]=localStoreIds):string[] {
 export function createLocalOfferReader({wooReader=fetchWooCommerceKnownOffer,detailReader=fetchKnownProductDetail}={}):Reader {
   return async(storeId,url,category,signal)=>{
     if(!validateLocalTarget(storeId,url))throw new Error('REFRESH_LOCAL_IDENTITY');
+    if(storeId==='compragamer') {
+      const reference=listingReference(storeId,url)!;
+      const catalog=await getCompraGamerCatalog(signal);
+      const item=catalog.find(row=>`${storeId}:id:${row.id_producto}`===reference);
+      if(!item)return null;
+      const subcategoryMap=await getCompraGamerSubcategoryMap(signal),brandMap=await getCompraGamerBrandMap(signal);
+      return mapCompraGamerProduct({item,subcategoryMap,brandMap});
+    }
     const contract=sourceContract(storeId)!;
     return (WOO_PUBLIC_STORE_IDS as readonly string[]).includes(storeId)?wooReader(storeId,url,category,signal)
       :detailReader(url,{id:storeId,name:storeId,baseUrl:contract.baseUrl},category,signal);
@@ -167,6 +177,7 @@ export async function runLocalRefresh(db:DatabaseSync,{limit=3,storeIds,productI
       let acknowledged=false;
       try{acknowledgeRefresh(db,{...lease,now:clock(),outcome,retryAfterMs});acknowledged=true;}catch{/* Lease vencido conserva su estado; no imprimir SDK. */}
       results.push({offerId:lease.offerId,storeId:lease.storeId,url:lease.url,status:'failed',outcome,acknowledged,
+        ...(error instanceof SourceHttpError?{sourceFailure:error.reason,httpStatus:error.status??null}:{}),
         ...(readSource?{sourceTitle:readSource.name.slice(0,400),sourceCategory:readSource.category}:{}),
         code:error instanceof Error&&/^REFRESH_LOCAL_[A-Z_]+$/.test(error.message)?error.message:outcome});
     }
@@ -180,10 +191,12 @@ export async function refreshLocalCli(args:string[]) {
   const mode=args[0],path=args[1];
   if(!['--dry-run','--execute'].includes(mode)||!path)throw new Error('REFRESH_LOCAL_USAGE');
   const file=realpathSync(resolve(path));
-  if(basename(file)!=='sample.sqlite'||!statSync(file).isFile())throw new Error('REFRESH_LOCAL_SAMPLE_REQUIRED');
+  const fullCatalog=args.includes('--full-catalog');
+  if((basename(file)!==(fullCatalog?'catalog-all.sqlite':'sample.sqlite'))||!statSync(file).isFile())throw new Error('REFRESH_LOCAL_SAMPLE_REQUIRED');
   const productIds:string[]=[],requestedStores:string[]=[];let freshMs=86400000;
   for(let i=2;i<args.length;i++) {
-    if(args[i]==='--product-id'&&args[i+1])productIds.push(args[++i]);
+    if(args[i]==='--full-catalog')continue;
+    else if(args[i]==='--product-id'&&args[i+1])productIds.push(args[++i]);
     else if(args[i]==='--store-id'&&args[i+1])requestedStores.push(args[++i]);
     else if(args[i]==='--fresh-hours'&&['3','24'].includes(args[i+1]))freshMs=Number(args[++i])*3600000;
     else throw new Error('REFRESH_LOCAL_USAGE');
@@ -192,6 +205,10 @@ export async function refreshLocalCli(args:string[]) {
   const selectedStores=selectedLocalStores(requestedStores.length?requestedStores:undefined);
   const db=new DatabaseSync(file,{readOnly:mode==='--dry-run'});
   try{
+    if(fullCatalog) {
+      const meta=db.prepare("SELECT value FROM pilot_meta WHERE key='snapshot'").get() as {value:string}|undefined;
+      if(!meta||JSON.parse(meta.value).counts?.product_prices!==Number(db.prepare('SELECT COUNT(*) n FROM product_prices').get()?.n))throw new Error('REFRESH_LOCAL_SNAPSHOT');
+    }
     const queueExists=Boolean(db.prepare("SELECT name FROM sqlite_schema WHERE type='table' AND name='pilot_refresh_demand'").get());
     const storeFilter=selectedStores.map(()=>'?').join(',');
     const rows=(productIds.length?db.prepare(`SELECT pp.id,pp.product_id,pp.store_id,pp.url,p.category FROM product_prices pp JOIN products p ON p.id=pp.product_id WHERE pp.product_id IN(${productIds.map(()=>'?').join(',')}) AND pp.store_id IN(${storeFilter}) ORDER BY pp.id LIMIT 100`).all(...productIds,...selectedStores)

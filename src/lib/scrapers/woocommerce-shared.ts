@@ -360,7 +360,15 @@ export function parseWooProductDetail(
   const storePrice = goldenDetail ? goldenVisibleText($, primary('.gt-ficha-cash__now'))
     : store.id === 'scphardstore' ? primary('.scp-price-main__current').first().text().trim()
     : store.id === 'maxtecno' ? primary('main.product .price-showcase-box .price-main').first().text().trim() : '';
-  const price = parseWooPrice(goldenDetail ? storePrice : storePrice || productFieldPrice || insPrice || anyPrice || metaPrice);
+  // Katech retira el importe visible al agotar una ficha pero conserva precio
+  // en OpenGraph/JSON-LD. Esa metadata no es una nueva observación de precio.
+  const katechPriceNode = store.id === 'katech' ? primaryPrices.filter('.product_field.price, p.price')
+    .filter((_, element) => !explicitlyHidden($, $(element))).first() : null;
+  const katechIns = katechPriceNode?.find('ins .woocommerce-Price-amount bdi, ins bdi')
+    .filter((_, element) => !explicitlyHidden($, $(element))).first();
+  const katechPrice = katechPriceNode ? (katechIns ? goldenVisibleText($, katechIns) : '')
+    || goldenVisibleText($, katechPriceNode) : '';
+  const price = parseWooPrice(store.id === 'katech' ? katechPrice : goldenDetail ? storePrice : storePrice || productFieldPrice || insPrice || anyPrice || metaPrice);
   if (price <= 0) return null;
 
   const imageRaw =
@@ -487,11 +495,12 @@ export async function fetchWooCommerceKnownOffer(storeId: string, rawUrl: string
   const html = await response.text();
   const $ = cheerio.load(html);
   if (foreignWooCurrency($, url.href, store.id)) throw new SourceHttpError('inconsistent-source');
-  // Una ficha GoldenTech presente pero rechazada conserva ese rechazo. El
+  // Una ficha propia presente pero rechazada conserva ese rechazo. El
   // JSON-LD puede seguir válido mientras el principal falta o contradice IDs.
   const goldenDetail = store.id === 'goldentechstore' && $('.gt-ficha').length > 0;
+  const katechDetail = store.id === 'katech' && $('body.single-product, main.product').length > 0;
   const product = parseWooProductDetail(html, url.href, store, category, slugFromScrapedUrl(url.href))
-    ?? (!goldenDetail && $('form.variations_form, table.variations').length === 0
+    ?? (!goldenDetail && !katechDetail && $('form.variations_form, table.variations').length === 0
       ? parseKnownProductDetail(html, url.href, store, category) : null);
   if (!product || host(product.prices[0].url) !== host(store.baseUrl)) return null;
   return product;

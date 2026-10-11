@@ -178,6 +178,23 @@ describe('woocommerce-shared', () => {
     expect(product?.prices[0].stock).toBe('in-stock');
   });
 
+  it.each(['', '<p class="product_field price"><ins hidden><bdi>$3.162.723</bdi></ins></p>', '<p class="price" hidden><bdi>$3.162.723</bdi></p>', '<section class="related products"><p class="price"><bdi>$3.162.723</bdi></p></section>'])('Katech sin precio visible no observa metadata conservada ni sanada con JSON-LD: %s', async content => {
+    // Ficha conocida 5080 leída el11/10/2026: SinStock, sin bloque de precio,
+    // OpenGraph aún conservaba3162723. El fallback tampoco puede renovar ese importe.
+    const name = 'VIDEO GEFORCE RTX 5080 16GB GIGABYTE GAMING OC';
+    const url = 'https://katech.com.ar/producto/video-geforce-rtx-5080-16gb-gigabyte-gaming-oc/';
+    const store = {id:'katech',name:'Katech',baseUrl:'https://katech.com.ar'};
+    const schema = {'@type':'Product',name,url,offers:{'@type':'Offer',price:3162723,priceCurrency:'ARS',availability:'https://schema.org/OutOfStock'}};
+    const html = `<body class="single-product"><h1 class="post_title">${name}</h1><link rel="canonical" href="${url}"><meta property="product:price:currency" content="ARS"><meta property="product:price:amount" content="3162723">${content}<p class="stock out-of-stock">Sin Stock</p><script type="application/ld+json">${JSON.stringify(schema)}</script></body>`;
+    expect(parseWooProductDetail(html,url,store,'tarjetas-graficas','gpu')).toBeNull();
+    const source=vi.fn().mockResolvedValue(new Response(html));vi.stubGlobal('fetch',source);
+    expect(await fetchWooCommerceKnownOffer(store.id,url,'tarjetas-graficas')).toBeNull();
+    expect(source).toHaveBeenCalledTimes(1);
+    // Un precio principal visible sí permite registrar la observación agotada.
+    const visible=html.replace(content+'<p class="stock', '<p class="product_field price"><bdi>$3.162.723</bdi></p><p class="stock');
+    expect(parseWooProductDetail(visible,url,store,'tarjetas-graficas','gpu')?.prices[0]).toMatchObject({price:3162723,stock:'out-of-stock'});
+  });
+
   it('Katech reconoce special sólo con etiqueta e importe del mismo bloque principal', () => {
     // Estructura del HTML de Katech leído el 11/10/2026 a las 14:19 UTC.
     const block = (label: string, price = '$428.250,00') => `<div class="w-vwrapper"><h5>${label}</h5><p class="product_field price"><bdi>${price}</bdi></p></div>`;
