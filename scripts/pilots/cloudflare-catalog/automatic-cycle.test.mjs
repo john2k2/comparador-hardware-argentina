@@ -8,6 +8,7 @@ import { initializeRefreshDemand,enqueueKnownProducts,claimRefreshBatch,acknowle
 import { rebuildProjection } from './projection.mjs';
 import { runAutomaticCycle,acquireCycleLease,validateCycleConfig } from './automatic-cycle.mjs';
 import { schedulerPlist } from './mac-scheduler.mjs';
+import { DAILY_BUDGET_SCHEMA } from './daily-budget.mjs';
 
 function fixture(){
  const directory=mkdtempSync(resolve(tmpdir(),'catalog-automatic-'));
@@ -44,7 +45,7 @@ function fixture(){
     return {attempted:leases.length,results,sourceHttp:{fixture:{requests:leases.length*4}}};
   }};
  const deps={consumer,token:'not-a-secret',clock:()=>time,state:async()=>({snapshot:remote,rowsRead:1}),sync:async payload=>{syncs++;assert.equal(payload.expectedSnapshot,remote);remote=payload.finalSnapshot;return {atomic:true,generation:JSON.parse(remote).cache.generation,rowsRead:7,rowsWritten:63};}};
- return {directory,config,deps,consumer,stats:()=>({calls,syncs}),marker:()=>remote,setRemote:value=>{remote=value;},advance:()=>{time+=900000;},cleanup:()=>rmSync(directory,{recursive:true,force:true})};
+ return {directory,config,deps,consumer,stats:()=>({calls,syncs}),marker:()=>remote,setRemote:value=>{remote=value;},setTime:value=>{time=value;},advance:()=>{time+=900000;},cleanup:()=>rmSync(directory,{recursive:true,force:true})};
 }
 test('tick rota, observa tres destinos y sincroniza; siguiente tick fresco no lee fuentes ni publica',async()=>{
  const f=fixture();try{
@@ -141,5 +142,158 @@ test('alternancia de familia por tienda persiste y revisa CPU antes de la GPU pe
   const deps={...f.deps,consumer:{...f.consumer,localCategories:['procesadores','tarjetas-graficas']}};
   const first=await runAutomaticCycle(f.config,deps);assert.ok(first.results.some(r=>r.offerId==='o0'));assert.ok(!first.results.some(r=>r.offerId==='o3'));
   f.advance();const second=await runAutomaticCycle(f.config,deps);assert.ok(second.results.some(r=>r.offerId==='o3'));assert.equal(second.coverage.totals.observedThisTrial,4);
+ }finally{f.cleanup();}
+});
+
+function expireProjection(f,{pending=false}={}){
+ const db=new DatabaseSync(f.config.sqlite),observed=new Date(f.config.startedAt-4*3600000+1).toISOString();
+ for(const row of db.prepare('SELECT id,row_json FROM product_prices').all()){
+  const raw={...JSON.parse(row.row_json),last_updated:observed};
+  db.prepare('UPDATE product_prices SET row_json=? WHERE id=?').run(JSON.stringify(raw),row.id);
+ }
+ db.prepare("UPDATE price_basis SET observed_at=? WHERE kind='current'").run(observed);
+ rebuildProjection(db,{now:f.config.startedAt,generation:'before-clock-transition'});
+ if(pending)enqueueKnownProducts(db,{productIds:['p0','p1','p2'],now:f.config.startedAt,freshMs:3*3600000});
+ f.setRemote(db.prepare("SELECT value FROM pilot_meta WHERE key='snapshot'").get().value);db.close();f.advance();
+}
+function durableState(f){
+ const db=new DatabaseSync(f.config.sqlite,{readOnly:true});try{return {
+  marker:db.prepare("SELECT value FROM pilot_meta WHERE key='snapshot'").get().value,
+  prices:db.prepare('SELECT * FROM product_prices ORDER BY id').all(),products:db.prepare('SELECT * FROM products ORDER BY id').all(),
+  basis:db.prepare('SELECT * FROM price_basis ORDER BY product_id,kind,id').all(),projection:db.prepare('SELECT * FROM search_projection ORDER BY product_id').all(),
+  ledger:db.prepare("SELECT name FROM sqlite_master WHERE name='pilot_daily_write_budget'").get()
+   ?db.prepare('SELECT * FROM pilot_daily_write_budget').all():[],
+ };}finally{db.close();}
+}
+test('sin demanda reconstruye transición del reloj y sincroniza sin renovar ninguna oferta',async()=>{
+ const f=fixture();try{
+  expireProjection(f);const before=durableState(f);let payload;
+  const result=await runAutomaticCycle(f.config,{...f.deps,consumer:{...f.consumer,canRefreshLocalTarget:()=>false},sync:async value=>{payload=value;return f.deps.sync(value);}});
+  assert.equal(result.status,'maintained');assert.equal(result.results.length,0);assert.deepEqual(f.stats(),{calls:0,syncs:1});
+  assert.ok(result.maintenance.changedProjectionRows>0);assert.equal(result.budget.attempted,0);assert.equal(result.budget.http_requests,0);assert.equal(result.budget.reserved_writes,0);
+  assert.deepEqual(payload.product_prices,[]);assert.deepEqual(payload.price_basis,[]);assert.deepEqual(payload.summaries,[]);
+  const after=durableState(f);assert.deepEqual(after.prices,before.prices);assert.deepEqual(after.products,before.products);assert.deepEqual(after.basis,before.basis);
+  assert.notEqual(after.marker,before.marker);assert.equal(after.marker,f.marker());assert.equal(after.ledger.length,1);
+  const cache=JSON.parse(after.marker).cache;assert.ok(Date.parse(cache.validUntil)>Date.parse(result.startedAt));
+ }finally{f.cleanup();}
+});
+test('marcador vigente sin demanda es zero-op sin checkpoint ni ledger',async()=>{
+ const f=fixture();try{
+  const before=durableState(f),result=await runAutomaticCycle(f.config,{...f.deps,consumer:{...f.consumer,canRefreshLocalTarget:()=>false}});
+  assert.equal(result.status,'idle');assert.deepEqual(durableState(f),before);assert.deepEqual(f.stats(),{calls:0,syncs:0});
+  assert.equal(result.budget.reserved_writes,0);assert.equal(result.remote.rowsWritten,0);assert.ok(!existsSync(f.config.checkpoint));
+ }finally{f.cleanup();}
+});
+test('mantenimiento exclusivo pospone lectores; sus fallos siguientes mantienen caché y datos',async()=>{
+ const f=fixture();try{
+  expireProjection(f,{pending:true});const before=durableState(f);
+  const consumer={...f.consumer,async runLocalRefresh(db,options){
+   const leases=claimRefreshBatch(db,{now:f.config.startedAt+900000,limit:1,storeIds:options.storeIds,productIds:options.productIds});
+   for(const lease of leases)acknowledgeRefresh(db,{...lease,now:f.config.startedAt+900000,outcome:'no-observation',retryAfterMs:6*3600000});
+   return {attempted:leases.length,results:leases.map(lease=>({offerId:lease.offerId,status:'failed'})),sourceHttp:{fixture:{requests:leases.length}}};
+  }};
+  const result=await runAutomaticCycle(f.config,{...f.deps,consumer});assert.equal(result.status,'maintained');assert.equal(result.results.length,0);
+  assert.equal(result.sourcesDeferred,3);assert.equal(result.remote.syncs,1);assert.equal(result.budget.attempted,0);assert.equal(result.budget.http_requests,0);
+  const after=durableState(f);assert.deepEqual(after.prices,before.prices);assert.deepEqual(after.basis,before.basis);assert.notEqual(after.marker,before.marker);
+  f.advance();const following=await runAutomaticCycle(f.config,{...f.deps,consumer});assert.equal(following.status,'completed');assert.equal(following.results.length,3);
+  assert.equal(following.budget.attempted,3);assert.equal(following.budget.http_requests,3);assert.equal(following.remote.syncs,0);
+  assert.deepEqual(durableState(f),after);
+ }finally{f.cleanup();}
+});
+test('HTTP agotado no impide mantenimiento de reloj dentro del presupuesto de escrituras',async()=>{
+ const f=fixture();try{
+  expireProjection(f,{pending:true});f.config.maxDailyHttp=6;
+  const result=await runAutomaticCycle(f.config,f.deps);assert.equal(result.status,'maintained');assert.equal(result.sourcesDeferred,3);
+  assert.deepEqual(f.stats(),{calls:0,syncs:1});assert.equal(result.budget.http_requests,0);assert.equal(result.budget.attempted,0);
+ }finally{f.cleanup();}
+});
+test('reserva remota insuficiente no reconstruye ni consulta una tienda',async()=>{
+ const f=fixture();try{
+  expireProjection(f);const before=durableState(f);f.config.maxDailyRemoteWrites=3999;
+  const result=await runAutomaticCycle(f.config,f.deps);assert.equal(result.status,'daily-budget');assert.deepEqual(durableState(f),before);
+  assert.deepEqual(f.stats(),{calls:0,syncs:0});assert.equal(result.budget.reserved_writes,0);
+ }finally{f.cleanup();}
+});
+test('estimate mayor que reserva revierte marcador/proyección y libera reserva sin HTTP',async()=>{
+ const f=fixture();try{
+  expireProjection(f);const before=durableState(f);
+  const result=await runAutomaticCycle(f.config,{...f.deps,estimateIndexes:()=>4001});
+  assert.equal(result.error,'CYCLE_MAINTENANCE_RESERVATION');assert.deepEqual(durableState(f),before);assert.deepEqual(f.stats(),{calls:0,syncs:0});
+  assert.equal(result.budget.reserved_writes,0);assert.equal(result.budget.attempted,0);assert.equal(result.budget.http_requests,0);
+ }finally{f.cleanup();}
+});
+test('presupuesto local rechazado revierte la transición y no duplica ledger',async()=>{
+ const f=fixture();try{
+  expireProjection(f);const db=new DatabaseSync(f.config.sqlite);db.exec(DAILY_BUDGET_SCHEMA);
+  db.prepare('INSERT INTO pilot_daily_write_budget VALUES(?,?,?)').run('2026-10-11',80000,80000);db.close();
+  const before=durableState(f),result=await runAutomaticCycle(f.config,f.deps);
+  assert.equal(result.status,'failed');assert.deepEqual(durableState(f),before);assert.deepEqual(f.stats(),{calls:0,syncs:0});
+  assert.equal(result.budget.reserved_writes,0);assert.equal(result.budget.http_requests,0);
+ }finally{f.cleanup();}
+});
+test('recibo de mantenimiento perdido conserva outbox/reserva y recuperación no recalcula ledger',async()=>{
+ const f=fixture();try{
+  expireProjection(f);const deps={...f.deps,consumer:{...f.consumer,canRefreshLocalTarget:()=>false}};
+  const first=await runAutomaticCycle(f.config,{...deps,sync:async payload=>{f.setRemote(payload.finalSnapshot);throw new Error('CYCLE_SYNC_RECEIPT_INVALID');}});
+  assert.equal(first.status,'failed');assert.equal(first.budget.reserved_writes,4000);assert.equal(first.budget.http_requests,0);assert.ok(existsSync(resolve(f.directory,'outbox.json')));
+  const ledger=durableState(f).ledger;f.advance();const next=await runAutomaticCycle(f.config,deps);
+  assert.equal(next.status,'recovered');assert.equal(next.remote.rowsWritten,0);assert.deepEqual(durableState(f).ledger,ledger);
+  assert.deepEqual(f.stats(),{calls:0,syncs:0});assert.equal(next.budget.reserved_writes,4000,'recibo desconocido no acredita liberación');
+ }finally{f.cleanup();}
+});
+test('más de200 proyecciones en transición rechaza delta dentro de la transacción y preserva datos',async()=>{
+ const f=fixture();try{
+  const db=new DatabaseSync(f.config.sqlite),observed=new Date(f.config.startedAt-4*3600000+1).toISOString();
+  for(let index=3;index<204;index++){
+   const id='p'+index,offer='o'+index,url='https://maxtecno.com.ar/producto/cpu-'+index+'/';
+   db.prepare('INSERT INTO products VALUES(?,?,?,?,?,?,?,?,?,?)').run(id,'procesadores',id,'amd ryzen 5 5500','amd ryzen 5 5500',1,0,observed,observed,JSON.stringify({id,name:'AMD Ryzen 5 5500',category:'procesadores'}));
+   db.prepare('INSERT INTO product_substrings VALUES(?,?)').run(id,'amd ryzen 5 5500');
+   db.prepare('INSERT INTO product_prices VALUES(?,?,?,?,?,?)').run(offer,id,'maxtecno',100000,url,JSON.stringify({id:offer,product_id:id,store_id:'maxtecno',url,price:100000,stock:'in-stock',last_updated:observed}));
+   db.prepare('INSERT INTO summaries VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').run(id,100000,100000,100000,1,url,0,'["maxtecno"]',null,null,observed,'{}');
+   for(const kind of ['historical','current'])db.prepare('INSERT INTO price_basis VALUES(?,?,?,?,?,?,?,?)').run(id,kind,offer,'maxtecno',100000,'in-stock',url,observed);
+  }
+  rebuildProjection(db,{now:f.config.startedAt,generation:'many-before-transition'});
+  f.setRemote(db.prepare("SELECT value FROM pilot_meta WHERE key='snapshot'").get().value);db.close();f.advance();
+  const before=durableState(f),result=await runAutomaticCycle(f.config,{...f.deps,consumer:{...f.consumer,canRefreshLocalTarget:()=>false}});
+  assert.equal(result.error,'CYCLE_MAINTENANCE_DELTA');assert.deepEqual(durableState(f),before);assert.deepEqual(f.stats(),{calls:0,syncs:0});
+  assert.equal(result.budget.reserved_writes,0);assert.ok(!existsSync(resolve(f.directory,'outbox.json')));
+ }finally{f.cleanup();}
+});
+test('mantenimiento no confirmado se reenvía desde outbox sin consumir tiendas ni ledger otra vez',async()=>{
+ const f=fixture();try{
+  expireProjection(f);const deps={...f.deps,consumer:{...f.consumer,canRefreshLocalTarget:()=>false}};
+  const first=await runAutomaticCycle(f.config,{...deps,sync:async()=>{throw new Error('network-down');}});
+  assert.equal(first.status,'failed');const ledger=durableState(f).ledger;f.advance();
+  const next=await runAutomaticCycle(f.config,deps);assert.equal(next.status,'recovered');assert.deepEqual(f.stats(),{calls:0,syncs:1});
+  assert.deepEqual(durableState(f).ledger,ledger);assert.equal(next.budget.reserved_writes,4000);
+ }finally{f.cleanup();}
+});
+test('crash tras commit de mantenimiento antes de outbox reconstruye delta sin recargar ledger',async()=>{
+ const f=fixture();try{
+  expireProjection(f);const deps={...f.deps,consumer:{...f.consumer,canRefreshLocalTarget:()=>false}};
+  await runAutomaticCycle(f.config,{...deps,sync:async()=>{throw new Error('crash');}});
+  const ledger=durableState(f).ledger;unlinkSync(resolve(f.directory,'outbox.json'));f.advance();
+  const next=await runAutomaticCycle(f.config,deps);assert.equal(next.status,'recovered');assert.equal(next.remote.recovered,true);
+  assert.deepEqual(f.stats(),{calls:0,syncs:1});assert.deepEqual(durableState(f).ledger,ledger);assert.equal(next.budget.http_requests,0);
+ }finally{f.cleanup();}
+});
+test('estado remoto que alcanza vencimiento exacto impide reservar y modificar proyección',async()=>{
+ const f=fixture();try{
+  expireProjection(f);const before=durableState(f);
+  const result=await runAutomaticCycle(f.config,{...f.deps,state:async()=>{f.setTime(f.config.expiresAt);return f.deps.state();}});
+  assert.equal(result.error,'CYCLE_PILOT_STOPPED');assert.equal(result.status,'failed');assert.deepEqual(durableState(f),before);
+  assert.deepEqual(f.stats(),{calls:0,syncs:0});assert.equal(result.budget.reserved_writes,0);assert.equal(result.budget.http_requests,0);
+  assert.ok(!existsSync(resolve(f.directory,'outbox.json')));assert.ok(!existsSync(f.config.checkpoint));
+ }finally{f.cleanup();}
+});
+test('cálculo que atraviesa vencimiento revierte marcador y ledger antes de confirmar',async()=>{
+ const f=fixture();try{
+  expireProjection(f);const before=durableState(f);
+  const result=await runAutomaticCycle(f.config,{...f.deps,projection:(db,options)=>{
+   const rebuilt=rebuildProjection(db,options);f.setTime(f.config.expiresAt);return rebuilt;
+  }});
+  assert.equal(result.error,'CYCLE_PILOT_STOPPED');assert.equal(result.status,'failed');assert.deepEqual(durableState(f),before);
+  assert.deepEqual(f.stats(),{calls:0,syncs:0});assert.equal(result.budget.reserved_writes,0);assert.equal(result.budget.http_requests,0);
+  assert.ok(!existsSync(resolve(f.directory,'outbox.json')));
  }finally{f.cleanup();}
 });

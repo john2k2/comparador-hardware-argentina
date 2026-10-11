@@ -5,9 +5,10 @@ import { readFileSync,writeFileSync,renameSync,existsSync,statSync,realpathSync,
 import { resolve,basename,dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { initializeRotation,seedNextRotationBatch,coverageSnapshot } from './rotation-local.mjs';
-import { cycleDeltaFromFiles,pilotState,sendCycleDelta } from './cycle-remote.mjs';
+import { buildCycleDelta,cycleDeltaFromFiles,pilotState,sendCycleDelta } from './cycle-remote.mjs';
 import { rebuildProjection } from './projection.mjs';
 import { estimateIndexMaintenance } from './incremental-sync.mjs';
+import { chargeDailyBudget } from './daily-budget.mjs';
 
 const HOUR=3600000;
 const schema=`CREATE TABLE IF NOT EXISTS pilot_cycle_state(
@@ -53,15 +54,15 @@ export function acquireCycleLease(db,config,now,owner=randomUUID()){
   });
 }
 function budget(db,day){db.prepare('INSERT OR IGNORE INTO pilot_cycle_budget(day) VALUES(?)').run(day);return db.prepare('SELECT * FROM pilot_cycle_budget WHERE day=?').get(day);}
-function reserve(db,day,config){
+function reserve(db,day,config,{sources=true}={}){
   return transaction(db,()=>{
     const row=budget(db,day);
     // Reserva conservadora para un delta de hasta tres productos/200 proyecciones.
     // Ante respuesta perdida se conserva entera hasta el fin del día.
     const reserveWrites=4000;
-    if(row.attempted+3>config.maxDailyOffers||row.http_requests+12>config.maxDailyHttp
+    if(sources&&(row.attempted+3>config.maxDailyOffers||row.http_requests+12>config.maxDailyHttp)
       ||row.rows_written+row.reserved_writes+reserveWrites>config.maxDailyRemoteWrites)return null;
-    db.prepare('UPDATE pilot_cycle_budget SET attempted=attempted+3,http_requests=http_requests+12,reserved_writes=reserved_writes+? WHERE day=?').run(reserveWrites,day);
+    db.prepare('UPDATE pilot_cycle_budget SET attempted=attempted+?,http_requests=http_requests+?,reserved_writes=reserved_writes+? WHERE day=?').run(sources?3:0,sources?12:0,reserveWrites,day);
     return reserveWrites;
   });
 }
@@ -75,7 +76,7 @@ export async function runAutomaticCycle(config,dependencies={}){
   const id=randomUUID(),outbox=resolve(dirname(config.sqlite),'outbox.json');
   const report={id,startedAt:new Date(now).toISOString(),status:'running',results:[],sourceHttp:{},remote:{rowsRead:0,rowsWritten:0,syncs:0,recovered:false}};
   db.prepare('INSERT INTO pilot_cycle_runs(id,started_at,status) VALUES(?,?,?)').run(id,now,'running');
-  let reservation=0,knownReceipt=false,attempted=0,sourceComplete=false;
+  let reservation=0,sourceReserved=false,knownReceipt=false,attempted=0,sourceComplete=false;
   try{
     if(clock()>=config.expiresAt)throw new Error('CYCLE_PILOT_STOPPED');
     const local=dependencies.consumer??await import(pathToFileURL(config.consumerBundle).href);
@@ -130,14 +131,41 @@ export async function runAutomaticCycle(config,dependencies={}){
       for(let offset=0;offset<stores.length&&selected.length<3;offset++){
         const store=stores[(lease.nextStore+offset)%stores.length];if(available.has(store))selected.push(store);
       }
-      if(!selected.length)report.status='idle';
+      const cache=JSON.parse(marker(db)).cache,maintenanceAt=clock();
+      const maintenanceDue=!cache||!Number.isFinite(Date.parse(cache.validUntil))||maintenanceAt>=Date.parse(cache.validUntil);
+      if(!selected.length&&!maintenanceDue)report.status='idle';
       else{
-        reservation=reserve(db,day,config);
+        if(clock()>=config.expiresAt)throw new Error('CYCLE_PILOT_STOPPED');
+        // Un delta de reloj ocupa su propio tick: no combinarlo con tres writers
+        // de ofertas que puedan superar la reserva o el transporte de200 filas.
+        sourceReserved=selected.length>0&&!maintenanceDue;
+        if(maintenanceDue)report.sourcesDeferred=selected.length;
+        reservation=reserve(db,day,config,{sources:sourceReserved});
         if(!reservation)report.status='daily-budget';
         else{
           // Copia durable antes del primer writer, conservada ante fallas de red.
           if(!existsSync(config.checkpoint))writeCheckpoint(db,config);
-          for(const store of selected){
+          if(maintenanceDue){
+            try{
+              report.maintenance=transaction(db,()=>{
+                if(clock()>=config.expiresAt)throw new Error('CYCLE_PILOT_STOPPED');
+                const rebuilt=(dependencies.projection??rebuildProjection)(db,{now:maintenanceAt,generation:'cycle-clock-'+id,affectedProductIds:[]});
+                const estimatedRowsWritten=rebuilt.baseRowsWritten+(dependencies.estimateIndexes??estimateIndexMaintenance)(db,rebuilt.statements);
+                if(estimatedRowsWritten>reservation)throw new Error('CYCLE_MAINTENANCE_RESERVATION');
+                // Validar límites del transporte antes de confirmar el writer local.
+                const before=new DatabaseSync(config.checkpoint,{readOnly:true});
+                try{buildCycleDelta(before,db);}catch{throw new Error('CYCLE_MAINTENANCE_DELTA');}finally{before.close();}
+                const charged=chargeDailyBudget(db,{now:maintenanceAt,estimatedRowsWritten});
+                if(clock()>=config.expiresAt)throw new Error('CYCLE_PILOT_STOPPED');
+                return {changedProjectionRows:rebuilt.changedProjectionRows,estimatedRowsWritten,budget:charged,cache:rebuilt.cache};
+              });
+            }catch(error){
+              // Fallo local confirmado: no se hizo HTTP ni quedó un writer parcial.
+              sourceComplete=true;knownReceipt=true;
+              throw error;
+            }
+          }
+          for(const store of sourceReserved?selected:[]){
             if(clock()>=config.expiresAt)throw new Error('CYCLE_PILOT_STOPPED');
             // Alternar familias por tienda evita que las GPU monopolizen la muestra.
             const categories=capabilities.categories;
@@ -159,7 +187,7 @@ export async function runAutomaticCycle(config,dependencies={}){
             // La cola confirma el ACK y la pausa por tienda en una sola transacción.
           }
           sourceComplete=true;
-          db.prepare('UPDATE pilot_cycle_state SET next_store=? WHERE id=1').run((stores.indexOf(selected.at(-1))+1)%stores.length);
+          if(sourceReserved)db.prepare('UPDATE pilot_cycle_state SET next_store=? WHERE id=1').run((stores.indexOf(selected.at(-1))+1)%stores.length);
           let payload;try{payload=cycleDeltaFromFiles(config.checkpoint,config.sqlite);}catch{throw new Error('CYCLE_DELTA_INVALID');}
           if(payload){
             if(clock()>=config.expiresAt)throw new Error('CYCLE_PILOT_STOPPED');
@@ -168,7 +196,7 @@ export async function runAutomaticCycle(config,dependencies={}){
             report.remote.rowsRead+=receipt.rowsRead;report.remote.rowsWritten+=receipt.rowsWritten;report.remote.syncs++;
             knownReceipt=true;writeCheckpoint(db,config);renameSync(outbox,outbox+'.sent-'+id);
           }else knownReceipt=true;
-          report.status='completed';
+          report.status=sourceReserved?'completed':'maintained';
         }
       }
     }
@@ -181,7 +209,7 @@ export async function runAutomaticCycle(config,dependencies={}){
     transaction(db,()=>{
       budget(db,day);
       db.prepare('UPDATE pilot_cycle_budget SET attempted=attempted-?+?,http_requests=http_requests-?+?,rows_read=rows_read+?,rows_written=rows_written+?,reserved_writes=reserved_writes-?,syncs=syncs+? WHERE day=?')
-        .run(reservation&&sourceComplete?3:0,reservation&&!sourceComplete?0:attempted,reservation&&sourceComplete?12:0,sourceComplete?requests:0,report.remote.rowsRead,report.remote.rowsWritten,knownReceipt?reservation:0,report.remote.syncs,day);
+        .run(sourceReserved&&reservation&&sourceComplete?3:0,reservation&&!sourceComplete?0:attempted,sourceReserved&&reservation&&sourceComplete?12:0,sourceComplete?requests:0,report.remote.rowsRead,report.remote.rowsWritten,knownReceipt?reservation:0,report.remote.syncs,day);
       db.prepare('UPDATE pilot_cycle_state SET lease_token=NULL,lease_until=NULL WHERE id=1 AND lease_token=?').run(lease.owner);
       db.prepare('UPDATE pilot_cycle_runs SET finished_at=?,status=?,report_json=? WHERE id=?').run(clock(),report.status,JSON.stringify(report),id);
     });
