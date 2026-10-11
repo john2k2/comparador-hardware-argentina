@@ -13,7 +13,9 @@ export function buildCycleDelta(before,after){
     if(old.size!==rows.length||rows.some(row=>!old.has(row[key])))throw new Error('CYCLE_MEMBERSHIP_CHANGED');
     payload[table]=rows.filter(row=>!isDeepStrictEqual({...old.get(row[key])},{...row}));
   }
-  payload.basisProductIds=[...new Set(payload.product_prices.map(row=>row.product_id))];
+  // Una reparación entre destinos EXISTENTES retira la base del modelo viejo
+  // y reconstruye ambos. Nunca trasladar sólo el nuevo product_id.
+  payload.basisProductIds=[...new Set(payload.product_prices.flatMap(row=>[row.product_id,before.prepare('SELECT product_id FROM product_prices WHERE id=?').get(row.id).product_id]))];
   payload.price_basis=after.prepare('SELECT * FROM price_basis WHERE product_id IN(SELECT value FROM json_each(?)) ORDER BY product_id,kind,id').all(JSON.stringify(payload.basisProductIds));
   return validateSync(payload);
 }
