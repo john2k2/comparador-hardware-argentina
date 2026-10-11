@@ -41,7 +41,7 @@ function isFinitePositivePrice(value: number): boolean {
 /** Oferta mostrable; la frescura se evalúa aparte para conservar precios anteriores. */
 export function isComparableStoreOffer(
   offer: StorePriceLike,
-  product: { name: string; category?: string },
+  product: { name: string; category?: string; specs?: Record<string, unknown> },
 ): boolean {
   if (hasPurchaseRestriction(offer.sourceIdentity) || hasPurchaseRestriction(offer.identityReview?.sourceIdentity)) return false;
   const evidence = offer.url && product.category ? buildIdentityEvidence(product.name, product.category as HardwareCategory,
@@ -307,7 +307,7 @@ export function computeComparableStorePriceStats(prices: ProductPrice[]) {
 }
 
 /** Base única para mínimos vigentes. El histórico permanece separado y completo. */
-export function computeCurrentStorePriceStats(prices: ProductPrice[], product: { name: string; category?: string }, now = Date.now()) {
+export function computeCurrentStorePriceStats(prices: ProductPrice[], product: { name: string; category?: string; specs?: Record<string, unknown> }, now = Date.now()) {
   return computeComparablePriceStats(pickBestStorePrices(prices.filter(price =>
     isComparableStoreOffer(price, product) && isCatalogOfferFresh(price.lastUpdated, now))));
 }

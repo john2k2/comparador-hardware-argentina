@@ -1,6 +1,6 @@
 # Completar identidad RAM con evidencia fabricante
 
-Estado: planner puro local, sin integración automática en el lector ni escrituras de catálogo. El registro contiene tres MPN verificadas en fuentes públicas de Corsair el 11/10/2026. No interpreta letras del SKU, no consulta HTTP en runtime y no renueva precio, stock, fecha, clave canónica ni disponibilidad.
+Estado actualizado: planner integrado en los consumidores locales y en el piloto privado de Cloudflare para cuatro ofertas CompraGamer autorizadas. La página publicada conserva su lector y su base actuales. El registro contiene tres MPN verificadas en fuentes públicas de Corsair el 11/10/2026. No interpreta letras del SKU, no consulta HTTP en runtime y no renueva precio, stock, fecha, clave canónica ni disponibilidad.
 
 ## Fuentes y alcance de cada dato
 
@@ -20,7 +20,7 @@ La ficha LPX no contiene un negativo RGB explícito verificado en esta lectura: 
 
 Completa sólo los campos ausentes en el título. Campos estructurados ya presentes deben concordar con la evidencia y conservan su procedencia. Cualquier capacidad, kit, generación, velocidad, CL, forma, color, serie o RGB explícito contradictorio rechaza el plan. Se preserva el título original íntegro junto al título enriquecido y la procedencia por campo: título, specs o fuente fabricante con URL/MPN/fecha.
 
-El resultado debe pasar `exactRamAttributes` y ambos títulos enriquecidos deben conservar una prueba exacta idéntica, incluidos sus sufijos, condiciones y perfil. Añadir identidad no aprueba una oferta. El consumidor existente sigue comprobando publicación, SKU real recibida, observación nueva, precio y stock; un fallo mantiene los datos anteriores. El planner no modifica `proof`, RLS, base remota ni la página publicada.
+El resultado debe pasar `exactRamAttributes` y ambos títulos enriquecidos deben conservar una prueba exacta idéntica, incluidos sus sufijos, condiciones y perfil. Añadir identidad no aprueba una oferta. El consumidor existente sigue comprobando publicación, SKU real recibida, observación nueva, precio y stock; un fallo mantiene los datos anteriores. El planner no modifica el catálogo por sí solo. La prueba serializada v2 `manufacturer-ram` guarda títulos originales, SKU/specs relevantes y procedencia; su gate vuelve a comprobar el producto y la fuente actuales antes de aprobar la oferta. RLS y la página publicada permanecen sin cambios.
 
 ## Cohorte candidata y límites
 
@@ -37,3 +37,13 @@ Runtime local: módulo compilado en memoria con esbuild y ejecutado sobre los cu
 Aplicación del coordinador: cuatro registros guardados en la tabla privada `pilot_ram_enrichment`, identificados por oferta, publicación y MPN. Guardan títulos originales, hashes del destino y captura, atributos, fuente/fecha por campo y `priceApproved: false`. La captura real de CompraGamer del 11/10 a las 22:15:57.489 UTC volvió a confirmar las cuatro SKU literales y permitió revalidar los planes; se conservaron recibos de ambas versiones de metadata en `outputs/lectores-datos-ram-2026-10-11/`. Las filas completas de producto y precio permanecieron idénticas, incluidos precio, stock, fecha y proof. Cero escrituras remotas. Los datos todavía requieren integración revisada en el consumidor por oferta; no completan specs globales de productos agrupados ni habilitan comparación por sí mismos.
 
 Reversión independiente: retirar `ram-enrichment.ts`, su test y este documento antes de integrar consumidores; no requiere revertir lectores, datos o trabajo ajeno. La aplicación SQLite y su evidencia de antes/después son responsabilidad del coordinador y deben registrarse por separado.
+
+## Integración privada del 11/10, 23:04 UTC
+
+Una lectura real posterior a la reserva confirmó cuatro ofertas de tres publicaciones: RGB RS 16 GB $283.600, LPX 8 GB $129.990 y Vengeance DDR5 16 GB $428.000, todas con stock informado y precio especial CompraGamer. La primera publicación aparece en dos fichas guardadas. Tres solicitudes HTTP compartidas por el lote; no se multiplicó la lectura por copia.
+
+Los consumidores individual, agrupado y compartido exigen SKU actual y atributos concordantes; vuelven a validar dentro de la transacción. Nombre, specs y claves originales de los cuatro productos se conservan. El piloto privado añadió las cuatro ofertas a su muestra mediante un lote D1 acotado y atómico; no se aplicó a Supabase. Las búsquedas por módulos usan metadata derivada de la prueba fabricante conservando el JSON original.
+
+Verificación: 170/170 Vitest en siete suites de calidad; 41/41 Node de consumidores (27 individual, 9 agrupado, 5 compartido). Runtime: cuatro observaciones guardadas y revalidadas tras serialización; diez comprobaciones de búsqueda Mac/Cloudflare y cuatro filas D1 idénticas. Una SKU ausente, contradictoria o una edición posterior del título invalida la prueba. La aprobación pública requiere adaptar sus lectores a este contexto de SKU/specs; hoy fallan de forma cerrada cuando les falta.
+
+Los párrafos de staging anteriores describen el corte de las 22:15 UTC. La integración posterior y su reversión de datos se detallan en [RAM_INTEGRACION_BUSQUEDA_FRIA_2026-10-11.md](RAM_INTEGRACION_BUSQUEDA_FRIA_2026-10-11.md). Retirar el código no elimina las observaciones ni las cuatro filas privadas ya admitidas.

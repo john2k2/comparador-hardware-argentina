@@ -6,7 +6,11 @@ import {
   parseLocalizedArsPrice,
   pickBestStorePrices,
   preferStorePrice,
+  isComparableStoreOffer,
+  computeCurrentStorePriceStats,
 } from './price-utils';
+import { proveManufacturerRamAttributes } from './quality/offer-attribute-proof';
+import { normalizeIdentityText } from './product-identity';
 
 function buildPrice(overrides: Partial<ProductPrice>): ProductPrice {
   return {
@@ -22,6 +26,26 @@ function buildPrice(overrides: Partial<ProductPrice>): ProductPrice {
 }
 
 describe('price-utils', () => {
+  it('RAM fabricante serializada requiere SKU y specs vigentes, stock y frescura por separado',()=>{
+    const name='Memoria Corsair DDR4 16GB 3200MHz Vengeance RGB RS Black CL16',sku='CMG16GX4M1E3200C16';
+    const url='https://compragamer.com/producto/RAM_15558',listingRef='compragamer:id:15558',subject={title:name,sku,specs:{SKU:sku}};
+    const now=Date.parse('2026-10-11T22:30:00Z'),sourceIdentity={title:name,storeSku:sku,listingRef};
+    const proof=proveManufacturerRamAttributes(subject,subject,{storeId:'compragamer',url,listingRef})!;
+    const offer=JSON.parse(JSON.stringify(buildPrice({storeId:'compragamer',url,lastUpdated:new Date(now),sourceIdentity,
+      identityReview:{version:1,status:'consistent',reason:'manufacturer-ram',reviewedAt:new Date(now).toISOString(),model:null,confidence:null,
+        subject:{name:normalizeIdentityText(name),category:'memoria-ram',url},sourceIdentity,proof}})));
+    const product={name,category:'memoria-ram',specs:{SKU:sku}};
+    expect(isComparableStoreOffer(offer,product)).toBe(true);
+    expect(isComparableStoreOffer({...offer,sourceIdentity:undefined},product)).toBe(false);
+    for(const changed of [{name,category:'memoria-ram'},{...product,specs:{}},{...product,specs:{SKU:'another'}},
+      {...product,specs:{SKU:sku,kit:'2x8GB'}},{...product,name:name.replace('Black','Grey')}])
+      expect(isComparableStoreOffer(offer,changed)).toBe(false);
+    for(const marker of ['*','×'])expect(isComparableStoreOffer(offer,{...product,name:name.replace('RGB RS',`RGB${marker}RS`)})).toBe(false);
+    for(const stock of ['unknown','out-of-stock','backorder'])expect(isComparableStoreOffer({...offer,stock},product)).toBe(false);
+    expect(isComparableStoreOffer({...offer,price:0},product)).toBe(false);
+    expect(computeCurrentStorePriceStats([offer],product,now).comparablePrices).toHaveLength(1);
+    expect(computeCurrentStorePriceStats([offer],product,now+86400001).comparablePrices).toHaveLength(0);
+  });
   it('prioriza observación reciente sobre precio histórico barato de la misma tienda',()=>{
     const old=buildPrice({price:1,lastUpdated:new Date(Date.now()-25*3600000)}),fresh=buildPrice({price:50000,lastUpdated:new Date()});
     expect(preferStorePrice(old,fresh)).toBe(fresh);expect(preferStorePrice(fresh,old)).toBe(fresh);

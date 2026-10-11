@@ -5,7 +5,7 @@ import { hasExplicitStorageConflict } from './storage-identity';
 
 export const IDENTITY_REVIEW_MIN_CONFIDENCE = 0.8;
 
-export type IdentityReviewReason = 'consistent-text' | 'exact-attributes' | 'explicit-conflict' | 'model-conflict'
+export type IdentityReviewReason = 'consistent-text' | 'exact-attributes' | 'manufacturer-ram' | 'explicit-conflict' | 'model-conflict'
   | 'insufficient-evidence' | 'low-confidence' | 'provider-unavailable' | 'invalid-response';
 
 export type OfferIdentityReview = {
@@ -29,7 +29,7 @@ export type IdentityEvidence = {
 };
 
 const REASONS = new Set<IdentityReviewReason>([
-  'consistent-text', 'exact-attributes', 'explicit-conflict', 'model-conflict', 'insufficient-evidence',
+  'consistent-text', 'exact-attributes', 'manufacturer-ram', 'explicit-conflict', 'model-conflict', 'insufficient-evidence',
   'low-confidence', 'provider-unavailable', 'invalid-response',
 ]);
 
@@ -62,9 +62,12 @@ export function readIdentityReview(value: unknown): OfferIdentityReview | undefi
     && typeof review.subject?.url === 'string'
     && (review.status !== 'consistent' || (review.reason === 'consistent-text' && review.model && review.reviewedAt
       && typeof review.confidence === 'number' && review.confidence >= IDENTITY_REVIEW_MIN_CONFIDENCE)
-      || (review.reason === 'exact-attributes' && review.model === null && review.confidence === null && review.reviewedAt
-        && review.sourceIdentity && review.proof?.version === 1 && review.proof.method === 'exact-attributes'
-        && attributeProofMatches(review.proof, review.subject.name, review.subject.category, review.sourceIdentity.title)))) {
+      || ((review.reason === 'exact-attributes' || review.reason === 'manufacturer-ram') && review.model === null && review.confidence === null && review.reviewedAt
+        && review.sourceIdentity && (review.reason === 'exact-attributes' && review.proof?.version === 1 && review.proof.method === 'exact-attributes'
+          || review.reason === 'manufacturer-ram' && review.proof?.version === 2 && review.proof.method === 'manufacturer-ram')
+        && attributeProofMatches(review.proof, review.subject.name, review.subject.category, review.sourceIdentity.title,
+          { targetSpecs: review.proof?.method === 'manufacturer-ram' ? review.proof.target?.specs : undefined,
+            sourceIdentity: review.sourceIdentity, url: review.subject.url })))) {
     return review as OfferIdentityReview;
   }
   // Un registro dañado no debe convertirse silenciosamente en una aprobación.
@@ -76,7 +79,7 @@ export function readIdentityReview(value: unknown): OfferIdentityReview | undefi
 
 export function needsIdentityReview(
   offer: { url?: string; identityReview?: OfferIdentityReview; sourceIdentity?: OfferSourceIdentity },
-  product?: { name: string; category?: string },
+  product?: { name: string; category?: string; specs?: Record<string, unknown> },
 ): boolean {
   // Una contradicción pública prevalece sobre la ausencia de un dictamen o
   // sobre una aprobación antigua. No modifica el precio ni su fecha real.
@@ -89,6 +92,10 @@ export function needsIdentityReview(
   if (!review) return false; // Ausencia conserva el contrato de ofertas todavía no evaluadas.
   if (review.status === 'needs-review' || review.subject.url !== offer.url) return true;
   if (offer.sourceIdentity && !sameSourceIdentity(review.sourceIdentity, offer.sourceIdentity)) return true;
+  if (review.proof?.method === 'manufacturer-ram' && (!product?.category || !offer.sourceIdentity
+    || !attributeProofMatches(review.proof, product.name, product.category,
+      offer.sourceIdentity?.title ?? '',
+      { targetSpecs: product.specs, sourceIdentity: offer.sourceIdentity, url: offer.url }))) return true;
   return Boolean(product && (review.subject.name !== normalizeIdentityText(product.name)
     || (product.category && review.subject.category !== product.category)));
 }

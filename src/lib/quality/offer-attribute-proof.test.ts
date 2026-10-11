@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { attributeProofMatches, exactOfferAttributes, proveOfferAttributes } from './offer-attribute-proof';
+import { attributeProofMatches, exactOfferAttributes, proveOfferAttributes, proveManufacturerRamAttributes } from './offer-attribute-proof';
 import { readIdentityReview } from './offer-identity';
 import { normalizeIdentityText } from '@/lib/product-identity';
 
@@ -94,5 +94,53 @@ describe('prueba de atributos exactos independiente de Jev', () => {
       subject: { name, category: 'procesadores', url: 'https://store.example/producto/1' } };
     expect(readIdentityReview(review)?.reason).toBe('exact-attributes');
     expect(readIdentityReview({ ...review, sourceIdentity: { title: 'AMD Ryzen 5 5600G', listingRef: 'store:id:1' } })?.status).toBe('needs-review');
+  });
+});
+
+describe('proof RAM fabricante revalidable con textos originales', () => {
+  const title='Memoria Corsair DDR4 16GB 3200MHz Vengeance RGB RS Black CL16',sku='CMG16GX4M1E3200C16';
+  const binding={storeId:'compragamer',url:'https://compragamer.com/producto/RAM_15558',listingRef:'compragamer:id:15558'};
+  const subject={title,sku,specs:{SKU:sku}};
+  function make(){return proveManufacturerRamAttributes(subject,subject,binding)!;}
+  function review(){return {version:1,status:'consistent',reason:'manufacturer-ram',model:null,confidence:null,
+    reviewedAt:'2026-10-11T22:30:00Z',subject:{name:normalizeIdentityText(title),category:'memoria-ram',url:binding.url},
+    sourceIdentity:{title,storeSku:sku,listingRef:binding.listingRef},proof:make()};}
+  it('completa identidad sin cambiar el título de la publicación y tolera orden JSON distinto',()=>{
+    const value=JSON.parse(JSON.stringify(review()));
+    expect(value.sourceIdentity.title).toBe(title);expect(value.proof.source.title).toBe(title);
+    expect(value.proof.attributes.kit).toBe('1x16');expect(value.proof.attributes.form).toBe('dimm');
+    value.proof=Object.fromEntries(Object.entries(value.proof).reverse());
+    expect(readIdentityReview(value)?.status).toBe('consistent');
+  });
+  it.each([
+    (v:ReturnType<typeof review>)=>{v.proof.attributes.kit='2x8';},
+    (v:ReturnType<typeof review>)=>{v.proof.target.specs.kit='2x8GB';},
+    (v:ReturnType<typeof review>)=>{v.proof.source.specs.formFactor='SODIMM';},
+    (v:ReturnType<typeof review>)=>{v.proof.source.title=title.replace('Black','Grey');},
+    (v:ReturnType<typeof review>)=>{v.proof.target.sku='MEM755';},
+    (v:ReturnType<typeof review>)=>{v.sourceIdentity.storeSku='MEM755';},
+    (v:ReturnType<typeof review>)=>{v.sourceIdentity.title=title.replace('CL16','CL18');},
+    (v:ReturnType<typeof review>)=>{v.sourceIdentity.listingRef='compragamer:id:15522';},
+    (v:ReturnType<typeof review>)=>{v.subject.url='https://compragamer.com/producto/RAM_15522';},
+    (v:ReturnType<typeof review>)=>{v.subject.category='procesadores';},
+  ])('rechaza modificación material tras serialización %#',change=>{
+    const value=JSON.parse(JSON.stringify(review()));change(value);expect(readIdentityReview(value)?.status).toBe('needs-review');
+  });
+  it('conserva contradicciones estructuradas y no acepta MPN interna, faltante o desconocida',()=>{
+    for(const source of [{...subject,specs:{SKU:sku,kit:'2x8GB'}},{...subject,specs:{SKU:sku,kit:['2x8GB']}},
+      {...subject,sku:'EL_'+sku},{...subject,sku:undefined},{...subject,sku:'CMG32GX4M2E3200C16'}])
+      expect(proveManufacturerRamAttributes(subject,source,binding)).toBeNull();
+    expect(proveManufacturerRamAttributes(subject,subject,{...binding,listingRef:'compragamer:id:15522'})).toBeNull();
+    expect(proveManufacturerRamAttributes(subject,subject,{...binding,storeId:'maxtecno'})).toBeNull();
+  });
+  it('recomputa specs vigentes del producto y necesita contexto explícito',()=>{
+    const proof=make(),sourceIdentity=review().sourceIdentity;
+    expect(attributeProofMatches(proof,title,'memoria-ram',title)).toBe(false);
+    const context={targetSpecs:{SKU:sku},sourceIdentity,url:binding.url};
+    expect(attributeProofMatches(proof,title,'memoria-ram',title,context)).toBe(true);
+    for(const targetSpecs of [{},{SKU:'another'},{SKU:sku,color:'grey'},{SKU:sku,kit:'2x8GB'}])
+      expect(attributeProofMatches(proof,title,'memoria-ram',title,{...context,targetSpecs})).toBe(false);
+    for(const marker of ['*','×'])expect(attributeProofMatches(proof,title.replace('RGB RS',`RGB${marker}RS`),'memoria-ram',title,context)).toBe(false);
+    expect(attributeProofMatches(proof,normalizeIdentityText(title),'memoria-ram',title,context)).toBe(true);
   });
 });

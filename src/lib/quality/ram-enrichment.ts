@@ -24,7 +24,7 @@ export const manufacturerRamEvidence: Readonly<Record<string, ManufacturerRamEvi
       form: 'dimm', color: 'black', series: 'base', lighting: 'non-rgb' }, fieldUrls: { lighting: corsairFaq } },
 };
 
-type RamSubject = { title: string; sku?: string; specs?: Record<string, unknown> };
+export type RamSubject = { title: string; sku?: string; specs?: Record<string, unknown> };
 type FieldProvenance = { value: string; source: 'original-title' | 'original-specs' | 'manufacturer';
   mpn?: string; url?: string; checkedAt?: string };
 type CompletedRamIdentity = { originalTitle: string; enrichedTitle: string; attributes: Record<string, string>;
@@ -35,7 +35,25 @@ export type RamEnrichmentResult = { ok: true; mpn: string; target: CompletedRamI
 
 const specFields: Record<string, RamField> = { capacity: 'capacity', capacitygb: 'capacity', kit: 'kit',
   generation: 'generation', speed: 'speed', speedmts: 'speed', latency: 'latency', cl: 'latency',
-  form: 'form', formfactor: 'form', color: 'color', series: 'series', lighting: 'lighting' };
+  form: 'form', formfactor: 'form', color: 'color', series: 'series', lighting: 'lighting', rgb: 'lighting',
+  capacidad: 'capacity', generacion: 'generation', frecuencia: 'speed', latencia: 'latency', formato: 'form', iluminacion: 'lighting' };
+
+/** Conserva todos los campos estructurados que gobiernan el planner. No descarta uno inválido. */
+export function captureRamSpecs(specs: unknown): Record<string, string | number> | null {
+  if (specs === undefined) return {};
+  if (!specs || typeof specs !== 'object' || Array.isArray(specs)) return null;
+  const captured: Record<string, string | number> = {};
+  for (const [key, value] of Object.entries(specs)) {
+    const normalized = normalizeIdentityText(key).replace(/\s/g, '');
+    if (normalized !== 'sku' && !Object.hasOwn(specFields, normalized)) continue;
+    if (typeof value !== 'string' && typeof value !== 'number' || typeof value === 'number' && !Number.isFinite(value)) return null;
+    if (key.length > 80 || String(value).length > 160) return null;
+    captured[key] = value;
+  }
+  const skuValues = Object.entries(captured).filter(([key]) => normalizeIdentityText(key) === 'sku').map(([, value]) => value);
+  if (new Set(skuValues).size > 1) return null;
+  return captured;
+}
 
 function normalizedValue(field: RamField, value: string): string {
   const text = normalizeIdentityText(value).replace(/\bddr\s+(\d)\b/g, 'ddr$1');

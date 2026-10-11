@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { exactRamAttributes } from './ram-identity';
-import { manufacturerRamEvidence, planRamEnrichment } from './ram-enrichment';
+import { captureRamSpecs, manufacturerRamEvidence, planRamEnrichment } from './ram-enrichment';
 
 const mpn = 'CMG16GX4M1E3200C16';
 const title = 'Memoria Corsair DDR4 16GB 3200MHz Vengeance RGB RS Black CL16';
@@ -10,6 +10,14 @@ function plan(value = title, manufacturerMpn = mpn, specs: Record<string, unknow
 }
 
 describe('enriquecimiento RAM con tres MPN de fabricante acreditadas', () => {
+  it('captura specs originales que gobiernan contradicciones y no ignora tipos inválidos',()=>{
+    expect(captureRamSpecs({SKU:mpn,kit:'2x8GB',Color:'Grey',Capacidad:32,Stock:'10'}))
+      .toEqual({SKU:mpn,kit:'2x8GB',Color:'Grey',Capacidad:32});
+    expect(captureRamSpecs({SKU:mpn,kit:['2x8GB']})).toBeNull();
+    expect(captureRamSpecs({SKU:mpn,RGB:true})).toBeNull();
+    expect(captureRamSpecs({SKU:mpn,capacityGB:NaN})).toBeNull();
+    expect(captureRamSpecs({SKU:mpn,sku:'MEM755'})).toBeNull();
+  });
   it('completa sólo kit y forma y revalida el título sin alterar su fuente original', () => {
     const result = plan();
     expect(result.ok).toBe(true);
