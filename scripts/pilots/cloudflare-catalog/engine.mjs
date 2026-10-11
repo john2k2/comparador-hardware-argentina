@@ -1,6 +1,6 @@
 import { prepareQuery, matchesProduct, hasPortableHint } from './catalog-matchers.mjs';
 export const MAX_TEXT_CANDIDATES = 2000;
-export const MAX_TEXT_BATCHES = 44;
+export const MAX_TEXT_BATCHES = 42;
 const SORTS = new Set(['relevance','price-asc','price-desc','name','newest']);
 export function validateParams(input = {}) {
   const p = { p_query:'',p_category:null,p_stores:[],p_min_price:null,p_max_price:null,p_sort:'relevance',p_page:1,p_page_size:12,...input };
@@ -12,7 +12,7 @@ export function validateParams(input = {}) {
   return p;
 }
 // Todo identificador SQL es estático. Fechas, filtros y lista de IDs son bindings.
-function candidatesSql(p, prepared, ids, now) {
+export function candidatesSql(p, prepared, ids, now) {
   const values = [JSON.stringify(p.p_stores),JSON.stringify(prepared.words),new Date(now-86400000).toISOString(),new Date(now+60000).toISOString(),new Date(now).toISOString()];
   const guards = ['p.catalog_component=1'],guardValues=[];
   if (p.p_category!==null) { guards.push('p.category=?'); guardValues.push(p.p_category); }
@@ -81,15 +81,43 @@ function candidatesSql(p, prepared, ids, now) {
  WHERE NOT EXISTS(SELECT 1 FROM filter_stores) OR EXISTS(SELECT 1 FROM json_each(p.store_ids_json) j JOIN filter_stores f ON f.id=j.value))`;
   return {sql,values};
 }
-function eligibilitySql(p, prepared, preselected, now) {
-  const base=candidatesSql(p,prepared,preselected,now);
+function projectedCandidatesSql(p,prepared,ids) {
+  const values=[JSON.stringify(prepared.words)],guards=['p.catalog_component=1'];
+  if(p.p_category!==null) {guards.push('p.category=?');values.push(p.p_category);}
+  if(prepared.candidate) {
+    if(prepared.candidate.length>=3) {guards.push('p.id IN(SELECT id FROM product_substrings WHERE document MATCH ?)');values.push(`"${prepared.candidate.replaceAll('"','""')}"`);}
+    guards.push('instr(p.catalog_document,?)>0');values.push(prepared.candidate);
+  }
+  if(prepared.kind!=='ram'&&prepared.words.length<=2) guards.push("NOT EXISTS(SELECT 1 FROM query_terms q WHERE instr(' '||p.catalog_name||' ',' '||q.term||' ')=0)");
+  if(prepared.kind!=='ram') guards.push("NOT EXISTS(SELECT 1 FROM query_terms q WHERE instr(' '||p.catalog_document||' ',' '||q.term||' ')=0)");
+  if(ids!==null) {guards.push('p.id IN(SELECT value FROM json_each(?))');values.push(JSON.stringify(ids));}
+  if(prepared.normalized&&(p.p_min_price!==null||p.p_max_price!==null)) {
+    // Mantener las fichas vencidas de una identidad activa: pueden ser la
+    // preferida y PostgreSQL elige identidad antes de aplicar frescura.
+    guards.push('EXISTS(SELECT 1 FROM search_projection active WHERE active.category=p.category AND active.catalog_identity=p.catalog_identity AND active.comparable_available>0)');
+  }
+  // Sólo el rango global puede preferir la identidad antes del texto. La
+  // proyección conserva las demás fichas para los matchers de cada consulta.
+  const globalCurrent=!prepared.normalized&&(p.p_min_price!==null||p.p_max_price!==null);
+  if(globalCurrent) {
+    guards.push('v.canonical=1','v.comparable_available>0');
+    if(p.p_min_price!==null) {guards.push('v.lowest>=?');values.push(p.p_min_price);}
+    if(p.p_max_price!==null) {guards.push('v.lowest<=?');values.push(p.p_max_price);}
+  }
+  return {values,sql:`WITH query_terms AS(SELECT value AS term FROM json_each(?)),matched AS(
+    SELECT p.id,p.category,p.catalog_identity,p.catalog_name,p.catalog_document,p.grouped_identity,p.last_scraped_at,p.updated_at,
+      v.lowest,v.highest,v.average,v.available,v.comparable_available,v.urls,v.observed_at
+    FROM search_projection v JOIN products p ON p.id=v.product_id WHERE ${guards.join(' AND ')})`};
+}
+function eligibilitySql(p, prepared, preselected, now, projected=false) {
+  const base=projected?projectedCandidatesSql(p,prepared,preselected):candidatesSql(p,prepared,preselected,now);
   const guards=['identity_rank=1'];
   if (p.p_min_price!==null||p.p_max_price!==null) guards.push('comparable_available>0');
   if (p.p_min_price!==null) {guards.push('lowest>=?');base.values.push(p.p_min_price);}
   if (p.p_max_price!==null) {guards.push('lowest<=?');base.values.push(p.p_max_price);}
   let rank = `ROW_NUMBER() OVER(PARTITION BY category,catalog_identity ORDER BY grouped_identity DESC,last_scraped_at DESC,updated_at DESC,id)`;
   // Sin texto/tiendas y con rango, PostgreSQL prefiere identidad ANTES de frescura.
-  if (!prepared.normalized && !p.p_stores.length && (p.p_min_price!==null||p.p_max_price!==null)) rank=`CASE WHEN id=(SELECT p2.id FROM products p2 JOIN summaries s2 ON s2.product_id=p2.id WHERE p2.catalog_component=1 AND p2.category=matched.category AND p2.catalog_identity=matched.catalog_identity ORDER BY p2.grouped_identity DESC,p2.last_scraped_at DESC,p2.updated_at DESC,p2.id LIMIT 1) THEN 1 ELSE 2 END`;
+  if (!projected && !prepared.normalized && !p.p_stores.length && (p.p_min_price!==null||p.p_max_price!==null)) rank=`CASE WHEN id=(SELECT p2.id FROM products p2 JOIN summaries s2 ON s2.product_id=p2.id WHERE p2.catalog_component=1 AND p2.category=matched.category AND p2.catalog_identity=matched.catalog_identity ORDER BY p2.grouped_identity DESC,p2.last_scraped_at DESC,p2.updated_at DESC,p2.id LIMIT 1) THEN 1 ELSE 2 END`;
   base.sql+=`,ranked AS(SELECT matched.*,${rank} AS identity_rank FROM matched), eligible AS(SELECT * FROM ranked WHERE ${guards.join(' AND ')})`;
   return base;
 }
@@ -109,11 +137,18 @@ function ordering(p,prepared,now,values) {
   }
   order.push('id ASC'); return order.join(',');
 }
-export async function searchCatalog(db,input,{now=Date.now()}={}) {
+export async function searchCatalog(db,input,{now=Date.now(),snapshot,forceOriginal=false}={}) {
   const p=validateParams(input),prepared=prepareQuery(p.p_query,p.p_category);
+  let projected=false;
+  if(!forceOriginal&&!p.p_stores.length) {
+    const marker=snapshot??(await db.first("SELECT value FROM pilot_meta WHERE key='snapshot'",[]))?.value;
+    let meta;try {meta=typeof marker==='string'?JSON.parse(marker):marker;}catch{}
+    const frame=meta?.cache;
+    projected=meta?.projectionVersion===1&&frame?.version===1&&now>=Date.parse(frame.validFrom)&&now<Date.parse(frame.validUntil);
+  }
   let ids=null;
   if (prepared.normalized) {
-    const base=candidatesSql(p,prepared,null,now);
+    const base=projected?projectedCandidatesSql(p,prepared,null):candidatesSql(p,prepared,null,now);
     ids=[];let complete=false;
     for(let batch=0;batch<MAX_TEXT_BATCHES;batch++) {
       const rows=await db.all(`${base.sql} SELECT id,catalog_name,catalog_document,(SELECT json_extract(original.row_json,'$.name') FROM products original WHERE original.id=matched.id) AS name,urls FROM matched ORDER BY id LIMIT ${MAX_TEXT_CANDIDATES} OFFSET ${batch*MAX_TEXT_CANDIDATES}`,base.values);
@@ -124,7 +159,7 @@ export async function searchCatalog(db,input,{now=Date.now()}={}) {
     // metadatos, ofertas, marcador del snapshot y evidencia opcional de la UI.
     if(!complete) {const error=new Error('CATALOG_CANDIDATE_BUDGET_EXCEEDED');error.code=error.message;throw error;}
   }
-  const base=eligibilitySql(p,prepared,ids,now);
+  const base=eligibilitySql(p,prepared,ids,now,projected);
   const count=await db.first(`${base.sql} SELECT COUNT(*) AS total FROM eligible`,base.values);
   const total=Number(count.total),totalPages=Math.ceil(total/p.p_page_size),page=Math.max(1,Math.min(p.p_page,Math.max(totalPages,1)));
   const values=[...base.values], order=ordering(p,prepared,now,values);values.push(p.p_page_size,(page-1)*p.p_page_size);
