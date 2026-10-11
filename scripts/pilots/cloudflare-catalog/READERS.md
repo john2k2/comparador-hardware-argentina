@@ -25,3 +25,7 @@ Reversión: restaurar los lectores y el bundle del consumidor anterior. Los camb
 FullH4rd queda diferido por decisión del usuario: el selector automático lo excluye incluso si conserva una oferta pendiente.
 
 37Bytes: sólo SSD con prueba estricta y URL `/productos/`. Precio principal visible, metadata consistente y variante seleccionada o única con stock son obligatorios. El precio condicional por transferencia permanece separado. Ensayo real: NV3 1 TB a $384.145, stock bajo; sincronización y búsqueda acreditadas en `docs/direccion/TERCERA_RECUPERACION_CATALOGO_2026-10-11.md`.
+
+RAM: la prueba separada `ram-identity.ts` acepta Single/un módulo explícito, U-DIMM y los alias Grey/Gray/Gris, blanco/negro. Exige capacidad total, kit coherente, generación, frecuencia, CL, formato, color y familia. Conserva título, RGB, perfiles y condición; no deduce atributos del SKU. Single Rank/Channel no acredita un módulo. Contradicciones y signos ×/* se rechazan porque el subject normalizado pierde esos signos. Las claves persistidas no cambian; una prueba antigua con sólo `model` deja de aprobarse y necesita otra observación.
+
+Verificación RAM del 11/10: 193/193 Vitest en seis suites de identidad/lectores; 35 observaciones persistidas revalidadas después de serializarlas, 17 comparables por identidad/stock. La elegibilidad de una oferta no garantiza que la ficha preferida de búsqueda la incluya: comprobar también el resultado de la búsqueda.

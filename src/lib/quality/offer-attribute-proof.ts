@@ -1,5 +1,6 @@
-import { extractGpuBoardAttributes, extractRamModelKey, normalizeIdentityText, parseCpuModelSignature, parseGpuChipSignature } from '@/lib/product-identity';
+import { extractGpuBoardAttributes, normalizeIdentityText, parseCpuModelSignature, parseGpuChipSignature } from '@/lib/product-identity';
 import { exactSsdAttributes } from './storage-identity';
+import { exactRamAttributes } from './ram-identity';
 
 export type OfferAttributeProof = { version: 1; method: 'exact-attributes'; attributes: Record<string, string> };
 
@@ -32,12 +33,7 @@ export function exactOfferAttributes(name: string, category: string): Record<str
     return { family: chip.family, model: chip.number, suffixes: chip.suffixes.join('-'), memory,
       ...Object.fromEntries(Object.entries(board).map(([key, value]) => [key, value ?? ''])) };
   }
-  if (category === 'memoria-ram') {
-    const key = extractRamModelKey(name);
-    // Kits, latencia y forma ausentes no acreditan equivalencia de módulos.
-    if (!key || /(?:^|:)(?:na|unk|unknown-kit)(?:$|:)/.test(key)) return null;
-    return { model: key };
-  }
+  if (category === 'memoria-ram') return exactRamAttributes(name);
   if (category === 'almacenamiento') return exactSsdAttributes(name);
   return null;
 }

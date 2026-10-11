@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { attributeProofMatches, exactOfferAttributes, proveOfferAttributes } from './offer-attribute-proof';
 import { readIdentityReview } from './offer-identity';
+import { normalizeIdentityText } from '@/lib/product-identity';
 
 describe('prueba de atributos exactos independiente de Jev', () => {
   it('corrobora la serie AERO y conserva marca, chip, memoria y condición OC', () => {
@@ -31,6 +32,29 @@ describe('prueba de atributos exactos independiente de Jev', () => {
     expect(proveOfferAttributes(name, 'memoria-ram', name)).not.toBeNull();
     expect(proveOfferAttributes(name, 'memoria-ram', name.replace('(1x16GB)', ''))).toBeNull();
     expect(proveOfferAttributes(name, 'memoria-ram', name.replace('LPX', 'RS RGB'))).toBeNull();
+  });
+  it('mantiene perfil, voltaje, condición y sufijos RAM al recuperar GREY y Single', () => {
+    const name = 'Memoria RAM UDIMM Kingston Fury Beast 16GB DDR5 5200MHz CL40 1.25V Single Grey Intel XMP';
+    const proof = proveOfferAttributes(name, 'memoria-ram', name)!;
+    expect(proof).toMatchObject({ attributes: { kit: '1x16', color: 'grey', profile: 'xmp' } });
+    for (const source of [name.replace('Intel XMP', 'AMD EXPO'), name.replace(' Intel XMP', ''),
+      name.replace('1.25V', '1.35V'), name.replace(' 1.25V', ''), `${name} OUTLET`, `${name} RGB`,
+      name.replace('Grey', 'Black'), name.replace(' Single', '')]) {
+      expect(proveOfferAttributes(name, 'memoria-ram', source)).toBeNull();
+    }
+    expect(attributeProofMatches(proof, name, 'memoria-ram', name)).toBe(true);
+    expect(attributeProofMatches(proof, name, 'memoria-ram', name.replace('Intel XMP', 'AMD EXPO'))).toBe(false);
+    const old = { ...proof, attributes: { model: proof.attributes.model } };
+    expect(attributeProofMatches(old, name, 'memoria-ram', name)).toBe(false);
+  });
+  it('revalida el subject RAM normalizado y serializado de Single/GREY', () => {
+    const name = 'Memoria Ram UDIMM KINGSTON Fury Beast 16GB DDR5 5200MHz CL40 1.25V Single GRAY';
+    const proof = proveOfferAttributes(name, 'memoria-ram', name)!;
+    const review = { version: 1, status: 'consistent', reason: 'exact-attributes', reviewedAt: '2026-10-11T18:00:00Z',
+      model: null, confidence: null, sourceIdentity: { title: name, listingRef: 'store:id:1' }, proof,
+      subject: { name: normalizeIdentityText(name), category: 'memoria-ram', url: 'https://store.example/producto/1' } };
+    expect(readIdentityReview(JSON.parse(JSON.stringify(review)))?.status).toBe('consistent');
+    expect(readIdentityReview({ ...review, sourceIdentity: { ...review.sourceIdentity, title: name.replace('GRAY', 'Black') } })?.status).toBe('needs-review');
   });
   it('acredita SSD sólo con título completo idéntico tras normalizar mayúsculas y espacios', () => {
     const name = 'SSD Kingston NV3 1TB NVMe M.2';
