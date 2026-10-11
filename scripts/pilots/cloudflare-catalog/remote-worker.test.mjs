@@ -18,3 +18,15 @@ test('límites y noindex preservan contenido autorizado', async () => {
   assert.equal(response.headers.get('X-Pilot-D1-Rows-Read'), '1');
   assert.equal(response.headers.get('X-Robots-Tag'), 'noindex, nofollow');
 });
+test('estado de recuperación exige autenticación y devuelve sólo marcador con consumo medido',async()=>{
+  let calls=0;
+  const worker=createRemoteWorker({now:()=>Date.parse('2026-10-11T14:00:00Z')});
+  const db={prepare(sql){assert.equal(sql,"SELECT value FROM pilot_meta WHERE key='snapshot'");return {bind(){return {all:async()=>{calls++;return {success:true,results:[{value:'public-marker'}],meta:{rows_read:1,rows_written:0}};}};}};}};
+  assert.equal((await worker.fetch(request('/api/pilot/state','wrong'),{...env,CATALOG_DB:db})).status,401);
+  assert.equal(calls,0);
+  assert.equal((await worker.fetch(request('/api/pilot/state'),{...env,PILOT_ENABLED:'0',CATALOG_DB:db})).status,503);
+  assert.equal(calls,0);
+  const response=await worker.fetch(request('/api/pilot/state'),{...env,CATALOG_DB:db});
+  assert.deepEqual(await response.json(),{snapshot:'public-marker',rowsRead:1,rowsWritten:0});assert.equal(calls,1);
+  assert.equal(response.headers.get('Cache-Control'),'no-store');
+});

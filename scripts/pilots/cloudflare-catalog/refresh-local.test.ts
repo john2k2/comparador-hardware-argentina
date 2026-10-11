@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { initializeRefreshDemand, enqueueKnownProducts, claimRefreshBatch } from './refresh-demand.mjs';
-import { runLocalRefresh, validateLocalTarget, reviewLocalObservation, persistLocalObservation, createLocalOfferReader, refreshLocalCli } from './refresh-local';
+import { runLocalRefresh, validateLocalTarget, reviewLocalObservation, persistLocalObservation, createLocalOfferReader, refreshLocalCli, canRefreshLocalTarget } from './refresh-local';
 import { parseWooProductDetail } from '@/lib/scrapers/woocommerce-shared';
 import { parseKnownProductDetail } from '@/lib/scrapers/known-product-detail';
 import { SourceHttpError } from '@/lib/scrapers/source-http';
@@ -112,19 +112,41 @@ test('observación actualizada se conserva en fallback/tienda/rango y tras vence
   assert.equal((await searchCatalog(sqliteAdapter(f.db),input,{now:now+86400002})).total,0);f.db.close();
 });
 
-test('allowlist local admite Katech y ficha FullH4rd exacta; rechaza categorías, sesiones y Woo no asignado',()=>{
+test('allowlist local admite lectores Woo y DOM registrados; rechaza categorías y sesiones',()=>{
   assert.equal(validateLocalTarget('katech','https://katech.com.ar/producto/ram/'),true);
   assert.equal(validateLocalTarget('fullh4rd','https://www.fullh4rd.com.ar/prod/12345/rtx-5070'),true);
   for(const url of ['https://www.fullh4rd.com.ar/cat/search/rtx','https://www.fullh4rd.com.ar/prod/12345/rtx?price=1','https://www.fullh4rd.com.ar/prod/12345/rtx#stock','https://evil.example/prod/12345/rtx'])
     assert.equal(validateLocalTarget('fullh4rd',url),false);
-  assert.equal(validateLocalTarget('liontech','https://liontech.com.ar/producto/ram/'),false);
+  assert.equal(validateLocalTarget('liontech','https://liontech.com.ar/producto/ram/'),true);
+  assert.equal(validateLocalTarget('37bytes','https://37bytes.com.ar/producto/ram/'),false);
 });
 test('selección acotada no reserva otras tiendas y rechaza selección ajena antes de lector',async()=>{
   const f=fixture('katech');let calls=0;
   const reader=async()=>{calls++;return null;};
   assert.equal((await runLocalRefresh(f.db,{...f.dependencies,reader,storeIds:['fullh4rd']})).attempted,0);
-  await assert.rejects(runLocalRefresh(f.db,{...f.dependencies,reader,storeIds:['liontech']}),/STORES/);
+  await assert.rejects(runLocalRefresh(f.db,{...f.dependencies,reader,storeIds:['37bytes']}),/STORES/);
   assert.equal(calls,0);assert.equal(f.db.prepare('SELECT status FROM pilot_refresh_demand').get()!.status,'pending');f.db.close();
+});
+test('capacidad exige atributos completos y no amplía familias por tener lector',()=>{
+  assert.equal(canRefreshLocalTarget('katech','https://katech.com.ar/producto/cpu/','procesadores','AMD Ryzen 7 8700G AM5'),true);
+  assert.equal(canRefreshLocalTarget('katech','https://katech.com.ar/producto/ssd/','almacenamiento','SSD Kingston 1TB NV3'),false);
+  assert.equal(canRefreshLocalTarget('katech','https://katech.com.ar/producto/ram/','memoria-ram','Memoria DDR5 32GB'),false);
+});
+test('lectores Woo y DOM ampliados mantienen destino exacto y no invocan descubrimiento',async()=>{
+  const calls:string[]=[];
+  const reader=createLocalOfferReader({wooReader:async(id)=>{calls.push('woo:'+id);return null;},detailReader:async(_url,store)=>{calls.push('dom:'+store.id);return null;}});
+  await reader('liontech','https://liontech.com.ar/producto/cpu/','procesadores');
+  await reader('mexx','https://www.mexx.com.ar/productos-rubro/procesadores/123-cpu.html','procesadores');
+  await reader('xtpc','https://www.xt-pc.com.ar/prod/12345/cpu','procesadores');
+  assert.deepEqual(calls,['woo:liontech','dom:mexx','dom:xtpc']);
+});
+test('familia sin prueba se rechaza antes de HTTP y ciclo automático conserva pausa de seis horas',async()=>{
+  const f=fixture('katech');let calls=0;
+  f.db.prepare("UPDATE products SET category='almacenamiento'").run();
+  const result=await runLocalRefresh(f.db,{...f.dependencies,failureRetryAfterMs:6*3600000,reader:async()=>{calls++;return null;}});
+  assert.equal(result.observed,0);assert.equal(calls,0);
+  assert.equal(f.db.prepare('SELECT due_at FROM pilot_refresh_demand').get()!.due_at,now+6*3600000);
+  assert.deepEqual(JSON.parse(f.db.prepare('SELECT row_json FROM product_prices').get()!.row_json as string),f.raw);f.db.close();
 });
 test('Katech observa HTML visible y backorder; FullH4rd observa detalle con precio ARS y producto principal',async()=>{
   for(const storeId of ['katech','fullh4rd']) {

@@ -5,9 +5,10 @@ import { realpathSync, statSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { fetchKnownProductDetail } from '@/lib/scrapers/known-product-detail';
-import { fetchWooCommerceKnownOffer, WOOCOMMERCE_STORES } from '@/lib/scrapers/woocommerce-shared';
+import { fetchWooCommerceKnownOffer } from '@/lib/scrapers/woocommerce-shared';
 import { SourceHttpError, sourceHttpMetrics, sourceBlockedUntil } from '@/lib/scrapers/source-http';
-import { proveOfferAttributes, attributeProofMatches } from '@/lib/quality/offer-attribute-proof';
+import { proveOfferAttributes, attributeProofMatches, exactOfferAttributes } from '@/lib/quality/offer-attribute-proof';
+import { sourceContract, WOO_PUBLIC_STORE_IDS } from '@/lib/scrapers/source-contracts';
 import { hasExplicitIdentityConflict, type OfferIdentityReview } from '@/lib/quality/offer-identity';
 import { normalizeIdentityText } from '@/lib/product-identity';
 import { listingReference, sameListing } from '@/lib/scrapers/listing-reference';
@@ -27,8 +28,12 @@ type Dependencies = { reader?:Reader; clock?:()=>number; projection:Projection; 
 const historySchema = `CREATE TABLE IF NOT EXISTS pilot_offer_observations(
  offer_id TEXT NOT NULL,observed_at TEXT NOT NULL,row_json TEXT NOT NULL,
  PRIMARY KEY(offer_id,observed_at));`;
-const localStoreIds = ['maxtecno','dinobyte','goldentechstore','katech','fullh4rd'];
-const fullh4rdStore = {id:'fullh4rd',name:'FullH4rd',baseUrl:'https://www.fullh4rd.com.ar'};
+export const localStoreIds = [...WOO_PUBLIC_STORE_IDS,'fullh4rd','mexx','xtpc','gamingcity','compugarden'];
+export const localCategories = ['procesadores','tarjetas-graficas','memoria-ram'];
+
+export function canRefreshLocalTarget(storeId:string,url:string,category:string,name:string):boolean {
+  return localCategories.includes(category)&&validateLocalTarget(storeId,url)&&exactOfferAttributes(name,category)!==null;
+}
 
 function selectedLocalStores(storeIds:string[]=localStoreIds):string[] {
   if(!Array.isArray(storeIds)||!storeIds.length||storeIds.length>localStoreIds.length
@@ -40,18 +45,20 @@ function selectedLocalStores(storeIds:string[]=localStoreIds):string[] {
 export function createLocalOfferReader({wooReader=fetchWooCommerceKnownOffer,detailReader=fetchKnownProductDetail}={}):Reader {
   return async(storeId,url,category,signal)=>{
     if(!validateLocalTarget(storeId,url))throw new Error('REFRESH_LOCAL_IDENTITY');
-    return storeId==='fullh4rd'?detailReader(url,fullh4rdStore,category,signal):wooReader(storeId,url,category,signal);
+    const contract=sourceContract(storeId)!;
+    return (WOO_PUBLIC_STORE_IDS as readonly string[]).includes(storeId)?wooReader(storeId,url,category,signal)
+      :detailReader(url,{id:storeId,name:storeId,baseUrl:contract.baseUrl},category,signal);
   };
 }
 
 export function validateLocalTarget(storeId:string, url:string): boolean {
   if(!localStoreIds.includes(storeId))return false;
-  const store=storeId==='fullh4rd'?fullh4rdStore:WOOCOMMERCE_STORES.find(item=>item.id===storeId);
+  const store=sourceContract(storeId);
   if(!store) return false;
   try {
-    const parsed=new URL(url),host=(value:string)=>new URL(value).hostname.replace(/^www\./,'');
+    const parsed=new URL(url);
     return parsed.protocol==='https:'&&!parsed.username&&!parsed.password&&!parsed.port&&!parsed.search&&!parsed.hash
-      &&host(url)===host(store.baseUrl)&&listingReference(storeId,url)!==null
+      &&parsed.hostname.replace(/^www\./,'')===store.host&&listingReference(storeId,url)!==null
       &&(storeId!=='fullh4rd'||/^\/prod\/\d+\/[^/]+\/?$/.test(parsed.pathname));
   } catch {return false;}
 }
@@ -130,18 +137,23 @@ export function persistLocalObservation(db:DatabaseSync,lease:Lease,price:Produc
   }catch(error){db.exec('ROLLBACK');throw error;}
 }
 
-export async function runLocalRefresh(db:DatabaseSync,{limit=3,storeIds,productIds,...dependencies}:Dependencies&{limit?:number;storeIds?:string[];productIds?:string[]}) {
+export async function runLocalRefresh(db:DatabaseSync,{limit=3,storeIds,productIds,failureRetryAfterMs=0,...dependencies}:Dependencies&{limit?:number;storeIds?:string[];productIds?:string[];failureRetryAfterMs?:number}) {
   if(!Number.isSafeInteger(limit)||limit<1||limit>3)throw new Error('REFRESH_LOCAL_LIMIT');
+  if(!Number.isSafeInteger(failureRetryAfterMs)||failureRetryAfterMs<0||failureRetryAfterMs>86400000)throw new Error('REFRESH_LOCAL_RETRY');
+  const beforeHttp=sourceHttpMetrics();
   const selectedStores=selectedLocalStores(storeIds);
   const clock=dependencies.clock??Date.now,reader=dependencies.reader??createLocalOfferReader();
   const leases=claimRefreshBatch(db,{now:clock(),limit,leaseMs:300000,storeIds:selectedStores,productIds});
   const results=[];
   for(const lease of leases as Lease[]) {
+    let readSource:Product|null=null;
     try {
       if(!validateLocalTarget(lease.storeId,lease.url))throw new Error('REFRESH_LOCAL_IDENTITY');
       const row=db.prepare('SELECT row_json,category FROM products WHERE id=?').get(lease.productId) as {row_json:string;category:HardwareCategory};
       const product={...JSON.parse(row.row_json),category:row.category};
+      if(!canRefreshLocalTarget(lease.storeId,lease.url,product.category,product.name))throw new Error('REFRESH_LOCAL_IDENTITY');
       const source=await reader(lease.storeId,lease.url,product.category,AbortSignal.timeout(25000));
+      readSource=source;
       if(!source)throw new Error('REFRESH_LOCAL_NO_OBSERVATION');
       const price=reviewLocalObservation(product,lease,source,clock());
       const saved=persistLocalObservation(db,lease,price,dependencies,clock());
@@ -151,14 +163,17 @@ export async function runLocalRefresh(db:DatabaseSync,{limit=3,storeIds,productI
       const outcome=error instanceof SourceHttpError?(error.reason==='rate-limited'?'http-429':error.reason==='blocked'?'http-403':'http-error')
         :error instanceof Error&&error.message==='REFRESH_LOCAL_IDENTITY'?'identity-mismatch'
         :error instanceof Error&&error.message==='REFRESH_LOCAL_NO_OBSERVATION'?'no-observation':'persistence-error';
-      const retryAfterMs=Math.min(86400000,Math.max(0,sourceBlockedUntil(lease.storeId)-clock()));
+      const retryAfterMs=Math.min(86400000,Math.max(failureRetryAfterMs,sourceBlockedUntil(lease.storeId)-clock(),0));
       let acknowledged=false;
       try{acknowledgeRefresh(db,{...lease,now:clock(),outcome,retryAfterMs});acknowledged=true;}catch{/* Lease vencido conserva su estado; no imprimir SDK. */}
       results.push({offerId:lease.offerId,storeId:lease.storeId,url:lease.url,status:'failed',outcome,acknowledged,
+        ...(readSource?{sourceTitle:readSource.name.slice(0,400),sourceCategory:readSource.category}:{}),
         code:error instanceof Error&&/^REFRESH_LOCAL_[A-Z_]+$/.test(error.message)?error.message:outcome});
     }
   }
-  return {localOnly:true,attempted:leases.length,observed:results.filter(item=>item.status==='observed').length,results,sourceHttp:sourceHttpMetrics()};
+  return {localOnly:true,attempted:leases.length,observed:results.filter(item=>item.status==='observed').length,results,sourceHttp:Object.fromEntries(Object.entries(sourceHttpMetrics()).map(([store,metric])=>[store,{
+    requests:metric.requests-(beforeHttp[store]?.requests??0),bytes:metric.bytes-(beforeHttp[store]?.bytes??0)
+  }]))};
 }
 
 export async function refreshLocalCli(args:string[]) {
