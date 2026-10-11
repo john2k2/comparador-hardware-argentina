@@ -31,7 +31,7 @@ function normalizePlan(input) {
   if (!record(input) || !['offerId', 'expectedProductId', 'targetProductId', 'sourceTitle'].every(key => text(input[key]))
     || !/^[a-f0-9]{64}$/.test(input.expectedRowHash ?? '') || input.expectedProductId === input.targetProductId) fail('INVALID_PLAN');
   const e = input.evidence;
-  if (!record(e) || e.kind !== 'public-detail' || !text(e.url, 2000)
+  if (!record(e) || !['public-detail', 'public-catalog'].includes(e.kind) || !text(e.url, 2000)
     || !Number.isFinite(Date.parse(e.capturedAt)) || !/^[a-f0-9]{64}$/.test(e.contentSha256 ?? '')) fail('INVALID_EVIDENCE');
   return { offerId: input.offerId, expectedProductId: input.expectedProductId, expectedRowHash: input.expectedRowHash,
     targetProductId: input.targetProductId, sourceTitle: input.sourceTitle,
@@ -61,7 +61,7 @@ function validateIdentity(rows, plan, dependencies, now) {
   if (!reference || reference !== dependencies.listingReference(offer.store_id, plan.evidence.url)) fail('EVIDENCE_URL');
   // El coordinador verifica el artefacto local/hash y extrae título/URL mediante el lector real.
   const verified = synchronous(dependencies.verifyEvidence(plan.evidence, { sourceTitle: plan.sourceTitle,
-    storeId: offer.store_id, url: offer.url, offerId: offer.id }));
+    storeId: offer.store_id, url: offer.url, offerId: offer.id, targetCategory: targetProduct.category }));
   if (verified !== true) fail('UNVERIFIED_EVIDENCE');
   if (!dependencies.exactOfferAttributes(target.name, targetProduct.category)
     || !dependencies.exactOfferAttributes(plan.sourceTitle, targetProduct.category)

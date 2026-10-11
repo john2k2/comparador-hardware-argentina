@@ -49,3 +49,31 @@ test('canonical ajeno se rechaza aunque el hash del nuevo artefacto sea correcto
  assert.throws(()=>applyAssociationPlan(f.db,f.plan,f.deps,{now}),/UNVERIFIED_EVIDENCE/);
  assert.equal(f.db.prepare('SELECT product_id FROM product_prices').get()?.product_id,'old');
 });
+function catalogFixture(t:TestContext) {
+ const f=fixture(t),sourceUrl='https://compragamer.com/producto/Procesador_AMD_Ryzen_5_7600_12345';
+ const raw={...f.raw,store_id:'compragamer',url:sourceUrl};
+ f.db.prepare('UPDATE product_prices SET store_id=?,url=?,row_json=? WHERE id=?').run('compragamer',sourceUrl,JSON.stringify(raw),'o');
+ f.plan.expectedRowHash=associationRowHash(f.db.prepare('SELECT * FROM product_prices WHERE id=?').get('o'));
+ const source={id:'cg-12345',name,category:'procesadores',prices:[{storeId:'compragamer',url:sourceUrl,lastUpdated:new Date(now-1000).toISOString()}]};
+ const json=JSON.stringify(source);writeFileSync(f.file,json);
+ const plan={...f.plan,evidence:{...f.plan.evidence,kind:'public-catalog',url:sourceUrl,contentSha256:createHash('sha256').update(json).digest('hex')}};
+ return {...f,source,plan};
+}
+test('captura pública compartida corrige identidad sin renovar precio ni fecha',t=>{
+ const f=catalogFixture(t);applyAssociationPlan(f.db,f.plan,f.deps,{now});
+ const after=JSON.parse(String(f.db.prepare('SELECT row_json FROM product_prices').get()!.row_json));
+ assert.equal(after.product_id,'target');assert.equal(after.price,f.raw.price);assert.equal(after.last_updated,old);
+ assert.equal(f.db.prepare('SELECT COUNT(*) n FROM price_basis').get()?.n,0);
+});
+for(const field of ['id','date','title','store','url','category'])test(`captura compartida rechaza ${field} alterado incluso con hash correcto`,t=>{
+ const f=catalogFixture(t);
+ if(field==='id')f.source.id='cg-99999';
+ if(field==='date')f.source.prices[0].lastUpdated=old;
+ if(field==='title')f.source.name='Procesador AMD Ryzen 7 7700';
+ if(field==='store')f.source.prices[0].storeId='katech';
+ if(field==='url')f.source.prices[0].url='https://evil.test/producto/12345';
+ if(field==='category')f.source.category='tarjetas-graficas';
+ const json=JSON.stringify(f.source);writeFileSync(f.file,json);f.plan.evidence.contentSha256=createHash('sha256').update(json).digest('hex');
+ assert.throws(()=>applyAssociationPlan(f.db,f.plan,f.deps,{now}),/UNVERIFIED_EVIDENCE/);
+ assert.equal(f.db.prepare('SELECT product_id FROM product_prices').get()?.product_id,'old');
+});

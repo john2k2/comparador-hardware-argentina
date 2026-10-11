@@ -13,11 +13,25 @@ type ProjectionResult={cache:{version:number;generation:string;validFrom:string;
 export function associationSqliteDependencies({artifacts,projection}:{artifacts:Map<string,string>;projection:(db:DatabaseSync,options:{now:number;generation:string;affectedProductIds:string[]})=>ProjectionResult}) {
   let rebuilt:ProjectionResult|undefined;
   return {exactOfferAttributes,proveOfferAttributes,hasExplicitIdentityConflict,listingReference,
-    verifyEvidence(evidence:{url:string;contentSha256:string},{offerId,sourceTitle,storeId}:{offerId:string;sourceTitle:string;storeId:string}) {
+    verifyEvidence(evidence:{kind:string;url:string;capturedAt:string;contentSha256:string},{offerId,sourceTitle,storeId,targetCategory}:{offerId:string;sourceTitle:string;storeId:string;targetCategory:string}) {
       const path=artifacts.get(offerId);
       if(!path||!statSync(path).isFile()||statSync(path).size>8000000)return false;
       const bytes=readFileSync(path);
       if(createHash('sha256').update(bytes).digest('hex')!==evidence.contentSha256)return false;
+      if(evidence.kind==='public-catalog') {
+        // Artefacto de la captura compartida: identidad solamente, no acredita precio nuevo.
+        if(storeId!=='compragamer')return false;
+        try {
+          const source=JSON.parse(bytes.toString('utf8'));
+          const reference=listingReference(storeId,evidence.url);
+          const offer=source.prices?.length===1?source.prices[0]:null;
+          return source.name===sourceTitle && source.category===targetCategory && offer?.storeId===storeId
+            && reference!==null && listingReference(storeId,offer.url)===reference
+            && /^cg-\d+$/.test(source.id) && reference===`compragamer:id:${source.id.slice(3)}`
+            && Number.isFinite(Date.parse(offer.lastUpdated))
+            && Date.parse(offer.lastUpdated)===Date.parse(evidence.capturedAt);
+        }catch{return false;}
+      }
       const $=cheerio.load(bytes.toString('utf8'));
       const titles=$('h1').map((_,element)=>$(element).text().replace(/\s+/g,' ').trim()).get().filter(Boolean);
       if(titles.length!==1||titles[0]!==sourceTitle)return false;
