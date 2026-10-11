@@ -8,6 +8,8 @@ El bloqueo de Cloudflare sigue siendo un bloqueo: adaptar el HTML no habilita au
 
 La segunda prueba REA con Chrome visible, URL sin www y doce segundos de espera recibió 403 y terminó en «Un momento…». Chrome habitual sí permitió verificar dos variantes. Las sugerencias públicas usan POST a `/_func/search.php` y `/_func/searchmob.php`; sus seis resultados sin precio ni stock no constituyen un catálogo completo. No existe todavía un flujo automático FullH4rd acreditado.
 
+La prueba local con curl_cffi 0.16.3 también recibió 403/desafío en dos procesos independientes y sin cookies iniciales. Dos solicitudes, cero observaciones de precio/stock; no se habilitó el lector automático. Resultado y reproducción: `docs/direccion/FULLH4RD_CURL_CFFI_2026-10-11.md`.
+
 GoldenTech: la etiqueta principal visible «Disponible en24–48 hs» informa disponibilidad pendiente (`unknown`), aunque un indicador genérico diga stock bajo. Metadata, texto oculto o recomendaciones no cambian esta decisión. Una ficha sin stock explícito continúa agotada.
 
 Mexx: tres fichas públicas sin precio principal y con «NO DISPONIBLE» devuelven ausencia de observación. Un precio/InStock antiguo de metadata y una recomendación con precio no habilitan la oferta ni renuevan su fecha.
