@@ -51,6 +51,18 @@ describe('fichas conocidas con DOM específico', () => {
     expect(parse('mexx', html.replace('content="248579"', 'content="148579"'), url)).toBeNull();
     expect(parse('mexx', html.replace('content="ARS"', 'content="USD"'), url)).toBeNull();
   });
+  it.each([
+    { model: '5500', name: 'Procesador Amd Ryzen 5 5500 3.6 Ghz - AM4 Sin Gpu', price: '158569.00', path: '47212-procesador-amd-ryzen-5-5500-3.6-ghz-am4-sin-gpu' },
+    { model: '7600', name: '', price: '', path: '45656-procesador-amd-ryzen-5-7600-5.1-ghz-am5' },
+    { model: '8700G', name: 'Procesador Amd Ryzen 7 8700G 5.1 Ghz - AM5', price: '489159.00', path: '46866-procesador-amd-ryzen-7-8700g-5.1-ghz-am5' },
+  ])('Mexx $model sin precio principal conserva no-observation aunque la metadata diga InStock', ({ name, price, path }) => {
+    // Fichas públicas leídas el 11/10/2026, 16:17:17–16:17:24 UTC.
+    // 5500 y 8700G conservan importes estructurados, pero el principal dice
+    // NO DISPONIBLE. 7600 conserva además nombre e importe vacíos.
+    const url = `https://www.mexx.com.ar/productos-rubro/procesadores/${path}.html`;
+    const html = `<div itemscope itemtype="http://schema.org/Product"><meta itemprop="name" content="${name}"><div itemscope itemtype="http://schema.org/Offer"><link itemprop="url" href="${url}"><meta itemprop="price" content="${price}"><meta itemprop="priceCurrency" content="ARS"><link itemprop="availability" content="InStock"></div></div><div id="prod_desc_edit"><h1 class="title">${name}</h1><div class="main-price">NO DISPONIBLE</div></div><div class="related card card-ecommerce"><h4>Otro procesador</h4><strong>$123.456</strong><span>EN STOCK</span></div>`;
+    expect(parseKnownProductDetail(html, url, { id: 'mexx', name: 'Mexx', baseUrl: 'https://www.mexx.com.ar' }, 'procesadores')).toBeNull();
+  });
   it('un H1 vacío de la plantilla no oculta el Product principal coincidente', () => {
     const url = 'https://hftecnologia.com.ar/123-mother';
     const html = `<link rel="canonical" href="${url}"><h1></h1><h1>Mother Gigabyte B550M</h1><script type="application/ld+json">${JSON.stringify({ '@type': 'Product', name: 'Mother Gigabyte B550M', offers: { price: 100000, priceCurrency: 'ARS', availability: 'https://schema.org/InStock' } })}</script>`;

@@ -158,6 +158,36 @@ describe('woocommerce-shared', () => {
     const html = '<body class="single-product"><h1>GPU RTX 5060</h1><p class="price"><bdi>$500.000</bdi></p><p class="stock out-of-stock">Agotado</p></body>';
     expect(parseWooProductDetail(html, 'https://liontech.com.ar/producto/gpu/', { id:'liontech', name:'LionTech', baseUrl:'https://liontech.com.ar' }, 'tarjetas-graficas', 'gpu')?.prices[0]).toMatchObject({ price:500000, stock:'out-of-stock' });
   });
+
+  // Fragmento del principal 8121/CPU083 leído el 11/10/2026 a las 15:22:07 UTC.
+  const goldenUrl = 'https://goldentechstore.com.ar/producto/procesador-amd-ryzen-7-8700g-am5-con-video-con-cooler/';
+  const goldenPill = '<span class="gt-ficha__pill gt-ficha__pill--blue"><svg aria-hidden="true"></svg>Disponible en 24-48 hs</span>';
+  const goldenDetail = (meta = goldenPill, stock = '<p class="stock in-stock"></p>', extra = '') => `<link rel="canonical" href="${goldenUrl}"><body class="single-product"><div class="gt-ficha"><div class="gt-ficha__buy"><div class="gt-ficha__meta">${meta}<span class="gt-ficha__sku">SKU: CPU083</span></div><h1 class="gt-ficha__title">PROCESADOR AMD RYZEN 7 8700G AM5 CON VIDEO CON COOLER</h1><span class="gt-ficha-cash__now">$ 454.585,76</span><span class="gt-ficha-cash__was">$ 509.136,05</span>${stock}<button name="add-to-cart" value="8121" class="single_add_to_cart_button">Agregar al carrito</button>${extra}</div></div></body>`;
+  const parseGolden = (html: string) => parseWooProductDetail(html, goldenUrl, { id:'goldentechstore', name:'GoldenTech', baseUrl:'https://goldentechstore.com.ar' }, 'procesadores', '8700g');
+
+  it('GoldenTech conserva precio cash y registra stock desconocido ante disponibilidad primaria en 24–48 horas', () => {
+    const product = parseGolden(goldenDetail());
+    expect(product?.prices[0]).toMatchObject({ price:454586, stock:'unknown', priceCondition:'special', url:goldenUrl });
+    expect(product?.specs).toMatchObject({ SKU:'CPU083', SourceListingId:'8121' });
+    expect(parseGolden(goldenDetail(goldenPill, '<p class="stock in-stock">Últimas unidades</p>'))?.prices[0].stock).toBe('unknown');
+  });
+  it.each(['hidden', 'aria-hidden="true"', 'style="display:none"', 'style="visibility:hidden"'])('GoldenTech ignora disponibilidad diferida oculta por %s', attribute => {
+    expect(parseGolden(goldenDetail(goldenPill.replace('<span ', `<span ${attribute} `)))?.prices[0].stock).toBe('in-stock');
+    expect(parseGolden(goldenDetail().replace('class="gt-ficha__meta"', `class="gt-ficha__meta" ${attribute}`))?.prices[0].stock).toBe('in-stock');
+    expect(parseGolden(goldenDetail(goldenPill.replace('Disponible en 24-48 hs', `<span ${attribute}>Disponible en 24-48 hs</span>`)))?.prices[0].stock).toBe('in-stock');
+  });
+  it.each(['gt-ficha-related', 'related products'])('GoldenTech ignora disponibilidad diferida de recomendados %s', className => {
+    const related = `<section class="${className}"><div class="gt-ficha__meta">${goldenPill}</div></section>`;
+    expect(parseGolden(goldenDetail('', undefined, related))?.prices[0].stock).toBe('in-stock');
+  });
+  it('GoldenTech no toma envío o cotización general como disponibilidad diferida', () => {
+    expect(parseGolden(goldenDetail(goldenPill.replace('Disponible en', 'Envío en')))?.prices[0].stock).toBe('in-stock');
+    expect(parseGolden(goldenDetail('', undefined, `<aside class="shipping">${goldenPill}</aside>`))?.prices[0].stock).toBe('in-stock');
+    expect(parseGolden(goldenDetail('').replace('</body>', `<div class="gt-ficha__meta">${goldenPill}</div></body>`))?.prices[0].stock).toBe('in-stock');
+  });
+  it.each(['<p class="stock out-of-stock">Sin stock</p>', '<p class="stock">Agotado</p>', '<main class="product outofstock"></main>'])('GoldenTech conserva agotamiento explícito sobre disponibilidad diferida: %s', stock => {
+    expect(parseGolden(goldenDetail(goldenPill, stock))?.prices[0]).toMatchObject({ price:454586, stock:'out-of-stock', priceCondition:'special' });
+  });
   it('no recupera el importe personalizado de MaxTecno desde un relacionado', () => {
     const html = '<main class="product"><h1 class="product-title">GPU RTX 5060</h1><section class="related products"><div class="price-showcase-box"><span class="price-main">$100.000</span></div></section></main>';
     expect(parseWooProductDetail(html, 'https://maxtecno.com.ar/producto/gpu/', { id:'maxtecno', name:'MaxTecno', baseUrl:'https://maxtecno.com.ar' }, 'tarjetas-graficas', 'gpu')).toBeNull();

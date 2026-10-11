@@ -391,9 +391,16 @@ export function parseWooProductDetail(
     || primaryStock.toArray().some(element => /\b(?:reservas?|back[\s-]?orders?|bajo\s+pedido)\b/i.test(
       goldenDetail ? goldenVisibleText($, $(element)) : $(element).text(),
     ));
+  // La ficha propia de GoldenTech mantiene carrito habilitado para disponibilidad
+  // diferida. Sólo la pastilla visible del principal acredita esta condición;
+  // un plazo de envío o cotización general no describe el stock del producto.
+  const hasGoldenLeadTime = goldenDetail && primary('.gt-ficha__meta > .gt-ficha__pill.gt-ficha__pill--blue')
+    .toArray().some(element => /^disponible\s+en\s+24\s*[-–—]\s*48\s*(?:hs|horas)\.?$/i.test(
+      goldenVisibleText($, $(element)).replace(/\s+/g, ' ').trim(),
+    ));
   const stock = hasOutOfStockClass || hasOutOfStockText
     ? 'out-of-stock'
-    : hasBackorder
+    : hasBackorder || hasGoldenLeadTime
       ? 'unknown'
       : hasLowStockText
         ? 'low-stock'
