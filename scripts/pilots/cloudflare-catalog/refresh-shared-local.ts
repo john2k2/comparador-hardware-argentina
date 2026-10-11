@@ -15,7 +15,7 @@ export async function runSharedRefresh(db:DatabaseSync,dependencies:Dependencies
     try {
       const row=db.prepare('SELECT row_json,category FROM products WHERE id=?').get(lease.productId) as {row_json:string;category:HardwareCategory};
       const product={...JSON.parse(row.row_json),category:row.category};
-      if(!canRefreshLocalTarget(lease.storeId,lease.url,product.category,product.name))throw new Error('REFRESH_LOCAL_IDENTITY');
+      if(!canRefreshLocalTarget(lease.storeId,lease.url,product.category,product.name,product.specs))throw new Error('REFRESH_LOCAL_IDENTITY');
       if(sharedFailure)throw sharedFailure;
       const source=await reader(lease.storeId,lease.url,product.category,AbortSignal.timeout(25000),
         {observedAfter:Math.max(...leases.map(item=>item.leasedAt))});

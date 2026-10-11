@@ -31,3 +31,11 @@ FullH4rd queda diferido por decisión del usuario: el selector automático lo ex
 RAM: la prueba separada `ram-identity.ts` acepta Single/un módulo explícito, U-DIMM y los alias Grey/Gray/Gris, blanco/negro. Exige capacidad total, kit coherente, generación, frecuencia, CL, formato, color y familia. Conserva título, RGB, perfiles y condición; no deduce atributos del SKU. Single Rank/Channel no acredita un módulo. Contradicciones y signos ×/* se rechazan porque el subject normalizado pierde esos signos. Las claves persistidas no cambian; una prueba antigua con sólo `model` deja de aprobarse y necesita otra observación.
 
 Verificación RAM del 11/10: 193/193 Vitest en seis suites de identidad/lectores; 35 observaciones persistidas revalidadas después de serializarlas, 17 comparables por identidad/stock. La elegibilidad de una oferta no garantiza que la ficha preferida de búsqueda la incluya: comprobar también el resultado de la búsqueda.
+
+## RAM acreditada por fabricante
+
+El consumidor individual, agrupado y compartido admite las tres MPN documentadas en `docs/direccion/FUENTES_RAM_FABRICANTE_2026-10-11.md`. La capacidad depende de nombre y specs actuales; no se deduce un kit de letras del SKU. El source recibido debe conservar SKU literal, publicación exacta y título concordante. La prueba v2 guarda ambos sujetos originales y revalida dentro de la transacción antes de escribir precio/stock/observación. Un cambio posterior del nombre con ×/* también rechaza la prueba.
+
+Verificación: 41/41 pruebas Node de los consumidores (27/9/5), compiladas con esbuild y ejecutadas con Node 26; 170/170 Vitest de calidad. Runtime 23:04 UTC: cuatro ofertas de tres publicaciones CompraGamer, tres solicitudes HTTP, cuatro comparables tras serialización. El bundle del ciclo se reemplazó y el primer tick posterior al reinicio terminó con salida cero, muestra/checkpoint/Cloudflare concordantes. Las cuatro RAM figuran soportadas y programadas sin ampliar presupuesto ni vencimiento.
+
+Reversión de consumidores: restaurar estos tres consumidores y el bundle previo; conservar calidad/otras mejoras independientes. Revertir código no revierte filas, bases, proyección, marcador ni recibos guardados.

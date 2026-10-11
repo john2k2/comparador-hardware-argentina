@@ -41,6 +41,28 @@ test('dos destinos reclaman antes de una lectura compartida y guardan la misma o
   assert.equal(calls, 1); assert.equal(r.observed, 2); assert.equal(r.publications, 1);
   const dates = f.prices().map(row => JSON.parse(String(row.row_json)).last_updated); assert.equal(dates[0], dates[1]); f.db.close();
 });
+test('dos fichas RAM manufacturer reciben proof por publicación con una lectura y conservan productos',async()=>{
+  const f=fixture({store:'compragamer'}),title='Memoria Corsair DDR4 16GB 3200MHz Vengeance RGB RS Black CL16';
+  const sku='CMG16GX4M1E3200C16',url='https://compragamer.com/producto/RAM_15558';
+  for(const id of ['a','b']){
+    f.db.prepare('UPDATE products SET category=?,row_json=? WHERE id=?').run('memoria-ram',JSON.stringify({id,name:title,category:'memoria-ram',specs:{SKU:sku}}),id);
+    const raw=JSON.parse(String(f.db.prepare('SELECT row_json FROM product_prices WHERE id=?').get(id)!.row_json));
+    f.db.prepare('UPDATE product_prices SET url=?,row_json=? WHERE id=?').run(url,JSON.stringify({...raw,url}),id);
+    f.db.prepare('UPDATE price_basis SET url=? WHERE id=?').run(url,id);
+  }
+  enqueueKnownProducts(f.db,{productIds:['a','b'],offerIds:['a','b'],storeIds:['compragamer'],now});
+  const products=f.db.prepare('SELECT * FROM products ORDER BY id').all();let calls=0;
+  const r=await runGroupedLocalRefresh(f.db,{...f.deps,reader:async()=>{
+    calls++;f.advance(5);return {name:title,category:'memoria-ram',specs:{SKU:sku},prices:[{storeId:'compragamer',url,price:200,stock:'in-stock',lastUpdated:new Date(now+5)}]} as Product;
+  }});
+  assert.equal(calls,1);assert.equal(r.observed,2);assert.equal(r.publications,1);
+  assert.deepEqual(f.db.prepare('SELECT * FROM products ORDER BY id').all(),products);
+  for(const row of f.prices()){
+    const raw=JSON.parse(String(row.row_json));assert.equal(raw.identity_review.proof.method,'manufacturer-ram');
+    assert.equal(raw.source_identity.title,title);assert.equal(raw.identity_review.proof.binding.listingRef,'compragamer:id:15558');
+  }
+  f.db.close();
+});
 test('una fuente previa al lease y una variante distinta no renuevan ninguna fila', async () => {
   for (const stale of [true, false]) {
     const f = fixture(), before = f.prices();

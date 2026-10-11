@@ -7,9 +7,9 @@ import { pathToFileURL } from 'node:url';
 import { fetchKnownProductDetail } from '@/lib/scrapers/known-product-detail';
 import { fetchWooCommerceKnownOffer } from '@/lib/scrapers/woocommerce-shared';
 import { SourceHttpError, sourceHttpMetrics, sourceBlockedUntil } from '@/lib/scrapers/source-http';
-import { proveOfferAttributes, attributeProofMatches, exactOfferAttributes } from '@/lib/quality/offer-attribute-proof';
+import { proveOfferAttributes, proveManufacturerRamAttributes, attributeProofMatches, exactOfferAttributes } from '@/lib/quality/offer-attribute-proof';
 import { sourceContract, WOO_PUBLIC_STORE_IDS } from '@/lib/scrapers/source-contracts';
-import { hasExplicitIdentityConflict, type OfferIdentityReview } from '@/lib/quality/offer-identity';
+import { hasExplicitIdentityConflict, readIdentityReview, needsIdentityReview, type OfferIdentityReview } from '@/lib/quality/offer-identity';
 import { normalizeIdentityText } from '@/lib/product-identity';
 import { listingReference, sameListing } from '@/lib/scrapers/listing-reference';
 import { getCompraGamerCatalog, getCompraGamerSubcategoryMap, getCompraGamerBrandMap } from '@/lib/scrapers/compragamer-catalog';
@@ -34,9 +34,12 @@ const historySchema = `CREATE TABLE IF NOT EXISTS pilot_offer_observations(
 export const localStoreIds = [...WOO_PUBLIC_STORE_IDS,'fullh4rd','mexx','xtpc','gamingcity','compugarden','compragamer','37bytes'];
 export const localCategories = ['procesadores','tarjetas-graficas','memoria-ram','almacenamiento'];
 
-export function canRefreshLocalTarget(storeId:string,url:string,category:string,name:string):boolean {
+export function canRefreshLocalTarget(storeId:string,url:string,category:string,name:string,specs?:Record<string,unknown>):boolean {
   return localCategories.includes(category)&&(storeId!=='37bytes'||category==='almacenamiento')
-    &&validateLocalTarget(storeId,url)&&exactOfferAttributes(name,category)!==null;
+    &&validateLocalTarget(storeId,url)&&(exactOfferAttributes(name,category)!==null
+      ||category==='memoria-ram'&&storeId==='compragamer'&&typeof specs?.SKU==='string'
+        &&proveManufacturerRamAttributes({title:name,sku:specs.SKU,specs},{title:name,sku:specs.SKU,specs},
+          {storeId,url,listingRef:listingReference(storeId,url)!})!==null);
 }
 
 function selectedLocalStores(storeIds:string[]=localStoreIds):string[] {
@@ -77,20 +80,26 @@ export function validateLocalTarget(storeId:string, url:string): boolean {
 }
 
 /** Prueba local estricta; SSD conserva además el título completo de ambas fuentes. */
-export function reviewLocalObservation(product:{name:string;category:HardwareCategory},lease:Lease,source:Product,now:number):ProductPrice {
+export function reviewLocalObservation(product:{name:string;category:HardwareCategory;specs?:Record<string,unknown>},lease:Lease,source:Product,now:number):ProductPrice {
   if(!validateLocalTarget(lease.storeId,lease.url)||source.category!==product.category) throw new Error('REFRESH_LOCAL_IDENTITY');
   const price=source.prices.find(offer=>offer.storeId===lease.storeId&&sameListing(lease.storeId,offer.url,lease.url));
   const observed=price?new Date(price.lastUpdated).valueOf():NaN;
   if(!price||!Number.isFinite(price.price)||price.price<=0||!Number.isFinite(observed)||observed<lease.leasedAt||observed>now
     ||(lease.observedAt&&observed<=Date.parse(lease.observedAt))) throw new Error('REFRESH_LOCAL_NO_OBSERVATION');
-  const proof=proveOfferAttributes(product.name,product.category,source.name);
-  if(!proof||hasExplicitIdentityConflict({name:product.name,category:product.category,offerText:source.name})) throw new Error('REFRESH_LOCAL_IDENTITY');
   const reference=listingReference(lease.storeId,lease.url)!;
+  const proof=proveOfferAttributes(product.name,product.category,source.name)
+    ??(product.category==='memoria-ram'?proveManufacturerRamAttributes(
+      {title:product.name,sku:typeof product.specs?.SKU==='string'?product.specs.SKU:undefined,specs:product.specs},
+      {title:source.name,sku:source.specs.SKU,specs:source.specs},{storeId:lease.storeId,url:lease.url,listingRef:reference}):null);
+  if(!proof||hasExplicitIdentityConflict({name:product.name,category:product.category,offerText:source.name})) throw new Error('REFRESH_LOCAL_IDENTITY');
+  if(proof.method==='manufacturer-ram'&&price.sourceIdentity
+    &&(price.sourceIdentity.listingRef!==reference||normalizeIdentityText(price.sourceIdentity.title)!==normalizeIdentityText(source.name)
+      ||price.sourceIdentity.storeSku!==undefined&&price.sourceIdentity.storeSku!==source.specs.SKU))throw new Error('REFRESH_LOCAL_IDENTITY');
   const sourceIdentity={...price.sourceIdentity,listingRef:reference,title:source.name.slice(0,400),
     ...(source.specs.SKU?{storeSku:source.specs.SKU.slice(0,160)}:{}),
     ...(source.specs.SourceListingId?{sourceId:source.specs.SourceListingId}:{}),
   };
-  const identityReview:OfferIdentityReview={version:1,status:'consistent',reason:'exact-attributes',reviewedAt:new Date(now).toISOString(),
+  const identityReview:OfferIdentityReview={version:1,status:'consistent',reason:proof.method==='manufacturer-ram'?'manufacturer-ram':'exact-attributes',reviewedAt:new Date(now).toISOString(),
     model:null,confidence:null,subject:{name:normalizeIdentityText(product.name),category:product.category,url:lease.url},sourceIdentity,proof};
   return {...price,url:lease.url,lastUpdated:new Date(observed),sourceIdentity,identityReview};
 }
@@ -112,7 +121,9 @@ export function persistLocalObservation(db:DatabaseSync,lease:Lease,price:Produc
   if(!marker) throw new Error('REFRESH_LOCAL_SNAPSHOT');
   const observedMs=price.lastUpdated.valueOf();
   if(!Number.isFinite(observedMs)||observedMs<queued.leased_at||observedMs>now||price.url!==lease.url||price.storeId!==lease.storeId
-    ||!price.sourceIdentity||!attributeProofMatches(price.identityReview?.proof,product.name,product.category,price.sourceIdentity.title)
+    ||!price.sourceIdentity||!attributeProofMatches(price.identityReview?.proof,product.name,product.category,price.sourceIdentity.title,
+      {targetSpecs:product.specs,sourceIdentity:price.sourceIdentity,url:lease.url})
+    ||readIdentityReview(price.identityReview)?.status!=='consistent'||needsIdentityReview(price,product)
     ||hasExplicitIdentityConflict({name:product.name,category:product.category,offerText:price.sourceIdentity.title}))throw new Error('REFRESH_LOCAL_IDENTITY');
   if(before.last_updated&&price.lastUpdated.valueOf()<=Date.parse(before.last_updated)) throw new Error('REFRESH_LOCAL_OBSERVATION_REGRESSION');
   const observed=price.lastUpdated.toISOString(),comparable=isComparableStoreOffer(price,product);
@@ -167,7 +178,7 @@ export async function runLocalRefresh(db:DatabaseSync,{limit=3,storeIds,productI
       if(!validateLocalTarget(lease.storeId,lease.url))throw new Error('REFRESH_LOCAL_IDENTITY');
       const row=db.prepare('SELECT row_json,category FROM products WHERE id=?').get(lease.productId) as {row_json:string;category:HardwareCategory};
       const product={...JSON.parse(row.row_json),category:row.category};
-      if(!canRefreshLocalTarget(lease.storeId,lease.url,product.category,product.name))throw new Error('REFRESH_LOCAL_IDENTITY');
+      if(!canRefreshLocalTarget(lease.storeId,lease.url,product.category,product.name,product.specs))throw new Error('REFRESH_LOCAL_IDENTITY');
       const source=await reader(lease.storeId,lease.url,product.category,AbortSignal.timeout(25000),{observedAfter:lease.leasedAt});
       readSource=source;
       if(!source)throw new Error('REFRESH_LOCAL_NO_OBSERVATION');

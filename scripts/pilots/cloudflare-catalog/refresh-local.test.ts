@@ -11,6 +11,8 @@ import { parseWooProductDetail } from '@/lib/scrapers/woocommerce-shared';
 import { parseKnownProductDetail } from '@/lib/scrapers/known-product-detail';
 import { SourceHttpError } from '@/lib/scrapers/source-http';
 import type { Product } from '@/lib/types';
+import { isComparableStoreOffer } from '@/lib/price-utils';
+import { readIdentityReview } from '@/lib/quality/offer-identity';
 const { rebuildProjection }=await import(pathToFileURL(resolve('scripts/pilots/cloudflare-catalog/projection.mjs')).href);
 const { searchCatalog }=await import(pathToFileURL(resolve('scripts/pilots/cloudflare-catalog/engine.mjs')).href);
 const { sqliteAdapter }=await import(pathToFileURL(resolve('scripts/pilots/cloudflare-catalog/sqlite-adapter.mjs')).href);
@@ -33,6 +35,75 @@ function fixture(storeId='maxtecno') {
   const dependencies={projection:rebuildProjection,estimateIndexes:()=>0,clock,reader:async()=>{const result=source();time+=5;return result;}};
   return {db,url,raw,source,dependencies,advance:()=>{time+=5;}};
 }
+const ramName='Memoria Corsair DDR4 16GB 3200MHz Vengeance RGB RS Black CL16',ramSku='CMG16GX4M1E3200C16';
+function ramFixture(){
+  const f=fixture('compragamer'),url='https://compragamer.com/producto/RAM_15558';
+  const product={id:'p',name:ramName,category:'memoria-ram',specs:{SKU:ramSku}};
+  f.db.prepare('UPDATE products SET category=?,catalog_name=?,catalog_document=?,row_json=?').run('memoria-ram',ramName.toLowerCase(),ramName.toLowerCase(),JSON.stringify(product));
+  f.db.prepare('UPDATE product_substrings SET document=?').run(ramName.toLowerCase());
+  const raw={...f.raw,url};f.db.prepare('UPDATE product_prices SET url=?,row_json=?').run(url,JSON.stringify(raw));
+  f.db.prepare('UPDATE price_basis SET url=?').run(url);f.db.prepare('UPDATE summaries SET urls=?').run(url);
+  enqueueKnownProducts(f.db,{productIds:['p'],storeIds:['compragamer'],now});
+  rebuildProjection(f.db,{now,generation:'ram-before'});
+  const source=()=>({...f.source(),name:ramName,category:'memoria-ram',specs:{SKU:ramSku},prices:f.source().prices.map(price=>({...price,url}))} as Product);
+  return {...f,url,product,raw,ramSource:source,dependencies:{...f.dependencies,reader:async()=>{const result=source();f.advance();return result;}}};
+}
+test('RAM fabricante conserva título/keys del producto y publicación original; JSON sigue comparable',async()=>{
+  const f=ramFixture();try{
+    const productBefore=f.db.prepare('SELECT * FROM products').get(),sourceTitle=f.ramSource().name;
+    assert.equal(canRefreshLocalTarget('compragamer',f.url,'memoria-ram',ramName),false);
+    assert.equal(canRefreshLocalTarget('compragamer',f.url,'memoria-ram',ramName,{SKU:ramSku}),true);
+    const result=await runLocalRefresh(f.db,f.dependencies);assert.equal(result.observed,1);
+    const raw=JSON.parse(String(f.db.prepare('SELECT row_json FROM product_prices').get()!.row_json));
+    assert.equal(raw.source_identity.title,sourceTitle);assert.equal(raw.identity_review.proof.source.title,sourceTitle);
+    assert.equal(raw.identity_review.proof.method,'manufacturer-ram');assert.equal(readIdentityReview(raw.identity_review)?.status,'consistent');
+    assert.deepEqual(f.db.prepare('SELECT * FROM products').get(),productBefore);
+    const offer={storeId:'compragamer',url:f.url,price:raw.price,stock:raw.stock,lastUpdated:raw.last_updated,
+      sourceIdentity:raw.source_identity,identityReview:raw.identity_review};
+    assert.equal(isComparableStoreOffer(offer,f.product),true);assert.equal(isComparableStoreOffer(offer,{name:ramName,category:'memoria-ram'}),false);
+    assert.equal(f.db.prepare("SELECT COUNT(*) n FROM price_basis WHERE kind='current'").get()!.n,1);
+  }finally{f.db.close();}
+});
+test('RAM con MPN/atributos fuente distintos o fecha anterior no renueva filas, basis ni marcador',async()=>{
+  for(const mutate of [
+    (source:Product)=>{source.specs.SKU='MEM755';},(source:Product)=>{source.specs.kit='2x8GB';},
+    (source:Product)=>{source.name=source.name.replace('Black','Grey');},
+    (source:Product)=>{source.prices[0].lastUpdated=new Date(now-1);},
+    (source:Product)=>{source.prices[0].url='https://compragamer.com/producto/RAM_15522';},
+  ]){
+    const f=ramFixture();try{
+      const tables=['product_prices','price_basis','products','pilot_meta'],before=tables.map(table=>f.db.prepare('SELECT * FROM '+table).all());
+      const result=await runLocalRefresh(f.db,{...f.dependencies,reader:async()=>{const source=f.ramSource();mutate(source);f.advance();return source;}});
+      assert.equal(result.observed,0);assert.deepEqual(tables.map(table=>f.db.prepare('SELECT * FROM '+table).all()),before);
+    }finally{f.db.close();}
+  }
+});
+test('RAM persistencia revalida SKU y variante actual del producto después de leer la fuente',()=>{
+  for(const specs of [{},{SKU:'another'},{SKU:ramSku,kit:'2x8GB'}]){
+    const f=ramFixture();try{
+      const lease=claimRefreshBatch(f.db,{now,limit:1})[0],price=reviewLocalObservation(f.product,lease,f.ramSource(),now+2);
+      f.db.prepare('UPDATE products SET row_json=?').run(JSON.stringify({...f.product,specs}));
+      const tables=['product_prices','price_basis','products','pilot_meta'],before=tables.map(table=>f.db.prepare('SELECT * FROM '+table).all());
+      assert.throws(()=>persistLocalObservation(f.db,lease,price,f.dependencies,now+2),/IDENTITY/);
+      assert.deepEqual(tables.map(table=>f.db.prepare('SELECT * FROM '+table).all()),before);
+    }finally{f.db.close();}
+  }
+});
+test('RAM título vigente con * o × tras lectura revierte raw/basis/marcador/ledger',()=>{
+  for(const marker of ['*','×']){
+    const f=ramFixture();try{
+      const lease=claimRefreshBatch(f.db,{now,limit:1})[0],price=reviewLocalObservation(f.product,lease,f.ramSource(),now+2);
+      f.db.exec('CREATE TABLE pilot_daily_write_budget(day TEXT PRIMARY KEY,used INTEGER,ceiling INTEGER)');
+      f.db.prepare('INSERT INTO pilot_daily_write_budget VALUES(?,?,?)').run('2026-10-11',0,80000);
+      f.db.prepare('UPDATE products SET row_json=?').run(JSON.stringify({...f.product,name:ramName.replace('RGB RS',`RGB${marker}RS`)}));
+      const tables=['product_prices','price_basis','products','pilot_meta','pilot_daily_write_budget'];
+      const before=tables.map(table=>f.db.prepare('SELECT * FROM '+table).all());
+      assert.throws(()=>persistLocalObservation(f.db,lease,price,f.dependencies,now+2),/IDENTITY/);
+      assert.deepEqual(tables.map(table=>f.db.prepare('SELECT * FROM '+table).all()),before);
+      assert.equal(f.db.isTransaction,false);
+    }finally{f.db.close();}
+  }
+});
 test('reader local valida tiendas/HTTPS/URLs conocidas y rechaza query o host ajeno',()=>{
   assert.equal(validateLocalTarget('maxtecno','https://maxtecno.com.ar/producto/cpu/'),true);
   assert.equal(validateLocalTarget('maxtecno','https://evil.example/producto/cpu/'),false);

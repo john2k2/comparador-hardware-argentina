@@ -109,12 +109,14 @@ test('fallo posterior al encolado revierte también cola y cursor en el mismo co
 
 test('capability recibe nombre exacto y conserva atributos incompletos en denominador no soportado',()=>{
   const f=fixture();f.add('a');f.add('b',{productId:'incomplete'});
-  f.db.prepare('UPDATE products SET row_json=? WHERE id=?').run(JSON.stringify({name:'Ryzen 7600 AM5'}),'p');
-  const seen=[],spec={...capabilities,validatorTarget:undefined,validateTarget:(storeId,url,category,name)=>{
-    seen.push({storeId,url,category,name});return name==='Ryzen 7600 AM5'?true:{supported:false,reason:'insufficient-attributes'};
+  const attributes={SKU:'exact-mpn'};
+  f.db.prepare('UPDATE products SET row_json=? WHERE id=?').run(JSON.stringify({name:'Ryzen 7600 AM5',specs:attributes}),'p');
+  const seen=[],spec={...capabilities,validatorTarget:undefined,validateTarget:(storeId,url,category,name,specs)=>{
+    seen.push({storeId,url,category,name,specs});return name==='Ryzen 7600 AM5'?true:{supported:false,reason:'insufficient-attributes'};
   }};
   const result=f.seed({capabilities:spec});assert.equal(result.supported,1);assert.equal(result.unsupported,1);
   assert.equal(result.reasons['insufficient-attributes'],1);assert.equal(seen[0].name,'Ryzen 7600 AM5');
+  assert.deepEqual(seen[0].specs,attributes);assert.equal(seen[1].specs,undefined);
   assert.equal(f.db.prepare('SELECT COUNT(*) n FROM pilot_refresh_demand').get().n,1);
   const coverage=f.coverage({capabilities:spec});assert.equal(coverage.totals.total,2);assert.equal(coverage.totals.reasons['insufficient-attributes'],1);f.db.close();
 });

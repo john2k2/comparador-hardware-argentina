@@ -82,7 +82,7 @@ export async function runAutomaticCycle(config,dependencies={}){
     const local=dependencies.consumer??await import(pathToFileURL(config.consumerBundle).href);
     // FullH4rd pendiente por decisión del usuario; su cola no autoriza otra lectura.
     const capabilities={storeIds:local.localStoreIds.filter(id=>id!=='fullh4rd'),categories:local.localCategories,
-      validateTarget:(storeId,url,category,name)=>local.canRefreshLocalTarget(storeId,url,category,name)};
+      validateTarget:(storeId,url,category,name,specs)=>local.canRefreshLocalTarget(storeId,url,category,name,specs)};
     const token=dependencies.token??readFileSync(config.tokenFile,'utf8').trim();
     const state=await (dependencies.state??pilotState)(token);
     report.remote.rowsRead+=state.rowsRead;

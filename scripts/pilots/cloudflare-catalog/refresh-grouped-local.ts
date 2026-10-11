@@ -47,7 +47,7 @@ export async function runGroupedLocalRefresh(db: DatabaseSync, options: Dependen
     const row = db.prepare('SELECT row_json,category FROM products WHERE id=?').get(lease.productId);
     const product = row ? JSON.parse(String(row.row_json)) : null;
     const reference = listingReference(lease.storeId, lease.url);
-    if (!row || !reference || !canRefreshLocalTarget(lease.storeId, lease.url, String(row.category), product?.name ?? '')) {
+    if (!row || !reference || !canRefreshLocalTarget(lease.storeId, lease.url, String(row.category), product?.name ?? '', product?.specs)) {
       failed(lease, new Error('REFRESH_LOCAL_IDENTITY'), true); continue;
     }
     const key = JSON.stringify([lease.storeId, reference, row.category]);

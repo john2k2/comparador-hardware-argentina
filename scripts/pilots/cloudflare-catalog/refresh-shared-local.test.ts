@@ -16,3 +16,20 @@ test('selección de ofertas no reclama otras filas pendientes del mismo producto
 test('todo el lote reclama antes de una única lectura compartida y conserva su fecha',async t=>{const db=fixture(t);let calls=0,time=now,readAt=0;const result=await runSharedRefresh(db,{projection:rebuildProjection,estimateIndexes:()=>0},{clock:()=>time,reader:async(_store,_url,_category,_signal,context)=>{assert.equal(context?.observedAfter,now);if(!readAt){assert.equal(db.prepare("SELECT COUNT(*) n FROM pilot_refresh_demand WHERE status='leased'").get()?.n,3);readAt=++time;calls++;}time++;return source(readAt);}});assert.equal(result.observed,3);assert.equal(calls,1);assert.equal(db.prepare('SELECT COUNT(DISTINCT json_extract(row_json,\'$.last_updated\')) n FROM product_prices').get()?.n,1);});
 test('caché anterior al lease no cambia precios ni fechas',async t=>{const db=fixture(t),before=db.prepare('SELECT * FROM product_prices').all();const result=await runSharedRefresh(db,{projection:rebuildProjection,estimateIndexes:()=>0},{clock:()=>now,reader:async()=>source(now-1)});assert.equal(result.observed,0);assert.deepEqual(db.prepare('SELECT * FROM product_prices').all(),before);});
 test('un bloqueo de fuente corta nuevas lecturas del lote y conserva backoff',async t=>{const db=fixture(t);let calls=0;const result=await runSharedRefresh(db,{projection:rebuildProjection,estimateIndexes:()=>0},{clock:()=>now,reader:async()=>{calls++;throw new SourceHttpError('blocked',403);}});assert.equal(calls,1);assert.equal(result.observed,0);assert.equal(db.prepare("SELECT COUNT(*) n FROM pilot_refresh_demand WHERE status='backoff' AND due_at>=?").get(now+6*3600000)?.n,3);});
+test('lector compartido pasa SKU RAM vigente y guarda títulos originales por oferta',async t=>{
+ const db=fixture(t),title='Memoria Corsair DDR4 8GB 3200Mhz Vengeance LPX Black CL16',sku='CMK8GX4M1E3200C16';
+ const ramUrl='https://compragamer.com/producto/RAM_15522';
+ db.prepare('UPDATE products SET category=?,row_json=?').run('memoria-ram',JSON.stringify({id:'p',name:title,category:'memoria-ram',specs:{SKU:sku}}));
+ for(const row of db.prepare('SELECT id,row_json FROM product_prices').all()){
+  const raw=JSON.parse(String(row.row_json));db.prepare('UPDATE product_prices SET url=?,row_json=? WHERE id=?').run(ramUrl,JSON.stringify({...raw,url:ramUrl}),row.id);
+ }
+ enqueueKnownProducts(db,{productIds:['p'],storeIds:['compragamer'],now});
+ const productBefore=db.prepare('SELECT * FROM products').get();let time=now;
+ const result=await runSharedRefresh(db,{projection:rebuildProjection,estimateIndexes:()=>0},{clock:()=>time,reader:async()=>{
+  time++;return {name:title,category:'memoria-ram',specs:{SKU:sku},prices:[{storeId:'compragamer',url:ramUrl,price:200,stock:'in-stock',lastUpdated:new Date(now+1)}]} as Product;
+ }});
+ assert.equal(result.observed,3);assert.deepEqual(db.prepare('SELECT * FROM products').get(),productBefore);
+ for(const row of db.prepare('SELECT row_json FROM product_prices').all()){
+  const raw=JSON.parse(String(row.row_json));assert.equal(raw.identity_review.proof.method,'manufacturer-ram');assert.equal(raw.source_identity.title,title);
+ }
+});

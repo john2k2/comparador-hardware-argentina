@@ -26,10 +26,10 @@ function classify(row,spec) {
   if(!spec.stores.has(row.store_id))return {state:'unsupported',reason:'unsupported-store'};
   if(!spec.categories.has(row.category))return {state:'unsupported',reason:'unsupported-category'};
   if(!offerFromRow(row))return {state:'rejected',reason:'invalid-known-offer'};
-  let name='';try{name=JSON.parse(row.product_json)?.name??'';}catch{/* Sin nombre demostrable. */}
+  let name='',specs;try{const product=JSON.parse(row.product_json);name=product?.name??'';specs=product?.specs;}catch{/* Sin nombre demostrable. */}
   if(typeof name!=='string')name='';
   if(spec.validatorTarget) {
-    const result=spec.validatorTarget(row.store_id,row.url,row.category,name);
+    const result=spec.validatorTarget(row.store_id,row.url,row.category,name,specs);
     if(result!==true&&result?.supported!==true) {
       const reason=typeof result?.reason==='string'&&/^[-a-z0-9]{1,80}$/.test(result.reason)?result.reason:'unsupported-target-or-attributes';
       return {state:'unsupported',reason};
