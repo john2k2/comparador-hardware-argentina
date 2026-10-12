@@ -172,7 +172,7 @@ export async function searchCatalog(db,input,{now=Date.now(),snapshot,forceOrigi
     page_rows AS MATERIALIZED(SELECT id,lowest,highest,average,ROW_NUMBER() OVER(ORDER BY ${order}) AS page_order
       FROM eligible ORDER BY page_order LIMIT ?
       OFFSET (MIN(?,MAX(1,CAST(((SELECT total FROM totals)+?-1)/? AS INTEGER)))-1)*${p.p_page_size})
-    SELECT totals.total,page_rows.id,page_rows.lowest,page_rows.highest,page_rows.average,stored.row_json,
+    SELECT totals.total,page_rows.id,page_rows.lowest,page_rows.highest,page_rows.average,stored.category AS stored_category,stored.row_json,
       (SELECT json_group_array(json(offer.row_json)) FROM(
         SELECT row_json FROM product_prices WHERE product_id=page_rows.id
         ${p.p_stores.length?'AND LOWER(store_id) IN(SELECT value FROM json_each(?))':''}
@@ -184,6 +184,7 @@ export async function searchCatalog(db,input,{now=Date.now(),snapshot,forceOrigi
   for(const row of rows) {
     if(row.id===null) continue;
     const product=JSON.parse(row.row_json),offers=JSON.parse(row.offers_json);
+    if(product.id!==row.id||product.category!==row.stored_category) throw new Error('CATALOG_PRODUCT_IDENTITY_MISMATCH');
     for (const key of ['catalog_name','catalog_document','catalog_identity','catalog_component']) delete product[key];
     products.push({...product,lowest_price:row.lowest,highest_price:row.highest,average_price:row.average,product_prices:offers.length?offers:null});
   }
