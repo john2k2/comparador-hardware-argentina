@@ -11,7 +11,7 @@ vi.mock('@/lib/server/supabase-server', () => ({
   getServerSupabaseReadClient: getServerSupabaseReadClientMock,
 }));
 
-import { readCategoryLandingPageFromDatabase, readProductsPageFromDatabase, readGuideCatalogCandidatesFromDatabase,readProductByIdFromDatabase,readProductDetailByIdFromDatabase, readCanonicalProductIdByKey,readCanonicalProductIdForProductId } from './product-read';
+import { readProductsFromDatabase, readPopularProductsFromDatabase, readCategoryLandingPageFromDatabase, readProductsPageFromDatabase, readGuideCatalogCandidatesFromDatabase,readProductByIdFromDatabase,readProductDetailByIdFromDatabase, readCanonicalProductIdByKey,readCanonicalProductIdForProductId } from './product-read';
 import { mapDbProduct } from './product-read-mapper';
 import { buildGuideNameFilters } from './product-read-helpers';
 import { resolveGuideRefreshOffers, resolveGuideComponent } from '@/lib/seo/budget-guide-pricing';
@@ -47,11 +47,25 @@ describe('integración del lector D1 explícito sin fallback', () => {
  afterEach(() => getD1ReaderMock.mockResolvedValue(null));
  const product = mapDbProduct(row);
  function reader() {
-  const result = { readProductsPage: vi.fn(async () => ({ products: [product], total: 1, totalPages: 1, page: 1, pageSize: 48 })),
+  const result = { readProducts: vi.fn(async () => [product]), readGuideCandidates: vi.fn(async () => [product]), readProductsPage: vi.fn(async () => ({ products: [product], total: 1, totalPages: 1, page: 1, pageSize: 48 })),
     readProductDetailById: vi.fn(async () => product), readCanonicalProductIdByKey: vi.fn(async () => row.id),
     readCanonicalProductIdForProductId: vi.fn(async () => row.id) };
   getD1ReaderMock.mockResolvedValue(result as never); getServerSupabaseReadClientMock.mockClear(); return result;
  }
+ it('listas, portada y guías usan la base seleccionada sin consultar Supabase', async () => {
+  const d1 = reader();
+  expect(await readProductsFromDatabase({ limit: 60 })).toEqual([product]);
+  expect(d1.readProducts).toHaveBeenCalledWith({ limit: 60 });
+  await readPopularProductsFromDatabase(8);
+  expect(d1.readProducts).toHaveBeenCalledWith({ sortBy: 'newest', limit: 8 });
+  const constraints = { name: 'Ryzen 7600', exactModel: '7600' };
+  expect(await readGuideCatalogCandidatesFromDatabase('procesadores', 8, 'ryzen 7600', constraints)).toEqual([product]);
+  expect(d1.readGuideCandidates).toHaveBeenCalledWith('procesadores', 8, 'ryzen 7600', constraints);
+  expect(getServerSupabaseReadClientMock).not.toHaveBeenCalled();
+  d1.readGuideCandidates.mockRejectedValueOnce(new Error('CATALOG_GUIDE_CANDIDATE_LIMIT'));
+  await expect(readGuideCatalogCandidatesFromDatabase('procesadores')).rejects.toThrow('CATALOG_GUIDE_CANDIDATE_LIMIT');
+  expect(getServerSupabaseReadClientMock).not.toHaveBeenCalled();
+ });
  it('paginado conserva clamp/categoría/tiendas y callback sin registrar RPC Supabase', async () => {
   const d1 = reader(), diagnostics = vi.fn();
   const result = await readProductsPageFromDatabase({ query: ' ryzen 7600 ', page: -5, pageSize: 99,

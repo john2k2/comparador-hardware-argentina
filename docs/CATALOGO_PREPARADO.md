@@ -64,6 +64,31 @@ integración del escritor automático preparado ni demuestra cobertura completa.
 
 ## Verificación pendiente de producción
 
+### Alternativa temporal en la Mac
+
+`CATALOG_READ_BACKEND=mac` selecciona explícitamente el mismo contrato SQL desde
+Node. El launcher abre SQLite con `readOnly: true` y registra
+`registerMacCatalogBinding` antes de iniciar Next, en el mismo proceso. El
+proveedor utiliza un símbolo propio; no sustituye el contexto interno de OpenNext.
+Exige fingerprint y manifiestos del corte local, controla el reloj y rechaza un
+cambio de proveedor durante una lectura. No usa Cache API ni cae en Supabase si
+falta el catálogo.
+
+Esta alternativa descarga el cómputo del Worker y mantiene Cloudflare como entrada
+HTTPS. Un túnel estable y protegido reemplaza el Quick Tunnel de prueba. Depende
+de la Mac, Internet y el proceso local: comprobar caída, recuperación, arranque y
+actualización antes de publicarla. No confundir abrir toda la base con haber
+observado recientemente todas sus ofertas.
+
+Búsqueda, detalle, listas de portada y candidatas de guías pasan por el selector
+SQL. Las listas recorren ventanas de hasta 48 filas y verifican que la generación
+no cambió entre páginas. Las guías filtran modelo y variante antes de su límite;
+un conjunto de más de 200 candidatas con restricciones falla explícitamente.
+Esto no renueva automáticamente la selección editorial de una guía. Revisar
+sitemaps, páginas de tiendas, historia y otros accesos directos antes de afirmar
+que toda la aplicación migró. Auth, favoritos y alertas conservan sus contratos
+de Supabase; este selector no migra datos de usuario.
+
 `npm test` cubre el consumidor y el lector. `npm run test:ops` ejecuta también los
 contratos del productor y del índice. Estas pruebas no sustituyen la medición
 remota del catálogo completo, el consumo de varios ciclos de actualización ni

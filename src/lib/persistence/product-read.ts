@@ -109,6 +109,8 @@ export const readProductDetailByIdFromDatabase = cache(async (id: string): Promi
 });
 
 export async function readProductsFromDatabase(params: ReadProductsParams) {
+  const sql = await getD1CatalogReader();
+  if (sql) return sql.readProducts(params);
   const supabase = getServerSupabaseReadClient();
   if (!supabase) return [];
 
@@ -259,6 +261,8 @@ export async function readGuideCatalogCandidatesFromDatabase(
   query?: string,
   constraints?: GuideCandidateConstraints,
 ): Promise<Product[]> {
+  const sql = await getD1CatalogReader();
+  if (sql) return sql.readGuideCandidates(category, limit, query, constraints);
   const supabase = getServerSupabaseReadClient();
   if (!supabase) throw new Error('Guide catalog database unavailable');
 
@@ -295,6 +299,8 @@ export async function readGuideCatalogCandidatesFromDatabase(
 }
 
 export async function readPopularProductsFromDatabase(limit: number = 8): Promise<Product[]> {
+  const sql = await getD1CatalogReader();
+  if (sql) return (await sql.readProducts({ sortBy: 'newest', limit })).filter(product => product.prices.length >= 2);
   const supabase = getServerSupabaseReadClient();
   if (!supabase) return [];
 

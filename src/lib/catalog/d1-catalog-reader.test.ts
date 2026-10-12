@@ -603,3 +603,32 @@ it('no entrega caché preparada si el registro cambia nombre o descriptor despu�
     }finally {Object.defineProperty(venex,'name',old);}
   }
 });
+
+
+describe('listas y guías sobre el catálogo certificado', () => {
+  it('lee la lista paginada con precios actuales y conserva el límite de consumidor', async () => {
+    const f = fixture(), reader = await f.create();
+    const products = await reader.readProducts({ category: 'memoria-ram', limit: 2, sortBy: 'newest' });
+    expect(products).toHaveLength(2);
+    expect(products.every(product => product.category === 'memoria-ram' && product.lowestPrice > 0)).toBe(true);
+  });
+  it('exige el modelo y descarta kits incompatibles antes del límite editorial', async () => {
+    const f = fixture(), reader = await f.create();
+    const products = await reader.readGuideCandidates('memoria-ram', 1, 'corsair vengeance',
+      { name: 'Corsair DDR4 16GB 3200MHz 1 módulo CL16', exactModel: 'Vengeance RGB RS' });
+    expect(products).toHaveLength(1);
+    expect(products[0].name).toContain('Vengeance RGB RS');
+    expect(products[0].name).not.toContain('DDR5');
+    expect(await reader.readGuideCandidates('memoria-ram', 8, '%,()')).toEqual([]);
+  });
+  it('no sirve una guía con una generación cambiada durante la lectura', async () => {
+    const f = fixture(), all = f.adapter.all;
+    f.adapter.all = async (query, values) => {
+      const result = await all(query, values);
+      if (query.includes('JOIN summaries s')) f.write('production_catalog', { ...f.manifest, complete: false });
+      return result;
+    };
+    const reader = await f.create();
+    await expect(reader.readGuideCandidates('memoria-ram', 1, 'corsair')).rejects.toThrow('CATALOG_PRODUCTION_MANIFEST_INVALID');
+  });
+});

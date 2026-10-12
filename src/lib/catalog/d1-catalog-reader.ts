@@ -2,8 +2,8 @@ import { searchCatalog, type CatalogSqlReader } from '../../../scripts/pilots/cl
 import { isHardwareCategory } from './hardware-categories';
 import { mapDbGuideProduct } from '@/lib/persistence/product-read-mapper';
 import { canRedirectToCanonicalProduct, mergeCanonicalDetailOffers, shareExactProductVariant } from '@/lib/persistence/product-detail-offers';
-import { prepareCatalogQuery } from '@/lib/persistence/product-read-helpers';
-import type { DbProductRow, ProductPageResult, ReadProductsPageParams } from '@/lib/persistence/product-read-types';
+import { prepareCatalogQuery, clampLimit, sanitizeSearchTerm, buildGuideNameFilters, type GuideCandidateConstraints } from '@/lib/persistence/product-read-helpers';
+import type { DbProductRow, ProductPageResult, ReadProductsPageParams, ReadProductsParams } from '@/lib/persistence/product-read-types';
 import { computeCurrentStorePriceStats } from '@/lib/price-utils';
 import type { Product } from '@/lib/types';
 import { createD1PageCache, type D1PageCacheStorage } from './d1-page-cache';
@@ -138,8 +138,7 @@ export async function createD1CatalogReader(db: CatalogSqlReader,
       .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime() || a.id.localeCompare(b.id))
       .find(candidate => canRedirectToCanonicalProduct(product, candidate))?.id ?? null;
   }
-  return {
-    async readProductsPage(params: ReadProductsPageParams): Promise<ProductPageResult> {
+  async function readProductsPage(params: ReadProductsPageParams): Promise<ProductPageResult> {
       const before = await begin();
       const input = { p_query: prepareCatalogQuery(params.query ?? '', params.category),
         p_category: params.category ?? null, p_stores: [...new Set([...params.storeIds ?? []]
@@ -204,6 +203,52 @@ export async function createD1CatalogReader(db: CatalogSqlReader,
         cache!.checkClock(plan, certificate);
       }
       return page;
+  }
+  return {
+    readProductsPage,
+    async readProducts(params: ReadProductsParams): Promise<Product[]> {
+      const before = await begin(), limit = clampLimit(params.limit), products: Product[] = [];
+      for (let page = 1; products.length < limit; page++) {
+        const result = await readProductsPage({ ...params, page, pageSize: Math.min(48, limit) });
+        products.push(...result.products);
+        if (page >= result.totalPages) break;
+      }
+      // También protege la generación entre páginas del mismo listado.
+      await assertGeneration(before);
+      return products.slice(0, limit);
+    },
+    async readGuideCandidates(category: ReadProductsPageParams['category'], limit = 24, query?: string,
+      constraints?: GuideCandidateConstraints): Promise<Product[]> {
+      if (!category || !isHardwareCategory(category)) return failure('CATALOG_GUIDE_CATEGORY_INVALID');
+      const before = await begin(), requestedLimit = Math.min(48, Math.max(1, Math.trunc(limit) || 1));
+      const tokens = [...new Set(sanitizeSearchTerm(query ?? '').toLowerCase().normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '').match(/[a-z0-9]+/g) ?? [])];
+      if (query && !tokens.length) { await assertGeneration(before); return []; }
+      const guards = ['p.category=?', 's.lowest>0'], values: (string | number)[] = [category];
+      if (!tokens.length) guards.push('p.grouped_identity=1');
+      for (const token of tokens) {
+        guards.push(`instr(lower(coalesce(json_extract(p.row_json,'$.name'),'')||' '||
+          coalesce(json_extract(p.row_json,'$.brand'),'')||' '||coalesce(json_extract(p.row_json,'$.model'),'')||' '||
+          coalesce(json_extract(p.row_json,'$.normalized_title'),'')||' '||coalesce(json_extract(p.row_json,'$.canonical_product_key'),'')),?)>0`);
+        values.push(token);
+      }
+      // El modelo se filtra antes de limitar; jamás presentar un lote truncado
+      // como todas las candidatas de una guía con restricciones de variante.
+      const cap = constraints ? 200 : requestedLimit;
+      values.push(cap + (constraints ? 1 : 0));
+      const rows = await db.all(`SELECT p.id,p.category,p.row_json,
+        (SELECT json_group_array(json(o.row_json)) FROM (SELECT row_json FROM product_prices
+          WHERE product_id=p.id ORDER BY price,store_id,url) o) AS offers_json
+        FROM products p JOIN summaries s ON s.product_id=p.id WHERE ${guards.join(' AND ')}
+        ORDER BY p.last_scraped_at DESC,p.updated_at DESC,p.id LIMIT ?`, values);
+      if (rows.length > cap) return failure('CATALOG_GUIDE_CANDIDATE_LIMIT');
+      const filters = constraints ? buildGuideNameFilters(category, constraints) : { include: [], exclude: [] };
+      const include = filters.include.map(pattern => new RegExp(pattern, 'i'));
+      const exclude = filters.exclude.map(pattern => new RegExp(pattern, 'i'));
+      const products = rows.map(mapStored).filter(product =>
+        include.every(pattern => pattern.test(product.name)) && !exclude.some(pattern => pattern.test(product.name)));
+      await assertGeneration(before);
+      return products.slice(0, requestedLimit);
     },
     async readProductDetailById(id: string): Promise<Product | null> {
       const before = await begin();
