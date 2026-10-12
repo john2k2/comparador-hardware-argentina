@@ -43,7 +43,7 @@ export function decodeObservedHome(value: unknown, now = Date.now()): ObservedHo
   const priceDropProducts = data.priceDropFallbackUsed ? [] : drops.flatMap((product) => {
     if (latestIds.has(product.id)) return [];
     const prices = product.prices.filter((price) => isComparableStoreOffer(price, product) && isCatalogOfferFresh(price.lastUpdated, now));
-    const stats = computeComparableStorePriceStats(prices);
+    const stats = computeComparableStorePriceStats(prices, product);
     if (!stats.comparablePrices.length) return [];
     latestIds.add(product.id);
     return [{ ...product, prices, lowestPrice: stats.lowest, highestPrice: stats.highest, averagePrice: stats.average }];

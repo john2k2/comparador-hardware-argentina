@@ -63,7 +63,7 @@ export async function readRecentOfferProducts(input: { category?: HardwareCatego
       || (input.category && product.category !== input.category)) return [];
     const prices = product.prices.filter(offer => Boolean(offer.storeId && offer.url) && isOfferFresh(offer.lastUpdated, checkedAt)
       && isComparableStoreOffer(offer, product));
-    const stats = computeComparableStorePriceStats(prices);
+    const stats = computeComparableStorePriceStats(prices, product);
     if (!stats.comparablePrices.length) return [];
     return [{ ...product, prices, lowestPrice: stats.lowest, highestPrice: stats.highest, averagePrice: stats.average }];
   }).sort((a, b) => newestObservation(b) - newestObservation(a)

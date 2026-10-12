@@ -95,7 +95,7 @@ export function getRecentProductOffers(product: Product) {
     isCatalogOfferFresh(price.lastUpdated)
     && Boolean(price.url)
     && isComparableStoreOffer(price, product)
-  )));
+  )), product);
 }
 
 export function stockToSchemaAvailability(stock: Product['prices'][number]['stock']): string {

@@ -17,8 +17,8 @@ export function eligibleOffers(product: Product): ProductPrice[] {
   });
   // Una oferta reciente tiene prioridad al sugerir tienda y presupuesto.
   return [
-    ...getComparableStorePrices(eligible.filter((offer) => isOfferFresh(offer.lastUpdated))),
-    ...getComparableStorePrices(eligible.filter((offer) => !isOfferFresh(offer.lastUpdated))),
+    ...getComparableStorePrices(eligible.filter((offer) => isOfferFresh(offer.lastUpdated)), product),
+    ...getComparableStorePrices(eligible.filter((offer) => !isOfferFresh(offer.lastUpdated)), product),
   ];
 }
 function fitsSlot(product: Product, slot: BuildSlot): boolean {

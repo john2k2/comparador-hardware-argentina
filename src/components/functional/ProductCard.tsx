@@ -73,8 +73,8 @@ export const ProductCard = React.memo(function ProductCard({
     priceDropPercent,
   } = useMemo(() => {
     const eligible = product.prices.filter((price) => isComparableStoreOffer(price, product));
-    const comparableStats = computeComparableStorePriceStats(eligible.filter((price) => !isCatalogOfferFresh(price.lastUpdated)));
-    const freshStats = computeComparableStorePriceStats(eligible.filter((price) => isCatalogOfferFresh(price.lastUpdated)));
+    const comparableStats = computeComparableStorePriceStats(eligible.filter((price) => !isCatalogOfferFresh(price.lastUpdated)), product);
+    const freshStats = computeComparableStorePriceStats(eligible.filter((price) => isCatalogOfferFresh(price.lastUpdated)), product);
     const freshStoreCount = freshStats.comparablePrices.length;
     const hasFreshPrice = freshStoreCount > 0;
     const comparableStoreCount = new Set((hasFreshPrice ? freshStats : comparableStats).comparablePrices.map((price) => price.storeId)).size;

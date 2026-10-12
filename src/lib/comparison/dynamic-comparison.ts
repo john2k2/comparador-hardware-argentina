@@ -50,7 +50,7 @@ export type DynamicComparison = {
 
 function comparableOffers(product: Product, now: number) {
   return getComparableStorePrices(
-    product.prices.filter((offer) => isComparableStoreOffer(offer, product) && isCatalogOfferFresh(offer.lastUpdated, now)),
+    product.prices.filter((offer) => isComparableStoreOffer(offer, product) && isCatalogOfferFresh(offer.lastUpdated, now)), product,
   )
     .filter((offer) => offer.price > 0 && (offer.stock === 'in-stock' || offer.stock === 'low-stock'))
     .sort((a, b) => a.price - b.price);
