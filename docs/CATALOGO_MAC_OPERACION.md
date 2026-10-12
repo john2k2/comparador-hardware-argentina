@@ -1,6 +1,6 @@
 # Operar la búsqueda temporal desde la Mac
 
-La Mac calcula las búsquedas sobre una copia completa del catálogo y Cloudflare entrega las respuestas HTTPS. La alternativa evita cargar toda la base en D1. El piloto privado funciona; la activación de rutas públicas sigue pendiente. Una Mac abierta, conectada y con Internet es una condición de servicio, no una garantía de disponibilidad.
+La Mac calcula las búsquedas sobre una copia completa del catálogo y Cloudflare entrega las respuestas HTTPS. La alternativa evita cargar toda la base en D1. El corte selectivo fue autorizado y publicado el 12/10/2026. La versión activa de `comparador-catalogo-mac` es `f784c32b-0e4e-49ec-9782-9a8c2592448b`; el Worker original conserva su despliegue. Una Mac abierta, conectada y con Internet es una condición de servicio, no una garantía de disponibilidad.
 
 ## Estado y alcance
 
@@ -59,10 +59,18 @@ Rollback público: restaurar exclusivamente las rutas cambiadas al Worker anteri
 - [x] Piloto remoto: assets nuevos y antiguos disponibles mientras el servicio Mac está caído; API 503 y recuperación 200.
 - [x] Interfaz híbrida en Chrome: portada → búsqueda Ryzen, consulta abreviada RAM → ficha → retorno, resultados RAM en escritorio/móvil y comparación 5600/5700X sin ganador de precio cuando falta stock elegible. Paginación 1→2 conservó Ryzen; ordenar por menor precio volvió a página 1 conservando la consulta. Filtros/páginas también comprobaron paridad por API.
 - [x] Versión privada `f535e3bd-e320-4c93-ae8b-537815f2c532`: 16/16 consultas iguales a la Mac, mediana 293 ms y máximo 2.259 ms. 36 trazas con CPU de 0–1 ms y outcome ok; incluye comprobaciones de caída, no es una prueba de carga. El proxy no tiene D1. Rutas públicas de Workers consultadas: ninguna, el dominio usa Custom Domains del Worker anterior. Despliegue público anterior `5b77fc37-9fea-48df-aca5-e1c43956f0a6`, versión `4add74ae-b3f4-4165-8040-5f143505c977` al 100%, sin cambios.
-- [ ] Activación pública autorizada y comprobada sobre el dominio real.
+- [x] Activación pública autorizada: 14 rutas verificadas; seis consultas con paridad exacta, HTML de búsqueda/ficha/categoría/comparación y assets nuevos/antiguos HTTP200. Portada/auth/guías/armador HTTP200; despliegue original sin cambios. Ficha y búsqueda revisadas en escritorio/móvil sobre el dominio real.
 
 No declarar toda la aplicación migrada, toda la base fresca ni capacidad gratuita ilimitada. El siguiente trabajo de cobertura es sumar lectores por tienda con identidad exacta y presupuesto medido, sin ampliar automáticamente la elegibilidad editorial.
 
 La consulta `ddr5 32 6000` reconoce capacidad y frecuencia dentro de contexto RAM. No inventa atributos de un producto ni junta kits: exigir `2 x 16` conserva esa restricción. Prueba remota con la base real confirmó KLEVV CL28 de CompraGamer.
 
 Validación final local: 3.022 unitarios pasados y dos omitidos; 288 operativos pasados; 45 focales adicionales de proxy/matcher/motor pasados y dos opcionales omitidos. Build aislado, typecheck y lint correctos. Revisión independiente no encontró bloqueos materiales en el delta; no acredita el resto del proyecto.
+
+## Despliegue reproducible
+
+La configuración versionada es `wrangler.mac-catalog.jsonc`; no reemplaza `wrangler.jsonc`. Preparar `outputs/cloudflare-mac-assets/_next/static` con el build QA completo antes de desplegar exclusivamente ese Worker. No incluir server bundles, `.env`, SQLite ni tokens en ASSETS. Mantener los assets de la versión Mac anterior durante un cambio de build. El secret `MAC_ORIGIN_TOKEN` se administra por separado y nunca aparece en la configuración.
+
+El registro `public-routing-receipt.json` guarda los 14 IDs y patrones del corte. La tabla anterior no tenía rutas Workers: los dos hosts eran Custom Domains del Worker original. Un rollback elimina únicamente esas rutas verificadas del Worker nuevo; no borra los Custom Domains, el Worker original, DNS ni datos de usuario.
+
+Primer control público: una consulta Ryzen tardó 7.146 ms aunque el cálculo Mac fue de 81 ms; su traza indicó demora durante el trayecto del proxy. Repetición de 12 consultas: 94–705 ms, todas HTTP200. No atribuir esa variación a consultas SQL ni prometer una latencia máxima garantizada. La continuidad temporal sigue dependiendo de la Mac y del túnel.
