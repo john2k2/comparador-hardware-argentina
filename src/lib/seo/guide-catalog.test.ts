@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Product } from '@/lib/types';
 
 const mocks = vi.hoisted(() => ({ readGuideCatalogCandidatesFromDatabase: vi.fn(), readProductByIdFromDatabase: vi.fn() }));
@@ -212,4 +212,29 @@ it('separa caché por presentación editorial aunque los términos no cambien', 
   expect(mocks.readGuideCatalogCandidatesFromDatabase).toHaveBeenCalledTimes(1);
   expect(mocks.readGuideCatalogCandidatesFromDatabase).toHaveBeenCalledWith('procesadores', 8, 'ryzen 7 5700',
     expect.objectContaining({ requiresIncludedCooler: false }));
+});
+
+
+describe('promoción de catálogo y memoria de guías', () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it('relee una nueva generación aun si conserva fingerprint, y no oculta sus errores', async () => {
+    vi.resetModules();
+    const fresh = await import('./guide-catalog');
+    vi.stubEnv('CATALOG_READ_BACKEND', 'mac');
+    vi.stubEnv('CATALOG_FINGERPRINT', 'a'.repeat(64));
+    vi.stubEnv('CATALOG_RUNTIME_GENERATION', 'cut-1');
+    const first = { id: 'one', category: 'procesadores', lowestPrice: 100 } as Product;
+    const second = { ...first, lowestPrice: 200 };
+    mocks.readGuideCatalogCandidatesFromDatabase.mockReset().mockResolvedValue([first]);
+    expect(await fresh.loadGuidePriorityProducts('procesadores', ['ryzen 5600'])).toEqual([first]);
+    expect(await fresh.loadGuideCatalogProducts()).toContain(first);
+    vi.stubEnv('CATALOG_RUNTIME_GENERATION', 'cut-2');
+    mocks.readGuideCatalogCandidatesFromDatabase.mockResolvedValue([second]);
+    expect(await fresh.loadGuidePriorityProducts('procesadores', ['ryzen 5600'])).toEqual([second]);
+    expect(await fresh.loadGuideCatalogProducts()).not.toContain(first);
+    vi.stubEnv('CATALOG_RUNTIME_GENERATION', 'cut-3');
+    mocks.readGuideCatalogCandidatesFromDatabase.mockRejectedValue(new Error('CATALOG_MAC_BINDING_CHANGED'));
+    await expect(fresh.loadGuidePriorityProducts('procesadores', ['ryzen 5600'])).rejects.toThrow('GUIDE_CATALOG_UNAVAILABLE');
+    await expect(fresh.loadGuideCatalogProducts()).rejects.toThrow('CATALOG_MAC_BINDING_CHANGED');
+  });
 });

@@ -166,7 +166,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
         />
       )}
-      <ProductDetailClient id={id} initialProduct={product} initialNow={getPresentationNow()} />
+      <ProductDetailClient canRequestRefresh={process.env.ENABLE_ON_DEMAND_REFRESH === '1'} id={id} initialProduct={product} initialNow={getPresentationNow()} />
       {product && <ProductSeoSupport product={product} />}
     </>
   );

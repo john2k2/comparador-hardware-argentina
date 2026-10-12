@@ -632,3 +632,43 @@ describe('listas y guías sobre el catálogo certificado', () => {
     await expect(reader.readGuideCandidates('memoria-ram', 1, 'corsair')).rejects.toThrow('CATALOG_PRODUCTION_MANIFEST_INVALID');
   });
 });
+
+it('ofertas recientes leen observaciones reales y excluyen stock desconocido y ventana de tres horas vencida', async () => {
+  const f = fixture(), reader = await f.create();
+  const before = await reader.readRecentProducts('memoria-ram');
+  expect(before.length).toBeGreaterThan(0);
+  expect(before.every(product => product.prices.every(offer => offer.lastUpdated.getTime() >= now - 3 * 3600000))).toBe(true);
+  for (const id of ['offer-cg-15558', 'offer-agrupado-rgb']) {
+    const raw = JSON.parse(String(f.db.prepare('SELECT row_json FROM product_prices WHERE id=?').get(id)!.row_json));
+    f.db.prepare('UPDATE product_prices SET row_json=? WHERE id=?').run(JSON.stringify({ ...raw, stock: 'unknown' }), id);
+  }
+  expect((await reader.readRecentProducts('memoria-ram')).some(product => product.name.includes('RGB RS'))).toBe(false);
+  vi.setSystemTime(now + 4 * 3600000);
+  expect(await reader.readRecentProducts()).toEqual([]);
+});
+
+it('sitemap conserva dos tiendas, deduplica clave canónica y ordena fechas nulas como PostgreSQL', async () => {
+  const f = fixture();
+  const original = JSON.parse(String(f.db.prepare('SELECT row_json FROM products WHERE id=?').get('agrupado-rgb')!.row_json));
+  const duplicate = { ...original, id: 'agrupado-rgb-new' };
+  f.db.prepare(`INSERT INTO products SELECT ?,category,catalog_identity,catalog_name,catalog_document,catalog_component,
+    grouped_identity,last_scraped_at,NULL,? FROM products WHERE id='agrupado-rgb'`).run(duplicate.id, JSON.stringify(duplicate));
+  f.db.prepare(`INSERT INTO summaries SELECT ?,lowest,highest,average,available,urls,portable_listing,store_ids_json,
+    comparable_stats_json,comparable_valid_until,comparable_latest_observed_at,row_json FROM summaries WHERE product_id='agrupado-rgb'`).run(duplicate.id);
+  for (const [id, productId, storeId, stock] of [
+    ['new-cg', duplicate.id, 'compragamer', 'in-stock'],
+    ['new-venex', duplicate.id, 'venex', 'unknown'],
+    ['old-venex', original.id, 'venex', 'unknown'],
+  ]) {
+    const offer = { id, product_id: productId, store_id: storeId, price: 200000, url: 'https://www.venex.com.ar/fixture', stock };
+    f.db.prepare('INSERT INTO product_prices VALUES(?,?,?,?,?,?)').run(id, productId, storeId, offer.price, offer.url, JSON.stringify(offer));
+  }
+  const counts = { ...f.snapshot.counts, products: 7, catalog_price_summaries: 7, product_prices: 9 };
+  f.write('snapshot', { ...f.snapshot, counts, catalog: { ...f.snapshot.catalog, counts } });
+  f.write('production_catalog', { ...f.manifest, counts });
+  const reader = await f.create();
+  expect(await reader.readIndexableCount()).toBe(1);
+  expect(await reader.readIndexablePage(0, 1)).toEqual([{ id: duplicate.id, updated_at: null, canonical_product_key: original.canonical_product_key }]);
+  expect(await reader.readIndexablePage(1, 1)).toEqual([]);
+  await expect(reader.readIndexablePage(0, 1001)).rejects.toThrow('CATALOG_SITEMAP_PAGE_INVALID');
+});

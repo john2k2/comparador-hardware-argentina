@@ -1,3 +1,4 @@
+import { isCatalogSqlBackendEnabled } from '@/lib/catalog/catalog-backend';
 import { cache } from 'react';
 import { readProductsFromDatabase } from '@/lib/persistence/product-read';
 import { readRecentOfferProducts } from '@/lib/persistence/recent-offer-products';
@@ -314,7 +315,9 @@ async function readRecentHistoryRows(sinceIso: string): Promise<HistoryRow[]> {
 }
 
 async function readHomeSectionsData(): Promise<HomeSectionsData> {
-  const cached = await getSharedCache<HomeSectionsData>('home-sections', HOME_SECTIONS_CACHE_KEY);
+  // La caché histórica de Supabase no puede mezclar dos generaciones SQL.
+  const sqlCatalog = isCatalogSqlBackendEnabled();
+  const cached = sqlCatalog ? null : await getSharedCache<HomeSectionsData>('home-sections', HOME_SECTIONS_CACHE_KEY);
   if (cached) {
     const featuredProducts = hydrateProducts(cached.featuredProducts ?? []);
     const priceDropProducts = hydrateProducts(cached.priceDropProducts ?? []);
@@ -392,7 +395,7 @@ async function readHomeSectionsData(): Promise<HomeSectionsData> {
     },
   };
 
-  await setSharedCache('home-sections', HOME_SECTIONS_CACHE_KEY, payload, HOME_SECTIONS_CACHE_TTL_MS);
+  if (!sqlCatalog) await setSharedCache('home-sections', HOME_SECTIONS_CACHE_KEY, payload, HOME_SECTIONS_CACHE_TTL_MS);
   return payload;
 }
 

@@ -1,10 +1,11 @@
+import { OFFER_FRESH_MS, isOfferFresh } from '@/lib/price-freshness';
 import { searchCatalog, type CatalogSqlReader } from '../../../scripts/pilots/cloudflare-catalog/engine.mjs';
-import { isHardwareCategory } from './hardware-categories';
+import { isHardwareCategory, inferHardwareCategoryFromName } from './hardware-categories';
 import { mapDbGuideProduct } from '@/lib/persistence/product-read-mapper';
 import { canRedirectToCanonicalProduct, mergeCanonicalDetailOffers, shareExactProductVariant } from '@/lib/persistence/product-detail-offers';
 import { prepareCatalogQuery, clampLimit, sanitizeSearchTerm, buildGuideNameFilters, type GuideCandidateConstraints } from '@/lib/persistence/product-read-helpers';
 import type { DbProductRow, ProductPageResult, ReadProductsPageParams, ReadProductsParams } from '@/lib/persistence/product-read-types';
-import { computeCurrentStorePriceStats } from '@/lib/price-utils';
+import { computeCurrentStorePriceStats, computeComparableStorePriceStats, isComparableStoreOffer } from '@/lib/price-utils';
 import type { Product } from '@/lib/types';
 import { createD1PageCache, type D1PageCacheStorage } from './d1-page-cache';
 import { CATALOG_PREPARED_POLICY } from './prepared-policy.generated';
@@ -204,8 +205,76 @@ export async function createD1CatalogReader(db: CatalogSqlReader,
       }
       return page;
   }
+  // Mismo contrato indexable legado: no cambiar stock/frescura editorial
+  // al cambiar de backend. Las fichas siguen verificando las ofertas aparte.
+  const indexableSql = `WITH eligible AS (
+    SELECT p.id,p.updated_at,json_extract(p.row_json,'$.canonical_product_key') AS canonical_product_key
+    FROM products p WHERE p.id LIKE 'agrupado-%' AND
+      (SELECT COUNT(DISTINCT o.store_id) FROM product_prices o WHERE o.product_id=p.id
+        AND o.price>0 AND o.url IS NOT NULL AND json_extract(o.row_json,'$.stock')<>'out-of-stock')>=2
+  ), selected AS (SELECT *,ROW_NUMBER() OVER(PARTITION BY COALESCE(NULLIF(canonical_product_key,''),id)
+      ORDER BY (updated_at IS NULL) DESC,updated_at DESC,id ASC) AS rn FROM eligible)`;
   return {
     readProductsPage,
+    async readRecentProducts(category?: ReadProductsPageParams['category']): Promise<Product[]> {
+      const before = await begin(), clock = now(), values: (string | number)[] = [
+        new Date(clock - OFFER_FRESH_MS).toISOString(), new Date(clock + 60000).toISOString()];
+      if (category) values.push(category);
+      const seeds = await db.all(`SELECT o.product_id,p.category,json_extract(p.row_json,'$.name') AS name
+        FROM product_prices o JOIN products p ON p.id=o.product_id
+        WHERE o.price>0 AND json_extract(o.row_json,'$.stock') IN('in-stock','low-stock')
+          AND strftime('%Y-%m-%dT%H:%M:%fZ',json_extract(o.row_json,'$.last_updated')) BETWEEN ? AND ?
+          ${category ? 'AND p.category=?' : ''}
+        ORDER BY strftime('%Y-%m-%dT%H:%M:%fZ',json_extract(o.row_json,'$.last_updated')) DESC,o.product_id,o.id LIMIT 160`, values);
+      const ids = new Set<string>();
+      for (const seed of seeds) {
+        if (typeof seed.product_id !== 'string' || typeof seed.name !== 'string') return failure('CATALOG_RECENT_ROW_INVALID');
+        if (inferHardwareCategoryFromName(seed.name) !== seed.category) continue;
+        ids.add(seed.product_id);
+        if (ids.size === 64) break;
+      }
+      const rows = ids.size ? await db.all(`SELECT p.id,p.category,p.row_json,
+        (SELECT json_group_array(json(o.row_json)) FROM (SELECT row_json FROM product_prices
+          WHERE product_id=p.id ORDER BY price,store_id,url) o) AS offers_json
+        FROM products p WHERE p.id IN(SELECT value FROM json_each(?))`, [JSON.stringify([...ids])]) : [];
+      const products = rows.map(mapStored);
+      await assertGeneration(before);
+      const checkedAt = now();
+      return products.flatMap(product => {
+        if (inferHardwareCategoryFromName(product.name) !== product.category || category && product.category !== category) return [];
+        const prices = product.prices.filter(offer => Boolean(offer.storeId && offer.url)
+          && isOfferFresh(offer.lastUpdated, checkedAt) && isComparableStoreOffer(offer, product));
+        const stats = computeComparableStorePriceStats(prices, product);
+        return stats.comparablePrices.length ? [{ ...product, prices, lowestPrice: stats.lowest, highestPrice: stats.highest, averagePrice: stats.average }] : [];
+      }).sort((a, b) => Math.max(...b.prices.map(offer => offer.lastUpdated.getTime())) - Math.max(...a.prices.map(offer => offer.lastUpdated.getTime()))
+        || a.lowestPrice - b.lowestPrice || a.id.localeCompare(b.id));
+    },
+    async readIndexableCount(): Promise<number> {
+      const before = await begin();
+      const row = await db.first(`${indexableSql} SELECT COUNT(*) AS total FROM selected WHERE rn=1`);
+      const count = Number(row?.total);
+      if (!Number.isSafeInteger(count) || count < 0) return failure('CATALOG_SITEMAP_COUNT_INVALID');
+      await assertGeneration(before);
+      return count;
+    },
+    async readIndexablePage(page: number, pageSize = 1000): Promise<Array<{
+      id: string; updated_at: string | null; canonical_product_key: string | null;
+    }>> {
+      if (!Number.isSafeInteger(page) || page < 0 || !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 1000)
+        return failure('CATALOG_SITEMAP_PAGE_INVALID');
+      const before = await begin();
+      const rows = await db.all(`${indexableSql} SELECT id,updated_at,canonical_product_key
+        FROM selected WHERE rn=1 ORDER BY (updated_at IS NULL) DESC,updated_at DESC,id ASC LIMIT ? OFFSET ?`, [pageSize, page * pageSize]);
+      const result = rows.map(row => {
+        if (typeof row.id !== 'string' || !row.id.startsWith('agrupado-')
+          || row.updated_at !== null && typeof row.updated_at !== 'string'
+          || row.canonical_product_key !== null && typeof row.canonical_product_key !== 'string')
+          return failure('CATALOG_SITEMAP_ROW_INVALID');
+        return row as { id: string; updated_at: string | null; canonical_product_key: string | null };
+      });
+      await assertGeneration(before);
+      return result;
+    },
     async readProducts(params: ReadProductsParams): Promise<Product[]> {
       const before = await begin(), limit = clampLimit(params.limit), products: Product[] = [];
       for (let page = 1; products.length < limit; page++) {

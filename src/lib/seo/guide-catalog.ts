@@ -14,6 +14,19 @@ export const GUIDE_COMPONENT_CONCURRENCY = 3;
 
 let catalogMemo: { at: number; products: Product[] } | null = null;
 const priorityMemo = new Map<string, { at: number; products: Product[] }>();
+let memoContext = '';
+function currentMemoContext(): string {
+  return JSON.stringify([process.env.CATALOG_READ_BACKEND ?? '', process.env.CATALOG_FINGERPRINT ?? '',
+    process.env.CATALOG_RUNTIME_GENERATION ?? '']);
+}
+function captureMemoContext(): string {
+  const current = currentMemoContext();
+  if (current !== memoContext) { catalogMemo = null; priorityMemo.clear(); memoContext = current; }
+  return current;
+}
+function assertMemoContext(before: string) {
+  if (currentMemoContext() !== before) { captureMemoContext(); throw new Error('GUIDE_CATALOG_GENERATION_CHANGED'); }
+}
 
 export type GuideCatalogSnapshot = {
   products: Product[];
@@ -67,12 +80,14 @@ export async function loadGuideCatalogProducts(guide?: BudgetGuideDefinition): P
     if (snapshot.unavailableSlots.length) throw new Error('GUIDE_CATALOG_UNAVAILABLE');
     return snapshot.products;
   }
+  const context = captureMemoContext();
   const now = Date.now();
   if (catalogMemo && now - catalogMemo.at < CATALOG_TTL_MS && catalogMemo.products.length > 0) {
     return catalogMemo.products;
   }
 
   const products = await fetchGuideCatalogProducts();
+  assertMemoContext(context);
   if (products.length > 0) {
     catalogMemo = { at: now, products };
   }
@@ -104,7 +119,8 @@ async function loadGuidePrioritySnapshot(category: HardwareCategory, terms: stri
   const referenceIds = [...new Set((spec?.referenceProductIds ?? []).map((id) => id.trim()).filter(Boolean))].slice(0, REFERENCE_PRODUCTS_PER_COMPONENT);
   if (queries.length === 0 && referenceIds.length === 0) return { products: [], available: true };
   const constraints = spec ? { name: spec.name, exactModel: spec.exactModel, requiresIncludedCooler: spec.requiresIncludedCooler } : undefined;
-  const cacheKey = JSON.stringify([category, queries, constraints, referenceIds]);
+  const context = captureMemoContext();
+  const cacheKey = JSON.stringify([context, category, queries, constraints, referenceIds]);
   const now = Date.now();
   const cached = priorityMemo.get(cacheKey);
   if (cached && now - cached.at < CATALOG_TTL_MS) return { products: cached.products, available: true };
@@ -139,6 +155,7 @@ async function loadGuidePrioritySnapshot(category: HardwareCategory, terms: stri
   const products = [...new Map([...references.flat(), ...batches.flat()].map((product) => [product.id, product])).values()];
   // Nunca memorizar una respuesta vacía o parcial causada por un error.
   // La próxima petición puede recuperar el servicio sin esperar cinco minutos.
+  assertMemoContext(context);
   if (available) priorityMemo.set(cacheKey, { at: now, products });
   return { products, available };
 }

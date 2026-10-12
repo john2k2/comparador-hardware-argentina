@@ -84,8 +84,8 @@ Búsqueda, detalle, listas de portada y candidatas de guías pasan por el select
 SQL. Las listas recorren ventanas de hasta 48 filas y verifican que la generación
 no cambió entre páginas. Las guías filtran modelo y variante antes de su límite;
 un conjunto de más de 200 candidatas con restricciones falla explícitamente.
-Esto no renueva automáticamente la selección editorial de una guía. Revisar
-sitemaps, páginas de tiendas, historia y otros accesos directos antes de afirmar
+Esto no renueva automáticamente la selección editorial de una guía. Los sitemaps, páginas de tiendas y metadatos ya utilizan el selector SQL;
+la historia y otras funciones conservan accesos propios. No afirmar
 que toda la aplicación migró. Auth, favoritos y alertas conservan sus contratos
 de Supabase; este selector no migra datos de usuario.
 
@@ -94,6 +94,7 @@ contratos del productor y del índice. Estas pruebas no sustituyen la medición
 remota del catálogo completo, el consumo de varios ciclos de actualización ni
 la revisión de búsqueda, detalle y comparación en la interfaz publicada.
 
-El piloto remoto actual verifica una selección de modelos elegibles del corte
-de origen. Todavía no acredita la carga ni la actualización de toda la base en
-Cloudflare, ni el rendimiento gratuito bajo consultas sin caché.
+El piloto Mac remoto abre todo el corte local; las pruebas de identidad y cobertura
+siguen siendo parciales. No carga toda la base en D1 ni acredita capacidad gratuita
+ilimitada. El procedimiento y los límites actuales están en
+[CATALOGO_MAC_OPERACION.md](CATALOGO_MAC_OPERACION.md).
