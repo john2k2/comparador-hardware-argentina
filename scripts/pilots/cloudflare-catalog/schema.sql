@@ -27,4 +27,6 @@ CREATE INDEX basis_lookup_idx ON price_basis(product_id,kind,store_id,observed_a
 CREATE INDEX basis_observed_idx ON price_basis(kind,observed_at,product_id);
 CREATE TABLE product_prices(id TEXT PRIMARY KEY,product_id TEXT NOT NULL REFERENCES products(id),store_id TEXT NOT NULL,price REAL,url TEXT,row_json TEXT NOT NULL);
 CREATE INDEX prices_product_idx ON product_prices(product_id,price,store_id,url);
+-- Todas las observaciones, incluso candidatas que hoy no ganan por tienda.
+CREATE INDEX prices_observed_idx ON product_prices(strftime('%Y-%m-%dT%H:%M:%fZ',json_extract(row_json,'$.last_updated'))) WHERE price>0;
 CREATE TABLE stores(id TEXT PRIMARY KEY,row_json TEXT NOT NULL);
