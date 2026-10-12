@@ -10,8 +10,9 @@ import { createD1PageCache, type D1PageCacheStorage } from './d1-page-cache';
 import { CATALOG_PREPARED_POLICY } from './prepared-policy.generated';
 import { catalogReadDeadline, checkCatalogReadClock } from './catalog-read-clock';
 import { catalogStorePolicyStamp } from './catalog-store-policy';
-import { consumePreparedProduct, decodePreparedProductTransport, importPreparedProductPublicKey, preparedProductPublicKeyId,
+import { consumePreparedProduct, decodePreparedProductTransport,
   PREPARED_PRODUCT_MAX_TRANSPORT_BYTES } from './prepared-product';
+import { preparedProductVerifier } from './prepared-public-key';
 
 export type { CatalogSqlReader };
 const tables = ['catalog_price_summaries', 'product_prices', 'products', 'stores'] as const;
@@ -69,10 +70,9 @@ export async function createD1CatalogReader(db: CatalogSqlReader,
     const encoded = options.prepared.publicKey;
     if (!/^[A-Za-z0-9+/]{43}=$/.test(encoded) || !/^[a-f0-9]{64}$/.test(CATALOG_PREPARED_POLICY)
       || /^0+$/.test(CATALOG_PREPARED_POLICY)) failure('CATALOG_PREPARED_CONFIGURATION_INVALID');
-    const raw = Uint8Array.from(atob(encoded), char => char.charCodeAt(0));
-    if (raw.length !== 32 || btoa(String.fromCharCode(...raw)) !== encoded) failure('CATALOG_PREPARED_CONFIGURATION_INVALID');
-    preparedKeyId = await preparedProductPublicKeyId(raw);
-    preparedKey = await importPreparedProductPublicKey(raw, preparedKeyId);
+    const verifier = await preparedProductVerifier(encoded);
+    preparedKeyId = verifier.keyId;
+    preparedKey = verifier.key;
   }
   // Los conteos reales se verifican en el controlplane antes de certificar el
   // manifiesto. Ni la factory ni un request escanean tablas grandes.
