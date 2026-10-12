@@ -3,13 +3,9 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import {
-  extractExactModelIdentity,
-  parseCpuModelSignature,
-  parseGpuChipSignature,
-} from '../../src/lib/product-identity.ts';
-import { loadPriceUtils } from '../lib/load-price-utils.mjs';
+import { loadPriceUtils, loadProductIdentity } from '../lib/load-price-utils.mjs';
 
+const { extractExactModelIdentity, parseCpuModelSignature, parseGpuChipSignature } = await loadProductIdentity();
 const { getComparableStorePrices } = await loadPriceUtils();
 
 export const PILOT_POLICY_VERSION = 'offer-quality-pilot-v1';
