@@ -74,3 +74,5 @@ La configuración versionada es `wrangler.mac-catalog.jsonc`; no reemplaza `wran
 El registro `public-routing-receipt.json` guarda los 14 IDs y patrones del corte. La tabla anterior no tenía rutas Workers: los dos hosts eran Custom Domains del Worker original. Un rollback elimina únicamente esas rutas verificadas del Worker nuevo; no borra los Custom Domains, el Worker original, DNS ni datos de usuario.
 
 Primer control público: una consulta Ryzen tardó 7.146 ms aunque el cálculo Mac fue de 81 ms; su traza indicó demora durante el trayecto del proxy. Repetición de 12 consultas: 94–705 ms, todas HTTP200. No atribuir esa variación a consultas SQL ni prometer una latencia máxima garantizada. La continuidad temporal sigue dependiendo de la Mac y del túnel.
+
+Ciclo automático posterior al corte: completado a las 20:54:04 UTC, cuatro observaciones guardadas de tres modelos/publicaciones (Corsair aparece como agrupado y hoja), cuatro peticiones HTTP, cero filas D1. El runtime confirmó `mac-refresh-1791838430040`. La API pública devolvió los cuatro precios y fechas de observación de las 20:53:49 UTC, y la búsqueda siguió HTTP200.
