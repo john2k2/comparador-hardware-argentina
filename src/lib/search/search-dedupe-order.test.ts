@@ -4,12 +4,14 @@ import { isCatalogOfferFresh } from '@/lib/price-freshness';
 import { normalizeIdentityText } from '@/lib/product-identity';
 import type { Product } from '@/lib/types';
 import { dedupeCpuSearchProducts } from './search-dedupe';
+import { sourceContract } from '@/lib/scrapers/source-contracts';
+import { listingReference } from '@/lib/scrapers/listing-reference';
 
 const observedAt = '2026-10-10T20:00:00Z';
 function cpu(id: string, name: string, price: number, storeId: string, reviewed = true): Product {
   const date = new Date(observedAt);
-  const url = `https://${storeId}.com.ar/producto/procesador-amd-ryzen-7-5700x/`;
-  const sourceIdentity = { title: name, listingRef: `${storeId}:url:${url}` };
+  const url = new URL('/producto/procesador-amd-ryzen-7-5700x/', sourceContract(storeId)!.baseUrl).href;
+  const sourceIdentity = { title: name, listingRef: listingReference(storeId, url)! };
   return { id, name, model: name, category: 'procesadores', brand: 'AMD', specs: {},
     createdAt: date, updatedAt: date, lowestPrice: price, highestPrice: price, averagePrice: price,
     prices: [{ storeId, storeName: storeId, url, price, stock: 'in-stock', installment: null,

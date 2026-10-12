@@ -2,6 +2,7 @@ import { extractGpuBoardAttributes, normalizeIdentityText, parseCpuModelSignatur
 import type { HardwareCategory, OfferSourceIdentity } from '@/lib/types';
 import { attributeProofMatches, cpuVariantAttributes, type OfferAttributeProof } from './offer-attribute-proof';
 import { hasExplicitStorageConflict } from './storage-identity';
+import { sourceIdentityMatchesListing } from '@/lib/scrapers/listing-reference';
 
 export const IDENTITY_REVIEW_MIN_CONFIDENCE = 0.8;
 
@@ -78,9 +79,11 @@ export function readIdentityReview(value: unknown): OfferIdentityReview | undefi
 }
 
 export function needsIdentityReview(
-  offer: { url?: string; identityReview?: OfferIdentityReview; sourceIdentity?: OfferSourceIdentity },
+  offer: { storeId?: string; url?: string; identityReview?: OfferIdentityReview; sourceIdentity?: OfferSourceIdentity },
   product?: { name: string; category?: string; specs?: Record<string, unknown> },
 ): boolean {
+  if (offer.storeId && offer.url && offer.sourceIdentity
+    && !sourceIdentityMatchesListing(offer.storeId, offer.url, offer.sourceIdentity)) return true;
   // Una contradicción pública prevalece sobre la ausencia de un dictamen o
   // sobre una aprobación antigua. No modifica el precio ni su fecha real.
   if (product?.category && offer.url) {

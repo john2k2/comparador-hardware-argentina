@@ -10,6 +10,14 @@ import {
   bindReviewToSource,
 } from './offer-identity';
 
+it('una fuente contradictoria exige revisión aunque no haya dictamen', () => {
+  const offer = { storeId: 'compragamer', url: 'https://compragamer.com/producto/RAM_15558',
+    sourceIdentity: { title: 'Memoria RAM', listingRef: 'compragamer:id:15558', sourceId: '15558' } };
+  expect(needsIdentityReview(offer)).toBe(false);
+  expect(needsIdentityReview({ ...offer, sourceIdentity: { ...offer.sourceIdentity, listingRef: 'compragamer:id:99999' } })).toBe(true);
+  expect(needsIdentityReview({ ...offer, sourceIdentity: { ...offer.sourceIdentity, sourceId: '99999' } })).toBe(true);
+});
+
 function identityReview(overrides: Partial<OfferIdentityReview> = {}): OfferIdentityReview {
   return {
     version: 1,
