@@ -6,6 +6,11 @@ const name = 'Memoria RAM UDIMM Corsair Vengeance 32GB DDR5 6000MHz CL38 1.35V (
 const single = 'Memoria RAM UDIMM Kingston Fury Beast 16GB DDR5 5200MHz CL40 1.25V Single Negro';
 
 describe('prueba explícita RAM sin cambiar las claves persistidas', () => {
+  it('un retorno de atributos mutado no altera la revisión posterior',()=>{
+    const expected=exactRamAttributes(name),mutated=exactRamAttributes(name)!;
+    expect(expected).not.toBeNull();mutated.kit='1x32';mutated.color='white';mutated.profile='expo';
+    expect(exactRamAttributes(name)).toEqual(expected);
+  });
   it('recupera GREY con kit, forma y CL explícitos y conserva perfil y título', () => {
     const key = extractRamModelKey(name);
     expect(key).toContain(':na');
@@ -69,4 +74,12 @@ describe('prueba explícita RAM sin cambiar las claves persistidas', () => {
   ])('rechaza omisión, accesorio o contradicción: %s', value => {
     expect(exactRamAttributes(value)).toBeNull();
   });
+});
+
+
+it('reconoce BOLT V explícita sin inferir forma, color o kit y separa familia mezclada', () => {
+  const value = 'Memoria KLEVV BOLT V 32GB 2x16GB DDR5 6000MHz CL28 UDIMM Grey';
+  expect(exactRamAttributes(value)?.model).toContain('klevv:bolt-v');
+  for (const changed of [value.replace('UDIMM', ''), value.replace('Grey', ''), value.replace('2x16GB', ''), value.replace('BOLT V', 'BOLT X'), `${value} CRAS V`, `${value} Vengeance`])
+    expect(exactRamAttributes(changed)).toBeNull();
 });

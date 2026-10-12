@@ -1,4 +1,5 @@
 import { extractRamModelKey, normalizeIdentityText } from '@/lib/product-identity';
+import { createBoundedIdentityTextMemo } from '@/lib/identity-text-memo';
 
 function unique(values: string[]): string | undefined {
   const distinct = [...new Set(values)];
@@ -21,6 +22,10 @@ function canonicalRamTitle(value: string): string {
 
 /** Prueba RAM separada de las claves persistidas; conserva el título y toda variante. */
 export function exactRamAttributes(name: string): Record<string, string> | null {
+  return ramAttributesMemo(name);
+}
+const ramAttributesMemo=createBoundedIdentityTextMemo(exactRamAttributesUncached,value=>value?{...value}:null,256);
+function exactRamAttributesUncached(name: string): Record<string, string> | null {
   // El subject persistido pierde estos signos con normalizeIdentityText. Hasta
   // preservar su evidencia en todo el contrato no se puede revalidar la prueba.
   if (/[×*]/.test(name)) return null;
@@ -63,7 +68,8 @@ export function exactRamAttributes(name: string): Record<string, string> | null 
   const conditions = title.match(/\b(?:nuevo|new|outlet|usado|used|reacondicionado|refurbished)\b/g) ?? [];
   const brands = title.match(/\b(?:corsair|kingston|adata|patriot|crucial|gskill|hiksemi|klevv|team)\b/g) ?? [];
   const brand = unique(brands);
-  const families = title.match(/\b(?:impact|beast|vengeance|lancer|viper|venom|vulcan)\b/g) ?? [];
+  const families = title.match(/\b(?:impact|beast|vengeance|lancer|viper|venom|vulcan|bolt v|cras)\b/g) ?? [];
+  if (families.some(family => family === 'bolt v') && brand !== 'klevv') return null;
   const voltages = [...title.matchAll(/\b(\d)(?: (\d{1,3}))?v\b/g)]
     .map(match => String(Number(`${match[1]}.${match[2] ?? '0'}`)));
   if (!generation || !['ddr4', 'ddr5'].includes(generation) || !speed || !latency || Number(latency) <= 0 || !color || !form || negativeRgb && positiveRgb

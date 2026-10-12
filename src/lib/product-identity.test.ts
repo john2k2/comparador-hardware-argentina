@@ -4,6 +4,7 @@ import {
   buildProductVariantKey,
   extractExactModelIdentity,
   extractGpuModelKey,
+  extractRamModelKey,
   extractGpuBoardAttributes,
   isBundleLikeTitle,
   isCompleteComputerTitle,
@@ -188,4 +189,11 @@ it('no cuenta compatibilidad DDR5 como memoria incluida en una APU', () => {
 
 it.each(['PC Intel i7 12700 con SSD 240GB', 'Notebook Asus X515EA i3 4GB SSD 256GB'])('reconoce %s por el equipo explícito aunque omita familias completas', name => {
   expect(isCompleteComputerTitle(name)).toBe(true);
+});
+
+
+it('reconoce únicamente la familia RAM BOLT V escrita y conserva omisiones de variante', () => {
+  expect(extractRamModelKey('KLEVV BOLT V DDR5 32GB 2x16GB 6000MHz CL28'))
+    .toBe('ram:klevv:bolt-v:32gb:ddr5:6000:unk:base:2x16:28:na');
+  expect(extractRamModelKey('KLEVV BOLT X DDR5 32GB 2x16GB 6000MHz CL28')).toBeNull();
 });

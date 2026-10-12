@@ -1,5 +1,6 @@
-import { parseStoreListingUrl } from './source-contracts';
+import { parseStoreListingUrl, listingSourcePolicyValue } from './source-contracts';
 import type { OfferSourceIdentity } from '@/lib/types';
+import { createBoundedIdentityTextMemo } from '@/lib/identity-text-memo';
 
 /** Una identidad capturada nunca puede contradecir la publicación observada. */
 export function sourceIdentityMatchesListing(storeId: string, url: string, source: OfferSourceIdentity): boolean {
@@ -11,6 +12,14 @@ export function sourceIdentityMatchesListing(storeId: string, url: string, sourc
 
 /** Los IDs de tienda nunca se usan como MPN/GTIN ni para unir fabricantes. */
 export function listingReference(storeId: string, rawUrl: string): string | null {
+  if(typeof storeId!=='string'||typeof rawUrl!=='string')return listingReferenceUncached(storeId,rawUrl);
+  const policy=listingSourcePolicyValue(storeId);
+  return policy.cacheSafe?listingMemo(JSON.stringify([storeId,rawUrl,policy.url])):listingReferenceUncached(storeId,rawUrl);
+}
+const listingMemo=createBoundedIdentityTextMemo((key:string)=>{
+  const[storeId,rawUrl]=JSON.parse(key) as [string,string,string|null];return listingReferenceUncached(storeId,rawUrl);
+},value=>value,256);
+function listingReferenceUncached(storeId: string, rawUrl: string): string | null {
   try {
     const url = parseStoreListingUrl(storeId, rawUrl);
     if (!url) return null;

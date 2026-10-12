@@ -1,15 +1,24 @@
 import { normalizeIdentityText } from '@/lib/product-identity';
 import { exactRamAttributes } from './ram-identity';
+import { createBoundedIdentityTextMemo } from '@/lib/identity-text-memo';
 
 type RamField = 'capacity' | 'kit' | 'generation' | 'speed' | 'latency' | 'form' | 'color' | 'series' | 'lighting';
 type RamFacts = Record<Exclude<RamField, 'lighting'>, string> & { lighting?: 'rgb' | 'non-rgb' };
-type ManufacturerRamEvidence = { mpn: string; brand: 'Corsair'; url: string; checkedAt: string;
+type ManufacturerRamEvidence = { mpn: string; brand: 'Corsair' | 'KLEVV'; url: string; checkedAt: string;
   facts: RamFacts; fieldUrls?: Partial<Record<RamField, string>> };
 const checkedAt = '2026-10-11';
+const klevvOrdering = 'https://www.klevv.com/kjp/products_details/memory/Klevv_BoltV';
+const klevvSheet = 'https://www.klevv.com/HyAdmin/upload/goodFile/KLEVV_Product%20Sheet_MEMORY_BOLT%20V_v8_EN.pdf?2026010501=';
 const corsairFaq = 'https://help.corsair.com/hc/en-us/articles/34383413781777-RAM-FAQ';
 
 /** Registro público revisado, sin HTTP en runtime ni interpretación del código MPN. */
 export const manufacturerRamEvidence: Readonly<Record<string, ManufacturerRamEvidence>> = {
+  'KD5AGUA80-60B280H': { mpn: 'KD5AGUA80-60B280H', brand: 'KLEVV', checkedAt: '2026-10-12', url: klevvOrdering,
+    facts: { capacity: '32', kit: '2x16', generation: 'ddr5', speed: '6000', latency: '28',
+      form: 'dimm', color: 'grey', series: 'base' }, fieldUrls: { form: klevvSheet, color: klevvSheet } },
+  'KD5AGUA80-60A300I': { mpn: 'KD5AGUA80-60A300I', brand: 'KLEVV', checkedAt: '2026-10-12', url: klevvOrdering,
+    facts: { capacity: '32', kit: '2x16', generation: 'ddr5', speed: '6000', latency: '30',
+      form: 'dimm', color: 'white', series: 'base' }, fieldUrls: { form: klevvSheet, color: klevvSheet } },
   CMG16GX4M1E3200C16: { mpn: 'CMG16GX4M1E3200C16', brand: 'Corsair', checkedAt,
     url: 'https://www.corsair.com/us/en/p/memory/cmg16gx4m1e3200c16/vengeancea-rgb-rs-16gb-1-x-16gb-ddr4-dram-3200mhz-c16-memory-kit-cmg16gx4m1e3200c16',
     facts: { capacity: '16', kit: '1x16', generation: 'ddr4', speed: '3200', latency: '16',
@@ -45,7 +54,8 @@ export function captureRamSpecs(specs: unknown): Record<string, string | number>
   const captured: Record<string, string | number> = {};
   for (const [key, value] of Object.entries(specs)) {
     const normalized = normalizeIdentityText(key).replace(/\s/g, '');
-    if (normalized !== 'sku' && !Object.hasOwn(specFields, normalized)) continue;
+    if (normalized !== 'sku' && !Object.hasOwn(specFields, normalized)
+      && !/^(?:voltage|voltagev|memoryvoltage|vdd|voltaje|tension|profile|profiles|perfil|perfiles|brand|manufacturer|fabricante)$/.test(normalized)) continue;
     if (typeof value !== 'string' && typeof value !== 'number' || typeof value === 'number' && !Number.isFinite(value)) return null;
     if (key.length > 80 || String(value).length > 160) return null;
     captured[key] = value;
@@ -69,6 +79,11 @@ function normalizedValue(field: RamField, value: string): string {
 }
 
 function titleFields(title: string): Partial<Record<RamField, string[]>> {
+  return ramTitleFieldsMemo(title);
+}
+const ramTitleFieldsMemo=createBoundedIdentityTextMemo((title:string)=>titleFieldsUncached(title) as Record<RamField,string[]>,
+  fields=>Object.fromEntries(Object.entries(fields).map(([key,values])=>[key,[...values]])) as Record<RamField,string[]>,128);
+function titleFieldsUncached(title: string): Partial<Record<RamField, string[]>> {
   const text = normalizeIdentityText(title).replace(/\bddr\s+(\d)\b/g, 'ddr$1');
   const kits = [...text.matchAll(/\b([1-8])\s*x\s*(\d{1,3})\s*(?:gb)?\b/g)].map(m => `${m[1]}x${m[2]}`);
   const capacity = [...text.replace(/\b[1-8]\s*x\s*\d{1,3}\s*gb\b/g, ' ').matchAll(/\b(\d{1,3})\s*gb\b/g)].map(m => m[1]);
@@ -106,9 +121,27 @@ export function hasRamSubjectConflict(...subjects: RamSubject[]): boolean {
 
 function complete(subject: RamSubject, evidence: ManufacturerRamEvidence): CompletedRamIdentity | string {
   const text = normalizeIdentityText(subject.title);
-  // La evidencia fabricante no transforma un accesorio, combo o fabricante distinto.
-  if (!/\bcorsair\b/.test(text) || !/\bvengeance\b/.test(text)
-    || /\b(?:kingston|adata|patriot|crucial|gskill|hiksemi|klevv|team)\b/.test(text)) return 'brand';
+  // Fabricante y familia se contrastan explícitamente; nunca se derivan de la MPN.
+  const brands = text.match(/\b(?:corsair|kingston|adata|patriot|crucial|gskill|hiksemi|klevv|team)\b/g) ?? [];
+  if (!brands.length || brands.some(brand => brand !== evidence.brand.toLowerCase())) return 'brand';
+  if (evidence.brand === 'Corsair' && !/\bvengeance\b/.test(text)
+    || evidence.brand === 'KLEVV' && (!/\bbolt v\b/.test(text) || /\b(?:cras|fit|vengeance|beast)\b/.test(text))) return 'family';
+  if (evidence.brand === 'KLEVV') {
+    // La ficha agrupa voltajes: no atribuir uno concreto a esta MPN.
+    if (/\b\d(?: \d{1,3})?\s*v\b/.test(text) || Object.keys(subject.specs ?? {}).some(key =>
+      /^(?:voltage|voltagev|memoryvoltage|vdd|voltaje|tension)$/.test(normalizeIdentityText(key).replace(/\s/g, '')))) return 'voltage-unverified';
+    if (/\b(?:sin|no|non) (?:xmp|expo)\b/.test(text)
+      || [...text.matchAll(/\bxmp\s*(\d+)(?: (\d+))?\b/g)].some(match => match[1] !== '3' || match[2] !== undefined && match[2] !== '0')) return 'profile';
+    for (const [key, value] of Object.entries(subject.specs ?? {})) {
+      const specKey = normalizeIdentityText(key).replace(/\s/g, ''), claim = normalizeIdentityText(String(value));
+      if (/^(?:brand|manufacturer|fabricante)$/.test(specKey) && claim !== 'klevv') return 'brand';
+      if (/^(?:profile|profiles|perfil|perfiles)$/.test(specKey)) {
+        if (!/^(?:intel )?xmp(?: 3 0)?(?: amd)?(?: expo)?$|^(?:amd )?expo$/.test(claim)) return 'profile';
+        const profileTokens = (value: string) => [...new Set(value.match(/\b(?:xmp|expo)\b/g) ?? [])].sort().join('-');
+        if (profileTokens(claim) !== profileTokens(text)) return 'profile-unverified';
+      }
+    }
+  }
   const originalFields = titleFields(subject.title);
   const found = Object.fromEntries(Object.entries(originalFields).map(([field, values]) => [field, [...values]])) as typeof originalFields;
   const provenance: CompletedRamIdentity['provenance'] = {};

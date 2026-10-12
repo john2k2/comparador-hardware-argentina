@@ -1,5 +1,5 @@
 // Cada memoizador tiene un límite explícito. Los cuatro parsers de producto
-// suman 1024 entradas; las tres pruebas puras de calidad suman otras 640.
+// suman 1024 entradas; calidad y referencias suman otras 1280 (2304 total).
 // No guardan Product/Price ni elegibilidad; sólo resultados puros del string.
 export const IDENTITY_TEXT_MEMO_ENTRIES = 1024;
 export const IDENTITY_TEXT_MEMO_LENGTH = 2048;

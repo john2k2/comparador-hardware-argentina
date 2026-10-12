@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { listingReference, sameListing } from './listing-reference';
+import { stores } from './static-data';
 
 describe('listing-reference', () => {
+  it('no conserva una admisión si cambia la política de host registrada',()=>{
+    const store=stores.find(store=>store.id==='katech')!,original=store.url,url='https://katech.com.ar/producto/memo-policy-123';
+    expect(listingReference('katech',url)).not.toBeNull();
+    try{store.url='https://other.example';expect(listingReference('katech',url)).toBeNull();}
+    finally{store.url=original;}
+    expect(listingReference('katech',url)).not.toBeNull();
+  });
   it('valida los hosts de todas las tiendas registradas y conserva variantes', () => {
     expect(listingReference('katech', 'https://other.example/producto/ryzen')).toBeNull();
     expect(listingReference('katech', 'https://katech.com.ar/producto/ryzen?utm_source=linkedin&fbclid=123'))

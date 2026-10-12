@@ -319,6 +319,7 @@ function detectRamFormFactor(normalized: string): 'sodimm' | 'dimm' | 'unk' {
 }
 
 function detectRamFamily(normalized: string): string {
+  if (/\bklevv\b/.test(normalized) && /\bbolt v\b/.test(normalized)) return 'bolt-v';
   if (/\bimpact\b/.test(normalized)) return 'impact';
   if (/\bbeast\b/.test(normalized)) return 'beast';
   if (/\bvengeance\b/.test(normalized)) return 'vengeance';

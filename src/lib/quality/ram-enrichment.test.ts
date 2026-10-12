@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { attributeProofMatches, proveManufacturerRamAttributes } from './offer-attribute-proof';
 import { exactRamAttributes } from './ram-identity';
 import { captureRamSpecs, hasRamSubjectConflict, manufacturerRamEvidence, planRamEnrichment } from './ram-enrichment';
 
@@ -10,6 +11,13 @@ function plan(value = title, manufacturerMpn = mpn, specs: Record<string, unknow
 }
 
 describe('enriquecimiento RAM con tres MPN de fabricante acreditadas', () => {
+  it('un conflicto en specs no contamina la extracción de otro sujeto con el mismo título',()=>{
+    expect(hasRamSubjectConflict({title,specs:{capacity:32}})).toBe(true);
+    expect(hasRamSubjectConflict({title,specs:{capacity:16}})).toBe(false);
+    const first=plan();expect(first.ok).toBe(true);
+    if(first.ok){first.target.attributes.kit='8x2';first.source.attributes.color='white';}
+    expect(plan()).toMatchObject({ok:true,target:{attributes:{kit:'1x16',color:'black'}}});
+  });
   it.each([
     { kit: '2x8GB' }, { generation: 'DDR5' }, { speed: '6000MHz' }, { formFactor: 'SODIMM' },
     { kit: '1x16GB', Kit: '2x8GB' }, { generation: 'DDR4', generacion: 'DDR5' },
@@ -115,5 +123,57 @@ describe('enriquecimiento RAM con tres MPN de fabricante acreditadas', () => {
     const result = plan(title.replace('Black', ''), mpn, { image: 'white.png' });
     expect(result.ok).toBe(true);
     expect(JSON.stringify(result)).not.toMatch(/QVL|white.png/);
+  });
+});
+
+
+describe('KLEVV BOLT V con dos MPN auditadas, sin decodificar ni aprobar precio', () => {
+  const sku = 'KD5AGUA80-60B280H';
+  const title = 'Memoria KLEVV DDR5 32GB (2X16GB) 6000MHz BOLT V CL28';
+  const subject = { title, sku, specs: { SKU: sku } };
+  const binding = { storeId: 'compragamer', url: 'https://compragamer.com/producto/Memoria_KLEVV_DDR5_32GB_2X16GB_6000MHz_BOLT_V_CL28_21565', listingRef: 'compragamer:id:21565' };
+  it('completa cg-21565 sólo con forma y gris acreditados; conserva título, sin RGB/voltaje/QVL inventados', () => {
+    const result = planRamEnrichment({ manufacturerMpn: sku, target: subject, source: structuredClone(subject) });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error('expected plan');
+    expect(result.target.enrichedTitle).toBe(`${title} UDIMM grey`);
+    expect(result.target.attributes).toMatchObject({ model: expect.stringContaining('klevv:bolt-v'), capacity: '32', kit: '2x16', latency: '28', form: 'dimm', color: 'grey', profile: '' });
+    expect(result.target.provenance.form).toMatchObject({ source: 'manufacturer', checkedAt: '2026-10-12', mpn: sku, url: manufacturerRamEvidence[sku].fieldUrls?.form });
+    expect(result.target.provenance.lighting).toBeUndefined();
+    expect(result.target.originalTitle).toBe(title);
+    expect(JSON.stringify(result)).not.toMatch(/QVL|1\.35|1\.4|sin RGB/);
+    const proof = proveManufacturerRamAttributes(subject, structuredClone(subject), binding);
+    expect(proof).not.toBeNull();
+    const sourceIdentity = { title, storeSku: sku, listingRef: binding.listingRef, sourceId: '21565' };
+    expect(attributeProofMatches(proof!, title, 'memoria-ram', title, { targetSpecs: subject.specs, sourceIdentity, url: binding.url })).toBe(true);
+    for (const changed of [{ ...binding, url: binding.url.replace('21565', '21562') }, { ...binding, storeId: 'katech' }, { ...binding, listingRef: 'compragamer:id:21562' }])
+      expect(proveManufacturerRamAttributes(subject, subject, changed)).toBeNull();
+    expect(attributeProofMatches(proof!, title, 'memoria-ram', title, { targetSpecs: subject.specs, sourceIdentity, url: binding.url.replace('21565', '21562') })).toBe(false);
+  });
+  it.each([
+    ['color', `${title} White`], ['lighting-unverified', `${title} RGB`], ['lighting-unverified', `${title} sin RGB`],
+    ['latency', title.replace('CL28', 'CL30')], ['kit', title.replace('2X16GB', '1X32GB')],
+    ['form', `${title} SODIMM`], ['brand', title.replace('KLEVV', 'Corsair')],
+    ['family', title.replace('BOLT V', 'CRAS V')], ['family', `${title} CRAS V`],
+    ['profile', `${title} sin EXPO`], ['profile', `${title} XMP 2.0`], ['voltage-unverified', `${title} 1.5V`], ['voltage-unverified', `${title} 1.5 V`],
+    ['profile', `${title} XMP2.0`], ['profile', `${title} XMP 3.1`],
+  ])('rechaza mutación de %s conservando evidencia original', (field, value) => {
+    expect(planRamEnrichment({ manufacturerMpn: sku, target: { ...subject, title: value }, source: subject }))
+      .toMatchObject({ ok: false, reason: 'identity-conflict', field });
+  });
+  it.each([{ voltage: 1.5 }, { voltageV: '1.35V' }, { profile: 'XMP 2.0' }, { profile: 'EXPO' }, { manufacturer: 'Corsair' }])('no pierde contradicción de specs al serializar: %j', specs => {
+    expect(proveManufacturerRamAttributes({ ...subject, specs: { SKU: sku, ...specs } }, subject, binding)).toBeNull();
+  });
+  it('preserva perfiles explícitos corroborables y rechaza diferencia entre destino y fuente', () => {
+    const withProfiles = { ...subject, title: `${title} Intel XMP 3.0 AMD EXPO`, specs: { SKU: sku, profiles: 'Intel XMP 3.0 AMD EXPO' } };
+    expect(proveManufacturerRamAttributes(withProfiles, withProfiles, binding)?.attributes.profile).toBe('xmp-expo');
+    expect(proveManufacturerRamAttributes(withProfiles, { ...subject, title: `${title} AMD EXPO` }, binding)).toBeNull();
+  });
+  it('no aprueba SKU vecina/no auditada, ni MPN blanca asociada a CRAS 6400', () => {
+    expect(planRamEnrichment({ manufacturerMpn: 'KD5AGU880-60B280H', target: subject, source: subject })).toEqual({ ok: false, reason: 'unknown-mpn' });
+    expect(planRamEnrichment({ manufacturerMpn: sku, target: { ...subject, sku: 'KD5AGUA80-60A300I' }, source: subject })).toMatchObject({ ok: false, reason: 'sku-mismatch' });
+    const white = { title: title.replace('CL28', 'White CL30'), sku: 'KD5AGUA80-60A300I', specs: { SKU: 'KD5AGUA80-60A300I' } };
+    expect(planRamEnrichment({ manufacturerMpn: white.sku, target: white, source: white }).ok).toBe(true);
+    expect(planRamEnrichment({ manufacturerMpn: white.sku, target: { ...white, title: 'Memoria KLEVV DDR5 32GB (2x16GB) 6400MHz CRAS V RGB CL32 White' }, source: white })).toMatchObject({ ok: false, field: 'family' });
   });
 });
