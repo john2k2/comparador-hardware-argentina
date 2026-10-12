@@ -27,7 +27,9 @@ export function parseFullh4rdPage(html: string, pageUrl: string, categoryHint?: 
     const category = inferHardwareCategoryFromName(name) ?? categoryHint;
     if (!name || !url || !listing || !category || !Number.isFinite(price) || price <= 0 || seen.has(listing)) return;
     seen.add(listing);
-    const text = card.text().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    // Cheerio concatena nodos adyacentes: "$100.000En stock" pierde el límite
+    // de palabra. Conservar también el texto explícito de la etiqueta de stock.
+    const text = `${card.text()} ${card.find('.stock').text()}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     const availability = card.find('[itemprop="availability"]').attr('href') ?? '';
     let stock: StockStatus = 'unknown';
     if (card.hasClass('out-of-stock') || card.find('.out-of-stock,.sin-stock').length || /sin stock|agotad[oa]|no disponible/.test(text) || /OutOfStock|Discontinued|SoldOut/.test(availability)) stock = 'out-of-stock';

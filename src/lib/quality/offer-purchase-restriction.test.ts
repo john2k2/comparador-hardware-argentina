@@ -68,11 +68,12 @@ describe('restricciones explícitas de compra individual', () => {
     expect(readIdentityReview(invalidReview)?.status).toBe('needs-review');
     expect(isComparableStoreOffer({ ...offer, identityReview: invalidReview }, product)).toBe(false);
     expect(isComparableStoreOffer({ ...offer, sourceIdentity: undefined, identityReview: invalidReview }, product)).toBe(false);
-    for (const map of [mapDbProduct, mapDbGuideProduct]) {
-      const mapped = map(dbRow(malformed));
-      expect(mapped.prices[0].identityReview?.status).toBe('needs-review');
-      expect(isComparableStoreOffer(mapped.prices[0], product)).toBe(false);
-    }
+    // Las tarjetas excluyen metadata inválida; el lector de detalle conserva
+    // la referencia pendiente para revisión. Ninguno admite su precio.
+    expect(mapDbProduct(dbRow(malformed)).prices.map(price => price.storeId)).toEqual(['mexx']);
+    const invalid = mapDbGuideProduct(dbRow(malformed)).prices.find(price => price.storeId === 'compragamer')!;
+    expect(invalid.identityReview?.status).toBe('needs-review');
+    expect(isComparableStoreOffer(invalid, product)).toBe(false);
   });
 
   it('ausencia conserva compra individual; metadata malformada se convierte en revisión, sin habilitar precio', () => {
