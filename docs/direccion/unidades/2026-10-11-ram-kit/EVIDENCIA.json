@@ -1,0 +1,51 @@
+{
+  "unit": "D02/RAM3M-format",
+  "status": "prepared-reviewed-not-integrated-not-published",
+  "sourceHead": "f811114556557fb801aff554f1fc180e09e324ab",
+  "authorizedCheckoutHead": "3e2d82e6a2b12f9c2f32d38858b992af03cd0ae8",
+  "branch": "codex/capacidad-costo-cero",
+  "patchSha256": "cb5a76b273890216b8abf53a4ae3aa83d62ecba64d439b72c47e5705fe2bca0a",
+  "modifiedApplicationFiles": [
+    "src/lib/persistence/product-read-helpers.ts",
+    "src/lib/seo/budget-guide-pricing.ts",
+    "src/lib/catalog/guide-ram-kit.ts",
+    "src/lib/seo/guide-ram-kit-contract.test.ts"
+  ],
+  "baselineGitBlobs": {
+    "src/lib/persistence/product-read-helpers.ts": "bdb1285f0eecfa02aa5986b33b03faa4880e4e14",
+    "src/lib/seo/budget-guide-pricing.ts": "a4c9bd0f291b410f30baa114d6a64c73e0564477"
+  },
+  "candidateSha256": {
+    "src/lib/persistence/product-read-helpers.ts": "d64057ce5ee099334882f22a055f65e3a7111143531f622f70c580f370586833",
+    "src/lib/seo/budget-guide-pricing.ts": "f8c078e8614a46e04d913570afab62dd986ff43890b93016c9f307d9368a7036",
+    "src/lib/catalog/guide-ram-kit.ts": "7e728f12c3152bec10162ee0980faea138a05821f1a59f81989776b9ebdd1574",
+    "src/lib/seo/guide-ram-kit-contract.test.ts": "8ea02da04868214f220fec6e11327e5b26cf6b51d7ad7fd168b315e6d3aa27f6"
+  },
+  "behaviourTests": {
+    "baseline": {
+      "failed": 17,
+      "passed": 18
+    },
+    "beforeAmbiguousGuard": {
+      "failed": 5,
+      "passed": 30
+    },
+    "beforeUriGuard": {
+      "failed": 3,
+      "passed": 32
+    },
+    "candidate": {
+      "passed": 35,
+      "failed": 0
+    }
+  },
+  "independentReview": "gpt-6.1-sol/high, no material findings open in R3, no files changed",
+  "limits": [
+    "pure fixture, no full application integration",
+    "no PostgreSQL replay",
+    "no TypeScript/full build of f811 performed here",
+    "no guide model replacement",
+    "no new identity approval or observation timestamp",
+    "purchaseRestriction outside unit"
+  ]
+}

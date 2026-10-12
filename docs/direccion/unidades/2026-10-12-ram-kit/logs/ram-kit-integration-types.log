@@ -1,0 +1,34 @@
+
+> comparador-hardware-argentina@0.1.0 typecheck
+> tsc --noEmit --incremental false
+
+tmp/ram-kit-f811/application-r2/src/lib/price-utils.ts(5,71): error TS2307: Cannot find module './types' or its corresponding type declarations.
+tmp/ram-kit-f811/application-r2/src/lib/price-utils.ts(7,60): error TS2307: Cannot find module './types' or its corresponding type declarations.
+tmp/ram-kit-f811/application-r2/src/lib/scrapers/compragamer-mapper.ts(1,61): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+tmp/ram-kit-f811/application-r2/src/lib/scrapers/compragamer-mapper.ts(4,49): error TS2307: Cannot find module './compragamer-catalog' or its corresponding type declarations.
+tmp/ram-kit-f811/application-r2/src/lib/scrapers/scraper-helpers.ts(5,61): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+tmp/ram-kit-f811/application-r2/src/lib/scrapers/static-data.ts(5,44): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+tmp/ram-kit-f811/application-r3/src/lib/price-utils.ts(5,71): error TS2307: Cannot find module './types' or its corresponding type declarations.
+tmp/ram-kit-f811/application-r3/src/lib/price-utils.ts(7,60): error TS2307: Cannot find module './types' or its corresponding type declarations.
+tmp/ram-kit-f811/application-r3/src/lib/scrapers/compragamer-mapper.ts(1,61): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+tmp/ram-kit-f811/application-r3/src/lib/scrapers/compragamer-mapper.ts(4,49): error TS2307: Cannot find module './compragamer-catalog' or its corresponding type declarations.
+tmp/ram-kit-f811/application-r3/src/lib/scrapers/scraper-helpers.ts(5,61): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+tmp/ram-kit-f811/application-r3/src/lib/scrapers/static-data.ts(5,44): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+tmp/ram-kit-f811/application/src/lib/price-utils.ts(5,71): error TS2307: Cannot find module './types' or its corresponding type declarations.
+tmp/ram-kit-f811/application/src/lib/price-utils.ts(7,60): error TS2307: Cannot find module './types' or its corresponding type declarations.
+tmp/ram-kit-f811/application/src/lib/scrapers/compragamer-mapper.ts(1,61): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+tmp/ram-kit-f811/application/src/lib/scrapers/compragamer-mapper.ts(4,49): error TS2307: Cannot find module './compragamer-catalog' or its corresponding type declarations.
+tmp/ram-kit-f811/application/src/lib/scrapers/scraper-helpers.ts(5,61): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+tmp/ram-kit-f811/application/src/lib/scrapers/static-data.ts(5,44): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+tmp/ram-kit-f811/baseline/src/lib/price-utils.ts(5,71): error TS2307: Cannot find module './types' or its corresponding type declarations.
+tmp/ram-kit-f811/baseline/src/lib/price-utils.ts(7,60): error TS2307: Cannot find module './types' or its corresponding type declarations.
+tmp/ram-kit-f811/baseline/src/lib/scrapers/compragamer-mapper.ts(1,61): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+tmp/ram-kit-f811/baseline/src/lib/scrapers/compragamer-mapper.ts(4,49): error TS2307: Cannot find module './compragamer-catalog' or its corresponding type declarations.
+tmp/ram-kit-f811/baseline/src/lib/scrapers/scraper-helpers.ts(5,61): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+tmp/ram-kit-f811/baseline/src/lib/scrapers/static-data.ts(5,44): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+tmp/ram-kit-f811/candidate/src/lib/price-utils.ts(5,71): error TS2307: Cannot find module './types' or its corresponding type declarations.
+tmp/ram-kit-f811/candidate/src/lib/price-utils.ts(7,60): error TS2307: Cannot find module './types' or its corresponding type declarations.
+tmp/ram-kit-f811/candidate/src/lib/scrapers/compragamer-mapper.ts(1,61): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+tmp/ram-kit-f811/candidate/src/lib/scrapers/compragamer-mapper.ts(4,49): error TS2307: Cannot find module './compragamer-catalog' or its corresponding type declarations.
+tmp/ram-kit-f811/candidate/src/lib/scrapers/scraper-helpers.ts(5,61): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+tmp/ram-kit-f811/candidate/src/lib/scrapers/static-data.ts(5,44): error TS2307: Cannot find module '../types' or its corresponding type declarations.

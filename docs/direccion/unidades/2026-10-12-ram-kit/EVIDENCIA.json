@@ -1,0 +1,275 @@
+{
+  "unit": "D02/RAM3M-format-integration",
+  "owner": "Codex coordinator",
+  "status": "integrated-reviewed-tested-locally-not-published",
+  "base": "d1081e196f2818a96f5b6d01794ebc1e385b859a",
+  "branch": "codex/ram-kit-integration-20261012",
+  "preservedBranch": "codex/capacidad-costo-cero",
+  "preservedHead": "0237cb8e111229addab63c04ac6b41de2d5c48f7",
+  "applicationFiles": [
+    "src/lib/persistence/product-read-helpers.ts",
+    "src/lib/seo/budget-guide-pricing.ts",
+    "src/lib/catalog/guide-ram-kit.ts",
+    "src/lib/seo/guide-ram-kit-contract.test.ts"
+  ],
+  "sha256": {
+    "src/lib/persistence/product-read-helpers.ts": "d64057ce5ee099334882f22a055f65e3a7111143531f622f70c580f370586833",
+    "src/lib/seo/budget-guide-pricing.ts": "f8c078e8614a46e04d913570afab62dd986ff43890b93016c9f307d9368a7036",
+    "src/lib/catalog/guide-ram-kit.ts": "7e728f12c3152bec10162ee0980faea138a05821f1a59f81989776b9ebdd1574",
+    "src/lib/seo/guide-ram-kit-contract.test.ts": "8ea02da04868214f220fec6e11327e5b26cf6b51d7ad7fd168b315e6d3aa27f6"
+  },
+  "lockedVersions": {
+    "next": "16.3.8",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
+  },
+  "checks": {
+    "sameMatrixBaselineD108": {
+      "failed": 17,
+      "passed": 18,
+      "total": 35
+    },
+    "sameMatrixIntegrated": {
+      "failed": 0,
+      "passed": 35,
+      "total": 35
+    },
+    "focal": {
+      "files": 5,
+      "passed": 133,
+      "failed": 0
+    },
+    "newContractTests": 35,
+    "lintExitCode": 0,
+    "defaultTypecheckExitCode": 0,
+    "nextBuildExitCode": 0,
+    "independentReview": {
+      "reviewer": "ramkit_integration_review",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "openMaterialFindings": 0,
+      "inMemoryConsumerAssertions": 19,
+      "scope": "read-only, no database/browser mutations"
+    },
+    "postgresLiteralFixtures": {
+      "passed": 6,
+      "failed": 0,
+      "tableRowsModified": false,
+      "fullSqlReplay": false
+    },
+    "browserFixtures": {
+      "passed": 3,
+      "failed": 0,
+      "desktopWidth": 1280,
+      "mobileWidth": 390,
+      "cases": [
+        "local draft save/recover/share IDs",
+        "mobile no horizontal overflow",
+        "A/B selection return"
+      ],
+      "externalRequestsBlocked": true,
+      "nonGetHeadRequestsBlocked": true,
+      "productionEvidence": false
+    }
+  },
+  "harnessLimitations": [
+    "Initial ESM wrapper failed before tests; changed wrapper to TypeScript.",
+    "Two consent assertions initially timed out because fake GA measurement ID was omitted from the QA build; rebuilt with documented E2E environment, unchanged application.",
+    "First typecheck read 120 old offline-fixture files under tmp. Preserved byte-identical files outside Next TypeScript glob; default typecheck then passed. Tracked configuration unchanged."
+  ],
+  "oldFixturePreservation": {
+    "previousLocation": "/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/tmp/ram-kit-f811",
+    "preservedLocation": "/Users/johnortiz/Documents/Codex/2026-10-02/new-chat/outputs/ram-kit-f811-preservado-2026-10-12",
+    "purpose": "Keep own partial offline source outside TypeScript application glob; no files deleted",
+    "fileCount": 120,
+    "sha256": {
+      "p2-before.log": "ce61878b3c71b08bf016df42efdc0cf05258c820927e997ae6b12a5071c3f576",
+      "vitest.config.mts": "ef793c854fd1a8deac4cbd6fa9cbfb2c090d0dd07fb425f8d8dffa8a072e0ba7",
+      "vitest.p2-uri-before.config.mts": "2423a1aedf16f9d75a2beea7409a20c73fcb8b58307508dff1735f296c7409c5",
+      "eslint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ram-kit.patch": "cb5a76b273890216b8abf53a4ae3aa83d62ecba64d439b72c47e5705fe2bca0a",
+      "vitest.before.config.mts": "e7e3c4e971eecf946e56b0fd97f71349b70b56f6cf90561c71fc59c7d5aebd3f",
+      "before.log": "eebaf882a784ffe464e34c393dd46922554fe3165b9ea613d3b532ddc472b5c5",
+      "p2-uri-before.log": "0c91d6c087a2e180d85e745f0ccfc68181950864fb9d2a83f6e97d2a199a6b1a",
+      "vitest.p2-before.config.mts": "a4182cbdfda1b936a90dc42a7759b6544d58ae051b6300ff5c8990cedfaad75f",
+      "after.log": "238d3d70270d2e50b79eeef50a4f62b596848b86ca9cbd99657a064418682c1d",
+      "candidate/src/lib/price-freshness.ts": "f67ca12197d692d4ae50d03759a4b47d2f7e145e6e8e4333979d76f6fd85c4ac",
+      "candidate/src/lib/product-identity.ts": "3c8c5063e50fd92591a8dad68341cc55c4ef710b2e05fdfcc998cd8b94435447",
+      "candidate/src/lib/text-utils.ts": "6af9d4480ec1040684529ab3e78ebac9a4e9912a8e11e96fe7df4275e5b620fe",
+      "candidate/src/lib/price-utils.ts": "8263a2c894a706c8043f62d4aebabbf4e2d57b5e08b3a35a736330d689e9538b",
+      "candidate/src/lib/product-images.ts": "188b11adec901d784dadee9a845e3e211cb3c63f0b6f772b7b70c6f3c7b272f4",
+      "candidate/src/lib/product-sanitizer.ts": "1c57546c45f3e61d653d86d6c7ddf346cbca91c65486d0330a8178908b5f1e4d",
+      "candidate/src/lib/quality/storage-identity.ts": "7a93622b31bdf1f132fc050da6167de7b3ade980addbd439cbb2e00defc30247",
+      "candidate/src/lib/quality/offer-identity.ts": "a960bed24ba8156f2c16932d94cdc0ca9e9bc1903841958abf749082bfd859cb",
+      "candidate/src/lib/quality/offer-attribute-proof.ts": "c042ac6661dd2d3cdb7683e4bab5a9023a7eb485795145dcab4f3ede26bf4ee0",
+      "candidate/src/lib/catalog/hardware-categories.ts": "db9b96041c0f654af87b51d2eaac9fe6083546ab7598ae59bcbef6af34d2c9f5",
+      "candidate/src/lib/catalog/guide-ram-kit.ts": "7e728f12c3152bec10162ee0980faea138a05821f1a59f81989776b9ebdd1574",
+      "candidate/src/lib/catalog/on-demand/contracts.ts": "d8c285019efe6fd5b7ab1732fa8eceab44548df42b43d3ebbeafcf40eff07ec2",
+      "candidate/src/lib/persistence/product-read-helpers.ts": "d64057ce5ee099334882f22a055f65e3a7111143531f622f70c580f370586833",
+      "candidate/src/lib/scrapers/static-data.ts": "42e43298f483d4cfc550f007113754b407c47a5a092430f5fe7557896beaf0e2",
+      "candidate/src/lib/scrapers/source-title.ts": "8617099907b194f3aee40239b8ea7ad0b582fe8e307faba1f82b55430e5f5a7f",
+      "candidate/src/lib/scrapers/compragamer-mapper.ts": "c34a7d57475fbf1ef23f7369c0b2612a49b73725e38b0e0a334254f5a790f2f4",
+      "candidate/src/lib/scrapers/source-contracts.ts": "fd8815da3ae7ec132d4fbbffc0a54655269c8fc9b4d07822a83cbeda84e4a4f0",
+      "candidate/src/lib/scrapers/brand-utils.ts": "2c1bf15e27c8a0362bf51b692dc2901c8f72707c45d24528b791de3e20795d18",
+      "candidate/src/lib/scrapers/listing-reference.ts": "863c512bb4c3c72aed873a8656ac82d3e4f929e0ccbbc3f57bcfcf320dbdf253",
+      "candidate/src/lib/scrapers/scraper-helpers.ts": "13e8877229353462c5b368f5cb096cd00b14ba85e4fe61123e2f93376b96e36e",
+      "candidate/src/lib/seo/guide-ram-kit-contract.test.ts": "8ea02da04868214f220fec6e11327e5b26cf6b51d7ad7fd168b315e6d3aa27f6",
+      "candidate/src/lib/seo/budget-guide-pricing.ts": "f8c078e8614a46e04d913570afab62dd986ff43890b93016c9f307d9368a7036",
+      "p2-baseline/src/lib/seo/budget-guide-pricing.ts": "dd741815f5d88183a13abc8eb26440360da1e728c40fb26d56044686ab3b9a4e",
+      "application-r2/src/lib/price-freshness.ts": "f67ca12197d692d4ae50d03759a4b47d2f7e145e6e8e4333979d76f6fd85c4ac",
+      "application-r2/src/lib/product-identity.ts": "3c8c5063e50fd92591a8dad68341cc55c4ef710b2e05fdfcc998cd8b94435447",
+      "application-r2/src/lib/text-utils.ts": "6af9d4480ec1040684529ab3e78ebac9a4e9912a8e11e96fe7df4275e5b620fe",
+      "application-r2/src/lib/price-utils.ts": "8263a2c894a706c8043f62d4aebabbf4e2d57b5e08b3a35a736330d689e9538b",
+      "application-r2/src/lib/product-images.ts": "188b11adec901d784dadee9a845e3e211cb3c63f0b6f772b7b70c6f3c7b272f4",
+      "application-r2/src/lib/product-sanitizer.ts": "1c57546c45f3e61d653d86d6c7ddf346cbca91c65486d0330a8178908b5f1e4d",
+      "application-r2/src/lib/quality/storage-identity.ts": "7a93622b31bdf1f132fc050da6167de7b3ade980addbd439cbb2e00defc30247",
+      "application-r2/src/lib/quality/offer-identity.ts": "a960bed24ba8156f2c16932d94cdc0ca9e9bc1903841958abf749082bfd859cb",
+      "application-r2/src/lib/quality/offer-attribute-proof.ts": "c042ac6661dd2d3cdb7683e4bab5a9023a7eb485795145dcab4f3ede26bf4ee0",
+      "application-r2/src/lib/catalog/hardware-categories.ts": "db9b96041c0f654af87b51d2eaac9fe6083546ab7598ae59bcbef6af34d2c9f5",
+      "application-r2/src/lib/catalog/guide-ram-kit.ts": "7e728f12c3152bec10162ee0980faea138a05821f1a59f81989776b9ebdd1574",
+      "application-r2/src/lib/catalog/on-demand/contracts.ts": "d8c285019efe6fd5b7ab1732fa8eceab44548df42b43d3ebbeafcf40eff07ec2",
+      "application-r2/src/lib/persistence/product-read-helpers.ts": "d64057ce5ee099334882f22a055f65e3a7111143531f622f70c580f370586833",
+      "application-r2/src/lib/scrapers/static-data.ts": "42e43298f483d4cfc550f007113754b407c47a5a092430f5fe7557896beaf0e2",
+      "application-r2/src/lib/scrapers/source-title.ts": "8617099907b194f3aee40239b8ea7ad0b582fe8e307faba1f82b55430e5f5a7f",
+      "application-r2/src/lib/scrapers/compragamer-mapper.ts": "c34a7d57475fbf1ef23f7369c0b2612a49b73725e38b0e0a334254f5a790f2f4",
+      "application-r2/src/lib/scrapers/source-contracts.ts": "fd8815da3ae7ec132d4fbbffc0a54655269c8fc9b4d07822a83cbeda84e4a4f0",
+      "application-r2/src/lib/scrapers/brand-utils.ts": "2c1bf15e27c8a0362bf51b692dc2901c8f72707c45d24528b791de3e20795d18",
+      "application-r2/src/lib/scrapers/listing-reference.ts": "863c512bb4c3c72aed873a8656ac82d3e4f929e0ccbbc3f57bcfcf320dbdf253",
+      "application-r2/src/lib/scrapers/scraper-helpers.ts": "13e8877229353462c5b368f5cb096cd00b14ba85e4fe61123e2f93376b96e36e",
+      "application-r2/src/lib/seo/guide-ram-kit-contract.test.ts": "f383bc27f5fe1df91debd570287ac0895fc70ed95b8251ab08e26e154ac0e3a9",
+      "application-r2/src/lib/seo/budget-guide-pricing.ts": "e6dd06eaf2759c64f96a01b4d69148ca87d85ed6d5f22e24484cea14e6a9f887",
+      "application-r3/src/lib/price-freshness.ts": "f67ca12197d692d4ae50d03759a4b47d2f7e145e6e8e4333979d76f6fd85c4ac",
+      "application-r3/src/lib/product-identity.ts": "3c8c5063e50fd92591a8dad68341cc55c4ef710b2e05fdfcc998cd8b94435447",
+      "application-r3/src/lib/text-utils.ts": "6af9d4480ec1040684529ab3e78ebac9a4e9912a8e11e96fe7df4275e5b620fe",
+      "application-r3/src/lib/price-utils.ts": "8263a2c894a706c8043f62d4aebabbf4e2d57b5e08b3a35a736330d689e9538b",
+      "application-r3/src/lib/product-images.ts": "188b11adec901d784dadee9a845e3e211cb3c63f0b6f772b7b70c6f3c7b272f4",
+      "application-r3/src/lib/product-sanitizer.ts": "1c57546c45f3e61d653d86d6c7ddf346cbca91c65486d0330a8178908b5f1e4d",
+      "application-r3/src/lib/quality/storage-identity.ts": "7a93622b31bdf1f132fc050da6167de7b3ade980addbd439cbb2e00defc30247",
+      "application-r3/src/lib/quality/offer-identity.ts": "a960bed24ba8156f2c16932d94cdc0ca9e9bc1903841958abf749082bfd859cb",
+      "application-r3/src/lib/quality/offer-attribute-proof.ts": "c042ac6661dd2d3cdb7683e4bab5a9023a7eb485795145dcab4f3ede26bf4ee0",
+      "application-r3/src/lib/catalog/hardware-categories.ts": "db9b96041c0f654af87b51d2eaac9fe6083546ab7598ae59bcbef6af34d2c9f5",
+      "application-r3/src/lib/catalog/guide-ram-kit.ts": "7e728f12c3152bec10162ee0980faea138a05821f1a59f81989776b9ebdd1574",
+      "application-r3/src/lib/catalog/on-demand/contracts.ts": "d8c285019efe6fd5b7ab1732fa8eceab44548df42b43d3ebbeafcf40eff07ec2",
+      "application-r3/src/lib/persistence/product-read-helpers.ts": "d64057ce5ee099334882f22a055f65e3a7111143531f622f70c580f370586833",
+      "application-r3/src/lib/scrapers/static-data.ts": "42e43298f483d4cfc550f007113754b407c47a5a092430f5fe7557896beaf0e2",
+      "application-r3/src/lib/scrapers/source-title.ts": "8617099907b194f3aee40239b8ea7ad0b582fe8e307faba1f82b55430e5f5a7f",
+      "application-r3/src/lib/scrapers/compragamer-mapper.ts": "c34a7d57475fbf1ef23f7369c0b2612a49b73725e38b0e0a334254f5a790f2f4",
+      "application-r3/src/lib/scrapers/source-contracts.ts": "fd8815da3ae7ec132d4fbbffc0a54655269c8fc9b4d07822a83cbeda84e4a4f0",
+      "application-r3/src/lib/scrapers/brand-utils.ts": "2c1bf15e27c8a0362bf51b692dc2901c8f72707c45d24528b791de3e20795d18",
+      "application-r3/src/lib/scrapers/listing-reference.ts": "863c512bb4c3c72aed873a8656ac82d3e4f929e0ccbbc3f57bcfcf320dbdf253",
+      "application-r3/src/lib/scrapers/scraper-helpers.ts": "13e8877229353462c5b368f5cb096cd00b14ba85e4fe61123e2f93376b96e36e",
+      "application-r3/src/lib/seo/guide-ram-kit-contract.test.ts": "8ea02da04868214f220fec6e11327e5b26cf6b51d7ad7fd168b315e6d3aa27f6",
+      "application-r3/src/lib/seo/budget-guide-pricing.ts": "f8c078e8614a46e04d913570afab62dd986ff43890b93016c9f307d9368a7036",
+      "baseline/src/lib/price-freshness.ts": "f67ca12197d692d4ae50d03759a4b47d2f7e145e6e8e4333979d76f6fd85c4ac",
+      "baseline/src/lib/product-identity.ts": "3c8c5063e50fd92591a8dad68341cc55c4ef710b2e05fdfcc998cd8b94435447",
+      "baseline/src/lib/text-utils.ts": "6af9d4480ec1040684529ab3e78ebac9a4e9912a8e11e96fe7df4275e5b620fe",
+      "baseline/src/lib/price-utils.ts": "8263a2c894a706c8043f62d4aebabbf4e2d57b5e08b3a35a736330d689e9538b",
+      "baseline/src/lib/product-images.ts": "188b11adec901d784dadee9a845e3e211cb3c63f0b6f772b7b70c6f3c7b272f4",
+      "baseline/src/lib/product-sanitizer.ts": "1c57546c45f3e61d653d86d6c7ddf346cbca91c65486d0330a8178908b5f1e4d",
+      "baseline/src/lib/quality/storage-identity.ts": "7a93622b31bdf1f132fc050da6167de7b3ade980addbd439cbb2e00defc30247",
+      "baseline/src/lib/quality/offer-identity.ts": "a960bed24ba8156f2c16932d94cdc0ca9e9bc1903841958abf749082bfd859cb",
+      "baseline/src/lib/quality/offer-attribute-proof.ts": "c042ac6661dd2d3cdb7683e4bab5a9023a7eb485795145dcab4f3ede26bf4ee0",
+      "baseline/src/lib/catalog/hardware-categories.ts": "db9b96041c0f654af87b51d2eaac9fe6083546ab7598ae59bcbef6af34d2c9f5",
+      "baseline/src/lib/catalog/on-demand/contracts.ts": "d8c285019efe6fd5b7ab1732fa8eceab44548df42b43d3ebbeafcf40eff07ec2",
+      "baseline/src/lib/persistence/product-read-helpers.ts": "62b7d8c6f11d99ff3d754020ad9867033bc6ebd4f32d523e8e6a047b56a26a62",
+      "baseline/src/lib/scrapers/static-data.ts": "42e43298f483d4cfc550f007113754b407c47a5a092430f5fe7557896beaf0e2",
+      "baseline/src/lib/scrapers/source-title.ts": "8617099907b194f3aee40239b8ea7ad0b582fe8e307faba1f82b55430e5f5a7f",
+      "baseline/src/lib/scrapers/compragamer-mapper.ts": "c34a7d57475fbf1ef23f7369c0b2612a49b73725e38b0e0a334254f5a790f2f4",
+      "baseline/src/lib/scrapers/source-contracts.ts": "fd8815da3ae7ec132d4fbbffc0a54655269c8fc9b4d07822a83cbeda84e4a4f0",
+      "baseline/src/lib/scrapers/brand-utils.ts": "2c1bf15e27c8a0362bf51b692dc2901c8f72707c45d24528b791de3e20795d18",
+      "baseline/src/lib/scrapers/listing-reference.ts": "863c512bb4c3c72aed873a8656ac82d3e4f929e0ccbbc3f57bcfcf320dbdf253",
+      "baseline/src/lib/scrapers/scraper-helpers.ts": "13e8877229353462c5b368f5cb096cd00b14ba85e4fe61123e2f93376b96e36e",
+      "baseline/src/lib/seo/budget-guide-pricing.ts": "d1c2b849e20146a51f5aac52edcf49344d4c407b045e7890f704777f9a2d0e04",
+      "p2-uri-baseline/src/lib/seo/budget-guide-pricing.ts": "e6dd06eaf2759c64f96a01b4d69148ca87d85ed6d5f22e24484cea14e6a9f887",
+      "application/src/lib/price-freshness.ts": "f67ca12197d692d4ae50d03759a4b47d2f7e145e6e8e4333979d76f6fd85c4ac",
+      "application/src/lib/product-identity.ts": "3c8c5063e50fd92591a8dad68341cc55c4ef710b2e05fdfcc998cd8b94435447",
+      "application/src/lib/text-utils.ts": "6af9d4480ec1040684529ab3e78ebac9a4e9912a8e11e96fe7df4275e5b620fe",
+      "application/src/lib/price-utils.ts": "8263a2c894a706c8043f62d4aebabbf4e2d57b5e08b3a35a736330d689e9538b",
+      "application/src/lib/product-images.ts": "188b11adec901d784dadee9a845e3e211cb3c63f0b6f772b7b70c6f3c7b272f4",
+      "application/src/lib/product-sanitizer.ts": "1c57546c45f3e61d653d86d6c7ddf346cbca91c65486d0330a8178908b5f1e4d",
+      "application/src/lib/quality/storage-identity.ts": "7a93622b31bdf1f132fc050da6167de7b3ade980addbd439cbb2e00defc30247",
+      "application/src/lib/quality/offer-identity.ts": "a960bed24ba8156f2c16932d94cdc0ca9e9bc1903841958abf749082bfd859cb",
+      "application/src/lib/quality/offer-attribute-proof.ts": "c042ac6661dd2d3cdb7683e4bab5a9023a7eb485795145dcab4f3ede26bf4ee0",
+      "application/src/lib/catalog/hardware-categories.ts": "db9b96041c0f654af87b51d2eaac9fe6083546ab7598ae59bcbef6af34d2c9f5",
+      "application/src/lib/catalog/guide-ram-kit.ts": "7e728f12c3152bec10162ee0980faea138a05821f1a59f81989776b9ebdd1574",
+      "application/src/lib/catalog/on-demand/contracts.ts": "d8c285019efe6fd5b7ab1732fa8eceab44548df42b43d3ebbeafcf40eff07ec2",
+      "application/src/lib/persistence/product-read-helpers.ts": "d64057ce5ee099334882f22a055f65e3a7111143531f622f70c580f370586833",
+      "application/src/lib/scrapers/static-data.ts": "42e43298f483d4cfc550f007113754b407c47a5a092430f5fe7557896beaf0e2",
+      "application/src/lib/scrapers/source-title.ts": "8617099907b194f3aee40239b8ea7ad0b582fe8e307faba1f82b55430e5f5a7f",
+      "application/src/lib/scrapers/compragamer-mapper.ts": "c34a7d57475fbf1ef23f7369c0b2612a49b73725e38b0e0a334254f5a790f2f4",
+      "application/src/lib/scrapers/source-contracts.ts": "fd8815da3ae7ec132d4fbbffc0a54655269c8fc9b4d07822a83cbeda84e4a4f0",
+      "application/src/lib/scrapers/brand-utils.ts": "2c1bf15e27c8a0362bf51b692dc2901c8f72707c45d24528b791de3e20795d18",
+      "application/src/lib/scrapers/listing-reference.ts": "863c512bb4c3c72aed873a8656ac82d3e4f929e0ccbbc3f57bcfcf320dbdf253",
+      "application/src/lib/scrapers/scraper-helpers.ts": "13e8877229353462c5b368f5cb096cd00b14ba85e4fe61123e2f93376b96e36e",
+      "application/src/lib/seo/guide-ram-kit-contract.test.ts": "5a9b0913003cb75872c8e775ebf1610b0856efb888cb891ed8e6ea56106d2d7a",
+      "application/src/lib/seo/budget-guide-pricing.ts": "dd741815f5d88183a13abc8eb26440360da1e728c40fb26d56044686ab3b9a4e"
+    }
+  },
+  "productionQa": "not verified; own Chrome tab blocked before application load",
+  "editorialReplacement": false,
+  "remoteWrites": false,
+  "published": false,
+  "next": "Confirm exact RAM MPN and proposal with seven recent eligible offers before any model replacement. Publication requires separate authorization.",
+  "logHandling": {
+    "normalization": "Terminal CR, trailing spaces and blank EOF only; results unchanged",
+    "rawCopy": "/Users/johnortiz/Documents/Proyectos/comparador-hardware-argentina/docs/reports/crecimiento-2026-09-12/cortes/2026-10-12/logs-raw",
+    "hashes": {
+      "ramkit-browser-run-final-captures.log": {
+        "rawSha256": "db57f632dfcd7ef03cba84d19946497ba12ef25ff1ace51c4255d6b7b3b04f98",
+        "normalizedSha256": "db57f632dfcd7ef03cba84d19946497ba12ef25ff1ace51c4255d6b7b3b04f98"
+      },
+      "ram-kit-integration-focal-locked.log": {
+        "rawSha256": "c7e4f6d9c0e44746521e4ed73caeb244b99989ac7088497885f7bb00d2ed5b4d",
+        "normalizedSha256": "c405cd6ab649bff374662f04eac25b57f4875a436bb3f693df478c01bbc4b6de"
+      },
+      "ram-kit-integration-build-qa-corrected.log": {
+        "rawSha256": "4342139e2ce5201a96c00ff562fffd88a1cee54085c3e6f9582670bc6830c07f",
+        "normalizedSha256": "658e38a105a64f32a148b6dc18ddbc4f136f4e251d41a3dbc0c9a0815b58be30"
+      },
+      "ram-kit-locked-dependencies.log": {
+        "rawSha256": "04560b9ac9c411ecd8c99f16cd1e7206cc3931296281b9fc19d4618efbc3b943",
+        "normalizedSha256": "04560b9ac9c411ecd8c99f16cd1e7206cc3931296281b9fc19d4618efbc3b943"
+      },
+      "ram-kit-integration-types-default.log": {
+        "rawSha256": "96b30055c3a4c4100989a9a345c35c1c56b58e4484e802cad839719675d624a9",
+        "normalizedSha256": "561732f4f3eddfce1bc2b68ffc48168040d394f6f70ef1dea01d0fabde06c64c"
+      },
+      "ram-kit-integration-types.log": {
+        "rawSha256": "f773d93ea6ec014a1cc584e05bfab1455fc0ddf32c4590884516240c65574db6",
+        "normalizedSha256": "f773d93ea6ec014a1cc584e05bfab1455fc0ddf32c4590884516240c65574db6"
+      },
+      "ramkit-browser-run-corrected.log": {
+        "rawSha256": "83d3a89d456b259fb3c827c6f0d00029824351cf2f2d1c1a915718295707a8e2",
+        "normalizedSha256": "83d3a89d456b259fb3c827c6f0d00029824351cf2f2d1c1a915718295707a8e2"
+      },
+      "ramkit-browser-run.log": {
+        "rawSha256": "70582d218488a363038c152d304fe3748394de50f36dee0f6eac8848c30b4db2",
+        "normalizedSha256": "db96ec9a5d4cb45ca3f8e5e3ab94bc4c472d24ab53c1ed2bf5075ecb4e66ce59"
+      },
+      "ram-kit-integration-lint.log": {
+        "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "normalizedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "ram-kit-after-d108.log": {
+        "rawSha256": "28ca8280cd1dd605a3c60315945fc3cca5932177fc5d0cd3c732d2d990c42a10",
+        "normalizedSha256": "e0786832d54566598d9b5f9bf9acee6fc24eaa80753110ba52c3deec2c534fb7"
+      },
+      "ramkit-browser-run-restore-final.log": {
+        "rawSha256": "874660e05b530ee9f3229add0a504142cc8804de198ee3e90552446439017014",
+        "normalizedSha256": "874660e05b530ee9f3229add0a504142cc8804de198ee3e90552446439017014"
+      },
+      "ramkit-browser-run-supported.log": {
+        "rawSha256": "aaeaf9ed6a84edce3c283e867caca449c02dbd130fb8ff266c283161b3b2b4a0",
+        "normalizedSha256": "ee0e49b9ae97c7a8ec1370c2bd9a6637ffdfdfdfabab0ecf5b65004f63e3f1da"
+      },
+      "ram-kit-baseline-d108.log": {
+        "rawSha256": "e8f25a804eede3ab2d6942f50157808747e3b6eee609b1747c47f23bc86cc22f",
+        "normalizedSha256": "b280069ba142b6a343aab1642bd2df67a4359e4587e0a2f76d35cd8d239ecf2a"
+      },
+      "ramkit-browser-run-comparison-final.log": {
+        "rawSha256": "fd143aee74fee7b2576b0e4f7d4d71b2f6f2b768195bdc96cdafdfc5643d85c7",
+        "normalizedSha256": "fd143aee74fee7b2576b0e4f7d4d71b2f6f2b768195bdc96cdafdfc5643d85c7"
+      }
+    }
+  }
+}

@@ -1,0 +1,74 @@
+(node:99437) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+Running 3 tests using 1 worker
+
+(node:99438) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:99438) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:99438) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 e2e/pc-builder.spec.ts:231:7 › armador de PC › guarda, recupera y comparte IDs sin precios, y descarga precio con fecha (1.1s)
+  ✘  2 e2e/pc-builder.spec.ts:366:7 › armador de PC › no desborda horizontalmente en viewport móvil de 390px (1.0m)
+(node:99548) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:99548) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:99548) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  3 e2e/comparison-return.spec.ts:10:5 › el comparador conserva los dos productos al visitar una ficha y regresar (1.0m)
+
+
+  1) e2e/pc-builder.spec.ts:366:7 › armador de PC › no desborda horizontalmente en viewport móvil de 390px
+
+    [31mTest timeout of 60000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: 'Rechazar analítica', exact: true })[22m
+
+
+      375 |     }));
+      376 |     expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 5);
+    > 377 |     await page.getByRole('button', { name: 'Rechazar analítica', exact: true }).click();
+          |                                                                                 ^
+      378 |     await page.evaluate(() => window.scrollTo(0, 0));
+      379 |     await page.screenshot({ path: testInfo.outputPath('pc-builder-mobile.png'), fullPage: true });
+      380 |     await page.screenshot({ path: testInfo.outputPath('pc-builder-mobile-inicio.png') });
+        at /Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/e2e/pc-builder.spec.ts:377:81
+
+    Error Context: tmp/ramkit-browser-results/ramkit-browser-armador-de--e499b--en-viewport-móvil-de-390px/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/ramkit-browser-results/ramkit-browser-armador-de--e499b--en-viewport-móvil-de-390px/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/ramkit-browser-results/ramkit-browser-armador-de--e499b--en-viewport-móvil-de-390px/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) e2e/comparison-return.spec.ts:10:5 › el comparador conserva los dos productos al visitar una ficha y regresar
+
+    [31mTest timeout of 60000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: 'Rechazar analítica', exact: true })[22m
+
+
+      26 |   const saved = JSON.parse(await page.evaluate(() => sessionStorage.getItem('comparison-selection:v1')) ?? '{}');
+      27 |   expect(Object.keys(saved).sort()).toEqual(['category', 'leftId', 'rightId', 'savedAt', 'useCase', 'version']);
+    > 28 |   await page.getByRole('button', { name: 'Rechazar analítica', exact: true }).click();
+         |                                                                               ^
+      29 |   await page.getByRole('button', { name: 'Cerrar preferencias', exact: true }).click();
+      30 |   await page.evaluate(() => window.scrollTo(0, 0));
+      31 |   await page.screenshot({ path: testInfo.outputPath('comparador-regreso.png'), fullPage: true });
+        at /Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/e2e/comparison-return.spec.ts:28:79
+
+    [31mTest timeout of 60000ms exceeded.[39m
+
+    Error Context: tmp/ramkit-browser-results/ramkit-browser-el-comparad-0d005-isitar-una-ficha-y-regresar/error-context.md
+
+  2 failed
+    e2e/pc-builder.spec.ts:366:7 › armador de PC › no desborda horizontalmente en viewport móvil de 390px
+    e2e/comparison-return.spec.ts:10:5 › el comparador conserva los dos productos al visitar una ficha y regresar
+  1 passed (3.1m)

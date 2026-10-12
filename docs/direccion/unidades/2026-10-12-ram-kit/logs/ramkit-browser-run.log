@@ -1,0 +1,5 @@
+(node:98308) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:98308) Warning: Failed to load the ES module: file:///Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/e2e/pc-builder.spec.ts. Make sure to set "type": "module" in the nearest package.json file or use the .mjs extension.
+SyntaxError: Cannot use import statement outside a module
+Error: No tests found

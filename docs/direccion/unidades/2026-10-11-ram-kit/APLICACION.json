@@ -1,0 +1,39 @@
+{
+  "patchSha256": "cb5a76b273890216b8abf53a4ae3aa83d62ecba64d439b72c47e5705fe2bca0a",
+  "steps": [
+    {
+      "flags": [
+        "--check",
+        "--verbose"
+      ],
+      "exitCode": 0,
+      "log": "Checking patch src/lib/persistence/product-read-helpers.ts...\nChecking patch src/lib/seo/budget-guide-pricing.ts...\nChecking patch src/lib/catalog/guide-ram-kit.ts...\nChecking patch src/lib/seo/guide-ram-kit-contract.test.ts...\n"
+    },
+    {
+      "flags": [
+        "--verbose"
+      ],
+      "exitCode": 0,
+      "log": "Checking patch src/lib/persistence/product-read-helpers.ts...\nChecking patch src/lib/seo/budget-guide-pricing.ts...\nChecking patch src/lib/catalog/guide-ram-kit.ts...\nChecking patch src/lib/seo/guide-ram-kit-contract.test.ts...\nApplied patch src/lib/persistence/product-read-helpers.ts cleanly.\nApplied patch src/lib/seo/budget-guide-pricing.ts cleanly.\nApplied patch src/lib/catalog/guide-ram-kit.ts cleanly.\nApplied patch src/lib/seo/guide-ram-kit-contract.test.ts cleanly.\n"
+    }
+  ],
+  "files": {
+    "src/lib/persistence/product-read-helpers.ts": {
+      "sha256": "d64057ce5ee099334882f22a055f65e3a7111143531f622f70c580f370586833",
+      "matches": true
+    },
+    "src/lib/seo/budget-guide-pricing.ts": {
+      "sha256": "f8c078e8614a46e04d913570afab62dd986ff43890b93016c9f307d9368a7036",
+      "matches": true
+    },
+    "src/lib/catalog/guide-ram-kit.ts": {
+      "sha256": "7e728f12c3152bec10162ee0980faea138a05821f1a59f81989776b9ebdd1574",
+      "matches": true
+    },
+    "src/lib/seo/guide-ram-kit-contract.test.ts": {
+      "sha256": "8ea02da04868214f220fec6e11327e5b26cf6b51d7ad7fd168b315e6d3aa27f6",
+      "matches": true
+    }
+  },
+  "environment": "temporary directory outside all project Git repositories"
+}

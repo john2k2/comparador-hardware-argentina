@@ -1,0 +1,243 @@
+--- a/src/lib/persistence/product-read-helpers.ts
++++ b/src/lib/persistence/product-read-helpers.ts
+@@ -1,4 +1,5 @@
+ import type { HardwareCategory, StockStatus } from '@/lib/types';
++import { readGuideRamKit } from '@/lib/catalog/guide-ram-kit';
+ 
+ export const DEFAULT_LIMIT = 240;
+ export const MAX_LIMIT = 1200;
+@@ -165,12 +166,14 @@
+     const generation = requested.match(/\bddr[45]\b/)?.[0];
+     const capacity = requested.match(/\b(\d+)gb\b/)?.[1];
+     const speed = requested.match(/\b([2-9]\d{3})\s*mhz\b/)?.[1];
+-    const kit = requested.match(/\b2x(?:8|16|32)gb\b/)?.[0];
++    const kit = readGuideRamKit(requested);
+     const latency = requested.match(/\bcl\s*(\d{2,3})\b/)?.[1];
+     if (generation) include.push(boundary(generation));
+     if (capacity) include.push(boundary(`${capacity}gb`));
+     if (speed) include.push(boundary(`${speed}([^a-z0-9]*mhz)?`));
+-    if (kit) include.push(boundary(kit));
++    if (kit.state === 'value') include.push(boundary(`${kit.modules}[^a-z0-9]*x[^a-z0-9]*${kit.moduleCapacityGb}[^a-z0-9]*gb`));
++    // Una presentación editorial contradictoria no puede desactivar el filtro.
++    if (kit.state === 'ambiguous') include.push('^$');
+     if (latency) include.push(boundary(`cl[^a-z0-9]*${latency}`));
+     if (/\b1 modulo\b/.test(requested)) exclude.push(boundary('[24][^a-z0-9]*x[^a-z0-9]*[0-9]+[^a-z0-9]*gb'));
+   }
+--- a/src/lib/seo/budget-guide-pricing.ts
++++ b/src/lib/seo/budget-guide-pricing.ts
+@@ -7,6 +7,7 @@
+ import { cpuVariantAttributes } from '@/lib/quality/offer-attribute-proof';
+ import { isOfferFresh } from '@/lib/price-freshness';
+ import { MAX_GUIDE_REFRESH_ROUNDS } from '@/lib/catalog/on-demand/contracts';
++import { normalizeGuideRamKitSpacing, readGuideRamKit } from '@/lib/catalog/guide-ram-kit';
+ 
+ export type GuideSlotSpec = {
+   name: string;
+@@ -206,9 +207,14 @@
+     if (capacity && actual.match(/\b(\d+)gb\b/)?.[1] !== capacity) return false;
+     if (/\b1 modulo\b/.test(requested) && /\b[24]\s*x\s*\d+\s*gb\b/.test(actual)) return false;
+     const speed = requested.match(/\b([2-9]\d{3})\s*mhz\b/)?.[1];
+-    const kit = requested.match(/\b2x(?:8|16|32)gb\b/)?.[0];
++    const kit = readGuideRamKit(requested);
+     if (speed && !new RegExp(`\\b${speed}(?:\\s*mhz)?\\b`).test(actual)) return false;
+-    if (kit && !actual.includes(kit)) return false;
++    if (kit.state === 'ambiguous') return false;
++    if (kit.state === 'value') {
++      const actualKit = readGuideRamKit(actual);
++      if (actualKit.state !== 'value' || actualKit.modules !== kit.modules
++        || actualKit.moduleCapacityGb !== kit.moduleCapacityGb) return false;
++    }
+     const latency = requested.match(/\bcl\s*(\d{2,3})\b/)?.[1];
+     const actualLatencies = new Set([...actual.matchAll(/\bcl\s*(\d{2,3})\b/g)].map((match) => match[1]));
+     // Una latencia ausente o ambigua no acredita la variante editorial declarada.
+@@ -314,7 +320,15 @@
+ }
+ 
+ function offerAgreesWithProductName(product: Product, offer: ProductPrice): boolean {
+-  const urlTokens = normalizeSearchText(provedCpuSourceTitle(product, offer) ?? offer.url).split(' ').filter((token) => token.length > 2);
++  if (product.category === 'memoria-ram') {
++    // El constructor compartido decodifica la ruta y falla sin lanzar ante URI inválida.
++    const evidence = buildIdentityEvidence(product.name, product.category, offer.url);
++    if (!evidence || [evidence.offerText, offer.sourceIdentity?.title, offer.identityReview?.sourceIdentity?.title]
++      .some(text => text && readGuideRamKit(normalizeSearchText(text)).state === 'ambiguous')) return false;
++  }
++  const normalizeOfferText = (text: string) => product.category === 'memoria-ram'
++    ? normalizeGuideRamKitSpacing(normalizeSearchText(text)) : normalizeSearchText(text);
++  const urlTokens = normalizeOfferText(provedCpuSourceTitle(product, offer) ?? offer.url).split(' ').filter((token) => token.length > 2);
+   if (urlTokens.length < 5) return true;
+   if (product.category === 'motherboards') {
+     // Las generaciones admitidas y códigos internos del catálogo no son el
+@@ -327,7 +341,7 @@
+     return model.length > 0 && model.every((token) => urlWords.includes(` ${token} `));
+   }
+ 
+-  const nameTokens = normalizeSearchText(product.name)
++  const nameTokens = normalizeOfferText(product.name)
+     .split(' ')
+     .filter((token) => token.length > 2 && !OFFER_NAME_STOPWORDS.has(token));
+   const capacities = nameTokens.filter((token) => /^\d+(gb|tb)$/.test(token));
+--- /dev/null
++++ b/src/lib/catalog/guide-ram-kit.ts
+@@ -0,0 +1,21 @@
++export type GuideRamKit =
++  | { state: 'none' | 'ambiguous' }
++  | { state: 'value'; modules: number; moduleCapacityGb: number };
++
++/** Los espacios no cambian el kit; dos composiciones distintas no lo acreditan. */
++export function readGuideRamKit(text: string): GuideRamKit {
++  const kits = new Map<string, { modules: number; moduleCapacityGb: number }>();
++  for (const match of text.toLowerCase().matchAll(/\b([1-9]\d?)\s*x\s*([1-9]\d{0,2})\s*gb\b/g)) {
++    const modules = Number(match[1]);
++    const moduleCapacityGb = Number(match[2]);
++    kits.set(`${modules}x${moduleCapacityGb}`, { modules, moduleCapacityGb });
++  }
++  if (kits.size === 0) return { state: 'none' };
++  if (kits.size !== 1) return { state: 'ambiguous' };
++  return { state: 'value', ...kits.values().next().value! };
++}
++
++/** Sólo unifica la escritura del kit para comparar títulos y slugs de la guía. */
++export function normalizeGuideRamKitSpacing(text: string): string {
++  return text.replace(/\b([1-9]\d?)\s*x\s*([1-9]\d{0,2})\s*gb\b/gi, '$1x$2gb');
++}
+--- /dev/null
++++ b/src/lib/seo/guide-ram-kit-contract.test.ts
+@@ -0,0 +1,138 @@
++import { afterEach, describe, expect, it, vi } from 'vitest';
++import type { Product } from '@/lib/types';
++import { buildGuideNameFilters } from '@/lib/persistence/product-read-helpers';
++import { resolveGuideComponent, resolveGuideRefreshOffers } from '@/lib/seo/budget-guide-pricing';
++import { readGuideRamKit } from '@/lib/catalog/guide-ram-kit';
++
++const formats = ['2x16GB', '2 x16GB', '2 x 16 GB'];
++const specFor = (format: string) => ({
++  name: `Corsair Vengeance 32GB DDR5 6000MHz CL30 Negro RGB (${format})`,
++  exactModel: 'Vengeance', searchTerms: ['corsair vengeance 32gb ddr5 negro rgb'],
++  category: 'memoria-ram' as const, description: 'Kit de dos módulos de 16 GB', estimatedPrice: 1_202_121.97,
++});
++const candidate = (format: string, replace?: [string, string]): Product => {
++  const name = `Memoria Ram UDIMM CORSAIR VENGEANCE 32GB DDR5 6000MHz CL30 1.40V (${format}) Negro RGB`;
++  return {
++    id: 'goldentechstore-api-188718', name: replace ? name.replace(...replace) : name,
++    category: 'memoria-ram', brand: 'Corsair', model: name, specs: { SKU: 'EL_CORM5VR2X1660' },
++    lowestPrice: 1_202_121.97, highestPrice: 1_202_121.97, averagePrice: 1_202_121.97,
++    prices: [{ storeId: 'goldentechstore', storeName: 'Golden Tech', price: 1_202_121.97, stock: 'in-stock', installment: null,
++      url: 'https://goldentechstore.com.ar/producto/memoria-ram-udimm-corsair-vengeance-32gb-ddr5-6000mhz-cl30-1-40v-2-x-16gb-negro-rgb/',
++      lastUpdated: new Date('2026-10-11T13:15:50.661Z') }],
++    createdAt: new Date('2026-10-11T13:15:50.661Z'), updatedAt: new Date('2026-10-11T13:15:50.661Z'),
++  };
++};
++const passesPrefilter = (name: string, spec: ReturnType<typeof specFor>) => {
++  const filters = buildGuideNameFilters('memoria-ram', spec);
++  return filters.include.every(pattern => new RegExp(pattern, 'i').test(name))
++    && filters.exclude.every(pattern => !new RegExp(pattern, 'i').test(name));
++};
++
++afterEach(() => vi.useRealTimers());
++
++describe('contrato del kit de RAM con espacios', () => {
++  it.each(formats.flatMap(specFormat => formats.map(actualFormat => [specFormat, actualFormat])))
++    ('%s conserva el mismo kit declarado como %s', (specFormat, actualFormat) => {
++      vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-11T13:17:00Z'));
++      const spec = specFor(specFormat), item = candidate(actualFormat), before = structuredClone(item);
++      expect(passesPrefilter(item.name, spec)).toBe(true);
++      expect(resolveGuideComponent(spec, [item])).toMatchObject({ productId: item.id, priceSource: 'catalog', price: 1_202_121.97 });
++      expect(resolveGuideRefreshOffers(spec, [item])[0]).toMatchObject({ productId: item.id, lastUpdated: '2026-10-11T13:15:50.661Z' });
++      expect(item).toEqual(before);
++    });
++
++  it.each(['', '1x32GB', '2x8GB', '4x8GB', '2x16GB y 4x8GB'])('rechaza una composición distinta o ambigua: %s', format => {
++    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-11T13:17:00Z'));
++    for (const specFormat of formats) {
++      const spec = specFor(specFormat), item = candidate(format);
++      expect(resolveGuideComponent(spec, [item]).offers).toEqual([]);
++      expect(resolveGuideRefreshOffers(spec, [item])).toEqual([]);
++      if (!format.includes(' y ')) expect(passesPrefilter(item.name, spec)).toBe(false);
++    }
++  });
++
++  it('un kit editorial ambiguo no evade la guarda', () => {
++    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-11T13:17:00Z'));
++    const spec = specFor('2x16GB o 4x8GB'), item = candidate('2x16GB');
++    expect(passesPrefilter(item.name, spec)).toBe(false);
++    expect(resolveGuideComponent(spec, [item]).offers).toEqual([]);
++    expect(resolveGuideRefreshOffers(spec, [item])).toEqual([]);
++  });
++
++  it.each(['2-x-16gb-o-4-x-8gb', '4-x-8gb-o-2-x-16gb'])
++    ('rechaza una URL con composición ambigua en cualquier orden: %s', kits => {
++      vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-11T13:17:00Z'));
++      const item = candidate('2 x 16 GB');
++      item.prices[0].url = `https://goldentechstore.com.ar/producto/corsair-vengeance-32gb-ddr5-6000mhz-cl30-${kits}-negro-rgb/`;
++      expect(resolveGuideComponent(specFor('2 x 16 GB'), [item]).offers).toEqual([]);
++      expect(resolveGuideRefreshOffers(specFor('2 x 16 GB'), [item])).toEqual([]);
++    });
++
++  it.each(['2 x 16 GB o 4 x 8 GB', '4 x 8 GB o 2 x 16 GB'])
++    ('rechaza un título de fuente con composición ambigua en cualquier orden: %s', kits => {
++      vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-11T13:17:00Z'));
++      const item = candidate('2 x 16 GB');
++      item.prices[0].sourceIdentity = { listingRef: 'goldentechstore:url:' + item.prices[0].url.replace(/\/$/, ''),
++        title: item.name.replace('2 x 16 GB', kits) };
++      expect(resolveGuideComponent(specFor('2 x 16 GB'), [item]).offers).toEqual([]);
++      expect(resolveGuideRefreshOffers(specFor('2 x 16 GB'), [item])).toEqual([]);
++    });
++
++  it.each(['4%2Dx%2D8gb', '4%09x%098gb'].flatMap(encoded => [
++    `2-x-16gb-o-${encoded}`, `${encoded}-o-2-x-16gb`,
++  ]))('rechaza composiciones ambiguas codificadas en la ruta: %s', kits => {
++    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-11T13:17:00Z'));
++    const item = candidate('2 x 16 GB');
++    item.prices[0].url = `https://goldentechstore.com.ar/producto/corsair-vengeance-32gb-ddr5-6000mhz-cl30-${kits}-negro-rgb/`;
++    expect(resolveGuideComponent(specFor('2 x 16 GB'), [item]).offers).toEqual([]);
++    expect(resolveGuideRefreshOffers(specFor('2 x 16 GB'), [item])).toEqual([]);
++  });
++
++  it('una codificación inválida no lanza errores ni acredita el kit de la URL', () => {
++    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-11T13:17:00Z'));
++    const item = candidate('2 x 16 GB');
++    item.prices[0].url = 'https://goldentechstore.com.ar/producto/corsair-vengeance-32gb-ddr5-6000mhz-cl30-2-x-16gb-o-4%ZZx%ZZ8gb-negro-rgb/';
++    expect(() => resolveGuideComponent(specFor('2 x 16 GB'), [item])).not.toThrow();
++    expect(resolveGuideComponent(specFor('2 x 16 GB'), [item]).offers).toEqual([]);
++    expect(resolveGuideRefreshOffers(specFor('2 x 16 GB'), [item])).toEqual([]);
++  });
++
++  it('conserva una URL con ID que omite el kit sin completar la composición del producto', () => {
++    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-11T13:17:00Z'));
++    const item = candidate('2 x 16 GB');
++    item.prices[0].storeId = 'shop';
++    item.prices[0].storeName = 'Shop';
++    item.prices[0].url = 'https://shop.test/188718';
++    expect(resolveGuideComponent(specFor('2 x 16 GB'), [item])).toMatchObject({ priceSource: 'catalog', productId: item.id });
++    expect(resolveGuideRefreshOffers(specFor('2 x 16 GB'), [item])).toHaveLength(1);
++  });
++
++  it.each([
++    ['DDR5', 'DDR4'], ['6000MHz', '5600MHz'], ['CL30', 'CL36'], ['CL30', 'CL30 CL36'],
++    ['RGB', 'sin iluminación'], ['Negro', 'Blanco'], ['UDIMM', 'SODIMM'], ['VENGEANCE', 'DOMINATOR'],
++  ] as [string, string][])('conserva el rechazo de %s cambiado a %s', (from, to) => {
++    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-11T13:17:00Z'));
++    const item = candidate('2 x 16 GB', [from, to]);
++    expect(resolveGuideComponent(specFor('2 x16GB'), [item]).offers).toEqual([]);
++    expect(resolveGuideRefreshOffers(specFor('2 x16GB'), [item])).toEqual([]);
++  });
++
++  it('no habilita una oferta vencida ni una identidad pendiente', () => {
++    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-11T13:17:00Z'));
++    const item = candidate('2 x 16GB');
++    item.prices[0].lastUpdated = new Date('2026-10-11T09:17:00Z');
++    expect(resolveGuideComponent(specFor('2x16GB'), [item]).offers).toEqual([]);
++    expect(item.prices[0].lastUpdated.toISOString()).toBe('2026-10-11T09:17:00.000Z');
++    item.prices[0].lastUpdated = new Date('2026-10-11T13:15:50.661Z');
++    item.prices[0].identityReview = { version: 1, status: 'needs-review', reason: 'explicit-conflict',
++      reviewedAt: null, confidence: null, model: null, subject: { name: item.name, category: item.category, url: item.prices[0].url } };
++    expect(resolveGuideComponent(specFor('2x16GB'), [item]).offers).toEqual([]);
++    expect(resolveGuideRefreshOffers(specFor('2x16GB'), [item])).toEqual([]);
++  });
++
++  it('el parser conserva ausencia y diferencia entre kit repetido y ambiguo', () => {
++    expect(readGuideRamKit('32GB')).toEqual({ state: 'none' });
++    expect(readGuideRamKit('2x16GB / 2 x 16 GB')).toEqual({ state: 'value', modules: 2, moduleCapacityGb: 16 });
++    expect(readGuideRamKit('2x16GB / 4x8GB')).toEqual({ state: 'ambiguous' });
++  });
++});

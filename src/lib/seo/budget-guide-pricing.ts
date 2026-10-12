@@ -7,6 +7,7 @@ import { buildCompraGamerProductUrl } from '@/lib/scrapers/compragamer-mapper';
 import { cpuVariantAttributes } from '@/lib/quality/offer-attribute-proof';
 import { isOfferFresh } from '@/lib/price-freshness';
 import { MAX_GUIDE_REFRESH_ROUNDS } from '@/lib/catalog/on-demand/contracts';
+import { normalizeGuideRamKitSpacing, readGuideRamKit } from '@/lib/catalog/guide-ram-kit';
 
 export type GuideSlotSpec = {
   name: string;
@@ -206,9 +207,14 @@ function productMatchesGuideSpec(product: Product, spec: GuideSlotSpec): boolean
     if (capacity && actual.match(/\b(\d+)gb\b/)?.[1] !== capacity) return false;
     if (/\b1 modulo\b/.test(requested) && /\b[24]\s*x\s*\d+\s*gb\b/.test(actual)) return false;
     const speed = requested.match(/\b([2-9]\d{3})\s*mhz\b/)?.[1];
-    const kit = requested.match(/\b2x(?:8|16|32)gb\b/)?.[0];
+    const kit = readGuideRamKit(requested);
     if (speed && !new RegExp(`\\b${speed}(?:\\s*mhz)?\\b`).test(actual)) return false;
-    if (kit && !actual.includes(kit)) return false;
+    if (kit.state === 'ambiguous') return false;
+    if (kit.state === 'value') {
+      const actualKit = readGuideRamKit(actual);
+      if (actualKit.state !== 'value' || actualKit.modules !== kit.modules
+        || actualKit.moduleCapacityGb !== kit.moduleCapacityGb) return false;
+    }
     const latency = requested.match(/\bcl\s*(\d{2,3})\b/)?.[1];
     const actualLatencies = new Set([...actual.matchAll(/\bcl\s*(\d{2,3})\b/g)].map((match) => match[1]));
     // Una latencia ausente o ambigua no acredita la variante editorial declarada.
@@ -314,7 +320,15 @@ function guidePurchaseUrl(product: Product, offer: ProductPrice): string {
 }
 
 function offerAgreesWithProductName(product: Product, offer: ProductPrice): boolean {
-  const urlTokens = normalizeSearchText(provedCpuSourceTitle(product, offer) ?? offer.url).split(' ').filter((token) => token.length > 2);
+  if (product.category === 'memoria-ram') {
+    // El constructor compartido decodifica la ruta y falla sin lanzar ante URI inválida.
+    const evidence = buildIdentityEvidence(product.name, product.category, offer.url);
+    if (!evidence || [evidence.offerText, offer.sourceIdentity?.title, offer.identityReview?.sourceIdentity?.title]
+      .some(text => text && readGuideRamKit(normalizeSearchText(text)).state === 'ambiguous')) return false;
+  }
+  const normalizeOfferText = (text: string) => product.category === 'memoria-ram'
+    ? normalizeGuideRamKitSpacing(normalizeSearchText(text)) : normalizeSearchText(text);
+  const urlTokens = normalizeOfferText(provedCpuSourceTitle(product, offer) ?? offer.url).split(' ').filter((token) => token.length > 2);
   if (urlTokens.length < 5) return true;
   if (product.category === 'motherboards') {
     // Las generaciones admitidas y códigos internos del catálogo no son el
@@ -327,7 +341,7 @@ function offerAgreesWithProductName(product: Product, offer: ProductPrice): bool
     return model.length > 0 && model.every((token) => urlWords.includes(` ${token} `));
   }
 
-  const nameTokens = normalizeSearchText(product.name)
+  const nameTokens = normalizeOfferText(product.name)
     .split(' ')
     .filter((token) => token.length > 2 && !OFFER_NAME_STOPWORDS.has(token));
   const capacities = nameTokens.filter((token) => /^\d+(gb|tb)$/.test(token));

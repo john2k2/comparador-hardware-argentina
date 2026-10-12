@@ -1,0 +1,13 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:7739) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+ RUN  v4.1.11 /Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina
+
+
+ Test Files  1 passed (1)
+      Tests  35 passed (35)
+   Start at  12:56:55
+   Duration  192ms (transform 68ms, setup 0ms, import 91ms, tests 14ms, environment 0ms)

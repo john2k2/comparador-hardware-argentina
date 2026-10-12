@@ -1,4 +1,5 @@
 import type { HardwareCategory, StockStatus } from '@/lib/types';
+import { readGuideRamKit } from '@/lib/catalog/guide-ram-kit';
 
 export const DEFAULT_LIMIT = 240;
 export const MAX_LIMIT = 1200;
@@ -165,12 +166,14 @@ export function buildGuideNameFilters(category: HardwareCategory, spec: GuideCan
     const generation = requested.match(/\bddr[45]\b/)?.[0];
     const capacity = requested.match(/\b(\d+)gb\b/)?.[1];
     const speed = requested.match(/\b([2-9]\d{3})\s*mhz\b/)?.[1];
-    const kit = requested.match(/\b2x(?:8|16|32)gb\b/)?.[0];
+    const kit = readGuideRamKit(requested);
     const latency = requested.match(/\bcl\s*(\d{2,3})\b/)?.[1];
     if (generation) include.push(boundary(generation));
     if (capacity) include.push(boundary(`${capacity}gb`));
     if (speed) include.push(boundary(`${speed}([^a-z0-9]*mhz)?`));
-    if (kit) include.push(boundary(kit));
+    if (kit.state === 'value') include.push(boundary(`${kit.modules}[^a-z0-9]*x[^a-z0-9]*${kit.moduleCapacityGb}[^a-z0-9]*gb`));
+    // Una presentación editorial contradictoria no puede desactivar el filtro.
+    if (kit.state === 'ambiguous') include.push('^$');
     if (latency) include.push(boundary(`cl[^a-z0-9]*${latency}`));
     if (/\b1 modulo\b/.test(requested)) exclude.push(boundary('[24][^a-z0-9]*x[^a-z0-9]*[0-9]+[^a-z0-9]*gb'));
   }

@@ -1,0 +1,88 @@
+
+> comparador-hardware-argentina@0.1.0 build
+> next build && node scripts/render-public-documents.mjs
+
+▲ Next.js 16.3.8 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 374ms
+Using secrets defined in .dev.vars
+
+  Creating an optimized production build ...
+(node:208) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✓ Compiled successfully in 1062ms
+  Running TypeScript ...
+  Finished TypeScript in 1520ms ...
+  Collecting page data using 9 workers ...
+  Generating static pages using 9 workers (0/53) ...
+  Generating static pages using 9 workers (13/53)
+[Supabase Server] SUPABASE_SECRET_KEY is missing. Server write operations will be disabled.
+[Supabase Server] Using NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY fallback on server. Prefer SUPABASE_PUBLISHABLE_KEY.
+{"level":"warn","message":"[Home] No se pudieron cargar las últimas ofertas","error":{"name":"Error","message":"readProductsFromDatabase: TypeError: fetch failed","stack":"Error: readProductsFromDatabase: TypeError: fetch failed\n    at A (/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/.next/server/chunks/ssr/src_lib_1fhvql5._.js:23:10958)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async Promise.all (index 0)\n    at async z (/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/.next/server/chunks/ssr/src_09y_8zu._.js:1:5645)"},"timestamp":"2026-10-12T14:59:32.740Z"}
+{"level":"warn","message":"[Home] No se pudieron cargar las bajas de precio","error":{"name":"Error","message":"readProductsFromDatabase: TypeError: fetch failed","stack":"Error: readProductsFromDatabase: TypeError: fetch failed\n    at A (/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/.next/server/chunks/ssr/src_lib_1fhvql5._.js:23:10958)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async Promise.all (index 0)\n    at async z (/Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina/.next/server/chunks/ssr/src_09y_8zu._.js:1:5645)"},"timestamp":"2026-10-12T14:59:32.740Z"}
+  Generating static pages using 9 workers (26/53)
+  Generating static pages using 9 workers (39/53)
+✓ Generating static pages using 9 workers (53/53) in 153ms
+  Finalizing page optimization ...
+
+Route (app)                                 Revalidate  Expire
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /about
+├ ƒ /acerca
+├ ƒ /admin
+├ ƒ /admin/alerts
+├ ƒ /admin/logs
+├ ƒ /admin/scrapers
+├ ƒ /admin/seguimiento
+├ ƒ /admin/stores
+├ ƒ /api/admin/cache-warm
+├ ƒ /api/admin/catalog-refresh
+├ ƒ /api/admin/catalog-refresh/priority
+├ ƒ /api/admin/catalog-refresh/requested
+├ ƒ /api/admin/measurement
+├ ƒ /api/admin/measurement/connections
+├ ƒ /api/admin/measurement/google/callback
+├ ƒ /api/admin/measurement/google/start
+├ ƒ /api/admin/operational
+├ ƒ /api/admin/product-cleanup
+├ ƒ /api/auth/session
+├ ƒ /api/catalog/refresh
+├ ƒ /api/categories
+├ ƒ /api/home/observed-sections
+├ ƒ /api/home/sections
+├ ƒ /api/juegos-digitales
+├ ƒ /api/pc-builder/catalog
+├ ƒ /api/products
+├ ƒ /api/search
+├ ƒ /api/search/suggestions
+├ ƒ /api/stores
+├ ƒ /auth
+├ ƒ /auth/callback
+├ ƒ /comparar/[categoria]
+├ ƒ /comparativa
+├ ƒ /comparativa/[slug]
+├ ƒ /comparativa/comparar
+├ ƒ /contacto
+├ ƒ /guia
+├ ƒ /guia/[slug]
+├ ƒ /guia/armar
+├ ƒ /juegos-digitales
+├ ƒ /llms.txt
+├ ƒ /measurement-shell-build
+├ ƒ /privacidad
+├ ƒ /product-sitemap/[page]
+├ ƒ /product/[id]
+├ ○ /robots.txt
+├ ƒ /search
+├ ƒ /sitemap-index.xml
+├ ○ /sitemap.xml                                    1h      1y
+└ ƒ /terminos
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+Documentos públicos verificados: 7. Sin consultas de cuentas ni recopilación de precios.

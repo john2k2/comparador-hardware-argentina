@@ -1,0 +1,293 @@
+(node:7640) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+ RUN  v4.1.11 /Users/johnortiz/.codex/worktrees/comparador-confianza/comparador-hardware-argentina
+
+ ❯ src/lib/seo/guide-ram-kit-contract.test.ts (35 tests | 17 failed) 17ms
+     × 2x16GB conserva el mismo kit declarado como 2x16GB 7ms
+     × 2x16GB conserva el mismo kit declarado como 2 x16GB 1ms
+     × 2x16GB conserva el mismo kit declarado como 2 x 16 GB 0ms
+     × 2 x16GB conserva el mismo kit declarado como 2x16GB 1ms
+     × 2 x16GB conserva el mismo kit declarado como 2 x16GB 0ms
+     × 2 x 16 GB conserva el mismo kit declarado como 2x16GB 0ms
+     × 2 x 16 GB conserva el mismo kit declarado como 2 x16GB 0ms
+     × rechaza una composición distinta o ambigua:  1ms
+     × rechaza una composición distinta o ambigua: 1x32GB 0ms
+     × rechaza una composición distinta o ambigua: 2x8GB 0ms
+     × rechaza una composición distinta o ambigua: 4x8GB 0ms
+     × un kit editorial ambiguo no evade la guarda 0ms
+     × rechaza una URL con composición ambigua en cualquier orden: 2-x-16gb-o-4-x-8gb 0ms
+     × rechaza un título de fuente con composición ambigua en cualquier orden: 2 x 16 GB o 4 x 8 GB 0ms
+     × rechaza composiciones ambiguas codificadas en la ruta: 2-x-16gb-o-4%2Dx%2D8gb 0ms
+     × rechaza composiciones ambiguas codificadas en la ruta: 2-x-16gb-o-4%09x%098gb 0ms
+     × una codificación inválida no lanza errores ni acredita el kit de la URL 1ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 17 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/seo/guide-ram-kit-contract.test.ts > contrato del kit de RAM con espacios > 2x16GB conserva el mismo kit declarado como 2x16GB
+ FAIL  src/lib/seo/guide-ram-kit-contract.test.ts > contrato del kit de RAM con espacios > 2 x16GB conserva el mismo kit declarado como 2x16GB
+ FAIL  src/lib/seo/guide-ram-kit-contract.test.ts > contrato del kit de RAM con espacios > 2 x16GB conserva el mismo kit declarado como 2 x16GB
+ FAIL  src/lib/seo/guide-ram-kit-contract.test.ts > contrato del kit de RAM con espacios > 2 x 16 GB conserva el mismo kit declarado como 2x16GB
+ FAIL  src/lib/seo/guide-ram-kit-contract.test.ts > contrato del kit de RAM con espacios > 2 x 16 GB conserva el mismo kit declarado como 2 x16GB
+AssertionError: expected { …(9) } to match object { …(3) }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "price": 1202121.97,
+-   "priceSource": "catalog",
+-   "productId": "goldentechstore-api-188718",
++   "priceSource": "estimate",
+  }
+
+ ❯ src/lib/seo/guide-ram-kit-contract.test.ts:39:51
+     37|       const spec = specFor(specFormat), item = candidate(actualFormat)…
+     38|       expect(passesPrefilter(item.name, spec)).toBe(true);
+     39|       expect(resolveGuideComponent(spec, [item])).toMatchObject({ prod…
+       |                                                   ^
+     40|       expect(resolveGuideRefreshOffers(spec, [item])[0]).toMatchObject…
+     41|       expect(item).toEqual(before);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/17]⎯
+
+ FAIL  src/lib/seo/guide-ram-kit-contract.test.ts > contrato del kit de RAM con espacios > 2x16GB conserva el mismo kit declarado como 2 x16GB
+ FAIL  src/lib/seo/guide-ram-kit-contract.test.ts > contrato del kit de RAM con espacios > 2x16GB conserva el mismo kit declarado como 2 x 16 GB
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/lib/seo/guide-ram-kit-contract.test.ts:38:48
+     36|       vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-11T13:17:…
+     37|       const spec = specFor(specFormat), item = candidate(actualFormat)…
+     38|       expect(passesPrefilter(item.name, spec)).toBe(true);
+       |                                                ^
+     39|       expect(resolveGuideComponent(spec, [item])).toMatchObject({ prod…
+     40|       expect(resolveGuideRefreshOffers(spec, [item])[0]).toMatchObject…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/17]⎯
+
+ FAIL  src/lib/seo/guide-ram-kit-contract.test.ts > contrato del kit de RAM con espacios > rechaza una composición distinta o ambigua:
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "lastUpdated": "2026-10-11T13:15:50.661Z",
++     "price": 1202121.97,
++     "refreshUrl": "https://goldentechstore.com.ar/producto/memoria-ram-udimm-corsair-vengeance-32gb-ddr5-6000mhz-cl30-1-40v-2-x-16gb-negro-rgb/",
++     "stock": "in-stock",
++     "storeId": "goldentechstore",
++     "storeName": "Golden Tech",
++     "url": "https://goldentechstore.com.ar/producto/memoria-ram-udimm-corsair-vengeance-32gb-ddr5-6000mhz-cl30-1-40v-2-x-16gb-negro-rgb/",
++   },
++ ]
+
+ ❯ src/lib/seo/guide-ram-kit-contract.test.ts:48:58
+     46|     for (const specFormat of formats) {
+     47|       const spec = specFor(specFormat), item = candidate(format);
+     48|       expect(resolveGuideComponent(spec, [item]).offers).toEqual([]);
+       |                                                          ^
+     49|       expect(resolveGuideRefreshOffers(spec, [item])).toEqual([]);
+     50|       if (!format.includes(' y ')) expect(passesPrefilter(item.name, s…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/17]⎯
+
+ FAIL  src/lib/seo/guide-ram-kit-contract.test.ts > contrato del kit de RAM con espacios > rechaza una composición distinta o ambigua: 1x32GB
+ FAIL  src/lib/seo/guide-ram-kit-contract.test.ts > contrato del kit de RAM con espacios > rechaza una composición distinta o ambigua: 2x8GB
+ FAIL  src/lib/seo/guide-ram-kit-contract.test.ts > contrato del kit de RAM con espacios > rechaza una composición distinta o ambigua: 4x8GB
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/lib/seo/guide-ram-kit-contract.test.ts:50:77
+     48|       expect(resolveGuideComponent(spec, [item]).offers).toEqual([]);
+     49|       expect(resolveGuideRefreshOffers(spec, [item])).toEqual([]);
+     50|       if (!format.includes(' y ')) expect(passesPrefilter(item.name, s…
+       |                                                                             ^
+     51|     }
+     52|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/17]⎯
+
+ FAIL  src/lib/seo/guide-ram-kit-contract.test.ts > contrato del kit de RAM con espacios > un kit editorial ambiguo no evade la guarda
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/lib/seo/guide-ram-kit-contract.test.ts:57:46
+     55|     vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-11T13:17:00…
+     56|     const spec = specFor('2x16GB o 4x8GB'), item = candidate('2x16GB');
+     57|     expect(passesPrefilter(item.name, spec)).toBe(false);
+       |                                              ^
+     58|     expect(resolveGuideComponent(spec, [item]).offers).toEqual([]);
+     59|     expect(resolveGuideRefreshOffers(spec, [item])).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/17]⎯
+
+ FAIL  src/lib/seo/guide-ram-kit-contract.test.ts > contrato del kit de RAM con espacios > rechaza una URL con composición ambigua en cualquier orden: 2-x-16gb-o-4-x-8gb
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "lastUpdated": "2026-10-11T13:15:50.661Z",
++     "price": 1202121.97,
++     "refreshUrl": "https://goldentechstore.com.ar/producto/corsair-vengeance-32gb-ddr5-6000mhz-cl30-2-x-16gb-o-4-x-8gb-negro-rgb/",
++     "stock": "in-stock",
++     "storeId": "goldentechstore",
++     "storeName": "Golden Tech",
++     "url": "https://goldentechstore.com.ar/producto/corsair-vengeance-32gb-ddr5-6000mhz-cl30-2-x-16gb-o-4-x-8gb-negro-rgb/",
++   },
++ ]
+
+ ❯ src/lib/seo/guide-ram-kit-contract.test.ts:67:74
+     65|       const item = candidate('2 x 16 GB');
+     66|       item.prices[0].url = `https://goldentechstore.com.ar/producto/co…
+     67|       expect(resolveGuideComponent(specFor('2 x 16 GB'), [item]).offer…
+       |                                                                          ^
+     68|       expect(resolveGuideRefreshOffers(specFor('2 x 16 GB'), [item])).…
+     69|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/17]⎯
+
+ FAIL  src/lib/seo/guide-ram-kit-contract.test.ts > contrato del kit de RAM con espacios > rechaza un título de fuente con composición ambigua en cualquier orden: 2 x 16 GB o 4 x 8 GB
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "lastUpdated": "2026-10-11T13:15:50.661Z",
++     "price": 1202121.97,
++     "refreshUrl": "https://goldentechstore.com.ar/producto/memoria-ram-udimm-corsair-vengeance-32gb-ddr5-6000mhz-cl30-1-40v-2-x-16gb-negro-rgb/",
++     "stock": "in-stock",
++     "storeId": "goldentechstore",
++     "storeName": "Golden Tech",
++     "url": "https://goldentechstore.com.ar/producto/memoria-ram-udimm-corsair-vengeance-32gb-ddr5-6000mhz-cl30-1-40v-2-x-16gb-negro-rgb/",
++   },
++ ]
+
+ ❯ src/lib/seo/guide-ram-kit-contract.test.ts:77:74
+     75|       item.prices[0].sourceIdentity = { listingRef: 'goldentechstore:u…
+     76|         title: item.name.replace('2 x 16 GB', kits) };
+     77|       expect(resolveGuideComponent(specFor('2 x 16 GB'), [item]).offer…
+       |                                                                          ^
+     78|       expect(resolveGuideRefreshOffers(specFor('2 x 16 GB'), [item])).…
+     79|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/17]⎯
+
+ FAIL  src/lib/seo/guide-ram-kit-contract.test.ts > contrato del kit de RAM con espacios > rechaza composiciones ambiguas codificadas en la ruta: 2-x-16gb-o-4%2Dx%2D8gb
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "lastUpdated": "2026-10-11T13:15:50.661Z",
++     "price": 1202121.97,
++     "refreshUrl": "https://goldentechstore.com.ar/producto/corsair-vengeance-32gb-ddr5-6000mhz-cl30-2-x-16gb-o-4%2Dx%2D8gb-negro-rgb/",
++     "stock": "in-stock",
++     "storeId": "goldentechstore",
++     "storeName": "Golden Tech",
++     "url": "https://goldentechstore.com.ar/producto/corsair-vengeance-32gb-ddr5-6000mhz-cl30-2-x-16gb-o-4%2Dx%2D8gb-negro-rgb/",
++   },
++ ]
+
+ ❯ src/lib/seo/guide-ram-kit-contract.test.ts:87:72
+     85|     const item = candidate('2 x 16 GB');
+     86|     item.prices[0].url = `https://goldentechstore.com.ar/producto/cors…
+     87|     expect(resolveGuideComponent(specFor('2 x 16 GB'), [item]).offers)…
+       |                                                                        ^
+     88|     expect(resolveGuideRefreshOffers(specFor('2 x 16 GB'), [item])).to…
+     89|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/17]⎯
+
+ FAIL  src/lib/seo/guide-ram-kit-contract.test.ts > contrato del kit de RAM con espacios > rechaza composiciones ambiguas codificadas en la ruta: 2-x-16gb-o-4%09x%098gb
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "lastUpdated": "2026-10-11T13:15:50.661Z",
++     "price": 1202121.97,
++     "refreshUrl": "https://goldentechstore.com.ar/producto/corsair-vengeance-32gb-ddr5-6000mhz-cl30-2-x-16gb-o-4%09x%098gb-negro-rgb/",
++     "stock": "in-stock",
++     "storeId": "goldentechstore",
++     "storeName": "Golden Tech",
++     "url": "https://goldentechstore.com.ar/producto/corsair-vengeance-32gb-ddr5-6000mhz-cl30-2-x-16gb-o-4%09x%098gb-negro-rgb/",
++   },
++ ]
+
+ ❯ src/lib/seo/guide-ram-kit-contract.test.ts:87:72
+     85|     const item = candidate('2 x 16 GB');
+     86|     item.prices[0].url = `https://goldentechstore.com.ar/producto/cors…
+     87|     expect(resolveGuideComponent(specFor('2 x 16 GB'), [item]).offers)…
+       |                                                                        ^
+     88|     expect(resolveGuideRefreshOffers(specFor('2 x 16 GB'), [item])).to…
+     89|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/17]⎯
+
+ FAIL  src/lib/seo/guide-ram-kit-contract.test.ts > contrato del kit de RAM con espacios > una codificación inválida no lanza errores ni acredita el kit de la URL
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "lastUpdated": "2026-10-11T13:15:50.661Z",
++     "price": 1202121.97,
++     "refreshUrl": "https://goldentechstore.com.ar/producto/corsair-vengeance-32gb-ddr5-6000mhz-cl30-2-x-16gb-o-4%ZZx%ZZ8gb-negro-rgb/",
++     "stock": "in-stock",
++     "storeId": "goldentechstore",
++     "storeName": "Golden Tech",
++     "url": "https://goldentechstore.com.ar/producto/corsair-vengeance-32gb-ddr5-6000mhz-cl30-2-x-16gb-o-4%ZZx%ZZ8gb-negro-rgb/",
++   },
++ ]
+
+ ❯ src/lib/seo/guide-ram-kit-contract.test.ts:96:72
+     94|     item.prices[0].url = 'https://goldentechstore.com.ar/producto/cors…
+     95|     expect(() => resolveGuideComponent(specFor('2 x 16 GB'), [item])).…
+     96|     expect(resolveGuideComponent(specFor('2 x 16 GB'), [item]).offers)…
+       |                                                                        ^
+     97|     expect(resolveGuideRefreshOffers(specFor('2 x 16 GB'), [item])).to…
+     98|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/17]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  17 failed | 18 passed (35)
+   Start at  12:56:17
+   Duration  190ms (transform 65ms, setup 0ms, import 86ms, tests 17ms, environment 0ms)
