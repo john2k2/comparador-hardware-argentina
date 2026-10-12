@@ -7,9 +7,30 @@ import {
   extractGpuBoardAttributes,
   isBundleLikeTitle,
   isCompleteComputerTitle,
+  normalizeIdentityText,
+  parseCpuModelSignature,
+  parseGpuChipSignature,
 } from './product-identity';
 
 describe('product identity', () => {
+  it('memo de parsers mantiene familias/sufijos y no comparte arrays mutables entre consumidores', () => {
+    const cpu = parseCpuModelSignature('AMD Ryzen 7 5700X3D')!;
+    cpu.family = 'changed'; cpu.suffixes.push('changed');
+    expect(parseCpuModelSignature('AMD Ryzen 7 5700X3D')).toEqual({ family: 'ryzen7', number: '5700', suffixes: ['x3d'] });
+    expect(parseCpuModelSignature('AMD Ryzen 7 5700GE')).toEqual({ family: 'ryzen7', number: '5700', suffixes: ['ge'] });
+    const gpu = parseGpuChipSignature('GeForce RTX 4070 Ti Super')!;
+    gpu.number = 'changed'; gpu.suffixes.splice(0);
+    expect(parseGpuChipSignature('GeForce RTX 4070 Ti Super')).toEqual({ family: 'rtx', number: '4070', suffixes: ['ti', 'super'] });
+    expect(parseGpuChipSignature('Sapphire RX 7900 XTX 24GB')).toEqual({ family: 'rx', number: '7900', suffixes: ['xtx'] });
+    expect(normalizeIdentityText('ÁSUS + RTX 4070 TÍ-Super')).toBe('asus + rtx 4070 ti super');
+  });
+  it('memo de placa devuelve atributos nuevos y conserva color/edición/clock del título original', () => {
+    const title = 'ASUS DUAL EVO RTX 5070 12GB GDDR7 WHITE OC', first = extractGpuBoardAttributes(title);
+    first.brand = 'changed'; first.color = 'black'; first.clock = 'non-oc';
+    expect(extractGpuBoardAttributes(title)).toEqual({ brand: 'asus', series: 'dual', edition: 'evo', fans: null,
+      color: 'white', memoryType: 'gddr7', clock: 'oc' });
+    expect(extractGpuBoardAttributes(title.replace('WHITE OC', 'BLACK NON OC'))).toMatchObject({ color: 'black', clock: 'non-oc' });
+  });
   it('reconoce AERO para identidad sin cambiar la clave histórica de la publicación', () => {
     const name = 'PLACA DE VIDEO GIGABYTE RTX 5070 AERO OC 12GB';
     expect(extractGpuBoardAttributes(name)).toMatchObject({ brand: 'gigabyte', series: 'aero', edition: 'aero', clock: 'oc' });
