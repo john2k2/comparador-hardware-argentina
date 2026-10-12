@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createReadStream } from 'node:fs';
 import { createInterface } from 'node:readline';
-import { identityText, searchText, ramSearchText, catalogChip, prepareQuery, matchesPrepared, matchesProduct, matchesQuery, hasPortableHint } from './catalog-matchers.mjs';
+import { identityText, searchText, ramSearchText, catalogChip, prepareQuery, prepareMatcherQuery, matchesPrepared, matchesProduct, matchesQuery, hasPortableHint, prepareUrlHints } from './catalog-matchers.mjs';
 
 const titles = [
   'MSI GeForce RTX 4070 Ti SUPER Ventus 3X 16GB', 'MSI RTX 4070 Ventus 12GB',
@@ -66,6 +66,86 @@ test('variantes, nombre obligatorio y portátil conservan rechazos', () => {
   const series = product('MSI RTX 4070 Ventus'); series.catalog_document += ' gaming';
   assert.equal(matchesProduct(series, prepareQuery('rtx 4070 gaming')), false);
   assert.equal(hasPortableHint('https://store/item-memoria-so-dimm'), true);
+});
+
+test('hint ASCII conserva fronteras, signos y fallback Unicode del texto normalizado', () => {
+  const reference = value => /\b(sodimm|so\s*dimm|notebook|laptop)\b/.test(identityText(value));
+  for (let code = 0; code < 128; code++) {
+    const separator = String.fromCharCode(code);
+    for (const token of ['notebook', 'LAPTOP', 'sodimm', `so${separator}DIMM`]) {
+      for (const prefix of ['', 'a', '1', '_', '+', '/']) {
+        for (const suffix of ['', 'b', '2', '_', '+', '/']) {
+          const value = `https://shop/${prefix}${separator}${token}${separator}${suffix}`;
+          assert.equal(hasPortableHint(value), reference(value), JSON.stringify(value));
+        }
+      }
+    }
+  }
+  for (const value of [null, '', 'so+dimm', 'so - dimm', 'notebook_16gb', 'prenotebook',
+    'notebook3', 'nótebook', 'SO\u00a0DIMM', 'laptóp', 'notebookß', 'Knotebook', '🎮notebook']) {
+    assert.equal(hasPortableHint(value), reference(value), JSON.stringify(value));
+  }
+});
+
+test('URLs lazy se omiten tras rechazo de palabras o consulta explícita portátil', () => {
+  const hints = { get portable() { assert.fail('No debe evaluar URL portátil'); }, get search() { assert.fail('No debe normalizar URL'); } };
+  const product = name => ({ name, catalog_name: searchText(name), catalog_document: searchText(name) });
+  assert.equal(matchesProduct(product('RAM DDR4 8GB'), prepareQuery('ram ddr4 16gb'), '', hints), false);
+  assert.equal(matchesProduct(product('RAM SODIMM DDR4 16GB'), prepareQuery('sodimm ddr4 16gb'), '', hints), true);
+  const portable = { portable: true, get search() { assert.fail('RAM ya está en nombre/consulta'); } };
+  assert.equal(matchesProduct(product('RAM DDR4 16GB'), prepareQuery('ddr4'), '', portable), false);
+  assert.equal(matchesProduct(product('MSI RTX notebook'), prepareQuery('rtx'), '',
+    { portable: true, search: searchText('https://shop/ddr4') }), false);
+});
+
+test('hint y texto de URL comparten una normalización Unicode y conservan alias', () => {
+  const url = 'https://tienda/nótebook-memoria-ram';
+  const normalize = String.prototype.normalize;
+  let calls = 0;
+  try {
+    String.prototype.normalize = function (...args) {
+      if (String(this) === url) calls++;
+      return normalize.apply(this, args);
+    };
+    const hints = prepareUrlHints(url);
+    assert.equal(hints.portable, true);
+    assert.equal(hints.search, searchText('https tienda notebook memoria ram'));
+    assert.equal(hints.portable, true);
+    assert.equal(hints.search, searchText('https tienda notebook memoria ram'));
+    assert.equal(calls, 1);
+  } finally { String.prototype.normalize = normalize; }
+});
+
+test('matcher lazy conserva hint booleano y señales de RAM presentes sólo en URLs', () => {
+  for (const name of ['MSI RTX notebook', 'DDR4 16GB', 'RAM DDR5 32GB 2x16gb 6000mhz', 'RAM SODIMM DDR4 16GB']) {
+    const product = { name, catalog_name: searchText(name), catalog_document: searchText(name) };
+    for (const query of ['rtx', 'ddr4', 'ddr5', 'ram', 'sodimm ddr4 16gb']) {
+      for (const url of ['', 'https://shop/notebook', 'https://shop/notebook-ddr4', 'https://shop/nótebook-memoria-ram', 'https://shop/so+dimm']) {
+        const prepared = prepareQuery(query);
+        assert.equal(matchesProduct(product, prepared, url, prepareUrlHints(url)),
+          matchesProduct(product, prepared, url, hasPortableHint(url)), `${name} / ${query} / ${url}`);
+      }
+    }
+  }
+});
+
+test('contexto de consulta compartido no modifica prepared RAM ni cambia el caller legacy', () => {
+  assert.equal(matchesPrepared({ normalized: '' }), true);
+  for (const query of ['ram 32 GB DDR5 2 x 16 GB 6000 MHz', '5700 g', 'rtx 4070 ti super', 'ryzen', 'ddr4 sodimm']) {
+    const prepared = prepareQuery(query);
+    Object.freeze(prepared.words);
+    if (prepared.queryChip) Object.freeze(prepared.queryChip);
+    Object.freeze(prepared);
+    const unchanged = JSON.stringify(prepared), context = prepareMatcherQuery(prepared), unchangedContext = JSON.stringify(context);
+    for (const name of ['RAM 32GB DDR5 2x16gb 6000MHz', 'RAM 16GB DDR5 6000MHz', 'RAM SODIMM DDR4 16GB', 'Ryzen 5700G', 'Ryzen 5700', 'MSI RTX 4070 Ti Super']) {
+      const product = { name, catalog_name: searchText(name), catalog_document: searchText(name) };
+      const args = { title: name, name: product.catalog_name, document: product.catalog_document, ...prepared, urls: '' };
+      assert.equal(matchesPrepared(args, context), matchesPrepared(args));
+      assert.equal(matchesProduct(product, prepared, '', false, context), matchesProduct(product, prepared));
+    }
+    assert.equal(JSON.stringify(prepared), unchanged);
+    assert.equal(JSON.stringify(context), unchangedContext);
+  }
 });
 
 test('normalización de todas las fichas del snapshot público', { skip: !process.env.CATALOG_MATCHER_SNAPSHOT_PRODUCTS }, async () => {

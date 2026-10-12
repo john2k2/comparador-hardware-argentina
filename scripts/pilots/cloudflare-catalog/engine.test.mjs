@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { searchCatalog,validateParams,MAX_TEXT_BATCHES,MAX_TEXT_CANDIDATES } from './engine.mjs';
 import { sqliteAdapter } from './sqlite-adapter.mjs';
 import { searchText } from './catalog-matchers.mjs';
+import { rebuildProjection } from './projection.mjs';
 const now=Date.parse('2026-10-11T03:00:00Z');
 function fixture() {
   const db=new DatabaseSync(':memory:');db.exec(readFileSync(new URL('./schema.sql',import.meta.url),'utf8'));
@@ -38,6 +39,24 @@ test('modelo, variante, tienda y paginación usan oferta visible del mismo corte
 test('FTS trigram conserva substrings y unidades RAM',async()=>{
   const f=fixture();f.add({id:'ram',name:'Memoria DDR5 16GB 6000MHz',category:'memoria-ram'});
   assert.equal((await f.search({p_query:'ddr5 16gb 6000mhz',p_category:'memoria-ram'})).total,1);f.db.close();
+});
+test('hint lazy conserva exclusión portátil actual e histórica con tiendas y proyección',async()=>{
+  const f=fixture();
+  f.add({id:'desktop',name:'RAM DDR4 16GB',category:'memoria-ram'});
+  f.add({id:'notebook-ddr4',name:'RAM DDR4 16GB',category:'memoria-ram'});
+  f.add({id:'laptop-ddr4-old',name:'RAM DDR4 16GB',category:'memoria-ram',comparable:false});
+  f.add({id:'sodimm-ddr4',name:'RAM SODIMM DDR4 16GB',category:'memoria-ram'});
+  f.db.prepare('INSERT INTO pilot_meta VALUES(?,?)').run('snapshot','{}');
+  rebuildProjection(f.db,{now,generation:'portable-test'});
+  for(const forceOriginal of [false,true]) {
+    for(const stores of [[],['mexx']]) {
+      const result=await searchCatalog(sqliteAdapter(f.db),{p_query:'ddr4',p_stores:stores},{now,forceOriginal});
+      assert.deepEqual(result.products.map(p=>p.id),['desktop']);
+      const portable=await searchCatalog(sqliteAdapter(f.db),{p_query:'ddr4 sodimm',p_stores:stores},{now,forceOriginal});
+      assert.deepEqual(portable.products.map(p=>p.id),['sodimm-ddr4']);
+    }
+  }
+  f.db.close();
 });
 test('cache vencida recalcula la oferta y JSON retornado no renueva observación',async()=>{
   const f=fixture();f.add({id:'a',price:100000});const cached={lowest:999,highest:999,average:999,available:1,urls:'stale-cache',observed_at:new Date(now).toISOString()};

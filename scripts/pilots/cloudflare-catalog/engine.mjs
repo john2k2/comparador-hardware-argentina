@@ -1,4 +1,4 @@
-import { prepareQuery, matchesProduct, hasPortableHint } from './catalog-matchers.mjs';
+import { prepareQuery, prepareMatcherQuery, matchesProduct, prepareUrlHints } from './catalog-matchers.mjs';
 export const MAX_TEXT_CANDIDATES = 2000;
 export const MAX_TEXT_BATCHES = 42;
 const SORTS = new Set(['relevance','price-asc','price-desc','name','newest']);
@@ -140,6 +140,7 @@ function ordering(p,prepared,now,values) {
 }
 export async function searchCatalog(db,input,{now=Date.now(),snapshot,forceOriginal=false}={}) {
   const p=validateParams(input),prepared=prepareQuery(p.p_query,p.p_category);
+  const matcherQuery=prepareMatcherQuery(prepared);
   let projected=false;
   if(!forceOriginal&&!p.p_stores.length) {
     const marker=snapshot??(await db.first("SELECT value FROM pilot_meta WHERE key='snapshot'",[]))?.value;
@@ -153,7 +154,7 @@ export async function searchCatalog(db,input,{now=Date.now(),snapshot,forceOrigi
     ids=[];let complete=false;
     for(let batch=0;batch<MAX_TEXT_BATCHES;batch++) {
       const rows=await db.all(`${base.sql} SELECT id,catalog_name,catalog_document,(SELECT json_extract(original.row_json,'$.name') FROM products original WHERE original.id=matched.id) AS name,urls FROM matched ORDER BY id LIMIT ${MAX_TEXT_CANDIDATES} OFFSET ${batch*MAX_TEXT_CANDIDATES}`,base.values);
-      ids.push(...rows.filter(row=>matchesProduct(row,prepared,row.urls,hasPortableHint(row.urls))).map(row=>row.id));
+      ids.push(...rows.filter(row=>matchesProduct(row,prepared,row.urls,prepareUrlHints(row.urls),matcherQuery)).map(row=>row.id));
       if(rows.length<MAX_TEXT_CANDIDATES) {complete=true;break;}
     }
     // No devolver totales truncados. Mantener el límite aunque la hidratación
