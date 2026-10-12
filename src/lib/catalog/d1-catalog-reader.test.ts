@@ -86,6 +86,70 @@ async function cacheFixture() {
 }
 
 describe('lector D1 inyectado con certificación explícita de producción', () => {
+  it('resuelve canónico por ID con una fila/cohort y dos marcadores primarios, sin hidratar detalle repetido', async () => {
+    const f = fixture(), primary = vi.fn(f.adapter.first);
+    f.adapter.latestFirst = primary;
+    const reader = await f.create();
+    expect(await reader.readCanonicalProductIdForProductId('cg-15558')).toBe('agrupado-rgb');
+    expect(f.sql).toHaveLength(4);
+    expect(primary).toHaveBeenCalledTimes(2);
+    expect(f.sql.filter(sql => sql.includes('WHERE p.id=?'))).toHaveLength(1);
+    expect(f.sql.filter(sql => sql.includes('WHERE category=?'))).toHaveLength(1);
+    expect(f.sql.some(sql => sql.includes('LIMIT 201'))).toBe(true);
+    const before = f.sql.length;
+    expect(await reader.readCanonicalProductIdForProductId('cg-15558')).toBe('agrupado-rgb');
+    expect(f.sql.slice(before)).toHaveLength(4);
+  });
+  it('canónico por ID conserva variante exacta y rechaza proof pendiente del sujeto actual', async () => {
+    for (const change of [{ name: 'Memoria Corsair DDR4 16GB 3200MHz Vengeance RGB RS White CL16' },
+      { specs: { SKU: 'CMG16GX4M1E3200C16', kit: '2x8GB' } }]) {
+      const f = fixture(); f.changeProduct('agrupado-rgb', change);
+      expect(await (await f.create()).readCanonicalProductIdForProductId('cg-15558')).toBeNull();
+      expect(f.sql).toHaveLength(4);
+    }
+    const f = fixture();
+    const offer = JSON.parse(String(f.db.prepare("SELECT row_json FROM product_prices WHERE id='offer-cg-15558'").get()!.row_json));
+    offer.identity_review.status = 'needs-review';
+    f.db.prepare("UPDATE product_prices SET row_json=? WHERE id='offer-cg-15558'").run(JSON.stringify(offer));
+    expect(await (await f.create()).readCanonicalProductIdForProductId('cg-15558')).toBeNull();
+    expect(f.sql).toHaveLength(4);
+  });
+  it('canónico por ID ausente/sin clave no lee cohort, pero confirma generación antes de devolver null', async () => {
+    const f = fixture(), reader = await f.create();
+    expect(await reader.readCanonicalProductIdForProductId('missing')).toBeNull();
+    expect(f.sql).toHaveLength(3); expect(f.sql.some(sql => sql.includes('WHERE category=?'))).toBe(false);
+    f.changeProduct('gpu-a', { canonical_product_key: null });
+    // GPU deriva su clave exacta del título; una categoría sin derivación conserva null.
+    f.db.prepare("UPDATE products SET category='perifericos',row_json=json_set(row_json,'$.category','perifericos') WHERE id='gpu-a'").run();
+    const before = f.sql.length;
+    expect(await reader.readCanonicalProductIdForProductId('gpu-a')).toBeNull();
+    expect(f.sql.slice(before)).toHaveLength(3);
+    expect(f.sql.slice(before).some(sql => sql.includes('WHERE category=?'))).toBe(false);
+    await expect(reader.readCanonicalProductIdForProductId('')).rejects.toThrow('CATALOG_PRODUCT_ID_INVALID');
+  });
+  it('canónico por ID descarta carrera de generación primaria incluso al devolver null', async () => {
+    for (const id of ['cg-15558', 'missing']) {
+      const f = fixture(), reader = await f.create(), original = f.adapter.first;
+      f.adapter.first = async (query, values) => {
+        const result = await original(query, values);
+        if (query.includes('WHERE p.id=?')) f.write('snapshot', { ...f.snapshot, cache: { generation: 'raced' } });
+        return result;
+      };
+      await expect(reader.readCanonicalProductIdForProductId(id)).rejects.toThrow('CATALOG_PRODUCTION_GENERATION_CHANGED');
+    }
+  });
+  it('canónico por ID rechaza cohort de201 antes de elegir una agrupación truncada', async () => {
+    const f = fixture();
+    f.db.exec(`WITH RECURSIVE n(i) AS(VALUES(1) UNION ALL SELECT i+1 FROM n WHERE i<199)
+      INSERT INTO products SELECT 'extra-'||i,category,catalog_identity,catalog_name,catalog_document,catalog_component,
+        grouped_identity,last_scraped_at,updated_at,json_set(row_json,'$.id','extra-'||i)
+        FROM products,n WHERE id='cg-15558'`);
+    const counted = { ...f.snapshot.counts, products: 205 };
+    f.write('snapshot', { ...f.snapshot, counts: counted, catalog: { ...f.snapshot.catalog, counts: counted } });
+    f.write('production_catalog', { ...f.manifest, counts: counted });
+    await expect((await f.create()).readCanonicalProductIdForProductId('cg-15558')).rejects.toThrow('CATALOG_DETAIL_RELATED_LIMIT');
+    expect(f.sql).toHaveLength(3); expect(f.sql.at(-1)).toContain('LIMIT 201');
+  });
   it('MISS/HIT devuelve dominio idéntico con Dates y HIT sólo consulta metadata primaria', async () => {
     const f = await cacheFixture(), storage = memoryCache(), reader = await f.create(storage);
     const miss = await reader.readProductsPage({ ...page, query: 'ddr4', category: 'memoria-ram' });

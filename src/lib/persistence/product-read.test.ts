@@ -11,7 +11,7 @@ vi.mock('@/lib/server/supabase-server', () => ({
   getServerSupabaseReadClient: getServerSupabaseReadClientMock,
 }));
 
-import { readCategoryLandingPageFromDatabase, readProductsPageFromDatabase, readGuideCatalogCandidatesFromDatabase,readProductByIdFromDatabase,readProductDetailByIdFromDatabase, readCanonicalProductIdByKey } from './product-read';
+import { readCategoryLandingPageFromDatabase, readProductsPageFromDatabase, readGuideCatalogCandidatesFromDatabase,readProductByIdFromDatabase,readProductDetailByIdFromDatabase, readCanonicalProductIdByKey,readCanonicalProductIdForProductId } from './product-read';
 import { mapDbProduct } from './product-read-mapper';
 import { buildGuideNameFilters } from './product-read-helpers';
 import { resolveGuideRefreshOffers, resolveGuideComponent } from '@/lib/seo/budget-guide-pricing';
@@ -48,7 +48,8 @@ describe('integración del lector D1 explícito sin fallback', () => {
  const product = mapDbProduct(row);
  function reader() {
   const result = { readProductsPage: vi.fn(async () => ({ products: [product], total: 1, totalPages: 1, page: 1, pageSize: 48 })),
-    readProductDetailById: vi.fn(async () => product), readCanonicalProductIdByKey: vi.fn(async () => row.id) };
+    readProductDetailById: vi.fn(async () => product), readCanonicalProductIdByKey: vi.fn(async () => row.id),
+    readCanonicalProductIdForProductId: vi.fn(async () => row.id) };
   getD1ReaderMock.mockResolvedValue(result as never); getServerSupabaseReadClientMock.mockClear(); return result;
  }
  it('paginado conserva clamp/categoría/tiendas y callback sin registrar RPC Supabase', async () => {
@@ -76,6 +77,16 @@ describe('integración del lector D1 explícito sin fallback', () => {
   await expect(readProductsPageFromDatabase({ page: 1, pageSize: 12 })).rejects.toThrow('CATALOG_D1_BINDING_REQUIRED');
   const d1 = reader(); d1.readProductDetailById.mockRejectedValueOnce(new Error('CATALOG_PRODUCTION_NOT_READY'));
   await expect(readProductDetailByIdFromDatabase(row.id)).rejects.toThrow('CATALOG_PRODUCTION_NOT_READY');
+  expect(getServerSupabaseReadClientMock).not.toHaveBeenCalled();
+ });
+ it('resolver por ID usa operación D1 única antes del camino de detalle/clave y propaga su fallo', async () => {
+  const d1 = reader();
+  expect(await readCanonicalProductIdForProductId('source-product')).toBe(row.id);
+  expect(d1.readCanonicalProductIdForProductId).toHaveBeenCalledWith('source-product');
+  expect(d1.readProductDetailById).not.toHaveBeenCalled();
+  expect(d1.readCanonicalProductIdByKey).not.toHaveBeenCalled();
+  d1.readCanonicalProductIdForProductId.mockRejectedValueOnce(new Error('CATALOG_PRODUCTION_GENERATION_CHANGED'));
+  await expect(readCanonicalProductIdForProductId('raced-product')).rejects.toThrow('CATALOG_PRODUCTION_GENERATION_CHANGED');
   expect(getServerSupabaseReadClientMock).not.toHaveBeenCalled();
  });
 });

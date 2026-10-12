@@ -84,6 +84,8 @@ const readProductRowByIdPerRequest = cache(readProductByIdFromDatabase);
 
 /** Resuelve el agrupado canónico desde la fila base, en paralelo con las ofertas relacionadas del detalle. */
 export const readCanonicalProductIdForProductId = cache(async (id: string): Promise<string | null> => {
+  const d1 = await getD1CatalogReader();
+  if (d1) return d1.readCanonicalProductIdForProductId(id);
   const product = await readProductRowByIdPerRequest(id);
   if (!product?.canonicalProductKey) return null;
   return readCanonicalProductIdByKey(product.canonicalProductKey, product);

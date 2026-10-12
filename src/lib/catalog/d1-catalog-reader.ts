@@ -109,6 +109,11 @@ export async function createD1CatalogReader(db: CatalogSqlReader,
     }
     return result;
   }
+  function canonicalProductId(product: Product, candidates: Product[]): string | null {
+    return candidates.filter(candidate => candidate.id.startsWith('agrupado-'))
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime() || a.id.localeCompare(b.id))
+      .find(candidate => canRedirectToCanonicalProduct(product, candidate))?.id ?? null;
+  }
   return {
     async readProductsPage(params: ReadProductsPageParams): Promise<ProductPageResult> {
       const before = await begin();
@@ -162,6 +167,16 @@ export async function createD1CatalogReader(db: CatalogSqlReader,
       await assertGeneration(before);
       return result;
     },
+    async readCanonicalProductIdForProductId(id: string): Promise<string | null> {
+      const before = await begin();
+      const current = await readRow(id);
+      // Resolver desde la fila de este corte evita hidratar el detalle y sus
+      // relaciones varias veces antes de decidir una redirección.
+      const canonicalId = current?.canonicalProductKey
+        ? canonicalProductId(current, await related(current)) : null;
+      await assertGeneration(before);
+      return canonicalId;
+    },
     async readCanonicalProductIdByKey(key: string, product: Product): Promise<string | null> {
       const before = await begin();
       if (product.canonicalProductKey !== key) return failure('CATALOG_CANONICAL_KEY_MISMATCH');
@@ -169,9 +184,7 @@ export async function createD1CatalogReader(db: CatalogSqlReader,
       if (!current) { await assertGeneration(before); return null; }
       if (current.canonicalProductKey !== key) return failure('CATALOG_CANONICAL_KEY_MISMATCH');
       const candidates = await related(current);
-      const id = candidates.filter(candidate => candidate.id.startsWith('agrupado-'))
-        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime() || a.id.localeCompare(b.id))
-        .find(candidate => canRedirectToCanonicalProduct(current, candidate))?.id ?? null;
+      const id = canonicalProductId(current, candidates);
       await assertGeneration(before);
       return id;
     },

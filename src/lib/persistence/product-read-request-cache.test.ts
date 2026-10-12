@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { getServerSupabaseReadClientMock, requestMemo } = vi.hoisted(() => ({
+const { getServerSupabaseReadClientMock, getD1ReaderMock, requestMemo } = vi.hoisted(() => ({
   getServerSupabaseReadClientMock: vi.fn(),
+  getD1ReaderMock: vi.fn(async () => null),
   requestMemo: new Map<unknown, Map<string, unknown>>(),
 }));
 
@@ -20,6 +21,7 @@ vi.mock('react', async (importOriginal) => ({
 vi.mock('@/lib/server/supabase-server', () => ({
   getServerSupabaseReadClient: getServerSupabaseReadClientMock,
 }));
+vi.mock('@/lib/catalog/catalog-backend', () => ({ getD1CatalogReader: getD1ReaderMock }));
 
 import { readCanonicalProductIdForProductId, readProductDetailByIdFromDatabase } from './product-read';
 
@@ -59,6 +61,8 @@ function mockSupabase() {
 describe('lecturas por request de la ficha de producto', () => {
   beforeEach(() => {
     requestMemo.clear();
+    getD1ReaderMock.mockResolvedValue(null);
+    getServerSupabaseReadClientMock.mockClear();
   });
 
   it('comparte la fila base y lanza ofertas relacionadas y agrupado canónico en paralelo', async () => {
@@ -90,5 +94,26 @@ describe('lecturas por request de la ficha de producto', () => {
     expect(second).toBe(first);
     expect(maybeSingle).toHaveBeenCalledTimes(1);
     expect(limits.sort()).toEqual([20, 201]);
+  });
+  it('D1 comparte sólo resolver canónico por request, sin volver a cargar el detalle o usar Supabase', async () => {
+    const read = vi.fn(async () => 'agrupado-procesadores-ryzen-7600');
+    const detail = vi.fn(); getD1ReaderMock.mockResolvedValue({ readCanonicalProductIdForProductId: read,
+      readProductDetailById: detail } as never);
+    const [first, second] = await Promise.all([readCanonicalProductIdForProductId(baseRow.id), readCanonicalProductIdForProductId(baseRow.id)]);
+    expect(first).toBe('agrupado-procesadores-ryzen-7600'); expect(second).toBe(first);
+    expect(read).toHaveBeenCalledTimes(1); expect(detail).not.toHaveBeenCalled();
+    expect(getServerSupabaseReadClientMock).not.toHaveBeenCalled();
+    requestMemo.clear();
+    expect(await readCanonicalProductIdForProductId(baseRow.id)).toBe(first);
+    expect(read).toHaveBeenCalledTimes(2);
+  });
+  it('D1 conserva null dentro del request y relee el contexto del siguiente request', async () => {
+    const read = vi.fn(async (): Promise<string | null> => null);
+    getD1ReaderMock.mockResolvedValue({ readCanonicalProductIdForProductId: read } as never);
+    expect(await readCanonicalProductIdForProductId('missing')).toBeNull();
+    expect(await readCanonicalProductIdForProductId('missing')).toBeNull(); expect(read).toHaveBeenCalledTimes(1);
+    requestMemo.clear(); read.mockResolvedValue('agrupado-new');
+    expect(await readCanonicalProductIdForProductId('missing')).toBe('agrupado-new'); expect(read).toHaveBeenCalledTimes(2);
+    expect(getServerSupabaseReadClientMock).not.toHaveBeenCalled();
   });
 });
