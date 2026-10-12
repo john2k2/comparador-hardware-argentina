@@ -11,6 +11,8 @@ export interface CatalogSearchEdgeEnv {
   CATALOG_READ_BACKEND?: string;
   CATALOG_FINGERPRINT?: string;
   CATALOG_RESPONSE_CACHE?: string;
+  CATALOG_PREPARED_VIEWS?: string;
+  CATALOG_PREPARED_PUBLIC_KEY?: string;
   CATALOG_DB?: { prepare?: unknown };
 }
 const sorts = new Set<ProductSort>(['relevance', 'price-asc', 'price-desc', 'name', 'newest']);
@@ -74,7 +76,8 @@ export function createCatalogSearchEdgeHandler(deps: Dependencies = {}) {
         try { pageCache = deps.cache ? deps.cache() : (globalThis.caches as CacheStorage & { default?: Cache } | undefined)?.default; }
         catch { /* Sin Cache API se conserva la lectura certificada. */ }
       }
-      const reader = await createReader(d1Adapter(env.CATALOG_DB), { expectedCatalogFingerprint: env.CATALOG_FINGERPRINT, now, pageCache });
+      const reader = await createReader(d1Adapter(env.CATALOG_DB), { expectedCatalogFingerprint: env.CATALOG_FINGERPRINT, now, pageCache,
+        ...(env.CATALOG_PREPARED_VIEWS === '1' ? { prepared: { publicKey: env.CATALOG_PREPARED_PUBLIC_KEY ?? '' } } : {}) });
       const result = await reader.readProductsPage({ query: query || undefined, category, minPrice, maxPrice,
         storeIds, sortBy, page, pageSize: 12, onlyCurrentOffers: url.searchParams.get('includeUnavailable') !== '1' });
       return reply(catalogPageResponse(result, { minPrice, maxPrice, sortBy }));

@@ -158,7 +158,7 @@ function ordering(p,prepared,now,values) {
   }
   order.push('id ASC'); return order.join(',');
 }
-export async function searchCatalog(db,input,{now=Date.now(),snapshot,forceOriginal=false,preferCurrentRepresentative=false}={}) {
+export async function searchCatalog(db,input,{now=Date.now(),snapshot,forceOriginal=false,preferCurrentRepresentative=false,preparedViews=false}={}) {
   const p=validateParams(input),prepared=prepareQuery(p.p_query,p.p_category);
   const matcherQuery=prepareMatcherQuery(prepared);
   let projected=false;
@@ -193,20 +193,23 @@ export async function searchCatalog(db,input,{now=Date.now(),snapshot,forceOrigi
       FROM eligible ORDER BY page_order LIMIT ?
       OFFSET (MIN(?,MAX(1,CAST(((SELECT total FROM totals)+?-1)/? AS INTEGER)))-1)*${p.p_page_size})
     SELECT totals.total,page_rows.id,page_rows.lowest,page_rows.highest,page_rows.average,stored.category AS stored_category,stored.row_json,
+      ${preparedViews?'prepared.envelope_json AS prepared_envelope,':''}
       (SELECT json_group_array(json(offer.row_json)) FROM(
         SELECT row_json FROM product_prices WHERE product_id=page_rows.id
         ${p.p_stores.length?'AND LOWER(store_id) IN(SELECT value FROM json_each(?))':''}
         ORDER BY price,store_id,url) offer) AS offers_json
     FROM totals LEFT JOIN page_rows ON 1=1 LEFT JOIN products stored ON stored.id=page_rows.id
+    ${preparedViews?'LEFT JOIN catalog_prepared_products prepared ON prepared.product_id=page_rows.id':''}
     ORDER BY page_rows.page_order`,values);
   const total=Number(rows[0].total),totalPages=Math.ceil(total/p.p_page_size),page=Math.max(1,Math.min(p.p_page,Math.max(totalPages,1)));
-  const products=[];
+  const products=[],preparedRecords=Object.create(null);
   for(const row of rows) {
     if(row.id===null) continue;
     const product=JSON.parse(row.row_json),offers=JSON.parse(row.offers_json);
     if(product.id!==row.id||product.category!==row.stored_category) throw new Error('CATALOG_PRODUCT_IDENTITY_MISMATCH');
     for (const key of ['catalog_name','catalog_document','catalog_identity','catalog_component']) delete product[key];
     products.push({...product,lowest_price:row.lowest,highest_price:row.highest,average_price:row.average,product_prices:offers.length?offers:null});
+    if(preparedViews)preparedRecords[row.id]=row.prepared_envelope;
   }
-  return {total,totalPages,page,pageSize:p.p_page_size,products};
+  return {total,totalPages,page,pageSize:p.p_page_size,products,...(preparedViews?{preparedRecords}:{})};
 }

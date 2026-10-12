@@ -23,5 +23,7 @@ export async function getD1CatalogReader(): Promise<D1CatalogReader | null> {
     try { pageCache = (globalThis.caches as CacheStorage & { default?: Cache } | undefined)?.default; }
     catch { /* Sin Cache API se conserva la lectura certificada de D1. */ }
   }
-  return createD1CatalogReader(d1Adapter(binding), { expectedCatalogFingerprint: fingerprint, pageCache });
+  return createD1CatalogReader(d1Adapter(binding), { expectedCatalogFingerprint: fingerprint, pageCache,
+    ...(process.env.CATALOG_PREPARED_VIEWS === '1'
+      ? { prepared: { publicKey: process.env.CATALOG_PREPARED_PUBLIC_KEY ?? '' } } : {}) });
 }

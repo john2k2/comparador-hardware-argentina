@@ -7,6 +7,11 @@ import type { DbProductRow, ProductPageResult, ReadProductsPageParams } from '@/
 import { computeCurrentStorePriceStats } from '@/lib/price-utils';
 import type { Product } from '@/lib/types';
 import { createD1PageCache, type D1PageCacheStorage } from './d1-page-cache';
+import { CATALOG_PREPARED_POLICY } from './prepared-policy.generated';
+import { catalogReadDeadline, checkCatalogReadClock } from './catalog-read-clock';
+import { catalogStorePolicyStamp } from './catalog-store-policy';
+import { consumePreparedProduct, decodePreparedProductTransport, importPreparedProductPublicKey, preparedProductPublicKeyId,
+  PREPARED_PRODUCT_MAX_TRANSPORT_BYTES } from './prepared-product';
 
 export type { CatalogSqlReader };
 const tables = ['catalog_price_summaries', 'product_prices', 'products', 'stores'] as const;
@@ -55,9 +60,20 @@ function parseProduct(value: unknown): DbProductRow {
 
 /** Activación explícita e inyectada. No registra backend ni escribe manifiestos. */
 export async function createD1CatalogReader(db: CatalogSqlReader,
-  options: { expectedCatalogFingerprint: string; now?: () => number; pageCache?: D1PageCacheStorage | null }) {
+  options: { expectedCatalogFingerprint: string; now?: () => number; pageCache?: D1PageCacheStorage | null; prepared?: { publicKey: string } }) {
   if (!/^[a-f0-9]{64}$/.test(options.expectedCatalogFingerprint)) failure('CATALOG_EXPECTED_FINGERPRINT_REQUIRED');
   const now = options.now ?? Date.now;
+  const storePolicy = catalogStorePolicyStamp();
+  let preparedKey: CryptoKey | undefined, preparedKeyId: string | undefined;
+  if (options.prepared) {
+    const encoded = options.prepared.publicKey;
+    if (!/^[A-Za-z0-9+/]{43}=$/.test(encoded) || !/^[a-f0-9]{64}$/.test(CATALOG_PREPARED_POLICY)
+      || /^0+$/.test(CATALOG_PREPARED_POLICY)) failure('CATALOG_PREPARED_CONFIGURATION_INVALID');
+    const raw = Uint8Array.from(atob(encoded), char => char.charCodeAt(0));
+    if (raw.length !== 32 || btoa(String.fromCharCode(...raw)) !== encoded) failure('CATALOG_PREPARED_CONFIGURATION_INVALID');
+    preparedKeyId = await preparedProductPublicKeyId(raw);
+    preparedKey = await importPreparedProductPublicKey(raw, preparedKeyId);
+  }
   // Los conteos reales se verifican en el controlplane antes de certificar el
   // manifiesto. Ni la factory ni un request escanean tablas grandes.
   const currentGeneration = async () => {
@@ -68,6 +84,14 @@ export async function createD1CatalogReader(db: CatalogSqlReader,
       || !counts(manifest.counts)
       || tables.some(table => (manifest.counts as ProductionCatalogCounts)[table] !== catalog.counts[table]))
       failure('CATALOG_PRODUCTION_MANIFEST_INVALID');
+    if (preparedKey) {
+      const snapshot: unknown = JSON.parse(current.snapshot);
+      const prepared = object(snapshot) ? snapshot.prepared_views : null;
+      if (!object(prepared) || prepared.version !== 1 || prepared.storageVersion !== 2 || prepared.ready !== true
+        || prepared.policy !== CATALOG_PREPARED_POLICY || prepared.keyId !== preparedKeyId
+        || prepared.count !== catalog.counts.products) failure('CATALOG_PREPARED_MANIFEST_INVALID');
+    }
+    if (catalogStorePolicyStamp() !== storePolicy) failure('CATALOG_STORE_POLICY_CHANGED');
     return current;
   };
   const assertGeneration = async (before: Markers) => {
@@ -131,31 +155,52 @@ export async function createD1CatalogReader(db: CatalogSqlReader,
       }
       const certificate = plan ? await cache!.certificate(plan) : null;
       if (plan) cache!.checkClock(plan, certificate);
+      const decisionClock = certificate ? plan!.clock : now();
+      const deadline = certificate?.validUntil ?? await catalogReadDeadline(db, before.snapshot, decisionClock, input.p_min_price === null && input.p_max_price === null);
+      const checkClock = () => checkCatalogReadClock(now(), decisionClock, deadline);
+      checkClock();
       const result = await searchCatalog(db, input,
         // Sin certificado el guard pudo demorarse o fallar tras una transición.
         // La degradación debe leer el reloj actual, como una lectura sin caché.
-        { now: certificate ? plan!.clock : now(), snapshot: before.snapshot, preferCurrentRepresentative: true });
-      const products = result.products.map(row => {
-        const product = mapDbGuideProduct(parseProduct(row));
+        { now: decisionClock, snapshot: before.snapshot, preferCurrentRepresentative: true, preparedViews: !!preparedKey });
+      checkClock();
+      const products = await Promise.all(result.products.map(async row => {
+        const raw = parseProduct(row);
+        let prepared;
+        if (preparedKey) {
+          const envelope = result.preparedRecords?.[raw.id];
+          if (typeof envelope !== 'string' || envelope.length > PREPARED_PRODUCT_MAX_TRANSPORT_BYTES) return failure('CATALOG_PREPARED_RECORD_REQUIRED');
+          prepared = await consumePreparedProduct(raw, await decodePreparedProductTransport(raw.id, CATALOG_PREPARED_POLICY, envelope),
+            { publicKey: preparedKey, policy: CATALOG_PREPARED_POLICY, now });
+        }
+        const product = prepared?.product ?? mapDbGuideProduct(raw);
         // Rechazar toda la página ante una selección certificada que el mapper
         // ya no admite. No ocultar filas manteniendo conteos/filtros incorrectos.
         if (params.category && product.category !== params.category) failure('CATALOG_PAGE_EVIDENCE_MISMATCH');
         if (product.lowestPrice !== Number(row.lowest_price) || product.highestPrice !== Number(row.highest_price)
           || product.averagePrice !== Number(row.average_price)) failure('CATALOG_PAGE_EVIDENCE_MISMATCH');
         if (params.onlyCurrentOffers || params.minPrice !== undefined || params.maxPrice !== undefined) {
-          const current = computeCurrentStorePriceStats(product.prices, product, now());
-          if (!current.comparablePrices.length || current.lowest !== Number(row.lowest_price)
+          const current = prepared?.current ?? (() => {
+            const stats = computeCurrentStorePriceStats(product.prices, product, now());
+            return { count: stats.comparablePrices.length, ...stats };
+          })();
+          if (!current.count || current.lowest !== Number(row.lowest_price)
             || current.highest !== Number(row.highest_price) || current.average !== Number(row.average_price))
             failure('CATALOG_PAGE_EVIDENCE_MISMATCH');
         }
         return { ...product, lowestPrice: Number(row.lowest_price), highestPrice: Number(row.highest_price), averagePrice: Number(row.average_price) };
-      });
+      }));
       await assertGeneration(before);
+      checkClock();
       if (plan) cache!.checkClock(plan, certificate);
-      const page = { ...result, products };
+      // El transporte preparado no sale al navegador ni entra en la caché pública.
+      const { preparedRecords: _preparedRecords, ...plainResult } = result;
+      void _preparedRecords;
+      const page = { ...plainResult, products };
       if (plan && certificate) {
         await cache!.write(plan, certificate, page);
         await assertGeneration(before);
+        checkClock();
         cache!.checkClock(plan, certificate);
       }
       return page;

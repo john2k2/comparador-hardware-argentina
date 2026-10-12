@@ -4,6 +4,8 @@ import { validateParams, type CatalogSqlParams, type CatalogSqlReader } from '..
 import type { ProductPageResult } from '@/lib/persistence/product-read-types';
 import type { Product } from '@/lib/types';
 import { isHardwareCategory } from './hardware-categories';
+import { CATALOG_PREPARED_POLICY } from './prepared-policy.generated';
+import { catalogStorePolicyStamp } from './catalog-store-policy';
 
 export interface D1PageCacheStorage {
   match(request: Request): Promise<Response | undefined>;
@@ -28,7 +30,7 @@ export async function d1PageCacheKey(fingerprint: string, snapshot: string, para
     p_stores: [...new Set(input.p_stores.map(id => id.trim().toLowerCase()).filter(Boolean))].sort(),
     p_min_price: input.p_min_price, p_max_price: input.p_max_price, p_sort: input.p_sort,
     p_page: input.p_page, p_page_size: input.p_page_size };
-  const hash = await digest(JSON.stringify({ format, fingerprint, snapshot: await digest(snapshot),
+  const hash = await digest(JSON.stringify({ format, policy: CATALOG_PREPARED_POLICY, stores: catalogStorePolicyStamp(), fingerprint, snapshot: await digest(snapshot),
     preferCurrentRepresentative, params: canonical }));
   return new Request(`https://catalog-cache.internal.invalid/__d1_page/v${format}/${hash}`);
 }

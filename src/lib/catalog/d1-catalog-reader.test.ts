@@ -10,6 +10,10 @@ import { computeCurrentStorePriceStats } from '@/lib/price-utils';
 import { listingReference } from '@/lib/scrapers/listing-reference';
 import type { DbProductRow } from '@/lib/persistence/product-read-types';
 import type { D1PageCacheStorage } from './d1-page-cache';
+import { CATALOG_PREPARED_POLICY } from './prepared-policy.generated';
+import { preparedProductPublicKeyId, preparedProductSignatureMessage } from './prepared-product';
+import { stores } from '@/lib/scrapers/static-data';
+import { prepareUnsignedProduct } from '../../../scripts/pilots/cloudflare-catalog/prepared-product-builder';
 
 const now = Date.parse('2026-10-12T01:00:00Z'), fingerprint = 'a'.repeat(64);
 const databases: DatabaseSync[] = [];
@@ -60,9 +64,15 @@ function fixture() {
   add('gpu-b', 'RTX 4070 12GB', undefined, 'rtx-4070', 400000, 'venex');
   const counts = { products: 6, product_prices: 6, catalog_price_summaries: 6, stores: 2 };
   // Certificación simulada por el controlplane de la fixture, nunca runtime.
-  const snapshot = { counts, catalog: { version: 1, fingerprint, counts } };
+  const snapshot = { counts, catalog: { version: 1, fingerprint, counts },
+    clock_observations: { version: 1, validated: true, timestampPolicy: 'js-sql-ms-v1', offers: counts.product_prices } };
   const manifest = { version: 1, complete: true, countsVerified: true, fingerprint, counts };
-  const write = (key: string, value: unknown) => db.prepare('INSERT OR REPLACE INTO pilot_meta VALUES(?,?)').run(key, JSON.stringify(value));
+  const write = (key: string, value: unknown) => {
+    if (key === 'snapshot' && value && typeof value === 'object' && 'clock_observations' in value && 'counts' in value) {
+      const data = value as typeof snapshot; value = { ...data, clock_observations: { ...data.clock_observations, offers: data.counts.product_prices } };
+    }
+    return db.prepare('INSERT OR REPLACE INTO pilot_meta VALUES(?,?)').run(key, JSON.stringify(value));
+  };
   write('snapshot', snapshot); write('production_catalog', manifest);
   const create = (pageCache?: D1PageCacheStorage) => createD1CatalogReader(adapter, { expectedCatalogFingerprint: fingerprint, now: () => Date.now(), pageCache });
   const changeProduct = (id: string, changes: Partial<DbProductRow>) => {
@@ -388,4 +398,208 @@ describe('lector D1 inyectado con certificación explícita de producción', () 
     expect(historical.total).toBe(5);
     expect(historical.products.every(product => product.prices.every(offer => offer.lastUpdated.toISOString() === f.stamp))).toBe(true);
   });
+});
+
+
+async function preparedFixture() {
+  const f = fixture();
+  const keys = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
+  const rawKey = new Uint8Array(await crypto.subtle.exportKey('raw', keys.publicKey));
+  const publicKey = btoa(String.fromCharCode(...rawKey));
+  const keyId = await preparedProductPublicKeyId(rawKey);
+  f.db.exec('CREATE TABLE catalog_prepared_products(product_id TEXT PRIMARY KEY,envelope_json TEXT NOT NULL) WITHOUT ROWID');
+  for (const stored of f.db.prepare('SELECT id,row_json FROM products ORDER BY id').all()) {
+    const raw = JSON.parse(String(stored.row_json));
+    raw.product_prices = f.db.prepare('SELECT row_json FROM product_prices WHERE product_id=? ORDER BY price,store_id,url')
+      .all(String(stored.id)).map(row => JSON.parse(String(row.row_json)));
+    const unsigned = await prepareUnsignedProduct(raw, CATALOG_PREPARED_POLICY);
+    const signature = btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.sign('Ed25519', keys.privateKey,
+      preparedProductSignatureMessage(unsigned)))));
+    f.db.prepare('INSERT INTO catalog_prepared_products VALUES(?,?)').run(String(stored.id), JSON.stringify([unsigned.payload, signature]));
+  }
+  const snapshot = { ...f.snapshot, prepared_views: { version: 1, storageVersion: 2, ready: true, policy: CATALOG_PREPARED_POLICY, keyId, count: 6 } };
+  f.write('snapshot', snapshot);
+  const create = (cache?: D1PageCacheStorage) => createD1CatalogReader(f.adapter,
+    { expectedCatalogFingerprint: fingerprint, now: () => Date.now(), pageCache: cache, prepared: { publicKey } });
+  return { ...f, snapshot, create, publicKey };
+}
+
+describe('páginas D1 preparadas con firma y política compilada', () => {
+  it('conserva página semántica y estadísticas, sin divulgar el transporte preparado', async () => {
+    const f = await preparedFixture();
+    for (const input of [page, { ...page, category: 'memoria-ram' as const }, { ...page, query: 'RTX' },
+      { ...page, storeIds: ['compragamer'] }, { ...page, onlyCurrentOffers: false }]) {
+      const legacy = await (await createD1CatalogReader(f.adapter, { expectedCatalogFingerprint: fingerprint })).readProductsPage(input);
+      const prepared = await (await f.create()).readProductsPage(input);
+      expect(JSON.parse(JSON.stringify(prepared))).toEqual(JSON.parse(JSON.stringify(legacy)));
+      expect(prepared).not.toHaveProperty('preparedRecords');
+    }
+    expect(f.sql.some(sql => sql.includes('LEFT JOIN catalog_prepared_products'))).toBe(true);
+  });
+  it('desactivado no consulta la tabla preparada', async () => {
+    const f = fixture();
+    await (await f.create()).readProductsPage(page);
+    expect(f.sql.some(sql => sql.includes('catalog_prepared_products'))).toBe(false);
+  });
+  it('rechaza manifiesto ausente, política cambiada, clave equivocada y conteo incompleto', async () => {
+    for (const patch of [null, { policy: 'f'.repeat(64) }, { keyId: 'f'.repeat(64) }, { storageVersion: 1 }, { count: 5 }, { ready: false }]) {
+      const f = await preparedFixture();
+      f.write('snapshot', { ...f.snapshot, prepared_views: patch === null ? null : { ...f.snapshot.prepared_views, ...patch } });
+      await expect(f.create()).rejects.toThrow('CATALOG_PREPARED_MANIFEST_INVALID');
+    }
+    const f = fixture();
+    await expect(createD1CatalogReader(f.adapter, { expectedCatalogFingerprint: fingerprint, prepared: { publicKey: '' } }))
+      .rejects.toThrow('CATALOG_PREPARED_CONFIGURATION_INVALID');
+  });
+  it('rechaza firma alterada, oferta modificada o registro faltante sin devolver una página parcial', async () => {
+    for (const kind of ['signature', 'price', 'missing']) {
+      const f = await preparedFixture();
+      if (kind === 'signature') {
+        for (const row of f.db.prepare('SELECT product_id,envelope_json FROM catalog_prepared_products').all()) {
+          const envelope = JSON.parse(String(row.envelope_json));
+          envelope[1] = (envelope[1][0] === 'A' ? 'B' : 'A') + envelope[1].slice(1);
+          f.db.prepare('UPDATE catalog_prepared_products SET envelope_json=? WHERE product_id=?').run(JSON.stringify(envelope), String(row.product_id));
+        }
+      }
+      if (kind === 'price') f.db.exec("UPDATE product_prices SET row_json=json_set(row_json,'$.price',1) WHERE product_id='gpu-a'");
+      if (kind === 'missing') f.db.exec("DELETE FROM catalog_prepared_products WHERE product_id='gpu-a'");
+      await expect((await f.create()).readProductsPage(page)).rejects.toThrow(kind === 'missing'
+        ? 'CATALOG_PREPARED_RECORD_REQUIRED' : kind === 'price' ? 'PREPARED_PRODUCT_SOURCE' : 'PREPARED_PRODUCT_SIGNATURE');
+    }
+  });
+  it('rechaza ofertas vencidas durante la hidratación y cambio de generación primaria', async () => {
+    for (const kind of ['clock', 'generation']) {
+      const f = await preparedFixture(), reader = await f.create(), original = f.adapter.all;
+      f.adapter.all = async (query, values) => {
+        const rows = await original(query, values);
+        if (query.includes('prepared.envelope_json')) {
+          if (kind === 'clock') vi.setSystemTime(now + 25 * 3600000);
+          else f.write('snapshot', { ...f.snapshot, raced: true });
+        }
+        return rows;
+      };
+      await expect(reader.readProductsPage(page)).rejects.toThrow(kind === 'clock'
+        ? 'CATALOG_CLOCK_INTERVAL_EXPIRED' : 'CATALOG_PRODUCTION_GENERATION_CHANGED');
+    }
+  });
+});
+
+
+describe('reloj final sin caché o con caché excluida por rango', () => {
+  it.each([false, true])('rechaza vencimiento durante último marcador primario; preparado=%s', async signed => {
+    for (const cached of [false, true]) {
+      const f = signed ? await preparedFixture() : fixture();
+      const reader = await f.create(cached ? memoryCache() : undefined), original = f.adapter.first;
+      f.adapter.first = async (query, values) => {
+        const result = await original(query, values);
+        if (query.includes("key='production_catalog'")) vi.setSystemTime(Date.parse(f.stamp) + 24 * 3600000 + 1);
+        return result;
+      };
+      await expect(reader.readProductsPage({ ...page, ...(cached ? { minPrice: 1 } : {}) }))
+        .rejects.toThrow('CATALOG_CLOCK_INTERVAL_EXPIRED');
+      vi.setSystemTime(now);
+    }
+  });
+  it('protege totales cuando vence una oferta fuera de la página hidratada', async () => {
+    const f = fixture();
+    const stamp = new Date(now - 24 * 3600000 + 5).toISOString();
+    f.db.prepare("UPDATE price_basis SET observed_at=? WHERE id='offer-gpu-b'").run(stamp);
+    f.db.prepare("UPDATE product_prices SET row_json=json_set(row_json,'$.last_updated',?) WHERE id='offer-gpu-b'").run(stamp);
+    const reader = await f.create(), original = f.adapter.first;
+    f.adapter.first = async (query, values) => {
+      const result = await original(query, values);
+      if (query.includes("key='production_catalog'")) vi.setSystemTime(now + 6);
+      return result;
+    };
+    await expect(reader.readProductsPage({ ...page, category: 'tarjetas-graficas', pageSize: 1, sortBy: 'price-asc' }))
+      .rejects.toThrow('CATALOG_CLOCK_INTERVAL_EXPIRED');
+  });
+});
+
+
+describe('política de tiendas durante la lectura y la caché', () => {
+  it('no entrega un HIT guardado bajo otro host y rechaza cambios durante el último marcador', async () => {
+    const f = await cacheFixture(), storage = memoryCache();
+    const reader = await f.create(storage);
+    await reader.readProductsPage({ ...page, category: 'tarjetas-graficas' });
+    const venex = stores.find(store => store.id === 'venex')!, old = venex.url;
+    const original = f.adapter.first;
+    f.adapter.first = async (query, values) => {
+      const result = await original(query, values);
+      if (query.includes("key='production_catalog'")) venex.url = 'https://different.example';
+      return result;
+    };
+    try {
+      await expect(reader.readProductsPage({ ...page, category: 'tarjetas-graficas' }))
+        .rejects.toThrow('CATALOG_STORE_POLICY_CHANGED');
+    } finally { venex.url = old; }
+  });
+});
+
+
+describe('transiciones fuera de página e históricas', () => {
+  it('rechaza la entrada futura de un producto fuera de la página', async () => {
+    const f = fixture(), stamp = new Date(now + 60001).toISOString();
+    f.db.prepare("UPDATE price_basis SET observed_at=? WHERE id='offer-gpu-b'").run(stamp);
+    f.db.prepare("UPDATE product_prices SET row_json=json_set(row_json,'$.last_updated',?) WHERE id='offer-gpu-b'").run(stamp);
+    const reader = await f.create(), original = f.adapter.first;
+    f.adapter.first = async (query, values) => { const result = await original(query, values);
+      if (query.includes("key='production_catalog'")) vi.setSystemTime(now + 2); return result; };
+    await expect(reader.readProductsPage({ ...page, category: 'tarjetas-graficas', pageSize: 1, sortBy: 'price-asc' }))
+      .rejects.toThrow('CATALOG_CLOCK_INTERVAL_EXPIRED');
+  });
+  it('rechaza cambio del representante histórico de una tienda sin basis current', async () => {
+    const f = fixture(), observed = new Date(now - 24 * 3600000 + 10).toISOString();
+    f.db.exec("DELETE FROM price_basis WHERE kind='current'");
+    const offer = JSON.parse(String(f.db.prepare("SELECT row_json FROM product_prices WHERE product_id='gpu-a'").get()!.row_json));
+    offer.stock = 'unknown'; offer.last_updated = observed;
+    f.db.prepare("UPDATE product_prices SET row_json=? WHERE product_id='gpu-a'").run(JSON.stringify(offer));
+    f.db.prepare("UPDATE price_basis SET stock='unknown',observed_at=? WHERE product_id='gpu-a'").run(observed);
+    const older = { ...offer, id: 'older-gpu-a', price: 100000, last_updated: new Date(now - 25 * 3600000).toISOString() };
+    f.db.prepare('INSERT INTO product_prices VALUES(?,?,?,?,?,?)').run(older.id, 'gpu-a', older.store_id, older.price, older.url, JSON.stringify(older));
+    f.db.prepare('INSERT INTO price_basis VALUES(?,?,?,?,?,?,?,?)').run('gpu-a', 'historical', older.id, older.store_id, older.price, older.stock, older.url, older.last_updated);
+    const counts = { ...f.snapshot.counts, product_prices: 7 };
+    f.write('snapshot', { ...f.snapshot, counts, catalog: { ...f.snapshot.catalog, counts } });
+    f.write('production_catalog', { ...f.manifest, counts });
+    const reader = await f.create(), original = f.adapter.first;
+    f.adapter.first = async (query, values) => { const result = await original(query, values);
+      if (query.includes("key='production_catalog'")) vi.setSystemTime(now + 11); return result; };
+    await expect(reader.readProductsPage({ ...page, query: 'RTX 4060', onlyCurrentOffers: false }))
+      .rejects.toThrow('CATALOG_CLOCK_INTERVAL_EXPIRED');
+  });
+});
+
+
+it('cubre la oferta futura que todavía no gana ni integra el histórico certificado', async () => {
+  const f = fixture();
+  f.db.exec("DELETE FROM price_basis WHERE kind='current'");
+  const old = JSON.parse(String(f.db.prepare("SELECT row_json FROM product_prices WHERE product_id='gpu-a'").get()!.row_json));
+  old.stock = 'unknown'; old.price = 200000;
+  f.db.prepare("UPDATE product_prices SET row_json=? WHERE product_id='gpu-a'").run(JSON.stringify(old));
+  const future = { ...old, id: 'future-gpu-a', price: 100000, last_updated: new Date(now + 60001).toISOString() };
+  f.db.prepare('INSERT INTO product_prices VALUES(?,?,?,?,?,?)').run(future.id, 'gpu-a', future.store_id, future.price, future.url, JSON.stringify(future));
+  const counts = { ...f.snapshot.counts, product_prices: 7 };
+  f.write('snapshot', { ...f.snapshot, counts, catalog: { ...f.snapshot.catalog, counts } });
+  f.write('production_catalog', { ...f.manifest, counts });
+  const reader = await f.create(), original = f.adapter.first;
+  f.adapter.first = async (query, values) => { const result = await original(query, values);
+    if (query.includes("key='production_catalog'")) vi.setSystemTime(now + 2); return result; };
+  await expect(reader.readProductsPage({ ...page, query: 'RTX 4060', onlyCurrentOffers: false }))
+    .rejects.toThrow('CATALOG_CLOCK_INTERVAL_EXPIRED');
+});
+
+
+it('no entrega caché preparada si el registro cambia nombre o descriptor después de guardarla', async () => {
+  for (const kind of ['name','descriptor']) {
+    const f = await cacheFixture(), storage = memoryCache(), reader = await f.create(storage);
+    await reader.readProductsPage({ ...page, category: 'tarjetas-graficas' });
+    const venex = stores.find(store => store.id === 'venex')!, old = Object.getOwnPropertyDescriptor(venex, 'name')!;
+    let called=0;
+    if(kind==='name')venex.name='Otra tienda';
+    else Object.defineProperty(venex,'name',{get(){called++;return 'Otra tienda';},configurable:true,enumerable:true});
+    try {
+      await expect(reader.readProductsPage({ ...page, category: 'tarjetas-graficas' })).rejects.toThrow('PREPARED_PRODUCT_REGISTRY');
+      expect(called).toBe(0);
+    }finally {Object.defineProperty(venex,'name',old);}
+  }
 });
