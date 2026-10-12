@@ -5,11 +5,26 @@ import {
   buildSearchRoute,
   hasSearchIntent,
   parseSearchState,
+  parseSearchUrlState,
   toSearchFilters,
   withSearchQuery,
 } from './search-state';
 
 describe('search state', () => {
+  it('restores repeated URL filters with the same first values as the server', () => {
+    const query = '?q=RTX&q=DDR5&category=tarjetas-graficas&category=memoria-ram&minPrice=0&minPrice=900000&maxPrice=300000&maxPrice=600000&stores=venex&stores=mexx&sortBy=price-asc&sortBy=name&page=1&page=3&includeUnavailable=0&includeUnavailable=1';
+    const server: Record<string, string[]> = Object.create(null);
+    for (const [key, value] of new URLSearchParams(query)) (server[key] ??= []).push(value);
+    expect(parseSearchUrlState(query)).toEqual(parseSearchState(server));
+    expect(buildApiSearchKey(parseSearchUrlState(query))).toBe(buildApiSearchKey(parseSearchState(server)));
+  });
+
+  it('keeps the first empty or invalid value and ignores prototype-like URL keys', () => {
+    expect(parseSearchUrlState('?q=&q=Ryzen&category=invalid&category=procesadores&page=0&page=3&__proto__=x&constructor=y'))
+      .toEqual(parseSearchState({ q: '', category: 'invalid', page: '0' }));
+    expect(parseSearchUrlState()).toEqual(parseSearchState({}));
+  });
+
   it('preserves opt-in references through URLs, keys and pagination', () => {
     const current = parseSearchState({ q: 'rtx 5090', page: '2' });
     const references = parseSearchState({ q: 'rtx 5090', page: '2', includeUnavailable: '1' });
