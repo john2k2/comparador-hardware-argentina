@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import worker, {createWorker} from './worker.mjs';
+import {queryCacheProbe,queryCertificate} from './response-cache.mjs';
 function database(rows=[],error=null) {
   return {prepare(sql){assert.equal(sql,"SELECT value FROM pilot_meta WHERE key='snapshot'");return {bind(...values){assert.deepEqual(values,[]);return {async all(){if(error)throw error;return {success:true,results:rows,meta:{rows_read:rows.length}};}};}};}};
 }
@@ -19,11 +20,14 @@ test('métodos, rutas y parámetros inválidos se rechazan antes de leer D1',asy
   assert.equal((await worker.fetch(new Request('http://localhost/api/search?pageSize=49'),env)).status,400);
 });
 const initial=Date.parse('2026-10-11T12:00:00Z');
-function fixture({end=initial+120000}={}) {
-  const state={clock:initial,generation:'g1',end,reads:0,searches:0,cacheWrites:0,dbError:false,legacy:false,searchError:false,gate:null,onSearch:null};
+function fixture({end=initial+120000,query=false}={}) {
+  const state={clock:initial,generation:'g1',end,reads:0,searches:0,cacheWrites:0,dbError:false,legacy:false,searchError:false,gate:null,onSearch:null,
+    guardCalls:0,guardError:false,guardDeadline:initial+120000,partial:false,onGuard:null};
   const entries=new Map(),cache={async match(key){return entries.get(key.url)?.clone();},async put(key,response){state.cacheWrites++;entries.set(key.url,response.clone());}};
-  const db={prepare(sql){return {bind(){return {async all(){state.reads++;if(state.dbError)throw Error('DB failed');const results=sql.includes('pilot_meta')?(state.generation?[{value:state.legacy?'legacy-snapshot':JSON.stringify({cache:{version:1,generation:state.generation,validFrom:new Date(initial-1000).toISOString(),validUntil:new Date(state.end).toISOString()}})}]:[]):[{id:'offer',product_id:'product',observed_at:new Date(initial).toISOString()}];return {success:true,results,meta:{rows_read:results.length}};}};}};}};
-  const pilot=createWorker({now:()=>state.clock,cache:()=>cache,search:async(_db,params)=>{state.searches++;if(state.gate)await state.gate;if(state.onSearch)state.onSearch();if(state.searchError)throw Error('search failed');return {total:1,totalPages:1,page:params.p_page,pageSize:params.p_page_size,products:[{id:'product',lowest_price:123,p_query:params.p_query}]};}});
+  const db={prepare(sql){return {bind(){return {async all(){state.reads++;if(state.dbError)throw Error('DB failed');const results=sql.includes('pilot_meta')?(state.generation?[{value:state.legacy?'legacy-snapshot':JSON.stringify({...(query?{projectionVersion:1,...(state.partial?{}:{counts:{products:1,product_prices:1,catalog_price_summaries:1,stores:1}})}:{}),cache:{version:1,generation:state.generation,validFrom:new Date(initial-1000).toISOString(),validUntil:new Date(state.end).toISOString()}})}]:[]):[{id:'offer',product_id:'product',observed_at:new Date(initial).toISOString()}];return {success:true,results,meta:{rows_read:results.length}};}};}};}};
+  const pilot=createWorker({now:()=>state.clock,cache:()=>cache,
+    queryClock:async(_db,_params,{now,snapshot})=>{state.guardCalls++;if(state.onGuard)state.onGuard();if(state.guardError)throw Error('guard failed');return queryCertificate(queryCacheProbe(snapshot,now),state.guardDeadline,now);},
+    search:async(_db,params)=>{state.searches++;if(state.gate)await state.gate;if(state.onSearch)state.onSearch();if(state.searchError)throw Error('search failed');return {total:1,totalPages:1,page:params.p_page,pageSize:params.p_page_size,products:[{id:'product',lowest_price:123,p_query:params.p_query}]};}});
   const fetch=(query='q=RTX5070',headers={})=>pilot.fetch(new Request('http://localhost/api/search?'+query,{headers}),{CATALOG_DB:db});
   return {state,fetch,entries};
 }
@@ -31,6 +35,56 @@ test('HIT ejecuta sólo marcador D1; invalidación por generación, sin cacheHTT
   const {state,fetch}=fixture();const miss=await fetch();assert.equal(miss.headers.get('X-Pilot-Cache'),'MISS');assert.equal(state.reads,2);
   const first=await miss.json();const hit=await fetch();assert.equal(hit.headers.get('X-Pilot-Cache'),'HIT');assert.equal(state.reads,3);assert.equal(state.searches,1);assert.equal(hit.headers.get('X-Pilot-D1-Queries'),'1');assert.equal(hit.headers.get('Cache-Control'),'no-store');assert.deepEqual(await hit.json(),first);
   state.generation='g2';assert.equal((await fetch()).headers.get('X-Pilot-Cache'),'MISS');assert.equal(state.searches,2);
+});
+
+test('query-clock permite MISS/HIT tras vencimiento global, con guard sólo en MISS',async()=>{
+  const {state,fetch}=fixture({query:true,end:initial-1});
+  const first=await fetch();assert.equal(first.status,200);assert.equal(first.headers.get('X-Pilot-Cache'),'MISS');assert.equal(first.headers.get('X-Pilot-Cache-Scope'),'query-clock-v1');
+  assert.equal((await fetch()).headers.get('X-Pilot-Cache'),'HIT');assert.equal(state.guardCalls,1);assert.equal(state.reads,3);
+  state.clock+=59999;assert.equal((await fetch()).headers.get('X-Pilot-Cache'),'HIT');state.clock++;
+  assert.equal((await fetch()).headers.get('X-Pilot-Cache'),'MISS');assert.equal(state.guardCalls,2);
+});
+test('guard falla o metadata parcial: BYPASS engine actual, sin caché ni503 artificial',async()=>{
+  const {state,fetch}=fixture({query:true,end:initial-1});state.guardError=true;
+  const response=await fetch();assert.equal(response.status,200);assert.equal(response.headers.get('X-Pilot-Cache'),'BYPASS');assert.equal(state.searches,1);assert.equal(state.cacheWrites,0);
+  state.guardError=false;state.partial=true;assert.equal((await fetch()).headers.get('X-Pilot-Cache'),'BYPASS');assert.equal(state.guardCalls,1);assert.equal(state.searches,2);assert.equal(state.cacheWrites,0);
+});
+test('stores conserva alcance global y no ejecuta query-clock',async()=>{
+  const {state,fetch}=fixture({query:true});const response=await fetch('q=ram&store=mexx');
+  assert.equal(response.headers.get('X-Pilot-Cache-Scope'),'global-store');assert.equal(response.headers.get('X-Pilot-Cache'),'MISS');assert.equal(state.guardCalls,0);
+  state.clock=state.end;assert.equal((await fetch('q=ram&store=mexx')).headers.get('X-Pilot-Cache'),'BYPASS');assert.equal(state.guardCalls,0);
+});
+test('query-clock rechaza deadline cruzado y clock regresado durante lectura; nunca cachea',async()=>{
+  for(const backwards of [false,true]) {
+    const {state,fetch}=fixture({query:true,end:initial-1});state.guardDeadline=initial+1000;
+    state.onSearch=()=>{state.clock=backwards?initial-1:initial+1000;};const response=await fetch();
+    assert.equal(response.status,503);assert.equal((await response.json()).error,'CATALOG_CLOCK_INTERVAL_EXPIRED');assert.equal(state.cacheWrites,0);
+  }
+});
+test('HIT futuro por regresión de clock y proveedor fuera de validFrom degradan sin reutilizarlo',async()=>{
+  const {state,fetch}=fixture({query:true,end:initial-1});await fetch();state.clock=initial-1001;
+  const response=await fetch();assert.equal(response.status,200);assert.equal(response.headers.get('X-Pilot-Cache'),'BYPASS');assert.equal(state.searches,2);assert.equal(state.guardCalls,1);
+});
+test('generación cambia durante guard: comprobación primaria final rechaza respuesta y certificado',async()=>{
+  const {state,fetch}=fixture({query:true,end:initial-1});state.onGuard=()=>{state.generation='g2';};const response=await fetch();
+  assert.equal(response.status,503);assert.equal((await response.json()).error,'CATALOG_SNAPSHOT_CHANGED');assert.equal(state.cacheWrites,0);
+});
+test('query-clock singleflight comparte certificado y cálculo sin omitir marcadores individuales',async()=>{
+  const {state,fetch}=fixture({query:true,end:initial-1});let release;state.gate=new Promise(resolve=>{release=resolve;});
+  const requests=Array.from({length:5},()=>fetch());while(!state.searches)await new Promise(resolve=>setImmediate(resolve));release();
+  const responses=await Promise.all(requests);assert.equal(state.guardCalls,1);assert.equal(state.searches,1);assert.equal(state.reads,6);assert.equal(state.cacheWrites,1);
+  assert.equal(responses.filter(response=>response.headers.get('X-Pilot-Cache')==='COALESCED').length,4);
+  for(const response of responses){assert.equal(response.status,200);assert.equal(response.headers.get('X-Pilot-Cache-Scope'),'query-clock-v1');}
+});
+test('query-clock con Sessions rechaza generación primaria nueva aunque réplica conserve corte certificado',async()=>{
+  const metadata=generation=>JSON.stringify({projectionVersion:1,counts:{products:1,product_prices:1,catalog_price_summaries:1,stores:1},cache:{version:1,generation,validFrom:new Date(initial-1000).toISOString(),validUntil:new Date(initial-1).toISOString()}});
+  let marker=metadata('g1');const bookmark=marker,calls=[];
+  const target=(name,read)=>({prepare(){return {bind(){return {async all(){calls.push(name);return {success:true,results:[{value:read()}],meta:{rows_read:1}};}};}};}});
+  const primary=target('primary',()=>marker);primary.withSession=constraint=>{assert.equal(constraint,'first-primary');return target('session',()=>bookmark);};
+  let writes=0;const cache={async match(){return null;},async put(){writes++;}};
+  const pilot=createWorker({now:()=>initial,cache:()=>cache,queryClock:async(_db,_params,{now,snapshot})=>queryCertificate(queryCacheProbe(snapshot,now),initial+60000,now),search:async()=>{marker=metadata('g2');return {products:[]};}});
+  const response=await pilot.fetch(new Request('http://localhost/api/search?q=ram'),{CATALOG_DB:primary,CATALOG_READ_REPLICATION:'1'});
+  assert.equal(response.status,503);assert.equal((await response.json()).error,'CATALOG_SNAPSHOT_CHANGED');assert.equal(writes,0);assert.deepEqual(calls,['session','primary']);
 });
 test('expiry duro y marker legado deshabilitan cache sin renovar observaciones',async()=>{
   const {state,fetch}=fixture({end:initial+2000});await fetch();state.clock+=2000;
