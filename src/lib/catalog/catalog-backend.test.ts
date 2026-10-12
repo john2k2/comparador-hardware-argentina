@@ -4,7 +4,7 @@ vi.mock('@opennextjs/cloudflare', () => { mocks.sdkLoaded(); return { getCloudfl
 import { getD1CatalogReader, isD1CatalogEnabled } from './catalog-backend';
 const fingerprint = 'a'.repeat(64);
 beforeEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks(); });
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 
 describe('selección explícita de backend de catálogo', () => {
   it.each([undefined, 'supabase', 'D1', ''])('por defecto %s no carga contexto ni hace SQL', async backend => {
@@ -48,5 +48,12 @@ describe('selección explícita de backend de catálogo', () => {
     expect(reader?.readProductsPage).toBeTypeOf('function');
     expect(reader?.readProductDetailById).toBeTypeOf('function');
     expect(prepare.mock.calls.every(([sql]) => !String(sql).includes('COUNT('))).toBe(true);
+    const readCache = vi.fn(() => ({ match: vi.fn(), put: vi.fn() }));
+    vi.stubGlobal('caches', { get default() { return readCache(); } });
+    await getD1CatalogReader();
+    expect(readCache).not.toHaveBeenCalled();
+    vi.stubEnv('CATALOG_RESPONSE_CACHE', '1');
+    await getD1CatalogReader();
+    expect(readCache).toHaveBeenCalledTimes(1);
   });
 });

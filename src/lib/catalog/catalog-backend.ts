@@ -18,5 +18,10 @@ export async function getD1CatalogReader(): Promise<D1CatalogReader | null> {
   if (!binding || typeof binding.prepare !== 'function') throw new Error('CATALOG_D1_BINDING_REQUIRED');
   const { d1Adapter } = await import('../../../scripts/pilots/cloudflare-catalog/sqlite-adapter.mjs');
   const { createD1CatalogReader } = await import('./d1-catalog-reader');
-  return createD1CatalogReader(d1Adapter(binding), { expectedCatalogFingerprint: fingerprint });
+  let pageCache: Cache | undefined;
+  if (process.env.CATALOG_RESPONSE_CACHE === '1') {
+    try { pageCache = (globalThis.caches as CacheStorage & { default?: Cache } | undefined)?.default; }
+    catch { /* Sin Cache API se conserva la lectura certificada de D1. */ }
+  }
+  return createD1CatalogReader(d1Adapter(binding), { expectedCatalogFingerprint: fingerprint, pageCache });
 }

@@ -1,11 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { createD1CatalogReader, type CatalogSqlReader } from './d1-catalog-reader';
 import { proveManufacturerRamAttributes } from '@/lib/quality/offer-attribute-proof';
 import { normalizeIdentityText } from '@/lib/product-identity';
 import { computeCurrentStorePriceStats } from '@/lib/price-utils';
+import { listingReference } from '@/lib/scrapers/listing-reference';
 import type { DbProductRow } from '@/lib/persistence/product-read-types';
+import type { D1PageCacheStorage } from './d1-page-cache';
 
 const now = Date.parse('2026-10-12T01:00:00Z'), fingerprint = 'a'.repeat(64);
 const databases: DatabaseSync[] = [];
@@ -24,7 +28,7 @@ function fixture() {
   function add(id: string, name: string, sku: string | undefined, ref: string, price: number, store = 'compragamer', identity = id) {
     const category = sku ? 'memoria-ram' : 'tarjetas-graficas';
     const url = store === 'compragamer' ? `https://compragamer.com/producto/RAM_${ref}` : `https://www.venex.com.ar/${ref}`;
-    const listingRef = `${store}:id:${ref}`, specs = sku ? { SKU: sku } : {};
+    const listingRef = listingReference(store, url)!, specs = sku ? { SKU: sku } : {};
     const sourceIdentity = { title: name, storeSku: sku, listingRef };
     const subject = { title: name, sku, specs };
     const review = sku ? { version: 1, status: 'consistent', reason: 'manufacturer-ram', reviewedAt: stamp, model: null,
@@ -60,7 +64,7 @@ function fixture() {
   const manifest = { version: 1, complete: true, countsVerified: true, fingerprint, counts };
   const write = (key: string, value: unknown) => db.prepare('INSERT OR REPLACE INTO pilot_meta VALUES(?,?)').run(key, JSON.stringify(value));
   write('snapshot', snapshot); write('production_catalog', manifest);
-  const create = () => createD1CatalogReader(adapter, { expectedCatalogFingerprint: fingerprint, now: () => Date.now() });
+  const create = (pageCache?: D1PageCacheStorage) => createD1CatalogReader(adapter, { expectedCatalogFingerprint: fingerprint, now: () => Date.now(), pageCache });
   const changeProduct = (id: string, changes: Partial<DbProductRow>) => {
     const raw = JSON.parse(String(db.prepare('SELECT row_json FROM products WHERE id=?').get(id)!.row_json));
     db.prepare('UPDATE products SET row_json=? WHERE id=?').run(JSON.stringify({ ...raw, ...changes }), id);
@@ -68,8 +72,154 @@ function fixture() {
   return { db, sql, adapter, create, write, snapshot, manifest, stamp, changeProduct };
 }
 const page = { page: 1, pageSize: 12, onlyCurrentOffers: true };
+function memoryCache() {
+  const entries = new Map<string, Response>();
+  const match = vi.fn(async (request: Request) => entries.get(request.url)?.clone());
+  const put = vi.fn(async (request: Request, response: Response) => { entries.set(request.url, response.clone()); });
+  return { entries, match, put };
+}
+async function cacheFixture() {
+  const f = fixture();
+  const { rebuildProjection } = await import(pathToFileURL(resolve('scripts/pilots/cloudflare-catalog/projection.mjs')).href);
+  rebuildProjection(f.db, { now, generation: 'production-test' });
+  return f;
+}
 
 describe('lector D1 inyectado con certificación explícita de producción', () => {
+  it('MISS/HIT devuelve dominio idéntico con Dates y HIT sólo consulta metadata primaria', async () => {
+    const f = await cacheFixture(), storage = memoryCache(), reader = await f.create(storage);
+    const miss = await reader.readProductsPage({ ...page, query: 'ddr4', category: 'memoria-ram' });
+    expect(storage.put).toHaveBeenCalledTimes(1);
+    const before = f.sql.length;
+    const hit = await reader.readProductsPage({ ...page, query: 'ddr4', category: 'memoria-ram' });
+    expect(hit).toEqual(miss);
+    expect(hit.products[0].createdAt).toBeInstanceOf(Date);
+    expect(hit.products[0].prices[0].lastUpdated).toBeInstanceOf(Date);
+    expect(f.sql.slice(before)).toHaveLength(2);
+    expect(f.sql.slice(before).every(sql => sql.includes("key='production_catalog'"))).toBe(true);
+    expect(storage.put).toHaveBeenCalledTimes(1);
+  });
+  it('TTL/errores/payload dañado degradan a MISS SQL validado sin vacío sintético', async () => {
+    const f = await cacheFixture(), storage = memoryCache(), reader = await f.create(storage);
+    const first = await reader.readProductsPage(page);
+    vi.setSystemTime(now + 60001);
+    expect(await reader.readProductsPage(page)).toEqual(first);
+    expect(storage.put).toHaveBeenCalledTimes(2);
+    const [key, entry] = [...storage.entries][0];
+    const raw = JSON.parse(await entry.text()); raw.page.products[0].prices[0].price = 1;
+    storage.entries.set(key, new Response(JSON.stringify(raw), { headers: entry.headers }));
+    expect(await reader.readProductsPage(page)).toEqual(first);
+    expect(storage.put).toHaveBeenCalledTimes(3);
+    storage.match.mockRejectedValueOnce(new Error('CACHE_DOWN'));
+    storage.put.mockRejectedValueOnce(new Error('CACHE_FULL'));
+    expect(await reader.readProductsPage(page)).toEqual(first);
+  });
+  it('HIT revalida marcador y reloj después de esperar caché/metadata', async () => {
+    const f = await cacheFixture(), storage = memoryCache(), reader = await f.create(storage);
+    await reader.readProductsPage(page);
+    const normal = storage.match.getMockImplementation()!;
+    storage.match.mockImplementationOnce(async request => {
+      const result = await normal(request);
+      const raw = JSON.parse(String(f.db.prepare("SELECT value FROM pilot_meta WHERE key='snapshot'").get()!.value));
+      raw.cache.generation = 'changed'; f.write('snapshot', raw); return result;
+    });
+    await expect(reader.readProductsPage(page)).rejects.toThrow('CATALOG_PRODUCTION_GENERATION_CHANGED');
+    // El nuevo corte no reutiliza el artefacto anterior.
+    expect((await reader.readProductsPage(page)).total).toBe(5);
+    storage.match.mockImplementationOnce(async request => { const result = await normal(request);
+      vi.setSystemTime(now - 1); return result; });
+    await expect(reader.readProductsPage(page)).rejects.toThrow('CATALOG_CLOCK_INTERVAL_EXPIRED');
+  });
+  it('stores usa certificado global vigente; histórico y frame vencido conservan BYPASS', async () => {
+    const f = await cacheFixture(), storage = memoryCache(), reader = await f.create(storage);
+    const query = { ...page, storeIds: new Set(['venex']) };
+    const first = await reader.readProductsPage(query);
+    const before = f.sql.length;
+    expect(await reader.readProductsPage(query)).toEqual(first);
+    expect(f.sql.slice(before)).toHaveLength(2);
+    expect(storage.put).toHaveBeenCalledTimes(1);
+    await reader.readProductsPage({ ...page, onlyCurrentOffers: false });
+    expect(storage.put).toHaveBeenCalledTimes(1);
+    vi.setSystemTime(now + 4 * 3600000);
+    await reader.readProductsPage(query);
+    expect(storage.put).toHaveBeenCalledTimes(1);
+  });
+  it('clock horizon durante MISS aborta sin guardar página y no confunde corpus pendiente con clock', async () => {
+    const f = await cacheFixture(), storage = memoryCache(), reader = await f.create(storage);
+    const original = f.adapter.all;
+    f.adapter.all = async (query, values) => { const result = await original(query, values);
+      if (query.includes('FROM totals LEFT JOIN')) vi.setSystemTime(now + 4 * 3600000); return result; };
+    await expect(reader.readProductsPage(page)).rejects.toThrow('CATALOG_CLOCK_INTERVAL_EXPIRED');
+    expect(storage.put).not.toHaveBeenCalled();
+  });
+  it('un guard demorado que falla lee con el reloj actual al entrar una oferta futura', async () => {
+    const f = fixture(), stamp = new Date(now + 65000).toISOString();
+    f.db.prepare("UPDATE product_prices SET row_json=json_set(row_json,'$.last_updated',?) WHERE id='offer-gpu-a'").run(stamp);
+    f.db.prepare("UPDATE price_basis SET observed_at=? WHERE id='offer-gpu-a'").run(stamp);
+    f.db.prepare("UPDATE summaries SET comparable_latest_observed_at=? WHERE product_id='gpu-a'").run(stamp);
+    const { rebuildProjection } = await import(pathToFileURL(resolve('scripts/pilots/cloudflare-catalog/projection.mjs')).href);
+    rebuildProjection(f.db, { now, generation: 'future-offer' });
+    const storage = memoryCache(), reader = await f.create(storage), original = f.adapter.first;
+    f.adapter.first = async (query, values) => {
+      if (query.includes('SELECT COALESCE(MIN(time)')) {
+        vi.setSystemTime(now + 5001); throw new Error('GUARD_UNAVAILABLE');
+      }
+      return original(query, values);
+    };
+    const result = await reader.readProductsPage({ ...page, query: 'RTX', category: 'tarjetas-graficas' });
+    expect(result.total).toBe(2); expect(result.products.map(product => product.id)).toContain('gpu-a');
+    expect(storage.put).not.toHaveBeenCalled();
+    const uncached = await f.create();
+    expect(await uncached.readProductsPage({ ...page, query: 'RTX', category: 'tarjetas-graficas' })).toEqual(result);
+  });
+  it.each([false, true])('el rango conserva el hijo vigente cuando el agrupado queda fuera; proyección=%s', async projected => {
+    const f = fixture();
+    f.db.exec(`INSERT INTO products SELECT 'agrupado-gpu',category,catalog_identity,catalog_name,catalog_document,
+      catalog_component,1,last_scraped_at,updated_at,json_set(row_json,'$.id','agrupado-gpu','$.lowest_price',400000,'$.highest_price',400000,'$.average_price',400000)
+      FROM products WHERE id='gpu-a';
+      INSERT INTO summaries SELECT 'agrupado-gpu',400000,400000,400000,available,urls,portable_listing,store_ids_json,
+        comparable_stats_json,comparable_valid_until,comparable_latest_observed_at,row_json FROM summaries WHERE product_id='gpu-a';
+      INSERT INTO product_prices SELECT 'offer-grouped-gpu','agrupado-gpu',store_id,400000,url,
+        json_set(row_json,'$.id','offer-grouped-gpu','$.product_id','agrupado-gpu','$.price',400000) FROM product_prices WHERE id='offer-gpu-a';
+      INSERT INTO price_basis SELECT 'agrupado-gpu',kind,'offer-grouped-gpu',store_id,400000,stock,url,observed_at FROM price_basis WHERE id='offer-gpu-a';
+      INSERT INTO product_substrings SELECT id,catalog_document FROM products WHERE id='agrupado-gpu';`);
+    const counted = { ...f.snapshot.counts, products: 7, product_prices: 7, catalog_price_summaries: 7 };
+    f.write('snapshot', { ...f.snapshot, counts: counted, catalog: { ...f.snapshot.catalog, counts: counted } });
+    f.write('production_catalog', { ...f.manifest, counts: counted });
+    if (projected) {
+      const { rebuildProjection } = await import(pathToFileURL(resolve('scripts/pilots/cloudflare-catalog/projection.mjs')).href);
+      rebuildProjection(f.db, { now, generation: 'range-test' });
+    }
+    const reader = await f.create();
+    for (const query of ['', 'RTX']) for (const storeIds of [new Set<string>(), new Set(['venex'])]) {
+      const result = await reader.readProductsPage({ ...page, category: 'tarjetas-graficas', query, storeIds, maxPrice: 300000 });
+      expect(result.total).toBe(1); expect(result.products[0]).toMatchObject({ id: 'gpu-a', lowestPrice: 200000 });
+    }
+  });
+  it.each([false, true])('una ficha agrupada vacía no oculta el hijo comprable; proyección=%s', async projected => {
+    const f = fixture();
+    f.db.exec(`INSERT INTO products SELECT 'agrupado-empty',category,catalog_identity,catalog_name,catalog_document,
+      catalog_component,1,last_scraped_at,updated_at,json_set(row_json,'$.id','agrupado-empty','$.lowest_price',0,'$.highest_price',0,'$.average_price',0)
+      FROM products WHERE id='gpu-a';
+      INSERT INTO summaries VALUES('agrupado-empty',0,0,0,0,'',0,'[]',NULL,NULL,NULL,'{}');
+      INSERT INTO product_substrings SELECT id,catalog_document FROM products WHERE id='agrupado-empty';`);
+    const counted = { ...f.snapshot.counts, products: 7, catalog_price_summaries: 7 };
+    f.write('snapshot', { ...f.snapshot, counts: counted, catalog: { ...f.snapshot.catalog, counts: counted } });
+    f.write('production_catalog', { ...f.manifest, counts: counted });
+    if (projected) {
+      const { rebuildProjection } = await import(pathToFileURL(resolve('scripts/pilots/cloudflare-catalog/projection.mjs')).href);
+      rebuildProjection(f.db, { now, generation: 'representative-test' });
+    }
+    const reader = await f.create();
+    for (const query of ['', 'RTX']) for (const stores of [new Set<string>(), new Set(['venex'])]) {
+      const result = await reader.readProductsPage({ ...page, category: 'tarjetas-graficas', query, storeIds: stores });
+      expect(result.total).toBe(2); expect(result.products.map(product => product.id)).toContain('gpu-a');
+      expect(result.products.find(product => product.id === 'gpu-a')!.lowestPrice).toBe(200000);
+    }
+    // La búsqueda histórica mantiene su elección canónica y no inventa oferta.
+    const historical = await reader.readProductsPage({ ...page, category: 'tarjetas-graficas', onlyCurrentOffers: false });
+    expect(historical.products.find(product => product.id === 'agrupado-empty')).toMatchObject({ lowestPrice: 0, prices: [] });
+  });
   it.each([{ id: 'wrong-id' }, { category: 'procesadores' as const }])('rechaza identidad JSON distinta a columnas SQL %j', async changes => {
     const f = fixture(), reader = await f.create();
     f.changeProduct('gpu-a', changes);

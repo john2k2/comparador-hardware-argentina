@@ -6,6 +6,7 @@ import { prepareCatalogQuery } from '@/lib/persistence/product-read-helpers';
 import type { DbProductRow, ProductPageResult, ReadProductsPageParams } from '@/lib/persistence/product-read-types';
 import { computeCurrentStorePriceStats } from '@/lib/price-utils';
 import type { Product } from '@/lib/types';
+import { createD1PageCache, type D1PageCacheStorage } from './d1-page-cache';
 
 export type { CatalogSqlReader };
 const tables = ['catalog_price_summaries', 'product_prices', 'products', 'stores'] as const;
@@ -54,7 +55,7 @@ function parseProduct(value: unknown): DbProductRow {
 
 /** Activación explícita e inyectada. No registra backend ni escribe manifiestos. */
 export async function createD1CatalogReader(db: CatalogSqlReader,
-  options: { expectedCatalogFingerprint: string; now?: () => number }) {
+  options: { expectedCatalogFingerprint: string; now?: () => number; pageCache?: D1PageCacheStorage | null }) {
   if (!/^[a-f0-9]{64}$/.test(options.expectedCatalogFingerprint)) failure('CATALOG_EXPECTED_FINGERPRINT_REQUIRED');
   const now = options.now ?? Date.now;
   // Los conteos reales se verifican en el controlplane antes de certificar el
@@ -74,7 +75,11 @@ export async function createD1CatalogReader(db: CatalogSqlReader,
     if (after.snapshot !== before.snapshot || after.production !== before.production)
       failure('CATALOG_PRODUCTION_GENERATION_CHANGED');
   };
-  await currentGeneration();
+  // Captura primaria para el primer uso, consumida una única vez. Un lector
+  // reutilizado jamás mantiene un snapshot de precio permanente.
+  let initial: Markers | null = await currentGeneration();
+  const begin = async () => { const first = initial; initial = null; return first ?? currentGeneration(); };
+  const cache = options.pageCache ? createD1PageCache(db, options.pageCache, options.expectedCatalogFingerprint, now) : null;
 
   async function readRow(id: string): Promise<Product | null> {
     if (!id || id.length > 256) return failure('CATALOG_PRODUCT_ID_INVALID');
@@ -106,12 +111,25 @@ export async function createD1CatalogReader(db: CatalogSqlReader,
   }
   return {
     async readProductsPage(params: ReadProductsPageParams): Promise<ProductPageResult> {
-      const before = await currentGeneration();
-      const result = await searchCatalog(db, { p_query: prepareCatalogQuery(params.query ?? '', params.category),
+      const before = await begin();
+      const input = { p_query: prepareCatalogQuery(params.query ?? '', params.category),
         p_category: params.category ?? null, p_stores: [...new Set([...params.storeIds ?? []]
           .map(id => id.trim().toLowerCase()).filter(Boolean))].sort(),
         p_min_price: params.minPrice ?? (params.onlyCurrentOffers ? 0 : null), p_max_price: params.maxPrice ?? null,
-        p_sort: params.sortBy ?? 'relevance', p_page: params.page, p_page_size: params.pageSize }, { now: now(), snapshot: before.snapshot });
+        p_sort: params.sortBy ?? 'relevance', p_page: params.page, p_page_size: params.pageSize };
+      const plan = cache ? await cache.plan(input, before.snapshot, params.onlyCurrentOffers === true) : null;
+      const hit = plan ? await cache!.read(plan) : null;
+      if (hit) {
+        await assertGeneration(before);
+        cache!.checkClock(plan!, hit.certificate, true);
+        return hit.page;
+      }
+      const certificate = plan ? await cache!.certificate(plan) : null;
+      if (plan) cache!.checkClock(plan, certificate);
+      const result = await searchCatalog(db, input,
+        // Sin certificado el guard pudo demorarse o fallar tras una transición.
+        // La degradación debe leer el reloj actual, como una lectura sin caché.
+        { now: certificate ? plan!.clock : now(), snapshot: before.snapshot, preferCurrentRepresentative: true });
       const products = result.products.map(row => {
         const product = mapDbGuideProduct(parseProduct(row));
         // Rechazar toda la página ante una selección certificada que el mapper
@@ -128,17 +146,24 @@ export async function createD1CatalogReader(db: CatalogSqlReader,
         return { ...product, lowestPrice: Number(row.lowest_price), highestPrice: Number(row.highest_price), averagePrice: Number(row.average_price) };
       });
       await assertGeneration(before);
-      return { ...result, products };
+      if (plan) cache!.checkClock(plan, certificate);
+      const page = { ...result, products };
+      if (plan && certificate) {
+        await cache!.write(plan, certificate, page);
+        await assertGeneration(before);
+        cache!.checkClock(plan, certificate);
+      }
+      return page;
     },
     async readProductDetailById(id: string): Promise<Product | null> {
-      const before = await currentGeneration();
+      const before = await begin();
       const product = await readRow(id);
       const result = product?.canonicalProductKey ? mergeCanonicalDetailOffers(product, await related(product)) : product;
       await assertGeneration(before);
       return result;
     },
     async readCanonicalProductIdByKey(key: string, product: Product): Promise<string | null> {
-      const before = await currentGeneration();
+      const before = await begin();
       if (product.canonicalProductKey !== key) return failure('CATALOG_CANONICAL_KEY_MISMATCH');
       const current = await readRow(product.id);
       if (!current) { await assertGeneration(before); return null; }
