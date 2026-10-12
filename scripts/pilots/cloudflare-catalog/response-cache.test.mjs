@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {cacheInterval,cacheRequest,readCached,writeCached} from './response-cache.mjs';
+import {cacheInterval,cacheRequest,queryCacheProbe,queryCertificate,readCached,writeCached} from './response-cache.mjs';
 const clock=Date.parse('2026-10-11T12:00:00Z');
 const marker=(overrides={})=>JSON.stringify({cache:{version:1,generation:'g1',validFrom:new Date(clock-1000).toISOString(),validUntil:new Date(clock+120000).toISOString(),...overrides}});
 function memoryCache(){const entries=new Map();return {entries,async match(k){return entries.get(k.url)?.clone();},async put(k,r){entries.set(k.url,r.clone());}};}
@@ -33,4 +33,29 @@ test('fallo de Cache API sólo degrada a MISS; nunca sirve parcial o condicional
   assert.equal(await readCached(broken,key,interval,clock),null);
   assert.equal(await writeCached(broken,key,new Response('{}'),interval,clock),false);
   for(const status of [206,304])assert.equal(await readCached({async match(){return new Response(null,{status});}},key,interval,clock),null);
+});
+const queryMarker=()=>JSON.stringify({projectionVersion:1,counts:{products:1,product_prices:1,catalog_price_summaries:1,stores:1},
+  cache:JSON.parse(marker({validUntil:new Date(clock-1).toISOString()})).cache});
+test('metadata de consulta admite frame global vencido pero no parcial o clock anterior a validFrom',()=>{
+  const raw=queryMarker();assert.equal(queryCacheProbe(raw,clock).clockVersion,1);
+  assert.equal(queryCacheProbe(raw,clock-1001),null);
+  for(const change of [{projectionVersion:2},{counts:{}},{counts:{products:0,product_prices:1,catalog_price_summaries:0,stores:1}},
+    {counts:{products:1,product_prices:1,catalog_price_summaries:2,stores:1}},{cache:{...JSON.parse(raw).cache,validFrom:123}}]) {
+    assert.equal(queryCacheProbe(JSON.stringify({...JSON.parse(raw),...change}),clock),null);
+  }
+});
+test('certificado por entrada verifica TTL exacto, versión, deadline, generación y regresión',async()=>{
+  const cache=memoryCache(),key=new Request('http://localhost/query'),probe=queryCacheProbe(queryMarker(),clock);
+  const interval=queryCertificate(probe,clock+120000,clock);
+  assert.equal(await writeCached(cache,key,new Response('{}'),interval,clock),true);
+  const stored=cache.entries.get(key.url);assert.equal(stored.headers.get('X-Pilot-Query-Clock'),'1');
+  assert.ok(await readCached(cache,key,{...probe,expires:clock+119999},clock+59999));
+  assert.equal(await readCached(cache,key,{...probe,expires:clock+120000},clock+60000),null);
+  assert.equal(await readCached(cache,key,probe,clock-1),null);
+  for(const [header,value] of [['X-Pilot-Query-Clock','2'],['X-Pilot-Cache-Created',String(clock+1)],
+    ['X-Pilot-Cache-Deadline',String(clock+59999)],['X-Pilot-Cache-Generation','g2']]) {
+    const headers=new Headers(stored.headers);headers.set(header,value);
+    assert.equal(await readCached({match:async()=>new Response('{}',{headers})},key,probe,clock),null);
+  }
+  assert.equal(queryCertificate(probe,clock,clock),null);assert.equal(queryCertificate(probe,NaN,clock),null);
 });
