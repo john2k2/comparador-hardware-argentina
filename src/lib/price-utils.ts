@@ -154,9 +154,9 @@ export function parseLocalizedArsPrice(value: string): number {
   return Math.round(Math.max(...prices));
 }
 
-export function preferStorePrice<T extends StorePriceLike>(existing: T, candidate: T): T {
+export function preferStorePrice<T extends StorePriceLike>(existing: T, candidate: T, now = Date.now()): T {
   // Una oferta histórica barata no debe tapar otra realmente observada de la tienda.
-  const existingFresh=isCatalogOfferFresh(existing.lastUpdated),candidateFresh=isCatalogOfferFresh(candidate.lastUpdated);
+  const existingFresh=isCatalogOfferFresh(existing.lastUpdated,now),candidateFresh=isCatalogOfferFresh(candidate.lastUpdated,now);
   if (existingFresh!==candidateFresh) return candidateFresh?candidate:existing;
   const existingUnavailable = existing.stock === 'out-of-stock';
   const candidateUnavailable = candidate.stock === 'out-of-stock';
@@ -178,7 +178,7 @@ export function preferStorePrice<T extends StorePriceLike>(existing: T, candidat
   return toTimestamp(candidate.lastUpdated) > toTimestamp(existing.lastUpdated) ? candidate : existing;
 }
 
-export function pickBestStorePrices<T extends StorePriceLike>(prices: T[]): T[] {
+export function pickBestStorePrices<T extends StorePriceLike>(prices: T[], now = Date.now()): T[] {
   const bestByStore = new Map<string, T>();
 
   for (const price of prices) {
@@ -192,7 +192,7 @@ export function pickBestStorePrices<T extends StorePriceLike>(prices: T[]): T[] 
       continue;
     }
 
-    bestByStore.set(storeKey, preferStorePrice(currentBest, price));
+    bestByStore.set(storeKey, preferStorePrice(currentBest, price, now));
   }
 
   return Array.from(bestByStore.values()).sort((a, b) => a.price - b.price);
@@ -316,7 +316,7 @@ export function computeComparableStorePriceStats(prices: ProductPrice[], product
 /** Base única para mínimos vigentes. El histórico permanece separado y completo. */
 export function computeCurrentStorePriceStats(prices: ProductPrice[], product: OfferProductContext, now = Date.now()) {
   return computeComparablePriceStats(pickBestStorePrices(prices.filter(price =>
-    isComparableStoreOffer(price, product) && isCatalogOfferFresh(price.lastUpdated, now))));
+    isComparableStoreOffer(price, product) && isCatalogOfferFresh(price.lastUpdated, now)), now));
 }
 
 export function getComparableStorePrices(prices: ProductPrice[], product?: OfferProductContext): ProductPrice[] {

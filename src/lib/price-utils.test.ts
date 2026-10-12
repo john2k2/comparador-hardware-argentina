@@ -27,6 +27,15 @@ function buildPrice(overrides: Partial<ProductPrice>): ProductPrice {
 }
 
 describe('price-utils', () => {
+  it('el reloj explícito mantiene una selección reproducible sin cambiar el reloj del proceso', () => {
+    const clock = Date.parse('2026-03-13T12:00:00Z');
+    const cheap = buildPrice({ price: 100, lastUpdated: new Date(clock - 23 * 3600000) });
+    const recent = buildPrice({ price: 200, lastUpdated: new Date(clock - 1000) });
+    expect(pickBestStorePrices([cheap, recent], clock)).toEqual([cheap]);
+    expect(pickBestStorePrices([cheap, recent], clock + 2 * 3600000)).toEqual([recent]);
+    expect(pickBestStorePrices([cheap, recent], clock + 25 * 3600000)).toEqual([cheap]);
+    expect(computeCurrentStorePriceStats([cheap, recent], { name: 'Gabinete Sentey P20', category: 'gabinetes' }, clock).lowest).toBe(100);
+  });
   it('con producto el stock comprable se filtra antes de deduplicar la tienda', () => {
     const unknown = buildPrice({ storeId: 'mexx', url: 'https://www.mexx.com.ar/ram-a', price: 100, stock: 'unknown', lastUpdated: new Date() });
     const available = { ...unknown, url: 'https://www.mexx.com.ar/ram-b', price: 200, stock: 'in-stock' as const };
