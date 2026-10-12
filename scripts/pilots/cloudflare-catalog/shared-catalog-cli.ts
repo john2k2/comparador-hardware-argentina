@@ -9,7 +9,7 @@ import { runSharedRefresh } from './refresh-shared-local';
 import { initializeRefreshDemand, enqueueKnownProducts } from './refresh-demand.mjs';
 import { canRefreshLocalTarget } from './refresh-local';
 import { listingReference } from '@/lib/scrapers/listing-reference';
-import { proveOfferAttributes } from '@/lib/quality/offer-attribute-proof';
+import { proveOfferAttributes, proveManufacturerRamAttributes } from '@/lib/quality/offer-attribute-proof';
 import type { HardwareCategory } from '@/lib/types';
 
 /** Selección privada. Una captura vieja sólo selecciona, jamás suministra el precio. */
@@ -22,17 +22,27 @@ export function selectSharedCandidates(db: DatabaseSync, now = Date.now()) {
       return at <= now && at >= now - 86400000
         && createHash('sha256').update(String(row.row_json)).digest('hex') === row.source_hash;
     }).map(row => [String(row.reference), JSON.parse(String(row.row_json))]));
+  const queueExists = Boolean(db.prepare("SELECT name FROM sqlite_schema WHERE name='pilot_refresh_demand'").get());
+  const pauseExists = Boolean(db.prepare("SELECT name FROM sqlite_schema WHERE name='pilot_cycle_store_pause'").get());
+  if (pauseExists && db.prepare('SELECT 1 FROM pilot_cycle_store_pause WHERE store_id=? AND until_at>?').get('compragamer', now)) return [];
   const rows = db.prepare(`SELECT pp.id,pp.product_id,pp.url,pp.row_json,p.category,p.row_json product_json
     FROM product_prices pp JOIN products p ON p.id=pp.product_id WHERE pp.store_id=? ORDER BY pp.id`).all('compragamer');
   return rows.filter(row => {
     const raw = JSON.parse(String(row.row_json)), target = JSON.parse(String(row.product_json));
+    const queued = queueExists ? db.prepare('SELECT status,due_at,lease_until FROM pilot_refresh_demand WHERE offer_id=?').get(row.id) : undefined;
+    if (queued && (queued.status === 'backoff' && Number(queued.due_at) > now
+      || queued.status === 'leased' && Number(queued.lease_until) > now)) return false;
     const at = Date.parse(raw.last_updated);
     if (Number.isFinite(at) && at > now - 90 * 60000 && at <= now) return false;
     const reference = listingReference('compragamer', String(row.url));
     const source = reference ? observations.get(reference) : undefined;
     return source && source.category === row.category
-      && canRefreshLocalTarget('compragamer', String(row.url), String(row.category), target.name)
-      && proveOfferAttributes(target.name, String(row.category) as HardwareCategory, source.name);
+      && canRefreshLocalTarget('compragamer', String(row.url), String(row.category), target.name, target.specs)
+      && (proveOfferAttributes(target.name, String(row.category) as HardwareCategory, source.name)
+        || row.category === 'memoria-ram' && proveManufacturerRamAttributes(
+          { title: target.name, sku: target.specs?.SKU, specs: target.specs },
+          { title: source.name, sku: source.specs?.SKU, specs: source.specs },
+          { storeId: 'compragamer', url: String(row.url), listingRef: reference! }));
   }).slice(0, 25).map(row => ({ offerId: String(row.id), productId: String(row.product_id) }));
 }
 

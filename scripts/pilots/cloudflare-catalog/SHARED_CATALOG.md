@@ -27,3 +27,9 @@ Esta herramienta local no está programada para toda la base. El LaunchAgent exi
 Reversión: detener consumidores, restaurar una copia SQLite anterior y retirar estas herramientas. No revertir fechas mediante actualizaciones SQL parciales. Detalle y recibos en `docs/direccion/PILOTO_ASOCIACIONES_2026-10-11.md`.
 
 Tercera tanda del 11/10: 48 SSD de 26 publicaciones renovados en dos lotes y seis solicitudes; todas comparables. No acredita cobertura completa de almacenamiento. Corte y consumo en `docs/direccion/TERCERA_RECUPERACION_CATALOGO_2026-10-11.md`.
+
+El selector conserva el contexto `specs` del producto. Para RAM con título incompleto admite únicamente la prueba fabricante existente, contrastando el SKU del producto con el SKU real de la captura y su referencia de publicación. Una contradicción de SKU o kit no entra en el lote. El lector vuelve a verificar la captura obtenida después del lease; seleccionar por una captura anterior no renueva la oferta.
+
+Las pausas de tienda, los leases activos y el backoff se excluyen antes del límite de 25 candidatos. Así, 25 ofertas bloqueadas no ocultan otra oferta elegible situada después. Esta lectura no modifica la cola ni acorta sus vencimientos.
+
+Ensayo privado del 12/10/2026, 04:41–04:46 UTC: sobre una copia nueva del catálogo completo se realizaron **412 intentos, 409 observaciones comparables y 60 solicitudes HTTP**, incluida la captura inicial. La captura contiene 1.695 publicaciones en diez familias; las observaciones admitidas abarcan CPU (255), GPU (102), SSD (48) y RAM (4). Tres intentos sin observación conservaron precio/stock/fecha y backoff; no se forzaron reintentos. La cifra no acredita renovación de las 73.827 ofertas del catálogo ni cumplimiento de G02. La copia sigue sin activación y requiere normalización/certificación antes del loader. Recibos privados: `outputs/produccion-preparacion-2026-10-12/QC/REFRESH/`.
