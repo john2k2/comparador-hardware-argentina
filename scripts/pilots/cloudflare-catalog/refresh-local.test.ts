@@ -342,3 +342,31 @@ test('404 preserva causa de transporte separada de outcome y no cambia observaci
   assert.ok('sourceFailure' in result.results[0]);assert.equal(result.results[0].sourceFailure,'not-found');assert.equal(result.results[0].httpStatus,404);
   assert.deepEqual(JSON.parse(f.db.prepare('SELECT row_json FROM product_prices').get()!.row_json as string),f.raw);f.db.close();
 });
+
+function exactListingFixture(category:HardwareCategory,title:string,sku:string){
+ const f=fixture('compragamer'),url='https://compragamer.com/producto/PRODUCTO_12345',product={id:'p',name:title,category,specs:{SKU:sku}};
+ f.db.prepare('UPDATE products SET category=?,catalog_name=?,catalog_document=?,row_json=?').run(category,title.toLowerCase(),title.toLowerCase(),JSON.stringify(product));
+ f.db.prepare('UPDATE product_substrings SET document=?').run(title.toLowerCase());const raw={...f.raw,url};
+ f.db.prepare('UPDATE product_prices SET url=?,row_json=?').run(url,JSON.stringify(raw));f.db.prepare('UPDATE price_basis SET url=?').run(url);f.db.prepare('UPDATE summaries SET urls=?').run(url);
+ enqueueKnownProducts(f.db,{productIds:['p'],storeIds:['compragamer'],now});rebuildProjection(f.db,{now,generation:'exact-before'});
+ const source=()=>({...f.source(),id:'cg-12345',name:title,category,specs:{SKU:sku,Stock:'2',Garantia:'24 meses'},prices:f.source().prices.map(o=>({...o,url}))}as Product);
+ return{...f,url,product,raw,exactSource:source,dependencies:{...f.dependencies,reader:async()=>{const s=source();f.advance();return s;}}};
+}
+const exactFamilies:Array<[HardwareCategory,string,string]>=[['motherboards','Mother ASUS PRIME B650M-A II AM5 DDR5','90MB1EH0-M0EAY0'],['gabinetes','Gabinete ASUS PRIME AP201 TG Black','90DC00G0-B38010'],['fuentes-alimentacion','Fuente Asrock 750W Gold Steel Legend','SL-750G'],['refrigeracion','Cooler CPU DeepCool ASSASSIN IV VC Vision','R-ASN4-BKNVMD-G'],['perifericos','Mouse Logitech M240 Silent Bluetooth Rose','910-007117']];
+for(const[category,title,sku]of exactFamilies)test(`exact-listing ${category} conserva producto y revalida oferta real persistida`,async()=>{
+ const f=exactListingFixture(category,title,sku);try{const before=f.db.prepare('SELECT * FROM products').get();const result=await runLocalRefresh(f.db,f.dependencies);assert.equal(result.observed,1);
+ const raw=JSON.parse(String(f.db.prepare('SELECT row_json FROM product_prices').get()!.row_json));assert.equal(raw.identity_review.reason,'exact-listing');assert.equal(raw.identity_review.proof.version,3);assert.equal(raw.source_identity.sourceId,'12345');assert.deepEqual(f.db.prepare('SELECT * FROM products').get(),before);
+ assert.equal(isComparableStoreOffer({storeId:'compragamer',url:f.url,price:raw.price,stock:raw.stock,identityReview:raw.identity_review,sourceIdentity:raw.source_identity},f.product),true);
+ }finally{f.db.close();}
+});
+test('exact-listing persistencia revalida contexto actual entre lectura y escritura, con rollback',()=>{
+ const[category,title,sku]=exactFamilies[0];
+ for(const change of[(p:{name:string;specs:{SKU:string}})=>{p.specs.SKU='other';},(p:{name:string;specs:{SKU:string}})=>{p.name+=' WIFI';}]){
+ const f=exactListingFixture(category,title,sku);try{const lease=claimRefreshBatch(f.db,{now,limit:1})[0],price=reviewLocalObservation(f.product,lease,f.exactSource(),now+2),current=structuredClone(f.product);change(current);f.db.prepare('UPDATE products SET row_json=?').run(JSON.stringify(current));
+ const tables=['product_prices','price_basis','pilot_meta'],before=tables.map(table=>f.db.prepare('SELECT * FROM '+table).all());assert.throws(()=>persistLocalObservation(f.db,lease,price,f.dependencies,now+2),/IDENTITY/);assert.deepEqual(tables.map(table=>f.db.prepare('SELECT * FROM '+table).all()),before);
+ }finally{f.db.close();}}
+});
+
+test('exact-listing no descarta sourceId contradictorio aunque title y SKU coincidan',()=>{
+ const[category,title,sku]=exactFamilies[0],f=exactListingFixture(category,title,sku);try{const lease=claimRefreshBatch(f.db,{now,limit:1})[0],source=f.exactSource();source.specs.SourceListingId='99999';assert.throws(()=>reviewLocalObservation(f.product,lease,source,now+2),/IDENTITY/);}finally{f.db.close();}
+});

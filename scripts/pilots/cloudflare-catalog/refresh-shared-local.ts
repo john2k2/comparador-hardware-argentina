@@ -21,7 +21,7 @@ export async function runSharedRefresh(db:DatabaseSync,dependencies:Dependencies
         {observedAfter:Math.max(...leases.map(item=>item.leasedAt))});
       if(!source)throw new Error('REFRESH_LOCAL_NO_OBSERVATION');
       const price=reviewLocalObservation(product,lease,source,clock());
-      const receipt=persistLocalObservation(db,lease,price,dependencies,clock());
+      const receipt=persistLocalObservation(db,lease,price,{...dependencies,clock},clock());
       results.push({offerId:lease.offerId,productId:lease.productId,status:'observed',price:price.price,stock:price.stock,...receipt});
     }catch(error) {
       if(error instanceof SourceHttpError)sharedFailure=error;

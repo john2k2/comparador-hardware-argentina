@@ -8,6 +8,7 @@ import { fetchKnownProductDetail } from '@/lib/scrapers/known-product-detail';
 import { fetchWooCommerceKnownOffer } from '@/lib/scrapers/woocommerce-shared';
 import { SourceHttpError, sourceHttpMetrics, sourceBlockedUntil } from '@/lib/scrapers/source-http';
 import { proveOfferAttributes, proveManufacturerRamAttributes, attributeProofMatches, exactOfferAttributes } from '@/lib/quality/offer-attribute-proof';
+import { proveExactListing, exactListingCategories } from '@/lib/quality/exact-listing-proof';
 import { sourceContract, WOO_PUBLIC_STORE_IDS } from '@/lib/scrapers/source-contracts';
 import { hasExplicitIdentityConflict, readIdentityReview, needsIdentityReview, type OfferIdentityReview } from '@/lib/quality/offer-identity';
 import { normalizeIdentityText } from '@/lib/product-identity';
@@ -35,8 +36,12 @@ export const localStoreIds = [...WOO_PUBLIC_STORE_IDS,'fullh4rd','mexx','xtpc','
 export const localCategories = ['procesadores','tarjetas-graficas','memoria-ram','almacenamiento'];
 
 export function canRefreshLocalTarget(storeId:string,url:string,category:string,name:string,specs?:Record<string,unknown>):boolean {
-  return localCategories.includes(category)&&(storeId!=='37bytes'||category==='almacenamiento')
-    &&validateLocalTarget(storeId,url)&&(exactOfferAttributes(name,category)!==null
+  const ref=listingReference(storeId,url);
+  const generic=storeId==='compragamer'&&exactListingCategories.includes(category as typeof exactListingCategories[number])
+    &&typeof specs?.SKU==='string'&&ref?proveExactListing({title:name,category,sku:specs.SKU},
+      {title:name,category,sku:specs.SKU},{storeId,url,listingRef:ref,sourceId:ref.split(':').at(-1)!}):null;
+  return (localCategories.includes(category)||Boolean(generic))&&(storeId!=='37bytes'||category==='almacenamiento')
+    &&validateLocalTarget(storeId,url)&&(generic!==null||exactOfferAttributes(name,category)!==null
       ||category==='memoria-ram'&&storeId==='compragamer'&&typeof specs?.SKU==='string'
         &&proveManufacturerRamAttributes({title:name,sku:specs.SKU,specs},{title:name,sku:specs.SKU,specs},
           {storeId,url,listingRef:listingReference(storeId,url)!})!==null);
@@ -87,24 +92,32 @@ export function reviewLocalObservation(product:{name:string;category:HardwareCat
   if(!price||!Number.isFinite(price.price)||price.price<=0||!Number.isFinite(observed)||observed<lease.leasedAt||observed>now
     ||(lease.observedAt&&observed<=Date.parse(lease.observedAt))) throw new Error('REFRESH_LOCAL_NO_OBSERVATION');
   const reference=listingReference(lease.storeId,lease.url)!;
-  const proof=proveOfferAttributes(product.name,product.category,source.name)
+  const sourceId=source.id?.startsWith('cg-')?source.id.slice(3):'';
+  const listingProof=lease.storeId==='compragamer'?proveExactListing(
+    {title:product.name,category:product.category,sku:typeof product.specs?.SKU==='string'?product.specs.SKU:''},
+    {title:source.name,category:source.category,sku:source.specs.SKU??''},
+    {storeId:lease.storeId,url:lease.url,listingRef:reference,sourceId}):null;
+  const proof=listingProof??proveOfferAttributes(product.name,product.category,source.name)
     ??(product.category==='memoria-ram'?proveManufacturerRamAttributes(
       {title:product.name,sku:typeof product.specs?.SKU==='string'?product.specs.SKU:undefined,specs:product.specs},
       {title:source.name,sku:source.specs.SKU,specs:source.specs},{storeId:lease.storeId,url:lease.url,listingRef:reference}):null);
+  if(proof?.method==='exact-listing'&&source.specs.SourceListingId!==undefined
+    &&source.specs.SourceListingId!==proof.binding.sourceId)throw new Error('REFRESH_LOCAL_IDENTITY');
   if(!proof||hasExplicitIdentityConflict({name:product.name,category:product.category,offerText:source.name})) throw new Error('REFRESH_LOCAL_IDENTITY');
-  if(proof.method==='manufacturer-ram'&&price.sourceIdentity
+  if((proof.method==='manufacturer-ram'||proof.method==='exact-listing')&&price.sourceIdentity
     &&(price.sourceIdentity.listingRef!==reference||normalizeIdentityText(price.sourceIdentity.title)!==normalizeIdentityText(source.name)
-      ||price.sourceIdentity.storeSku!==undefined&&price.sourceIdentity.storeSku!==source.specs.SKU))throw new Error('REFRESH_LOCAL_IDENTITY');
+      ||price.sourceIdentity.storeSku!==undefined&&price.sourceIdentity.storeSku!==source.specs.SKU
+      ||proof.method==='exact-listing'&&price.sourceIdentity.sourceId!==undefined&&price.sourceIdentity.sourceId!==sourceId))throw new Error('REFRESH_LOCAL_IDENTITY');
   const sourceIdentity={...price.sourceIdentity,listingRef:reference,title:source.name.slice(0,400),
     ...(source.specs.SKU?{storeSku:source.specs.SKU.slice(0,160)}:{}),
-    ...(source.specs.SourceListingId?{sourceId:source.specs.SourceListingId}:{}),
+    ...(proof.method==='exact-listing'?{sourceId:proof.binding.sourceId}:source.specs.SourceListingId?{sourceId:source.specs.SourceListingId}:{}),
   };
-  const identityReview:OfferIdentityReview={version:1,status:'consistent',reason:proof.method==='manufacturer-ram'?'manufacturer-ram':'exact-attributes',reviewedAt:new Date(now).toISOString(),
+  const identityReview:OfferIdentityReview={version:1,status:'consistent',reason:proof.method==='manufacturer-ram'?'manufacturer-ram':proof.method==='exact-listing'?'exact-listing':'exact-attributes',reviewedAt:new Date(now).toISOString(),
     model:null,confidence:null,subject:{name:normalizeIdentityText(product.name),category:product.category,url:lease.url},sourceIdentity,proof};
   return {...price,url:lease.url,lastUpdated:new Date(observed),sourceIdentity,identityReview};
 }
 
-export function persistLocalObservation(db:DatabaseSync,lease:Lease,price:ProductPrice,{projection,estimateIndexes}:Dependencies,now:number) {
+export function persistLocalObservation(db:DatabaseSync,lease:Lease,price:ProductPrice,{projection,estimateIndexes,clock=Date.now}:Dependencies,now:number) {
   if(db.isTransaction) throw new Error('REFRESH_LOCAL_TRANSACTION');
   db.exec('BEGIN IMMEDIATE');
   try {
@@ -149,12 +162,16 @@ export function persistLocalObservation(db:DatabaseSync,lease:Lease,price:Produc
     const generation=createHash('sha256').update(marker.value).update(JSON.stringify(next)).digest('hex');
     const rebuilt=projection(db,{now,generation,affectedProductIds:[lease.productId]});
     for(const statement of rebuilt.statements)statements.push({...statement,expectedRows:1});
-    const ack=acknowledgeRefresh(db,{...lease,now,withinTransaction:true,outcome:'observed',receipt:{offerId:lease.offerId,url:lease.url,observedAt:observed,
+    const completedAt=clock();
+    if(!Number.isSafeInteger(completedAt)||completedAt<queued.leased_at||completedAt>=queued.lease_until)throw new Error('REFRESH_LOCAL_LEASE_CONFLICT');
+    const ack=acknowledgeRefresh(db,{...lease,now:completedAt,withinTransaction:true,outcome:'observed',receipt:{offerId:lease.offerId,url:lease.url,observedAt:observed,
       source:'public-page',persisted:true,identityVerified:true,priceVerified:true,stockVerified:true,comparableVerified:comparable}});
     statements.push({sql:"UPDATE pilot_refresh_demand SET status='observed',last_observed_at=?,last_error=NULL,lease_token=NULL,lease_until=NULL,attempts=0 WHERE offer_id=?",values:[observed,lease.offerId],expectedRows:1});
     const baseRowsWritten=statements.reduce((sum,statement)=>sum+statement.expectedRows,0);
     const estimatedRowsWritten=baseRowsWritten+estimateIndexes(db,statements);
-    const budget=chargeDailyBudget(db,{now,estimatedRowsWritten});
+    const budget=chargeDailyBudget(db,{now:completedAt,estimatedRowsWritten});
+    const commitAt=clock();
+    if(!Number.isSafeInteger(commitAt)||commitAt<completedAt||commitAt>=queued.lease_until)throw new Error('REFRESH_LOCAL_LEASE_CONFLICT');
     db.exec('COMMIT');
     return {observedAt:observed,comparable,baseRowsWritten,estimatedRowsWritten,budget,
       projectionChanged:rebuilt.changedProjectionRows,generation,ack,localOnly:true,remotePublishSafe:false};

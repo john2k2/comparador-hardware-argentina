@@ -26,3 +26,16 @@ test('veinticinco filas en backoff no ocultan la siguiente elegible; lease vivo 
 test('pausa de tienda persiste sin lectura HTTP ni mutaciones de cola',t=>{
  const f=fixture(t);f.db.prepare('INSERT INTO pilot_cycle_store_pause VALUES(?,?,?)').run('compragamer',now+3600000,'http-429');assert.deepEqual(selectSharedCandidates(f.db,now),[]);
 });
+
+for(const category of ['motherboards','gabinetes','fuentes-alimentacion','refrigeracion','perifericos'] as const)test(`selector exact-listing ${category} exige captura de SKU/categoría/ID/título`,t=>{
+ const f=fixture(t),title=category==='motherboards'?'Mother ASUS PRIME B650M-A II AM5 DDR5':category==='gabinetes'?'Gabinete ASUS AP201 Black':category==='fuentes-alimentacion'?'Fuente Asrock Steel Legend 750W':category==='refrigeracion'?'Cooler DeepCool ASSASSIN IV':'Mouse Logitech M240 Rose',code='CODE-123';
+ f.db.prepare('UPDATE products SET category=?,row_json=?').run(category,JSON.stringify({id:'ram',name:title,category,specs:{SKU:code}}));
+ f.source.id='cg-15522';f.source.name=title;f.source.category=category;f.source.specs.SKU=code;f.source.prices[0].lastUpdated=new Date(now+1);
+ stageSharedObservations(f.db,[{reference:'compragamer:id:15522',product:f.source}],{now:now+1});
+ assert.deepEqual(selectSharedCandidates(f.db,now+1,500),[{offerId:'o00',productId:'ram'}]);
+ f.source.specs.SKU='other';f.source.prices[0].lastUpdated=new Date(now+2);stageSharedObservations(f.db,[{reference:'compragamer:id:15522',product:f.source}],{now:now+2});assert.deepEqual(selectSharedCandidates(f.db,now+2,500),[]);
+});
+test('selector no habilita computadoras por tener título y SKU repetidos',t=>{
+ const f=fixture(t),title='Notebook ASUS Vivobook',code='X1504';f.db.prepare('UPDATE products SET category=?,row_json=?').run('computadoras',JSON.stringify({id:'ram',name:title,category:'computadoras',specs:{SKU:code}}));
+ f.source.id='cg-15522';f.source.name=title;f.source.category='computadoras';f.source.specs.SKU=code;f.source.prices[0].lastUpdated=new Date(now+1);stageSharedObservations(f.db,[{reference:'compragamer:id:15522',product:f.source}],{now:now+1});assert.deepEqual(selectSharedCandidates(f.db,now+1,500),[]);
+});
