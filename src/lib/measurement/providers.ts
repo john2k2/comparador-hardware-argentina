@@ -69,9 +69,31 @@ function gaValues(row: Record<string, unknown>, key: 'metricValues' | 'dimension
     return value.value;
   });
 }
-function validateGaReport(data: Record<string, unknown>, names: string[]) {
+function validateGaReport(data: Record<string, unknown>, names: string[], dimensions: string[], timeZone: string, limit: number, allowTopRows = false) {
   const headers = rows(data, 'metricHeaders');
   if (headers.length !== names.length || headers.some((header, index) => header.name !== names[index])) throw new Error('Invalid GA report');
+  const dimensionHeaders = rows(data, 'dimensionHeaders');
+  if (dimensionHeaders.length !== dimensions.length || dimensionHeaders.some((header, index) => header.name !== dimensions[index])) throw new Error('Invalid GA dimensions');
+  if (!isRecord(data.metadata) || data.metadata.timeZone !== timeZone) throw new ProviderReadError('error', 'No se pudo verificar la zona horaria de Analytics. Ajustar la ventana antes de comparar.');
+  for (const flag of ['subjectToThresholding', 'dataLossFromOtherRow']) {
+    if (data.metadata[flag] !== undefined && typeof data.metadata[flag] !== 'boolean') throw new Error('Invalid GA metadata');
+    if (data.metadata[flag] === true) throw new ProviderReadError('error', 'Analytics indicó una posible limitación por privacidad o agrupación de datos. Se conserva el dato anterior con su fecha.');
+  }
+  for (const field of ['dataTruncationReasons', 'samplingMetadatas']) {
+    const limitations = data.metadata[field];
+    if (limitations !== undefined && !Array.isArray(limitations)) throw new Error('Invalid GA metadata');
+    if (Array.isArray(limitations) && limitations.length > 0) throw new ProviderReadError('error', 'Analytics entregó un informe truncado o muestreado. Se conserva el dato anterior con su fecha.');
+  }
+  const reportRows = rows(data);
+  // Protobuf puede omitir rowCount y rows cuando ambos valen cero.
+  const rowCount = data.rowCount === undefined ? 0 : data.rowCount;
+  if (typeof rowCount !== 'number' || !Number.isSafeInteger(rowCount) || rowCount < 0 || reportRows.length !== Math.min(rowCount, limit) || (!allowTopRows && rowCount > limit)) throw new Error('Incomplete GA report');
+  for (const row of reportRows) {
+    const values = gaValues(row, 'metricValues');
+    const dimensionValues = row.dimensionValues === undefined && dimensions.length === 0 ? [] : gaValues(row, 'dimensionValues');
+    if (values.length !== names.length || dimensionValues.length !== dimensions.length) throw new Error('Incomplete GA row');
+    values.forEach(number);
+  }
 }
 function reading(id: ProviderId, metrics: MeasurementReading['metrics'], now: Date, notes: string[] = []): MeasurementReading {
   return { version: 1, provider: id, origin: 'api', collectedAt: now.toISOString(), period: readingPeriod(id, now), metrics, notes };
@@ -96,11 +118,10 @@ async function readGa4(now: Date, token: () => Promise<string>): Promise<Measure
     report({ dimensions: [{ name: 'date' }], metrics: [{ name: 'totalUsers' }], orderBys: [{ dimension: { dimensionName: 'date' } }], limit: '7' }),
     report({ dimensions: [{ name: 'sessionSourceMedium' }], metrics: [{ name: 'sessions' }], orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: '8' }),
   ]);
-  validateGaReport(overview, ['totalUsers', 'sessions', 'screenPageViews', 'engagedSessions']);
-  validateGaReport(events, ['eventCount', 'totalUsers']);
-  validateGaReport(daily, ['totalUsers']);
-  validateGaReport(channels, ['sessions']);
-  if (!isRecord(overview.metadata) || overview.metadata.timeZone !== period.timeZone) throw new ProviderReadError('error', 'No se pudo verificar la zona horaria de Analytics. Ajustar la ventana antes de comparar.');
+  validateGaReport(overview, ['totalUsers', 'sessions', 'screenPageViews', 'engagedSessions'], [], period.timeZone, 1);
+  validateGaReport(events, ['eventCount', 'totalUsers'], ['eventName'], period.timeZone, 100);
+  validateGaReport(daily, ['totalUsers'], ['date'], period.timeZone, 7);
+  validateGaReport(channels, ['sessions'], ['sessionSourceMedium'], period.timeZone, 8, true);
   const totals = rows(overview)[0];
   const metrics = totals ? gaValues(totals, 'metricValues').map(number) : [0, 0, 0, 0];
   if (metrics.length !== 4) throw new Error('Incomplete metrics');
