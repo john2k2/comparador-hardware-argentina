@@ -1,15 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { getServerSupabaseReadClientMock, rangeMock } = vi.hoisted(() => ({
+const { getServerSupabaseReadClientMock, rangeMock, getD1ReaderMock } = vi.hoisted(() => ({
   getServerSupabaseReadClientMock: vi.fn(),
   rangeMock: vi.fn(),
+  getD1ReaderMock: vi.fn(async () => null),
 }));
+vi.mock('@/lib/catalog/catalog-backend', () => ({ getD1CatalogReader: getD1ReaderMock }));
 
 vi.mock('@/lib/server/supabase-server', () => ({
   getServerSupabaseReadClient: getServerSupabaseReadClientMock,
 }));
 
-import { readCategoryLandingPageFromDatabase, readProductsPageFromDatabase, readGuideCatalogCandidatesFromDatabase,readProductDetailByIdFromDatabase, readCanonicalProductIdByKey } from './product-read';
+import { readCategoryLandingPageFromDatabase, readProductsPageFromDatabase, readGuideCatalogCandidatesFromDatabase,readProductByIdFromDatabase,readProductDetailByIdFromDatabase, readCanonicalProductIdByKey } from './product-read';
 import { mapDbProduct } from './product-read-mapper';
 import { buildGuideNameFilters } from './product-read-helpers';
 import { resolveGuideRefreshOffers, resolveGuideComponent } from '@/lib/seo/budget-guide-pricing';
@@ -40,6 +42,43 @@ const row = {
     { store_id: 'mexx', url: 'https://example.com/mexx', price: 200_000, original_price: null, stock: 'in-stock', installment_count: null, installment_amount: null, last_updated: '2026-09-12T00:00:00.000Z' },
   ],
 };
+
+describe('integración del lector D1 explícito sin fallback', () => {
+ afterEach(() => getD1ReaderMock.mockResolvedValue(null));
+ const product = mapDbProduct(row);
+ function reader() {
+  const result = { readProductsPage: vi.fn(async () => ({ products: [product], total: 1, totalPages: 1, page: 1, pageSize: 48 })),
+    readProductDetailById: vi.fn(async () => product), readCanonicalProductIdByKey: vi.fn(async () => row.id) };
+  getD1ReaderMock.mockResolvedValue(result as never); getServerSupabaseReadClientMock.mockClear(); return result;
+ }
+ it('paginado conserva clamp/categoría/tiendas y callback sin registrar RPC Supabase', async () => {
+  const d1 = reader(), diagnostics = vi.fn();
+  const result = await readProductsPageFromDatabase({ query: ' ryzen 7600 ', page: -5, pageSize: 99,
+    storeIds: new Set([' MEXX ', 'mexx', '']), onlyCurrentOffers: true }, diagnostics);
+  expect(result.products).toEqual([product]);
+  expect(d1.readProductsPage).toHaveBeenCalledWith(expect.objectContaining({ query: 'ryzen 7600', category: 'procesadores',
+    page: 1, pageSize: 48, storeIds: new Set(['mexx']), onlyCurrentOffers: true }));
+  expect(diagnostics).toHaveBeenCalledWith({ rpcCalls: 0, rpcMs: 0, headersMs: 0, bodyMs: 0, transformMs: 0 });
+  expect(getServerSupabaseReadClientMock).not.toHaveBeenCalled();
+ });
+ it('producto/detalle/canónico releen producto real de D1 y no acceden a Supabase', async () => {
+  const d1 = reader();
+  expect(await readProductByIdFromDatabase(row.id)).toEqual(product);
+  expect(await readProductDetailByIdFromDatabase(row.id)).toEqual(product);
+  expect(await readCanonicalProductIdByKey(product.canonicalProductKey!, product)).toBe(row.id);
+  expect(d1.readCanonicalProductIdByKey).toHaveBeenCalledWith(product.canonicalProductKey, product);
+  await expect(readCanonicalProductIdByKey(product.canonicalProductKey!, { name: product.name, category: product.category,
+    canonicalProductKey: product.canonicalProductKey, prices: product.prices })).rejects.toThrow('CATALOG_CANONICAL_PRODUCT_ID_REQUIRED');
+  expect(getServerSupabaseReadClientMock).not.toHaveBeenCalled();
+ });
+ it('error de selección/manifiesto o lectura se propaga sin RPC alternativo', async () => {
+  getD1ReaderMock.mockRejectedValueOnce(new Error('CATALOG_D1_BINDING_REQUIRED'));
+  await expect(readProductsPageFromDatabase({ page: 1, pageSize: 12 })).rejects.toThrow('CATALOG_D1_BINDING_REQUIRED');
+  const d1 = reader(); d1.readProductDetailById.mockRejectedValueOnce(new Error('CATALOG_PRODUCTION_NOT_READY'));
+  await expect(readProductDetailByIdFromDatabase(row.id)).rejects.toThrow('CATALOG_PRODUCTION_NOT_READY');
+  expect(getServerSupabaseReadClientMock).not.toHaveBeenCalled();
+ });
+});
 
 describe('detalle canónico con nuevas publicaciones',()=>{
  function mockDetail(data:unknown,error:unknown=null,base:unknown=row){
