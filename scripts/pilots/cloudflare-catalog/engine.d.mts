@@ -18,5 +18,8 @@ export interface CatalogSqlParams {
 export function searchCatalog(db: CatalogSqlReader, input: CatalogSqlParams,
   options?: { now?: number; snapshot?: string; forceOriginal?: boolean }): Promise<DbCatalogPage>;
 export function validateParams(input?: CatalogSqlParams): Required<CatalogSqlParams>;
+export function stableCandidateGuards(input: Required<CatalogSqlParams>,
+  prepared: { words: string[]; candidate: string | null; kind: string },
+  ids?: string[] | null): { values: unknown[]; guards: string[] };
 export const MAX_TEXT_CANDIDATES: number;
 export const MAX_TEXT_BATCHES: number;

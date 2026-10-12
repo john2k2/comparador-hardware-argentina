@@ -81,7 +81,9 @@ export function candidatesSql(p, prepared, ids, now) {
  WHERE NOT EXISTS(SELECT 1 FROM filter_stores) OR EXISTS(SELECT 1 FROM json_each(p.store_ids_json) j JOIN filter_stores f ON f.id=j.value))`;
   return {sql,values};
 }
-function projectedCandidatesSql(p,prepared,ids) {
+// Prefiltro estable compartido con el certificado de reloj por consulta.
+// Precio, frescura y preferencia canónica se aplican fuera de este helper.
+export function stableCandidateGuards(p,prepared,ids=null) {
   const values=[JSON.stringify(prepared.words)],guards=['p.catalog_component=1'];
   if(p.p_category!==null) {guards.push('p.category=?');values.push(p.p_category);}
   if(prepared.candidate) {
@@ -91,6 +93,10 @@ function projectedCandidatesSql(p,prepared,ids) {
   if(prepared.kind!=='ram'&&prepared.words.length<=2) guards.push("NOT EXISTS(SELECT 1 FROM query_terms q WHERE instr(' '||p.catalog_name||' ',' '||q.term||' ')=0)");
   if(prepared.kind!=='ram') guards.push("NOT EXISTS(SELECT 1 FROM query_terms q WHERE instr(' '||p.catalog_document||' ',' '||q.term||' ')=0)");
   if(ids!==null) {guards.push('p.id IN(SELECT value FROM json_each(?))');values.push(JSON.stringify(ids));}
+  return {values,guards};
+}
+function projectedCandidatesSql(p,prepared,ids) {
+  const {values,guards}=stableCandidateGuards(p,prepared,ids);
   if(prepared.normalized&&(p.p_min_price!==null||p.p_max_price!==null)) {
     // Mantener las fichas vencidas de una identidad activa: pueden ser la
     // preferida y PostgreSQL elige identidad antes de aplicar frescura.
