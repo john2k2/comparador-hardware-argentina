@@ -3,6 +3,7 @@ import type { ProductPrice } from './types';
 import {
   computeComparableStorePriceStats,
   getAvailableComparableStorePrices,
+  getComparableStorePrices,
   parseLocalizedArsPrice,
   pickBestStorePrices,
   preferStorePrice,
@@ -26,6 +27,50 @@ function buildPrice(overrides: Partial<ProductPrice>): ProductPrice {
 }
 
 describe('price-utils', () => {
+  it('con producto el stock comprable se filtra antes de deduplicar la tienda', () => {
+    const unknown = buildPrice({ storeId: 'mexx', url: 'https://www.mexx.com.ar/ram-a', price: 100, stock: 'unknown', lastUpdated: new Date() });
+    const available = { ...unknown, url: 'https://www.mexx.com.ar/ram-b', price: 200, stock: 'in-stock' as const };
+    const product = { name: 'Memoria DDR4', category: 'memoria-ram' };
+    for (const stock of ['unknown', 'out-of-stock', 'backorder', null]) {
+      const unavailable = { ...unknown, stock } as ProductPrice;
+      expect(getAvailableComparableStorePrices([unavailable, available], product)).toEqual([available]);
+      expect(getAvailableComparableStorePrices([available, unavailable], product)).toEqual([available]);
+    }
+    expect(getAvailableComparableStorePrices([unknown, available])).toEqual([unknown]);
+  });
+  it.each([
+    ['agrupado-memoria-ram-corsair-16gb-1co0hh2', 'CMG16GX4M1E3200C16', 'Memoria Corsair DDR4 16GB 3200MHz Vengeance RGB RS Black CL16', '15558', 283600],
+    ['cg-15558', 'CMG16GX4M1E3200C16', 'Memoria Corsair DDR4 16GB 3200MHz Vengeance RGB RS Black CL16', '15558', 283600],
+    ['cg-15522', 'CMK8GX4M1E3200C16', 'Memoria Corsair DDR4 8GB 3200MHz Vengeance LPX Black CL16', '15522', 129990],
+    ['cg-16112', 'CMK16GX5M1B5600C40', 'Memoria Corsair DDR5 16GB 5600MHz Vengeance Black CL40', '16112', 428000],
+  ])('stats y lectores públicos revalidan SKU actual de %s', (_id, sku, name, ref, price) => {
+    const url = `https://compragamer.com/producto/RAM_${ref}`, listingRef = `compragamer:id:${ref}`;
+    const subject = { title: name, sku, specs: { SKU: sku } };
+    const sourceIdentity = { title: name, storeSku: sku, listingRef };
+    const proof = proveManufacturerRamAttributes(subject, subject, { storeId: 'compragamer', url, listingRef });
+    expect(proof).not.toBeNull();
+    const offer = buildPrice({ storeId: 'compragamer', url, price, lastUpdated: new Date(), sourceIdentity,
+      identityReview: { version: 1, status: 'consistent', reason: 'manufacturer-ram', reviewedAt: new Date().toISOString(),
+        model: null, confidence: null, subject: { name: normalizeIdentityText(name), category: 'memoria-ram', url },
+        sourceIdentity, proof: proof! } });
+    const product = { name, category: 'memoria-ram', specs: { SKU: sku } };
+    for (const getter of [getComparableStorePrices, getAvailableComparableStorePrices]) {
+      expect(getter([offer], product)).toEqual([offer]);
+      expect(getter([offer])).toEqual([]);
+      for (const changed of [{ ...product, specs: {} }, { ...product, specs: { SKU: 'otro' } },
+        { ...product, name: `${name} 2x8GB` }, { ...product, name: name.replace('Black', 'White') }])
+        expect(getter([offer], changed)).toEqual([]);
+    }
+    expect(computeComparableStorePriceStats([offer], product).lowest).toBe(price);
+    expect(computeComparableStorePriceStats([offer]).lowest).toBe(0);
+    const damaged = { ...offer, identityReview: { ...offer.identityReview!, proof: undefined } };
+    expect(getAvailableComparableStorePrices([damaged])).toEqual([]);
+    expect(getAvailableComparableStorePrices([damaged], product)).toEqual([]);
+    // La elegibilidad se comprueba antes de deduplicar una tienda: un proof
+    // inválido barato no oculta su otra publicación válida.
+    const pending = { ...offer, price: 1, sourceIdentity: { ...sourceIdentity, storeSku: 'otro' } };
+    expect(computeComparableStorePriceStats([pending, offer], product).lowest).toBe(price);
+  });
   it('RAM fabricante serializada requiere SKU y specs vigentes, stock y frescura por separado',()=>{
     const name='Memoria Corsair DDR4 16GB 3200MHz Vengeance RGB RS Black CL16',sku='CMG16GX4M1E3200C16';
     const url='https://compragamer.com/producto/RAM_15558',listingRef='compragamer:id:15558',subject={title:name,sku,specs:{SKU:sku}};

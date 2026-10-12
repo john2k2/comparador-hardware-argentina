@@ -1,8 +1,47 @@
 import { describe, expect, it } from 'vitest';
 import { mapDbProduct, mapDbGuideProduct } from '@/lib/persistence/product-read-mapper';
 import type { DbProductRow } from '@/lib/persistence/product-read-types';
+import { proveManufacturerRamAttributes } from '@/lib/quality/offer-attribute-proof';
+import { normalizeIdentityText } from '@/lib/product-identity';
+import { getAvailableComparableStorePrices } from '@/lib/price-utils';
 
 describe('product-read-mapper', () => {
+  it.each([
+    ['agrupado-memoria-ram-corsair-16gb-1co0hh2', 'CMG16GX4M1E3200C16', 'Memoria Corsair DDR4 16GB 3200MHz Vengeance RGB RS Black CL16', '15558'],
+    ['cg-15558', 'CMG16GX4M1E3200C16', 'Memoria Corsair DDR4 16GB 3200MHz Vengeance RGB RS Black CL16', '15558'],
+    ['cg-15522', 'CMK8GX4M1E3200C16', 'Memoria Corsair DDR4 8GB 3200MHz Vengeance LPX Black CL16', '15522'],
+    ['cg-16112', 'CMK16GX5M1B5600C40', 'Memoria Corsair DDR5 16GB 5600MHz Vengeance Black CL40', '16112'],
+  ])('mapea %s conservando specs y la fecha real de una aprobación RAM serializada', (id, sku, name, ref) => {
+    const url = `https://compragamer.com/producto/RAM_${ref}`, listingRef = `compragamer:id:${ref}`;
+    const subject = { title: name, sku, specs: { SKU: sku } }, observedAt = new Date().toISOString();
+    const source = { title: name, storeSku: sku, listingRef };
+    const review = { version: 1, status: 'consistent', reason: 'manufacturer-ram', model: null, confidence: null,
+      reviewedAt: observedAt, subject: { name: normalizeIdentityText(name), category: 'memoria-ram', url }, sourceIdentity: source,
+      proof: proveManufacturerRamAttributes(subject, subject, { storeId: 'compragamer', url, listingRef }) };
+    const row: DbProductRow = { id, name, category: 'memoria-ram', brand: 'Corsair', model: name, description: null,
+      image: null, normalized_title: null, canonical_product_key: 'legacy-ram', family_key: null, variant_key: null,
+      refresh_priority: null, last_scraped_at: observedAt, last_normalized_at: null, specs: { SKU: sku },
+      lowest_price: 123, highest_price: 123, average_price: 123, created_at: observedAt, updated_at: observedAt,
+      product_prices: [{ store_id: 'compragamer', url, price: 283600, original_price: null, stock: 'in-stock',
+        installment_count: null, installment_amount: null, last_updated: observedAt, price_condition: 'special',
+        identity_review: JSON.parse(JSON.stringify(review)), source_identity: source }] };
+    for (const mapper of [mapDbProduct, mapDbGuideProduct]) {
+      const product = mapper(row);
+      expect(product.id).toBe(id);
+      expect(product.specs).toEqual({ SKU: sku });
+      expect(product.lowestPrice).toBe(283600);
+      expect(getAvailableComparableStorePrices(product.prices, product)).toHaveLength(1);
+      expect(product.prices[0].lastUpdated.toISOString()).toBe(observedAt);
+      expect(product.prices[0].priceCondition).toBe('special');
+      for (const changed of [{ ...row, specs: {} }, { ...row, specs: { SKU: 'otro' } },
+        { ...row, name: `${name} 2x8GB` }, { ...row, name: name.replace('Black', 'White') }]) {
+        const invalid = mapper(changed);
+        expect(getAvailableComparableStorePrices(invalid.prices, invalid)).toEqual([]);
+        expect(invalid.lowestPrice).toBe(0);
+        expect(invalid.prices).toHaveLength(1);
+      }
+    }
+  });
   it('recovers the AORUS manufacturer without changing the product ID or observed offer', () => {
     const name = 'VIDEO GEFORCE RTX 5090 32GB AORUS MASTER';
     const observedAt = '2026-10-03T23:20:00Z';

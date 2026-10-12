@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { exactRamAttributes } from './ram-identity';
-import { captureRamSpecs, manufacturerRamEvidence, planRamEnrichment } from './ram-enrichment';
+import { captureRamSpecs, hasRamSubjectConflict, manufacturerRamEvidence, planRamEnrichment } from './ram-enrichment';
 
 const mpn = 'CMG16GX4M1E3200C16';
 const title = 'Memoria Corsair DDR4 16GB 3200MHz Vengeance RGB RS Black CL16';
@@ -10,6 +10,22 @@ function plan(value = title, manufacturerMpn = mpn, specs: Record<string, unknow
 }
 
 describe('enriquecimiento RAM con tres MPN de fabricante acreditadas', () => {
+  it.each([
+    { kit: '2x8GB' }, { generation: 'DDR5' }, { speed: '6000MHz' }, { formFactor: 'SODIMM' },
+    { kit: '1x16GB', Kit: '2x8GB' }, { generation: 'DDR4', generacion: 'DDR5' },
+    { speed: '3200MHz', frecuencia: '3600MHz' }, { latency: 'CL16', latencia: 'CL18' },
+  ])('detecta contradicción estructurada sin completar fabricante: %j', specs => {
+    const completeTitle = `${title} 1x16GB UDIMM`;
+    const subject = { title: completeTitle, specs: { SKU: 'unknown' } };
+    expect(hasRamSubjectConflict(subject, { ...subject, specs: { SKU: 'unknown', ...specs } })).toBe(true);
+  });
+  it('admite campos equivalentes y contrasta atributos presentes entre sujetos sin inferir faltantes', () => {
+    const subject = { title: `${title} 1x16GB UDIMM`, specs: { SKU: 'unknown', kit: '1 x 16 GB', generacion: 'DDR 4', frecuencia: '3200 MHz' } };
+    expect(hasRamSubjectConflict(subject, { ...subject, specs: { SKU: 'unknown', formFactor: 'desktop' } })).toBe(false);
+    expect(hasRamSubjectConflict({ title: 'RAM', specs: { kit: '1x16GB' } },
+      { title: 'RAM', specs: { kit: '2x8GB' } })).toBe(true);
+    expect(hasRamSubjectConflict({ title: 'RAM' }, { title: 'RAM' })).toBe(false);
+  });
   it('captura specs originales que gobiernan contradicciones y no ignora tipos inválidos',()=>{
     expect(captureRamSpecs({SKU:mpn,kit:'2x8GB',Color:'Grey',Capacidad:32,Stock:'10'}))
       .toEqual({SKU:mpn,kit:'2x8GB',Color:'Grey',Capacidad:32});

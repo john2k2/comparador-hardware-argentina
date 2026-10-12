@@ -9,6 +9,7 @@ import { listingReference } from './scrapers/listing-reference';
 import { isCatalogOfferFresh } from './price-freshness';
 
 type PriceLike = { price: number };
+export type OfferProductContext = { name: string; category?: string; specs?: Record<string, unknown> };
 type StorePriceLike = PriceLike & {
   storeId: string;
   lastUpdated?: Date | string | number;
@@ -41,7 +42,7 @@ function isFinitePositivePrice(value: number): boolean {
 /** Oferta mostrable; la frescura se evalúa aparte para conservar precios anteriores. */
 export function isComparableStoreOffer(
   offer: StorePriceLike,
-  product: { name: string; category?: string; specs?: Record<string, unknown> },
+  product: OfferProductContext,
 ): boolean {
   if (hasPurchaseRestriction(offer.sourceIdentity) || hasPurchaseRestriction(offer.identityReview?.sourceIdentity)) return false;
   const evidence = offer.url && product.category ? buildIdentityEvidence(product.name, product.category as HardwareCategory,
@@ -289,8 +290,14 @@ function isUnavailableStock(stock?: string | null): boolean {
   return stock === 'out-of-stock';
 }
 
-export function computeComparableStorePriceStats(prices: ProductPrice[]) {
-  const bestPerStore = pickBestStorePrices(prices);
+export function computeComparableStorePriceStats(prices: ProductPrice[], product?: OfferProductContext) {
+  // El proof fabricante necesita el producto actual. La falta de contexto no
+  // habilita un SKU capturado anteriormente; conservar el contrato histórico v1.
+  const reviewed = prices.filter(price => product
+    ? !needsIdentityReview(price, product)
+    : price.identityReview?.reason !== 'manufacturer-ram'
+      && price.identityReview?.proof?.version !== 2);
+  const bestPerStore = pickBestStorePrices(reviewed);
   const available = bestPerStore.filter((price) => !isUnavailableStock(price.stock));
 
   if (available.length === 0) {
@@ -307,20 +314,23 @@ export function computeComparableStorePriceStats(prices: ProductPrice[]) {
 }
 
 /** Base única para mínimos vigentes. El histórico permanece separado y completo. */
-export function computeCurrentStorePriceStats(prices: ProductPrice[], product: { name: string; category?: string; specs?: Record<string, unknown> }, now = Date.now()) {
+export function computeCurrentStorePriceStats(prices: ProductPrice[], product: OfferProductContext, now = Date.now()) {
   return computeComparablePriceStats(pickBestStorePrices(prices.filter(price =>
     isComparableStoreOffer(price, product) && isCatalogOfferFresh(price.lastUpdated, now))));
 }
 
-export function getComparableStorePrices(prices: ProductPrice[]): ProductPrice[] {
-  return computeComparableStorePriceStats(prices).comparablePrices;
+export function getComparableStorePrices(prices: ProductPrice[], product?: OfferProductContext): ProductPrice[] {
+  return computeComparableStorePriceStats(prices, product).comparablePrices;
 }
 
 /** Precios comparables que el comprador todavía puede adquirir. */
-export function getAvailableComparableStorePrices(prices: ProductPrice[]): ProductPrice[] {
-  return computeComparableStorePriceStats(prices)
+export function getAvailableComparableStorePrices(prices: ProductPrice[], product?: OfferProductContext): ProductPrice[] {
+  // Excluir stock no comprable antes de elegir una publicación por tienda.
+  // Una unknown barata no puede ocultar otra publicación in-stock más cara.
+  const eligible = product ? prices.filter(price => isComparableStoreOffer(price, product)) : prices;
+  return computeComparableStorePriceStats(eligible, product)
     .comparablePrices
-    .filter((price) => !isUnavailableStock(price.stock));
+    .filter((price) => product ? isComparableStoreOffer(price, product) : !isUnavailableStock(price.stock));
 }
 
 // Instancias reutilizables para formateo de precios (evitar creacion en cada llamada)

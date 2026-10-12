@@ -83,6 +83,27 @@ function titleFields(title: string): Partial<Record<RamField, string[]>> {
     lighting: [...(/\brgb\b/.test(text.replace(negative, ' ')) ? ['rgb'] : []), ...(negative.test(text) ? ['non-rgb'] : [])] };
 }
 
+/** Contrasta sólo afirmaciones presentes; no completa una MPN desconocida. */
+export function hasRamSubjectConflict(...subjects: RamSubject[]): boolean {
+  const observed: Partial<Record<RamField, Set<string>>> = {};
+  for (const subject of subjects) {
+    const specs = captureRamSpecs(subject.specs);
+    if (!specs) return true;
+    const claims = titleFields(subject.title);
+    for (const [key, value] of Object.entries(specs)) {
+      const specKey = normalizeIdentityText(key).replace(/\s/g, '');
+      const field = Object.hasOwn(specFields, specKey) ? specFields[specKey] : undefined;
+      if (field) (claims[field] ??= []).push(normalizedValue(field, String(value)));
+    }
+    for (const [field, values] of Object.entries(claims) as [RamField, string[]][]) {
+      const seen = observed[field] ??= new Set();
+      for (const value of values) seen.add(value);
+      if (seen.size > 1) return true;
+    }
+  }
+  return false;
+}
+
 function complete(subject: RamSubject, evidence: ManufacturerRamEvidence): CompletedRamIdentity | string {
   const text = normalizeIdentityText(subject.title);
   // La evidencia fabricante no transforma un accesorio, combo o fabricante distinto.

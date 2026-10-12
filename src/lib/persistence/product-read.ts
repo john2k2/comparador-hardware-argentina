@@ -48,13 +48,13 @@ export async function readProductByIdFromDatabase(id: string) {
   return mapDbProduct(data as DbProductRow);
 }
 
-export async function readCanonicalProductIdByKey(canonicalProductKey: string, product?: Pick<Product,'name'|'category'|'canonicalProductKey'|'prices'>) {
+export async function readCanonicalProductIdByKey(canonicalProductKey: string, product?: Pick<Product,'name'|'category'|'canonicalProductKey'|'prices'> & Partial<Pick<Product,'specs'>>) {
   const supabase = getServerSupabaseReadClient();
   if (!supabase || !canonicalProductKey || !product) return null;
 
   const { data, error } = await supabase
     .from('products')
-    .select('id,name,category')
+    .select('id,name,category,specs')
     .eq('canonical_product_key', canonicalProductKey)
     .like('id', 'agrupado-%')
     .order('updated_at', { ascending: false })
