@@ -1,6 +1,7 @@
 // Transporte del ciclo privado. No descubre ni publica nuevos productos.
 import { DatabaseSync } from 'node:sqlite';
 import { isDeepStrictEqual } from 'node:util';
+import { buildClockSyncDelta,validateClockSync } from './clock-sync.mjs';
 import { validateSync } from './remote-sync.mjs';
 export const PILOT_ORIGIN='https://catalog-search-free-pilot-20261011.ortiz-jonathan.workers.dev';
 export function buildCycleDelta(before,after){
@@ -37,4 +38,17 @@ export async function sendCycleDelta(payload,token,{fetcher=fetch}={}){
 export function cycleDeltaFromFiles(beforeFile,afterFile){
   const before=new DatabaseSync(beforeFile,{readOnly:true}),after=new DatabaseSync(afterFile,{readOnly:true});
   try{return buildCycleDelta(before,after);}finally{before.close();after.close();}
+}
+
+export function clockDeltaFromFiles(beforeFile,afterFile,options){
+  const before=new DatabaseSync(beforeFile,{readOnly:true}),after=new DatabaseSync(afterFile,{readOnly:true});
+  try{return buildClockSyncDelta(before,after,options);}finally{before.close();after.close();}
+}
+export async function sendCycleClockDelta(payload,token,{fetcher=fetch,now=Date.now(),maxRowsWritten}={}){
+  validateClockSync(payload,{now,maxRowsWritten});
+  const response=await fetcher(PILOT_ORIGIN+'/api/pilot/clock-sync',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(30000)});
+  if(!response.ok)throw new Error('CYCLE_CLOCK_SYNC_REJECTED');
+  const body=await response.json();
+  if(body.atomic!==true||body.generation!==JSON.parse(payload.finalSnapshot).cache.generation||!Number.isSafeInteger(body.rowsRead)||!Number.isSafeInteger(body.rowsWritten)||body.rowsRead<0||body.rowsWritten<0||body.rowsWritten>maxRowsWritten)throw new Error('CYCLE_SYNC_RECEIPT_INVALID');
+  return body;
 }

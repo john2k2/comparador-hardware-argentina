@@ -1,5 +1,6 @@
 // Piloto remoto aislado: no tiene rutas del sitio ni acceso a Supabase.
 import catalog from './worker.mjs';
+import { applyClockSync } from './clock-sync.mjs';
 import { applyRemoteSync } from './remote-sync.mjs';
 import { d1Adapter } from './sqlite-adapter.mjs';
 import { applyRamAdmission } from './ram-admission.mjs';
@@ -20,17 +21,31 @@ export function createRemoteWorker({ worker = catalog, now = () => Date.now(), r
           return new Response(JSON.stringify({snapshot:row.value,rowsRead:db.metrics.rowsRead,rowsWritten:0}),{headers:{...headers,'Content-Type':'application/json'}});
         }catch{return reject(503,'PILOT_STATE_UNAVAILABLE');}
       }
-      if (['/api/pilot/sync','/api/pilot/ram-admission'].includes(url.pathname) && request.method === 'POST') {
-        if (Number(request.headers.get('Content-Length')) > 128000) return reject(413, 'PILOT_SYNC_SIZE');
+      const clockSync=url.pathname==='/api/pilot/clock-sync';
+      const clockBudget=Number(env.PILOT_CLOCK_SYNC_MAX_ROWS_WRITTEN);
+      if(clockSync&&(env.PILOT_CLOCK_SYNC_ENABLED!=='1'||!Number.isSafeInteger(clockBudget)||clockBudget<8||clockBudget>20000))return reject(404,'PILOT_CLOCK_SYNC_DISABLED');
+      if (['/api/pilot/sync','/api/pilot/ram-admission','/api/pilot/clock-sync'].includes(url.pathname) && request.method === 'POST') {
+        const byteLimit=clockSync?1024*1024:128000;
+        if (Number(request.headers.get('Content-Length')) > byteLimit) return reject(413, 'PILOT_SYNC_SIZE');
         try {
           // El lector cancela antes de parsear cuerpos ilimitados, incluso sin Content-Length.
           const reader = request.body.getReader(); const chunks = []; let size = 0;
-          for (;;) { const { done, value } = await reader.read(); if (done) break; size += value.byteLength; if (size > 128000) { await reader.cancel(); return reject(413, 'PILOT_SYNC_SIZE'); } chunks.push(value); }
+          for (;;) { const { done, value } = await reader.read(); if (done) break; size += value.byteLength; if (size > byteLimit) { await reader.cancel(); return reject(413, 'PILOT_SYNC_SIZE'); } chunks.push(value); }
           const bytes = new Uint8Array(size); let offset = 0; for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
           if(now()>=Date.parse(env.PILOT_EXPIRES_AT))return reject(503,'PILOT_STOPPED');
           const payload=JSON.parse(new TextDecoder().decode(bytes));
-          const result = url.pathname==='/api/pilot/ram-admission'
+          let certificateRowsRead=0;
+          if(clockSync){
+            const certificateDb=d1Adapter(env.CATALOG_DB);
+            const marker=await certificateDb.first("SELECT value FROM pilot_meta WHERE key='snapshot'");
+            certificateRowsRead=certificateDb.metrics.rowsRead;
+            const snapshot=JSON.parse(marker?.value??'null');
+            if(!snapshot||Object.hasOwn(snapshot,'prepared_views')||Object.hasOwn(snapshot,'clock_observations'))return reject(409,'PILOT_CLOCK_CERTIFICATE_UNSUPPORTED');
+            if(now()>=Date.parse(env.PILOT_EXPIRES_AT))return reject(503,'PILOT_STOPPED');
+          }
+          const result = clockSync?await applyClockSync(env.CATALOG_DB,payload,{now:now(),maxRowsWritten:clockBudget}):url.pathname==='/api/pilot/ram-admission'
             ?await applyRamAdmission(env.CATALOG_DB,payload,{now:now(),verifyOffer:ramVerifier}):await applyRemoteSync(env.CATALOG_DB,payload);
+          if(clockSync)result.rowsRead+=certificateRowsRead;
           return new Response(JSON.stringify(result), { headers: { ...headers, 'Content-Type': 'application/json' } });
         } catch { return reject(409, 'PILOT_SYNC_REJECTED'); }
       }

@@ -1,11 +1,13 @@
 // Un tick del piloto en la Mac. El scheduler sólo invoca este proceso acotado.
 import { DatabaseSync } from 'node:sqlite';
 import { randomUUID } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 import { readFileSync,writeFileSync,renameSync,existsSync,statSync,realpathSync,unlinkSync } from 'node:fs';
 import { resolve,basename,dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { initializeRotation,seedNextRotationBatch,coverageSnapshot } from './rotation-local.mjs';
-import { buildCycleDelta,cycleDeltaFromFiles,pilotState,sendCycleDelta } from './cycle-remote.mjs';
+import { buildCycleDelta,cycleDeltaFromFiles,pilotState,sendCycleDelta,clockDeltaFromFiles,sendCycleClockDelta } from './cycle-remote.mjs';
+import { buildClockSyncDelta,validateClockSync } from './clock-sync.mjs';
 import { rebuildProjection } from './projection.mjs';
 import { estimateIndexMaintenance } from './incremental-sync.mjs';
 import { chargeDailyBudget } from './daily-budget.mjs';
@@ -36,6 +38,7 @@ export function validateCycleConfig(config){
     if(typeof config[key]!=='string'||!config[key].startsWith('/'))throw new Error('CYCLE_CONFIG_PATH');
   if(basename(config.sqlite)!=='sample.sqlite'||new Set([config.sqlite,config.checkpoint,config.tokenFile,config.reportFile]).size!==4)throw new Error('CYCLE_CONFIG_PATH');
   if(dirname(config.tokenFile)!==dirname(config.sqlite)||basename(config.tokenFile)!=='pilot-access.private')throw new Error('CYCLE_CONFIG_PATH');
+  if(config.clockSync!==undefined&&typeof config.clockSync!=='boolean')throw new Error('CYCLE_CONFIG_CLOCK_SYNC');
   return config;
 }
 /** Lock SQLite durable: un proceso solapado no consume ni consulta fuentes. */
@@ -54,19 +57,45 @@ export function acquireCycleLease(db,config,now,owner=randomUUID()){
   });
 }
 function budget(db,day){db.prepare('INSERT OR IGNORE INTO pilot_cycle_budget(day) VALUES(?)').run(day);return db.prepare('SELECT * FROM pilot_cycle_budget WHERE day=?').get(day);}
-function reserve(db,day,config,{sources=true}={}){
-  return transaction(db,()=>{
+function reserve(db,day,config,{sources=true,writes=4000}={}){
+  const operation=()=>{
     const row=budget(db,day);
     // Reserva conservadora para un delta de hasta tres productos/200 proyecciones.
     // Ante respuesta perdida se conserva entera hasta el fin del día.
-    const reserveWrites=4000;
+    const reserveWrites=writes;
     if(sources&&(row.attempted+3>config.maxDailyOffers||row.http_requests+12>config.maxDailyHttp)
       ||row.rows_written+row.reserved_writes+reserveWrites>config.maxDailyRemoteWrites)return null;
     db.prepare('UPDATE pilot_cycle_budget SET attempted=attempted+?,http_requests=http_requests+?,reserved_writes=reserved_writes+? WHERE day=?').run(sources?3:0,sources?12:0,reserveWrites,day);
     return reserveWrites;
-  });
+  };
+  return db.isTransaction?operation():transaction(db,operation);
 }
 function writeCheckpoint(db,config){copySqlite(db,config.checkpoint);}
+const clockJournalKey='cycle_clock_outbox';
+function validatePendingClock(db,config,pending,{acknowledged=false}={}){
+  // El corte original valida estructura y presupuesto; su edad no invalida un ACK.
+  validateClockSync(pending.payload,{now:pending.payload.now,maxRowsWritten:20000});
+  if(marker(db)!==pending.payload.finalSnapshot)throw new Error('CYCLE_DELTA_INVALID');
+  const before=new DatabaseSync(config.checkpoint,{readOnly:true});
+  try{
+    const original=marker(before);
+    if(original===pending.payload.expectedSnapshot){
+      const rebuilt=buildClockSyncDelta(before,db,{now:pending.payload.now,maxRowsWritten:20000});
+      if(!isDeepStrictEqual(rebuilt,pending.payload))throw new Error('CYCLE_DELTA_INVALID');
+    }else if(acknowledged&&original===pending.payload.finalSnapshot){
+      // Un crash después del checkpoint puede conservar el outbox: comprobar
+      // datos y proyección, además de cada target final del documento anterior.
+      if(buildClockSyncDelta(before,db,{now:pending.payload.now,maxRowsWritten:20000})!==null)throw new Error('CYCLE_DELTA_INVALID');
+      const count=db.prepare('SELECT COUNT(*) n FROM search_projection').get().n;
+      const horizon=db.prepare('SELECT MIN(next_transition) time FROM search_projection').get().time??'9999-12-31T23:59:59.999Z';
+      if(count!==pending.payload.expectedProjectionCount||horizon!==JSON.parse(pending.payload.finalSnapshot).cache.validUntil)throw new Error('CYCLE_DELTA_INVALID');
+      for(const row of pending.payload.rows){
+        const actual=db.prepare('SELECT * FROM search_projection WHERE product_id=?').get(row.before.product_id);
+        if(!isDeepStrictEqual({...actual},{...row.before,...row.after}))throw new Error('CYCLE_DELTA_INVALID');
+      }
+    }else throw new Error('CYCLE_DELTA_INVALID');
+  }finally{before.close();}
+}
 export async function runAutomaticCycle(config,dependencies={}){
   validateCycleConfig(config);
   const clock=dependencies.clock??Date.now,now=clock(),day=new Date(now).toISOString().slice(0,10);
@@ -79,6 +108,8 @@ export async function runAutomaticCycle(config,dependencies={}){
   let reservation=0,sourceReserved=false,knownReceipt=false,attempted=0,sourceComplete=false;
   try{
     if(clock()>=config.expiresAt)throw new Error('CYCLE_PILOT_STOPPED');
+    const localSnapshot=JSON.parse(marker(db));
+    if(Object.hasOwn(localSnapshot,'prepared_views')||Object.hasOwn(localSnapshot,'clock_observations'))throw new Error('CYCLE_CERTIFIED_SNAPSHOT_UNSUPPORTED');
     const local=dependencies.consumer??await import(pathToFileURL(config.consumerBundle).href);
     // FullH4rd pendiente por decisión del usuario; su cola no autoriza otra lectura.
     const capabilities={storeIds:local.localStoreIds.filter(id=>id!=='fullh4rd'),categories:local.localCategories,
@@ -86,32 +117,79 @@ export async function runAutomaticCycle(config,dependencies={}){
     const token=dependencies.token??readFileSync(config.tokenFile,'utf8').trim();
     const state=await (dependencies.state??pilotState)(token);
     report.remote.rowsRead+=state.rowsRead;
+    const journal=db.prepare('SELECT value FROM pilot_meta WHERE key=?').get(clockJournalKey);
+    if(journal){
+      const durable=JSON.parse(journal.value);
+      try{validatePendingClock(db,config,durable,{acknowledged:state.snapshot===durable.payload.finalSnapshot});}catch{throw new Error('CYCLE_DELTA_INVALID');}
+      atomicJson(outbox,durable);
+    }
     if(!existsSync(outbox)&&state.snapshot!==marker(db)&&existsSync(config.checkpoint)){
       // El writer puede confirmar SQLite antes de que exista el archivo outbox.
       // Reconstruir desde el checkpoint durable, sin otra lectura a una tienda.
       const old=new DatabaseSync(config.checkpoint,{readOnly:true});let expected;
       try{expected=marker(old);}finally{old.close();}
       if(state.snapshot===expected){
-        let payload;try{payload=cycleDeltaFromFiles(config.checkpoint,config.sqlite);}catch{throw new Error('CYCLE_DELTA_INVALID');}
-        atomicJson(outbox,{createdAt:new Date(clock()).toISOString(),day,reservation:4000,reconstructed:true,payload});
+        let payload,kind;
+        try{
+          if(config.clockSync){
+            try{payload=clockDeltaFromFiles(config.checkpoint,config.sqlite,{now:Date.parse(JSON.parse(marker(db)).cache.validFrom),maxRowsWritten:20000});kind='clock';}
+            catch(error){if(!/^CLOCK_SYNC_IMMUTABLE_/.test(error.message))throw error;payload=cycleDeltaFromFiles(config.checkpoint,config.sqlite);}
+          }else payload=cycleDeltaFromFiles(config.checkpoint,config.sqlite);
+        }catch{throw new Error('CYCLE_DELTA_INVALID');}
+        atomicJson(outbox,{createdAt:new Date(clock()).toISOString(),day,reservation:kind==='clock'?4*payload.rows.length+8:4000,reconstructed:true,kind,payload});
       }
     }
     if(existsSync(outbox)){
-      const pending=JSON.parse(readFileSync(outbox,'utf8'));
+      let pending=JSON.parse(readFileSync(outbox,'utf8'));
+      let recoveryReserve=pending.kind==='clock'?4*pending.payload.rows.length+8:4000;
+      if(pending.kind==='clock'){
+        if(!config.clockSync)throw new Error('CYCLE_CONFIG_CLOCK_SYNC');
+        try{validatePendingClock(db,config,pending,{acknowledged:state.snapshot===pending.payload.finalSnapshot});}catch{throw new Error('CYCLE_DELTA_INVALID');}
+      }
       if(state.snapshot!==pending.payload.finalSnapshot){
         if(state.snapshot!==pending.payload.expectedSnapshot)throw new Error('CYCLE_REMOTE_DIVERGED');
+        if(pending.kind==='clock'&&clock()>=Date.parse(JSON.parse(pending.payload.finalSnapshot).cache.validUntil)){
+          const recoveryAt=clock();
+          if(recoveryAt>=config.expiresAt)throw new Error('CYCLE_PILOT_STOPPED');
+          pending=transaction(db,()=>{
+            const rebuilt=(dependencies.projection??rebuildProjection)(db,{now:recoveryAt,generation:'cycle-clock-recovery-'+id,affectedProductIds:[]});
+            const estimate=rebuilt.baseRowsWritten+(dependencies.estimateIndexes??estimateIndexMaintenance)(db,rebuilt.statements);
+            const before=new DatabaseSync(config.checkpoint,{readOnly:true});let payload;
+            try{payload=buildClockSyncDelta(before,db,{now:recoveryAt,maxRowsWritten:config.maxDailyRemoteWrites});}
+            catch(error){if(error.message==='CLOCK_SYNC_BUDGET')throw new Error('CYCLE_MAINTENANCE_BUDGET');throw new Error('CYCLE_DELTA_INVALID');}
+            finally{before.close();}
+            const writes=Math.max(4*payload.rows.length+8,estimate);
+            // La reserva anterior sigue retenida: una respuesta perdida no
+            // acredita consumo cero, aunque hoy la generación siga siendo vieja.
+            if(!reserve(db,day,config,{sources:false,writes}))throw new Error('CYCLE_MAINTENANCE_BUDGET');
+            let charged;
+            try{charged=chargeDailyBudget(db,{now:recoveryAt,estimatedRowsWritten:estimate});}
+            catch(error){if(error.message.startsWith('DAILY_ESTIMATED_WRITE_BUDGET_EXCEEDED:'))throw new Error('CYCLE_MAINTENANCE_BUDGET');throw error;}
+            const durable={createdAt:new Date(recoveryAt).toISOString(),day,reservation:writes,kind:'clock',regenerated:true,payload};
+            db.prepare('INSERT INTO pilot_meta(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run(clockJournalKey,JSON.stringify(durable));
+            if(clock()>=config.expiresAt)throw new Error('CYCLE_PILOT_STOPPED');
+            report.maintenance={regenerated:true,changedProjectionRows:rebuilt.changedProjectionRows,estimatedRowsWritten:estimate,reservedRemoteWrites:writes,budget:charged,cache:rebuilt.cache};
+            return durable;
+          });
+          // Journal y marcador confirmados juntos: si falla el archivo, el
+          // siguiente tick reconstruye el nuevo outbox sin volver a cobrarlo.
+          atomicJson(outbox,pending);
+          recoveryReserve=4*pending.payload.rows.length+8;
+        }
         transaction(db,()=>{
           const row=budget(db,day);
-          if(row.reserved_writes<4000){
-            if(row.rows_written+row.reserved_writes+4000>config.maxDailyRemoteWrites)throw new Error('CYCLE_RECOVERY_BUDGET');
-            db.prepare('UPDATE pilot_cycle_budget SET reserved_writes=reserved_writes+4000 WHERE day=?').run(day);
+          if(row.reserved_writes<recoveryReserve){
+            const missing=recoveryReserve-row.reserved_writes;
+            if(row.rows_written+row.reserved_writes+missing>config.maxDailyRemoteWrites)throw new Error('CYCLE_RECOVERY_BUDGET');
+            db.prepare('UPDATE pilot_cycle_budget SET reserved_writes=reserved_writes+? WHERE day=?').run(missing,day);
           }
         });
         if(clock()>=config.expiresAt)throw new Error('CYCLE_PILOT_STOPPED');
-        const receipt=await (dependencies.sync??sendCycleDelta)(pending.payload,token);
+        const receipt=await (pending.kind==='clock'?(dependencies.clockSync??sendCycleClockDelta):(dependencies.sync??sendCycleDelta))(pending.payload,token,{now:clock(),maxRowsWritten:recoveryReserve});
         report.remote.rowsRead+=receipt.rowsRead;report.remote.rowsWritten+=receipt.rowsWritten;report.remote.syncs++;
       }
-      writeCheckpoint(db,config);renameSync(outbox,outbox+'.recovered-'+id);report.remote.recovered=true;
+      writeCheckpoint(db,config);renameSync(outbox,outbox+'.recovered-'+id);
+      db.prepare('DELETE FROM pilot_meta WHERE key=?').run(clockJournalKey);report.remote.recovered=true;
       // Recuperar primero; una generación perdida jamás suma otras observaciones.
       report.status='recovered';
     }else{
@@ -140,26 +218,37 @@ export async function runAutomaticCycle(config,dependencies={}){
         // de ofertas que puedan superar la reserva o el transporte de200 filas.
         sourceReserved=selected.length>0&&!maintenanceDue;
         if(maintenanceDue)report.sourcesDeferred=selected.length;
-        reservation=reserve(db,day,config,{sources:sourceReserved});
-        if(!reservation)report.status='daily-budget';
+        const scalableMaintenance=maintenanceDue&&config.clockSync;
+        reservation=scalableMaintenance?0:reserve(db,day,config,{sources:sourceReserved});
+        if(!reservation&&!scalableMaintenance)report.status='daily-budget';
         else{
           // Copia durable antes del primer writer, conservada ante fallas de red.
           if(!existsSync(config.checkpoint))writeCheckpoint(db,config);
+          let clockPayload;
           if(maintenanceDue){
             try{
               report.maintenance=transaction(db,()=>{
                 if(clock()>=config.expiresAt)throw new Error('CYCLE_PILOT_STOPPED');
                 const rebuilt=(dependencies.projection??rebuildProjection)(db,{now:maintenanceAt,generation:'cycle-clock-'+id,affectedProductIds:[]});
                 const estimatedRowsWritten=rebuilt.baseRowsWritten+(dependencies.estimateIndexes??estimateIndexMaintenance)(db,rebuilt.statements);
-                if(estimatedRowsWritten>reservation)throw new Error('CYCLE_MAINTENANCE_RESERVATION');
+                if(!scalableMaintenance&&estimatedRowsWritten>reservation)throw new Error('CYCLE_MAINTENANCE_RESERVATION');
                 // Validar límites del transporte antes de confirmar el writer local.
                 const before=new DatabaseSync(config.checkpoint,{readOnly:true});
-                try{buildCycleDelta(before,db);}catch{throw new Error('CYCLE_MAINTENANCE_DELTA');}finally{before.close();}
+                try{
+                  if(scalableMaintenance){
+                    clockPayload=buildClockSyncDelta(before,db,{now:maintenanceAt,maxRowsWritten:config.maxDailyRemoteWrites});
+                    const remoteEstimate=4*clockPayload.rows.length+8;
+                    reservation=reserve(db,day,config,{sources:false,writes:Math.max(remoteEstimate,estimatedRowsWritten)});
+                    if(!reservation)throw new Error('CYCLE_MAINTENANCE_BUDGET');
+                  }else buildCycleDelta(before,db);
+                }catch(error){if(error.message==='CYCLE_MAINTENANCE_BUDGET'||error.message==='CLOCK_SYNC_BUDGET')throw new Error('CYCLE_MAINTENANCE_BUDGET');throw new Error('CYCLE_MAINTENANCE_DELTA');}finally{before.close();}
                 const charged=chargeDailyBudget(db,{now:maintenanceAt,estimatedRowsWritten});
                 if(clock()>=config.expiresAt)throw new Error('CYCLE_PILOT_STOPPED');
-                return {changedProjectionRows:rebuilt.changedProjectionRows,estimatedRowsWritten,budget:charged,cache:rebuilt.cache};
+                return {changedProjectionRows:rebuilt.changedProjectionRows,estimatedRowsWritten,budget:charged,cache:rebuilt.cache,transport:scalableMaintenance?'clock-sync-v1':'legacy',reservedRemoteWrites:reservation};
               });
             }catch(error){
+              // La reserva del transporte escalable pertenece a la transacción revertida.
+              if(scalableMaintenance)reservation=0;
               // Fallo local confirmado: no se hizo HTTP ni quedó un writer parcial.
               sourceComplete=true;knownReceipt=true;
               throw error;
@@ -188,11 +277,11 @@ export async function runAutomaticCycle(config,dependencies={}){
           }
           sourceComplete=true;
           if(sourceReserved)db.prepare('UPDATE pilot_cycle_state SET next_store=? WHERE id=1').run((stores.indexOf(selected.at(-1))+1)%stores.length);
-          let payload;try{payload=cycleDeltaFromFiles(config.checkpoint,config.sqlite);}catch{throw new Error('CYCLE_DELTA_INVALID');}
+          let payload;try{payload=clockPayload??cycleDeltaFromFiles(config.checkpoint,config.sqlite);}catch{throw new Error('CYCLE_DELTA_INVALID');}
           if(payload){
             if(clock()>=config.expiresAt)throw new Error('CYCLE_PILOT_STOPPED');
-            atomicJson(outbox,{createdAt:new Date(clock()).toISOString(),day,reservation,payload});
-            const receipt=await (dependencies.sync??sendCycleDelta)(payload,token);
+            atomicJson(outbox,{createdAt:new Date(clock()).toISOString(),day,reservation,kind:clockPayload?'clock':undefined,payload});
+            const receipt=await (clockPayload?(dependencies.clockSync??sendCycleClockDelta):(dependencies.sync??sendCycleDelta))(payload,token,{now:clock(),maxRowsWritten:reservation});
             report.remote.rowsRead+=receipt.rowsRead;report.remote.rowsWritten+=receipt.rowsWritten;report.remote.syncs++;
             knownReceipt=true;writeCheckpoint(db,config);renameSync(outbox,outbox+'.sent-'+id);
           }else knownReceipt=true;
@@ -202,7 +291,7 @@ export async function runAutomaticCycle(config,dependencies={}){
     }
     report.coverage=coverageSnapshot(db,{now:clock(),capabilities,sinceStartedAt:config.startedAt});
   }catch(error){
-    report.status='failed';report.error=error instanceof Error&&/^CYCLE_[A-Z_]+$/.test(error.message)?error.message:'CYCLE_EXECUTION_FAILED';
+    report.status=error instanceof Error&&error.message==='CYCLE_MAINTENANCE_BUDGET'?'daily-budget':'failed';report.error=error instanceof Error&&/^CYCLE_[A-Z_]+$/.test(error.message)?error.message:'CYCLE_EXECUTION_FAILED';
     db.prepare('UPDATE pilot_cycle_state SET last_error=? WHERE id=1').run(report.error);
   }finally{
     const requests=Object.values(report.sourceHttp).reduce((total,metric)=>total+(metric.requests??0),0);

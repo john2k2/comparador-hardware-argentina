@@ -297,3 +297,177 @@ test('cálculo que atraviesa vencimiento revierte marcador y ledger antes de con
   assert.ok(!existsSync(resolve(f.directory,'outbox.json')));
  }finally{f.cleanup();}
 });
+
+function largeClockFixture(count=1003){
+ const f=fixture(),db=new DatabaseSync(f.config.sqlite);
+ const product={...db.prepare('SELECT * FROM products WHERE id=?').get('p0')};
+ const summary={...db.prepare('SELECT * FROM summaries WHERE product_id=?').get('p0')};
+ const old=new Date(f.config.startedAt-4*3600000+1).toISOString();
+ db.exec('BEGIN');
+ for(let i=3;i<count;i++){
+  const id='p'+i,offer='o'+i,url='https://katech.com.ar/producto/cpu-'+i+'/';
+  db.prepare('INSERT INTO products VALUES(?,?,?,?,?,?,?,?,?,?)').run(...Object.values({...product,id,catalog_identity:id,row_json:JSON.stringify({id,name:'AMD Ryzen 5 5500',category:'procesadores'})}));
+  db.prepare('INSERT INTO product_substrings VALUES(?,?)').run(id,'amd ryzen 5 5500');
+  db.prepare('INSERT INTO product_prices VALUES(?,?,?,?,?,?)').run(offer,id,'katech',100000,url,JSON.stringify({id:offer,product_id:id,store_id:'katech',url,price:100000,stock:'in-stock',last_updated:old}));
+  db.prepare('INSERT INTO summaries VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').run(...Object.values({...summary,product_id:id,urls:url}));
+  for(const kind of ['historical','current'])db.prepare('INSERT INTO price_basis VALUES(?,?,?,?,?,?,?,?)').run(id,kind,offer,'katech',100000,'in-stock',url,old);
+ }
+ db.exec('COMMIT');db.close();expireProjection(f);f.config.clockSync=true;
+ return f;
+}
+async function localClockEndpoint(f){
+ const {createRemoteWorker}=await import('./remote-worker.mjs');
+ const {pilotState,sendCycleClockDelta}=await import('./cycle-remote.mjs');
+ const db=new DatabaseSync(f.config.sqlite);db.prepare('VACUUM INTO ?').run(resolve(f.directory,'remote.sqlite'));db.close();
+ const remote=new DatabaseSync(resolve(f.directory,'remote.sqlite'));
+ const binding={prepare(sql){return{bind(...values){return{sql,values,async all(){return{success:true,results:remote.prepare(sql).all(...values),meta:{rows_read:1,rows_written:0}};}};}};},async batch(statements){
+  remote.exec('BEGIN');try{const results=statements.map(s=>{const result=remote.prepare(s.sql).run(...s.values);return{success:true,meta:{changes:Number(result.changes),rows_written:s.sql.startsWith('CREATE')?0:Number(result.changes),rows_read:0}};});remote.exec('COMMIT');return results;}catch(error){remote.exec('ROLLBACK');throw error;}
+ }};
+ let time=f.config.startedAt+900000,sends=0,payload;
+ const worker=createRemoteWorker({now:()=>time});
+ const env={PILOT_ENABLED:'1',PILOT_EXPIRES_AT:new Date(f.config.expiresAt).toISOString(),PILOT_ACCESS_TOKEN:'not-a-secret',PILOT_CLOCK_SYNC_ENABLED:'1',PILOT_CLOCK_SYNC_MAX_ROWS_WRITTEN:'20000',CATALOG_DB:binding};
+ const fetcher=(url,options)=>worker.fetch(new Request(url,options),env);
+ const deps={...f.deps,clock:()=>time,consumer:{...f.consumer,canRefreshLocalTarget:()=>false},state:()=>pilotState('not-a-secret',{fetcher}),clockSync:async(value,token,options)=>{sends++;payload=value;return sendCycleClockDelta(value,token,{...options,fetcher});}};
+ return {setTime(value){time=value;f.setTime(value);},remote,deps,env,worker,binding,advance(){time+=900000;f.advance();},stats:()=>({sends,payload}),close:()=>remote.close()};
+}
+test('clock-sync opt-in mantiene1003 productos por endpoint local, sin tocar ofertas; replay idle0',async()=>{
+ const f=largeClockFixture();let endpoint;try{
+  endpoint=await localClockEndpoint(f);const before=durableState(f);
+  const result=await runAutomaticCycle(f.config,endpoint.deps);
+  assert.equal(result.status,'maintained');assert.equal(result.maintenance.transport,'clock-sync-v1');
+  assert.equal(result.maintenance.changedProjectionRows,1003);assert.equal(result.maintenance.reservedRemoteWrites,4020);
+  assert.equal(endpoint.stats().payload.rows.length,1003);assert.equal(result.budget.reserved_writes,0);
+  const after=durableState(f);for(const key of ['products','prices','basis'])assert.deepEqual(after[key],before[key]);
+  assert.deepEqual(endpoint.remote.prepare('SELECT * FROM product_prices ORDER BY id').all(),before.prices);
+  assert.deepEqual(endpoint.remote.prepare('SELECT * FROM search_projection ORDER BY product_id').all(),after.projection);
+  assert.equal(endpoint.remote.prepare("SELECT value FROM pilot_meta WHERE key='snapshot'").get().value,after.marker);
+  assert.equal(f.stats().calls,0);endpoint.advance();
+  const replay=await runAutomaticCycle(f.config,endpoint.deps);assert.equal(replay.status,'idle');assert.equal(replay.remote.rowsWritten,0);assert.equal(endpoint.stats().sends,1);assert.deepEqual(durableState(f),after);
+ }finally{endpoint?.close();f.cleanup();}
+});
+test('clock-sync opt-in reserva insuficiente revierte datos, marcador y ledger sin endpoint',async()=>{
+ const f=largeClockFixture();try{
+  f.config.maxDailyRemoteWrites=4000;const before=durableState(f);
+  const result=await runAutomaticCycle(f.config,{...f.deps,consumer:{...f.consumer,canRefreshLocalTarget:()=>false},clockSync:()=>assert.fail('sin endpoint')});
+  assert.equal(result.status,'daily-budget');assert.equal(result.error,'CYCLE_MAINTENANCE_BUDGET');assert.deepEqual(durableState(f),before);assert.equal(result.budget.reserved_writes,0);assert.equal(f.stats().calls,0);
+ }finally{f.cleanup();}
+});
+test('clock-sync recupera ACK perdido de1003 filas sin reaplicar ni consumir fuentes/ledger',async()=>{
+ const f=largeClockFixture();let endpoint;try{
+  endpoint=await localClockEndpoint(f);
+  const first=await runAutomaticCycle(f.config,{...endpoint.deps,clockSync:async(...args)=>{await endpoint.deps.clockSync(...args);throw new Error('lost');}});
+  assert.equal(first.status,'failed');assert.equal(first.budget.reserved_writes,4020);const before=durableState(f);endpoint.advance();
+  const recovered=await runAutomaticCycle(f.config,endpoint.deps);assert.equal(recovered.status,'recovered');assert.equal(recovered.remote.rowsWritten,0);assert.equal(recovered.budget.reserved_writes,4020);assert.equal(endpoint.stats().sends,1);assert.deepEqual(durableState(f),before);assert.equal(f.stats().calls,0);
+ }finally{endpoint?.close();f.cleanup();}
+});
+test('clock-sync recupera commit anterior a outbox y reenvía sólo mantenimiento1003',async()=>{
+ const f=largeClockFixture();let endpoint;try{
+  endpoint=await localClockEndpoint(f);
+  const first=await runAutomaticCycle(f.config,{...endpoint.deps,clockSync:async()=>{throw new Error('offline');}});
+  assert.equal(first.status,'failed');assert.equal(first.budget.reserved_writes,4020);const before=durableState(f);
+  unlinkSync(resolve(f.directory,'outbox.json'));endpoint.advance();
+  const recovered=await runAutomaticCycle(f.config,endpoint.deps);assert.equal(recovered.status,'recovered');assert.equal(endpoint.stats().sends,1);assert.deepEqual(durableState(f),before);assert.equal(recovered.budget.reserved_writes,4020);assert.equal(f.stats().calls,0);
+ }finally{endpoint?.close();f.cleanup();}
+});
+test('certificados preparados o reloj-observaciones impiden tick antes de fuentes y red',async()=>{
+ for(const key of ['prepared_views','clock_observations']){
+  const f=fixture();try{
+   const db=new DatabaseSync(f.config.sqlite);const meta=JSON.parse(f.marker());meta[key]={version:1};
+   db.prepare("UPDATE pilot_meta SET value=? WHERE key='snapshot'").run(JSON.stringify(meta));db.close();const before=durableState(f);
+   const result=await runAutomaticCycle({...f.config,clockSync:true},{...f.deps,state:()=>assert.fail('sin red')});
+   assert.equal(result.error,'CYCLE_CERTIFIED_SNAPSHOT_UNSUPPORTED');assert.deepEqual(durableState(f),before);assert.equal(f.stats().calls,0);assert.equal(result.budget.reserved_writes,0);
+  }finally{f.cleanup();}
+ }
+});
+
+test('clock-sync no aumenta reserva al exceder saldo del día y revierte cargo local',async()=>{
+ const f=largeClockFixture();try{
+  const db=new DatabaseSync(f.config.sqlite);acquireCycleLease(db,f.config,f.config.startedAt);
+  db.exec("UPDATE pilot_cycle_state SET lease_token=NULL,lease_until=NULL;INSERT INTO pilot_cycle_budget(day,rows_written) VALUES('2026-10-11',17000)");db.close();const before=durableState(f);
+  const result=await runAutomaticCycle(f.config,{...f.deps,consumer:{...f.consumer,canRefreshLocalTarget:()=>false},clockSync:()=>assert.fail('sin endpoint')});
+  assert.equal(result.status,'daily-budget');assert.equal(result.error,'CYCLE_MAINTENANCE_BUDGET');assert.equal(result.budget.reserved_writes,0);assert.equal(result.budget.rows_written,17000);assert.deepEqual(durableState(f),before);
+ }finally{f.cleanup();}
+});
+
+test('ACK clock1003 vencido recupera sin POST y conserva reserva original de otro día UTC',async()=>{
+ const f=largeClockFixture();let endpoint;try{
+  endpoint=await localClockEndpoint(f);
+  await runAutomaticCycle(f.config,{...endpoint.deps,clockSync:async(...args)=>{await endpoint.deps.clockSync(...args);throw new Error('lost');}});
+  const before=durableState(f),pending=JSON.parse(readFileSync(resolve(f.directory,'outbox.json'),'utf8'));
+  endpoint.setTime(Date.parse(JSON.parse(pending.payload.finalSnapshot).cache.validUntil));
+  const result=await runAutomaticCycle(f.config,endpoint.deps);
+  assert.equal(result.status,'recovered');assert.equal(result.remote.rowsWritten,0);assert.equal(endpoint.stats().sends,1);assert.equal(f.stats().calls,0);assert.deepEqual(durableState(f),before);assert.ok(!existsSync(resolve(f.directory,'outbox.json')));
+  const db=new DatabaseSync(f.config.sqlite,{readOnly:true});try{assert.equal(db.prepare("SELECT reserved_writes FROM pilot_cycle_budget WHERE day='2026-10-11'").get().reserved_writes,4020);}finally{db.close();}
+ }finally{endpoint?.close();f.cleanup();}
+});
+test('clock1003 no aplicado vencido regenera contra checkpoint, sin enviar payload viejo',async()=>{
+ const f=largeClockFixture();let endpoint;try{
+  endpoint=await localClockEndpoint(f);
+  await runAutomaticCycle(f.config,{...endpoint.deps,clockSync:async()=>{throw new Error('offline');}});
+  const before=durableState(f),pending=JSON.parse(readFileSync(resolve(f.directory,'outbox.json'),'utf8'));
+  const at=Date.parse(JSON.parse(pending.payload.finalSnapshot).cache.validUntil);endpoint.setTime(at);
+  const result=await runAutomaticCycle(f.config,endpoint.deps);
+  assert.equal(result.status,'recovered');assert.equal(result.maintenance.regenerated,true);assert.equal(endpoint.stats().sends,1);
+  const payload=endpoint.stats().payload;assert.equal(payload.expectedSnapshot,pending.payload.expectedSnapshot);assert.notEqual(payload.finalSnapshot,pending.payload.finalSnapshot);assert.equal(payload.now,at);assert.equal(payload.rows.length,1003);
+  const after=durableState(f);for(const key of ['products','prices','basis'])assert.deepEqual(after[key],before[key]);assert.equal(after.ledger.length,2);assert.equal(f.stats().calls,0);
+  assert.deepEqual(endpoint.remote.prepare('SELECT * FROM search_projection ORDER BY product_id').all(),after.projection);
+  const db=new DatabaseSync(f.config.sqlite,{readOnly:true});try{
+   assert.equal(db.prepare("SELECT reserved_writes FROM pilot_cycle_budget WHERE day='2026-10-11'").get().reserved_writes,4020);
+   assert.equal(db.prepare("SELECT reserved_writes FROM pilot_cycle_budget WHERE day='2026-10-12'").get().reserved_writes,result.maintenance.reservedRemoteWrites);
+   assert.equal(result.maintenance.reservedRemoteWrites,7022);
+   assert.ok(!db.prepare('SELECT value FROM pilot_meta WHERE key=?').get('cycle_clock_outbox'));
+  }finally{db.close();}
+ }finally{endpoint?.close();f.cleanup();}
+});
+test('regeneraciónclock sin saldo preserva outbox y no queda bloqueada por caducidad natural',async()=>{
+ const f=largeClockFixture();let endpoint;try{
+  endpoint=await localClockEndpoint(f);
+  await runAutomaticCycle(f.config,{...endpoint.deps,clockSync:async()=>{throw new Error('offline');}});
+  const old=readFileSync(resolve(f.directory,'outbox.json'),'utf8'),pending=JSON.parse(old),before=durableState(f);
+  endpoint.setTime(Date.parse(JSON.parse(pending.payload.finalSnapshot).cache.validUntil));f.config.maxDailyRemoteWrites=4000;
+  const result=await runAutomaticCycle(f.config,endpoint.deps);assert.equal(result.status,'daily-budget');assert.equal(result.error,'CYCLE_MAINTENANCE_BUDGET');assert.equal(readFileSync(resolve(f.directory,'outbox.json'),'utf8'),old);assert.deepEqual(durableState(f),before);assert.equal(endpoint.stats().sends,0);assert.equal(f.stats().calls,0);
+  f.config.maxDailyRemoteWrites=20000;const retry=await runAutomaticCycle(f.config,endpoint.deps);assert.equal(retry.status,'recovered');assert.equal(endpoint.stats().sends,1);
+ }finally{endpoint?.close();f.cleanup();}
+});
+test('journalclock recupera crash después de regenerar antes del outbox sin nueva reserva ni ledger',async()=>{
+ const f=largeClockFixture();let endpoint;try{
+  endpoint=await localClockEndpoint(f);
+  await runAutomaticCycle(f.config,{...endpoint.deps,clockSync:async()=>{throw new Error('offline');}});
+  const old=readFileSync(resolve(f.directory,'outbox.json'),'utf8'),pending=JSON.parse(old);
+  endpoint.setTime(Date.parse(JSON.parse(pending.payload.finalSnapshot).cache.validUntil));
+  const regenerated=await runAutomaticCycle(f.config,{...endpoint.deps,clockSync:async()=>{throw new Error('crash');}});assert.equal(regenerated.status,'failed');
+  const before=durableState(f);writeFileSync(resolve(f.directory,'outbox.json'),old);endpoint.advance();
+  const recovered=await runAutomaticCycle(f.config,endpoint.deps);assert.equal(recovered.status,'recovered');assert.deepEqual(durableState(f),before);assert.equal(recovered.budget.reserved_writes,regenerated.maintenance.reservedRemoteWrites);assert.equal(endpoint.stats().sends,1);assert.equal(f.stats().calls,0);
+ }finally{endpoint?.close();f.cleanup();}
+});
+test('ACKclock vencido con payload alterado no omite validación contra checkpoint',async()=>{
+ const f=largeClockFixture();let endpoint;try{
+  endpoint=await localClockEndpoint(f);
+  await runAutomaticCycle(f.config,{...endpoint.deps,clockSync:async(...args)=>{await endpoint.deps.clockSync(...args);throw new Error('lost');}});
+  const file=resolve(f.directory,'outbox.json'),pending=JSON.parse(readFileSync(file,'utf8'));
+  endpoint.setTime(Date.parse(JSON.parse(pending.payload.finalSnapshot).cache.validUntil));pending.payload.rows[0].before.lowest=90000;writeFileSync(file,JSON.stringify(pending));
+  const before=durableState(f),result=await runAutomaticCycle(f.config,endpoint.deps);assert.equal(result.error,'CYCLE_DELTA_INVALID');assert.deepEqual(durableState(f),before);assert.equal(endpoint.stats().sends,1);assert.ok(existsSync(file));
+ }finally{endpoint?.close();f.cleanup();}
+});
+test('ACKclock después de checkpoint pero antes de retirar journal/outbox recupera sin POST',async()=>{
+ const f=largeClockFixture();let endpoint;try{
+  endpoint=await localClockEndpoint(f);
+  await runAutomaticCycle(f.config,{...endpoint.deps,clockSync:async()=>{throw new Error('offline');}});
+  const old=JSON.parse(readFileSync(resolve(f.directory,'outbox.json'),'utf8'));endpoint.setTime(Date.parse(JSON.parse(old.payload.finalSnapshot).cache.validUntil));
+  await runAutomaticCycle(f.config,{...endpoint.deps,clockSync:async(...args)=>{await endpoint.deps.clockSync(...args);throw new Error('lost');}});
+  const db=new DatabaseSync(f.config.sqlite);unlinkSync(f.config.checkpoint);db.prepare('VACUUM INTO ?').run(f.config.checkpoint);db.close();
+  const before=durableState(f),recovered=await runAutomaticCycle(f.config,endpoint.deps);assert.equal(recovered.status,'recovered');assert.equal(endpoint.stats().sends,1);assert.deepEqual(durableState(f),before);assert.equal(recovered.remote.rowsWritten,0);
+ }finally{endpoint?.close();f.cleanup();}
+});
+
+test('regeneraciónclock sin presupuesto local revierte journal/reserva y conserva outbox',async()=>{
+ const f=largeClockFixture();let endpoint;try{
+  endpoint=await localClockEndpoint(f);
+  await runAutomaticCycle(f.config,{...endpoint.deps,clockSync:async()=>{throw new Error('offline');}});
+  const file=resolve(f.directory,'outbox.json'),old=readFileSync(file,'utf8'),pending=JSON.parse(old);
+  endpoint.setTime(Date.parse(JSON.parse(pending.payload.finalSnapshot).cache.validUntil));
+  const db=new DatabaseSync(f.config.sqlite);db.prepare('INSERT INTO pilot_daily_write_budget VALUES(?,?,?)').run('2026-10-12',80000,80000);db.close();
+  const before=durableState(f),result=await runAutomaticCycle(f.config,endpoint.deps);
+  assert.equal(result.status,'daily-budget');assert.equal(result.error,'CYCLE_MAINTENANCE_BUDGET');assert.equal(result.budget.reserved_writes,0);assert.deepEqual(durableState(f),before);assert.equal(readFileSync(file,'utf8'),old);assert.equal(endpoint.stats().sends,0);
+ }finally{endpoint?.close();f.cleanup();}
+});

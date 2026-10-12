@@ -48,6 +48,20 @@ Desactivar el modo preparado conserva el lector ordinario y sus controles; el
 los requieren. La recuperación debe usar datos y marcadores de la misma captura.
 No restaurar por separado precios, resúmenes, proyecciones o firmas.
 
+El ciclo privado dispone de un transporte de mantenimiento de reloj optativo:
+`clockSync: true` en la Mac y `PILOT_CLOCK_SYNC_ENABLED=1` junto a
+`PILOT_CLOCK_SYNC_MAX_ROWS_WRITTEN` en el receptor. No se activa con sólo actualizar
+el código. Permite hasta 2.000 cambios derivados / 1 MiB y reserva el presupuesto
+antes del commit local. Ante una respuesta perdida conserva el outbox y reconcilia
+la generación antes de volver a leer tiendas. Superar esos límites revierte el
+mantenimiento completo; no envía una página parcial de cambios.
+
+Este ciclo todavía rechaza snapshots con `prepared_views` o `clock_observations`:
+no puede renovar sus certificados ni firmar las vistas de las ofertas modificadas.
+No activarlo sobre el piloto preparado. La renovación manual acotada de sólo
+proyección, comprobada con ofertas y certificados idénticos, no sustituye la
+integración del escritor automático preparado ni demuestra cobertura completa.
+
 ## Verificación pendiente de producción
 
 `npm test` cubre el consumidor y el lector. `npm run test:ops` ejecuta también los

@@ -48,3 +48,14 @@ test('delta idéntico no escribe y membresía nueva exige otro flujo de importac
  b.prepare("UPDATE pilot_meta SET value=? WHERE key='snapshot'").run(payload().finalSnapshot);b.exec("INSERT INTO products VALUES('p','procesadores','cpu','ryzen','ryzen',1,0,NULL,NULL,'{}');INSERT INTO product_prices VALUES('o','p','katech',100,'https://katech.com.ar/producto/cpu/','{}');");assert.throws(()=>buildCycleDelta(a,b),/CYCLE_MEMBERSHIP_CHANGED/);
  }finally{a.close();b.close();}
 });
+
+test('transporteclock exige presupuesto y valida recibo antes de acreditar escritura',async()=>{
+ const {sendCycleClockDelta}=await import('./cycle-remote.mjs');
+ const now=Date.parse('2026-10-11T15:00:00Z');
+ const p={version:1,now,expectedProjectionCount:0,expectedSnapshot:payload().expectedSnapshot,finalSnapshot:payload().finalSnapshot,rows:[]};
+ for(const receipt of [{atomic:false,generation:'new',rowsRead:1,rowsWritten:1},{atomic:true,generation:'new',rowsRead:1,rowsWritten:9},{atomic:true,generation:'old',rowsRead:1,rowsWritten:1}]){
+  await assert.rejects(sendCycleClockDelta(p,'private',{now,maxRowsWritten:8,fetcher:async(url,options)=>{assert.equal(url,PILOT_ORIGIN+'/api/pilot/clock-sync');assert.equal(options.method,'POST');return Response.json(receipt);}}),/CYCLE_SYNC_RECEIPT_INVALID/);
+ }
+ await assert.rejects(sendCycleClockDelta(p,'private',{now,fetcher:()=>assert.fail('sin presupuesto, sin red')}),/CLOCK_SYNC_BUDGET/);
+ const receipt=await sendCycleClockDelta(p,'private',{now,maxRowsWritten:8,fetcher:async()=>Response.json({atomic:true,generation:'new',rowsRead:1,rowsWritten:7})});assert.equal(receipt.rowsWritten,7);
+});
