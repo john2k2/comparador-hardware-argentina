@@ -54,7 +54,9 @@ async function open(options: { slow?: boolean; alwaysExpired?: boolean } = {}): 
   await page.route('**/*', route => route.abort());
   await page.route('http://search.fixture/**', route => route.fulfill({ contentType:'text/html', body:'<div id="root"></div>' }));
   await page.goto('http://search.fixture/search');
-  await page.clock.install({ time: start });
+  // Instalar atrás del corte: una pausa del runner no debe adelantar el reloj
+  // real más allá del destino de pauseAt antes de montar el fixture.
+  await page.clock.install({ time: new Date(start.getTime() - 60_000) });
   await page.clock.pauseAt(new Date(start.getTime() + 100));
   await page.evaluate(options => Object.assign(window, options), options);
   await page.addScriptTag({ content: script });
