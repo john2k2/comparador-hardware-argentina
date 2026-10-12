@@ -56,9 +56,13 @@ Rollback público: restaurar exclusivamente las rutas cambiadas al Worker anteri
 - [x] Promoción, rollback de corte y recuperación del proceso comprobados en servicio real.
 - [x] Tick automático con ACK y retención comprobados; precios fallidos no rejuvenecen.
 - [x] Tests unitarios y operativos; build de producción y revisión independiente.
-- [ ] Piloto remoto: assets nuevos y antiguos disponibles mientras el servicio Mac está caído.
-- [ ] Interfaz híbrida: portada → búsqueda → ficha → retorno, filtros y comparación en escritorio/móvil.
-- [ ] CPU del proxy y consumo remoto medidos con la versión final; registro de rutas y despliegue público anteriores.
+- [x] Piloto remoto: assets nuevos y antiguos disponibles mientras el servicio Mac está caído; API 503 y recuperación 200.
+- [x] Interfaz híbrida en Chrome: portada → búsqueda Ryzen, consulta abreviada RAM → ficha → retorno, resultados RAM en escritorio/móvil y comparación 5600/5700X sin ganador de precio cuando falta stock elegible. Paginación 1→2 conservó Ryzen; ordenar por menor precio volvió a página 1 conservando la consulta. Filtros/páginas también comprobaron paridad por API.
+- [x] Versión privada `f535e3bd-e320-4c93-ae8b-537815f2c532`: 16/16 consultas iguales a la Mac, mediana 293 ms y máximo 2.259 ms. 36 trazas con CPU de 0–1 ms y outcome ok; incluye comprobaciones de caída, no es una prueba de carga. El proxy no tiene D1. Rutas públicas de Workers consultadas: ninguna, el dominio usa Custom Domains del Worker anterior. Despliegue público anterior `5b77fc37-9fea-48df-aca5-e1c43956f0a6`, versión `4add74ae-b3f4-4165-8040-5f143505c977` al 100%, sin cambios.
 - [ ] Activación pública autorizada y comprobada sobre el dominio real.
 
 No declarar toda la aplicación migrada, toda la base fresca ni capacidad gratuita ilimitada. El siguiente trabajo de cobertura es sumar lectores por tienda con identidad exacta y presupuesto medido, sin ampliar automáticamente la elegibilidad editorial.
+
+La consulta `ddr5 32 6000` reconoce capacidad y frecuencia dentro de contexto RAM. No inventa atributos de un producto ni junta kits: exigir `2 x 16` conserva esa restricción. Prueba remota con la base real confirmó KLEVV CL28 de CompraGamer.
+
+Validación final local: 3.022 unitarios pasados y dos omitidos; 288 operativos pasados; 45 focales adicionales de proxy/matcher/motor pasados y dos opcionales omitidos. Build aislado, typecheck y lint correctos. Revisión independiente no encontró bloqueos materiales en el delta; no acredita el resto del proyecto.
