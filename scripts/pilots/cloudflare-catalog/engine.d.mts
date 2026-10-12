@@ -16,7 +16,7 @@ export interface CatalogSqlParams {
   p_page_size?: number;
 }
 export function searchCatalog(db: CatalogSqlReader, input: CatalogSqlParams,
-  options?: { now?: number; snapshot?: string; forceOriginal?: boolean }): Promise<DbCatalogPage>;
+  options?: { now?: number; snapshot?: string; forceOriginal?: boolean; preferCurrentRepresentative?: boolean }): Promise<DbCatalogPage>;
 export function validateParams(input?: CatalogSqlParams): Required<CatalogSqlParams>;
 export function stableCandidateGuards(input: Required<CatalogSqlParams>,
   prepared: { words: string[]; candidate: string | null; kind: string },

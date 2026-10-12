@@ -34,7 +34,11 @@ export function candidatesSql(p, prepared, ids, now) {
  WHERE p2.catalog_component=1 AND recent.comparable_latest_observed_at>=(SELECT earliest FROM clock)
  UNION SELECT p2.category,p2.catalog_identity FROM summaries recent JOIN products p2 ON p2.id=recent.product_id
  WHERE p2.catalog_component=1 AND recent.comparable_stats_json IS NOT NULL AND recent.comparable_valid_until>(SELECT now FROM clock)),`:'';
-  if(currentOnly&&keyGuards.length>1) {
+  // Sin texto, categoría ni tiendas, el guard de query_terms vacío es una
+  // tautología. Conservar la unión indexada de resúmenes recientes evita un
+  // barrido del catálogo completo sin cambiar las identidades admitidas.
+  const globalCurrentScope=!prepared.normalized&&p.p_category===null&&!p.p_stores.length;
+  if(currentOnly&&!globalCurrentScope&&keyGuards.length>1) {
     recentKeys=`current_identity_keys AS MATERIALIZED(SELECT DISTINCT p2.category,p2.catalog_identity FROM products p2 JOIN summaries recent ON recent.product_id=p2.id
     WHERE ${keyGuards.join(' AND ')} AND (recent.comparable_latest_observed_at>=(SELECT earliest FROM clock) OR (recent.comparable_stats_json IS NOT NULL AND recent.comparable_valid_until>(SELECT now FROM clock)))),`;
     values.push(...keyValues);
@@ -95,7 +99,7 @@ export function stableCandidateGuards(p,prepared,ids=null) {
   if(ids!==null) {guards.push('p.id IN(SELECT value FROM json_each(?))');values.push(JSON.stringify(ids));}
   return {values,guards};
 }
-function projectedCandidatesSql(p,prepared,ids) {
+function projectedCandidatesSql(p,prepared,ids,preferCurrentRepresentative=false) {
   const {values,guards}=stableCandidateGuards(p,prepared,ids);
   if(prepared.normalized&&(p.p_min_price!==null||p.p_max_price!==null)) {
     // Mantener las fichas vencidas de una identidad activa: pueden ser la
@@ -106,7 +110,8 @@ function projectedCandidatesSql(p,prepared,ids) {
   // proyección conserva las demás fichas para los matchers de cada consulta.
   const globalCurrent=!prepared.normalized&&(p.p_min_price!==null||p.p_max_price!==null);
   if(globalCurrent) {
-    guards.push('v.canonical=1','v.comparable_available>0');
+    if(!preferCurrentRepresentative) guards.push('v.canonical=1');
+    guards.push('v.comparable_available>0');
     if(p.p_min_price!==null) {guards.push('v.lowest>=?');values.push(p.p_min_price);}
     if(p.p_max_price!==null) {guards.push('v.lowest<=?');values.push(p.p_max_price);}
   }
@@ -115,17 +120,23 @@ function projectedCandidatesSql(p,prepared,ids) {
       v.lowest,v.highest,v.average,v.available,v.comparable_available,v.urls,v.observed_at
     FROM search_projection v JOIN products p ON p.id=v.product_id WHERE ${guards.join(' AND ')})`};
 }
-function eligibilitySql(p, prepared, preselected, now, projected=false) {
-  const base=projected?projectedCandidatesSql(p,prepared,preselected):candidatesSql(p,prepared,preselected,now);
+function eligibilitySql(p, prepared, preselected, now, projected=false,preferCurrentRepresentative=false) {
+  const base=projected?projectedCandidatesSql(p,prepared,preselected,preferCurrentRepresentative):candidatesSql(p,prepared,preselected,now);
   const guards=['identity_rank=1'];
   if (p.p_min_price!==null||p.p_max_price!==null) guards.push('comparable_available>0');
   if (p.p_min_price!==null) {guards.push('lowest>=?');base.values.push(p.p_min_price);}
   if (p.p_max_price!==null) {guards.push('lowest<=?');base.values.push(p.p_max_price);}
-  let rank = `ROW_NUMBER() OVER(PARTITION BY category,catalog_identity ORDER BY grouped_identity DESC,last_scraped_at DESC,updated_at DESC,id)`;
+  const currentFirst=preferCurrentRepresentative&&(p.p_min_price!==null||p.p_max_price!==null);
+  let rank = `ROW_NUMBER() OVER(PARTITION BY category,catalog_identity ORDER BY ${currentFirst?'(comparable_available>0) DESC,':''}grouped_identity DESC,last_scraped_at DESC,updated_at DESC,id)`;
   // Sin texto/tiendas y con rango, PostgreSQL prefiere identidad ANTES de frescura.
-  if (!projected && !prepared.normalized && !p.p_stores.length && (p.p_min_price!==null||p.p_max_price!==null)) rank=`CASE WHEN id=(SELECT p2.id FROM products p2 JOIN summaries s2 ON s2.product_id=p2.id WHERE p2.catalog_component=1 AND p2.category=matched.category AND p2.catalog_identity=matched.catalog_identity ORDER BY p2.grouped_identity DESC,p2.last_scraped_at DESC,p2.updated_at DESC,p2.id LIMIT 1) THEN 1 ELSE 2 END`;
-  base.sql+=`,ranked AS(SELECT matched.*,${rank} AS identity_rank FROM matched), eligible AS MATERIALIZED(
-    SELECT id,lowest,highest,average,catalog_name,comparable_available,observed_at,updated_at FROM ranked WHERE ${guards.join(' AND ')})`;
+  if (!currentFirst && !projected && !prepared.normalized && !p.p_stores.length && (p.p_min_price!==null||p.p_max_price!==null)) rank=`CASE WHEN id=(SELECT p2.id FROM products p2 JOIN summaries s2 ON s2.product_id=p2.id WHERE p2.catalog_component=1 AND p2.category=matched.category AND p2.catalog_identity=matched.catalog_identity ORDER BY p2.grouped_identity DESC,p2.last_scraped_at DESC,p2.updated_at DESC,p2.id LIMIT 1) THEN 1 ELSE 2 END`;
+  // La política vigente elige una ficha elegible para este rango. Aplicar el
+  // mismo orden con proyección y fallback evita perder un hijo comprable cuando
+  // el agrupado tiene una oferta válida pero fuera del presupuesto.
+  const rankSource=currentFirst?'range_candidates':'matched';
+  if(currentFirst) base.sql+=`,range_candidates AS(SELECT * FROM matched WHERE ${guards.slice(1).join(' AND ')})`;
+  base.sql+=`,ranked AS(SELECT ${rankSource}.*,${rank} AS identity_rank FROM ${rankSource}), eligible AS MATERIALIZED(
+    SELECT id,lowest,highest,average,catalog_name,comparable_available,observed_at,updated_at FROM ranked WHERE ${currentFirst?'identity_rank=1':guards.join(' AND ')})`;
   return base;
 }
 function ordering(p,prepared,now,values) {
@@ -144,7 +155,7 @@ function ordering(p,prepared,now,values) {
   }
   order.push('id ASC'); return order.join(',');
 }
-export async function searchCatalog(db,input,{now=Date.now(),snapshot,forceOriginal=false}={}) {
+export async function searchCatalog(db,input,{now=Date.now(),snapshot,forceOriginal=false,preferCurrentRepresentative=false}={}) {
   const p=validateParams(input),prepared=prepareQuery(p.p_query,p.p_category);
   const matcherQuery=prepareMatcherQuery(prepared);
   let projected=false;
@@ -156,7 +167,7 @@ export async function searchCatalog(db,input,{now=Date.now(),snapshot,forceOrigi
   }
   let ids=null;
   if (prepared.normalized) {
-    const base=projected?projectedCandidatesSql(p,prepared,null):candidatesSql(p,prepared,null,now);
+    const base=projected?projectedCandidatesSql(p,prepared,null,preferCurrentRepresentative):candidatesSql(p,prepared,null,now);
     ids=[];let complete=false;
     for(let batch=0;batch<MAX_TEXT_BATCHES;batch++) {
       const rows=await db.all(`${base.sql} SELECT id,catalog_name,catalog_document,(SELECT json_extract(original.row_json,'$.name') FROM products original WHERE original.id=matched.id) AS name,urls FROM matched ORDER BY id LIMIT ${MAX_TEXT_CANDIDATES} OFFSET ${batch*MAX_TEXT_CANDIDATES}`,base.values);
@@ -167,7 +178,7 @@ export async function searchCatalog(db,input,{now=Date.now(),snapshot,forceOrigi
     // requiera menos lecturas: la cantidad de candidatos sigue siendo acotada.
     if(!complete) {const error=new Error('CATALOG_CANDIDATE_BUDGET_EXCEEDED');error.code=error.message;throw error;}
   }
-  const base=eligibilitySql(p,prepared,ids,now,projected);
+  const base=eligibilitySql(p,prepared,ids,now,projected,preferCurrentRepresentative);
   const values=[...base.values],order=ordering(p,prepared,now,values);
   values.push(p.p_page_size,p.p_page,p.p_page_size,p.p_page_size);
   if(p.p_stores.length) values.push(JSON.stringify(p.p_stores));

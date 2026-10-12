@@ -57,3 +57,16 @@ Filas D1: 72.173 → 58.192 (19,4% menos). Latencia media MISS: 1.100,48 → 875
 Evidencia privada: `outputs/ram-integracion-frio-2026-10-11/performance-comparison.json`. Revisión independiente: 240 casos de paridad en memoria y 34 pruebas de motor/proyección/sync, sin hallazgos abiertos. El dominio publicado conserva su despliegue anterior. Revertir `engine.mjs`, sus pruebas y el namespace de caché restaura el lector previo sin revertir ofertas.
 
 La verificación visual posterior añadió un pico de 9.596 ms y una conexión Node que venció sin respuesta HTTP. La repetición separada directo/puente dio MISS 820,73 ms y HIT 144,78–307,53 ms; no permite asignar el pico anterior al motor. El puente conserva tiempos remotos/locales y códigos de transporte para el siguiente diagnóstico, sin token ni headers de autorización. Detalles y límites en `docs/direccion/RAM_INTEGRACION_BUSQUEDA_FRIA_2026-10-11.md`.
+# Selección vigente para D1
+
+`preferCurrentRepresentative` es opt-in; el contrato histórico por defecto
+permanece intacto. En una búsqueda vigente, filtra precio y disponibilidad
+antes de elegir la ficha de una identidad. Un agrupado vacío o fuera del rango
+no oculta un hijo elegible. Cada ficha conserva sus ofertas e ID originales.
+Proyección y fallback aplican el mismo orden de selección.
+
+El fallback global sin texto, categoría ni tiendas usa la unión indexada de
+resúmenes recientes. La prueba completa conservó 144 respuestas JSON exactas;
+una medición SQLite redujo 120.076 visitas a 2.526. Esto no representa lecturas
+facturadas por D1 ni capacidad de producción acreditada.
+
