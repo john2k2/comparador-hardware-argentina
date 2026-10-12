@@ -4,6 +4,14 @@ import { readIdentityReview } from './offer-identity';
 import { normalizeIdentityText } from '@/lib/product-identity';
 
 describe('prueba de atributos exactos independiente de Jev', () => {
+  it('memo puro conserva retornos mutables independientes y categoría en la clave',()=>{
+    const name='AMD Ryzen 5 5600 BOX con cooler';
+    const expected=exactOfferAttributes(name,'procesadores');expect(expected).not.toBeNull();
+    const mutated=exactOfferAttributes(name,'procesadores')!;mutated.model='9999';mutated.packaging='tray';
+    expect(exactOfferAttributes(name,'procesadores')).toEqual(expected);
+    expect(exactOfferAttributes(name,'tarjetas-graficas')).toBeNull();
+    expect(exactOfferAttributes(name.replace('5600','5600G'),'procesadores')?.suffixes).not.toBe(expected?.suffixes);
+  });
   it('corrobora la serie AERO y conserva marca, chip, memoria y condición OC', () => {
     const name = 'PLACA DE VIDEO GeForce RTX 5070 12GB GIGABYTE AERO OC';
     const source = 'PLACA DE VIDEO GIGABYTE RTX 5070 AERO OC 12GB';

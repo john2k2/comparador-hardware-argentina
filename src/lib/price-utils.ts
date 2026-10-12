@@ -295,8 +295,8 @@ export function computeComparableStorePriceStats(prices: ProductPrice[], product
   // habilita un SKU capturado anteriormente; conservar el contrato histórico v1.
   const reviewed = prices.filter(price => product
     ? !needsIdentityReview(price, product)
-    : price.identityReview?.reason !== 'manufacturer-ram'
-      && price.identityReview?.proof?.version !== 2);
+    : price.identityReview?.reason !== 'manufacturer-ram' && price.identityReview?.reason !== 'exact-listing'
+      && price.identityReview?.proof?.version !== 2 && price.identityReview?.proof?.version !== 3);
   const bestPerStore = pickBestStorePrices(reviewed);
   const available = bestPerStore.filter((price) => !isUnavailableStock(price.stock));
 

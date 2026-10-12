@@ -3,10 +3,11 @@ import type { HardwareCategory, OfferSourceIdentity } from '@/lib/types';
 import { attributeProofMatches, cpuVariantAttributes, type OfferAttributeProof } from './offer-attribute-proof';
 import { hasExplicitStorageConflict } from './storage-identity';
 import { sourceIdentityMatchesListing } from '@/lib/scrapers/listing-reference';
+import { createBoundedIdentityTextMemo } from '@/lib/identity-text-memo';
 
 export const IDENTITY_REVIEW_MIN_CONFIDENCE = 0.8;
 
-export type IdentityReviewReason = 'consistent-text' | 'exact-attributes' | 'manufacturer-ram' | 'explicit-conflict' | 'model-conflict'
+export type IdentityReviewReason = 'consistent-text' | 'exact-attributes' | 'manufacturer-ram' | 'exact-listing' | 'explicit-conflict' | 'model-conflict'
   | 'insufficient-evidence' | 'low-confidence' | 'provider-unavailable' | 'invalid-response';
 
 export type OfferIdentityReview = {
@@ -30,7 +31,7 @@ export type IdentityEvidence = {
 };
 
 const REASONS = new Set<IdentityReviewReason>([
-  'consistent-text', 'exact-attributes', 'manufacturer-ram', 'explicit-conflict', 'model-conflict', 'insufficient-evidence',
+  'consistent-text', 'exact-attributes', 'manufacturer-ram', 'exact-listing', 'explicit-conflict', 'model-conflict', 'insufficient-evidence',
   'low-confidence', 'provider-unavailable', 'invalid-response',
 ]);
 
@@ -63,11 +64,13 @@ export function readIdentityReview(value: unknown): OfferIdentityReview | undefi
     && typeof review.subject?.url === 'string'
     && (review.status !== 'consistent' || (review.reason === 'consistent-text' && review.model && review.reviewedAt
       && typeof review.confidence === 'number' && review.confidence >= IDENTITY_REVIEW_MIN_CONFIDENCE)
-      || ((review.reason === 'exact-attributes' || review.reason === 'manufacturer-ram') && review.model === null && review.confidence === null && review.reviewedAt
+      || ((review.reason === 'exact-attributes' || review.reason === 'manufacturer-ram' || review.reason === 'exact-listing') && review.model === null && review.confidence === null && review.reviewedAt
         && review.sourceIdentity && (review.reason === 'exact-attributes' && review.proof?.version === 1 && review.proof.method === 'exact-attributes'
-          || review.reason === 'manufacturer-ram' && review.proof?.version === 2 && review.proof.method === 'manufacturer-ram')
+          || review.reason === 'manufacturer-ram' && review.proof?.version === 2 && review.proof.method === 'manufacturer-ram'
+          || review.reason === 'exact-listing' && review.proof?.version === 3 && review.proof.method === 'exact-listing')
         && attributeProofMatches(review.proof, review.subject.name, review.subject.category, review.sourceIdentity.title,
-          { targetSpecs: review.proof?.method === 'manufacturer-ram' ? review.proof.target?.specs : undefined,
+          { targetSpecs: review.proof?.method === 'manufacturer-ram' ? review.proof.target?.specs
+              : review.proof?.method === 'exact-listing' ? {SKU:review.proof.target?.sku} : undefined,
             sourceIdentity: review.sourceIdentity, url: review.subject.url })))) {
     return review as OfferIdentityReview;
   }
@@ -95,7 +98,8 @@ export function needsIdentityReview(
   if (!review) return false; // Ausencia conserva el contrato de ofertas todavía no evaluadas.
   if (review.status === 'needs-review' || review.subject.url !== offer.url) return true;
   if (offer.sourceIdentity && !sameSourceIdentity(review.sourceIdentity, offer.sourceIdentity)) return true;
-  if (review.proof?.method === 'manufacturer-ram' && (!product?.category || !offer.sourceIdentity
+  if (review.proof?.method === 'exact-listing' && offer.storeId !== review.proof.binding.storeId) return true;
+  if ((review.proof?.method === 'manufacturer-ram' || review.proof?.method === 'exact-listing') && (!product?.category || !offer.sourceIdentity
     || !attributeProofMatches(review.proof, product.name, product.category,
       offer.sourceIdentity?.title ?? '',
       { targetSpecs: product.specs, sourceIdentity: offer.sourceIdentity, url: offer.url }))) return true;
@@ -135,6 +139,15 @@ export function buildIdentityEvidence(name: string, category: HardwareCategory, 
 }
 
 export function hasExplicitIdentityConflict(evidence: IdentityEvidence): boolean {
+  if(typeof evidence.name!=='string'||typeof evidence.category!=='string'||typeof evidence.offerText!=='string'
+    ||evidence.sourceTitle!==undefined&&typeof evidence.sourceTitle!=='string')return hasExplicitIdentityConflictUncached(evidence);
+  return explicitConflictMemo(JSON.stringify([evidence.name,evidence.category,evidence.offerText,evidence.sourceTitle??null]));
+}
+const explicitConflictMemo=createBoundedIdentityTextMemo((key:string)=>{
+  const [name,category,offerText,sourceTitle]=JSON.parse(key) as [string,IdentityEvidence['category'],string,string|null];
+  return hasExplicitIdentityConflictUncached({name,category,offerText,...(sourceTitle===null?{}:{sourceTitle})});
+},value=>value,256);
+function hasExplicitIdentityConflictUncached(evidence: IdentityEvidence): boolean {
   if (/\b(outlet|reacondicionado|usado|refurbished)\b/i.test(evidence.offerText) && !/\b(outlet|reacondicionado|usado|refurbished)\b/i.test(evidence.name)) return true;
   if (evidence.sourceTitle && hasExplicitIdentityConflict({ name: evidence.name, category: evidence.category, offerText: evidence.sourceTitle })) return true;
   if (evidence.category === 'almacenamiento' && hasExplicitStorageConflict(evidence.name, evidence.offerText)) return true;

@@ -1,4 +1,6 @@
 import { extractGpuBoardAttributes, normalizeIdentityText, parseCpuModelSignature, parseGpuChipSignature } from '@/lib/product-identity';
+import { exactListingProofMatches, type ExactListingProof } from './exact-listing-proof';
+import { createBoundedIdentityTextMemo } from '@/lib/identity-text-memo';
 import { exactSsdAttributes } from './storage-identity';
 import { exactRamAttributes } from './ram-identity';
 import { captureRamSpecs, planRamEnrichment, type RamSubject } from './ram-enrichment';
@@ -9,7 +11,7 @@ export type ManufacturerRamProof = { version: 2; method: 'manufacturer-ram'; mpn
   target: { title: string; sku: string; specs: Record<string, string | number> };
   source: { title: string; sku: string; specs: Record<string, string | number> };
   binding: { storeId: 'compragamer'; url: string; listingRef: string }; attributes: Record<string, string> };
-export type OfferAttributeProof = { version: 1; method: 'exact-attributes'; attributes: Record<string, string> } | ManufacturerRamProof;
+export type OfferAttributeProof = { version: 1; method: 'exact-attributes'; attributes: Record<string, string> } | ManufacturerRamProof | ExactListingProof;
 type ProofContext = { targetSpecs?: Record<string, unknown>; sourceIdentity?: OfferSourceIdentity; url?: string };
 function stableJson(value: unknown): string {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -34,6 +36,10 @@ export function proveManufacturerRamAttributes(target: RamSubject, source: RamSu
 }
 
 export function cpuVariantAttributes(name: string): Record<string, string> {
+  return cpuVariantMemo(name);
+}
+const cpuVariantMemo=createBoundedIdentityTextMemo(cpuVariantAttributesUncached,value=>({...value}),128);
+function cpuVariantAttributesUncached(name: string): Record<string, string> {
   const text=normalizeIdentityText(name);
   const excluded=/\b(?:sin|no|s) (?:cooler|disipador)\b|\bno incluye (?:cooler|disipador)\b/.test(text);
   const included=/\b(?:con|c) (?:cooler|disipador)\b|\b(?:cooler|disipador) incluid[oa]\b|\bwraith (?:stealth|spire|prism)\b/.test(text);
@@ -46,6 +52,14 @@ export function cpuVariantAttributes(name: string): Record<string, string> {
 
 /** Omisiones y coincidencias aproximadas requieren revisión; nunca se inventa un score. */
 export function exactOfferAttributes(name: string, category: string): Record<string, string> | null {
+  if(typeof name!=='string'||typeof category!=='string')return exactOfferAttributesUncached(name,category);
+  return exactAttributesMemo(JSON.stringify([name,category]));
+}
+// Sólo texto inmutable. No memoriza SKU, prueba, stock, fecha ni elegibilidad.
+const exactAttributesMemo=createBoundedIdentityTextMemo((key:string)=>{
+  const [name,category]=JSON.parse(key) as [string,string];return exactOfferAttributesUncached(name,category);
+},value=>value?{...value}:null,256);
+function exactOfferAttributesUncached(name: string, category: string): Record<string, string> | null {
   const text = normalizeIdentityText(name);
   if (category !== 'memoria-ram' && /\b(combo|pc gamer|computadora|notebook|laptop|bundle)\b/.test(text)) return null;
   if (category === 'procesadores') {
@@ -67,13 +81,17 @@ export function exactOfferAttributes(name: string, category: string): Record<str
   return null;
 }
 
-export function proveOfferAttributes(name: string, category: string, sourceTitle: string): OfferAttributeProof | null {
+export function proveOfferAttributes(name: string, category: string, sourceTitle: string): Extract<OfferAttributeProof,{method:'exact-attributes'}> | null {
   const target = exactOfferAttributes(name, category), source = exactOfferAttributes(sourceTitle, category);
   if (!target || !source || JSON.stringify(target) !== JSON.stringify(source)) return null;
   return { version: 1, method: 'exact-attributes', attributes: target };
 }
 
 export function attributeProofMatches(proof: OfferAttributeProof | undefined, name: string, category: string, title: string, context?: ProofContext): boolean {
+  if (proof?.version === 3 && proof.method === 'exact-listing') {
+    return Boolean(context && title === context.sourceIdentity?.title
+      && exactListingProofMatches(proof, {name,category,specs:context.targetSpecs}, context.sourceIdentity, context.url));
+  }
   if (proof?.version === 2 && proof.method === 'manufacturer-ram') {
     if (category !== 'memoria-ram' || !context?.targetSpecs || !context.sourceIdentity || !context.url
       || !proof.target || !proof.source || !proof.binding || !proof.attributes
