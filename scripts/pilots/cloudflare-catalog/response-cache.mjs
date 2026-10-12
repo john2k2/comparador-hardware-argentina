@@ -19,7 +19,7 @@ export function cacheInterval(marker,now) {
 export async function cacheRequest(url, params, evidence, generation) {
   // Orden y duplicados de tienda no alteran SQL ni la respuesta. No normalizar
   // texto/categoría por intuición: el matcher conserva su contrato exacto.
-  const canonical=JSON.stringify({...params,p_stores:[...new Set(params.p_stores)].sort(),withOfferEvidence:evidence,generation,cacheVersion:3});
+  const canonical=JSON.stringify({...params,p_stores:[...new Set(params.p_stores)].sort(),withOfferEvidence:evidence,generation,cacheVersion:5});
   const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(canonical));
   const digest=Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,'0')).join('');
   const key=new URL('/__pilot_search_cache/'+digest,url.origin);

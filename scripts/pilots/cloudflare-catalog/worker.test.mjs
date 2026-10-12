@@ -65,3 +65,19 @@ test('singleflight que falla se limpia y todas las solicitudes reciben error com
   for(const response of await Promise.all(requests))assert.equal(response.status,503);assert.equal(state.searches,1);assert.equal(state.cacheWrites,0);
   state.searchError=false;state.gate=null;assert.equal((await fetch()).status,200);assert.equal(state.searches,2);
 });
+
+test('sesión no permite cachear datos si primaria cambia mientras replica conserva bookmark',async()=>{
+  let marker='g1';const calls=[];
+  const target=(name,read)=>({prepare(){return {bind(){return {async all(){calls.push(name);return {success:true,results:[{value:read()}],meta:{rows_read:1}};}};}};}});
+  const primary=target('primary',()=>marker);
+  primary.withSession=constraint=>{assert.equal(constraint,'first-primary');return target('session',()=> 'g1');};
+  const pilot=createWorker({cache:()=>null,search:async()=>{marker='g2';return {products:[]};}});
+  const response=await pilot.fetch(new Request('http://localhost/api/search?q=ram'),{CATALOG_DB:primary,CATALOG_READ_REPLICATION:'1'});
+  assert.equal(response.status,503);assert.equal((await response.json()).error,'CATALOG_SNAPSHOT_CHANGED');
+  assert.deepEqual(calls,['session','primary']);
+});
+
+test('replicación solicitada sin Sessions API falla cerrado',async()=>{
+  const response=await worker.fetch(new Request('http://localhost/api/search?q=ram'),{CATALOG_DB:database(),CATALOG_READ_REPLICATION:'1'});
+  assert.equal(response.status,503);assert.equal((await response.json()).error,'CATALOG_READ_UNAVAILABLE');
+});

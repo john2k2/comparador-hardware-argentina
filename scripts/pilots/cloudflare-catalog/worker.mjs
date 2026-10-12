@@ -21,8 +21,9 @@ return {
     let params;
     try { params=validateParams({p_query:url.searchParams.get('q')??'',p_category:url.searchParams.get('category'),p_stores:url.searchParams.getAll('store'),p_min_price:number('minPrice',null),p_max_price:number('maxPrice',null),p_sort:url.searchParams.get('sortBy')??'relevance',p_page:number('page',1),p_page_size:number('pageSize',12)}); }
     catch {return reply({error:'INVALID_SEARCH_PARAMETERS'},400);}
-    const db=d1Adapter(env.CATALOG_DB),started=performance.now();
+    const started=performance.now();
     try {
+      const db=d1Adapter(env.CATALOG_DB,{readReplication:env.CATALOG_READ_REPLICATION==='1'});
       // El marcador se escribe al final de la importación completa; un bootstrap
       // escalonado no puede responder con un catálogo parcialmente cargado.
       const ready=await db.first("SELECT value FROM pilot_meta WHERE key='snapshot'");
@@ -30,7 +31,7 @@ return {
       const evidence=url.searchParams.get('withOfferEvidence')==='1',clock=now(),interval=cacheInterval(ready.value,clock);
       const deadline=snapshotInterval(ready.value,clock)?.validUntil;
       const storage=interval?cache():null,key=interval?await cacheRequest(url,params,evidence,interval.generation):null;
-      const headers=status=>({'Server-Timing':`pilot;dur=${(performance.now()-started).toFixed(2)},d1;dur=${db.metrics.sqlDurationMs.toFixed(2)}`,'X-Pilot-D1-Rows-Read':String(db.metrics.rowsRead),'X-Pilot-D1-Queries':String(db.metrics.queries),'X-Pilot-Cache':status});
+      const headers=status=>({'Server-Timing':`pilot;dur=${(performance.now()-started).toFixed(2)},d1;dur=${db.metrics.sqlDurationMs.toFixed(2)}`,'X-Pilot-D1-Rows-Read':String(db.metrics.rowsRead),'X-Pilot-D1-Queries':String(db.metrics.queries),'X-Pilot-D1-Replica-Queries':String(db.metrics.replicaQueries),'X-Pilot-Cache':status});
       const cached=await readCached(storage,key,interval,now());
       if(cached&&now()<Number(cached.headers.get('X-Pilot-Cache-Expires'))) return new Response(cached.body,{status:200,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store',...headers('HIT')}});
       const flightKey=storage&&key?key.url:null;
@@ -46,7 +47,7 @@ return {
           }
           // Un cambio de generación durante las lecturas puede mezclar dos
           // cortes. Descartar esa respuesta; jamás guardarla en la caché.
-          const after=await db.first("SELECT value FROM pilot_meta WHERE key='snapshot'");
+          const after=await db.latestFirst("SELECT value FROM pilot_meta WHERE key='snapshot'");
           if(!after||after.value!==ready.value) {const error=new Error('CATALOG_SNAPSHOT_CHANGED');error.code=error.message;throw error;}
           const body=JSON.stringify(result);
           const stillValid=interval&&now()<interval.expires;

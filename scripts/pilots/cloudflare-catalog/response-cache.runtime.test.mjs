@@ -5,9 +5,9 @@ import {Miniflare} from 'miniflare';
 import {fileURLToPath} from 'node:url';
 // Cache API y D1 reales de workerd local; el motor se sustituye por una lectura
 // pequeña para aislar ahorro/invalidation de la semántica SQL del catálogo.
-test('workerd Cache API: HIT reduce a una fila, generación invalida y errorDB no sirve caché',async()=>{
+for (const readReplication of [false,true]) test(`workerd Cache API con sesión=${readReplication}: HIT, invalidación y DB caída`,async()=>{
   const bundled=await build({stdin:{contents:`import {createWorker} from './worker.mjs';export default createWorker({search:async(db,params)=>{const row=await db.first('SELECT row_json FROM runtime_record');return {total:1,totalPages:1,page:params.p_page,pageSize:params.p_page_size,products:[JSON.parse(row.row_json)]};}});`,resolveDir:fileURLToPath(new URL('.',import.meta.url)),sourcefile:'cache-runtime.mjs'},bundle:true,write:false,format:'esm',platform:'browser'});
-  const runtime=new Miniflare({telemetry:{enabled:false},workers:[{config:{name:'cache-local-test',compatibilityDate:'2026-10-10',cache:{enabled:true},manifest:{mainModule:'worker.mjs',modules:{'worker.mjs':{type:'esm',contents:bundled.outputFiles[0].text}}},env:{CATALOG_DB:{type:'d1',id:'00000000-0000-0000-0000-000000000001'}}}}]});
+  const runtime=new Miniflare({telemetry:{enabled:false},workers:[{config:{name:'cache-local-test',compatibilityDate:'2026-10-10',cache:{enabled:true},manifest:{mainModule:'worker.mjs',modules:{'worker.mjs':{type:'esm',contents:bundled.outputFiles[0].text}}},env:{CATALOG_DB:{type:'d1',id:'00000000-0000-0000-0000-000000000001'},CATALOG_READ_REPLICATION:{type:'text',value:readReplication?'1':'0'}}}}]});
   try {
     const db=await runtime.getD1Database('CATALOG_DB');
     await db.batch([db.prepare('CREATE TABLE pilot_meta(key TEXT PRIMARY KEY,value TEXT)'),db.prepare('CREATE TABLE runtime_record(row_json TEXT)'),db.prepare('INSERT INTO runtime_record VALUES(?)').bind(JSON.stringify({id:'old',lowest_price:123}))]);

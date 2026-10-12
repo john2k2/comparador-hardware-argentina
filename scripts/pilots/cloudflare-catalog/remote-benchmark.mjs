@@ -28,7 +28,7 @@ try {
       const started = performance.now();
       const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(30_000) });
       const text = await response.text();
-      const observation = { query, repeat, at: new Date().toISOString(), status: response.status, latencyMs: Math.round((performance.now() - started) * 100) / 100, cache: response.headers.get('X-Pilot-Cache'), rowsRead: response.headers.has('X-Pilot-D1-Rows-Read') ? Number(response.headers.get('X-Pilot-D1-Rows-Read')) : null, queries: response.headers.has('X-Pilot-D1-Queries') ? Number(response.headers.get('X-Pilot-D1-Queries')) : null, serverTiming: response.headers.get('Server-Timing'), colo: response.headers.get('cf-ray')?.split('-').at(-1), sha256: createHash('sha256').update(text).digest('hex') };
+      const observation = { query, repeat, at: new Date().toISOString(), status: response.status, latencyMs: Math.round((performance.now() - started) * 100) / 100, cache: response.headers.get('X-Pilot-Cache'), rowsRead: response.headers.has('X-Pilot-D1-Rows-Read') ? Number(response.headers.get('X-Pilot-D1-Rows-Read')) : null, queries: response.headers.has('X-Pilot-D1-Queries') ? Number(response.headers.get('X-Pilot-D1-Queries')) : null, replicaQueries: Number(response.headers.get('X-Pilot-D1-Replica-Queries') ?? 0), serverTiming: response.headers.get('Server-Timing'), colo: response.headers.get('cf-ray')?.split('-').at(-1), sha256: createHash('sha256').update(text).digest('hex') };
       observations.push(observation);
       assert.equal(response.status, 200, `Respuesta ${query}: ${text.slice(0, 200)}`);
       assert.deepEqual(JSON.parse(text), expected, `Paridad ${query}`);
