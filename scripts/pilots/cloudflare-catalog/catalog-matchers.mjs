@@ -28,8 +28,18 @@ function searchIdentityText(value) {
     .replace(/\b(placas?\s+madre|motherboards?|mother)\b/g, 'motherboard');
 }
 
-export function ramSearchText(value) {
-  return searchText(value)
+export function ramSearchText(value, { queryCapacity = false } = {}) {
+  let text = searchText(value);
+  // Sólo la consulta declara capacidad implícita en contexto RAM. No completar
+  // atributos de fichas, CPUs/GPU/SSD ni miembros de un kit a partir de números.
+  if (queryCapacity && !/\b(cpu|gpu|ryzen|core|rtx|gtx|rx|geforce|radeon|ssd|disco)\b/.test(text)) {
+    text = text.replace(/\b(4|8|16|24|32|48|64|96|128|256)\b/g, (token, capacity, offset) => {
+      const before = text.slice(0, offset), after = text.slice(offset + token.length);
+      if (/\b(?:[1-8]\s*x|cl)\s*$/.test(before) || /^\s*(?:gb|mhz|hz|v|x)\b/.test(after)) return token;
+      return `${capacity}gb`;
+    });
+  }
+  return text
     .replace(/\b([0-9]{1,3})\s*gb\b/g, '$1gb')
     .replace(/\b([1-9][0-9]{3,4})\s*mhz\b/g, '$1mhz')
     .replace(/\b([1-8])\s*x\s*([0-9]{1,3})(\s*gb)?\b/g, '$1x$2gb')
@@ -69,7 +79,7 @@ export function prepareQuery(query = '', category = null) {
   let queryChip = catalogChip(query, kind);
   if (!queryChip) { kind = 'cpu'; queryChip = catalogChip(query, kind); }
   const ramQuery = category === 'memoria-ram' || (category == null && queryChip == null && RAM.test(normalized));
-  if (ramQuery) normalized = ramSearchText(normalized);
+  if (ramQuery) normalized = ramSearchText(normalized, { queryCapacity: true });
   const words = significantWords(normalized);
   const stableWords = normalized.split(' ').map(token => {
     if (!ramQuery) return token;
@@ -89,7 +99,7 @@ export function prepareMatcherQuery({ normalized, words, queryChip, kind }) {
   if (normalized === '') return { empty: true };
   const normalizeRam = kind === 'ram' && RAM_SIGNATURE.test(normalized);
   if (normalizeRam) {
-    normalized = ramSearchText(normalized);
+    normalized = ramSearchText(normalized, { queryCapacity: true });
     words = significantWords(normalized);
   }
   const modelWords = words.filter(word => /^\d{3,5}$/.test(word) || (/[a-z]/.test(word) && /[0-9]/.test(word)));

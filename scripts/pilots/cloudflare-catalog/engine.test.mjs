@@ -40,6 +40,21 @@ test('FTS trigram conserva substrings y unidades RAM',async()=>{
   const f=fixture();f.add({id:'ram',name:'Memoria DDR5 16GB 6000MHz',category:'memoria-ram'});
   assert.equal((await f.search({p_query:'ddr5 16gb 6000mhz',p_category:'memoria-ram'})).total,1);f.db.close();
 });
+test('RAM32 sin GB coincide con capacidad exacta y velocidad, sin confundir kits/portátiles ni otras variantes',async()=>{
+  const f=fixture();
+  f.add({id:'kit',name:'Memoria KLEVV DDR5 32GB 2x16GB 6000MHz BOLT V CL28',category:'memoria-ram'});
+  f.add({id:'single',name:'Memoria DDR5 32GB 1x32GB 6000MHz',category:'memoria-ram'});
+  f.add({id:'half',name:'Memoria DDR5 16GB 6000MHz',category:'memoria-ram'});
+  f.add({id:'slow',name:'Memoria DDR5 32GB 5600MHz',category:'memoria-ram'});
+  f.add({id:'portable',name:'Memoria SODIMM DDR5 32GB 6000MHz',category:'memoria-ram'});
+  for(const forceOriginal of [true,false]) {
+    const result=await searchCatalog(sqliteAdapter(f.db),{p_query:'ddr5 32 6000'},{now,forceOriginal});
+    assert.deepEqual(result.products.map(p=>p.id).sort(),['kit','single']);
+    const explicit=await searchCatalog(sqliteAdapter(f.db),{p_query:'ddr5 32 2 x 16 6000'},{now,forceOriginal});
+    assert.deepEqual(explicit.products.map(p=>p.id),['kit']);
+  }
+  f.db.close();
+});
 test('hint lazy conserva exclusión portátil actual e histórica con tiendas y proyección',async()=>{
   const f=fixture();
   f.add({id:'desktop',name:'RAM DDR4 16GB',category:'memoria-ram'});

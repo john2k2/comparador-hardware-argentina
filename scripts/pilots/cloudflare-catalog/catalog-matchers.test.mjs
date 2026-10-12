@@ -51,6 +51,20 @@ test('preparación separa modelo ambiguo, categoría RAM y candidato estable', (
   assert.equal(prepareQuery('windspeed windgb', 'memoria-ram').candidate, 'windspeed');
 });
 
+test('capacidad RAM sin unidad sólo se normaliza en consulta contextual, sin inferir kits ni tocar fichas', () => {
+  assert.equal(prepareQuery('ddr5 32 6000').normalized, 'ddr5 32gb 6000mhz');
+  assert.equal(prepareQuery('32 6000', 'memoria-ram').normalized, '32gb 6000mhz');
+  assert.equal(prepareQuery('ddr5 32 2 x 16 6000').normalized, 'ddr5 32gb 2x16gb 6000mhz');
+  assert.equal(prepareQuery('ddr5 2 x 16 6000').normalized, 'ddr5 2x16gb 6000mhz');
+  assert.equal(ramSearchText('DDR5 32 6000'), 'ddr5 32 6000mhz');
+  for (const query of ['32 6000', 'ssd 32', 'gpu 32', 'rtx 32', 'ryzen 32']) {
+    assert.equal(prepareQuery(query).normalized, searchText(query));
+  }
+  assert.equal(prepareQuery('ssd 32 ddr5 6000').normalized.includes('32gb'), false);
+  assert.equal(prepareQuery('ddr5 cl 32 6000').normalized.includes('32gb'), false);
+  assert.equal(prepareQuery('ddr5 32 mhz').normalized.includes('32gb'), false);
+});
+
 test('variantes, nombre obligatorio y portátil conservan rechazos', () => {
   const product = name => ({ name, catalog_name: searchText(name), catalog_document: searchText(name) });
   assert.equal(matchesProduct(product('AMD RX 7600'), prepareQuery('7600')), true);
