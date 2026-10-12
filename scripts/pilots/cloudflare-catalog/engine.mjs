@@ -45,6 +45,9 @@ export function candidatesSql(p, prepared, ids, now) {
   }
   values.push(...guardValues);
   const seedJoin=currentOnly?'JOIN current_identity_keys active ON active.category=p.category AND active.catalog_identity=p.catalog_identity':'';
+  // El respaldo sin texto recorre identidades activas. Usar su clave completa
+  // evita volver a barrer una categoría por cada identidad al vencer el frame.
+  const seedIndex=currentOnly&&!prepared.normalized?'INDEXED BY products_identity_idx ':'';
   const currentSourceJoin=(currentOnly&&prepared.normalized)||p.p_stores.length?'seed p CROSS JOIN price_basis b INDEXED BY basis_lookup_idx':'price_basis b JOIN seed p ON p.id=b.product_id';
   const historicalSource=p.p_stores.length?`UNION ALL SELECT b.* FROM seed p CROSS JOIN price_basis b INDEXED BY basis_lookup_idx WHERE b.product_id=p.id AND b.kind='historical' AND b.price>0 AND b.store_id IN(SELECT id FROM filter_stores)`:'';
   const sql = `WITH
@@ -55,7 +58,7 @@ export function candidatesSql(p, prepared, ids, now) {
  seed AS MATERIALIZED (SELECT p.id,p.category,p.catalog_identity,p.catalog_name,p.catalog_document,p.grouped_identity,p.last_scraped_at,p.updated_at,s.lowest AS historical_lowest,s.highest AS historical_highest,s.average AS historical_average,
  s.available AS historical_available,s.urls AS historical_urls,s.portable_listing,s.store_ids_json,s.comparable_stats_json,
  CASE WHEN NOT EXISTS(SELECT 1 FROM filter_stores) AND s.comparable_stats_json IS NOT NULL AND (SELECT now FROM clock)<s.comparable_valid_until THEN 1 ELSE 0 END AS use_cached
- FROM products p ${seedJoin} JOIN summaries s ON s.product_id=p.id WHERE ${guards.join(' AND ')}),
+ FROM products p ${seedIndex}${seedJoin} JOIN summaries s ON s.product_id=p.id WHERE ${guards.join(' AND ')}),
  offer_sources AS (SELECT b.* FROM ${currentSourceJoin}
  WHERE b.product_id=p.id AND b.kind='current' AND b.price>0 AND p.use_cached=0
  AND b.observed_at BETWEEN (SELECT earliest FROM clock) AND (SELECT latest FROM clock)
