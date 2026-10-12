@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prebuild": "node scripts/pilots/cloudflare-catalog/prepared-policy.mjs",
     "build": "next build && node scripts/render-public-documents.mjs",
     "dev": "next dev",
     "start": "next start",
