@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "asOf": "2026-10-13T13:32:39.942080+00:00",
+  "subject": {
+    "productId": "goldentechstore-api-188718",
+    "storeId": "goldentechstore",
+    "url": "https://goldentechstore.com.ar/producto/memoria-ram-udimm-corsair-vengeance-32gb-ddr5-6000mhz-cl30-1-40v-2-x-16gb-negro-rgb/"
+  },
+  "evidence": [
+    {
+      "role": "producer",
+      "productId": "goldentechstore-api-188718",
+      "storeId": "goldentechstore",
+      "url": "https://goldentechstore.com.ar/producto/memoria-ram-udimm-corsair-vengeance-32gb-ddr5-6000mhz-cl30-1-40v-2-x-16gb-negro-rgb/",
+      "currency": "ARS",
+      "price": 1202121.97,
+      "stock": "in-stock",
+      "priceCondition": "special",
+      "lastUpdated": "2026-10-13T12:12:37.76+00:00",
+      "capturedAt": "2026-10-13T13:06:58.326052+00:00"
+    },
+    {
+      "role": "snapshot",
+      "productId": "goldentechstore-api-188718",
+      "storeId": "goldentechstore",
+      "url": "https://goldentechstore.com.ar/producto/memoria-ram-udimm-corsair-vengeance-32gb-ddr5-6000mhz-cl30-1-40v-2-x-16gb-negro-rgb/",
+      "currency": "ARS",
+      "price": 1202122,
+      "stock": "unknown",
+      "priceCondition": "special",
+      "lastUpdated": "2026-10-11T18:49:20.003Z",
+      "capturedAt": "2026-10-13T13:24:43.253305+00:00"
+    },
+    {
+      "role": "public-api",
+      "productId": "goldentechstore-api-188718",
+      "storeId": "goldentechstore",
+      "url": "https://goldentechstore.com.ar/producto/memoria-ram-udimm-corsair-vengeance-32gb-ddr5-6000mhz-cl30-1-40v-2-x-16gb-negro-rgb/",
+      "currency": "ARS",
+      "price": 1202122,
+      "stock": "unknown",
+      "priceCondition": "special",
+      "lastUpdated": "2026-10-11T18:49:20.003Z",
+      "capturedAt": "2026-10-13T13:17:18.086423+00:00"
+    }
+  ]
+}

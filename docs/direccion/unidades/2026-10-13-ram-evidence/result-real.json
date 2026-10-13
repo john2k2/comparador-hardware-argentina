@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "asOf": "2026-10-13T13:32:39.942080+00:00",
+  "subject": {
+    "productId": "goldentechstore-api-188718",
+    "storeId": "goldentechstore",
+    "url": "https://goldentechstore.com.ar/producto/memoria-ram-udimm-corsair-vengeance-32gb-ddr5-6000mhz-cl30-1-40v-2-x-16gb-negro-rgb/"
+  },
+  "sameDestination": true,
+  "status": "producer-newer-than-public",
+  "evidence": [
+    {
+      "role": "producer",
+      "sameDestination": true,
+      "price": 1202121.97,
+      "currency": "ARS",
+      "stock": "in-stock",
+      "priceCondition": "special",
+      "capturedAt": "2026-10-13T13:06:58.326052+00:00",
+      "lastUpdated": "2026-10-13T12:12:37.76+00:00",
+      "ageMs": 4802182,
+      "fresh3h": true,
+      "fresh24h": true
+    },
+    {
+      "role": "snapshot",
+      "sameDestination": true,
+      "price": 1202122,
+      "currency": "ARS",
+      "stock": "unknown",
+      "priceCondition": "special",
+      "capturedAt": "2026-10-13T13:24:43.253305+00:00",
+      "lastUpdated": "2026-10-11T18:49:20.003Z",
+      "ageMs": 153799939,
+      "fresh3h": false,
+      "fresh24h": false
+    },
+    {
+      "role": "public-api",
+      "sameDestination": true,
+      "price": 1202122,
+      "currency": "ARS",
+      "stock": "unknown",
+      "priceCondition": "special",
+      "capturedAt": "2026-10-13T13:17:18.086423+00:00",
+      "lastUpdated": "2026-10-11T18:49:20.003Z",
+      "ageMs": 153799939,
+      "fresh3h": false,
+      "fresh24h": false
+    }
+  ],
+  "producerToPublic": {
+    "observationDifferenceMs": 148997757,
+    "priceDifferenceARS": 0.03,
+    "roundedWholePesoMatches": true,
+    "stockMatches": false,
+    "conditionMatches": true
+  },
+  "snapshotToPublic": {
+    "observationMatches": true,
+    "priceMatches": true,
+    "stockMatches": true,
+    "conditionMatches": true
+  },
+  "limitation": "Compara campos aportados y fechas de oferta. No verifica MPN, título, compatibilidad, elegibilidad, recepción Analytics ni causa del desfase. No consulta o modifica sistemas."
+}
