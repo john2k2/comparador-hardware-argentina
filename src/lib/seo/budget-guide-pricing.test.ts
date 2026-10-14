@@ -44,6 +44,47 @@ const cpuSpec = {
   estimatedPrice: 350_000,
 };
 
+describe('código exacto de la selección editorial', () => {
+  const spec = { name: 'Corsair Vengeance 32GB DDR5 6000MHz CL36 (2x16GB)', exactModel: 'Vengeance',
+    exactPartNumber: 'CMK32GX5M2E6000Z36', searchTerms: ['corsair 32gb ddr5 6000 vengeance'],
+    category: 'memoria-ram' as const, description: 'Kit de prueba', estimatedPrice: 960_000 };
+  const name = 'Memoria Corsair DDR5 32GB (2x16GB) 6000MHz Vengeance CL36 UDIMM Black';
+  const url = 'https://compragamer.com/producto/Memoria_Corsair_DDR5_32GB_2x16GB_6000MHz_Vengeance_CL36_UDIMM_Black_17050';
+  const make = () => {
+    const sourceIdentity = { title: name, listingRef: 'compragamer:id:17050', storeSku: 'CMK32GX5M2E6000Z36' };
+    return product({ id: 'cg-17050', name, category: 'memoria-ram', brand: 'Corsair', specs: { SKU: 'CMK32GX5M2E6000Z36' },
+      prices: [price({ storeId: 'compragamer', storeName: 'CompraGamer', price: 960_000, url, sourceIdentity,
+        identityReview: { version: 1, status: 'consistent', reason: 'exact-attributes', reviewedAt: new Date().toISOString(),
+          model: null, confidence: null, sourceIdentity, subject: { name: normalizeIdentityText(name), category: 'memoria-ram', url },
+          proof: proveOfferAttributes(name, 'memoria-ram', name)! } })] });
+  };
+
+  it('admite el código coincidente y conserva la oferta y su hora de observación', () => {
+    const candidate = make();
+    candidate.prices[0].priceCondition = 'special';
+    const before = structuredClone(candidate);
+    expect(resolveGuideComponent(spec, [candidate])).toMatchObject({ priceSource: 'catalog', price: 960_000, productId: 'cg-17050' });
+    expect(resolveGuideComponent(spec, [candidate]).offers[0]?.priceCondition).toBe('special');
+    expect(resolveGuideReferenceOffer(spec, [candidate])?.url).toBe(url);
+    expect(resolveGuideRefreshOffers(spec, [candidate])).toHaveLength(1);
+    expect(candidate).toEqual(before);
+  });
+
+  it.each(['missing-product-code', 'different-product-code', 'missing-source-code', 'different-source-code', 'conflicting-review-code'])(
+    'rechaza %s aunque el título declare la misma capacidad, frecuencia y latencia', variant => {
+      const candidate = make();
+      if (variant === 'missing-product-code') candidate.specs = {};
+      if (variant === 'different-product-code') candidate.specs.SKU += 'W';
+      if (variant === 'missing-source-code') delete candidate.prices[0].sourceIdentity!.storeSku;
+      if (variant === 'different-source-code') candidate.prices[0].sourceIdentity!.storeSku += 'W';
+      if (variant === 'conflicting-review-code') candidate.prices[0].identityReview!.sourceIdentity = {
+        ...candidate.prices[0].sourceIdentity!, storeSku: 'CMK32GX5M2E6000Z36W' };
+      expect(resolveGuideComponent(spec, [candidate]).priceSource).toBe('estimate');
+      expect(resolveGuideReferenceOffer(spec, [candidate])).toBeNull();
+      expect(resolveGuideRefreshOffers(spec, [candidate])).toEqual([]);
+    });
+});
+
 describe('cooler incluido exigido por la selección editorial', () => {
   it('admite la URL numérica CompraGamer14309 sólo con prueba CPU exacta vinculada a la publicación', () => {
     const name = 'Procesador AMD Ryzen 5 7600 5.1GHz Turbo AM5 + Wraith Stealth Cooler';
@@ -180,7 +221,12 @@ describe('cooler incluido exigido por la selección editorial', () => {
 });
 
 describe('latencia de la variante RAM editorial', () => {
-  const guide = BUDGET_GUIDES.find((guide) => guide.slug === 'pc-gamer-3-millones')!;
+  const guide = structuredClone(BUDGET_GUIDES.find((guide) => guide.slug === 'pc-gamer-3-millones')!);
+  // La prueba de latencia conserva una selección explícita, independiente de
+  // las sustituciones editoriales realizadas por falta de stock.
+  guide.components.ram = { name: 'Patriot Viper Venom 32GB DDR5 6000MHz CL36 (2x16GB)',
+    exactModel: 'Viper Venom', searchTerms: ['patriot 32gb ddr5 6000 viper venom'],
+    category: 'memoria-ram', description: 'Kit para comprobar el contrato de latencia', estimatedPrice: 190_000 };
   const spec = guide.components.ram;
   const now = new Date('2026-10-09T20:15:00.000Z');
   const ram = (latency: string, overrides: Partial<ProductPrice> = {}) => product({

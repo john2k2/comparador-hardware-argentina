@@ -32,12 +32,13 @@ describe('consulta de la selección editorial de guías', () => {
     expect(guide).toEqual(original);
   });
 
-  it('conserva las variantes CL19 y CL36 y expone límites de plataforma y accesorios', () => {
+  it('conserva las variantes CL19 y CL28 y expone límites de plataforma y accesorios', () => {
     const entry = getBudgetGuideBySlug('pc-gamer-1-millon')!;
     const mid = getBudgetGuideBySlug('pc-gamer-2-millones')!;
     const upper = getBudgetGuideBySlug('pc-gamer-3-millones')!;
     expect(entry.components.ram.name).toContain('CL19');
-    expect(upper.components.ram.name).toContain('CL36 (2x16GB)');
+    expect(upper.components.ram.name).toContain('CL28 (2x16GB)');
+    expect(upper.components.ram.exactPartNumber).toBe('KD5AGUA80-60B280H');
     expect(mid.components.gpu.name).toContain('16GB Challenger OC');
     expect(mid.components.ssd.description).toContain('PCIe 3.0');
     expect(mid.tips.join(' ')).toContain('no tiene botón BIOS Flashback');
@@ -65,9 +66,10 @@ describe('consulta de la selección editorial de guías', () => {
   });
 
   it('fecha las guías revisadas y alinea fuentes y límites de la nueva selección', () => {
-    for (const slug of ['pc-gamer-1-millon', 'pc-gamer-2-millones', 'pc-gamer-3-millones']) {
+    for (const slug of ['pc-gamer-1-millon', 'pc-gamer-2-millones']) {
       expect(getEditorialMethodology(slug)?.updatedAt).toBe('2026-10-09');
     }
+    expect(getEditorialMethodology('pc-gamer-3-millones')?.updatedAt).toBe('2026-10-14');
     const method = getEditorialMethodology('pc-gamer-2-millones')!;
     const text = method.sections.map((section) => section.text).join(' ');
     expect(text).toContain('BIOS P2.10');

@@ -48,6 +48,7 @@ function ComponentRow({
   const extraOffers = item.offers.slice(1, 3);
   const isCatalog = item.priceSource === 'catalog';
   const showPrice = isCatalog && item.price > 0;
+  const bestOffer = item.offers[0];
   const reportContext = isCatalog || !reference ? { productId: item.productId, productName: item.name,
     storeId: item.offers[0]?.storeId, storeName: item.bestStoreName ?? undefined, offerUrl: item.bestStoreUrl ?? undefined }
     : { productId: reference.productId, productName: reference.productName,
@@ -85,6 +86,11 @@ function ComponentRow({
         <div className="text-[14px] sm:text-[16px] font-pixel text-primary break-words">
           {showPrice ? formatPriceARS(item.price) : 'Sin precio reciente'}
         </div>
+        {showPrice && bestOffer?.priceCondition === 'special' && (
+          <p className="font-body text-xs text-accent mt-1">
+            {bestOffer.storeId === 'compragamer' ? 'Precio especial por depósito o transferencia.' : 'Precio especial: verificá el medio de pago.'}
+          </p>
+        )}
         {isCatalog ? (
           <div className="text-[12px] text-muted-foreground">
             {item.storeCount === 1 ? '1 tienda informó stock en las últimas 3 h' : `${item.storeCount} tiendas informaron stock en las últimas 3 h`}

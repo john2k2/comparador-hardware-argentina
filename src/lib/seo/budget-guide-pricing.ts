@@ -13,6 +13,8 @@ export type GuideSlotSpec = {
   name: string;
   // Fija una pieza editorial comprobada sin confundirla con otra variante del catálogo.
   exactModel?: string;
+  // Código del fabricante comprobado; no aceptar otra revisión con el mismo título.
+  exactPartNumber?: string;
   requiresIncludedCooler?: boolean;
   // Publicaciones editoriales conocidas: sólo amplían la lectura, nunca su elegibilidad.
   referenceProductIds?: string[];
@@ -26,6 +28,7 @@ export type GuideStoreOffer = {
   storeId: string;
   storeName: string;
   price: number;
+  priceCondition?: ProductPrice['priceCondition'];
   stock: 'in-stock' | 'low-stock';
   url: string;
   // Identidad literal de la fila observada; el enlace de compra puede llevar un slug.
@@ -173,6 +176,7 @@ export function productMatchesGuideTerms(product: Product, searchTerms: string[]
 function productMatchesGuideSpec(product: Product, spec: GuideSlotSpec): boolean {
   const searchTerms = spec.searchTerms?.filter(Boolean) ?? [];
   if (!productMatchesGuideTerms(product, searchTerms)) return false;
+  if (spec.exactPartNumber && product.specs.SKU?.trim().toUpperCase() !== spec.exactPartNumber.trim().toUpperCase()) return false;
   const requested = normalizeSearchText(spec.name);
   const actual = normalizeSearchText(product.name);
   if (spec.exactModel) {
@@ -250,6 +254,14 @@ function offerMatchesCoolerRequirement(spec: GuideSlotSpec, product: Product, of
   // La omisión en un slug no contradice el título; una negación sí. Nunca se
   // usa otro producto o dictamen para completar la presentación desconocida.
   return Boolean(evidence && !excludesCpuCooler(evidence.offerText));
+}
+
+function offerMatchesPartNumber(spec: GuideSlotSpec, offer: ProductPrice): boolean {
+  const expected = spec.exactPartNumber?.trim().toUpperCase();
+  if (!expected) return true;
+  const sources = [offer.sourceIdentity, offer.identityReview?.sourceIdentity].filter(source => source !== undefined);
+  return sources.length > 0 && sources.every(source =>
+    source.storeSku?.trim().toUpperCase() === expected);
 }
 
 export function isBuyableGuideStock(stock: ProductPrice['stock']): stock is 'in-stock' | 'low-stock' {
@@ -386,6 +398,7 @@ function buyableOffers(product: Product, spec?: GuideSlotSpec): ProductPrice[] {
     && !offerConflictsWithGuide(offer)
     && offerAgreesWithProductName(product, offer)
     && (!spec || offerMatchesCoolerRequirement(spec, product, offer))
+    && (!spec || offerMatchesPartNumber(spec, offer))
   ));
   if (inStock.length === 0) return [];
 
@@ -426,6 +439,7 @@ function collectGuideReferenceOffers(
         || (needsIdentityReview(offer, product) && !retryableReview)) return false;
       if (offerConflictsWithGuide(offer) || !offerAgreesWithProductName(product, offer)) return false;
       if (!offerMatchesCoolerRequirement(spec, product, offer)) return false;
+      if (!offerMatchesPartNumber(spec, offer)) return false;
       try {
         const url = new URL(offer.url);
         return url.protocol === 'https:' && !url.username && !url.password;
@@ -474,6 +488,7 @@ function toGuideOffers(product: Product, offers: ProductPrice[]): GuideStoreOffe
       storeName: offer.storeName,
       price: offer.price,
       stock: offer.stock,
+      ...(offer.priceCondition ? { priceCondition: offer.priceCondition } : {}),
       url: guidePurchaseUrl(product, offer),
       refreshUrl: offer.url,
       lastUpdated: Number.isFinite(new Date(offer.lastUpdated).getTime()) ? new Date(offer.lastUpdated).toISOString() : null,

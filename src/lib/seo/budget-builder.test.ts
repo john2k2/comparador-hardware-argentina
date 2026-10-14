@@ -77,21 +77,24 @@ function entryGuideCatalog(): Product[] {
   });
 }
 
-// Corte editorial reproducible; la fixture no demuestra disponibilidad presente.
-function expandedGuideCatalog(gpuPrice = 956_600): Product[] {
+// Selección local del 14/10; la fixture no demuestra disponibilidad presente.
+function expandedGuideCatalog(gpuPrice = 947_350): Product[] {
   const components: [string, string, HardwareCategory, number, number][] = [
-    ['cpu', 'Procesador AMD Ryzen 5 7600 5.1GHz Turbo AM5 + Wraith Stealth Cooler', 'procesadores', 355_850, 14309],
+    ['cpu', 'Procesador AMD Ryzen 5 7600 5.1GHz Turbo AM5 + Wraith Stealth Cooler', 'procesadores', 360_150, 14309],
     ['gpu', 'Placa de Video Asrock Radeon RX 9060 XT 16GB GDDR6 Challenger OC', 'tarjetas-graficas', gpuPrice, 17960],
-    ['ram', 'Memoria Patriot DDR5 32GB (2x16GB) 6000MHz Viper Venom CL36 XMP 3.0/AMD EXPO', 'memoria-ram', 859_100, 17061],
-    ['ssd', 'Disco Solido SSD M.2 Kingston 1TB NV3 6000MB/s NVMe PCI-E Gen4 x4', 'almacenamiento', 291_850, 16872],
-    ['mother', 'Mother MSI B650M GAMING WIFI AM5 DDR5', 'motherboards', 212_050, 17076],
-    ['psu', 'Fuente Asrock 750W 80 Plus Gold Steel Legend Full Modular ATX 3.1 PCIe 5.1 Cybenetics Platinum', 'fuentes-alimentacion', 131_250, 18173],
-    ['case', 'Gabinete Antec VX310 RGB Black 4x120mm Vidrio Templado', 'gabinetes', 60_360, 18607],
+    ['ram', 'Memoria KLEVV DDR5 32GB (2x16GB) 6000MHz BOLT V CL28', 'memoria-ram', 872_200, 21565],
+    ['ssd', 'Disco Solido SSD M.2 Kingston 1TB NV3 6000MB/s NVMe PCI-E Gen4 x4', 'almacenamiento', 289_050, 16872],
+    ['mother', 'Mother MSI B650M GAMING WIFI AM5 DDR5', 'motherboards', 188_985, 17076],
+    ['psu', 'Fuente Asrock 750W 80 Plus Gold Steel Legend Full Modular ATX 3.1 PCIe 5.1 Cybenetics Platinum', 'fuentes-alimentacion', 130_000, 18173],
+    ['case', 'Gabinete Antec VX310 RGB Black 4x120mm Vidrio Templado', 'gabinetes', 59_990, 18607],
   ];
   return components.map(([id, name, category, amount, sourceId]) => {
     const slug = name.replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    const sku = id === 'ram' ? 'KD5AGUA80-60B280H' : id === 'case' ? '0-761345-10232-2' : undefined;
     return product({ id: `expanded-${id}`, name, category,
+      specs: sku ? { SKU: sku } : {},
       prices: [price({ storeId: 'compragamer', storeName: 'CompraGamer', price: amount,
+        ...(sku ? { sourceIdentity: { listingRef: `compragamer:id:${sourceId}`, title: name, storeSku: sku, sourceId: String(sourceId) } } : {}),
         url: `https://compragamer.com/producto/${slug}_${sourceId}` })],
     });
   });
@@ -336,7 +339,7 @@ describe('resolveLiveGuideSlots', () => {
     const resolved = resolveLiveGuideSlots(guide, expandedGuideCatalog());
     expect(resolved.inStockSlots).toBe(7);
     expect(resolved.hasEstimates).toBe(false);
-    expect(resolved.catalogTotal).toBe(2_867_060);
+    expect(resolved.catalogTotal).toBe(2_847_725);
     expect(resolved.fitsBudget).toBe(true);
     expect(resolved.cpu.name).toMatch(/Wraith Stealth/);
     expect(resolved.ram.name).toContain('2x16GB');
@@ -344,9 +347,9 @@ describe('resolveLiveGuideSlots', () => {
   });
 
   it.each([
-    { gpuPrice: 1_089_540, total: 3_000_000, fitsBudget: true },
-    { gpuPrice: 1_389_540, total: 3_300_000, fitsBudget: true },
-    { gpuPrice: 1_389_541, total: 3_300_001, fitsBudget: false },
+    { gpuPrice: 1_099_625, total: 3_000_000, fitsBudget: true },
+    { gpuPrice: 1_399_625, total: 3_300_000, fitsBudget: true },
+    { gpuPrice: 1_399_626, total: 3_300_001, fitsBudget: false },
   ])('trata tres millones como techo editorial para $total', ({ gpuPrice, total, fitsBudget }) => {
     const guide = getBudgetGuideBySlug('pc-gamer-3-millones')!;
     const resolved = resolveLiveGuideSlots(guide, expandedGuideCatalog(gpuPrice));

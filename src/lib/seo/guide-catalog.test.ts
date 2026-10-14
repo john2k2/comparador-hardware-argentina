@@ -14,6 +14,8 @@ import { resolveGuideComponent } from './budget-guide-pricing';
 import { planGuideGroups } from '@/lib/catalog/priority-planning';
 
 describe('modelos prioritarios de la guía', () => {
+  afterEach(() => vi.useRealTimers());
+
   it('distingue el error de una referencia editorial y vuelve a leer sin memorizar el corte parcial', async () => {
     vi.resetModules();
     const fresh = await import('./guide-catalog');
@@ -97,6 +99,39 @@ describe('modelos prioritarios de la guía', () => {
     expect(planGuideGroups(custom, snapshot.products).find((group) => group.key.endsWith('/cpu')))
       .toMatchObject({ covered: false, targets: [{ productId: reference.id, storeId: 'compragamer', url: reference.prices[0].url }] });
     expect(reference.prices[0].lastUpdated).toEqual(observedAt);
+  });
+
+  it.each(['ssd', 'motherboard'] as const)('rescata %s de 3M fuera de las ocho candidatas sin renovar su observación', async (slot) => {
+    vi.resetModules();
+    const fresh = await import('./guide-catalog');
+    const guide = getBudgetGuideBySlug('pc-gamer-3-millones')!;
+    const spec = guide.components[slot];
+    const id = slot === 'ssd' ? 'cg-16872' : 'cg-17076';
+    const now = new Date();
+    const observedAt = new Date(now.getTime() - 60_000);
+    const name = slot === 'ssd' ? 'Disco Solido SSD M.2 Kingston 1TB NV3 6000MB/s NVME PCI-E 4.0' : 'Mother MSI B650M GAMING WIFI AM5 DDR5';
+    const reference: Product = {
+      id, name, model: name, category: spec.category, brand: slot === 'ssd' ? 'Kingston' : 'MSI', specs: {},
+      lowestPrice: 200_000, highestPrice: 200_000, averagePrice: 200_000, createdAt: now, updatedAt: now,
+      prices: [{ storeId: 'compragamer', storeName: 'CompraGamer', price: 200_000, stock: 'in-stock', installment: null,
+        url: `https://compragamer.com/producto/${name.replaceAll(' ', '_')}_${id.slice(3)}`, lastUpdated: observedAt }],
+    };
+    const truncated = Array.from({ length: 8 }, (_, index) => ({ ...reference, id: `old-${index}`,
+      prices: [{ ...reference.prices[0], lastUpdated: new Date(now.getTime() - 4 * 60 * 60_000) }] }));
+    mocks.readGuideCatalogCandidatesFromDatabase.mockReset().mockImplementation(async (category: string) => category === spec.category ? truncated : []);
+    mocks.readProductByIdFromDatabase.mockReset().mockImplementation(async (productId: string) => productId === id ? reference : null);
+    expect(resolveGuideComponent(spec, truncated).offers).toEqual([]);
+
+    const snapshot = await fresh.loadGuideCatalogSnapshot(guide);
+    expect(snapshot.unavailableSlots).toEqual([]);
+    expect(resolveGuideComponent(spec, snapshot.products)).toMatchObject({ productId: id, price: 200_000, priceSource: 'catalog' });
+    expect(mocks.readProductByIdFromDatabase).toHaveBeenCalledWith(id);
+    expect(reference.prices[0].lastUpdated).toEqual(observedAt);
+    vi.useFakeTimers();
+    vi.setSystemTime(now.getTime() + 3 * 60 * 60_000);
+    expect(resolveGuideComponent(spec, snapshot.products).offers).toEqual([]);
+    expect(planGuideGroups(guide, snapshot.products, now.getTime() + 3 * 60 * 60_000)
+      .find((group) => group.key.endsWith(`/${slot}`))?.targets).toContainEqual(expect.objectContaining({ productId: id }));
   });
 
   it('reintenta la próxima consulta tras un error, sin esperar el TTL ni cambiar fechas', async () => {
