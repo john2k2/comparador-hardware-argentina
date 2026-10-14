@@ -96,4 +96,20 @@ describe('redis-cache', () => {
     expect(await incrWithExpiry('bucket', 60)).toBeNull();
     expect(await incrWithExpiry('bucket', 60)).toBe(2);
   });
+  it('propaga cancelación sin reintentar escrituras inciertas ni reutilizar señal vencida', async () => {
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://example.upstash.io');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'fixture-token');
+    redis.eval.mockResolvedValue(1); redis.ttl.mockResolvedValue(60);
+    const { Redis } = await import('@upstash/redis');
+    const { incrWithExpiry, getRedisTtlSeconds } = await import('./redis-cache');
+    const controller = new AbortController();
+    expect(await incrWithExpiry('bounded', 60, controller.signal)).toBe(1);
+    expect(await getRedisTtlSeconds('bounded', controller.signal)).toBe(60);
+    expect(Redis).toHaveBeenLastCalledWith(expect.objectContaining({ signal: controller.signal, retry: false, enableAutoPipelining: false }));
+    controller.abort();
+    expect(await incrWithExpiry('bounded', 60, controller.signal)).toBeNull();
+    expect(await incrWithExpiry('bounded', 60, new AbortController().signal)).toBe(1);
+    expect(redis.eval).toHaveBeenCalledTimes(2);
+  });
+
 });

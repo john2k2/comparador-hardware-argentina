@@ -50,7 +50,13 @@ function hasValidRedisConfiguration(): boolean {
   return false;
 }
 
-function getRedisClient(): Redis | null {
+function getRedisClient(signal?: AbortSignal): Redis | null {
+  // Una señal por operación evita que un timeout contamine el cliente compartido.
+  if (signal) {
+    if (!hasValidRedisConfiguration() || signal.aborted) return null;
+    try { return new Redis({ url: redisUrl!, token: redisToken!, signal, retry: false, enableAutoPipelining: false }); }
+    catch { return null; }
+  }
   if (redisClient) return redisClient;
   if (triedInit) return null;
 
@@ -148,8 +154,8 @@ end
 return redis.call('INCR', KEYS[1])
 `;
 
-export async function incrWithExpiry(key: string, ttlSeconds: number): Promise<number | null> {
-  const redis = getRedisClient();
+export async function incrWithExpiry(key: string, ttlSeconds: number, signal?: AbortSignal): Promise<number | null> {
+  const redis = getRedisClient(signal);
   if (!redis || !Number.isSafeInteger(ttlSeconds) || ttlSeconds <= 0) return null;
 
   try {
@@ -162,8 +168,8 @@ export async function incrWithExpiry(key: string, ttlSeconds: number): Promise<n
   }
 }
 
-export async function getRedisTtlSeconds(key: string): Promise<number> {
-  const redis = getRedisClient();
+export async function getRedisTtlSeconds(key: string, signal?: AbortSignal): Promise<number> {
+  const redis = getRedisClient(signal);
   if (!redis) return 0;
 
   try {

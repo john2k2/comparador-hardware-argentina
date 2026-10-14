@@ -252,7 +252,7 @@ describe('rate-limit', () => {
 
     it('usa Redis (incrWithExpiry) en vez del fallback cuando esta habilitado', async () => {
       await checkRateLimit('redis-user-0', rule);
-      expect(redisCacheMock.incrWithExpiry).toHaveBeenCalledWith('redis-user-0', 60);
+      expect(redisCacheMock.incrWithExpiry).toHaveBeenCalledWith('redis-user-0', 60, expect.any(AbortSignal));
     });
 
     it('permite requests dentro del limite usando Redis', async () => {
@@ -336,11 +336,40 @@ describe('rate-limit', () => {
         .mockResolvedValueOnce({ error: null, data: { allowed: 'true' } })
         .mockRejectedValueOnce(new Error('private-credential'))
         .mockResolvedValueOnce({ error: null, data: { allowed: true, limit: 60, remaining: 59, resetAtMs: Date.now() + 60_000, retryAfterSeconds: 60 } });
-      vi.mocked(getServerSupabaseServiceClient).mockReturnValue({ rpc } as never);
+      vi.mocked(getServerSupabaseServiceClient).mockReturnValue({ rpc: (...args: unknown[]) => ({ abortSignal: () => rpc(...args) }) } as never);
       for (let attempt = 0; attempt < 3; attempt++) {
         expect(await checkRateLimit('privileged-rpc', rule, { fallback: 'deny' })).toMatchObject({ allowed: false, unavailable: true });
       }
       expect(await checkRateLimit('privileged-rpc', rule, { fallback: 'deny' })).toMatchObject({ allowed: true, remaining: 59 });
+    });
+
+    it.each(['rpc', 'eval', 'ttl'] as const)('una espera indefinida en %s termina en tres segundos sin habilitar memoria', async (provider) => {
+      let rpcSignal: AbortSignal | undefined;
+      const never = () => new Promise<never>(() => {});
+      const rpc = vi.fn(() => ({ abortSignal: (signal: AbortSignal) => { rpcSignal = signal; return never(); } }));
+      vi.mocked(getServerSupabaseServiceClient).mockReturnValue({ rpc } as never);
+      redisMockState.enabled = provider !== 'rpc';
+      if (provider === 'eval') vi.mocked(redisCacheMock.incrWithExpiry).mockImplementationOnce(never);
+      if (provider === 'ttl') vi.mocked(redisCacheMock.getRedisTtlSeconds).mockImplementationOnce(never);
+      try {
+        const pending = checkRateLimit('hung-' + provider, rule, { fallback: 'deny' });
+        await vi.advanceTimersByTimeAsync(3000);
+        expect(await pending).toMatchObject({ allowed: false, unavailable: true, remaining: 0 });
+        if (provider === 'rpc') expect(rpcSignal?.aborted).toBe(true);
+        else expect(rpc).not.toHaveBeenCalled();
+        expect(vi.getTimerCount()).toBe(0);
+      } finally { redisMockState.enabled = false; }
+    });
+    it('un TTL que devuelve cero al abortarse tampoco habilita la consulta después del límite', async () => {
+      redisMockState.enabled = true;
+      vi.mocked(redisCacheMock.getRedisTtlSeconds).mockImplementationOnce((_key, signal) => new Promise(resolve => {
+        signal!.addEventListener('abort', () => resolve(0), { once: true });
+      }));
+      try {
+        const pending = checkRateLimit('abort-settles-ttl', rule, { fallback: 'deny' });
+        await vi.advanceTimersByTimeAsync(3000);
+        expect(await pending).toMatchObject({ allowed: false, unavailable: true });
+      } finally { redisMockState.enabled = false; }
     });
     it('rechaza la caída de Redis sin trasladar un caller estricto a memoria', async () => {
       redisMockState.enabled = true;

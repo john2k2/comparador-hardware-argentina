@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server';
+import { withAbortTimeout, withPromiseTimeout } from '@/lib/async/with-abort-timeout';
 import { logger } from '@/lib/logger';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 import { isRedisEnabled, incrWithExpiry, getRedisTtlSeconds } from '@/lib/server/redis-cache';
@@ -111,54 +112,68 @@ export async function checkRateLimit(key: string, rule: RateLimitRule, options: 
     resetAtMs: Date.now() + rule.windowMs,
     retryAfterSeconds: Math.max(1, Math.ceil(rule.windowMs / 1000)),
   } : checkRateLimitInMemory(key, rule);
-  if (isRedisEnabled()) {
-    const windowSeconds = Math.max(1, Math.ceil(rule.windowMs / 1000));
-    const count = await incrWithExpiry(key, windowSeconds);
-
-    if (count !== null) {
-      const ttlSeconds = await getRedisTtlSeconds(key);
-      const effectiveTtlSeconds = ttlSeconds > 0 ? ttlSeconds : windowSeconds;
-
-      return {
-        allowed: count <= rule.limit,
-        limit: rule.limit,
-        remaining: Math.max(0, rule.limit - count),
-        resetAtMs: Date.now() + effectiveTtlSeconds * 1000,
-        retryAfterSeconds: effectiveTtlSeconds,
-      };
-    }
-
-    logger.warn('[RateLimit] Contador Redis no disponible; comprobando proveedor alternativo');
-  }
-
-  const supabase = getServerSupabaseServiceClient();
-
-  if (!supabase) return fallback();
-
+  // Una sola espera total; la señal cancela el transporte y el timeout también
+  // resuelve ante un proveedor que no respete la cancelación.
+  const deadlineMs = 3000;
   try {
-    // Intentar usar la función RPC de Supabase para rate limiting distribuido
-    const { data, error } = await supabase.rpc('check_api_rate_limit', {
-      p_bucket_key: key,
-      p_limit: rule.limit,
-      p_window_seconds: Math.max(1, Math.ceil(rule.windowMs / 1000)),
-    });
+    return await withAbortTimeout(signal => withPromiseTimeout((async () => {
+      if (isRedisEnabled()) {
+        const windowSeconds = Math.max(1, Math.ceil(rule.windowMs / 1000));
+        const count = await incrWithExpiry(key, windowSeconds, signal);
+        signal.throwIfAborted();
 
-    // La autorización exige booleanos y números reales; un payload malformado
-    // o allowed='false' jamás debe habilitar una consulta privilegiada.
-    const result = data as RateLimitResult | null;
-    if (error || !result || typeof result.allowed !== 'boolean'
-      || !Number.isSafeInteger(result.limit) || result.limit !== rule.limit
-      || !Number.isSafeInteger(result.remaining) || result.remaining < 0 || result.remaining >= rule.limit
-      || !Number.isFinite(result.resetAtMs) || result.resetAtMs <= Date.now()
-      || !Number.isSafeInteger(result.retryAfterSeconds) || result.retryAfterSeconds < 1) {
-      logger.warn('[RateLimit] Respuesta distribuida no disponible o inválida');
-      return fallback();
-    }
+        if (count !== null) {
+          const ttlSeconds = await getRedisTtlSeconds(key, signal);
+          signal.throwIfAborted();
+          const effectiveTtlSeconds = ttlSeconds > 0 ? ttlSeconds : windowSeconds;
 
-    return { allowed: result.allowed, limit: result.limit, remaining: result.remaining,
-      resetAtMs: result.resetAtMs, retryAfterSeconds: result.retryAfterSeconds };
+          return {
+            allowed: count <= rule.limit,
+            limit: rule.limit,
+            remaining: Math.max(0, rule.limit - count),
+            resetAtMs: Date.now() + effectiveTtlSeconds * 1000,
+            retryAfterSeconds: effectiveTtlSeconds,
+          };
+        }
+
+        logger.warn('[RateLimit] Contador Redis no disponible; comprobando proveedor alternativo');
+      }
+
+      signal.throwIfAborted();
+      const supabase = getServerSupabaseServiceClient();
+
+      if (!supabase) return fallback();
+
+      try {
+        // Intentar usar la función RPC de Supabase para rate limiting distribuido
+        const { data, error } = await supabase.rpc('check_api_rate_limit', {
+          p_bucket_key: key,
+          p_limit: rule.limit,
+          p_window_seconds: Math.max(1, Math.ceil(rule.windowMs / 1000)),
+        }).abortSignal(signal);
+        signal.throwIfAborted();
+
+        // La autorización exige booleanos y números reales; un payload malformado
+        // o allowed='false' jamás debe habilitar una consulta privilegiada.
+        const result = data as RateLimitResult | null;
+        if (error || !result || typeof result.allowed !== 'boolean'
+          || !Number.isSafeInteger(result.limit) || result.limit !== rule.limit
+          || !Number.isSafeInteger(result.remaining) || result.remaining < 0 || result.remaining >= rule.limit
+          || !Number.isFinite(result.resetAtMs) || result.resetAtMs <= Date.now()
+          || !Number.isSafeInteger(result.retryAfterSeconds) || result.retryAfterSeconds < 1) {
+          logger.warn('[RateLimit] Respuesta distribuida no disponible o inválida');
+          return fallback();
+        }
+
+        return { allowed: result.allowed, limit: result.limit, remaining: result.remaining,
+          resetAtMs: result.resetAtMs, retryAfterSeconds: result.retryAfterSeconds };
+      } catch {
+        logger.warn('[RateLimit] Consulta distribuida no disponible');
+        return fallback();
+      }
+    })(), deadlineMs, 'RateLimit'), deadlineMs, 'RateLimit');
   } catch {
-    logger.warn('[RateLimit] Consulta distribuida no disponible');
+    logger.warn('[RateLimit] Tiempo de espera distribuido agotado');
     return fallback();
   }
 }
