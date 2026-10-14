@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process';
 import { mkdtemp, rm, stat, writeFile, rename } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { nodeServerBuildOptions } from './lib/node-server-build.mjs';
 
 const normal = ['priority', 'guides', 'requested', 'adaptive'];
 const standalone = ['import-interest', 'inspect-sources', 'verify-listings', 'eneba-pilot'];
@@ -26,12 +27,10 @@ export async function runCatalogCommand(args, options = {}) {
     // Dentro del checkout para que Node resuelva sus dependencias instaladas.
     directory = await mkdtemp(join(cwd, '.catalog-runner-'));
     const outfile = join(directory, 'refresh.mjs');
-    await (options.build ?? build)({ entryPoints: [standalone.includes(mode) ? 'scripts/catalog/' + mode + '.ts' : 'scripts/catalog/refresh-entry.ts'], outfile, bundle: true,
-      platform: 'node', target: 'node22', format: 'esm', packages: 'external', logLevel: 'warning',
-      plugins: [{ name: 'server-only-cli', setup(builder) {
-        builder.onResolve({ filter: /^server-only$/ }, () => ({ path: 'server-only', namespace: 'cli-marker' }));
-        builder.onLoad({ filter: /.*/, namespace: 'cli-marker' }, () => ({ contents: 'export {};', loader: 'js' }));
-      } }] });
+    await (options.build ?? build)(nodeServerBuildOptions({
+      entryPoints: [standalone.includes(mode) ? 'scripts/catalog/' + mode + '.ts' : 'scripts/catalog/refresh-entry.ts'],
+      outfile, logLevel: 'warning',
+    }));
     phase = 'spawn';
     const child = (options.spawn ?? spawn)(process.execPath, ['--conditions=react-server', outfile, ...args.slice(standalone.includes(mode) ? 1 : 0)], { cwd, stdio: 'inherit', env: process.env });
     const timeoutMs = options.timeoutMs ?? (mode === 'eneba-pilot' ? 90_000 : mode === 'requested' ? 8 * 60_000 : 19 * 60_000);

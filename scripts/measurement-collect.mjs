@@ -7,6 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
 import dotenv from 'dotenv';
 import { collectMeasurementsWithRecovery, classifyEnebaCache, measurementCollectionOutcome } from './lib/measurement-recovery.mjs';
+import { nodeServerBuildOptions } from './lib/node-server-build.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 dotenv.config({ path: path.join(root, '.env.local'), quiet: true });
@@ -39,11 +40,7 @@ try {
       return refreshEnebaPilot(client);
     }
   `;
-  await build({ stdin: { contents: entry, resolveDir: root, loader: 'ts' }, outfile, platform: 'node', format: 'esm', bundle: true, packages: 'external',
-    plugins: [{ name: 'server-only-node', setup(builder) {
-      builder.onResolve({ filter: /^server-only$/ }, () => ({ path: 'server-only', namespace: 'collector' }));
-      builder.onLoad({ filter: /.*/, namespace: 'collector' }, () => ({ contents: 'export {};', loader: 'js' }));
-    } }] });
+  await build(nodeServerBuildOptions({ stdin: { contents: entry, resolveDir: root, loader: 'ts' }, outfile }));
   // Los paquetes externos se resuelven desde el proyecto, también en un runner efímero.
   await fs.symlink(path.join(root, 'node_modules'), path.join(folder, 'node_modules'), 'dir');
   await fs.chmod(outfile, 0o600);
