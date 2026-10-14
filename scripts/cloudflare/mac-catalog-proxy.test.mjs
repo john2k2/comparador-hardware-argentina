@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { parseRoutes, matchRoutes } from 'miniflare';
 import { readFileSync } from 'node:fs';
 import { createMacCatalogProxy, MAC_ORIGIN, LEGACY_ORIGIN, routeKind } from './mac-catalog-proxy.mjs';
 
@@ -32,7 +33,7 @@ test('configuración enruta índice y páginas de ambos dominios al Worker de ca
   const config = JSON.parse(source);
   const patterns = new Set(config.routes.map(route => route.pattern));
   for (const hostname of ['www.comparador-hardware.com.ar', 'comparador-hardware.com.ar']) {
-    assert.ok(patterns.has(hostname + '/sitemap-index.xml'));
+    assert.ok(patterns.has(hostname + '/sitemap-index.xml*'));
     assert.ok(patterns.has(hostname + '/product-sitemap/*'));
   }
 });
@@ -48,18 +49,56 @@ test('ambas selecciones de portada usan Mac y mantienen la respuesta de fallo', 
   assert.deepEqual(sent, paths.map(path => MAC_ORIGIN + path));
   const config = JSON.parse(readFileSync(new URL('../../wrangler.mac-catalog.jsonc', import.meta.url), 'utf8').replace(/^\s*\/\/.*$/gm, ''));
   for (const host of ['www.comparador-hardware.com.ar', 'comparador-hardware.com.ar']) {
-    for (const path of paths) assert.ok(config.routes.some(route => route.pattern === host + path));
+    for (const path of paths) assert.ok(config.routes.some(route => route.pattern === host + path + '*'));
   }
   assert.equal(routeKind('/api/home/observed-sections/admin'), null);
 });
 
-test('mapa incluye sólo rutas de catálogo, suggestions y chunks; excluye portada/auth/admin/guías', () => {
+test('mapa incluye sólo rutas de catálogo, suggestions y chunks; excluye portada/auth/admin/armador', () => {
   for (const path of ['/search', '/search/', '/product/cg-21565', '/comparar/procesadores', '/comparativa/comparar',
     '/api/search', '/api/search/suggestions', '/api/products', '/api/pc-builder/catalog']) assert.equal(routeKind(path), 'catalog', path);
   for (const path of ['/_next/static/chunks/30k8j4fsiq6zp.js', '/_next/static/media/font.woff2']) assert.equal(routeKind(path), 'static');
   for (const path of ['/', '/auth/login', '/api/auth/session', '/api/admin/catalog-refresh', '/guia/armar', '/guia/foo',
     '/comparativa/foo', '/api/search/refresh', '/product', '/product/id/refresh', '/_next/image', '/_next/static/chunk%2fadmin.js'])
     assert.equal(routeKind(path), null, path);
+});
+test('Cloudflare selecciona Mac con queries reales sin salir de su allowlist', () => {
+  const config = JSON.parse(readFileSync(new URL('../../wrangler.mac-catalog.jsonc', import.meta.url), 'utf8').replace(/^\s*\/\/.*$/gm, ''));
+  const routes = parseRoutes(new Map([['mac', config.routes.map(route => route.pattern)]]));
+  const paths = ['/guia/pc-gamer-1-millon', '/guia/pc-gamer-2-millones', '/guia/pc-gamer-3-millones',
+    '/api/pc-builder/catalog', '/api/home/sections', '/api/home/observed-sections', '/sitemap-index.xml'];
+  for (const host of ['www.comparador-hardware.com.ar', 'comparador-hardware.com.ar']) {
+    for (const path of paths) for (const suffix of ['', '/', '?_rsc=cut', '?slot=motherboard&budget=3000000']) {
+      const url = new URL('https://' + host + path + suffix);
+      assert.equal(matchRoutes(routes, url), 'mac', url.href);
+      assert.equal(routeKind(url.pathname), 'catalog');
+    }
+    for (const path of ['/guia', '/guia/armar', '/guia/nueva', '/api/catalog/refresh'])
+      assert.equal(matchRoutes(routes, new URL('https://' + host + path + '?_rsc=cut')), null);
+    // Los wildcards de Cloudflare admiten sufijos; el handler rechaza esas subrutas.
+    assert.equal(routeKind('/guia/pc-gamer-3-millones/admin'), null);
+    assert.equal(routeKind('/api/pc-builder/catalog/admin'), null);
+  }
+});
+
+test('guías editoriales y catálogo del armador leen Mac con límites de sólo lectura', async () => {
+  const paths = ['/guia/pc-gamer-1-millon', '/guia/pc-gamer-2-millones', '/guia/pc-gamer-3-millones', '/api/pc-builder/catalog'];
+  const sent = [];
+  const proxy = createMacCatalogProxy({ fetch: async req => { sent.push(req.url); return new Response('catalog-current'); } });
+  const config = JSON.parse(readFileSync(new URL('../../wrangler.mac-catalog.jsonc', import.meta.url), 'utf8').replace(/^\s*\/\/.*$/gm, ''));
+  for (const path of paths) {
+    assert.equal(routeKind(path), 'catalog');
+    assert.equal(routeKind(path + '/'), 'catalog');
+    const response = await proxy.fetch(request(path + '?_rsc=cut'), production);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.equal((await proxy.fetch(request(path, { method: 'POST' }), production)).status, 405);
+    for (const host of ['www.comparador-hardware.com.ar', 'comparador-hardware.com.ar'])
+      assert.ok(config.routes.some(route => route.pattern === host + path + '*'));
+  }
+  assert.deepEqual(sent, paths.map(path => MAC_ORIGIN + path + '?_rsc=cut'));
+  for (const path of ['/guia', '/guia/armar', '/guia/pc-gamer-3-millones/admin', '/guia/nueva', '/api/catalog/refresh', '/api/pc-builder/catalog/admin'])
+    assert.equal(routeKind(path), null);
 });
 test('disabled, host no permitido y piloto expirado fallan sin tocar origen', async () => {
   let calls = 0; const proxy = createMacCatalogProxy({ fetch: async () => { calls++; return new Response('unexpected'); } });

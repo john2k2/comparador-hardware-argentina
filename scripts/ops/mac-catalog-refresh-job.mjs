@@ -8,6 +8,7 @@ import { spawn } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
 import { hashFile, loadRuntimeConfig, validatePointer, immutableDatabasePath,
   readTransportSecret, TRANSPORT_HEADER } from './mac-catalog-service.mjs';
+import { hasObservationClockCertificate } from '../pilots/cloudflare-catalog/observation-time.mjs';
 
 const GiB = 1024 ** 3, MiB = 1024 ** 2;
 const fail = code => { throw Error(code); };
@@ -116,8 +117,7 @@ export function validatePromotionReport(report, { source, pointer, facts, direct
     || promotion?.expectedSourceSha256 !== pointer.sha256 || promotion.expectedSourceFingerprint !== pointer.fingerprint
     || candidate?.path !== join(directory, 'candidate.sqlite') || !hex.test(candidate.sha256) || !hex.test(candidate.fingerprint)
     || !/^mac-refresh-\d+$/.test(candidate.generation) || json(candidate.counts) !== json(facts.counts)
-    || candidate.certificate?.version !== 1 || candidate.certificate.validated !== true
-    || candidate.certificate.timestampPolicy !== 'js-sql-ms-v1' || candidate.certificate.offers !== facts.counts.product_prices
+    || !hasObservationClockCertificate(candidate.certificate, facts.counts.product_prices)
     || report.qc?.productionActivated !== false || report.qc?.localOnly !== true
     || report.qc.products !== facts.counts.products || report.qc.offers !== facts.counts.product_prices
     || !Number.isFinite(Date.parse(promotion.validUntil)) || Date.parse(promotion.validUntil) <= now

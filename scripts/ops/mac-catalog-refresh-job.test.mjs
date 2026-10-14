@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
+import { createRequire, Module } from 'node:module';
+import { buildSync } from 'esbuild';
 import { hashFile } from './mac-catalog-service.mjs';
 import { acquireJobLock, checkStorage, cleanupWorking, pruneJobSnapshots, refreshJobPlan,
   runMacRefreshJob as runJob } from './mac-catalog-refresh-job.mjs';
@@ -14,6 +16,12 @@ const counts = { products: 1, product_prices: 1, catalog_price_summaries: 1, sto
 const read = path => JSON.parse(readFileSync(path, 'utf8'));
 const ackProbe = async (_runtime, pointer) => ({ readOnly: true, generation: pointer.generation, fingerprint: pointer.fingerprint });
 const runMacRefreshJob = (path, dependencies = {}) => runJob(path, { probe: ackProbe, ...dependencies });
+// Productor real de certificados v2, compilado en memoria sin escribir módulos.
+const require = createRequire(import.meta.url), clockModule = new Module(import.meta.filename + '.clock.cjs');
+clockModule.require = require;
+clockModule._compile(buildSync({ entryPoints: [join(import.meta.dirname, '../pilots/cloudflare-catalog/observation-clock-index.ts')],
+  bundle: true, write: false, platform: 'node', format: 'cjs', packages: 'external' }).outputFiles[0].text, clockModule.id);
+const { installObservationClockIndex } = clockModule.exports;
 function directory(t) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'mac-refresh-job-test-')));
   t.after(() => rmSync(root, { recursive: true, force: true })); return root;
@@ -79,6 +87,51 @@ test('marker de presupuesto existente nunca solicita reinicialización', async t
   const f = await fixture(t, true); let initialized;
   await runMacRefreshJob(f.configFile, { runner: fakeRunner(f, ({ config }) => { initialized = config.initializeMacBudget; }), validateCandidate });
   assert.equal(initialized, false);
+});
+
+test('reporte con certificado v2 del productor real promueve y obtiene ACK sin alterar fuente', async t => {
+  const f = await fixture(t); let certificate;
+  const receipt = await runMacRefreshJob(f.configFile, { runner: fakeRunner(f, async ({ report }) => {
+    const db = new DatabaseSync(report.candidate.path);
+    try {
+      db.exec('CREATE TABLE product_prices(id TEXT PRIMARY KEY,price REAL,row_json TEXT)');
+      // Precisión PostgreSQL: v2 trunca y conserva el timestamp original, nunca lo rejuvenece.
+      db.prepare('INSERT INTO product_prices VALUES(?,?,?)').run('offer-1', 211400,
+        JSON.stringify({ last_updated: '2026-10-14T03:55:13.629999+00:00' }));
+      certificate = installObservationClockIndex(db);
+      report.candidate.certificate = certificate;
+    } finally { db.close(); }
+    report.candidate.sha256 = await hashFile(report.candidate.path);
+  }), validateCandidate });
+  assert.deepEqual(certificate, { version: 2, validated: true, timestampPolicy: 'js-sql-ms-v2', offers: 1 });
+  assert.equal(receipt.status, 'promoted'); assert.equal(receipt.runtimeAck.confirmed, true);
+  assert.equal(await hashFile(f.source), f.pointer.sha256);
+  assert.deepEqual(read(join(f.root, 'previous.json')), f.pointer);
+  const db = new DatabaseSync(join(f.root, receipt.current.database), { readOnly: true });
+  try {
+    const snapshot = JSON.parse(db.prepare("SELECT value FROM pilot_meta WHERE key='snapshot'").get().value);
+    assert.deepEqual(snapshot.clock_observations, certificate);
+    assert.equal(JSON.parse(db.prepare("SELECT row_json FROM product_prices WHERE id='offer-1'").get().row_json).last_updated,
+      '2026-10-14T03:55:13.629999+00:00');
+  } finally { db.close(); }
+});
+
+test('relojes v1/v2 inconsistentes, versión desconocida y conteos inválidos no promueven', async t => {
+  const valid = { version: 2, validated: true, timestampPolicy: 'js-sql-ms-v2', offers: 1 };
+  const invalidCertificates = [null, [], {}, { ...valid, version: 3 }, { ...valid, version: '2' },
+    { ...valid, timestampPolicy: 'js-sql-ms-v1' }, { ...valid, version: 1 }, { ...valid, timestampPolicy: 'other' },
+    { ...valid, validated: false }, { ...valid, validated: 'true' }, { ...valid, offers: 0 }, { ...valid, offers: 2 },
+    { ...valid, offers: '1' }, { ...valid, offers: 1.5 }];
+  for (const certificate of invalidCertificates) {
+    const f = await fixture(t);
+    await assert.rejects(runMacRefreshJob(f.configFile, { runner: fakeRunner(f, ({ report }) => {
+      report.candidate.certificate = certificate;
+    }), validateCandidate }), /MAC_JOB_PROMOTION_REPORT/);
+    assert.deepEqual(read(join(f.root, 'current.json')), f.pointer);
+    assert.equal(existsSync(join(f.root, 'previous.json')), false);
+    assert.equal(readdirSync(join(f.root, 'snapshots')).length, 1);
+    assert.equal(await hashFile(f.source), f.pointer.sha256);
+  }
 });
 
 test('puente explícito transmite sólo ruta pública y conserva lecturas reales en receipt', async t => {
