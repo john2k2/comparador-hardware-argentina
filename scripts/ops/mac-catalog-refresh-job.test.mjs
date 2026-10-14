@@ -80,6 +80,28 @@ test('marker de presupuesto existente nunca solicita reinicialización', async t
   await runMacRefreshJob(f.configFile, { runner: fakeRunner(f, ({ config }) => { initialized = config.initializeMacBudget; }), validateCandidate });
   assert.equal(initialized, false);
 });
+
+test('puente explícito transmite sólo ruta pública y conserva lecturas reales en receipt', async t => {
+  const f = await fixture(t);
+  f.config.envFile = join(f.root, 'public.env'); f.config.refreshJob.syncUpstream = true;
+  writeFileSync(f.configFile, JSON.stringify(f.config));
+  const receipt = await runMacRefreshJob(f.configFile, { validateCandidate, runner: fakeRunner(f, ({ config, report }) => {
+    assert.equal(config.upstreamEnvFile, f.config.envFile);
+    report.remoteRowsRead = 12;
+    report.upstream = { read: 12, receivedRows: 12, accepted: 3, rejected: 9, requests: 1, capped: false,
+      remoteRowsWritten: 0, productionActivated: false, publicKey: 'must-not-appear' };
+  }) });
+  assert.equal(receipt.remoteRowsRead, 12); assert.equal(receipt.observation.upstream.accepted, 3);
+  assert.equal(JSON.stringify(receipt).includes('must-not-appear'), false);
+});
+
+test('puente habilitado sin recibo o conteo acotado no cambia pointer', async t => {
+  const f = await fixture(t);
+  f.config.envFile = join(f.root, 'public.env'); f.config.refreshJob.syncUpstream = true;
+  writeFileSync(f.configFile, JSON.stringify(f.config));
+  await assert.rejects(runMacRefreshJob(f.configFile, { validateCandidate, runner: fakeRunner(f) }), /UPSTREAM_REPORT/);
+  assert.deepEqual(read(join(f.root, 'current.json')), f.pointer);
+});
 test('receipt suma HTTP captura y sweep plano, sin copiar matched[] ni datos crudos', async t => {
   const f = await fixture(t);
   const receipt = await runMacRefreshJob(f.configFile, { runner: fakeRunner(f, ({ report }) => {

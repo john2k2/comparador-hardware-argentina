@@ -16,6 +16,7 @@ const json = value => JSON.stringify(value);
 const hex = /^[a-f0-9]{64}$/;
 const producer = 'mac-catalog-refresh-job-v1';
 const scope = '500 ofertas conocidas CompraGamer por tick; no acredita catálogo entero ni otras tiendas.';
+const upstreamScope = scope + ' Además, hasta1000 observaciones existentes del productor público, con cursor y control de identidad.';
 function owner(file) {
   const stat = lstatSync(file);
   if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o777) !== 0o600
@@ -63,7 +64,9 @@ export function acquireJobLock(root, { kill = process.kill, now = Date.now() } =
 export function jobSettings(runtime) {
   const value = runtime.refreshJob ?? {};
   const settings = { deadlineMs: value.deadlineMs ?? 540000, maxStorageBytes: value.maxStorageBytes ?? 8 * GiB,
-    reserveFreeBytes: value.reserveFreeBytes ?? 2 * GiB, ackTimeoutMs: value.ackTimeoutMs ?? 30000 };
+    reserveFreeBytes: value.reserveFreeBytes ?? 2 * GiB, ackTimeoutMs: value.ackTimeoutMs ?? 30000,
+    syncUpstream: value.syncUpstream ?? false };
+  if (typeof settings.syncUpstream !== 'boolean' || settings.syncUpstream && !runtime.envFile) fail('MAC_JOB_UPSTREAM_CONFIG');
   for (const [key, min, max] of [['deadlineMs', 1000, 600000], ['maxStorageBytes', MiB, 100 * GiB],
     ['reserveFreeBytes', 0, 100 * GiB], ['ackTimeoutMs', 1, 30000]])
     if (!Number.isSafeInteger(settings[key]) || settings[key] < min || settings[key] > max) fail('MAC_JOB_SETTINGS');
@@ -99,10 +102,16 @@ function readSourceFacts(file) {
       initializeMacBudget: !db.prepare("SELECT value FROM pilot_meta WHERE key='mac_budget_local'").get() };
   } finally { db.close(); }
 }
-export function validatePromotionReport(report, { source, pointer, facts, directory, now }) {
+function validRemoteReadCount(value) { return Number.isSafeInteger(value) && value >= 0 && value <= 1000; }
+export function validatePromotionReport(report, { source, pointer, facts, directory, now, syncUpstream = false }) {
   const candidate = report?.candidate, promotion = report?.promotion;
+  if (syncUpstream && (!report?.upstream || report.upstream.receivedRows !== report.remoteRowsRead
+    || report.upstream.accepted + report.upstream.rejected !== report.upstream.read
+    || report.upstream.remoteRowsWritten !== 0 || report.upstream.productionActivated !== false
+    || !Number.isSafeInteger(report.upstream.requests) || report.upstream.requests < 1 || report.upstream.requests > 5))
+    fail('MAC_JOB_UPSTREAM_REPORT');
   if (report?.version !== 1 || report.promotionReady !== true || report.productionActivated !== false
-    || report.remoteRowsRead !== 0 || report.remoteRowsWritten !== 0
+    || !validRemoteReadCount(report.remoteRowsRead) || !syncUpstream && report.remoteRowsRead !== 0 || report.remoteRowsWritten !== 0
     || report.source?.path !== source || report.source.sha256 !== pointer.sha256 || report.source.fingerprint !== pointer.fingerprint
     || promotion?.expectedSourceSha256 !== pointer.sha256 || promotion.expectedSourceFingerprint !== pointer.fingerprint
     || candidate?.path !== join(directory, 'candidate.sqlite') || !hex.test(candidate.sha256) || !hex.test(candidate.fingerprint)
@@ -194,7 +203,8 @@ export async function waitForRuntimeAck(runtime, pointer, { probe = defaultProbe
 function recognizedReceipt(value, filename) {
   if (value?.version !== 1 || value.producer !== producer || value.status !== 'promoted' || value.promoted !== true
     || !/^tick-[a-f0-9-]{36}$/.test(value.id) || filename !== value.id + '.json'
-    || value.remoteRowsRead !== 0 || value.remoteRowsWritten !== 0 || value.scope !== scope
+    || !validRemoteReadCount(value.remoteRowsRead) || value.remoteRowsWritten !== 0
+    || ![scope, upstreamScope].includes(value.scope) || value.scope === scope && value.remoteRowsRead !== 0
     || !Number.isFinite(Date.parse(value.startedAt)) || !Number.isFinite(Date.parse(value.completedAt))
     || Date.parse(value.completedAt) < Date.parse(value.startedAt) || !Number.isSafeInteger(value.durationMs) || value.durationMs < 0 || value.durationMs > 600000
     || !Number.isFinite(Date.parse(value.runtimeAck?.at)) || Date.parse(value.runtimeAck.at) < Date.parse(value.startedAt)
@@ -281,7 +291,9 @@ function compactObservation(report) {
   return { selected: report?.selected?.length ?? null, attempted: observation.attempted ?? null,
     observed: observation.observed ?? null, comparable: observation.comparable ?? null,
     deferred: observation.deferred ?? null, failures, sourceHttp: report ? http : null, capture, httpRequests,
-    scope: report?.candidate?.counts ?? null, coverage };
+    scope: report?.candidate?.counts ?? null, coverage,
+    upstream: report?.upstream ? { ...numeric({ read: report.upstream.read, receivedRows: report.upstream.receivedRows, accepted: report.upstream.accepted,
+      rejected: report.upstream.rejected, requests: report.upstream.requests }), capped: report.upstream.capped === true } : null };
 }
 
 export async function runMacRefreshJob(configFile, dependencies = {}) {
@@ -306,11 +318,12 @@ export async function runMacRefreshJob(configFile, dependencies = {}) {
     controller = new AbortController();
     timer = setTimeout(() => controller.abort(), Math.max(1, deadline - clock() - 3000));
     const runnerConfig = { source, directory, sweep: true, maxTargets: 500, storeIds: ['compragamer'],
-      freshMinutes: 120, refreshCapture: true, initializeMacBudget: facts.initializeMacBudget };
+      freshMinutes: 120, refreshCapture: true, initializeMacBudget: facts.initializeMacBudget,
+      ...(settings.syncUpstream ? { upstreamEnvFile: runtime.envFile } : {}) };
     report = await (dependencies.runner ?? defaultRunner)(runnerConfig, { signal: controller.signal, runtime });
     clearTimeout(timer);
     if (controller.signal.aborted || clock() >= deadline) fail('MAC_JOB_DEADLINE');
-    const candidate = validatePromotionReport(report, { source, pointer, facts, directory, now: clock() });
+    const candidate = validatePromotionReport(report, { source, pointer, facts, directory, now: clock(), syncUpstream: settings.syncUpstream });
     if (realpathSync(candidate.path) !== candidate.path || !lstatSync(candidate.path).isFile()
       || ['-wal', '-shm', '-journal'].some(suffix => existsSync(candidate.path + suffix))) fail('MAC_JOB_CANDIDATE_FILE');
     if (await hashFile(candidate.path) !== candidate.sha256) fail('MAC_JOB_CANDIDATE_HASH');
@@ -338,16 +351,16 @@ export async function runMacRefreshJob(configFile, dependencies = {}) {
     receipt = { version: 1, producer, id, status: runtimeAck.confirmed ? 'promoted' : 'promoted-unconfirmed', promoted,
       runtimeAck, retention, startedAt: new Date(startedAt).toISOString(),
       completedAt: new Date(clock()).toISOString(), durationMs: clock() - startedAt, previous: pointer, current: next,
-      observation: compactObservation(report), storage, remoteRowsRead: 0, remoteRowsWritten: 0,
+      observation: compactObservation(report), storage, remoteRowsRead: report.remoteRowsRead, remoteRowsWritten: 0,
       rollback: 'Restaurar previous.json mediante rename atómico; no editar una SQLite abierta.',
-      scope };
+      scope: settings.syncUpstream ? upstreamScope : scope };
     return receipt;
   } catch (error) {
     // Un error de fsync posterior al rename no debe ocultar un pointer ya cambiado.
     if (newPointer) try { promoted = json(JSON.parse(readFileSync(manifest, 'utf8'))) === json(newPointer); } catch { /* Conserva estado conocido. */ }
     receipt = { version: 1, producer, id, status: 'failed', code: codeOf(error), promoted,
       startedAt: new Date(startedAt).toISOString(), completedAt: new Date(clock()).toISOString(), durationMs: clock() - startedAt,
-      observation: compactObservation(report), remoteRowsRead: 0, remoteRowsWritten: 0 };
+      observation: compactObservation(report), remoteRowsRead: report?.remoteRowsRead ?? (settings.syncUpstream ? null : 0), remoteRowsWritten: 0 };
     throw Object.assign(Error(receipt.code), { receipt });
   } finally {
     clearTimeout(timer);

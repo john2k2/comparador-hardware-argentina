@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
-import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -220,5 +220,35 @@ test('sweep explícito acepta hasta500 targetsCG; otros modos y tiendas no autor
       await assert.rejects(runMacCatalogRefresh({ source: f.source, dryRun: true, sweep: true, maxTargets: 500,
         storeIds: ['compragamer'], offerIds: ['o0', 'o1'] }, { consumer, reader: () => { throw Error('must not read'); } }), /CAPTURE_OR_PROOF_REQUIRED/);
     }
+  } finally { f.close(); }
+});
+
+test('puente más certificación conserva microsegundos sin consultar tiendas ni activar producción', async () => {
+  const f = fixture();
+  try {
+    const publicEnv = join(f.directory, 'public.env');
+    writeFileSync(publicEnv, 'NEXT_PUBLIC_SUPABASE_URL=https://testproject.supabase.co\nNEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_fixture\n');
+    const now = Math.floor(Date.now() / 1000) * 1000;
+    // Ambas observaciones preceden el corte, aun cuando el test empieza al inicio de un segundo.
+    const second = new Date(now - 1000).toISOString().slice(0, 19);
+    const dates = [second + '.123789Z', second + '.999789Z'];
+    const rows = f.prices.map((price, index) => ({ ...price, price: 110000, last_updated: dates[index],
+      source_identity: { title: name, listingRef: consumer.listingReference(price.store_id, price.url) },
+      products: { id: price.product_id, name, category: 'tarjetas-graficas', specs: {} } }));
+    const before = await hashFile(f.source);
+    const result = await runMacCatalogRefresh({ source: f.source, directory: join(f.directory, 'upstream'),
+      upstreamOnly: true, upstreamEnvFile: publicEnv, initializeMacBudget: true },
+    { consumer, upstreamFetch: async () => Response.json(rows), reader: () => { throw Error('No merchant request authorized'); } });
+    assert.equal(result.upstream.accepted, 2); assert.equal(result.remoteRowsRead, 2);
+    assert.equal(result.productionActivated, false); assert.equal(result.remoteRowsWritten, 0); assert.equal(result.promotionReady, true);
+    assert.equal(await hashFile(f.source), before);
+    const db = new DatabaseSync(result.candidate.path, { readOnly: true });
+    try {
+      validateCatalog(db);
+      const saved = db.prepare('SELECT row_json FROM product_prices ORDER BY id').all().map(r => JSON.parse(r.row_json));
+      assert.deepEqual(saved.map(r => r.last_updated), dates);
+      assert.deepEqual(saved.map(r => r.price), [110000, 110000]);
+      assert.equal(result.candidate.certificate.offers, 2);
+    } finally { db.close(); }
   } finally { f.close(); }
 });

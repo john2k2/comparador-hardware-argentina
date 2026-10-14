@@ -1,13 +1,14 @@
 // Runner Mac: observa destinos conocidos en staging; jamás publica ni abre la DB servida para escribir.
 import { DatabaseSync, backup } from 'node:sqlite';
-import { createHash } from 'node:crypto';
-import { createReadStream, existsSync, realpathSync, statSync, mkdirSync, writeFileSync } from 'node:fs';
+import { createHash, randomUUID } from 'node:crypto';
+import { createReadStream, existsSync, realpathSync, statSync, mkdirSync, writeFileSync, renameSync, readFileSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
 import { initializeRotation, seedNextRotationBatch, coverageSnapshot } from './cloudflare-catalog/rotation-local.mjs';
 import { enqueueKnownProducts } from './cloudflare-catalog/refresh-demand.mjs';
 import { rebuildProjection } from './cloudflare-catalog/projection.mjs';
+import { parseEnv } from 'node:util';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const tables = ['products', 'product_prices', 'summaries', 'stores', 'price_basis', 'search_projection'];
@@ -27,6 +28,8 @@ export async function loadMacRefreshConsumer() {
     export { readAndStageCompraGamer } from './scripts/pilots/cloudflare-catalog/shared-catalog-local';
     export { certifyProductEvidence } from './scripts/pilots/cloudflare-catalog/certify-product-evidence';
     export { installObservationClockIndex } from './scripts/pilots/cloudflare-catalog/observation-clock-index';
+    export { admitUpstreamObservations, syncUpstreamObservations, guidePriorityOfferIds } from './scripts/pilots/cloudflare-catalog/sync-upstream-observations';
+    export { repairCatalogIdentities } from './scripts/pilots/cloudflare-catalog/repair-catalog-identities';
   `, resolveDir: root, sourcefile: 'mac-refresh-consumer.ts' }, absWorkingDir: root,
     bundle: true, packages: 'external', write: false, platform: 'node', target: 'node22', format: 'esm', logLevel: 'silent' });
   // Guardar imports externos junto al proyecto, no dentro de un data: URL.
@@ -34,7 +37,13 @@ export async function loadMacRefreshConsumer() {
   mkdirSync(folder, { recursive: true, mode: 0o700 });
   const content = result.outputFiles[0].text;
   const file = join(folder, 'consumer-' + createHash('sha256').update(content).digest('hex') + '.mjs');
-  if (!existsSync(file)) writeFileSync(file, content, { flag: 'wx', mode: 0o600 });
+  if (!existsSync(file)) {
+    const temp = file + '.' + randomUUID() + '.tmp';
+    writeFileSync(temp, content, { flag: 'wx', mode: 0o600 });
+    // Dos pruebas/procesos pueden generar el mismo hash. Publicar el archivo
+    // completo de una vez evita EEXIST y lecturas de un módulo a medio escribir.
+    renameSync(temp, file);
+  }
   return import(pathToFileURL(file).href);
 }
 function marker(db) {
@@ -82,6 +91,7 @@ export function validateCatalog(db, { requireManifest = true } = {}) {
   return identity;
 }
 function options(config) {
+  if (config.upstreamOnly && !config.upstreamEnvFile) throw Error('MAC_REFRESH_UPSTREAM_CONFIG');
   const maxTargets = config.maxTargets ?? 2;
   if (!Number.isSafeInteger(maxTargets) || maxTargets < 2 || maxTargets > (config.sweep ? 500 : 20)) throw Error('MAC_REFRESH_LIMIT');
   const freshMinutes = config.freshMinutes ?? 1440;
@@ -212,8 +222,17 @@ export async function runMacCatalogRefresh(config, dependencies = {}) {
   } finally { original.close(); }
   if (activeWal() || await hashFile(source) !== sourceSha256 || statSync(source).ino !== sourceStat.ino) throw Error('MAC_REFRESH_SOURCE_CHANGED');
   if (statSync(working).ino === sourceStat.ino) throw Error('MAC_REFRESH_DESTINATION_INODE');
+  let identityRepair;
+  if (config.repairCatalogIdentities) {
+    const repaired = join(directory, 'identity-repaired.sqlite');
+    identityRepair = consumer.repairCatalogIdentities(working, repaired, {
+      now: clock(), generation: 'identity-repair-' + startedAt, rebuildProjection,
+    });
+    renameSync(repaired, working);
+    identityRepair.target = working;
+  }
   const db = new DatabaseSync(working);
-  let observation, localBudget, denominator, capture;
+  let observation, localBudget, denominator, capture, upstream;
   try {
     const before = marker(db);
     const hasPreparedTable = db.prepare("SELECT name FROM sqlite_schema WHERE name='catalog_prepared_products'").get();
@@ -226,10 +245,19 @@ export async function runMacCatalogRefresh(config, dependencies = {}) {
     db.exec('COMMIT');
     // Validar todas las fechas heredadas antes de gastar una lectura a un comercio.
     consumer.installObservationClockIndex(db);
+    if (config.upstreamEnvFile) {
+      const env = parseEnv(readFileSync(config.upstreamEnvFile, 'utf8'));
+      upstream = await consumer.syncUpstreamObservations(db, {
+        url: env.NEXT_PUBLIC_SUPABASE_URL,
+        publicKey: env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        priorityOfferIds: consumer.guidePriorityOfferIds(db),
+        now: clock(), ...(dependencies.upstreamFetch ? { fetch: dependencies.upstreamFetch } : {}),
+      });
+    }
     localBudget = initializeMacBudget(db, { allowFirstCut: config.initializeMacBudget, sourceSha256, now: clock() });
     denominator = macTargetDenominator(db, consumer, clock());
     initializeRotation(db);
-    if (config.refreshCapture) {
+    if (config.refreshCapture && !config.upstreamOnly) {
       if (!config.sweep) throw Error('MAC_REFRESH_CAPTURE_REQUIRES_SWEEP');
       const pause = db.prepare("SELECT name FROM sqlite_schema WHERE name='pilot_cycle_store_pause'").get();
       if (pause && db.prepare('SELECT 1 FROM pilot_cycle_store_pause WHERE store_id=? AND until_at>?').get('compragamer', clock()))
@@ -238,12 +266,12 @@ export async function runMacCatalogRefresh(config, dependencies = {}) {
     }
     const spec = capabilities(db, consumer, config);
     const rotation = [];
-    if (!config.offerIds) for (let i = 0; i < 30; i++) {
+    if (!config.offerIds && !config.upstreamOnly) for (let i = 0; i < 30; i++) {
       const seeded = seedNextRotationBatch(db, { now: clock(), capabilities: spec, clock, deadlineAt: startedAt + 180000 });
       rotation.push(seeded);
       if (seeded.complete || seeded.status === 'waiting' || seeded.status === 'deadline') break;
     }
-    selected = selectMacTargets(db, config, consumer, clock());
+    selected = config.upstreamOnly ? [] : selectMacTargets(db, config, consumer, clock());
     for (const target of selected) enqueueKnownProducts(db, { productIds: [target.productId], offerIds: [target.offerId],
       storeIds: [target.storeId], now: clock(), freshMs: (config.freshMinutes ?? 1440) * 60000 });
     // Proyección diferida: esta copia nunca sirve búsquedas. Rehacer todo tras finalizar el lote.
@@ -296,7 +324,9 @@ export async function runMacCatalogRefresh(config, dependencies = {}) {
     source: { path: source, sha256: sourceSha256, fingerprint: identity.fingerprint, immutable: true },
     candidate: { path: candidate, sha256: candidateSha256, fingerprint: nextIdentity.fingerprint,
       generation: 'mac-refresh-' + certifiedAt, counts: nextIdentity.counts, certificate },
-    selected, observation, ...(capture ? { capture } : {}), qc, denominator, localBudget, promotionReady: true, productionActivated: false, remoteRowsRead: 0, remoteRowsWritten: 0,
+    selected, observation, ...(capture ? { capture } : {}), ...(upstream ? { upstream } : {}),
+    ...(identityRepair ? { identityRepair } : {}), qc, denominator, localBudget,
+    promotionReady: true, productionActivated: false, remoteRowsRead: upstream?.receivedRows ?? 0, remoteRowsWritten: 0,
     limits: { maxTargets: config.maxTargets ?? 2, maxStores: 3, refreshFreshMinutes: config.freshMinutes ?? 1440,
       offerEligibilityHours: 24, sweep: Boolean(config.sweep), maxHttp: config.sweep ? 10 : null,
       readerDeadlineMs: config.sweep ? 300000 : 180000, fullh4rd: 'deferred', discovery: false,
@@ -316,9 +346,12 @@ export function parseMacRefreshArgs(args) {
     if (flag === '--refresh-capture') { config.refreshCapture = true; continue; }
     if (flag === '--sweep') { config.sweep = true; continue; }
     if (flag === '--initialize-mac-budget') { config.initializeMacBudget = true; continue; }
+    if (flag === '--upstream-only') { config.upstreamOnly = true; continue; }
+    if (flag === '--repair-catalog-identities') { config.repairCatalogIdentities = true; continue; }
     const value = flags[++i];
     if (!value) throw Error('MAC_REFRESH_USAGE');
     if (flag === '--directory') config.directory = value;
+    else if (flag === '--upstream-env-file') config.upstreamEnvFile = resolve(value);
     else if (flag === '--max-targets') config.maxTargets = Number(value);
     else if (flag === '--fresh-minutes') config.freshMinutes = Number(value);
     else if (flag === '--offer-id') config.offerIds.push(value);
@@ -331,5 +364,5 @@ export function parseMacRefreshArgs(args) {
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   runMacCatalogRefresh(parseMacRefreshArgs(process.argv.slice(2))).then(report => process.stdout.write(json(report) + '\n'))
-    .catch(error => { process.stderr.write((/^MAC_REFRESH_[A-Z_]+$/.test(error.message) ? error.message : 'MAC_REFRESH_FAILED') + '\n'); process.exitCode = 1; });
+    .catch(error => { process.stderr.write((/^(?:MAC_REFRESH|UPSTREAM|OBSERVATION_CLOCK|CATALOG_IDENTITY_REPAIR)_[A-Z_]+$/.test(error.message) ? error.message : 'MAC_REFRESH_FAILED') + '\n'); process.exitCode = 1; });
 }

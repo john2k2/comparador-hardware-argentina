@@ -1,3 +1,4 @@
+import { hasObservationClockCertificate, legacyObservationTimeSql, observationTimeSql } from '../../../scripts/pilots/cloudflare-catalog/observation-time.mjs';
 import { OFFER_FRESH_MS, isOfferFresh } from '@/lib/price-freshness';
 import { searchCatalog, type CatalogSqlReader } from '../../../scripts/pilots/cloudflare-catalog/engine.mjs';
 import { isHardwareCategory, inferHardwareCategoryFromName } from './hardware-categories';
@@ -219,13 +220,19 @@ export async function createD1CatalogReader(db: CatalogSqlReader,
     async readRecentProducts(category?: ReadProductsPageParams['category']): Promise<Product[]> {
       const before = await begin(), clock = now(), values: (string | number)[] = [
         new Date(clock - OFFER_FRESH_MS).toISOString(), new Date(clock + 60000).toISOString()];
+      const snapshot = JSON.parse(before.snapshot);
+      if (!hasObservationClockCertificate(snapshot.clock_observations, snapshot.counts.product_prices))
+        return failure('CATALOG_CLOCK_OBSERVATIONS_NOT_READY');
+      const rawObservation = "json_extract(o.row_json,'$.last_updated')";
+      const observed = snapshot.clock_observations.version === 2
+        ? observationTimeSql(rawObservation) : legacyObservationTimeSql(rawObservation);
       if (category) values.push(category);
       const seeds = await db.all(`SELECT o.product_id,p.category,json_extract(p.row_json,'$.name') AS name
         FROM product_prices o JOIN products p ON p.id=o.product_id
         WHERE o.price>0 AND json_extract(o.row_json,'$.stock') IN('in-stock','low-stock')
-          AND strftime('%Y-%m-%dT%H:%M:%fZ',json_extract(o.row_json,'$.last_updated')) BETWEEN ? AND ?
+          AND ${observed} BETWEEN ? AND ?
           ${category ? 'AND p.category=?' : ''}
-        ORDER BY strftime('%Y-%m-%dT%H:%M:%fZ',json_extract(o.row_json,'$.last_updated')) DESC,o.product_id,o.id LIMIT 160`, values);
+        ORDER BY ${observed} DESC,o.product_id,o.id LIMIT 160`, values);
       const ids = new Set<string>();
       for (const seed of seeds) {
         if (typeof seed.product_id !== 'string' || typeof seed.name !== 'string') return failure('CATALOG_RECENT_ROW_INVALID');

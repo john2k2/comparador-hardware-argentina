@@ -13,12 +13,33 @@ import type { D1PageCacheStorage } from './d1-page-cache';
 import { CATALOG_PREPARED_POLICY } from './prepared-policy.generated';
 import { preparedProductPublicKeyId, preparedProductSignatureMessage } from './prepared-product';
 import { stores } from '@/lib/scrapers/static-data';
+import { installObservationClockIndex } from '../../../scripts/pilots/cloudflare-catalog/observation-clock-index';
 import { prepareUnsignedProduct } from '../../../scripts/pilots/cloudflare-catalog/prepared-product-builder';
 
 const now = Date.parse('2026-10-12T01:00:00Z'), fingerprint = 'a'.repeat(64);
 const databases: DatabaseSync[] = [];
 beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(now); });
 afterEach(() => { databases.splice(0).forEach(db => db.close()); vi.useRealTimers(); });
+
+it.each([1, 2])('selección reciente v%s usa su expresión certificada y una búsqueda del índice', async version => {
+  const f = fixture();
+  if (version === 2) installObservationClockIndex(f.db);
+  const reader = await f.create();
+  expect((await reader.readRecentProducts()).length).toBeGreaterThan(0);
+  const sql = f.sql.find(query => query.includes('SELECT o.product_id,p.category') && query.includes('LIMIT 160'))!;
+  expect(sql.includes('ltrim')).toBe(version === 2);
+  const plan = f.db.prepare('EXPLAIN QUERY PLAN ' + sql).all(new Date(now - 3 * 3600000).toISOString(), new Date(now + 60000).toISOString());
+  expect(plan.some(row => String(row.detail).includes('SEARCH o USING INDEX prices_observed_idx'))).toBe(true);
+  expect(plan.some(row => String(row.detail).includes('SCAN o'))).toBe(false);
+});
+
+it.each([null, { version: 2, validated: true, timestampPolicy: 'js-sql-ms-v1' }])('selección reciente rechaza certificado inválido %j antes de buscar ofertas', async clock => {
+  const f = fixture();
+  f.write('snapshot', { ...f.snapshot, clock_observations: clock });
+  const reader = await f.create();
+  await expect(reader.readRecentProducts()).rejects.toThrow('CATALOG_CLOCK_OBSERVATIONS_NOT_READY');
+  expect(f.sql.some(query => query.includes('SELECT o.product_id,p.category'))).toBe(false);
+});
 function fixture() {
   const db = new DatabaseSync(':memory:'); databases.push(db);
   db.exec(readFileSync(new URL('../../../scripts/pilots/cloudflare-catalog/schema.sql', import.meta.url), 'utf8'));

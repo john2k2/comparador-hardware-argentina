@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import next from 'next';
 import { config as dotenv } from 'dotenv';
 import { registerMacCatalogBinding } from '../src/lib/catalog/mac-catalog-binding';
+import { hasObservationClockCertificate } from './pilots/cloudflare-catalog/observation-time.mjs';
 import { loadRuntimeConfig, readTransportSecret, transportAuthorized, TRANSPORT_HEADER,
   RequestBarrier, verifyImmutableCandidate } from './ops/mac-catalog-service.mjs';
 
@@ -30,8 +31,7 @@ export function validateDatabase(db: DatabaseSync, fingerprint: string) {
       throw Error('MAC_SERVICE_DATABASE_COUNTS');
   }
   const clock = snapshot.clock_observations;
-  if (clock?.version !== 1 || clock.validated !== true || clock.timestampPolicy !== 'js-sql-ms-v1'
-    || clock.offers !== snapshot.counts.product_prices) throw Error('MAC_SERVICE_DATABASE_CLOCK');
+  if (!hasObservationClockCertificate(clock, snapshot.counts.product_prices)) throw Error('MAC_SERVICE_DATABASE_CLOCK');
   if (db.prepare("SELECT value FROM pilot_meta WHERE key='prepared_view_manifest'").get())
     throw Error('MAC_SERVICE_PREPARED_NOT_SUPPORTED');
 }

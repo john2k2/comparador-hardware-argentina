@@ -1,5 +1,6 @@
 import { snapshotInterval, queryCacheProbe } from '../../../scripts/pilots/cloudflare-catalog/response-cache.mjs';
 import type { CatalogSqlReader } from '../../../scripts/pilots/cloudflare-catalog/engine.mjs';
+import { hasObservationClockCertificate, legacyObservationTimeSql, observationTimeSql } from '../../../scripts/pilots/cloudflare-catalog/observation-time.mjs';
 
 /** Superset global indexado: también protege totales y filas fuera de la página. */
 export async function catalogReadDeadline(db: CatalogSqlReader, snapshot: string, clock: number, includeHistorical = false): Promise<number> {
@@ -7,11 +8,12 @@ export async function catalogReadDeadline(db: CatalogSqlReader, snapshot: string
   if (interval && !includeHistorical) return interval.validUntil;
   const metadata = JSON.parse(snapshot);
   const observations = metadata?.clock_observations;
-  if (observations?.version !== 1 || observations.validated !== true || observations.timestampPolicy !== 'js-sql-ms-v1'
-    || observations.offers !== metadata.counts?.product_prices) throw new Error('CATALOG_CLOCK_OBSERVATIONS_NOT_READY');
+  if (!hasObservationClockCertificate(observations, metadata.counts?.product_prices)) throw new Error('CATALOG_CLOCK_OBSERVATIONS_NOT_READY');
   const stamp = (offset: number) => new Date(clock + offset).toISOString();
   // Cada rama busca el próximo evento desde el índice; no recorre el catálogo.
-  const observed = "strftime('%Y-%m-%dT%H:%M:%fZ',json_extract(row_json,'$.last_updated'))";
+  // El certificado v1 sólo admitía fechas con equivalencia JS/SQLite exacta.
+  // Conservar su expresión indexada permite leer copias anteriores sin mutarlas.
+  const observed = observations.version === 2 ? observationTimeSql() : legacyObservationTimeSql();
   const row = await db.first(`SELECT MIN(time) AS next_transition FROM (
     SELECT strftime('%Y-%m-%dT%H:%M:%fZ',MIN(${observed}),'-60 seconds') AS time
       FROM product_prices INDEXED BY prices_observed_idx WHERE price>0 AND ${observed}>?

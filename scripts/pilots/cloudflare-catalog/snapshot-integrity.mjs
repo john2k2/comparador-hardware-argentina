@@ -4,6 +4,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
+import { observationTimeSql } from './observation-time.mjs';
 const directory=path.resolve(process.argv[2]??'outputs/catalogo-local-cloudflare-2026-10-11');
 const state=JSON.parse(fs.readFileSync(path.join(directory,'public-snapshot/postgres-state.json')));
 const source=state.certifiedSnapshot??path.join(directory,'public-snapshot');
@@ -26,7 +27,7 @@ const queries={
  'base de precios inconsistente':`SELECT COUNT(*) AS n FROM price_basis b LEFT JOIN product_prices pp ON b.id=pp.id
  WHERE pp.id IS NULL OR b.product_id<>pp.product_id OR b.store_id<>pp.store_id OR b.price<>pp.price OR b.url IS NOT pp.url
  OR b.stock IS NOT json_extract(pp.row_json,'$.stock')
- OR (b.kind='current' AND b.observed_at IS NOT strftime('%Y-%m-%dT%H:%M:%fZ',json_extract(pp.row_json,'$.last_updated')))`,
+ OR (b.kind='current' AND b.observed_at IS NOT ${observationTimeSql("json_extract(pp.row_json,'$.last_updated')")})`,
 };
 for(const [check,query] of Object.entries(queries)){const value=Number(db.prepare(query).get().n);checks.push({check,pass:value===0,value});}
 const categories=db.prepare('SELECT category,COUNT(*) AS products FROM products GROUP BY category ORDER BY category').all();
