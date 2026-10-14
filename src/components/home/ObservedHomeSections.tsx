@@ -1,7 +1,7 @@
 'use client';
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { decodeObservedHome, type ObservedHomeSnapshot } from '@/lib/home/observed-snapshot';
+import { decodeObservedHome, retainObservedHomeAfterFailure, type ObservedHomeSnapshot } from '@/lib/home/observed-snapshot';
 import { ProductGrid } from '@/components/functional/ProductGrid';
 import { ProductGridSkeleton } from '@/components/ui/Skeleton';
 import { SectionTitle } from './SectionTitle';
@@ -19,7 +19,7 @@ export function ObservedHomeProvider({ children }: { children: ReactNode }) {
         if (!data) throw new Error('No hay un corte válido.');
         if (!controller.signal.aborted) setState({ data, pending: false, failed: false });
       } catch {
-        if (!controller.signal.aborted) setState({ data: null, pending: false, failed: true });
+        if (!controller.signal.aborted) setState(previous => ({ data: retainObservedHomeAfterFailure(previous.data), pending: false, failed: true }));
       }
     }
     void load();
@@ -34,6 +34,7 @@ export function ObservedLatestOffers() {
   return <section id="ultimas-ofertas" aria-label="Últimas ofertas" className="scroll-mt-24">
     <SectionTitle title="ÚLTIMAS OFERTAS" subtitle="Una selección de distintas categorías y modelos, con precios y stock relevados en las últimas 3 horas." actionHref="/search?sortBy=newest" actionLabel="Ver catálogo" />
     {pending ? <ProductGridSkeleton count={4} /> : <ProductGrid products={data?.latestOfferProducts ?? []} compact surface="home_latest_offers" emptyMessage={failed ? 'No pudimos cargar una selección reciente. Podés explorar el catálogo o volver más tarde.' : 'No hay ofertas recientes verificadas en este corte. Podés explorar el catálogo.'} />}
+    {failed && data && <p className="font-body text-sm text-muted-foreground mt-3">No pudimos actualizar la selección. Las ofertas que siguen vigentes conservan su fecha; comprobá las condiciones en la tienda.</p>}
     {data && <p className="font-body text-sm text-muted-foreground mt-3">Selección consultada el {new Date(data.collectedAt).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })} · hora de Argentina. Las fechas de cada oferta se conservan; comprobá las condiciones en la tienda.</p>}
   </section>;
 }

@@ -1,4 +1,4 @@
-import { decodeObservedHome, PUBLIC_HOME_KEY, PUBLIC_HOME_SCOPE } from './observed-snapshot';
+import { decodeObservedHome, observedHomeInvalidReason, PUBLIC_HOME_KEY, PUBLIC_HOME_SCOPE } from './observed-snapshot';
 
 type HomeReadEnv = { SUPABASE_URL?: string; NEXT_PUBLIC_SUPABASE_URL?: string; SUPABASE_SECRET_KEY?: string };
 async function boundedRows(response: Response): Promise<unknown> {
@@ -19,19 +19,21 @@ async function boundedRows(response: Response): Promise<unknown> {
 export async function handleObservedHomeRead(request: Request, env: HomeReadEnv, fetcher: typeof fetch): Promise<Response | null> {
   if (request.method !== 'GET' || new URL(request.url).pathname !== '/api/home/observed-sections') return null;
   const headers = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' };
-  const failure = () => Response.json({ error: 'No hay un corte reciente verificable para esta selección. Podés consultar el catálogo.' }, { status: 503, headers });
+  const failure = (reason: string) => Response.json({ error: 'No hay un corte reciente verificable para esta selección. Podés consultar el catálogo.', reason }, { status: 503, headers });
   const origin = env.SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!env.SUPABASE_SECRET_KEY || !/^https:\/\/zyiyziubpcpgoqlkcrie\.supabase\.co\/?$/.test(origin ?? '')) return failure();
+  if (!env.SUPABASE_SECRET_KEY || !/^https:\/\/zyiyziubpcpgoqlkcrie\.supabase\.co\/?$/.test(origin ?? '')) return failure('selection-unavailable');
   try {
     const url = new URL('/rest/v1/measurement_dashboard_entries', origin);
     url.searchParams.set('scope', `eq.${PUBLIC_HOME_SCOPE}`);
     url.searchParams.set('entry_key', `eq.${PUBLIC_HOME_KEY}`);
     url.searchParams.set('select', 'payload'); url.searchParams.set('limit', '1');
     const response = await fetcher(url, { headers: { apikey: env.SUPABASE_SECRET_KEY, Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}` }, redirect: 'manual', signal: AbortSignal.timeout(8_000) });
-    if (!response.ok) return failure();
-    const rows = await boundedRows(response);
-    if (!Array.isArray(rows) || rows.length !== 1 || !rows[0] || typeof rows[0] !== 'object') return failure();
+    if (!response.ok) return failure('selection-unavailable');
+    let rows: unknown;
+    try { rows = await boundedRows(response); } catch { return failure('response-invalid'); }
+    if (Array.isArray(rows) && rows.length === 0) return failure('snapshot-missing');
+    if (!Array.isArray(rows) || rows.length !== 1 || !rows[0] || typeof rows[0] !== 'object') return failure('response-invalid');
     const snapshot = decodeObservedHome(rows[0].payload);
-    return snapshot ? Response.json(snapshot, { headers }) : failure();
-  } catch { return failure(); }
+    return snapshot ? Response.json(snapshot, { headers }) : failure(observedHomeInvalidReason(rows[0].payload));
+  } catch { return failure('selection-unavailable'); }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getAllBudgetGuideSlugs } from './budget-guides-data';
+import { getAllBudgetGuideSlugs, getBudgetGuideBySlug } from './budget-guides-data';
 import { HOME_BUDGET_GUIDE_LINKS, HOME_CITATION_BLOCK, countWords } from './home-copy';
 
 describe('home copy', () => {
@@ -17,5 +17,14 @@ describe('home copy', () => {
     for (const guide of HOME_BUDGET_GUIDE_LINKS) {
       expect(published.has(guide.slug)).toBe(true);
     }
+  });
+
+  it('deriva CPU y GPU de la selección editorial en todas las tarjetas', () => {
+    for (const link of HOME_BUDGET_GUIDE_LINKS) {
+      const guide = getBudgetGuideBySlug(link.slug)!;
+      expect(link.target).toBe(`${guide.components.cpu.name} + ${guide.components.gpu.name}`);
+      expect(link.title).toBe(`$${guide.budget.toLocaleString('es-AR')}`);
+    }
+    expect(HOME_BUDGET_GUIDE_LINKS.find(link => link.slug === 'pc-gamer-2-millones')!.target).toContain('5700');
   });
 });

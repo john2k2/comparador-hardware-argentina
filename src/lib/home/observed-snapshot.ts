@@ -6,6 +6,7 @@ import { computeComparableStorePriceStats, isComparableStoreOffer } from '@/lib/
 
 export const PUBLIC_HOME_SCOPE = 'measurement-dashboard-v1';
 export const PUBLIC_HOME_KEY = `${PUBLIC_HOME_SCOPE}:public-home`;
+const SNAPSHOT_MAX_AGE_MS = 75 * 60_000;
 export interface ObservedHomeSnapshot {
   collectedAt: string;
   latestOfferProducts: Product[];
@@ -35,7 +36,7 @@ export function decodeObservedHome(value: unknown, now = Date.now()): ObservedHo
   if (!record(value) || value.kind !== 'public-home' || !record(value.data)) return null;
   const data = value.data;
   const collectedAt = typeof data.collectedAt === 'string' ? Date.parse(data.collectedAt) : NaN;
-  if (!Number.isFinite(collectedAt) || collectedAt > now + 60_000 || now - collectedAt > 75 * 60_000 || typeof data.priceDropFallbackUsed !== 'boolean') return null;
+  if (!Number.isFinite(collectedAt) || collectedAt > now + 60_000 || now - collectedAt > SNAPSHOT_MAX_AGE_MS || typeof data.priceDropFallbackUsed !== 'boolean') return null;
   const latest = products(data.latestOfferProducts), drops = products(data.priceDropProducts);
   if (!latest || !drops) return null;
   const latestOfferProducts = pickLatestOfferProducts(latest, 4, now);
@@ -49,4 +50,18 @@ export function decodeObservedHome(value: unknown, now = Date.now()): ObservedHo
     return [{ ...product, prices, lowestPrice: stats.lowest, highestPrice: stats.highest, averagePrice: stats.average }];
   }).slice(0, 4);
   return { collectedAt: new Date(collectedAt).toISOString(), latestOfferProducts, priceDropProducts, priceDropFallbackUsed: data.priceDropFallbackUsed };
+}
+
+/** Diagnóstico público acotado: jamás devolver la fila ni el error del backend. */
+export function observedHomeInvalidReason(value: unknown, now = Date.now()): 'snapshot-expired' | 'snapshot-invalid' {
+  if (record(value) && value.kind === 'public-home' && record(value.data) && typeof value.data.collectedAt === 'string') {
+    const collectedAt = Date.parse(value.data.collectedAt);
+    if (Number.isFinite(collectedAt) && now - collectedAt > SNAPSHOT_MAX_AGE_MS) return 'snapshot-expired';
+  }
+  return 'snapshot-invalid';
+}
+
+/** Retener únicamente una lectura recibida en esta página, con su fecha original. */
+export function retainObservedHomeAfterFailure(snapshot: ObservedHomeSnapshot | null, now = Date.now()): ObservedHomeSnapshot | null {
+  return snapshot ? decodeObservedHome({ kind: 'public-home', data: snapshot }, now) : null;
 }

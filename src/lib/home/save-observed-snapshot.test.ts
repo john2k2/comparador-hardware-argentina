@@ -4,6 +4,7 @@ vi.mock('server-only', () => ({}));
 vi.mock('@/lib/server/supabase-server', () => ({ getServerSupabaseReadClient: mocks.readClient, getServerSupabaseServiceClient: mocks.serviceClient }));
 vi.mock('./home-sections', () => ({ getHomeSectionsData: mocks.sections }));
 import { saveObservedHomeSnapshot } from './save-observed-snapshot';
+import { handleObservedHomeRead } from './edge-read';
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -51,5 +52,16 @@ describe('guardado de la selección pública', () => {
     expect(payload.data.latestOfferProducts[0].lowestPrice).toBe(200_000);
     expect(payload.data.priceDropProducts).toEqual([]);
     expect(JSON.stringify(payload)).not.toContain('not-public');
+    // Recorrido runtime productor -> fila guardada -> lector público, sin red.
+    const fetcher = vi.fn(async () => Response.json([{ payload }]));
+    const response = await handleObservedHomeRead(new Request('https://www.comparador-hardware.com.ar/api/home/observed-sections'), {
+      SUPABASE_URL: 'https://zyiyziubpcpgoqlkcrie.supabase.co', SUPABASE_SECRET_KEY: 'fixture-only',
+    }, fetcher);
+    expect(response!.status).toBe(200);
+    const publicSnapshot = await response!.json();
+    expect(publicSnapshot.collectedAt).toBe(payload.data.collectedAt);
+    expect(publicSnapshot.latestOfferProducts[0].prices[0].lastUpdated).toBe(observed.toISOString());
+    expect(publicSnapshot.latestOfferProducts[0].lowestPrice).toBe(200_000);
+    expect(fetcher).toHaveBeenCalledOnce();
   });
 });

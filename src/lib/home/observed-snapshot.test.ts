@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Product, ProductPrice } from '@/lib/types';
-import { decodeObservedHome, PUBLIC_HOME_KEY, PUBLIC_HOME_SCOPE } from './observed-snapshot';
+import { decodeObservedHome, retainObservedHomeAfterFailure, PUBLIC_HOME_KEY, PUBLIC_HOME_SCOPE } from './observed-snapshot';
 import { handleObservedHomeRead } from './edge-read';
 
 const now = Date.parse('2026-10-06T05:00:00Z');
@@ -55,6 +55,48 @@ describe('corte público observado de portada', () => {
     expect(decodeObservedHome({ kind: 'dashboard-view', data: payload().data }, now)).toBeNull();
     const invalid = payload(); invalid.data.latestOfferProducts[0].prices = [null];
     expect(decodeObservedHome(invalid, now)).toBeNull();
+  });
+
+  it('identifica el vencimiento real de 118 minutos sin ampliar los 75 minutos', async () => {
+    const input = payload();
+    input.data.collectedAt = '2026-10-14T00:12:36.103Z';
+    vi.setSystemTime(new Date('2026-10-14T02:10:55Z'));
+    const response = await handleObservedHomeRead(request(), env, vi.fn(async () => Response.json([{ payload: input }])));
+    expect(response!.status).toBe(503);
+    expect(await response!.json()).toMatchObject({ reason: 'snapshot-expired' });
+  });
+
+  it.each([
+    { rows: [], reason: 'snapshot-missing' },
+    { rows: [{ payload: { kind: 'private' } }], reason: 'snapshot-invalid' },
+  ])('identifica $reason sin divulgar filas ni detalles del backend', async ({ rows, reason }) => {
+    const response = await handleObservedHomeRead(request(), env, vi.fn(async () => Response.json(rows)));
+    expect(await response!.json()).toMatchObject({ reason });
+  });
+
+  it('retiene una selección recibida ante fallo sólo mientras su corte y ofertas sigan válidos', () => {
+    const source = decodeObservedHome(payload([product('short', [offer(2.99)]), product('valid')]), now)!;
+    const retained = retainObservedHomeAfterFailure(source, now + 60_000)!;
+    expect(retained.latestOfferProducts.map(product => product.id)).toEqual(['valid']);
+    expect(retained.collectedAt).toBe(source.collectedAt);
+    expect(retained.latestOfferProducts[0].prices[0].lastUpdated.getTime()).toBe(now - hour);
+    expect(retainObservedHomeAfterFailure(source, now + 76 * 60_000)).toBeNull();
+    expect(retainObservedHomeAfterFailure(null, now)).toBeNull();
+  });
+
+  it('la retención vuelve a excluir stock desconocido y contradicciones de identidad', () => {
+    const source = decodeObservedHome(payload(), now)!;
+    source.latestOfferProducts[0].prices[0].stock = 'unknown';
+    expect(retainObservedHomeAfterFailure(source, now)!.latestOfferProducts).toEqual([]);
+    source.latestOfferProducts[0].prices[0].stock = 'in-stock';
+    source.latestOfferProducts[0].prices[0].sourceIdentity = { listingRef: 'mexx:5700x', title: 'AMD Ryzen 7 5700X' };
+    expect(retainObservedHomeAfterFailure(source, now)!.latestOfferProducts).toEqual([]);
+  });
+
+  it('mantiene la frontera exacta de 75 minutos aun si las ofertas no vencieron', async () => {
+    const input = payload();
+    expect(decodeObservedHome(input, now + 75 * 60_000)).not.toBeNull();
+    expect(decodeObservedHome(input, now + 75 * 60_000 + 1)).toBeNull();
   });
 
   it('excluye campos desconocidos del producto, de la oferta y del informe público', async () => {
