@@ -28,7 +28,8 @@ type Projection = (db:DatabaseSync, options:{now:number;generation:string;affect
   statements:Array<{sql:string;values:unknown[]}>;baseRowsWritten:number;changedProjectionRows:number;cache:unknown;
 };
 type Statement = { sql:string;values:unknown[];expectedRows:number };
-type Dependencies = { reader?:Reader; clock?:()=>number; projection:Projection; estimateIndexes:(db:DatabaseSync,statements:Statement[])=>number };
+type Dependencies = { reader?:Reader; clock?:()=>number; projection:Projection; estimateIndexes:(db:DatabaseSync,statements:Statement[])=>number;
+  chargeBudget?: typeof chargeDailyBudget };
 const historySchema = `CREATE TABLE IF NOT EXISTS pilot_offer_observations(
  offer_id TEXT NOT NULL,observed_at TEXT NOT NULL,row_json TEXT NOT NULL,
  PRIMARY KEY(offer_id,observed_at));`;
@@ -117,7 +118,7 @@ export function reviewLocalObservation(product:{name:string;category:HardwareCat
   return {...price,url:lease.url,lastUpdated:new Date(observed),sourceIdentity,identityReview};
 }
 
-export function persistLocalObservation(db:DatabaseSync,lease:Lease,price:ProductPrice,{projection,estimateIndexes,clock=Date.now}:Dependencies,now:number) {
+export function persistLocalObservation(db:DatabaseSync,lease:Lease,price:ProductPrice,{projection,estimateIndexes,clock=Date.now,chargeBudget=chargeDailyBudget}:Dependencies,now:number) {
   if(db.isTransaction) throw new Error('REFRESH_LOCAL_TRANSACTION');
   db.exec('BEGIN IMMEDIATE');
   try {
@@ -169,7 +170,7 @@ export function persistLocalObservation(db:DatabaseSync,lease:Lease,price:Produc
     statements.push({sql:"UPDATE pilot_refresh_demand SET status='observed',last_observed_at=?,last_error=NULL,lease_token=NULL,lease_until=NULL,attempts=0 WHERE offer_id=?",values:[observed,lease.offerId],expectedRows:1});
     const baseRowsWritten=statements.reduce((sum,statement)=>sum+statement.expectedRows,0);
     const estimatedRowsWritten=baseRowsWritten+estimateIndexes(db,statements);
-    const budget=chargeDailyBudget(db,{now:completedAt,estimatedRowsWritten});
+    const budget=chargeBudget(db,{now:completedAt,estimatedRowsWritten});
     const commitAt=clock();
     if(!Number.isSafeInteger(commitAt)||commitAt<completedAt||commitAt>=queued.lease_until)throw new Error('REFRESH_LOCAL_LEASE_CONFLICT');
     db.exec('COMMIT');

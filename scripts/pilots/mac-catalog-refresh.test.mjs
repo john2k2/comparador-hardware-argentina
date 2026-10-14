@@ -174,6 +174,62 @@ test('corte de ledger exige autorización local explícita y preserva íntegrame
     assert.deepEqual(original.prepare('SELECT * FROM pilot_daily_write_budget').all(), inherited); original.close();
   } finally { f.close(); }
 });
+
+test('migración explícita Mac conserva79995 y ledger original, observa en copia y conserva política al reiniciar', async () => {
+  const f = fixture();
+  try {
+    const day = new Date().toISOString().slice(0, 10), db = new DatabaseSync(f.source);
+    initializeMacBudget(db, { allowFirstCut: true, sourceSha256: 'a'.repeat(64) });
+    db.exec('CREATE TABLE pilot_daily_write_budget(day TEXT PRIMARY KEY,used INTEGER,ceiling INTEGER)');
+    db.prepare('INSERT INTO pilot_daily_write_budget VALUES(?,?,?)').run(day, 79995, 80000); db.close();
+    const sourceHash = await hashFile(f.source);
+    const config = { source: f.source, offerIds: ['o0', 'o1'] };
+    const blocked = await runMacCatalogRefresh({ ...config, directory: join(f.directory, 'legacy') }, { consumer, reader: reader() });
+    assert.equal(blocked.observation.observed, 0);
+    assert.ok(blocked.observation.results.every(row => row.outcome === 'persistence-error'));
+    const result = await runMacCatalogRefresh({ ...config, directory: join(f.directory, 'mac'), macDailyWriteLimit: 1000000 }, { consumer, reader: reader() });
+    assert.equal(result.observation.observed, 2); assert.equal(result.localBudget.version, 2);
+    assert.equal(result.localBudget.migrationSourceSha256, sourceHash);
+    assert.equal(result.localBudget.scope, 'offer-observation-persistence');
+    for (const observed of result.observation.results) {
+      assert.equal(observed.receipt.budget.scope, 'offer-observation-persistence');
+      assert.equal(observed.receipt.budget.limit, 1000000);
+      assert.ok(observed.receipt.budget.note.includes('techo 1000000'));
+      assert.ok(observed.receipt.budget.note.includes('excluye puente, QC'));
+    }
+    assert.equal(await hashFile(f.source), sourceHash);
+    const next = new DatabaseSync(result.candidate.path);
+    assert.equal(next.prepare('SELECT used FROM pilot_daily_write_budget WHERE day=?').get(day).used, 79995);
+    const used = next.prepare('SELECT used FROM mac_daily_write_budget WHERE day=?').get(day).used;
+    assert.ok(used > 79995 && used < 80030);
+    assert.equal(initializeMacBudget(next).ceiling, 1000000);
+    assert.equal(next.prepare('SELECT used FROM mac_daily_write_budget WHERE day=?').get(day).used, used);
+    assert.throws(() => initializeMacBudget(next, { macDailyWriteLimit: 900000 }), /POLICY_CHANGE/);
+    next.close();
+    const replay = await runMacCatalogRefresh({ source: result.candidate.path, directory: join(f.directory, 'replay'), offerIds: ['o0', 'o1'] },
+      { consumer, reader: () => { throw Error('fresh replay must not read'); } });
+    assert.equal(replay.observation.attempted, 0); assert.equal(replay.localBudget.version, 2);
+    assert.equal(parseMacRefreshArgs(['--execute', f.source, '--mac-daily-write-limit', '1000000']).macDailyWriteLimit, 1000000);
+  } finally { f.close(); }
+});
+
+test('migración Mac exige marcador/sourceSHA, rechaza límites y revierte un fallo de escritura del marker', async () => {
+  const f = fixture();
+  try {
+    const db = new DatabaseSync(f.source);
+    assert.throws(() => initializeMacBudget(db, { macDailyWriteLimit: 1000000, sourceSha256: 'b'.repeat(64) }), /INITIALIZATION_REQUIRED/);
+    initializeMacBudget(db, { allowFirstCut: true, sourceSha256: 'a'.repeat(64) });
+    assert.throws(() => initializeMacBudget(db, { macDailyWriteLimit: 1000000 }), /MIGRATION_OPTIONS/);
+    db.exec("CREATE TRIGGER reject_policy BEFORE UPDATE ON pilot_meta WHEN new.key='mac_budget_local' BEGIN SELECT RAISE(ABORT,'policy failure'); END;");
+    assert.throws(() => initializeMacBudget(db, { macDailyWriteLimit: 1000000, sourceSha256: 'b'.repeat(64) }), /policy failure/);
+    assert.equal(db.prepare("SELECT 1 FROM sqlite_schema WHERE name='mac_daily_write_budget'").get(), undefined);
+    assert.equal(JSON.parse(db.prepare("SELECT value FROM pilot_meta WHERE key='mac_budget_local'").get().value).version, 1); db.close();
+    let reads = 0;
+    for (const limit of [80000, 1000001, 0, 1.5]) await assert.rejects(runMacCatalogRefresh({ source: f.source, macDailyWriteLimit: limit, dryRun: true },
+      { consumer, reader: () => { reads++; } }), /BUDGET_LIMIT/);
+    assert.equal(reads, 0);
+  } finally { f.close(); }
+});
 test('sweep explícito acepta hasta500 targetsCG; otros modos y tiendas no autorizan ese límite', async () => {
   const f = fixture();
   try {

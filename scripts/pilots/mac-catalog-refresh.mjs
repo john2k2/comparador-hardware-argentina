@@ -9,6 +9,7 @@ import { initializeRotation, seedNextRotationBatch, coverageSnapshot } from './c
 import { enqueueKnownProducts } from './cloudflare-catalog/refresh-demand.mjs';
 import { rebuildProjection } from './cloudflare-catalog/projection.mjs';
 import { parseEnv } from 'node:util';
+import { MAC_DAILY_BUDGET_SCHEMA, MAC_DAILY_WRITE_LIMIT, chargeMacDailyBudget } from './cloudflare-catalog/daily-budget.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const tables = ['products', 'product_prices', 'summaries', 'stores', 'price_basis', 'search_projection'];
@@ -91,6 +92,8 @@ export function validateCatalog(db, { requireManifest = true } = {}) {
   return identity;
 }
 function options(config) {
+  if (config.macDailyWriteLimit !== undefined && (!Number.isSafeInteger(config.macDailyWriteLimit)
+    || config.macDailyWriteLimit <= 80000 || config.macDailyWriteLimit > MAC_DAILY_WRITE_LIMIT)) throw Error('MAC_REFRESH_BUDGET_LIMIT');
   if (config.upstreamOnly && !config.upstreamEnvFile) throw Error('MAC_REFRESH_UPSTREAM_CONFIG');
   const maxTargets = config.maxTargets ?? 2;
   if (!Number.isSafeInteger(maxTargets) || maxTargets < 2 || maxTargets > (config.sweep ? 500 : 20)) throw Error('MAC_REFRESH_LIMIT');
@@ -111,24 +114,56 @@ function capabilities(db, consumer, config) {
     version: 'mac-known-v1', validateTarget: consumer.canRefreshLocalTarget };
 }
 function budgetRows(db, table) {
-  if (!['pilot_daily_write_budget', 'mac_inherited_d1_daily_write_budget'].includes(table)) throw Error('MAC_REFRESH_BUDGET_TABLE');
+  if (!['pilot_daily_write_budget', 'mac_inherited_d1_daily_write_budget', 'mac_daily_write_budget'].includes(table)) throw Error('MAC_REFRESH_BUDGET_TABLE');
   if (!db.prepare("SELECT name FROM sqlite_schema WHERE type='table' AND name=?").get(table)) return null;
   const rows = db.prepare(`SELECT day,used,ceiling FROM ${table} ORDER BY day`).all();
   return { rows: rows.length, sha256: createHash('sha256').update(json(rows)).digest('hex') };
 }
 /** Corte único de presupuesto, sólo en staging. Jamás reiniciar el ledger de otro tick Mac. */
-export function initializeMacBudget(db, { allowFirstCut = false, sourceSha256, now = Date.now() } = {}) {
+export function initializeMacBudget(db, { allowFirstCut = false, sourceSha256, now = Date.now(), macDailyWriteLimit } = {}) {
   if (db.isTransaction) throw Error('MAC_REFRESH_BUDGET_TRANSACTION');
+  if (macDailyWriteLimit !== undefined && (!Number.isSafeInteger(macDailyWriteLimit)
+    || macDailyWriteLimit <= 80000 || macDailyWriteLimit > MAC_DAILY_WRITE_LIMIT)) throw Error('MAC_REFRESH_BUDGET_LIMIT');
   const saved = db.prepare("SELECT value FROM pilot_meta WHERE key='mac_budget_local'").get();
   if (saved) {
     if (allowFirstCut) throw Error('MAC_REFRESH_BUDGET_ALREADY_LOCAL');
     const marker = JSON.parse(saved.value), inherited = budgetRows(db, 'mac_inherited_d1_daily_write_budget');
+    if (marker.version === 2) {
+      if (marker.kind !== 'mac-local-estimate' || marker.ledger !== 'mac_daily_write_budget'
+        || marker.scope !== 'offer-observation-persistence' || !Number.isSafeInteger(marker.ceiling)
+        || marker.ceiling <= 80000 || marker.ceiling > MAC_DAILY_WRITE_LIMIT
+        || !/^[a-f0-9]{64}$/.test(marker.migrationSourceSha256 ?? '')
+        || json(marker.inheritedLedger) !== json(inherited)
+        || json(marker.legacyLocalLedger) !== json(budgetRows(db, 'pilot_daily_write_budget'))
+        || !budgetRows(db, 'mac_daily_write_budget')) throw Error('MAC_REFRESH_BUDGET_MARKER');
+      if (macDailyWriteLimit !== undefined && macDailyWriteLimit !== marker.ceiling) throw Error('MAC_REFRESH_BUDGET_POLICY_CHANGE');
+      return marker;
+    }
     if (marker.version !== 1 || marker.kind !== 'mac-local-estimate' || marker.ceiling !== 80000
       || json(marker.inheritedLedger) !== json(inherited)) throw Error('MAC_REFRESH_BUDGET_MARKER');
-    return marker;
+    if (macDailyWriteLimit === undefined) return marker;
+    if (!Number.isSafeInteger(macDailyWriteLimit) || macDailyWriteLimit <= 80000 || macDailyWriteLimit > MAC_DAILY_WRITE_LIMIT
+      || !/^[a-f0-9]{64}$/.test(sourceSha256 ?? '') || !Number.isFinite(new Date(now).valueOf())) throw Error('MAC_REFRESH_BUDGET_MIGRATION_OPTIONS');
+    if (budgetRows(db, 'mac_daily_write_budget')) throw Error('MAC_REFRESH_BUDGET_AMBIGUOUS');
+    const legacyLocalLedger = budgetRows(db, 'pilot_daily_write_budget');
+    const rows = legacyLocalLedger ? db.prepare('SELECT day,used,ceiling FROM pilot_daily_write_budget ORDER BY day').all() : [];
+    if (rows.some(row => typeof row.day !== 'string' || !/^\d{4}-\d\d-\d\d$/.test(row.day)
+      || !Number.isSafeInteger(row.used) || row.used < 0 || !Number.isSafeInteger(row.ceiling)
+      || row.ceiling > 80000 || row.ceiling <= 0 || row.used > row.ceiling)) throw Error('MAC_REFRESH_BUDGET_LEGACY_INVALID');
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      db.exec(MAC_DAILY_BUDGET_SCHEMA);
+      for (const row of rows) db.prepare('INSERT INTO mac_daily_write_budget VALUES(?,?,?)').run(row.day, row.used, macDailyWriteLimit);
+      const next = { ...marker, version: 2, ceiling: macDailyWriteLimit, ledger: 'mac_daily_write_budget',
+        scope: 'offer-observation-persistence', legacyLocalLedger, migratedAt: new Date(now).toISOString(),
+        migrationSourceSha256: sourceSha256,
+        note: 'Copia explícita del consumo local previo, sin reset. Estima persistencia de ofertas; excluye puente, QC, inventario y copia. No mide D1.' };
+      db.prepare("UPDATE pilot_meta SET value=? WHERE key='mac_budget_local' AND value=?").run(json(next), saved.value);
+      db.exec('COMMIT'); return next;
+    } catch (error) { if (db.isTransaction) db.exec('ROLLBACK'); throw error; }
   }
   if (!allowFirstCut || !/^[0-9a-f]{64}$/.test(sourceSha256 ?? '')) throw Error('MAC_REFRESH_BUDGET_INITIALIZATION_REQUIRED');
-  if (budgetRows(db, 'mac_inherited_d1_daily_write_budget')) throw Error('MAC_REFRESH_BUDGET_AMBIGUOUS');
+  if (budgetRows(db, 'mac_inherited_d1_daily_write_budget') || budgetRows(db, 'mac_daily_write_budget')) throw Error('MAC_REFRESH_BUDGET_AMBIGUOUS');
   const inherited = budgetRows(db, 'pilot_daily_write_budget');
   db.exec('BEGIN IMMEDIATE');
   try {
@@ -137,7 +172,8 @@ export function initializeMacBudget(db, { allowFirstCut = false, sourceSha256, n
       sourceSha256, inheritedLedger: inherited,
       note: 'Preserva estimaciones anteriores, posiblemente mixtas. El nuevo techo es local conservador; no mide D1.' };
     db.prepare("INSERT INTO pilot_meta(key,value) VALUES('mac_budget_local',?)").run(json(marker));
-    db.exec('COMMIT'); return marker;
+    db.exec('COMMIT');
+    return macDailyWriteLimit === undefined ? marker : initializeMacBudget(db, { sourceSha256, now, macDailyWriteLimit });
   } catch (error) { if (db.isTransaction) db.exec('ROLLBACK'); throw error; }
 }
 export function macTargetDenominator(db, consumer, now = Date.now()) {
@@ -254,7 +290,7 @@ export async function runMacCatalogRefresh(config, dependencies = {}) {
         now: clock(), ...(dependencies.upstreamFetch ? { fetch: dependencies.upstreamFetch } : {}),
       });
     }
-    localBudget = initializeMacBudget(db, { allowFirstCut: config.initializeMacBudget, sourceSha256, now: clock() });
+    localBudget = initializeMacBudget(db, { allowFirstCut: config.initializeMacBudget, sourceSha256, now: clock(), macDailyWriteLimit: config.macDailyWriteLimit });
     denominator = macTargetDenominator(db, consumer, clock());
     initializeRotation(db);
     if (config.refreshCapture && !config.upstreamOnly) {
@@ -275,7 +311,8 @@ export async function runMacCatalogRefresh(config, dependencies = {}) {
     for (const target of selected) enqueueKnownProducts(db, { productIds: [target.productId], offerIds: [target.offerId],
       storeIds: [target.storeId], now: clock(), freshMs: (config.freshMinutes ?? 1440) * 60000 });
     // Proyección diferida: esta copia nunca sirve búsquedas. Rehacer todo tras finalizar el lote.
-    const writer = { clock, projection: () => ({ statements: [], baseRowsWritten: 0, changedProjectionRows: 0 }), estimateIndexes: () => 0 };
+    const writer = { clock, projection: () => ({ statements: [], baseRowsWritten: 0, changedProjectionRows: 0 }), estimateIndexes: () => 0,
+      ...(localBudget.version === 2 ? { chargeBudget: chargeMacDailyBudget } : {}) };
     const reader = dependencies.reader ? { reader: dependencies.reader } : {};
     observation = !selected.length ? { attempted: 0, observed: 0, comparable: 0, results: [], sourceHttp: { requests: 0, bytes: 0 } }
       : config.sweep ? await consumer.runLocalSweep(db, writer, { offerIds: selected.map(t => t.offerId), limit: config.maxTargets ?? 2,
@@ -287,7 +324,8 @@ export async function runMacCatalogRefresh(config, dependencies = {}) {
         const { statement, schemaStatement, schemaSql, ...budget } = receipt.budget;
         void statement; void schemaStatement; void schemaSql;
         receipt.budget = { ...budget, kind: 'mac-local-estimate', remoteVerified: false,
-          note: 'Ledger Mac posterior al corte explícito. Techo conservador local80000; no consumo ni cuota Cloudflare.' };
+          scope: localBudget.scope ?? 'offer-observation-persistence',
+          note: `Ledger local de persistencia de observaciones; techo ${localBudget.ceiling}; excluye puente, QC, inventario y copia. No mide D1.` };
       }
     }
     db.exec('CREATE TABLE IF NOT EXISTS mac_refresh_state(id INTEGER PRIMARY KEY CHECK(id=1),category TEXT,last_tick_at INTEGER)');
@@ -353,6 +391,7 @@ export function parseMacRefreshArgs(args) {
     if (flag === '--directory') config.directory = value;
     else if (flag === '--upstream-env-file') config.upstreamEnvFile = resolve(value);
     else if (flag === '--max-targets') config.maxTargets = Number(value);
+    else if (flag === '--mac-daily-write-limit') config.macDailyWriteLimit = Number(value);
     else if (flag === '--fresh-minutes') config.freshMinutes = Number(value);
     else if (flag === '--offer-id') config.offerIds.push(value);
     else if (flag === '--store-id') config.storeIds.push(value);
