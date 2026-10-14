@@ -1,5 +1,6 @@
 import 'server-only';
 import { NextRequest, NextResponse } from 'next/server';
+import { checkRateLimit, buildRateLimitHeaders } from '@/lib/server/rate-limit';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 import { JOB_ID_PATTERN, parseRefreshTargets, readSmallJson, type RefreshJob } from './contracts';
 import { dispatchRequestedRefresh } from './dispatch';
@@ -45,6 +46,13 @@ export async function GET(request: NextRequest) {
   const supabase = getServerSupabaseServiceClient();
   if (!supabase) return respond({ error: 'Servicio no disponible.' }, 503);
   try {
+    // El borde Cloudflare fija esta cabecera. Fuera de ese contrato se usa un
+    // bucket compartido; X-Forwarded-For y X-Real-IP no identifican al solicitante.
+    const ip = request.headers.get('cf-connecting-ip')?.trim() || 'shared-fallback';
+    const rate = await checkRateLimit(`catalog-refresh-status:${ip}`, { limit: 60, windowMs: 60_000 }, { fallback: 'deny' });
+    const headers = { ...buildRateLimitHeaders(rate), 'Retry-After': String(rate.retryAfterSeconds) };
+    if (rate.unavailable) return respond({ error: 'La consulta de estado no está disponible. Volvé a intentarlo en un minuto.' }, 503, headers);
+    if (!rate.allowed) return respond({ error: 'Consultaste el estado varias veces. Esperá un minuto antes de volver a consultar.' }, 429, headers);
     const { data, error } = await supabase.from('requested_offer_refreshes')
       .select('id,status,targets,results,created_at,started_at,finished_at,expires_at').eq('id', id).maybeSingle();
     if (error) return respond({ error: 'No se pudo consultar el estado.' }, 503);

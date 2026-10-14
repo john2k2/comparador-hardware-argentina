@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 import { isRedisEnabled, incrWithExpiry, getRedisTtlSeconds } from '@/lib/server/redis-cache';
 
@@ -7,7 +8,13 @@ export type RateLimitRule = {
   windowMs: number;
 };
 
+export type RateLimitOptions = {
+  // Las consultas privilegiadas no pueden degradar su control global a un isolate.
+  fallback?: 'memory' | 'deny';
+};
+
 export type RateLimitResult = {
+  unavailable?: true;
   allowed: boolean;
   limit: number;
   remaining: number;
@@ -15,8 +22,8 @@ export type RateLimitResult = {
   retryAfterSeconds: number;
 };
 
-// Fallback en memoria SOLO para desarrollo o cuando Supabase no está disponible
-// En producción con Vercel, esto es inefectivo pero mejor que nada como último recurso
+// Fallback por proceso para lecturas públicas que aceptan degradación.
+// Los callers con fallback deny requieren confirmación de un proveedor compartido.
 type MemoryBucket = {
   count: number;
   windowEndMs: number;
@@ -98,7 +105,12 @@ export function getRequestIp(request: NextRequest): string {
   return 'unknown';
 }
 
-export async function checkRateLimit(key: string, rule: RateLimitRule): Promise<RateLimitResult> {
+export async function checkRateLimit(key: string, rule: RateLimitRule, options: RateLimitOptions = {}): Promise<RateLimitResult> {
+  const fallback = (): RateLimitResult => options.fallback === 'deny' ? {
+    allowed: false, unavailable: true, limit: rule.limit, remaining: 0,
+    resetAtMs: Date.now() + rule.windowMs,
+    retryAfterSeconds: Math.max(1, Math.ceil(rule.windowMs / 1000)),
+  } : checkRateLimitInMemory(key, rule);
   if (isRedisEnabled()) {
     const windowSeconds = Math.max(1, Math.ceil(rule.windowMs / 1000));
     const count = await incrWithExpiry(key, windowSeconds);
@@ -116,16 +128,12 @@ export async function checkRateLimit(key: string, rule: RateLimitRule): Promise<
       };
     }
 
-    console.warn('[RateLimit] Redis no disponible, usando fallback (Supabase RPC / memoria)');
+    logger.warn('[RateLimit] Contador Redis no disponible; comprobando proveedor alternativo');
   }
 
   const supabase = getServerSupabaseServiceClient();
 
-  // Si no hay Supabase, usar fallback en memoria (con advertencia)
-  if (!supabase) {
-    console.warn('[RateLimit] Supabase no disponible, usando fallback en memoria (INSEGURO en serverless)');
-    return checkRateLimitInMemory(key, rule);
-  }
+  if (!supabase) return fallback();
 
   try {
     // Intentar usar la función RPC de Supabase para rate limiting distribuido
@@ -135,21 +143,23 @@ export async function checkRateLimit(key: string, rule: RateLimitRule): Promise<
       p_window_seconds: Math.max(1, Math.ceil(rule.windowMs / 1000)),
     });
 
-    if (error || !data || typeof data !== 'object') {
-      console.warn('[RateLimit] Error en RPC, usando fallback:', error?.message);
-      return checkRateLimitInMemory(key, rule);
+    // La autorización exige booleanos y números reales; un payload malformado
+    // o allowed='false' jamás debe habilitar una consulta privilegiada.
+    const result = data as RateLimitResult | null;
+    if (error || !result || typeof result.allowed !== 'boolean'
+      || !Number.isSafeInteger(result.limit) || result.limit !== rule.limit
+      || !Number.isSafeInteger(result.remaining) || result.remaining < 0 || result.remaining >= rule.limit
+      || !Number.isFinite(result.resetAtMs) || result.resetAtMs <= Date.now()
+      || !Number.isSafeInteger(result.retryAfterSeconds) || result.retryAfterSeconds < 1) {
+      logger.warn('[RateLimit] Respuesta distribuida no disponible o inválida');
+      return fallback();
     }
 
-    return {
-      allowed: Boolean((data as { allowed?: boolean }).allowed),
-      limit: Number((data as { limit?: number }).limit ?? rule.limit),
-      remaining: Number((data as { remaining?: number }).remaining ?? 0),
-      resetAtMs: Number((data as { resetAtMs?: number }).resetAtMs ?? Date.now() + rule.windowMs),
-      retryAfterSeconds: Number((data as { retryAfterSeconds?: number }).retryAfterSeconds ?? Math.ceil(rule.windowMs / 1000)),
-    };
-  } catch (err) {
-    console.warn('[RateLimit] Excepción, usando fallback:', err);
-    return checkRateLimitInMemory(key, rule);
+    return { allowed: result.allowed, limit: result.limit, remaining: result.remaining,
+      resetAtMs: result.resetAtMs, retryAfterSeconds: result.retryAfterSeconds };
+  } catch {
+    logger.warn('[RateLimit] Consulta distribuida no disponible');
+    return fallback();
   }
 }
 

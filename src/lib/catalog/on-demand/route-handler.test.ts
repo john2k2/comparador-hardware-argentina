@@ -5,12 +5,15 @@ const mocks = vi.hoisted(() => ({
   getServerSupabaseServiceClient: vi.fn(),
   rpc: vi.fn(),
   from: vi.fn(),
+  checkRateLimit: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/server/supabase-server', () => ({
   getServerSupabaseServiceClient: mocks.getServerSupabaseServiceClient,
 }));
+vi.mock('@/lib/server/rate-limit', () => ({ checkRateLimit: mocks.checkRateLimit,
+  buildRateLimitHeaders: () => ({ 'X-RateLimit-Limit': '60', 'X-RateLimit-Remaining': '0' }) }));
 
 import { GET, POST } from './route-handler';
 
@@ -53,6 +56,7 @@ describe('on-demand refresh route handler', () => {
     vi.stubEnv('GITHUB_ACTIONS_DISPATCH_TOKEN', '');
     mocks.getServerSupabaseServiceClient.mockReturnValue({ rpc: mocks.rpc, from: mocks.from });
     mocks.rpc.mockResolvedValue({ data: publicJob(), error: null });
+    mocks.checkRateLimit.mockResolvedValue({ allowed: true, limit: 60, remaining: 59, resetAtMs: Date.now() + 60_000, retryAfterSeconds: 60 });
   });
 
   it('returns 503 with the feature disabled without calling Supabase', async () => {
@@ -154,6 +158,50 @@ describe('on-demand refresh route handler', () => {
     const response = await GET(request('GET', '/api/catalog/on-demand?id=not-a-uuid'));
 
     expect(response.status).toBe(400);
+    expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.checkRateLimit).not.toHaveBeenCalled();
+  });
+
+  it('limita GET antes de consultar trabajos usando la IP de Cloudflare, aunque cambie el UUID', async () => {
+    mocks.checkRateLimit.mockResolvedValue({ allowed: false, limit: 60, remaining: 0, resetAtMs: Date.now() + 60_000, retryAfterSeconds: 60 });
+    for (const id of ['123e4567-e89b-12d3-a456-426614174000', '123e4567-e89b-12d3-a456-426614174001']) {
+      const response = await GET(request('GET', `/api/catalog/on-demand?id=${id}`, { headers: {
+        'cf-connecting-ip': '203.0.113.10', 'x-forwarded-for': 'client-controlled',
+      } }));
+      expect(response.status).toBe(429);
+      expect(response.headers.get('Retry-After')).toBe('60');
+      expect(response.headers.get('Cache-Control')).toBe('no-store');
+    }
+    expect(mocks.checkRateLimit).toHaveBeenCalledWith('catalog-refresh-status:203.0.113.10', { limit: 60, windowMs: 60_000 }, { fallback: 'deny' });
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+
+  it('rechaza la lectura privilegiada con 503 si la limitación compartida no está disponible', async () => {
+    mocks.checkRateLimit.mockResolvedValueOnce({ allowed: false, unavailable: true, retryAfterSeconds: 60 });
+    const response = await GET(request('GET', '/api/catalog/on-demand?id=123e4567-e89b-12d3-a456-426614174000'));
+    expect(response.status).toBe(503);
+    expect(await response.text()).not.toMatch(/private|token|Supabase|Redis/);
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+
+  it('usa un bucket común sin IP de Cloudflare y no acepta IPs arbitrarias como identidad', async () => {
+    mocks.checkRateLimit.mockResolvedValue({ allowed: false, retryAfterSeconds: 60 });
+    for (const ip of ['client-one', 'client-two']) {
+      await GET(request('GET', '/api/catalog/on-demand?id=123e4567-e89b-12d3-a456-426614174000', {
+        headers: { 'x-forwarded-for': ip, 'x-real-ip': ip },
+      }));
+    }
+    expect(mocks.checkRateLimit.mock.calls.map(call => call[0])).toEqual([
+      'catalog-refresh-status:shared-fallback', 'catalog-refresh-status:shared-fallback',
+    ]);
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+
+  it('devuelve una respuesta segura si el limitador lanza un error inesperado', async () => {
+    mocks.checkRateLimit.mockRejectedValueOnce(new Error('private-token'));
+    const response = await GET(request('GET', '/api/catalog/on-demand?id=123e4567-e89b-12d3-a456-426614174000'));
+    expect(response.status).toBe(503);
+    expect(await response.text()).not.toContain('private-token');
     expect(mocks.from).not.toHaveBeenCalled();
   });
 

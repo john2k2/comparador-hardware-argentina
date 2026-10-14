@@ -80,8 +80,8 @@ export async function getRedisCache<T>(key: string): Promise<T | null> {
   try {
     const value = await redis.get<T>(key);
     return value;
-  } catch (error) {
-    console.warn('[Redis] Get error:', error);
+  } catch {
+    logger.warn('[Redis] Get no disponible');
     return null;
   }
 }
@@ -96,8 +96,8 @@ export async function setRedisCache(
   
   try {
     await redis.setex(key, ttlSeconds, value);
-  } catch (error) {
-    console.warn('[Redis] Set error:', error);
+  } catch {
+    logger.warn('[Redis] Set no disponible');
   }
 }
 
@@ -107,8 +107,8 @@ export async function deleteRedisCache(key: string): Promise<void> {
   
   try {
     await redis.del(key);
-  } catch (error) {
-    console.warn('[Redis] Del error:', error);
+  } catch {
+    logger.warn('[Redis] Del no disponible');
   }
 }
 
@@ -124,8 +124,8 @@ export async function deleteRedisPattern(pattern: string): Promise<void> {
     if (keys.length > 0) {
       await redis.del(...keys);
     }
-  } catch (error) {
-    console.warn('[Redis] Pattern delete error:', error);
+  } catch {
+    logger.warn('[Redis] Pattern delete no disponible');
   }
 }
 
@@ -134,22 +134,30 @@ export function isRedisEnabled(): boolean {
 }
 
 /**
- * Incrementa un contador atomicamente y le pone TTL solo la primera vez
- * (cuando el contador pasa de no existir a 1). Base para rate limiting
- * de ventana fija distribuido entre instancias de Vercel.
+ * Una sola operación distribuida: crear o reparar la expiración antes del
+ * incremento. Un fallo de red entre INCR y EXPIRE ya no puede dejar una clave
+ * nueva permanente. Una clave heredada sin TTL conserva su cuenta al repararse.
  */
+const INCR_WITH_EXPIRY_SCRIPT = `
+local ttl = redis.call('TTL', KEYS[1])
+if ttl == -2 then
+  redis.call('SET', KEYS[1], 0, 'EX', ARGV[1], 'NX')
+elseif ttl == -1 then
+  redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+return redis.call('INCR', KEYS[1])
+`;
+
 export async function incrWithExpiry(key: string, ttlSeconds: number): Promise<number | null> {
   const redis = getRedisClient();
-  if (!redis) return null;
+  if (!redis || !Number.isSafeInteger(ttlSeconds) || ttlSeconds <= 0) return null;
 
   try {
-    const count = await redis.incr(key);
-    if (count === 1) {
-      await redis.expire(key, ttlSeconds);
-    }
-    return count;
-  } catch (error) {
-    console.warn('[Redis] Incr error:', error);
+    const count = await redis.eval(INCR_WITH_EXPIRY_SCRIPT, [key], [ttlSeconds]);
+    return typeof count === 'number' && Number.isSafeInteger(count) && count > 0 ? count : null;
+  } catch {
+    // El proveedor puede incluir credenciales en sus errores. No imprimirlos.
+    logger.warn('[Redis] Contador distribuido no disponible');
     return null;
   }
 }
@@ -161,8 +169,8 @@ export async function getRedisTtlSeconds(key: string): Promise<number> {
   try {
     const ttl = await redis.ttl(key);
     return ttl > 0 ? ttl : 0;
-  } catch (error) {
-    console.warn('[Redis] TTL error:', error);
+  } catch {
+    logger.warn('[Redis] TTL no disponible');
     return 0;
   }
 }

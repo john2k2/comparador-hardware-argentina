@@ -39,6 +39,7 @@ vi.mock('@/lib/server/redis-cache', () => ({
 }));
 
 import * as redisCacheMock from '@/lib/server/redis-cache';
+import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 
 // Acceder al mapa interno de buckets para tests de estado
 // (no se exporta, pero podemos testear comportamiento observable)
@@ -320,6 +321,35 @@ describe('rate-limit', () => {
 
       const allowed = await checkRateLimit('short-user', shortRule);
       expect(allowed.allowed).toBe(true);
+    });
+  });
+
+  describe('consultas que requieren limitación compartida', () => {
+    const rule = { limit: 60, windowMs: 60_000 };
+    afterEach(() => { vi.mocked(getServerSupabaseServiceClient).mockReturnValue(null); });
+    it('rechaza sin depender de memoria si no hay proveedor compartido', async () => {
+      const result = await checkRateLimit('privileged-no-provider', rule, { fallback: 'deny' });
+      expect(result).toMatchObject({ allowed: false, remaining: 0, unavailable: true });
+    });
+    it('rechaza fallos o respuestas inválidas de RPC y vuelve a permitir tras recuperación', async () => {
+      const rpc = vi.fn().mockResolvedValueOnce({ error: { message: 'private-credential' }, data: null })
+        .mockResolvedValueOnce({ error: null, data: { allowed: 'true' } })
+        .mockRejectedValueOnce(new Error('private-credential'))
+        .mockResolvedValueOnce({ error: null, data: { allowed: true, limit: 60, remaining: 59, resetAtMs: Date.now() + 60_000, retryAfterSeconds: 60 } });
+      vi.mocked(getServerSupabaseServiceClient).mockReturnValue({ rpc } as never);
+      for (let attempt = 0; attempt < 3; attempt++) {
+        expect(await checkRateLimit('privileged-rpc', rule, { fallback: 'deny' })).toMatchObject({ allowed: false, unavailable: true });
+      }
+      expect(await checkRateLimit('privileged-rpc', rule, { fallback: 'deny' })).toMatchObject({ allowed: true, remaining: 59 });
+    });
+    it('rechaza la caída de Redis sin trasladar un caller estricto a memoria', async () => {
+      redisMockState.enabled = true;
+      redisMockState.failIncr = true;
+      try {
+        expect(await checkRateLimit('privileged-redis-down', rule, { fallback: 'deny' })).toMatchObject({ allowed: false, unavailable: true });
+        redisMockState.failIncr = false;
+        expect(await checkRateLimit('privileged-redis-down', rule, { fallback: 'deny' })).toMatchObject({ allowed: true, remaining: 59 });
+      } finally { redisMockState.enabled = false; redisMockState.failIncr = false; }
     });
   });
 });
