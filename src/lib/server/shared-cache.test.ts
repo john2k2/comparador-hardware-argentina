@@ -1,4 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+const lifetime = vi.hoisted(() => ({ after: vi.fn() }));
+vi.mock('next/server', () => ({ after: lifetime.after }));
 
 // Mockear Supabase ANTES de importar el modulo
 vi.mock('@/lib/server/supabase-server', () => ({
@@ -10,6 +12,10 @@ import { getSharedCache, setSharedCache, deleteSharedCache, preloadCache, clearS
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 import { logger } from '@/lib/logger';
 
+function withSignal<T>(promise: Promise<T>) {
+  return Object.assign(promise, { abortSignal: vi.fn(() => promise) });
+}
+
 function mockExpiredEntry(key: string, expiresAt: string, renewAfterRead = false) {
   let row: { cache_key: string; payload: unknown; expires_at: string } | null = {
     cache_key: `expiry-race:${key}`, payload: { version: 'old' }, expires_at: expiresAt,
@@ -20,12 +26,12 @@ function mockExpiredEntry(key: string, expiresAt: string, renewAfterRead = false
       filters.set(column, value);
       return deleteQuery;
     }),
-    lte: vi.fn(async (column: string, value: string) => {
+    lte: vi.fn((column: string, value: string) => {
       if (row && [...filters].every(([field, expected]) => row?.[field as keyof typeof row] === expected)
         && new Date(row[column as 'expires_at']).getTime() <= new Date(value).getTime()) {
         row = null;
       }
-      return { error: null };
+      return withSignal(Promise.resolve({ error: null }));
     }),
   };
   const deleteEntry = vi.fn(() => deleteQuery);
@@ -49,6 +55,7 @@ describe('shared-cache', () => {
     vi.setSystemTime(new Date('2026-04-14T10:00:00Z'));
     vi.mocked(getServerSupabaseServiceClient).mockReturnValue(null);
     vi.mocked(logger.warn).mockClear();
+    lifetime.after.mockReset().mockImplementation(() => { throw new Error('No request context'); });
   });
 
   afterEach(() => {
@@ -220,11 +227,64 @@ describe('shared-cache', () => {
   });
 
   describe('ACK de persistencia best effort', () => {
+    it('registra el guardado en la vida del request y captura un ACK fallido después de responder', async () => {
+      const callbacks: Array<() => Promise<void>> = [];
+      lifetime.after.mockImplementation(callback => callbacks.push(callback));
+      const ack = vi.fn(async () => ({ error: { code: '57014', message: 'PRIVATE' } }));
+      const upsert = vi.fn(() => ({ abortSignal: ack }));
+      vi.mocked(getServerSupabaseServiceClient).mockReturnValue({ from: () => ({ upsert }) } as never);
+      await setSharedCache('lifetime', 'request-write', {}, 60_000);
+      expect(callbacks).toHaveLength(1);
+      expect(upsert).not.toHaveBeenCalled();
+      await callbacks[0]();
+      expect(ack).toHaveBeenCalledWith(expect.any(AbortSignal));
+      expect(logger.warn).toHaveBeenCalledWith(expect.any(String), { scope: 'shared-cache', code: '57014' });
+    });
+
+    it('sin request espera el ACK antes de resolver para no perderlo al cerrar CLI', async () => {
+      let complete!: (value: { error: null }) => void;
+      const ack = new Promise<{ error: null }>(resolve => { complete = resolve; });
+      const upsert = vi.fn(() => withSignal(ack));
+      vi.mocked(getServerSupabaseServiceClient).mockReturnValue({ from: () => ({ upsert }) } as never);
+      let finished = false;
+      const task = setSharedCache('lifetime', 'cli-write', {}, 60_000).then(() => { finished = true; });
+      await Promise.resolve(); await Promise.resolve();
+      expect(finished).toBe(false);
+      complete({ error: null });
+      await task;
+      expect(finished).toBe(true);
+    });
+
+    it('aborta un guardado sin respuesta y conserva sólo su estado local', async () => {
+      let signal!: AbortSignal;
+      const abortSignal = vi.fn((input: AbortSignal) => {
+        signal = input;
+        return new Promise<{ error: null }>((_resolve, reject) => input.addEventListener('abort', () => reject(input.reason), { once: true }));
+      });
+      vi.mocked(getServerSupabaseServiceClient).mockReturnValue({ from: () => ({ upsert: () => ({ abortSignal }) }) } as never);
+      const task = setSharedCache('lifetime', 'aborted-write', { retained: true }, 60_000);
+      await vi.advanceTimersByTimeAsync(5_000); await task;
+      expect(signal.aborted).toBe(true);
+      expect(await getSharedCache('lifetime', 'aborted-write')).toEqual({ retained: true });
+      expect(logger.warn).toHaveBeenCalledWith(expect.any(String), { scope: 'shared-cache', code: null });
+    });
+
+    it('la revalidación stale se registra antes de devolver el valor anterior', async () => {
+      await setSharedCache('lifetime', 'stale-revalidation', { version: 1 }, 60_000, { skipDbWrite: true });
+      await vi.advanceTimersByTimeAsync(49_000);
+      const callbacks: Array<() => Promise<void>> = [];
+      lifetime.after.mockImplementation(callback => callbacks.push(callback));
+      const revalidateCallback = vi.fn(async () => ({ version: 2 }));
+      expect(await getSharedCache('lifetime', 'stale-revalidation', { revalidateCallback })).toEqual({ version: 1 });
+      expect(revalidateCallback).not.toHaveBeenCalled(); expect(callbacks).toHaveLength(1);
+      await callbacks[0]();
+      expect(await getSharedCache('lifetime', 'stale-revalidation')).toEqual({ version: 2 });
+    });
     it.each(['resolved-error', 'rejected'] as const)('%s conserva caché local y registra sólo scope/código', async (mode) => {
       const failure = { code: '57014', message: 'PRIVATE key url payload', details: 'PRIVATE' };
-      const write = vi.fn(() => mode === 'rejected' ? Promise.reject(failure) : Promise.resolve({ error: failure }));
+      const write = vi.fn(() => withSignal(mode === 'rejected' ? Promise.reject(failure) : Promise.resolve({ error: failure })));
       const deletion = {
-        eq: vi.fn(() => deletion), like: write, lte: write,
+        eq: vi.fn(() => deletion), like: write, lte: write, abortSignal: write,
         then: (resolve: (value: { error: unknown }) => unknown, reject: (reason: unknown) => unknown) => write().then(resolve, reject),
       };
       const client = { from: vi.fn(() => ({
@@ -254,7 +314,7 @@ describe('shared-cache', () => {
     });
 
     it('ACK exitoso no registra fallo y skipDbWrite no escribe', async () => {
-      const upsert = vi.fn(async () => ({ error: null }));
+      const upsert = vi.fn(() => withSignal(Promise.resolve({ error: null })));
       const client = { from: vi.fn(() => ({ upsert })) };
       vi.mocked(getServerSupabaseServiceClient).mockReturnValue(client as unknown as ReturnType<typeof getServerSupabaseServiceClient>);
       await setSharedCache('ack-ok', 'saved', {}, 60_000);
@@ -265,7 +325,7 @@ describe('shared-cache', () => {
     });
 
     it('descarta códigos inválidos del registro', async () => {
-      const client = { from: vi.fn(() => ({ upsert: vi.fn(async () => ({ error: { code: 'PRIVATE-url', message: 'PRIVATE' } })) })) };
+      const client = { from: vi.fn(() => ({ upsert: vi.fn(() => withSignal(Promise.resolve({ error: { code: 'PRIVATE-url', message: 'PRIVATE' } }))) })) };
       vi.mocked(getServerSupabaseServiceClient).mockReturnValue(client as unknown as ReturnType<typeof getServerSupabaseServiceClient>);
       await setSharedCache('ack-invalid', 'key', {}, 60_000);
       expect(logger.warn).toHaveBeenCalledWith(expect.any(String), { scope: 'shared-cache', code: null });

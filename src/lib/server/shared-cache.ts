@@ -1,3 +1,5 @@
+import { after } from 'next/server';
+import { withAbortTimeout, withPromiseTimeout } from '@/lib/async/with-abort-timeout';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 import { getRedisCache, setRedisCache, isRedisEnabled } from '@/lib/server/redis-cache';
 import { logger } from '@/lib/logger';
@@ -9,9 +11,17 @@ function logCacheFailure(error: unknown): void {
 }
 
 // Persistencia best effort: un ACK fallido o un rechazo no invalida la caché local.
-async function writeDatabaseCache(write: () => PromiseLike<{ error: unknown }>): Promise<void> {
+const CACHE_WRITE_TIMEOUT_MS = 5_000;
+
+// Next registra el callback en waitUntil. Los procesos sin request esperan
+// el ACK acotado en vez de abandonar la escritura antes de cerrar el proceso.
+async function scheduleCacheTask(task: () => Promise<void>): Promise<void> {
+  try { after(task); } catch { await task(); }
+}
+
+async function writeDatabaseCache(write: (signal: AbortSignal) => PromiseLike<{ error: unknown }>): Promise<void> {
   try {
-    const { error } = await write();
+    const { error } = await withAbortTimeout(async signal => await write(signal), CACHE_WRITE_TIMEOUT_MS, 'shared-cache');
     if (error) logCacheFailure(error);
   } catch (error) {
     logCacheFailure(error);
@@ -106,14 +116,14 @@ export async function getSharedCache<T>(
     
     // Trigger background revalidation if callback provided
     if (options?.allowStale !== false && options?.revalidateCallback) {
-      void (async () => {
+      await scheduleCacheTask(async () => {
         try {
-          const freshValue = await options.revalidateCallback!();
+          const freshValue = await withPromiseTimeout(options.revalidateCallback!(), CACHE_WRITE_TIMEOUT_MS, 'cache-revalidation');
           await setSharedCache(scope, key, freshValue, local.expiresAt - local.staleAt);
         } catch (error) {
           logCacheFailure(error);
         }
-      })();
+      });
     }
     
     return local.value as T;
@@ -163,12 +173,12 @@ export async function getSharedCache<T>(
     metrics.dbMisses++;
     if (Number.isFinite(expiresAtMs)) {
       // Revalidar en el DELETE: otra request pudo renovar la entrada desde el SELECT.
-      await writeDatabaseCache(() => supabase
+      await writeDatabaseCache(signal => supabase
         .from('api_cache_entries')
         .delete()
         .eq('cache_key', scopedKey)
         .eq('expires_at', data.expires_at)
-        .lte('expires_at', new Date(now).toISOString()));
+        .lte('expires_at', new Date(now).toISOString()).abortSignal(signal));
     }
     return undefined;
   }
@@ -228,9 +238,8 @@ export async function setSharedCache<T>(
   const supabase = getServerSupabaseServiceClient();
   if (!supabase) return;
 
-  // Fire-and-forget — no bloquear la respuesta en la escritura a Supabase.
-  // El cache local ya sirve la siguiente request.
-  void writeDatabaseCache(() => supabase
+  // La caché local ya sirve; conservar la persistencia durante la vida del request.
+  await scheduleCacheTask(() => writeDatabaseCache(signal => supabase
     .from('api_cache_entries')
     .upsert({
       cache_key: scopedKey,
@@ -240,7 +249,7 @@ export async function setSharedCache<T>(
       updated_at: new Date().toISOString(),
     }, {
       onConflict: 'cache_key',
-    }));
+    }).abortSignal(signal)));
 }
 
 /**
@@ -270,7 +279,7 @@ export async function preloadCache(
   const supabase = getServerSupabaseServiceClient();
   if (!supabase) return;
   
-  void writeDatabaseCache(() => {
+  await scheduleCacheTask(() => writeDatabaseCache(signal => {
     const dbEntries = entries.map((entry) => ({
       cache_key: buildScopedKey(entry.scope, entry.key),
       scope: entry.scope,
@@ -283,8 +292,8 @@ export async function preloadCache(
       .from('api_cache_entries')
       .upsert(dbEntries, {
         onConflict: 'cache_key',
-      });
-  });
+      }).abortSignal(signal);
+  }));
 }
 
 export async function deleteSharedCache(scope: string, key: string): Promise<void> {
@@ -304,7 +313,7 @@ export async function deleteSharedCache(scope: string, key: string): Promise<voi
   const supabase = getServerSupabaseServiceClient();
   if (!supabase) return;
 
-  await writeDatabaseCache(() => supabase.from('api_cache_entries').delete().eq('cache_key', scopedKey));
+  await writeDatabaseCache(signal => supabase.from('api_cache_entries').delete().eq('cache_key', scopedKey).abortSignal(signal));
 }
 
 /**
@@ -331,8 +340,8 @@ export async function clearScopeCache(scope: string): Promise<void> {
   const supabase = getServerSupabaseServiceClient();
   if (!supabase) return;
 
-  await writeDatabaseCache(() => supabase
+  await writeDatabaseCache(signal => supabase
     .from('api_cache_entries')
     .delete()
-    .like('cache_key', `${scope}:%`));
+    .like('cache_key', `${scope}:%`).abortSignal(signal));
 }

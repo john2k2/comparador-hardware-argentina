@@ -62,6 +62,18 @@ describe('persistTelemetryEntry', () => {
     expect(logger.warn).not.toHaveBeenCalled();
   });
 
+  it('propaga la señal opcional al guardado real y distingue aborto de un ACK exitoso', async () => {
+    const controller = new AbortController();
+    const abortSignal = vi.fn((signal: AbortSignal) => new Promise<{ error: null }>((_resolve, reject) =>
+      signal.addEventListener('abort', () => reject(new Error('PRIVATE-timeout')), { once: true })));
+    useClient({ from: () => ({ upsert: () => ({ abortSignal }) }) });
+    const task = persistTelemetryEntry(STORE_SCOPE, 'fixture', storeEvent, controller.signal);
+    const rejected = expect(task).rejects.toThrow('OPERATIONAL_TELEMETRY_WRITE_FAILED');
+    controller.abort(); await rejected;
+    expect(abortSignal).toHaveBeenCalledWith(controller.signal);
+    expect(JSON.stringify(vi.mocked(logger.warn).mock.calls)).not.toContain('PRIVATE');
+  });
+
   it('conserva lectura legacy por scope, expiración y límites', async () => {
     const queries: Array<{ scope?: string; cutoff?: string; limit?: number }> = [];
     useClient({ from: vi.fn(() => {

@@ -22,8 +22,8 @@ function getBlockedUntil(store: TiendaNubeStore): number | null {
   return blockedUntil && blockedUntil > Date.now() ? blockedUntil : null;
 }
 
-function recordBlockedStore(store: TiendaNubeStore, endpoint: MonitoredEndpoint, blockedUntil: number): Product[] {
-  recordStoreScrapeEvent({
+async function recordBlockedStore(store: TiendaNubeStore, endpoint: MonitoredEndpoint, blockedUntil: number): Promise<Product[]> {
+  await recordStoreScrapeEvent({
     endpoint,
     storeId: store.id,
     storeName: store.name,

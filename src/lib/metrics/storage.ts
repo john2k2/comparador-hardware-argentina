@@ -13,13 +13,13 @@ import { normalizeStoreEvent, normalizeEndpointEvent, buildEventKey } from './ut
 
 export { STORE_SCOPE, ENDPOINT_SCOPE };
 
-async function persistTelemetryEntry(scope: string, cacheKey: string, payload: StoreScrapeEvent | EndpointRequestEvent): Promise<void> {
+async function persistTelemetryEntry(scope: string, cacheKey: string, payload: StoreScrapeEvent | EndpointRequestEvent, signal?: AbortSignal): Promise<void> {
   const supabase = getServerSupabaseServiceClient();
   if (!supabase) return;
 
   const expiresAt = new Date(Date.now() + PERSISTED_EVENT_TTL_MS).toISOString();
   try {
-    const { error } = await supabase
+    const query = supabase
       .from('api_cache_entries')
       .upsert({
         cache_key: cacheKey,
@@ -30,6 +30,7 @@ async function persistTelemetryEntry(scope: string, cacheKey: string, payload: S
       }, {
         onConflict: 'cache_key',
       });
+    const { error } = await (signal ? query.abortSignal(signal) : query);
     if (error) throw error;
   } catch (error) {
     const candidate = error && typeof error === 'object' && 'code' in error ? error.code : null;

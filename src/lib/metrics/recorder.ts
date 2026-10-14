@@ -1,3 +1,5 @@
+import { after } from 'next/server';
+import { withAbortTimeout, withPromiseTimeout } from '@/lib/async/with-abort-timeout';
 import type {
   MonitoredEndpoint,
   ScrapeHealthStatus,
@@ -22,6 +24,15 @@ import {
 
 export { SLOW_SCRAPE_THRESHOLD_MS };
 
+const OBSERVATION_WRITE_TIMEOUT_MS = 5_000;
+
+async function scheduleObservationWrite(write: () => Promise<unknown>): Promise<void> {
+  const settle = async () => {
+    try { await write(); } catch { /* El almacenamiento registra un recibo saneado; la observación en memoria se conserva. */ }
+  };
+  try { after(settle); } catch { await settle(); }
+}
+
 export function recordStoreScrapeEvent(event: {
   endpoint: MonitoredEndpoint;
   storeId: string;
@@ -33,7 +44,7 @@ export function recordStoreScrapeEvent(event: {
   status: ScrapeHealthStatus;
   httpStatus?: number;
   message?: string;
-}): void {
+}): Promise<void> {
   const state = getState();
   const normalizedEvent: StoreScrapeEvent = {
     ...event,
@@ -41,11 +52,11 @@ export function recordStoreScrapeEvent(event: {
   };
 
   pushWithCap(state.storeEvents, normalizedEvent, STORE_EVENT_LIMIT);
-  void persistTelemetryEntry(
+  return scheduleObservationWrite(() => withAbortTimeout(signal => persistTelemetryEntry(
     STORE_SCOPE,
     buildEventKey(STORE_SCOPE, normalizedEvent, normalizedEvent.storeId),
-    normalizedEvent,
-  ).catch(() => undefined);
+    normalizedEvent, signal,
+  ), OBSERVATION_WRITE_TIMEOUT_MS, 'operational-telemetry'));
 }
 
 export function recordEndpointRequestEvent(event: {
@@ -56,7 +67,7 @@ export function recordEndpointRequestEvent(event: {
   success: boolean;
   resultCount: number;
   note?: string;
-}): void {
+}): Promise<void> {
   const state = getState();
   const finishedAtMs = event.finishedAtMs ?? Date.now();
   const normalizedEvent: EndpointRequestEvent = {
@@ -66,11 +77,11 @@ export function recordEndpointRequestEvent(event: {
   };
 
   pushWithCap(state.endpointEvents, normalizedEvent, ENDPOINT_EVENT_LIMIT);
-  void persistTelemetryEntry(
+  return scheduleObservationWrite(() => withAbortTimeout(signal => persistTelemetryEntry(
     ENDPOINT_SCOPE,
     buildEventKey(ENDPOINT_SCOPE, normalizedEvent, String(normalizedEvent.statusCode)),
-    normalizedEvent,
-  ).catch(() => undefined);
+    normalizedEvent, signal,
+  ), OBSERVATION_WRITE_TIMEOUT_MS, 'operational-telemetry'));
 }
 
 export async function runObservedStoreScrape<T>(params: {
@@ -85,7 +96,7 @@ export async function runObservedStoreScrape<T>(params: {
 
   const circuitState = await getStoreCircuitState(params.storeId).catch(() => null);
   if (circuitState?.blockedUntilMs && circuitState.blockedUntilMs > startedAtMs) {
-    recordStoreScrapeEvent({
+    await recordStoreScrapeEvent({
       endpoint: params.endpoint,
       storeId: params.storeId,
       storeName: params.storeName,
@@ -102,7 +113,7 @@ export async function runObservedStoreScrape<T>(params: {
     const data = await params.run();
     const latencyMs = Math.max(0, Date.now() - startedAtMs);
     const status = statusFromSuccessfulScrape(data.length, latencyMs, slowThresholdMs);
-    recordStoreScrapeEvent({
+    await recordStoreScrapeEvent({
       endpoint: params.endpoint,
       storeId: params.storeId,
       storeName: params.storeName,
@@ -112,13 +123,13 @@ export async function runObservedStoreScrape<T>(params: {
       status,
     });
     if (circuitState) {
-      void clearStoreCircuit(params.storeId).catch(() => undefined);
+      await scheduleObservationWrite(() => withPromiseTimeout(clearStoreCircuit(params.storeId), OBSERVATION_WRITE_TIMEOUT_MS, 'store-circuit-clear'));
     }
     return data;
   } catch (error) {
     const latencyMs = Math.max(0, Date.now() - startedAtMs);
     const classified = classifyError(error);
-    recordStoreScrapeEvent({
+    await recordStoreScrapeEvent({
       endpoint: params.endpoint,
       storeId: params.storeId,
       storeName: params.storeName,
@@ -130,7 +141,7 @@ export async function runObservedStoreScrape<T>(params: {
       message: classified.message,
     });
     if (classified.status === 'blocked' || classified.status === 'error') {
-      void recordStoreCircuitFailure(params.storeId, classified.status).catch(() => undefined);
+      await scheduleObservationWrite(() => withPromiseTimeout(recordStoreCircuitFailure(params.storeId, classified.status as 'blocked' | 'error'), OBSERVATION_WRITE_TIMEOUT_MS, 'store-circuit-failure'));
     }
     return [];
   }

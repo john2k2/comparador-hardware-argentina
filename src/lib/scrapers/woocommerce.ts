@@ -22,8 +22,8 @@ function getBlockedUntil(store: WooStore): number | null {
   return blockedUntil && blockedUntil > Date.now() ? blockedUntil : null;
 }
 
-function recordWooBlockedStore(store: WooStore, endpoint: MonitoredEndpoint, blockedUntil: number): Product[] {
-  recordStoreScrapeEvent({
+async function recordWooBlockedStore(store: WooStore, endpoint: MonitoredEndpoint, blockedUntil: number): Promise<Product[]> {
+  await recordStoreScrapeEvent({
     endpoint,
     storeId: store.id,
     storeName: store.name,
