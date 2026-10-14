@@ -1,8 +1,22 @@
 # Operar la búsqueda temporal desde la Mac
 
-La Mac calcula las búsquedas sobre una copia completa del catálogo y Cloudflare entrega las respuestas HTTPS. La alternativa evita cargar toda la base en D1. El corte selectivo fue autorizado y publicado el 12/10/2026. La versión activa de `comparador-catalogo-mac` es `f784c32b-0e4e-49ec-9782-9a8c2592448b`; el Worker original conserva su despliegue. Una Mac abierta, conectada y con Internet es una condición de servicio, no una garantía de disponibilidad.
+La Mac calcula las búsquedas sobre una copia completa del catálogo y Cloudflare entrega las respuestas HTTPS. La alternativa evita cargar toda la base en D1. Una Mac abierta, conectada y con Internet es una condición de servicio, no una garantía de disponibilidad.
 
-## Estado y alcance
+## Estado vigente: 14/10/2026
+
+La publicación autorizada está documentada en [PUBLICACION_2026-10-14.md](correcciones-integrales/PUBLICACION_2026-10-14.md), con fuentes, precios, pruebas públicas e incidencias de activación.
+
+- Worker principal `51e2130c-5830-4fea-8632-e7b51fc12c2b`; proxy `e062e5a2-b669-420e-a7cb-7ccc8f2a91ab`. Hay 30 rutas selectivas, conservando auth/admin y escrituras fuera del proxy.
+- Búsqueda, fichas, comparaciones interactivas, APIs de portada, sitemap de productos, catálogo del armador y las tres guías editoriales leen el mismo catálogo. La página del armador y el índice editorial siguen en el Worker principal.
+- El túnel privado también requiere esas rutas. Su allowlist se versiona en `scripts/cloudflare/mac-catalog-ingress.mjs`; desplegar sólo el proxy no actualiza el túnel. Los patrones Cloudflare terminan en `*` para admitir queries, pero los handlers conservan paths exactos.
+- Release estable `releases/correcciones-20261014`, build `.next` de producción. Los plists apuntan a esa release y mantienen modo 644; runtime y secretos mantienen 600. El reinicio se comprobó con `launchctl` directo, PID administrado y ACK de generación/fingerprint.
+- `refreshJob.syncUpstream=true`: lectura pública de hasta 1.000 observaciones por tick, sin escrituras remotas; el lector CompraGamer conserva hasta 500 destinos y el intervalo de 900 segundos. Lectura, admisión, observación y promoción se registran como resultados distintos.
+- Política Mac v2: presupuesto de 1.000.000 para persistencia estimada de observaciones, sin reset del consumo anterior. El presupuesto D1 de 80.000 no cambia. Siguen 8 GiB de almacenamiento y 2 GiB de reserva.
+- La guía de $3M fue comprobada públicamente 7/7 a $2.847.725 por transferencia. El ciclo confirmado de las 12:53 UTC guardó 493 observaciones, conservó siete fallos sin observación y mantuvo la guía completa. No acredita todas las tiendas ni disponibilidad futura.
+
+Las secciones siguientes conservan el antecedente operativo del 12/10. Sus conteos, versiones, 14 rutas y pruebas son históricos; el estado superior y el recibo de publicación los suceden.
+
+## Estado y alcance del corte del 12/10
 
 - Catálogo servido: 59.692 productos, 73.827 ofertas históricas, 34 tiendas. Estos totales no acreditan ofertas recientes.
 - Actualizador instalado: cada 15 minutos, hasta 500 asociaciones verificadas de CompraGamer. Captura estructurada antes de seleccionar y revalida después de obtener las leases. FullH4rd permanece diferido; los lectores de otras tiendas todavía no forman un barrido automático completo.
@@ -40,7 +54,7 @@ La retención sólo elimina derivados reconocidos con recibo propio, hash coinci
 3. Esperar el ACK de salud local protegido para la generación restaurada antes de liberar el lock. No modificar una SQLite que esté abierta. No podar archivos durante una recuperación manual.
 4. Para actualizar el build, conservar la versión anterior, detener sólo `mac-catalog`, reemplazar el build completo y bundle juntos, arrancar y verificar salud/API/HTML. No interrumpir el túnel ni la actualización si no es necesario.
 
-## Corte público propuesto
+## Corte público propuesto el 12/10 (sucedido por el del 14/10)
 
 El proxy debe usar rutas **selectivas**, nunca `/*`. Búsqueda, fichas, categorías y comparación interactiva pasan por la Mac. Portada, auth, administración, guías, armador y `/_next/image` conservan el Worker público anterior. No publicar la ruta del catálogo del armador hasta comprobar el flujo de actualización que aún utiliza su backend anterior.
 
@@ -50,7 +64,7 @@ La activación requiere configurar modo production, host público exacto, ASSETS
 
 Rollback público: restaurar exclusivamente las rutas cambiadas al Worker anterior y retirar las nuevas rutas más específicas; conservar su despliegue original y guardar la tabla de rutas anterior antes del corte. No hacer push a main como mecanismo de corte: Workers Builds desplegaría otros cambios no incluidos en esta prueba.
 
-## Criterios para activar
+## Criterios comprobados en el corte del 12/10
 
 - [x] Base abierta readonly, autenticación de transporte y candidatos inválidos rechazados.
 - [x] Promoción, rollback de corte y recuperación del proceso comprobados en servicio real.
@@ -67,7 +81,7 @@ La consulta `ddr5 32 6000` reconoce capacidad y frecuencia dentro de contexto RA
 
 Validación final local: 3.022 unitarios pasados y dos omitidos; 288 operativos pasados; 45 focales adicionales de proxy/matcher/motor pasados y dos opcionales omitidos. Build aislado, typecheck y lint correctos. Revisión independiente no encontró bloqueos materiales en el delta; no acredita el resto del proyecto.
 
-## Despliegue reproducible
+## Antecedente de despliegue del 12/10
 
 La configuración versionada es `wrangler.mac-catalog.jsonc`; no reemplaza `wrangler.jsonc`. Preparar `outputs/cloudflare-mac-assets/_next/static` con el build QA completo antes de desplegar exclusivamente ese Worker. No incluir server bundles, `.env`, SQLite ni tokens en ASSETS. Mantener los assets de la versión Mac anterior durante un cambio de build. El secret `MAC_ORIGIN_TOKEN` se administra por separado y nunca aparece en la configuración.
 
