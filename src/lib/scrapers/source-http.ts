@@ -3,7 +3,7 @@ export type SourceFailure = 'not-found' | 'rate-limited' | 'blocked' | 'http-err
 export class SourceHttpError extends Error {
   constructor(public readonly reason: SourceFailure, public readonly status?: number) { super(reason); }
 }
-type Metric = { requests: number; bytes: number; durationMs: number; conditionalHits: number; backoffSkips: number; failures: number; failureReasons: Record<string,number> };
+type Metric = { requests: number; bytes: number; durationMs: number; conditionalHits: number; backoffSkips: number; failures: number; failureReasons: Record<string,number>; httpStatusCounts: Partial<Record<number, number>> };
 const metrics = new Map<string, Metric>();
 const state = new Map<string, { tail: Promise<void>; nextAt: number; blockedUntil: number; consecutiveFailures: number }>();
 let active = 0;
@@ -21,11 +21,11 @@ export function sourceBlockedUntil(store: string): number {
   return state.get(store)?.blockedUntil ?? 0;
 }
 function metric(store: string): Metric {
-  if (!metrics.has(store)) metrics.set(store, { requests: 0, bytes: 0, durationMs: 0, conditionalHits: 0, backoffSkips: 0, failures: 0, failureReasons: {} });
+  if (!metrics.has(store)) metrics.set(store, { requests: 0, bytes: 0, durationMs: 0, conditionalHits: 0, backoffSkips: 0, failures: 0, failureReasons: {}, httpStatusCounts: {} });
   return metrics.get(store)!;
 }
 export function sourceHttpMetrics(): Record<string, Metric> {
-  return Object.fromEntries([...metrics].map(([key, value]) => [key, { ...value, failureReasons: { ...value.failureReasons } }]));
+  return Object.fromEntries([...metrics].map(([key, value]) => [key, { ...value, failureReasons: { ...value.failureReasons }, httpStatusCounts: { ...value.httpStatusCounts } }]));
 }
 export function retryAfterMs(value: string | null, now = Date.now()): number {
   if (!value) return 60_000;
@@ -59,6 +59,11 @@ export async function sourceFetch(store: string, url: string, options: RequestIn
     for (let hop = 0; ; hop++) {
       stats.requests++;
       response = await fetch(current, { ...options, redirect: redirectHosts.length ? 'manual' : 'error', signal });
+      // Una entrada por respuesta HTTP, incluidos redirects/304. Un error de
+      // transporte o un backoff sin respuesta nunca fabrica un código.
+      const status = response.status;
+      if (typeof status === 'number' && Number.isInteger(status) && status >= 100 && status <= 599)
+        stats.httpStatusCounts[status] = (stats.httpStatusCounts[status] ?? 0) + 1;
       if (!redirectHosts.length || ![301,302,303,307,308].includes(response.status)) break;
       const location = response.headers.get('location');
       await response.body?.cancel();

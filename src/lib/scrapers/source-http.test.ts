@@ -185,4 +185,70 @@ describe('source-http', () => {
     expect(retryAfterMs(future, now)).toBe(90_000);
     expect(retryAfterMs(new Date(now - 1_000).toUTCString(), now)).toBe(1_000);
   });
+
+  it('conserva códigos repetidos por respuesta HTTP sin cambiar intentos ni errores', async () => {
+    const { sourceFetch, sourceHttpMetrics } = await loadSourceHttp();
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => new Response(null, { status: 400 })));
+    await expect(sourceFetch('mexx', 'https://store.example/first')).rejects.toMatchObject({ reason: 'http-error', status: 400 });
+    const second = expect(sourceFetch('mexx', 'https://store.example/second')).rejects.toMatchObject({ reason: 'http-error', status: 400 });
+    await vi.advanceTimersByTimeAsync(2000);
+    await second;
+    expect(sourceHttpMetrics().mexx).toMatchObject({ requests: 2, failures: 2, failureReasons: { 'http-error': 2 }, httpStatusCounts: { '400': 2 } });
+  });
+
+  it.each([100, 199, 200, 304, 401, 403, 404, 410, 418, 429, 500, 503, 599])('registra sólo el código HTTP entero válido %s de la respuesta', async status => {
+    const { sourceFetch, sourceHttpMetrics } = await loadSourceHttp();
+    // Informativos: doble sintético para ejercer el contrato100–599; fetch normalmente entrega la respuesta final.
+    const response = new Response(null, { status: status < 200 ? 400 : status });
+    if (status < 200) Object.defineProperty(response, 'status', { value: status });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
+    await sourceFetch('codes', 'https://store.example/item').catch(() => undefined);
+    expect(sourceHttpMetrics().codes).toMatchObject({ requests: 1, httpStatusCounts: { [status]: 1 } });
+  });
+
+  it.each([0, 99, 600, NaN, Infinity, 200.5, '500', null, undefined, 'PRIVATE_HTTP_VALUE'])('omite status malformado %s sin copiar su valor', async status => {
+    const { sourceFetch, sourceHttpMetrics } = await loadSourceHttp();
+    const response = new Response(null, { status: 400 });
+    Object.defineProperty(response, 'status', { value: status });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
+    await sourceFetch('invalid', 'https://store.example/item').catch(() => undefined);
+    expect(sourceHttpMetrics().invalid).toMatchObject({ requests: 1, failures: 1, httpStatusCounts: {} });
+    expect(JSON.stringify(sourceHttpMetrics())).not.toContain('PRIVATE_HTTP_VALUE');
+  });
+
+  it('cuenta redirects y 304 separados por tienda sin duplicar backoff skips', async () => {
+    const { sourceFetch, sourceHttpMetrics } = await loadSourceHttp();
+    const fetchMock = vi.fn().mockResolvedValueOnce(new Response(null, { status: 302, headers: { Location: '/final' } }))
+      .mockResolvedValueOnce(new Response('ok')).mockResolvedValueOnce(new Response(null, { status: 304 }))
+      .mockResolvedValueOnce(new Response(null, { status: 429, headers: { 'Retry-After': '10' } }));
+    vi.stubGlobal('fetch', fetchMock);
+    await sourceFetch('redirects', 'https://store.example/start', {}, 100, ['store.example']);
+    await sourceFetch('conditional', 'https://store.example/item');
+    await expect(sourceFetch('paused', 'https://store.example/item')).rejects.toMatchObject({ reason: 'rate-limited' });
+    await expect(sourceFetch('paused', 'https://store.example/item')).rejects.toMatchObject({ reason: 'rate-limited' });
+    expect(sourceHttpMetrics().redirects).toMatchObject({ requests: 2, failures: 0, httpStatusCounts: { '302': 1, '200': 1 } });
+    expect(sourceHttpMetrics().conditional).toMatchObject({ requests: 1, conditionalHits: 1, failures: 0, httpStatusCounts: { '304': 1 } });
+    expect(sourceHttpMetrics().paused).toMatchObject({ requests: 1, failures: 2, backoffSkips: 1, httpStatusCounts: { '429': 1 } });
+  });
+
+  it.each(['TypeError', 'TimeoutError', 'AbortError'])('un %s de transporte no fabrica código desde el mensaje o status del error', async name => {
+    const { sourceFetch, sourceHttpMetrics } = await loadSourceHttp();
+    const error = Object.assign(new Error('PRIVATE_ERROR HTTP 500'), { name, status: 500 });
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(error));
+    await expect(sourceFetch('transport', 'https://store.example/item')).rejects.toBe(error);
+    expect(sourceHttpMetrics().transport).toMatchObject({ requests: 1, failures: 1, failureReasons: { [name === 'TypeError' ? 'network' : 'timeout']: 1 }, httpStatusCounts: {} });
+    expect(JSON.stringify(sourceHttpMetrics())).not.toContain('PRIVATE_ERROR');
+  });
+
+  it('el snapshot copia contadores y excluye URL cuerpo headers y valores privados', async () => {
+    const { sourceFetch, sourceHttpMetrics } = await loadSourceHttp();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('PRIVATE_BODY', { status: 400, headers: { 'Set-Cookie': 'PRIVATE_COOKIE', 'X-Private': 'PRIVATE_HEADER' } })));
+    await sourceFetch('safe', 'https://store.example/PRIVATE_URL?token=PRIVATE_TOKEN', { headers: { Authorization: 'Bearer PRIVATE_AUTH' } }).catch(() => undefined);
+    const snapshot = sourceHttpMetrics();
+    expect(snapshot.safe.httpStatusCounts).toEqual({ '400': 1 });
+    snapshot.safe.httpStatusCounts['400'] = 999;
+    snapshot.safe.httpStatusCounts['500'] = 1;
+    expect(sourceHttpMetrics().safe.httpStatusCounts).toEqual({ '400': 1 });
+    expect(JSON.stringify(sourceHttpMetrics())).not.toMatch(/PRIVATE_|https:|Authorization|Set-Cookie/);
+  });
 });
