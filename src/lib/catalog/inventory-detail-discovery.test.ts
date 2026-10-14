@@ -12,6 +12,18 @@ it('una ficha visible se guarda por ID estable, con precio y hora de esa ficha',
   expect(accepted?.id).toBe('katech-api-123');
   expect(accepted?.prices[0]).toMatchObject({ price: 574710, lastUpdated: new Date(at), priceCondition: 'unspecified', sourceIdentity: { title: target.title, storeSku: 'store-only' } });
 });
+it('conserva la condición special probada por la ficha HTML y no cambia stock ni fecha', () => {
+  const product = detail(); product.prices[0].priceCondition = 'special'; product.prices[0].stock = 'unknown';
+  expect(acceptInventoryDetail(target, product, at - 1)?.prices[0]).toMatchObject({ priceCondition: 'special', stock: 'unknown', lastUpdated: new Date(at) });
+});
+it('una presencia de API sin ficha observada no crea una oferta ni un precio nuevo', () => {
+  expect(acceptInventoryDetail(target, null, at - 1)).toBeNull();
+  expect(acceptInventoryDetail(target, detail(), at + 1)).toBeNull();
+});
+it('un ID de la ficha distinto al del inventario no se sobrescribe para simular coincidencia', () => {
+  const product = detail(); product.specs.SourceListingId = '456';
+  expect(acceptInventoryDetail(target, product, at - 1)).toBeNull();
+});
 it('no acepta otro destino ni una lectura anterior al inicio', () => {
   const wrong = detail(); wrong.prices[0].url = 'https://katech.com.ar/producto/ram-32gb/';
   expect(acceptInventoryDetail(target, wrong, at - 1)).toBeNull();

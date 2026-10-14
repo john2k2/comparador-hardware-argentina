@@ -13,12 +13,13 @@ export function acceptInventoryDetail(target: DetailTarget, product: Product | n
   if (!product || target.store_id !== 'katech' || !/^\d+$/.test(target.source_id)) return null;
   const price = product.prices[0], observedAt = new Date(price?.lastUpdated).getTime();
   if (!price || price.storeId !== target.store_id || !sameListing(target.store_id, target.url, price.url)
+    || (product.specs.SourceListingId !== undefined && product.specs.SourceListingId !== target.source_id)
     || !Number.isFinite(price.price) || price.price <= 0 || !Number.isFinite(observedAt) || observedAt < started || observedAt > Date.now() + 60000
     || hasExplicitIdentityConflict({ name: target.title, category: resolveHardwareCategoryForProduct(target.title), offerText: product.name })) return null;
   const reference = listingReference(target.store_id, target.url);
   if (!reference) return null;
   return { ...product, id: `${target.store_id}-api-${target.source_id}`, specs: { ...product.specs, SourceListingId: target.source_id },
-    prices: [{ ...price, url: target.url, priceCondition: 'unspecified', sourceIdentity: { listingRef: reference, sourceId: target.source_id, title: product.name.slice(0, 400),
+    prices: [{ ...price, url: target.url, priceCondition: price.priceCondition ?? 'unspecified', sourceIdentity: { listingRef: reference, sourceId: target.source_id, title: product.name.slice(0, 400),
       ...(product.specs.SKU ? { storeSku: product.specs.SKU } : {}) } }] };
 }
 

@@ -39,6 +39,95 @@ const dinobyteReserveFragment = `
   </body>
 `;
 
+// Fragmentos mínimos de respuestas reales Katech del 14/10/2026, 13:36 UTC.
+// RAM 1023210/MSO047 y notebook 1023037/NOT1348; capturas completas en outputs/seguimiento-post-publicacion-2026-10-14/tiendas.
+const katechStore = { id: 'katech', name: 'Katech', baseUrl: 'https://katech.com.ar' };
+const katechAcuFixture = (id = '1023210', sku = 'MSO047', name = 'MEMORIA RAM SODIMM 32GB DDR5 5600 CORSAIR VENGEANCE', amount = '1.022.610,00', slug = 'memoria-ram-sodimm-32gb-ddr5-5600-corsair-vengeance') => {
+  const url = `https://katech.com.ar/producto/${slug}/`;
+  return { url, html: `<html><head><link rel="canonical" href="${url}"><meta property="product:price:currency" content="ARS"></head>
+    <body class="single-product"><div id="product-${id}" class="acu-hero product onbackorder">
+      <section id="acu-buy" class="acu-card acu-buy"><h1 class="acu-title">${name}</h1>
+        <div class="acu-meta"><span class="acu-sku">${sku}</span></div>
+        <div class="acu-pricebox"><div class="acu-cash-l acu-desk"><h5>Precio especial EFECTIVO/TRANSFERENCIA </h5></div>
+          <div class="acu-cash-l acu-mob">Precio especial EFECTIVO/TRANSFERENCIA </div>
+          <div class="acu-price"><p class="price"><span class="woocommerce-Price-amount"><bdi>$${amount}</bdi></span></p></div></div>
+        <p class="stock available-on-backorder">Disponible en 24/48hs hábiles para retiro/despacho</p>
+        <button class="single_add_to_cart_button" name="add-to-cart" value="${id}">Añadir al carrito</button>
+        <div class="cuotas-mp-precio-lista">$1.329.393,00</div>
+      </section></div></body></html>` };
+};
+
+describe('Katech ficha acu', () => {
+  const read = (html: string, url = katechAcuFixture().url) => parseWooProductDetail(html, url, katechStore, 'memoria-ram', 'diag');
+  it.each([
+    katechAcuFixture(),
+    katechAcuFixture('1023037', 'NOT1348', 'NOTEBOOK HP 16 ZBOOK XG2I U9-386H 32G 1T RTX 1000 8G W11', '8.270.050,00', 'notebook-hp-16-zbook-xg2i-u9-386h-32g-1t-rtx-1000-8g-w11'),
+  ])('observa importe especial e identidad de captura real, conserva la reserva unknown', ({ html, url }) => {
+    const product = read(html, url);
+    expect(product?.prices[0]).toMatchObject({ stock: 'unknown', priceCondition: 'special', url });
+    expect(product?.prices[0].price).toBe(url.includes('notebook') ? 8270050 : 1022610);
+    expect(product?.specs).toMatchObject(url.includes('notebook') ? { SKU: 'NOT1348', SourceListingId: '1023037' } : { SKU: 'MSO047', SourceListingId: '1023210' });
+  });
+  it('no usa recomendaciones, lista, cuotas ni metadata para sanar un precio principal ausente', () => {
+    const { html } = katechAcuFixture();
+    const poisoned = html.replace('</body>', '<section class="related products"><h1 class="acu-title">Otra RAM</h1><p class="price">$1</p><span class="stock in-stock">En stock</span></section><meta property="product:price:amount" content="999999"></body>');
+    expect(read(poisoned)?.prices[0].price).toBe(1022610);
+    expect(read(poisoned.replace('<p class="price"><span class="woocommerce-Price-amount"><bdi>$1.022.610,00</bdi></span></p>', ''))).toBeNull();
+  });
+  it('retiene unknown sin stock aunque el botón esté habilitado y la raíz diga instock', () => {
+    const html = katechAcuFixture().html.replace('product onbackorder', 'product instock').replace('<p class="stock available-on-backorder">Disponible en 24/48hs hábiles para retiro/despacho</p>', '');
+    expect(read(html)?.prices[0].stock).toBe('unknown');
+    expect(read(html.replace('</section>', '<p class="stock in-stock">Hay existencias</p></section>'))?.prices[0].stock).toBe('in-stock');
+  });
+  it('lee ins vigente antes de del y rechaza ins oculto en vez de recuperar el precio tachado', () => {
+    const html = katechAcuFixture().html.replace('<span class="woocommerce-Price-amount"><bdi>$1.022.610,00</bdi></span>',
+      '<del><span class="woocommerce-Price-amount"><bdi>$1.200.000,00</bdi></span></del><ins><span class="woocommerce-Price-amount"><bdi>$1.022.610,00</bdi></span></ins>');
+    expect(read(html)?.prices[0].price).toBe(1022610);
+    expect(read(html.replace('<ins>', '<ins hidden>'))).toBeNull();
+  });
+  // Controles sintéticos offline derivados de la revisión; no son nuevas observaciones de Katech.
+  it.each(['del', 's', 'strike', 'span style="text-decoration: line-through"', 'span style="text-decoration-line: line-through"'])('rechaza un único importe tachado con %s sin precio vigente', tag => {
+    const html = katechAcuFixture().html.replace('<span class="woocommerce-Price-amount"><bdi>$1.022.610,00</bdi></span>',
+      `<${tag}><span class="woocommerce-Price-amount"><bdi>$1.022.610,00</bdi></span></${tag.split(' ')[0]}>`);
+    expect(read(html)).toBeNull();
+  });
+  it.each(['No hay existencias', 'Sin existencias', 'No hay stock', 'No hay existencias; últimas unidades', 'Sin existencias; pocas unidades'])('negación explícita %s prevalece sobre carrito, instock y pocas unidades', stockText => {
+    const html = katechAcuFixture().html.replace('product onbackorder', 'product instock')
+      .replace('<p class="stock available-on-backorder">Disponible en 24/48hs hábiles para retiro/despacho</p>', `<p class="stock in-stock">${stockText}</p>`);
+    expect(read(html)?.prices[0].stock).toBe('out-of-stock');
+  });
+  it.each(['Últimas unidades', 'Pocas unidades'])('conserva disponibilidad limitada sin negación: %s', stockText => {
+    const html = katechAcuFixture().html.replace('product onbackorder', 'product instock')
+      .replace('<p class="stock available-on-backorder">Disponible en 24/48hs hábiles para retiro/despacho</p>', `<p class="stock in-stock">${stockText}</p>`);
+    expect(read(html)?.prices[0].stock).toBe('low-stock');
+  });
+  it.each(['No está en stock', 'No se encuentra en stock', 'No contamos con stock', 'Stock no disponible'].flatMap(stockText => [
+    [stockText, ''], [stockText, ' in-stock'],
+  ]))('una negación %s con clase %s jamás activa disponibilidad positiva', (stockText, className) => {
+    const html = katechAcuFixture().html.replace('product onbackorder', 'product instock')
+      .replace('<p class="stock available-on-backorder">Disponible en 24/48hs hábiles para retiro/despacho</p>', `<p class="stock${className}">${stockText}</p>`);
+    expect(read(html)?.prices[0].stock).toBe(stockText === 'Stock no disponible' ? 'out-of-stock' : 'unknown');
+  });
+  it.each(['Hay stock disponible!', 'Hay existencias', 'En stock', 'Stock disponible'])('conserva afirmación inequívoca sin clase positiva: %s', stockText => {
+    const html = katechAcuFixture().html.replace('product onbackorder', 'product')
+      .replace('<p class="stock available-on-backorder">Disponible en 24/48hs hábiles para retiro/despacho</p>', `<p class="stock">${stockText}</p>`);
+    expect(read(html)?.prices[0].stock).toBe('in-stock');
+  });
+  it('mantiene pago unspecified si faltan etiquetas y captura cambios de SKU sin reutilizar el anterior', () => {
+    const html = katechAcuFixture().html.replaceAll('Precio especial EFECTIVO/TRANSFERENCIA ', '').replace('MSO047', 'MSO999');
+    expect(read(html)?.prices[0].priceCondition).toBe('unspecified');
+    expect(read(html)?.specs.SKU).toBe('MSO999');
+  });
+  it.each([
+    ['canonical de otra publicación', (html: string) => html.replace('href="https://katech.com.ar/producto/memoria-ram-sodimm-32gb-ddr5-5600-corsair-vengeance/"', 'href="https://katech.com.ar/producto/otra-ram/"')],
+    ['ID contradictorio', (html: string) => html.replace('value="1023210"', 'value="1023037"')],
+    ['moneda distinta', (html: string) => html.replace('content="ARS"', 'content="USD"')],
+    ['título ausente', (html: string) => html.replace('class="acu-title"', 'class="unrelated-title"')],
+    ['SKU ausente', (html: string) => html.replace('MSO047', '')],
+    ['segundo importe principal', (html: string) => html.replace('</p></div></div>', '</p><p class="price">$999</p></div></div>')],
+  ])('rechaza %s', (_, alter) => expect(read(alter(katechAcuFixture().html))).toBeNull());
+});
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });

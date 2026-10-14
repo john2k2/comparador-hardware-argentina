@@ -307,6 +307,63 @@ function katechSpecialPriceMatches($: cheerio.CheerioAPI, prices: ReturnType<che
   return amounts.length > 0 && amounts.every(amount => amount > 0 && Math.abs(amount - price) < 0.005);
 }
 
+/** Ficha acu de Katech: observar sólo el bloque principal, sin metadata ni cuotas. */
+function parseKatechAcuDetail($: cheerio.CheerioAPI, pageUrl: string, store: WooStore, category: HardwareCategory): Product | null {
+  const roots = $('.acu-hero.product[id^="product-"]').filter((_, element) => (
+    $(element).parents('.related, .products, .up-sells, .upsells, .cross-sells, .w-grid-item').length === 0
+    && !explicitlyHidden($, $(element))
+  ));
+  if (roots.length !== 1) return null;
+  const root = roots.first(), sourceId = root.attr('id')?.match(/^product-([1-9]\d{0,14})$/)?.[1];
+  const buy = root.children('#acu-buy.acu-buy').filter((_, element) => !explicitlyHidden($, $(element)));
+  const primary = (selector: string) => buy.find(selector).filter((_, element) => (
+    $(element).parents('.related, .products, .up-sells, .upsells, .cross-sells, .w-grid-item').length === 0
+    && !explicitlyHidden($, $(element))
+  ));
+  const titles = primary('h1.acu-title'), skus = primary('.acu-meta .acu-sku');
+  const boxes = buy.children('.acu-pricebox').filter((_, element) => !explicitlyHidden($, $(element)));
+  const amounts = boxes.children('.acu-price').find('p.price').filter((_, element) => !explicitlyHidden($, $(element)));
+  const canonicals = $('link[rel~="canonical"]');
+  if (!sourceId || buy.length !== 1 || titles.length !== 1 || skus.length !== 1 || boxes.length !== 1
+    || amounts.length !== 1 || canonicals.length !== 1) return null;
+  let canonical: string;
+  try { canonical = new URL(canonicals.attr('href') ?? '', pageUrl).href; } catch { return null; }
+  if (!sameListing(store.id, canonical, pageUrl)) return null;
+  const sourceIds = primary('input[name="product_id"], input[name="add-to-cart"], button[name="add-to-cart"]')
+    .toArray().map(element => $(element).attr('value') ?? '');
+  if (!sourceIds.length || sourceIds.some(value => value !== sourceId)) return null;
+  const discounted = amounts.find('ins');
+  const currentAmounts = (discounted.length ? discounted : amounts).find('.woocommerce-Price-amount > bdi')
+    .filter((_, element) => !explicitlyHidden($, $(element)) && !$(element).add($(element).parents()).toArray().some(node => {
+      const candidate = $(node), style = (candidate.attr('style') ?? '').replace(/\/\*[\s\S]*?\*\//g, '');
+      return candidate.is('del, s, strike') || /(?:^|;)\s*text-decoration(?:-line)?\s*:[^;]*\bline-through\b/i.test(style);
+    }));
+  if (currentAmounts.length !== 1) return null;
+  const name = goldenVisibleText($, titles), sku = goldenVisibleText($, skus);
+  const priceText = goldenVisibleText($, currentAmounts), price = parseWooPrice(priceText);
+  if (!name || !sku || sku === 'N/A' || price <= 0 || !/\$/.test(priceText)) return null;
+  const stocks = primary('.stock'), stockText = stocks.toArray().map(element => goldenVisibleText($, $(element))).join(' ')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+  const reserve = root.hasClass('onbackorder') || stocks.is('.available-on-backorder, .on-backorder')
+    || primary('.acu-pill.is-bo').length > 0 || /reservas?|back[\s-]?order|bajo\s+pedido|disponible\s+en\s+24\s*[-–—/]\s*48\s*(?:hs|horas)/i.test(stockText);
+  const unavailable = root.hasClass('outofstock') || stocks.is('.out-of-stock')
+    || /\b(?:sin|no\s+(?:hay|tenemos|quedan))\s+(?:stock|existencias|unidades)\b|agotad[oa]|no disponible/i.test(stockText);
+  // Una negación no resuelta nunca puede convertirse en stock por subcadena
+  // o clase positiva. Texto ambiguo conserva unknown; no inventar agotamiento.
+  const negated = /\b(?:no|sin)\b/i.test(stockText);
+  const stock = unavailable ? 'out-of-stock' : reserve || negated ? 'unknown'
+    : /^(?:ultimas?|pocas?)\s+unidades\b/i.test(stockText) ? 'low-stock'
+    : /^(?:hay\s+(?:stock\s+disponible|existencias)|en\s+stock|stock\s+disponible)\s*[.!¡]*$/i.test(stockText) ? 'in-stock' : 'unknown';
+  const product = buildSinglePriceProduct({ id: `${store.id}-${slugFromScrapedUrl(canonical)}`, name, category,
+    storeId: store.id, storeName: store.name, storeBaseUrl: store.baseUrl, url: canonical, price, stock,
+    image: root.find('.woocommerce-product-gallery__wrapper img').first().attr('data-large_image'),
+    brand: extractKnownHardwareBrand(name), specs: { SourceListingId: sourceId, SKU: sku } });
+  const labels = boxes.children('.acu-cash-l').toArray().map(element => goldenVisibleText($, $(element))).filter(Boolean);
+  if (product) product.prices[0].priceCondition = labels.length > 0
+    && labels.every(label => /^precio\s+especial\s+efectivo\s*\/\s*transferencia\s*$/i.test(label)) ? 'special' : 'unspecified';
+  return product;
+}
+
 export function parseWooProductDetail(
   html: string,
   pageUrl: string,
@@ -317,6 +374,8 @@ export function parseWooProductDetail(
   const $ = cheerio.load(html);
   // Una publicación con variantes necesita observar la opción exacta.
   if ($('form.variations_form, table.variations').length > 0 || foreignWooCurrency($, pageUrl, store.id)) return null;
+  if (store.id === 'katech' && $('.acu-hero, #acu-buy.acu-buy, h1.acu-title').length > 0)
+    return parseKatechAcuDetail($, pageUrl, store, category);
 
   // GoldenTech sirve también una ficha propia según la representación HTTP.
   // Su control debe leer el principal visible, no sanar ausencias con metadata.
