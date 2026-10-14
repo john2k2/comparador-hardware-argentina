@@ -36,7 +36,7 @@ export function buildStoreCatalogSnapshot(products: Product[], storeId: string, 
       try { const url = new URL(offer.url); if (url.protocol !== 'https:' || url.username || url.password) return false; } catch { return false; }
       const evidence = buildIdentityEvidence(product.name, product.category, offer.url);
       return !evidence || !hasExplicitIdentityConflict(evidence);
-    }));
+    }), product);
     if (!prices.length) continue;
     const key = product.canonicalProductKey || product.id;
     if (seen.has(key)) continue;

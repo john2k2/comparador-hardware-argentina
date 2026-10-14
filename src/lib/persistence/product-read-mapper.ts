@@ -74,9 +74,10 @@ function mapProductRow(row: DbProductRow, preserveOffers: boolean): Product {
     };
   });
 
-  const comparableStats = computeComparableStorePriceStats(prices);
+  const subject = { name: row.name, category, specs: row.specs ?? {} };
+  const comparableStats = computeComparableStorePriceStats(prices, subject);
   const hasComparablePrices = comparableStats.comparablePrices.length > 0;
-  const currentStats = computeCurrentStorePriceStats(prices, { name: row.name, category });
+  const currentStats = computeCurrentStorePriceStats(prices, subject);
   const effectiveStats = currentStats.comparablePrices.length ? currentStats : comparableStats;
 
   const mapped: Product = {

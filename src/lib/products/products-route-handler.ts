@@ -31,6 +31,7 @@ import { getStableFixtureProductById, getStableFixtureProducts } from '@/lib/ser
 import { catalogPageResponse, parseNonNegativeNumber, parsePositiveInteger, parseStoreIds, VALID_SORTS, type SortBy } from '@/lib/search/search-handler-shared';
 import { paginateProducts } from '@/lib/search/search-pagination';
 import { applyDatabaseReadTransforms } from '@/lib/persistence/product-read-grouping';
+import { isD1CatalogEnabled } from '@/lib/catalog/catalog-backend';
 
 export async function GET(request: NextRequest) {
   const endpointStartedAtMs = Date.now();
@@ -93,6 +94,12 @@ export async function GET(request: NextRequest) {
 
   try {
     if (id) {
+      if (isD1CatalogEnabled()) {
+        const product = await readProductDetailByIdFromDatabase(id);
+        return product ? respond(product, { headers: { 'X-Product-Cache': 'D1', 'Cache-Control': 'no-store' } },
+          { success: true, resultCount: 1, note: 'D1_CATALOG_DETAIL' })
+          : respond({ error: 'Producto no encontrado' }, { status: 404, headers: { 'Cache-Control': 'no-store' } });
+      }
       const detailKey = normalizeId(id);
       let hasNegativeDetailCache = false;
 
@@ -192,6 +199,11 @@ export async function GET(request: NextRequest) {
     const minPrice = rawMin !== undefined && rawMax !== undefined ? Math.min(rawMin, rawMax) : rawMin;
     const maxPrice = rawMin !== undefined && rawMax !== undefined ? Math.max(rawMin, rawMax) : rawMax;
     const readParams = { query, category: categorySlug, sortBy, storeIds, minPrice, maxPrice, page, pageSize };
+    if (isD1CatalogEnabled()) {
+      const result = await readProductsPageFromDatabase(readParams);
+      return respond(catalogPageResponse(result), { headers: { 'X-Product-Cache': 'D1', 'Cache-Control': 'no-store' } },
+        { success: true, resultCount: result.products.length, note: 'D1_CATALOG_LIST' });
+    }
     const fromCompleteList = (products: import('@/lib/types').Product[]) => {
       const slice = paginateProducts(products, page, pageSize);
       return catalogPageResponse({ products: slice.paginatedProducts, total: products.length,
@@ -244,6 +256,6 @@ export async function GET(request: NextRequest) {
       query,
       error,
     });
-    return respond({ error: 'Error al obtener productos' }, { status: !id && catalogOnlyMode ? 503 : 500 }, { success: false, resultCount: 0, note: 'ERROR' });
+    return respond({ error: 'Error al obtener productos' }, { status: isD1CatalogEnabled() || !id && catalogOnlyMode ? 503 : 500 }, { success: false, resultCount: 0, note: 'ERROR' });
   }
 }

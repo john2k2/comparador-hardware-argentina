@@ -1,6 +1,7 @@
 import { getServerSupabaseReadClient } from '@/lib/server/supabase-server';
 import { logger } from '@/lib/logger';
 import { isIndexableProductId } from './product-indexing';
+import { getD1CatalogReader, isD1CatalogEnabled } from '@/lib/catalog/catalog-backend';
 
 // Supabase limita las respuestas REST a 1.000 filas. El índice debe usar el
 // mismo tamaño para que cada página listada contenga todas sus URLs.
@@ -33,6 +34,15 @@ function waitBeforeCountRetry(): Promise<void> {
 }
 
 export async function readIndexedProductCount(): Promise<ProductSitemapCountResult> {
+  if (isD1CatalogEnabled()) {
+    try {
+      const reader = await getD1CatalogReader();
+      const count = reader ? await reader.readIndexableCount() : null;
+      if (typeof count === 'number' && Number.isSafeInteger(count) && count >= 0) return { count, source: 'database' };
+    } catch { /* SQL seleccionado no habilita otro backend ni su último conteo. */ }
+    logger.warn('Conteo SQL del sitemap no disponible');
+    return { count: null, source: 'unavailable' };
+  }
   const supabase = getServerSupabaseReadClient();
   if (!supabase) {
     return lastKnownIndexedProductCount === null
@@ -69,6 +79,20 @@ export async function countIndexedProducts(): Promise<number | null> {
 export async function readProductSitemapPage(page: number, pageSize = PRODUCT_SITEMAP_PAGE_SIZE): Promise<ProductSitemapPageResult> {
   const safePageSize = Math.min(PRODUCT_SITEMAP_PAGE_SIZE, Math.max(1, pageSize));
   const safePage = Math.max(0, Math.trunc(page));
+  if (isD1CatalogEnabled()) {
+    try {
+      const reader = await getD1CatalogReader();
+      const rows = reader ? await reader.readIndexablePage(safePage, safePageSize) : null;
+      if (Array.isArray(rows) && rows.length <= safePageSize && rows.every((row) =>
+        row && typeof row.id === 'string' && isIndexableProductId(row.id)
+        && (row.updated_at === null || typeof row.updated_at === 'string')
+        && (row.canonical_product_key === null || typeof row.canonical_product_key === 'string'))) {
+        return { status: 'available', rows };
+      }
+    } catch { /* Una falla SQL conserva estado unavailable; no representa cero URLs. */ }
+    logger.warn('Página SQL del sitemap no disponible', { page: safePage });
+    return { status: 'unavailable' };
+  }
   const supabase = getServerSupabaseReadClient();
   if (!supabase) return { status: 'unavailable' };
 

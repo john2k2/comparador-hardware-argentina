@@ -1,3 +1,4 @@
+import { getD1CatalogReader } from '@/lib/catalog/catalog-backend';
 import 'server-only';
 import { getServerSupabaseReadClient } from '@/lib/server/supabase-server';
 import { inferHardwareCategoryFromName } from '@/lib/catalog/hardware-categories';
@@ -17,6 +18,8 @@ type RecentOfferSeed = { product_id: string; product: { id: string; name: string
 /** Lee primero observaciones de precios, no modificaciones de fichas. La ventana
  * está acotada: encontrar candidatas no acredita cobertura de todo el catálogo. */
 export async function readRecentOfferProducts(input: { category?: HardwareCategory } = {}): Promise<Product[]> {
+  const sql = await getD1CatalogReader();
+  if (sql) return sql.readRecentProducts(input.category);
   const client = getServerSupabaseReadClient();
   if (!client) throw new Error('RECENT_CATALOG_UNAVAILABLE');
   const now = Date.now();
@@ -63,7 +66,7 @@ export async function readRecentOfferProducts(input: { category?: HardwareCatego
       || (input.category && product.category !== input.category)) return [];
     const prices = product.prices.filter(offer => Boolean(offer.storeId && offer.url) && isOfferFresh(offer.lastUpdated, checkedAt)
       && isComparableStoreOffer(offer, product));
-    const stats = computeComparableStorePriceStats(prices);
+    const stats = computeComparableStorePriceStats(prices, product);
     if (!stats.comparablePrices.length) return [];
     return [{ ...product, prices, lowestPrice: stats.lowest, highestPrice: stats.highest, averagePrice: stats.average }];
   }).sort((a, b) => newestObservation(b) - newestObservation(a)

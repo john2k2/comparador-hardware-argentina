@@ -3,10 +3,15 @@ import type { ProductPrice } from './types';
 import {
   computeComparableStorePriceStats,
   getAvailableComparableStorePrices,
+  getComparableStorePrices,
   parseLocalizedArsPrice,
   pickBestStorePrices,
   preferStorePrice,
+  isComparableStoreOffer,
+  computeCurrentStorePriceStats,
 } from './price-utils';
+import { proveManufacturerRamAttributes } from './quality/offer-attribute-proof';
+import { normalizeIdentityText } from './product-identity';
 
 function buildPrice(overrides: Partial<ProductPrice>): ProductPrice {
   return {
@@ -22,6 +27,79 @@ function buildPrice(overrides: Partial<ProductPrice>): ProductPrice {
 }
 
 describe('price-utils', () => {
+  it('el reloj explícito mantiene una selección reproducible sin cambiar el reloj del proceso', () => {
+    const clock = Date.parse('2026-03-13T12:00:00Z');
+    const cheap = buildPrice({ price: 100, lastUpdated: new Date(clock - 23 * 3600000) });
+    const recent = buildPrice({ price: 200, lastUpdated: new Date(clock - 1000) });
+    expect(pickBestStorePrices([cheap, recent], clock)).toEqual([cheap]);
+    expect(pickBestStorePrices([cheap, recent], clock + 2 * 3600000)).toEqual([recent]);
+    expect(pickBestStorePrices([cheap, recent], clock + 25 * 3600000)).toEqual([cheap]);
+    expect(computeCurrentStorePriceStats([cheap, recent], { name: 'Gabinete Sentey P20', category: 'gabinetes' }, clock).lowest).toBe(100);
+  });
+  it('con producto el stock comprable se filtra antes de deduplicar la tienda', () => {
+    const unknown = buildPrice({ storeId: 'mexx', url: 'https://www.mexx.com.ar/ram-a', price: 100, stock: 'unknown', lastUpdated: new Date() });
+    const available = { ...unknown, url: 'https://www.mexx.com.ar/ram-b', price: 200, stock: 'in-stock' as const };
+    const product = { name: 'Memoria DDR4', category: 'memoria-ram' };
+    for (const stock of ['unknown', 'out-of-stock', 'backorder', null]) {
+      const unavailable = { ...unknown, stock } as ProductPrice;
+      expect(getAvailableComparableStorePrices([unavailable, available], product)).toEqual([available]);
+      expect(getAvailableComparableStorePrices([available, unavailable], product)).toEqual([available]);
+    }
+    expect(getAvailableComparableStorePrices([unknown, available])).toEqual([unknown]);
+  });
+  it.each([
+    ['agrupado-memoria-ram-corsair-16gb-1co0hh2', 'CMG16GX4M1E3200C16', 'Memoria Corsair DDR4 16GB 3200MHz Vengeance RGB RS Black CL16', '15558', 283600],
+    ['cg-15558', 'CMG16GX4M1E3200C16', 'Memoria Corsair DDR4 16GB 3200MHz Vengeance RGB RS Black CL16', '15558', 283600],
+    ['cg-15522', 'CMK8GX4M1E3200C16', 'Memoria Corsair DDR4 8GB 3200MHz Vengeance LPX Black CL16', '15522', 129990],
+    ['cg-16112', 'CMK16GX5M1B5600C40', 'Memoria Corsair DDR5 16GB 5600MHz Vengeance Black CL40', '16112', 428000],
+  ])('stats y lectores públicos revalidan SKU actual de %s', (_id, sku, name, ref, price) => {
+    const url = `https://compragamer.com/producto/RAM_${ref}`, listingRef = `compragamer:id:${ref}`;
+    const subject = { title: name, sku, specs: { SKU: sku } };
+    const sourceIdentity = { title: name, storeSku: sku, listingRef };
+    const proof = proveManufacturerRamAttributes(subject, subject, { storeId: 'compragamer', url, listingRef });
+    expect(proof).not.toBeNull();
+    const offer = buildPrice({ storeId: 'compragamer', url, price, lastUpdated: new Date(), sourceIdentity,
+      identityReview: { version: 1, status: 'consistent', reason: 'manufacturer-ram', reviewedAt: new Date().toISOString(),
+        model: null, confidence: null, subject: { name: normalizeIdentityText(name), category: 'memoria-ram', url },
+        sourceIdentity, proof: proof! } });
+    const product = { name, category: 'memoria-ram', specs: { SKU: sku } };
+    for (const getter of [getComparableStorePrices, getAvailableComparableStorePrices]) {
+      expect(getter([offer], product)).toEqual([offer]);
+      expect(getter([offer])).toEqual([]);
+      for (const changed of [{ ...product, specs: {} }, { ...product, specs: { SKU: 'otro' } },
+        { ...product, name: `${name} 2x8GB` }, { ...product, name: name.replace('Black', 'White') }])
+        expect(getter([offer], changed)).toEqual([]);
+    }
+    expect(computeComparableStorePriceStats([offer], product).lowest).toBe(price);
+    expect(computeComparableStorePriceStats([offer]).lowest).toBe(0);
+    const damaged = { ...offer, identityReview: { ...offer.identityReview!, proof: undefined } };
+    expect(getAvailableComparableStorePrices([damaged])).toEqual([]);
+    expect(getAvailableComparableStorePrices([damaged], product)).toEqual([]);
+    // La elegibilidad se comprueba antes de deduplicar una tienda: un proof
+    // inválido barato no oculta su otra publicación válida.
+    const pending = { ...offer, price: 1, sourceIdentity: { ...sourceIdentity, storeSku: 'otro' } };
+    expect(computeComparableStorePriceStats([pending, offer], product).lowest).toBe(price);
+  });
+  it('RAM fabricante serializada requiere SKU y specs vigentes, stock y frescura por separado',()=>{
+    const name='Memoria Corsair DDR4 16GB 3200MHz Vengeance RGB RS Black CL16',sku='CMG16GX4M1E3200C16';
+    const url='https://compragamer.com/producto/RAM_15558',listingRef='compragamer:id:15558',subject={title:name,sku,specs:{SKU:sku}};
+    const now=Date.parse('2026-10-11T22:30:00Z'),sourceIdentity={title:name,storeSku:sku,listingRef};
+    const proof=proveManufacturerRamAttributes(subject,subject,{storeId:'compragamer',url,listingRef})!;
+    const offer=JSON.parse(JSON.stringify(buildPrice({storeId:'compragamer',url,lastUpdated:new Date(now),sourceIdentity,
+      identityReview:{version:1,status:'consistent',reason:'manufacturer-ram',reviewedAt:new Date(now).toISOString(),model:null,confidence:null,
+        subject:{name:normalizeIdentityText(name),category:'memoria-ram',url},sourceIdentity,proof}})));
+    const product={name,category:'memoria-ram',specs:{SKU:sku}};
+    expect(isComparableStoreOffer(offer,product)).toBe(true);
+    expect(isComparableStoreOffer({...offer,sourceIdentity:undefined},product)).toBe(false);
+    for(const changed of [{name,category:'memoria-ram'},{...product,specs:{}},{...product,specs:{SKU:'another'}},
+      {...product,specs:{SKU:sku,kit:'2x8GB'}},{...product,name:name.replace('Black','Grey')}])
+      expect(isComparableStoreOffer(offer,changed)).toBe(false);
+    for(const marker of ['*','×'])expect(isComparableStoreOffer(offer,{...product,name:name.replace('RGB RS',`RGB${marker}RS`)})).toBe(false);
+    for(const stock of ['unknown','out-of-stock','backorder'])expect(isComparableStoreOffer({...offer,stock},product)).toBe(false);
+    expect(isComparableStoreOffer({...offer,price:0},product)).toBe(false);
+    expect(computeCurrentStorePriceStats([offer],product,now).comparablePrices).toHaveLength(1);
+    expect(computeCurrentStorePriceStats([offer],product,now+86400001).comparablePrices).toHaveLength(0);
+  });
   it('prioriza observación reciente sobre precio histórico barato de la misma tienda',()=>{
     const old=buildPrice({price:1,lastUpdated:new Date(Date.now()-25*3600000)}),fresh=buildPrice({price:50000,lastUpdated:new Date()});
     expect(preferStorePrice(old,fresh)).toBe(fresh);expect(preferStorePrice(fresh,old)).toBe(fresh);

@@ -46,6 +46,14 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
 
 describe('initial catalog page', () => {
+  it('D1 seleccionado consulta su catálogo sin cache Supabase ni fixtures y propaga fallas', async () => {
+    vi.stubEnv('CATALOG_READ_BACKEND', 'd1'); vi.stubEnv('E2E_STABLE_MODE', '1');
+    readPage.mockResolvedValue(page([product('d1')]));
+    expect((await readInitialSearchPage(parseSearchState({ q: 'ryzen 5600' }))).products[0].id).toBe('d1');
+    expect(getCache).not.toHaveBeenCalled(); expect(setCache).not.toHaveBeenCalled();
+    readPage.mockRejectedValue(new Error('CATALOG_PRODUCTION_NOT_READY'));
+    await expect(readInitialSearchPage(parseSearchState({ q: 'ryzen 5600' }))).rejects.toThrow('CATALOG_PRODUCTION_NOT_READY');
+  });
   it('includes historical references only when explicitly requested', async () => {
     readPage.mockResolvedValue({ products: [], total: 0, totalPages: 0, page: 1, pageSize: 12 });
     await readInitialSearchPage(parseSearchState({ q: 'rtx 5090', includeUnavailable: '1' }));

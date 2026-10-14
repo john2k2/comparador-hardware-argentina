@@ -93,6 +93,15 @@ export function parseSearchState(params: Record<string, string | string[] | unde
   };
 }
 
+/** Conserva el primer valor repetido, igual que searchParams de Next y la API. */
+export function parseSearchUrlState(query = ''): SearchPageState {
+  const params: Record<string, string> = Object.create(null);
+  for (const [key, value] of new URLSearchParams(query)) {
+    if (!Object.hasOwn(params, key)) params[key] = value;
+  }
+  return parseSearchState(params);
+}
+
 export function hasSearchIntent(state: SearchPageState): boolean {
   return Boolean(
     state.query

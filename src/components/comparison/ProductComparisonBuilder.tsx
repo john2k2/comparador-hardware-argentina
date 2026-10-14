@@ -10,6 +10,8 @@ import { COMPARISON_SELECTION_KEY, decodeComparisonSelection, encodeComparisonSe
 import { AdvisoryCta } from '@/components/commercial/AdvisoryCta';
 import { OfferReportLink } from '@/components/commercial/OfferReportLink';
 import { CATALOG_OFFER_FRESH_MS, OFFER_FRESH_MS } from '@/lib/price-freshness';
+import { trackComparisonProductOpen, trackComparisonResult } from '@/lib/analytics/comparison';
+import { ANALYTICS_READY_EVENT } from '@/lib/analytics/consent';
 
 type Side = 'left' | 'right';
 
@@ -214,6 +216,14 @@ export function ProductComparisonBuilder() {
   const comparison = useMemo(() => comparisonNow > 0 && left && right && left.category === category && right.category === category
     ? compareProducts(left, right, useCase, comparisonNow) : null, [left, right, useCase, category, comparisonNow]);
 
+  useEffect(() => {
+    if (!comparison || !left || !right) return;
+    const track = () => trackComparisonResult({ left, right, useCase });
+    track();
+    window.addEventListener(ANALYTICS_READY_EVENT, track);
+    return () => window.removeEventListener(ANALYTICS_READY_EVENT, track);
+  }, [comparison, left, right, useCase]);
+
   return (
     <div>
       <div className="mb-5 grid gap-4 md:grid-cols-2">
@@ -318,8 +328,8 @@ export function ProductComparisonBuilder() {
           </section>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Link href={`/product/${encodeURIComponent(left.id)}?from=/comparativa/comparar`} className="border-2 border-border p-3 text-center text-[12px] font-bold hover:border-primary">VER PRECIOS DE A</Link>
-            <Link href={`/product/${encodeURIComponent(right.id)}?from=/comparativa/comparar`} className="border-2 border-border p-3 text-center text-[12px] font-bold hover:border-primary">VER PRECIOS DE B</Link>
+            <Link href={`/product/${encodeURIComponent(left.id)}?from=/comparativa/comparar`} onClick={() => trackComparisonProductOpen({ left, right, useCase }, 'a')} className="border-2 border-border p-3 text-center text-[12px] font-bold hover:border-primary">VER PRECIOS DE A</Link>
+            <Link href={`/product/${encodeURIComponent(right.id)}?from=/comparativa/comparar`} onClick={() => trackComparisonProductOpen({ left, right, useCase }, 'b')} className="border-2 border-border p-3 text-center text-[12px] font-bold hover:border-primary">VER PRECIOS DE B</Link>
           </div>
 
           <AdvisoryCta surface="product_comparison" />

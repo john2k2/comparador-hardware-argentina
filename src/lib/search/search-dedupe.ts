@@ -179,7 +179,7 @@ function mergeProductEntries(existing: Product, candidate: Product): Product {
     : candidateTokens > existingTokens ? candidate : existing;
   const mergedImage = pickProductImage(existing.image, candidate.image);
   const stats = isCpu ? computeCurrentStorePriceStats(mergedPrices, preferred)
-    : computeComparableStorePriceStats(mergedPrices);
+    : computeComparableStorePriceStats(mergedPrices, { ...existing, name: preferred.name });
 
   return {
     ...(isCpu ? preferred : existing),
@@ -271,7 +271,7 @@ export function filterProductStores(product: Product, selectedStoreIds: Set<stri
   const prices = product.prices.filter((priceInfo) => selectedStoreIds.has(priceInfo.storeId.toLowerCase()));
   if (prices.length === 0) return null;
 
-  const stats = computeComparableStorePriceStats(prices);
+  const stats = computeComparableStorePriceStats(prices, product);
   return {
     ...product,
     prices: stats.comparablePrices,
@@ -307,7 +307,7 @@ export function groupSearchProducts(
     if (!uniqueMap.has(mergeKey)) {
       const stats = categorizedProduct.category === 'procesadores'
         ? computeCurrentStorePriceStats(categorizedProduct.prices, categorizedProduct)
-        : computeComparableStorePriceStats(categorizedProduct.prices);
+        : computeComparableStorePriceStats(categorizedProduct.prices, categorizedProduct);
 
       uniqueMap.set(mergeKey, {
         ...categorizedProduct,
@@ -338,7 +338,7 @@ export function groupSearchProducts(
     const shouldReplaceDisplay = incomingScore > existingScore;
     const display = shouldReplaceDisplay ? categorizedProduct : existingProduct;
     const stats = categorizedProduct.category === 'procesadores' ? computeCurrentStorePriceStats(mergedPrices, display)
-      : computeComparableStorePriceStats(mergedPrices);
+      : computeComparableStorePriceStats(mergedPrices, { ...existingProduct, name: display.name });
 
     uniqueMap.set(mergeKey, {
       ...existingProduct,

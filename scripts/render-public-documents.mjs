@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
-const routes = ['/', '/comparativa/comparar', '/guia/armar', '/acerca', '/privacidad', '/terminos', '/measurement-shell-build'];
+const routes = ['/', '/search', '/comparativa/comparar', '/guia/armar', '/acerca', '/privacidad', '/terminos', '/measurement-shell-build'];
 const folder = path.join(root, 'public/__public-documents');
 // Conservar el enlace del piloto público con el mismo flag del Worker.
 const workerConfig = await fs.readFile(path.join(root, 'wrangler.jsonc'), 'utf8');
@@ -23,7 +23,7 @@ const port = reservation.address().port;
 await new Promise((resolve) => reservation.close(resolve));
 const server = spawn(process.execPath, [require.resolve('next/dist/bin/next'), 'start', '--hostname', '127.0.0.1', '--port', String(port)], {
   cwd: root, stdio: ['ignore', 'pipe', 'pipe'],
-  env: { ...process.env, NODE_ENV: 'production', PUBLIC_HOME_DOCUMENTS: '1', MEASUREMENT_SHELL_BUILD: '1', ENEBA_AFFILIATE_PILOT_ENABLED: affiliatePilot, DISABLE_INTERNAL_BACKGROUND_REFRESH: '1', DISABLE_LIVE_SCRAPING: '1', ENABLE_ON_DEMAND_REFRESH: '0' },
+  env: { ...process.env, NODE_ENV: 'production', PUBLIC_HOME_DOCUMENTS: '1', MEASUREMENT_SHELL_BUILD: '1', ENEBA_AFFILIATE_PILOT_ENABLED: affiliatePilot, DISABLE_INTERNAL_BACKGROUND_REFRESH: '1', DISABLE_LIVE_SCRAPING: '1', ENABLE_ON_DEMAND_REFRESH: '0', SUPABASE_SECRET_KEY: '', SUPABASE_SERVICE_ROLE_KEY: '', CRON_SECRET: '', CATALOG_REFRESH_CRON_SECRET: '' },
 });
 let ready = false;
 let failed = false;
@@ -44,8 +44,12 @@ try {
       const value = response.headers.get(name);
       return value ? [[name, value.replaceAll(nonce, 'COMPARADOR_DOCUMENT_NONCE')]] : [];
     }));
+    if (route === '/search') headers['x-robots-tag'] = 'noindex, nofollow';
     const result = { version: 1, route, headers, html: html.replaceAll(nonce, 'COMPARADOR_DOCUMENT_NONCE') };
     await fs.writeFile(path.join(folder, `${route === '/' ? 'home' : route.slice(1).replaceAll('/', '-')}.json`), JSON.stringify(result));
   }
   console.log(`Documentos públicos verificados: ${routes.length}. Sin consultas de cuentas ni recopilación de precios.`);
-} finally { server.kill('SIGTERM'); }
+} finally {
+  server.kill('SIGTERM');
+  if (server.exitCode === null && server.signalCode === null) await new Promise((resolve) => server.once('exit', resolve));
+}

@@ -80,7 +80,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const description = buildProductDescription(product);
   const canonicalProductId = product.canonicalProductKey ? await canonicalRead : null;
   const resolvedCanonicalId = canonicalProductId ?? id;
-  const comparableStoreCount = getAvailableComparableStorePrices(product.prices).length;
+  const comparableStoreCount = getAvailableComparableStorePrices(product.prices, product).length;
   const indexing = decideProductPageIndexing({
     product,
     resolvedCanonicalId,
@@ -145,7 +145,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
     }
   }
   
-  const comparableStoreCount = getAvailableComparableStorePrices(product.prices).length;
+  const comparableStoreCount = getAvailableComparableStorePrices(product.prices, product).length;
   const indexing = decideProductPageIndexing({
     product,
     resolvedCanonicalId: id,
@@ -166,7 +166,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
         />
       )}
-      <ProductDetailClient id={id} initialProduct={product} initialNow={getPresentationNow()} />
+      <ProductDetailClient canRequestRefresh={process.env.ENABLE_ON_DEMAND_REFRESH === '1'} id={id} initialProduct={product} initialNow={getPresentationNow()} />
       {product && <ProductSeoSupport product={product} />}
     </>
   );

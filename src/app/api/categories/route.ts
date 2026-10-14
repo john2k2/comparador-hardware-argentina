@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import { categories as staticCategories } from '@/lib/scrapers/static-data';
 import { getServerSupabaseReadClient } from '@/lib/server/supabase-server';
 import type { CategoryConfig } from '@/lib/types';
+import { isD1CatalogEnabled } from '@/lib/catalog/catalog-backend';
 
 type CategoryRow = {
   id: string;
@@ -17,6 +18,7 @@ type CategoryRow = {
 
 export async function GET() {
   try {
+    if (isD1CatalogEnabled()) return NextResponse.json({ categories: staticCategories });
     const supabase = getServerSupabaseReadClient();
     const { data, error } = supabase
       ? await supabase

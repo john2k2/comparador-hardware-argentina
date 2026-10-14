@@ -5,6 +5,7 @@ import { BUDGET_GUIDES } from '@/lib/seo/budget-guides-data';
 import { planGuideGroups } from '@/lib/catalog/priority-planning';
 import { proveOfferAttributes } from '@/lib/quality/offer-attribute-proof';
 import { normalizeIdentityText } from '@/lib/product-identity';
+import { listingReference } from '@/lib/scrapers/listing-reference';
 
 afterEach(() => vi.useRealTimers());
 
@@ -137,8 +138,9 @@ describe('cooler incluido exigido por la selección editorial', () => {
     vi.useFakeTimers();
     vi.setSystemTime(now);
     const candidate = cpu('con cooler', 294_245);
-    const known = { ...candidate.prices[0], sourceIdentity: { title: candidate.name, listingRef: 'store:2' } };
-    const unknown = { ...known, price: 100_000, sourceIdentity: { title: 'AMD Ryzen 7 5700 AM4', listingRef: 'store:1' } };
+    const listingRef = listingReference(candidate.prices[0].storeId, candidate.prices[0].url)!;
+    const known = { ...candidate.prices[0], sourceIdentity: { title: candidate.name, listingRef } };
+    const unknown = { ...known, price: 100_000, sourceIdentity: { title: 'AMD Ryzen 7 5700 AM4', listingRef } };
     candidate.prices = [unknown, known];
     expect(resolveGuideComponent(guide.components.cpu, [candidate])).toMatchObject({ price: 294_245,
       offers: [{ price: 294_245 }] });

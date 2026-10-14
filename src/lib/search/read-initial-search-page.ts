@@ -16,6 +16,7 @@ import { filterCurrentCatalogProducts } from './search-availability';
 import { createCoalescedRead } from '@/lib/server/coalesced-read';
 import { logger } from '@/lib/logger';
 import { after } from 'next/server';
+import { isD1CatalogEnabled } from '@/lib/catalog/catalog-backend';
 
 export type InitialSearchPage = Pick<SearchApiResponse, 'products' | 'pagination'>;
 const readPendingInitialSearchPage = createCoalescedRead<SearchApiResponse>();
@@ -36,6 +37,15 @@ async function scheduleInitialCacheWrite(cacheKey: string, payload: SearchApiRes
 export async function readInitialSearchPage(state: SearchPageState): Promise<InitialSearchPage> {
   if (!hasSearchIntent(state)) return emptySearchResponse();
   const storeIds = new Set(state.stores.map((id) => id.trim().toLowerCase()).filter(Boolean));
+  if (isD1CatalogEnabled()) {
+    // El resultado certificado no usa la caché histórica de Supabase ni sus
+    // escrituras. Un fallo llega al boundary y no activa fixtures ni scraping.
+    return catalogPageResponse(await readProductsPageFromDatabase({
+      query: state.query, category: state.category, minPrice: state.minPrice, maxPrice: state.maxPrice,
+      storeIds, sortBy: state.sortBy, page: state.page, pageSize: SEARCH_PAGE_SIZE,
+      onlyCurrentOffers: !state.includeUnavailable,
+    }), state);
+  }
   if (isStableRuntimeMode()) {
     const products = filterCurrentCatalogProducts(getStableFixtureProducts({ ...state, selectedStoreIds: storeIds }), state.includeUnavailable);
     const slice = paginateProducts(products, state.page, SEARCH_PAGE_SIZE);

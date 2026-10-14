@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { useRouter } from 'next/navigation';
 import type { SearchApiResponse } from '@/lib/search/search-api';
 import { hydrateProducts } from '@/lib/product-serialization';
-import { buildApiSearchKey, buildSearchRoute, parseSearchState, toSearchFilters, withSearchQuery, type SearchPageState } from '@/lib/search/search-state';
+import { buildApiSearchKey, buildSearchRoute, parseSearchUrlState, toSearchFilters, withSearchQuery, type SearchPageState } from '@/lib/search/search-state';
 import { getCategorySeoCopy, isCategoryCanonicalLanding, isIndexableCategoryLanding } from '@/lib/search/search-seo';
 import { stores as defaultStores } from '@/lib/scrapers/static-data';
 import type { Product, SearchFilters } from '@/lib/types';
@@ -147,7 +147,7 @@ function SearchPageClientInner({
     if (`${window.location.pathname}${window.location.search}` !== route) {
       window.history.pushState(null, '', route);
     }
-    const normalizedState = parseSearchState(Object.fromEntries(new URLSearchParams(route.split('?')[1])));
+    const normalizedState = parseSearchUrlState(route.split('?')[1]);
     setDraftFilters(toSearchFilters(normalizedState));
     setCurrentState(normalizedState);
   }, [router, cancelFilterDebounce, startNavigation, currentState]);
@@ -157,14 +157,14 @@ function SearchPageClientInner({
       cancelFilterDebounce();
       // Next conserva la navegación de documentos y de landings de categorías.
       if (window.location.pathname !== '/search') return;
-      const nextState = parseSearchState(Object.fromEntries(new URLSearchParams(window.location.search)));
+      const nextState = parseSearchUrlState(window.location.search);
       setDraftFilters(toSearchFilters(nextState));
       setCurrentState(nextState);
     };
     // Al volver desde un producto, Next puede restaurar el árbol SSR original
     // con una URL que ya contiene filtros añadidos mediante historial nativo.
     if (window.location.pathname === '/search') {
-      const urlState = parseSearchState(Object.fromEntries(new URLSearchParams(window.location.search)));
+      const urlState = parseSearchUrlState(window.location.search);
       if (buildSearchRoute(urlState) !== initialRouteRef.current) restoreFromHistory();
     }
     window.addEventListener('popstate', restoreFromHistory);

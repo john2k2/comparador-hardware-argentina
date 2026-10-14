@@ -1,4 +1,5 @@
 import type { HardwareCategory } from '@/lib/types';
+import { createBoundedIdentityTextMemo } from './identity-text-memo';
 
 const BUNDLE_TERMS = [
   'combo', 'kit', 'armado', 'armada', 'pc gamer', 'pc completa', 'pc creadores',
@@ -18,6 +19,12 @@ export type ChipSignature = {
   number: string;
   suffixes: string[];
 };
+const copyChipSignature = (value: ChipSignature | null): ChipSignature | null => value
+  ? { ...value, suffixes: [...value.suffixes] } : null;
+const normalizedTextMemo = createBoundedIdentityTextMemo(normalizeIdentityTextUncached, value => value, 512);
+const cpuSignatureMemo = createBoundedIdentityTextMemo(parseCpuModelSignatureUncached, copyChipSignature, 128);
+const gpuSignatureMemo = createBoundedIdentityTextMemo(parseGpuChipSignatureUncached, copyChipSignature, 128);
+const gpuBoardMemo = createBoundedIdentityTextMemo(extractGpuBoardAttributesUncached, value => ({ ...value }), 256);
 const GPU_VARIANTS = [
   'aorus', 'strix', 'tuf', 'dual', 'prime', 'proart', 'eagle', 'windforce',
   'gaming', 'ventus', 'shadow', 'suprim', 'trinity', 'phoenix', 'pulse',
@@ -43,6 +50,9 @@ const GENERIC_VARIANT_HINTS = new Set([
 ]);
 
 export function normalizeIdentityText(value: string): string {
+  return normalizedTextMemo(value);
+}
+function normalizeIdentityTextUncached(value: string): string {
   return value
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -223,6 +233,9 @@ export function isCompleteComputerTitle(value: string): boolean {
 }
 
 export function parseCpuModelSignature(value: string): ChipSignature | null {
+  return cpuSignatureMemo(value);
+}
+function parseCpuModelSignatureUncached(value: string): ChipSignature | null {
   const normalized = normalizeIdentityText(value);
   if (!normalized) return null;
 
@@ -262,6 +275,9 @@ export function parseCpuModelSignature(value: string): ChipSignature | null {
 }
 
 export function parseGpuChipSignature(value: string): ChipSignature | null {
+  return gpuSignatureMemo(value);
+}
+function parseGpuChipSignatureUncached(value: string): ChipSignature | null {
   const normalized = normalizeIdentityText(value);
   if (!normalized) return null;
 
@@ -303,6 +319,7 @@ function detectRamFormFactor(normalized: string): 'sodimm' | 'dimm' | 'unk' {
 }
 
 function detectRamFamily(normalized: string): string {
+  if (/\bklevv\b/.test(normalized) && /\bbolt v\b/.test(normalized)) return 'bolt-v';
   if (/\bimpact\b/.test(normalized)) return 'impact';
   if (/\bbeast\b/.test(normalized)) return 'beast';
   if (/\bvengeance\b/.test(normalized)) return 'vengeance';
@@ -343,6 +360,9 @@ export function extractCpuModelKey(value: string): string | null {
 }
 
 export function extractGpuBoardAttributes(value: string) {
+  return gpuBoardMemo(value);
+}
+function extractGpuBoardAttributesUncached(value: string) {
   const normalized = normalizeIdentityText(value);
   // AMD/Intel pueden describir el chip antes que al fabricante de la placa.
   const brand = firstMatch(/\b(asus|gigabyte|msi|zotac|palit|inno3d|asrock|pny|xfx|sapphire|powercolor|gainward)\b/, normalized);

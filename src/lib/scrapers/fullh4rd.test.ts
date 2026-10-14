@@ -15,7 +15,7 @@ const validProductHtml = `
 <html>
 <body>
   <div class="item">
-    <a href="/producto/placa-video-rtx-4080-super">
+    <a href="/prod/1000/placa-video-rtx-4080-super">
       <h3>Placa de Video RTX 4080 Super 16GB</h3>
       <div class="image"><img src="/images/rtx4080.jpg" /></div>
       <span class="price">$ 1.899.999</span>
@@ -23,7 +23,7 @@ const validProductHtml = `
     </a>
   </div>
   <div class="item">
-    <a href="/producto/procesador-amd-ryzen-9-7950x">
+    <a href="/prod/1001/procesador-amd-ryzen-9-7950x">
       <h3>Procesador AMD Ryzen 9 7950X</h3>
       <div class="image"><img src="/images/ryzen9.jpg" /></div>
       <span class="price">$ 899.999</span>
@@ -57,7 +57,7 @@ describe('fullh4rd scraper', () => {
     ])('exige evidencia de stock y respeta señales negativas: %s', async (markup, stock) => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
         ok: true, status: 200,
-        text: async () => `<div class="item"><a href="/producto/ryzen-5600"><h3>AMD Ryzen 5 5600</h3><span class="price">$100.000</span>${markup}</a></div>`,
+        text: async () => `<div class="item"><a href="/prod/1002/ryzen-5600"><h3>AMD Ryzen 5 5600</h3><span class="price">$100.000</span>${markup}</a></div>`,
       }));
       const result = await fetchFullh4rdProducts('https://www.fullh4rd.com.ar/cat/search/5600', 'procesadores');
       expect(result).toHaveLength(1);
@@ -167,7 +167,9 @@ describe('fullh4rd scraper', () => {
         'tarjetas-graficas'
       );
 
-      expect(result.every(p => p.category === 'tarjetas-graficas')).toBe(true);
+      expect(result).toHaveLength(2);
+      expect(result.find(p => p.id === 'fh-1000')?.category).toBe('tarjetas-graficas');
+      expect(result.find(p => p.id === 'fh-1001')?.category).toBe('procesadores');
     });
 
     it('extracts brand from product name', async () => {

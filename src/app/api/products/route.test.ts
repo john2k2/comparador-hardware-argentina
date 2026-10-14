@@ -156,6 +156,25 @@ const sampleProduct: Product = {
 };
 
 describe('/api/products route', () => {
+  it('D1 usa ficha/lista de su catálogo y no cache, demanda ni scraping Supabase', async () => {
+    vi.stubEnv('CATALOG_READ_BACKEND', 'd1'); vi.stubEnv('E2E_STABLE_MODE', '1');
+    mockReadProductByIdFromDatabase.mockResolvedValue(sampleProduct);
+    mockReadProductsFromDatabase.mockResolvedValue([sampleProduct]);
+    const { GET } = await import('./route');
+    const detail = await GET(new NextRequest('http://localhost/api/products?id=sample'));
+    expect(detail.status).toBe(200); expect(detail.headers.get('X-Product-Cache')).toBe('D1');
+    expect((await detail.json()).id).toBe(sampleProduct.id);
+    const list = await GET(new NextRequest('http://localhost/api/products?category=procesadores'));
+    expect(list.status).toBe(200); expect(list.headers.get('X-Product-Cache')).toBe('D1');
+    expect(mockGetSharedCache).not.toHaveBeenCalled(); expect(mockSetSharedCache).not.toHaveBeenCalled();
+    expect(mockRecordCatalogRefreshDemand).not.toHaveBeenCalled(); expect(mockRunObservedStoreScrape).not.toHaveBeenCalled();
+    mockReadProductByIdFromDatabase.mockResolvedValue(null);
+    expect((await GET(new NextRequest('http://localhost/api/products?id=missing'))).status).toBe(404);
+    mockReadProductByIdFromDatabase.mockRejectedValue(new Error('CATALOG_PRODUCTION_NOT_READY'));
+    expect((await GET(new NextRequest('http://localhost/api/products?id=sample'))).status).toBe(503);
+    mockReadProductsFromDatabase.mockRejectedValue(new Error('DB_DOWN'));
+    expect((await GET(new NextRequest('http://localhost/api/products?category=procesadores'))).status).toBe(503);
+  });
   it('serves explicitly enabled stable list fixtures without a database', async () => {
     vi.stubEnv('E2E_STABLE_MODE', '1');
     mockReadProductsFromDatabase.mockRejectedValue(new Error('unavailable'));

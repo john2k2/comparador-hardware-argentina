@@ -69,6 +69,8 @@ export default async function ComparisonPage({ params }: Props) {
     product2Name: comparison.product2.name,
     product1Prices: product1?.prices,
     product2Prices: product2?.prices,
+    product1: product1 ?? undefined,
+    product2: product2 ?? undefined,
   });
   const p1Prices = pricing.side1.prices;
   const p2Prices = pricing.side2.prices;

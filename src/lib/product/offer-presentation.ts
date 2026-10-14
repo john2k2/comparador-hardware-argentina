@@ -17,7 +17,7 @@ export function buildOfferPresentation(product: Product, prices: ProductPrice[],
     stores.add(store);
     return true;
   });
-  const stats = computeComparableStorePriceStats(bestPerStore);
+  const stats = computeComparableStorePriceStats(bestPerStore, product);
   const recentPrices = stats.comparablePrices;
   const recent = new Set(recentPrices);
   const sortablePrice = (price: ProductPrice) => Number.isFinite(price.price) && price.price > 0 ? price.price : Infinity;

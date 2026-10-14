@@ -6,11 +6,23 @@ import { mapDbProduct } from '@/lib/persistence/product-read-mapper';
 import type { DbProductRow, DbProductPriceRow } from '@/lib/persistence/product-read-types';
 import { logger } from '@/lib/logger';
 import { buildStoreCatalogSnapshot, getStoreLanding, type StoreCatalogSnapshot } from './store-landings';
+import { getD1CatalogReader, isD1CatalogEnabled } from '@/lib/catalog/catalog-backend';
 
 const unavailable = (): StoreCatalogSnapshot => ({ products: [], freshProducts: 0, indexable: false, unavailable: true });
 
 export const readStoreCatalog = cache(async (storeId: string): Promise<StoreCatalogSnapshot> => {
   if (!getStoreLanding(storeId)) return unavailable();
+  if (isD1CatalogEnabled()) {
+    try {
+      const reader = await getD1CatalogReader();
+      if (!reader) return unavailable();
+      const products = await reader.readProducts({ storeIds: new Set([storeId]), sortBy: 'newest', limit: 36 });
+      return buildStoreCatalogSnapshot(products, storeId);
+    } catch {
+      logger.warn('Catálogo SQL de tienda no disponible', { storeId });
+      return unavailable();
+    }
+  }
   const client = getServerSupabaseReadClient();
   if (!client) return unavailable();
   try {

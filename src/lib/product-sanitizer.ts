@@ -2,6 +2,7 @@ import { computeComparableStorePriceStats, computeCurrentStorePriceStats } from 
 import { normalizeDisplayText } from '@/lib/text-utils';
 import { normalizeProductImageUrl } from '@/lib/product-images';
 import type { Product, ProductPrice } from '@/lib/types';
+import { needsIdentityReview } from '@/lib/quality/offer-identity';
 
 function sanitizeText(value: string | null | undefined, fallback = ''): string {
   const normalized = normalizeDisplayText(value);
@@ -48,13 +49,18 @@ export function sanitizeGuideProduct(product: Product): Product {
 function sanitizeProductOffers(product: Product, preserveOffers: boolean): Product {
   const name = sanitizeText(product.name);
   const fallbackName = name || product.name.trim();
+  const specs = sanitizeSpecs(product.specs);
+  const subject = { name: fallbackName, category: product.category, specs };
   const sanitizedPrices = (product.prices ?? [])
     .map(sanitizePrice)
-    .filter((price): price is ProductPrice => Boolean(price));
+    .filter((price): price is ProductPrice => Boolean(price))
+    .map(price => price.identityReview?.proof?.method === 'manufacturer-ram' && needsIdentityReview(price, product)
+      ? { ...price, identityReview: { ...price.identityReview, status: 'needs-review' as const } }
+      : price);
   const comparableStats = sanitizedPrices.length > 0
-    ? computeComparableStorePriceStats(sanitizedPrices)
+    ? computeComparableStorePriceStats(sanitizedPrices, subject)
     : null;
-  const currentStats = computeCurrentStorePriceStats(sanitizedPrices, { name: fallbackName, category: product.category });
+  const currentStats = computeCurrentStorePriceStats(sanitizedPrices, subject);
   const effectiveStats = currentStats.comparablePrices.length ? currentStats : comparableStats;
 
   return {
@@ -64,9 +70,10 @@ function sanitizeProductOffers(product: Product, preserveOffers: boolean): Produ
     model: sanitizeText(product.model, fallbackName),
     description: sanitizeText(product.description, fallbackName),
     image: normalizeProductImageUrl(product.image),
-    specs: sanitizeSpecs(product.specs),
+    specs,
     // Una alternativa actual puede quedar detrás del mínimo histórico de la tienda.
-    prices: preserveOffers || currentStats.comparablePrices.length ? sanitizedPrices : comparableStats?.comparablePrices ?? sanitizedPrices,
+    prices: preserveOffers || currentStats.comparablePrices.length || !comparableStats?.comparablePrices.length
+      ? sanitizedPrices : comparableStats.comparablePrices,
     lowestPrice: effectiveStats?.lowest ?? product.lowestPrice,
     highestPrice: effectiveStats?.highest ?? product.highestPrice,
     averagePrice: effectiveStats?.average ?? product.averagePrice,

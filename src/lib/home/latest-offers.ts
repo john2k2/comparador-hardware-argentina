@@ -29,7 +29,7 @@ export function pickLatestOfferProducts(products: Product[], limit = LATEST_OFFE
       && isComparableStoreOffer(offer, product) && isOfferFresh(offer.lastUpdated, now));
     if (prices.length === 0) return [];
 
-    const stats = computeComparableStorePriceStats(prices);
+    const stats = computeComparableStorePriceStats(prices, product);
     if (stats.comparablePrices.length === 0) return [];
     return [{
       observedAt: Math.max(...stats.comparablePrices.map((offer) => new Date(offer.lastUpdated).getTime())),

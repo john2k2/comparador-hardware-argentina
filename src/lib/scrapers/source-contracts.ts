@@ -11,6 +11,13 @@ export const SHARED_PRICE_STORE_IDS = ['compragamer', ...WOO_SHARED_PRICE_STORE_
 const byId = new Map(stores.map(store => [store.id, store]));
 const wooIds = new Set<string>(WOO_PUBLIC_STORE_IDS);
 
+/** La política de host también pertenece a la clave de una referencia pura. */
+export function listingSourcePolicyValue(storeId:string):{url:string|null;cacheSafe:boolean} {
+  const store=byId.get(storeId);if(!store)return{url:null,cacheSafe:true};
+  const descriptor=Object.getOwnPropertyDescriptor(store,'url');
+  return descriptor&&'value' in descriptor&&typeof descriptor.value==='string'
+    ?{url:descriptor.value,cacheSafe:true}:{url:null,cacheSafe:false};
+}
 export function sourceContract(storeId: string) {
   const store = byId.get(storeId);
   if (!store) return null;

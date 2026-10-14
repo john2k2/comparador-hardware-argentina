@@ -19,7 +19,7 @@ beforeEach(() => {
   vi.mocked(readRecentOfferProducts).mockResolvedValue([]);
 });
 
-afterEach(() => vi.useRealTimers());
+afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
 
 describe('evidencia actual de portada', () => {
   const makeProduct = (observedAt: Date, stock = 'in-stock') => ({
@@ -123,4 +123,12 @@ describe('resolveOfferHistory', () => {
     history.set(buildOfferIdentity('product-1', 'mexx', 'https://mexx.com/item/5600x'), exact);
     expect(resolveOfferHistory(history, 'product-1', 'mexx', 'https://mexx.com/item/5600x')).toBe(exact);
   });
+});
+
+it('catálogo Mac evita caché histórica compartida aun cuando contiene ofertas anteriores', async () => {
+  vi.stubEnv('CATALOG_READ_BACKEND', 'mac');
+  vi.mocked(getSharedCache).mockResolvedValue({ latestOfferProducts: [{ id: 'old-cut' }], featuredProducts: [], priceDropProducts: [] });
+  expect((await getHomeSectionsData()).latestOfferProducts).toEqual([]);
+  expect(getSharedCache).not.toHaveBeenCalled();
+  expect(readRecentOfferProducts).toHaveBeenCalledOnce();
 });

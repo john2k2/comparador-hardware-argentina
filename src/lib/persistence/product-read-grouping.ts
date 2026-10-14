@@ -199,7 +199,7 @@ export function dedupeProductsByCanonicalName(products: Product[]): Product[] {
     }
 
     const mergedPrices = mergeGroupedPrices(existing.prices, product.prices);
-    const stats = computeComparableStorePriceStats(mergedPrices);
+    const stats = computeComparableStorePriceStats(mergedPrices, existing);
     const pickedImage = pickProductImage(existing.image, product.image);
 
     grouped.set(key, {
@@ -226,10 +226,10 @@ export function dedupeProductsByCanonicalName(products: Product[]): Product[] {
 
     const existing = final[targetIndex];
     const mergedPrices = mergeGroupedPrices(existing.prices, candidate.prices);
-    const stats = computeComparableStorePriceStats(mergedPrices);
     const preferredName = tokenizeNameForDedupe(candidate.name).length > tokenizeNameForDedupe(existing.name).length
       ? candidate.name
       : existing.name;
+    const stats = computeComparableStorePriceStats(mergedPrices, { ...existing, name: preferredName });
 
     final[targetIndex] = {
       ...existing,
@@ -258,7 +258,7 @@ export function recalculateProductPrices(product: Product, allowedStoreIds?: Set
   const scopedPrices = filteredPrices.map((price) => price.identityReview?.status === 'consistent' && needsIdentityReview(price, product)
     ? { ...price, identityReview: { ...price.identityReview, status: 'needs-review' as const, reason: 'insufficient-evidence' as const } }
     : price);
-  const stats = computeComparableStorePriceStats(scopedPrices);
+  const stats = computeComparableStorePriceStats(scopedPrices, product);
 
   return {
     ...product,

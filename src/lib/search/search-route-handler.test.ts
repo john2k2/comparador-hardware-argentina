@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { RateLimitResult } from '@/lib/server/rate-limit';
 import type { CatalogPageReadDiagnostics } from '@/lib/persistence/product-read';
 import type { Product } from '@/lib/types';
+afterEach(() => vi.unstubAllEnvs());
 
 const mocks = vi.hoisted(() => ({
   checkRateLimit: vi.fn(),
@@ -60,6 +61,28 @@ function searchRequest(query = 'ryzen 5600') {
 }
 
 describe('/api/search rate limit, caché y escrituras', () => {
+  it('D1 respeta rate limit y responde datos certificados sin leer ni escribir caché Supabase', async () => {
+    vi.stubEnv('CATALOG_READ_BACKEND', 'd1');
+    mocks.checkRateLimit.mockResolvedValue(rateLimit(true));
+    mocks.readProductsPageFromDatabase.mockResolvedValue(catalogPage([freshProduct('d1')]));
+    const response = await GET(searchRequest());
+    expect(response.status).toBe(200); expect(response.headers.get('X-Search-Cache')).toBe('D1');
+    expect((await response.json()).products[0].id).toBe('d1');
+    expect(mocks.getSharedCache).not.toHaveBeenCalled(); expect(mocks.setSharedCache).not.toHaveBeenCalled();
+    mocks.checkRateLimit.mockResolvedValue(rateLimit(false));
+    mocks.readProductsPageFromDatabase.mockClear();
+    expect((await GET(searchRequest())).status).toBe(429);
+    expect(mocks.readProductsPageFromDatabase).not.toHaveBeenCalled();
+  });
+  it('D1 fallido devuelve 503 sin vacío sintético ni caché antigua de otra base', async () => {
+    vi.stubEnv('CATALOG_READ_BACKEND', 'd1');
+    mocks.checkRateLimit.mockResolvedValue(rateLimit(true));
+    mocks.readProductsPageFromDatabase.mockRejectedValue(new Error('CATALOG_PRODUCTION_NOT_READY'));
+    mocks.getSharedCache.mockResolvedValue(catalogPageResponse(catalogPage([freshProduct('old')])));
+    const response = await GET(searchRequest());
+    expect(response.status).toBe(503); expect(await response.json()).toEqual({ error: expect.any(String) });
+    expect(mocks.getSharedCache).not.toHaveBeenCalled(); expect(mocks.setSharedCache).not.toHaveBeenCalled();
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getSharedCache.mockResolvedValue(undefined);
@@ -176,7 +199,7 @@ describe('Server-Timing de búsqueda pública', () => {
     mocks.setSharedCache.mockResolvedValue(undefined);
     mocks.readProductsPageFromDatabase.mockResolvedValue(catalogPage([freshProduct('timed-db')]));
   });
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 
   function timings(response: Response) {
     const header = response.headers.get('Server-Timing')!;

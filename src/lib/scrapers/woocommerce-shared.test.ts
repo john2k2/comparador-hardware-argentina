@@ -158,6 +158,36 @@ describe('woocommerce-shared', () => {
     const html = '<body class="single-product"><h1>GPU RTX 5060</h1><p class="price"><bdi>$500.000</bdi></p><p class="stock out-of-stock">Agotado</p></body>';
     expect(parseWooProductDetail(html, 'https://liontech.com.ar/producto/gpu/', { id:'liontech', name:'LionTech', baseUrl:'https://liontech.com.ar' }, 'tarjetas-graficas', 'gpu')?.prices[0]).toMatchObject({ price:500000, stock:'out-of-stock' });
   });
+
+  // Fragmento del principal 8121/CPU083 leído el 11/10/2026 a las 15:22:07 UTC.
+  const goldenUrl = 'https://goldentechstore.com.ar/producto/procesador-amd-ryzen-7-8700g-am5-con-video-con-cooler/';
+  const goldenPill = '<span class="gt-ficha__pill gt-ficha__pill--blue"><svg aria-hidden="true"></svg>Disponible en 24-48 hs</span>';
+  const goldenDetail = (meta = goldenPill, stock = '<p class="stock in-stock"></p>', extra = '') => `<link rel="canonical" href="${goldenUrl}"><body class="single-product"><div class="gt-ficha"><div class="gt-ficha__buy"><div class="gt-ficha__meta">${meta}<span class="gt-ficha__sku">SKU: CPU083</span></div><h1 class="gt-ficha__title">PROCESADOR AMD RYZEN 7 8700G AM5 CON VIDEO CON COOLER</h1><span class="gt-ficha-cash__now">$ 454.585,76</span><span class="gt-ficha-cash__was">$ 509.136,05</span>${stock}<button name="add-to-cart" value="8121" class="single_add_to_cart_button">Agregar al carrito</button>${extra}</div></div></body>`;
+  const parseGolden = (html: string) => parseWooProductDetail(html, goldenUrl, { id:'goldentechstore', name:'GoldenTech', baseUrl:'https://goldentechstore.com.ar' }, 'procesadores', '8700g');
+
+  it('GoldenTech conserva precio cash y registra stock desconocido ante disponibilidad primaria en 24–48 horas', () => {
+    const product = parseGolden(goldenDetail());
+    expect(product?.prices[0]).toMatchObject({ price:454586, stock:'unknown', priceCondition:'special', url:goldenUrl });
+    expect(product?.specs).toMatchObject({ SKU:'CPU083', SourceListingId:'8121' });
+    expect(parseGolden(goldenDetail(goldenPill, '<p class="stock in-stock">Últimas unidades</p>'))?.prices[0].stock).toBe('unknown');
+  });
+  it.each(['hidden', 'aria-hidden="true"', 'style="display:none"', 'style="visibility:hidden"'])('GoldenTech ignora disponibilidad diferida oculta por %s', attribute => {
+    expect(parseGolden(goldenDetail(goldenPill.replace('<span ', `<span ${attribute} `)))?.prices[0].stock).toBe('in-stock');
+    expect(parseGolden(goldenDetail().replace('class="gt-ficha__meta"', `class="gt-ficha__meta" ${attribute}`))?.prices[0].stock).toBe('in-stock');
+    expect(parseGolden(goldenDetail(goldenPill.replace('Disponible en 24-48 hs', `<span ${attribute}>Disponible en 24-48 hs</span>`)))?.prices[0].stock).toBe('in-stock');
+  });
+  it.each(['gt-ficha-related', 'related products'])('GoldenTech ignora disponibilidad diferida de recomendados %s', className => {
+    const related = `<section class="${className}"><div class="gt-ficha__meta">${goldenPill}</div></section>`;
+    expect(parseGolden(goldenDetail('', undefined, related))?.prices[0].stock).toBe('in-stock');
+  });
+  it('GoldenTech no toma envío o cotización general como disponibilidad diferida', () => {
+    expect(parseGolden(goldenDetail(goldenPill.replace('Disponible en', 'Envío en')))?.prices[0].stock).toBe('in-stock');
+    expect(parseGolden(goldenDetail('', undefined, `<aside class="shipping">${goldenPill}</aside>`))?.prices[0].stock).toBe('in-stock');
+    expect(parseGolden(goldenDetail('').replace('</body>', `<div class="gt-ficha__meta">${goldenPill}</div></body>`))?.prices[0].stock).toBe('in-stock');
+  });
+  it.each(['<p class="stock out-of-stock">Sin stock</p>', '<p class="stock">Agotado</p>', '<main class="product outofstock"></main>'])('GoldenTech conserva agotamiento explícito sobre disponibilidad diferida: %s', stock => {
+    expect(parseGolden(goldenDetail(goldenPill, stock))?.prices[0]).toMatchObject({ price:454586, stock:'out-of-stock', priceCondition:'special' });
+  });
   it('no recupera el importe personalizado de MaxTecno desde un relacionado', () => {
     const html = '<main class="product"><h1 class="product-title">GPU RTX 5060</h1><section class="related products"><div class="price-showcase-box"><span class="price-main">$100.000</span></div></section></main>';
     expect(parseWooProductDetail(html, 'https://maxtecno.com.ar/producto/gpu/', { id:'maxtecno', name:'MaxTecno', baseUrl:'https://maxtecno.com.ar' }, 'tarjetas-graficas', 'gpu')).toBeNull();
@@ -176,6 +206,45 @@ describe('woocommerce-shared', () => {
       'memoria-ram', 'fallback');
     expect(product?.prices[0].price).toBe(385_890);
     expect(product?.prices[0].stock).toBe('in-stock');
+  });
+
+  it.each(['', '<p class="product_field price"><ins hidden><bdi>$3.162.723</bdi></ins></p>', '<p class="price" hidden><bdi>$3.162.723</bdi></p>', '<section class="related products"><p class="price"><bdi>$3.162.723</bdi></p></section>'])('Katech sin precio visible no observa metadata conservada ni sanada con JSON-LD: %s', async content => {
+    // Ficha conocida 5080 leída el11/10/2026: SinStock, sin bloque de precio,
+    // OpenGraph aún conservaba3162723. El fallback tampoco puede renovar ese importe.
+    const name = 'VIDEO GEFORCE RTX 5080 16GB GIGABYTE GAMING OC';
+    const url = 'https://katech.com.ar/producto/video-geforce-rtx-5080-16gb-gigabyte-gaming-oc/';
+    const store = {id:'katech',name:'Katech',baseUrl:'https://katech.com.ar'};
+    const schema = {'@type':'Product',name,url,offers:{'@type':'Offer',price:3162723,priceCurrency:'ARS',availability:'https://schema.org/OutOfStock'}};
+    const html = `<body class="single-product"><h1 class="post_title">${name}</h1><link rel="canonical" href="${url}"><meta property="product:price:currency" content="ARS"><meta property="product:price:amount" content="3162723">${content}<p class="stock out-of-stock">Sin Stock</p><script type="application/ld+json">${JSON.stringify(schema)}</script></body>`;
+    expect(parseWooProductDetail(html,url,store,'tarjetas-graficas','gpu')).toBeNull();
+    const source=vi.fn().mockResolvedValue(new Response(html));vi.stubGlobal('fetch',source);
+    expect(await fetchWooCommerceKnownOffer(store.id,url,'tarjetas-graficas')).toBeNull();
+    expect(source).toHaveBeenCalledTimes(1);
+    // Un precio principal visible sí permite registrar la observación agotada.
+    const visible=html.replace(content+'<p class="stock', '<p class="product_field price"><bdi>$3.162.723</bdi></p><p class="stock');
+    expect(parseWooProductDetail(visible,url,store,'tarjetas-graficas','gpu')?.prices[0]).toMatchObject({price:3162723,stock:'out-of-stock'});
+  });
+
+  it('Katech reconoce special sólo con etiqueta e importe del mismo bloque principal', () => {
+    // Estructura del HTML de Katech leído el 11/10/2026 a las 14:19 UTC.
+    const block = (label: string, price = '$428.250,00') => `<div class="w-vwrapper"><h5>${label}</h5><p class="product_field price"><bdi>${price}</bdi></p></div>`;
+    const body = (content: string) => `<body class="single-product"><h1 class="post_title">PROCESADOR AMD RYZEN 7 8700G AM5</h1>${content}<p class="stock in-stock">Hay stock disponible!</p></body>`;
+    const url = 'https://katech.com.ar/producto/procesador-amd-ryzen-7-8700g-am5/';
+    const store = {id:'katech',name:'Katech',baseUrl:'https://katech.com.ar'};
+    const parse = (content: string, selectedStore = store) => parseWooProductDetail(body(content), url, selectedStore, 'procesadores', 'cpu');
+    const label = 'Precio especial EFECTIVO/TRANSFERENCIA';
+    expect(parse(block(label))?.prices[0]).toMatchObject({price:428250,priceCondition:'special'});
+    // La representación móvil incluye texto directo en lugar de h5.
+    expect(parse(block(label).replace(`<h5>${label}</h5>`, label))?.prices[0].priceCondition).toBe('special');
+    expect(parse(block(label) + block(label))?.prices[0].priceCondition).toBe('special');
+    expect(parse(block('Precio de lista'))?.prices[0].priceCondition).toBeUndefined();
+    expect(parse(`<h5>${label}</h5>` + block('Precio de lista'))?.prices[0].priceCondition).toBeUndefined();
+    expect(parse(block(label), {id:'dinobyte',name:'Dinobyte',baseUrl:'https://dinobyte.ar'})?.prices[0].priceCondition).toBeUndefined();
+    expect(parse(block(label) + block(label, '$500.000,00'))?.prices[0].priceCondition).toBeUndefined();
+    expect(parse(block('Precio de lista') + `<section class="related products">${block(label)}</section>`)?.prices[0].priceCondition).toBeUndefined();
+    expect(parse(block(label).replace('w-vwrapper', 'w-vwrapper" style="display:none'))?.prices[0].priceCondition).toBeUndefined();
+    expect(parse(block(label).replace('<h5>', '<h5 hidden>'))?.prices[0].priceCondition).toBeUndefined();
+    expect(parse(block(label).replace('</div>', '<p class="product_field price">$500.000,00</p></div>'))?.prices[0].priceCondition).toBeUndefined();
   });
 
   it('no inventa un precio de detalle cuando solo hay precios en recomendaciones', () => {

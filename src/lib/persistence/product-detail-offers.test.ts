@@ -2,8 +2,54 @@ import {afterEach,expect,it,vi} from 'vitest';
 import type {Product} from '@/lib/types';
 import {canRedirectToCanonicalProduct,mergeCanonicalDetailOffers,shareExactProductVariant} from './product-detail-offers';
 import {normalizeIdentityText} from '@/lib/product-identity';
+import { proveManufacturerRamAttributes } from '@/lib/quality/offer-attribute-proof';
+import { getAvailableComparableStorePrices } from '@/lib/price-utils';
 const make=(id:string,name='Extensor Tp-Link WA850RE',storeId='dinobyte',date='2026-07-28T12:00:00Z',price=47612):Product=>({id,name,category:'perifericos',canonicalProductKey:'perifericos::wa850re',prices:[{storeId,storeName:storeId,url:`https://${storeId}.example/producto/wa850re`,price,stock:'in-stock',lastUpdated:new Date(date)}],createdAt:new Date(date),updatedAt:new Date(date)} as Product);
 afterEach(()=>vi.useRealTimers());
+it('una SKU desconocida no oculta contradicciones estructuradas ni impide variantes textuales completas válidas', () => {
+ const name = 'Memoria Corsair Vengeance LPX DDR4 16GB 1x16GB 3200MHz CL16 UDIMM Black';
+ const root: Product = { ...make('ram-unknown', name), category: 'memoria-ram', canonicalProductKey: 'legacy-ram', specs: { SKU: 'unknown' } };
+ const valid = { ...root, id: 'ram-equivalent', specs: { SKU: 'unknown', Kit: '1 x 16 GB', generacion: 'DDR 4', frecuencia: '3200 MHz' } };
+ expect(shareExactProductVariant(root, valid)).toBe(true);
+ expect(canRedirectToCanonicalProduct(root, valid)).toBe(true);
+ for (const specs of [{ kit: '2x8GB' }, { generation: 'DDR5' }, { speed: '3600MHz' },
+   { kit: '1x16GB', Kit: '2x8GB' }, { generation: 'DDR4', generacion: 'DDR5' }]) {
+   const candidate = { ...valid, specs: { SKU: 'unknown', ...specs } };
+   expect(shareExactProductVariant(root, candidate)).toBe(false);
+   expect(canRedirectToCanonicalProduct(root, candidate)).toBe(false);
+   expect(mergeCanonicalDetailOffers(root, [candidate]).prices).toEqual(root.prices);
+ }
+});
+it('el detalle reúne las dos filas de una publicación RAM sin duplicarla ni confiar en una clave incompleta', () => {
+ const name = 'Memoria Corsair DDR4 16GB 3200MHz Vengeance RGB RS Black CL16', sku = 'CMG16GX4M1E3200C16';
+ const url = 'https://compragamer.com/producto/RAM_15558', listingRef = 'compragamer:id:15558';
+ const subject = { title: name, sku, specs: { SKU: sku } }, sourceIdentity = { title: name, storeSku: sku, listingRef };
+ const root: Product = { ...make('agrupado-memoria-ram-corsair-16gb-1co0hh2', name, 'compragamer', new Date().toISOString(), 283600),
+   category: 'memoria-ram', canonicalProductKey: 'legacy-ram', specs: { SKU: sku } };
+ root.prices[0] = { ...root.prices[0], url, sourceIdentity, installment: null, priceCondition: 'special',
+   identityReview: { version: 1, status: 'consistent', reason: 'manufacturer-ram', model: null, confidence: null,
+     reviewedAt: new Date().toISOString(), subject: { name: normalizeIdentityText(name), category: 'memoria-ram', url }, sourceIdentity,
+     proof: proveManufacturerRamAttributes(subject, subject, { storeId: 'compragamer', url, listingRef })! } };
+ const duplicate = { ...root, id: 'cg-15558' };
+ expect(shareExactProductVariant(root, duplicate)).toBe(true);
+ expect(canRedirectToCanonicalProduct(root, duplicate)).toBe(true);
+ const detail = mergeCanonicalDetailOffers(root, [duplicate]);
+ expect(detail.prices).toEqual(root.prices);
+ expect(detail.lowestPrice).toBe(283600);
+ expect(getAvailableComparableStorePrices(detail.prices, detail)).toHaveLength(1);
+ for (const candidate of [{ ...duplicate, specs: {} }, { ...duplicate, specs: { SKU: 'CMK8GX4M1E3200C16' } },
+   { ...duplicate, specs: { SKU: sku, kit: '2x8GB' } }, { ...duplicate, name: name.replace('Black', 'White') }]) {
+   expect(shareExactProductVariant(root, candidate)).toBe(false);
+   expect(canRedirectToCanonicalProduct(root, candidate)).toBe(false);
+   expect(mergeCanonicalDetailOffers(root, [candidate]).prices).toEqual(root.prices);
+ }
+ const missing = { ...root, specs: {} };
+ expect(canRedirectToCanonicalProduct(missing, duplicate)).toBe(false);
+ expect(shareExactProductVariant(missing, { ...duplicate, specs: {} })).toBe(false);
+ const invalid = mergeCanonicalDetailOffers(missing, []);
+ expect(invalid.prices).toEqual(root.prices);
+ expect(invalid.lowestPrice).toBe(0);
+});
 it('la tarjeta mantiene su ficha cuando el título canónico invalidaría su oferta aprobada',()=>{
  const name='MICRO AMD RYZEN 7 5700X SIN PACKAGING S/VIDEO S/COOLER AM4';
  const product={...make('goldentechstore-api-187462',name,'goldentechstore',new Date().toISOString(),300077),

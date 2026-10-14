@@ -117,3 +117,105 @@ describe('documentos públicos en el Worker', () => {
     expect(s.next).toHaveBeenCalledOnce();
   });
 });
+
+describe('shell opt-in de búsqueda', () => {
+  async function setupSearch() {
+    const s = setup();
+    const source = document();
+    const html = (await source.text()).replaceAll(nonce, 'COMPARADOR_DOCUMENT_NONCE');
+    const headers = Object.fromEntries([...source.headers].map(([key, value]) => [key, value.replaceAll(nonce, 'COMPARADOR_DOCUMENT_NONCE')]));
+    const payload = { version: 1, route: '/search', html, headers };
+    const assets = vi.fn<(request: Request) => Promise<Response>>(async () => Response.json(payload));
+    const env = { CATALOG_SEARCH_DOCUMENT: '1', ASSETS: { fetch: assets } };
+    return { ...s, env, assets, payload };
+  }
+
+  it.each(['/search', '/search?q=Ryzen&stores=compragamer&sortBy=price-asc&page=2', '/search?category=memoria-ram&q=DDR4', '/search?category=memoria-ram&minPrice=0', '/search?__proto__=ignored&q=DDR4'])('sirve %s sin Next, cache API ni metadata de versión', async (route) => {
+    const s = await setupSearch();
+    const response = await s.handler(new Request(`${root}${route}`), s.env, s.context);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('x-comparador-render')).toBe('static-search-document');
+    expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow');
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(s.assets.mock.calls[0][0].url).toBe('https://assets.local/__public-documents/search.json');
+    expect(s.next).not.toHaveBeenCalled();
+    expect(s.cache.match).not.toHaveBeenCalled();
+    expect(s.cache.put).not.toHaveBeenCalled();
+  });
+
+  it('GET y HEAD reciben nonce nuevo y HEAD no contiene body', async () => {
+    const s = await setupSearch();
+    const get = await s.handler(new Request(`${root}/search?q=DDR4`), s.env, s.context);
+    const head = await s.handler(new Request(`${root}/search?q=DDR4`, { method: 'HEAD' }), s.env, s.context);
+    const getNonce = get.headers.get('x-content-security-policy-nonce');
+    const headNonce = head.headers.get('x-content-security-policy-nonce');
+    expect(getNonce).not.toBe(headNonce);
+    expect(await head.text()).toBe('');
+    expect(head.headers.get('content-security-policy')).toContain(`'nonce-${headNonce}'`);
+    expect(head.headers.get('cache-control')).toBe('private, no-store');
+    const html = await get.text();
+    expect(html).toContain(`nonce="${getNonce}"`);
+    expect(html).toContain('2026-10-05T12:00:00Z');
+    expect(html).not.toContain('COMPARADOR_DOCUMENT_NONCE');
+  });
+
+  it.each([undefined, '0', 'true'])('el flag %s conserva Next', async (flag) => {
+    const s = await setupSearch();
+    await s.handler(new Request(`${root}/search?q=DDR4`), { ...s.env, CATALOG_SEARCH_DOCUMENT: flag }, s.context);
+    expect(s.next).toHaveBeenCalledOnce(); expect(s.assets).not.toHaveBeenCalled();
+  });
+
+  it.each(['/search?category=memoria-ram', '/search?category=memoria-ram&page=2', '/search?category=memoria-ram&q=', '/search?category=memoria-ram&minPrice=bad', '/search?category=memoria-ram&category=procesadores', '/comparar/memoria-ram', '/search?_rsc=ignored&q=DDR4'])('mantiene SSR/Flight de %s', async (route) => {
+    const s = await setupSearch();
+    await s.handler(new Request(`${root}${route}`), s.env, s.context);
+    expect(s.next).toHaveBeenCalledOnce(); expect(s.assets).not.toHaveBeenCalled();
+  });
+
+  it.each([{ Cookie: 'sb-access-token=private' }, { Cookie: 'consent=accepted' }, { Cookie: '' }, { Authorization: 'Bearer private' }, { RSC: '1' }, { 'Next-Router-State-Tree': 'state' }, { 'Next-Action': 'action' }, { Range: 'bytes=0-20' }])('no intercepta contexto %j', async (headers) => {
+    const s = await setupSearch();
+    await s.handler(new Request(`${root}/search?q=DDR4`, { headers }), s.env, s.context);
+    expect(s.next).toHaveBeenCalledOnce(); expect(s.assets).not.toHaveBeenCalled();
+  });
+
+  it.each(['_ga=GA1.2.public; _ga_ABC123=GS1.1.public', 'cf_clearance=opaque; _gid=public'])('conserva shell vacío con cookies sin contexto de cuenta %s',async(cookie)=>{
+    const s=await setupSearch();const response=await s.handler(new Request(`${root}/search?q=DDR4`,{headers:{Cookie:cookie}}),s.env,s.context);
+    expect(response.headers.get('x-comparador-render')).toBe('static-search-document');expect(s.next).not.toHaveBeenCalled();
+    expect(await response.text()).not.toContain(cookie);
+  });
+  it.each(['_ga=x; sb-example-auth-token=private','_ga=x; comparador_admin_session=private','_ga=x; unknown=private','_ga','_ga=x; invalid'])('delega cookies de sesión, desconocidas o inválidas %s',async(cookie)=>{
+    const s=await setupSearch();await s.handler(new Request(`${root}/search?q=DDR4`,{headers:{Cookie:cookie}}),s.env,s.context);
+    expect(s.next).toHaveBeenCalledOnce();expect(s.assets).not.toHaveBeenCalled();
+  });
+  it.each(['POST', 'OPTIONS'])('no intercepta método %s', async (method) => {
+    const s = await setupSearch(); await s.handler(new Request(`${root}/search?q=DDR4`, { method }), s.env, s.context);
+    expect(s.next).toHaveBeenCalledOnce(); expect(s.assets).not.toHaveBeenCalled();
+  });
+
+  it('no intercepta host ajeno ni devuelve un archivo interno', async () => {
+    const s = await setupSearch();
+    await s.handler(new Request('https://otro.example/search?q=DDR4'), s.env, s.context);
+    expect(s.next).toHaveBeenCalledOnce(); expect(s.assets).not.toHaveBeenCalled();
+    const response = await s.handler(new Request(`${root}/__public-documents/search.json`), s.env, s.context);
+    expect(response.status).toBe(404);
+    expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow');
+  });
+
+  it('un archivo ausente, inválido, personal o de otra ruta vuelve a Next', async () => {
+    const s = await setupSearch();
+    const badPayloads = [
+      { ...s.payload, version: 2 }, { ...s.payload, route: '/' },
+      { ...s.payload, html: 'x'.repeat(512_001) }, { ...s.payload, html: '<div id="__next_error__">error</div>' },
+      { ...s.payload, headers: { ...s.payload.headers, 'set-cookie': 'session=private' } },
+      { ...s.payload, headers: { ...s.payload.headers, 'content-type': 'application/json' } },
+      { ...s.payload, headers: { ...s.payload.headers, 'content-security-policy': "script-src 'self'" } },
+    ];
+    const responses = [new Response('missing', { status: 404 }), new Response('invalid json'), Response.json(s.payload, { headers: { 'Set-Cookie': 'session=private' } }), ...badPayloads.map((payload) => Response.json(payload))];
+    for (const response of responses) {
+      const assets = vi.fn(async () => response.clone());
+      await s.handler(new Request(`${root}/search?q=DDR4`), { ...s.env, ASSETS: { fetch: assets } }, s.context);
+    }
+    await s.handler(new Request(`${root}/search?q=DDR4`), { ...s.env, ASSETS: { fetch: async () => { throw new Error('unavailable'); } } }, s.context);
+    expect(s.next).toHaveBeenCalledTimes(responses.length + 1);
+    expect(s.cache.match).not.toHaveBeenCalled(); expect(s.cache.put).not.toHaveBeenCalled();
+  });
+});

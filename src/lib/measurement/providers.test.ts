@@ -11,13 +11,25 @@ vi.mock('./credentials', async (original) => ({ ...await original<typeof import(
   ads: process.env.MEASUREMENT_GOOGLE_ADS_DEVELOPER_TOKEN ? { developerToken: process.env.MEASUREMENT_GOOGLE_ADS_DEVELOPER_TOKEN, customerId: '5796164752' } : null,
 }) }));
 import { loadConnectionSecrets } from './credentials';
-import { createProviderReader, getConnection } from './providers';
+import { createProviderReader, getConnection, ProviderReadError } from './providers';
 const now = new Date('2026-10-05T23:00:00Z');
 
 function authorizeGoogle() {
   vi.stubEnv('MEASUREMENT_GOOGLE_CLIENT_ID', 'fixture-client');
   vi.stubEnv('MEASUREMENT_GOOGLE_CLIENT_SECRET', 'private-fixture-secret');
   vi.stubEnv('MEASUREMENT_GOOGLE_REFRESH_TOKEN', 'private-fixture-refresh');
+}
+type GaReport = Record<string, unknown>;
+function mockGaReports(change: (report: GaReport, dimensions: string[]) => void = () => {}) {
+  authorizeGoogle();
+  vi.mocked(fetch).mockImplementation(async (url, init) => {
+    if (String(url).includes('/token')) return Response.json({ access_token: 'only-on-server' });
+    const body = JSON.parse(String(init?.body));
+    const dimensions = (body.dimensions ?? []).map((item: { name: string }) => item.name);
+    const report: GaReport = { metricHeaders: body.metrics, dimensionHeaders: body.dimensions, metadata: { timeZone: 'America/Buenos_Aires' } };
+    change(report, dimensions);
+    return Response.json(report);
+  });
 }
 describe('consultas privadas de las fuentes', () => {
   beforeEach(() => {
@@ -45,7 +57,7 @@ describe('consultas privadas de las fuentes', () => {
       if (String(url).includes('/token')) return Response.json({ access_token: 'only-on-server' });
       if (String(url).includes('webmasters')) return Response.json({ responseAggregationType: 'byProperty' });
       const body = JSON.parse(String(init?.body));
-      return Response.json({ metricHeaders: body.metrics, metadata: { timeZone: 'America/Buenos_Aires' } });
+      return Response.json({ metricHeaders: body.metrics, dimensionHeaders: body.dimensions, metadata: { timeZone: 'America/Buenos_Aires' } });
     });
     const reader = createProviderReader(now);
     const readings = await Promise.all([reader('ga4'), reader('search-console')]);
@@ -53,6 +65,73 @@ describe('consultas privadas de las fuentes', () => {
     expect(readings[1].metrics).toMatchObject({ clicks: 0, position: null });
     expect(vi.mocked(fetch).mock.calls.filter(([url]) => String(url).includes('/token'))).toHaveLength(1);
     expect(JSON.stringify(readings)).not.toMatch(/only-on-server|private-fixture/);
+  });
+  it.each(['overview', 'eventName', 'date', 'sessionSourceMedium'].flatMap((report) =>
+    ['subjectToThresholding', 'dataLossFromOtherRow'].map((flag) => ({ report, flag }))))('rechaza $report con $flag incluso si Google omite sus filas', async ({ report: target, flag }) => {
+    mockGaReports((report, dimensions) => {
+      if ((dimensions[0] ?? 'overview') === target) report.metadata = { timeZone: 'America/Buenos_Aires', [flag]: true };
+    });
+    await expect(createProviderReader(now)('ga4')).rejects.toBeInstanceOf(ProviderReadError);
+    await expect(createProviderReader(now)('ga4')).rejects.toMatchObject({ kind: 'error', message: expect.stringContaining('Se conserva el dato anterior') });
+  });
+  it.each([
+    { rowCount: 1 },
+    { rowCount: 1, rows: [] },
+    { rowCount: -1 },
+    { rowCount: null },
+    { rowCount: '1' },
+    { rowCount: 1.5 },
+    { rows: [{ metricValues: [{ value: '12' }] }] },
+    { rowCount: 1, rows: [{ metricValues: [{ value: '12' }] }] },
+    { rowCount: 1, rows: [{ metricValues: [{ value: '12' }, { value: '4' }], dimensionValues: [] }] },
+  ])('rechaza un informe de eventos incompleto sin convertirlo en cero: %j', async (incomplete) => {
+    mockGaReports((report, dimensions) => { if (dimensions[0] === 'eventName') Object.assign(report, incomplete); });
+    await expect(createProviderReader(now)('ga4')).rejects.toMatchObject({ kind: 'error' });
+  });
+  it.each([
+    { dataTruncationReasons: ['DATA_TRUNCATION_REASON_UNSPECIFIED'] },
+    { samplingMetadatas: [{ samplesReadCount: '100', samplingSpaceSize: '1000' }] },
+    { dataTruncationReasons: 'invalid' },
+    { samplingMetadatas: {} },
+  ])('no presenta como completo un informe truncado, muestreado o con metadatos inválidos: %j', async (limitations) => {
+    mockGaReports((report, dimensions) => {
+      if (dimensions[0] === 'eventName') report.metadata = { timeZone: 'America/Buenos_Aires', ...limitations };
+    });
+    await expect(createProviderReader(now)('ga4')).rejects.toMatchObject({ kind: 'error' });
+  });
+  it('valida metadatos y encabezados en los informes secundarios', async () => {
+    mockGaReports((report, dimensions) => { if (dimensions[0] === 'date') delete report.metadata; });
+    await expect(createProviderReader(now)('ga4')).rejects.toThrow('zona horaria');
+    mockGaReports((report, dimensions) => { if (dimensions[0] === 'eventName') delete report.dimensionHeaders; });
+    await expect(createProviderReader(now)('ga4')).rejects.toMatchObject({ kind: 'error' });
+    mockGaReports((report, dimensions) => { if (dimensions[0] === 'sessionSourceMedium') report.metadata = { timeZone: 'America/Buenos_Aires', subjectToThresholding: 'false' }; });
+    await expect(createProviderReader(now)('ga4')).rejects.toMatchObject({ kind: 'error' });
+  });
+  it('acepta un informe completo con cifras positivas y cero real para eventos ausentes', async () => {
+    mockGaReports((report, dimensions) => {
+      report.metadata = { timeZone: 'America/Buenos_Aires', subjectToThresholding: false, dataLossFromOtherRow: false };
+      if (dimensions.length === 0) Object.assign(report, { rowCount: 1, rows: [{ metricValues: ['12', '15', '30', '10'].map(value => ({ value })) }] });
+      if (dimensions[0] === 'eventName') Object.assign(report, { rowCount: 1, rows: [{ dimensionValues: [{ value: 'outbound_store_click' }], metricValues: [{ value: '5' }, { value: '3' }] }] });
+    });
+    const result = await createProviderReader(now)('ga4');
+    expect(result.metrics).toMatchObject({ users: 12, sessions: 15, views: 30, outboundClicks: 5, outboundUsers: 3, budgets: 0 });
+  });
+  it('acepta ceros explícitos y los ocho canales pedidos sin exigir todos los canales', async () => {
+    mockGaReports((report, dimensions) => {
+      Object.assign(report, { rowCount: 0, rows: [] });
+      if (dimensions[0] === 'sessionSourceMedium') Object.assign(report, { rowCount: 12, rows: Array.from({ length: 8 }, (_, index) => ({ dimensionValues: [{ value: `channel-${index}` }], metricValues: [{ value: '1' }] })) });
+    });
+    const result = await createProviderReader(now)('ga4');
+    expect(result.metrics.users).toBe(0);
+    expect(result.breakdown).toHaveLength(8);
+  });
+  it('rechaza truncamiento de eventos o días y filas faltantes dentro del ranking de canales', async () => {
+    for (const [dimension, rowCount, returned] of [['eventName', 101, 100], ['date', 8, 7], ['sessionSourceMedium', 12, 7]] as const) {
+      mockGaReports((report, dimensions) => {
+        if (dimensions[0] === dimension) Object.assign(report, { rowCount, rows: Array.from({ length: returned }, () => ({ dimensionValues: [{ value: 'fixture' }], metricValues: [{ value: '1' }, ...(dimension === 'eventName' ? [{ value: '1' }] : [])] })) });
+      });
+      await expect(createProviderReader(now)('ga4')).rejects.toMatchObject({ kind: 'error' });
+    }
   });
   it('mantiene los errores de permisos sin exponer el cuerpo privado de la API', async () => {
     authorizeGoogle();

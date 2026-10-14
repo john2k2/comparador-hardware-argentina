@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { OfferIdentityReview, IdentityEvidence } from './offer-identity';
+import { proveManufacturerRamAttributes } from './offer-attribute-proof';
+import { normalizeIdentityText } from '@/lib/product-identity';
 import {
   buildIdentityEvidence,
   hasExplicitIdentityConflict,
@@ -7,6 +9,14 @@ import {
   readIdentityReview,
   bindReviewToSource,
 } from './offer-identity';
+
+it('una fuente contradictoria exige revisión aunque no haya dictamen', () => {
+  const offer = { storeId: 'compragamer', url: 'https://compragamer.com/producto/RAM_15558',
+    sourceIdentity: { title: 'Memoria RAM', listingRef: 'compragamer:id:15558', sourceId: '15558' } };
+  expect(needsIdentityReview(offer)).toBe(false);
+  expect(needsIdentityReview({ ...offer, sourceIdentity: { ...offer.sourceIdentity, listingRef: 'compragamer:id:99999' } })).toBe(true);
+  expect(needsIdentityReview({ ...offer, sourceIdentity: { ...offer.sourceIdentity, sourceId: '99999' } })).toBe(true);
+});
 
 function identityReview(overrides: Partial<OfferIdentityReview> = {}): OfferIdentityReview {
   return {
@@ -20,6 +30,22 @@ function identityReview(overrides: Partial<OfferIdentityReview> = {}): OfferIden
     ...overrides,
   };
 }
+
+it('manufacturer RAM liga JSON a publicación y SKU/specs vigentes sin renombrar ficha',()=>{
+  const name='Memoria Corsair DDR4 8GB 3200Mhz Vengeance LPX Black CL16',sku='CMK8GX4M1E3200C16';
+  const url='https://compragamer.com/producto/RAM_15522',listingRef='compragamer:id:15522',subject={title:name,sku,specs:{SKU:sku}};
+  const sourceIdentity={title:name,storeSku:sku,listingRef};
+  const review:OfferIdentityReview={version:1,status:'consistent',reason:'manufacturer-ram',model:null,confidence:null,reviewedAt:'2026-10-11T22:30:00Z',
+    subject:{name:normalizeIdentityText(name),category:'memoria-ram',url},sourceIdentity,
+    proof:proveManufacturerRamAttributes(subject,subject,{storeId:'compragamer',url,listingRef})!};
+  const offer={url,sourceIdentity,identityReview:JSON.parse(JSON.stringify(review))},product={name,category:'memoria-ram',specs:{SKU:sku}};
+  expect(needsIdentityReview(offer,product)).toBe(false);
+  expect(needsIdentityReview(offer,{...product,specs:{SKU:sku,Color:'Grey'}})).toBe(true);
+  expect(needsIdentityReview(offer,{name,category:'memoria-ram'})).toBe(true);
+  expect(needsIdentityReview({...offer,sourceIdentity:undefined},product)).toBe(true);
+  expect(needsIdentityReview({...offer,sourceIdentity:{...sourceIdentity,storeSku:'MEM755'}},product)).toBe(true);
+  expect(needsIdentityReview({...offer,url:'https://compragamer.com/producto/RAM_15558'},product)).toBe(true);
+});
 
 describe('offer identity evidence', () => {
   it('does not treat CPU base and boost clock differences as identity conflicts', () => {

@@ -1,3 +1,5 @@
+import { normalizeIdentityText } from '@/lib/product-identity';
+
 /** Contradicciones explícitas: una omisión conserva su estado desconocido. */
 function onlyValue(values: string[]): string | undefined {
   const unique = [...new Set(values)];
@@ -44,4 +46,31 @@ export function hasExplicitStorageConflict(name: string, source: string): boolea
   const target = storageAttributes(name), offer = storageAttributes(source);
   return (Object.keys(target) as Array<keyof typeof target>)
     .some(key => target[key] !== undefined && offer[key] !== undefined && target[key] !== offer[key]);
+}
+
+/** Prueba deliberadamente acotada: el detector de conflictos no demuestra equivalencia. */
+export function exactSsdAttributes(name: string): Record<string, string> | null {
+  const text = normalizeIdentityText(name);
+  // x4 describe carriles sólo si está ligado explícitamente a PCIe o Gen; x2 suelto puede ser cantidad.
+  const withoutLanes = name.replace(/\b(?:pcie|pci[ -]?e)\s*(?:[345](?:[.,]0)?\s*)?[x×]\s*(?:16|8|4|2|1)\b|\bgen\s*[345]\s*[x×]\s*(?:16|8|4|2|1)\b/gi, ' ');
+  if (/\b(?:combo|bundle|kit|pack|lote|unidades?|doble|dual|dos|adaptador|adapter|carcasa|enclosure|gabinete|caddy|dock|docking|convertidor|lector|cable|para|extern[oa]|external|portable|portatil|usb|hdd|pendrive)\b/.test(text)
+      || /\b\d+\s*[x×]\s*\d+\s*(?:gb|tb)\b|\b\d+(?:[.,]\d+)?\s*(?:gb|tb)\s*[x×]\s*\d+\b|\b\d+\s*(?:[x×]\s*)?(?:ssd|discos?)\b/i.test(name)
+      || /(?:^|[^a-z])[x×]\s*\d+\b/i.test(withoutLanes)
+      || /\+/.test(name)) return null;
+  // GB/s y GBps describen transferencia: no son capacidades ni formas de unidad.
+  const withoutSpeeds = name.replace(/\b\d+(?:[.,]\d+)?\s*(?:tb|gb|mb|kb)\s*(?:\/\s*s\b|ps\b|por\s+segundo\b)/gi, ' ');
+  const generations = [...text.matchAll(/\b(?:gen(?:eracion)?\s*|pcie\s+)([345])\b/g)].map(match => match[1]);
+  const conditions = text.match(/\b(?:outlet|usado|used|reacondicionado|refurbished)\b/g) ?? [];
+  const withHeatsink = /\bcon (?:disipador|heatsink)\b/.test(text);
+  const withoutHeatsink = /\bsin (?:disipador|heatsink)\b/.test(text);
+  if (new Set(generations).size > 1 || new Set(conditions).size > 1 || (withHeatsink && withoutHeatsink)
+      || /\b(?:gen(?:eracion)?\s*|pcie\s*)[345](?:[.,]0)?\s*[\/|]\s*[345]\b/i.test(withoutSpeeds)) return null;
+  const attrs = storageAttributes(withoutSpeeds);
+  if (attrs.media !== 'ssd' || !attrs.brand || !attrs.model || !attrs.capacity
+      || !Number.isFinite(Number(attrs.capacity)) || Number(attrs.capacity) <= 0 || !attrs.interface || !attrs.form
+      || !['sata', 'pcie'].includes(attrs.interface) || !['m2', '2.5'].includes(attrs.form)
+      || (attrs.interface === 'pcie' && attrs.form !== 'm2')) return null;
+  // El título completo conserva Plus, generación, disipador, condición y sufijos no modelados.
+  return { media: attrs.media, brand: attrs.brand, model: attrs.model, capacity: attrs.capacity,
+    interface: attrs.interface, form: attrs.form, title: text };
 }

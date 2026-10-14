@@ -1,0 +1,100 @@
+# Lectura del catálogo preparado
+
+El modo preparado es optativo y conserva los registros de precio originales. La
+Mac ejecuta el mapper y las reglas de identidad; firma el resultado con una clave
+local. El Worker sólo recibe la clave pública. La firma no renueva observaciones
+ni convierte un stock desconocido en una oferta comprable.
+
+## Construcción y activación
+
+1. Normalizar y comprobar el catálogo completo con las reglas vigentes antes de
+   preparar las vistas. Conservar una captura recuperable de fuente y marcadores.
+2. Ejecutar `prepared-policy.mjs` y comprobar su resultado con `--check`. El
+   `prebuild` lo genera automáticamente; una publicación nativa también exige la
+   comprobación explícita. Cambiar el código de las reglas invalida la política.
+3. Instalar/certificar `prices_observed_idx` mediante
+   `installObservationClockIndex`. Esta función rechaza diferencias entre fechas
+   JavaScript/SQLite, tipos indebidos y conteos incompatibles. No modifica fechas.
+4. Usar `buildPreparedView` con fuente de sólo lectura, destino separado, política
+   compilada y clave privada de firma inyectada. Guarda `[payload, signature]` y
+   devuelve `storageVersion: 2`. Un reintento idéntico conserva las mismas filas.
+5. Comparar el destino remoto completo con la copia local y comprobar nuevamente
+   la generación primaria antes de activar el marcador. Presupuestar índices,
+   vistas, verificaciones y mantenimiento dentro del consumo diario de la cuenta.
+6. Activar `CATALOG_PREPARED_VIEWS=1` y `CATALOG_PREPARED_PUBLIC_KEY` exclusivamente
+   junto a un catálogo certificado. Mantener el emisor privado fuera del Worker,
+   del repositorio y de toda variable `NEXT_PUBLIC_*`.
+
+El lector exige política, clave, formato y conteos compatibles; comprueba firma,
+identidad, oferta original, estadísticas SQL y generación. La respuesta al
+navegador y la caché pública no contienen el transporte preparado.
+
+## Reloj y recuperación
+
+La caché conserva el vencimiento real de las ofertas. Para las lecturas sin un
+intervalo global vigente, el índice considera todas las observaciones positivas,
+incluso ofertas futuras o históricas que todavía no representan a su tienda.
+El lector vuelve a comprobar el intervalo después de las esperas de base de datos
+y caché. Una transición durante la consulta produce 503 y exige otra lectura.
+
+Los escritores de ofertas deben conservar la equivalencia temporal certificada,
+actualizar conteos/marcadores y reconstruir las vistas afectadas. Una nueva
+política exige preparar nuevamente las vistas; no activar primero un Worker que
+exige una política ausente. La rotación de código/datos debe probarse en privado
+antes de elegir el procedimiento de publicación y recuperación.
+
+Desactivar el modo preparado conserva el lector ordinario y sus controles; el
+índice y su certificación siguen siendo necesarios para los casos de reloj que
+los requieren. La recuperación debe usar datos y marcadores de la misma captura.
+No restaurar por separado precios, resúmenes, proyecciones o firmas.
+
+El ciclo privado dispone de un transporte de mantenimiento de reloj optativo:
+`clockSync: true` en la Mac y `PILOT_CLOCK_SYNC_ENABLED=1` junto a
+`PILOT_CLOCK_SYNC_MAX_ROWS_WRITTEN` en el receptor. No se activa con sólo actualizar
+el código. Permite hasta 2.000 cambios derivados / 1 MiB y reserva el presupuesto
+antes del commit local. Ante una respuesta perdida conserva el outbox y reconcilia
+la generación antes de volver a leer tiendas. Superar esos límites revierte el
+mantenimiento completo; no envía una página parcial de cambios.
+
+Este ciclo todavía rechaza snapshots con `prepared_views` o `clock_observations`:
+no puede renovar sus certificados ni firmar las vistas de las ofertas modificadas.
+No activarlo sobre el piloto preparado. La renovación manual acotada de sólo
+proyección, comprobada con ofertas y certificados idénticos, no sustituye la
+integración del escritor automático preparado ni demuestra cobertura completa.
+
+## Verificación pendiente de producción
+
+### Alternativa temporal en la Mac
+
+`CATALOG_READ_BACKEND=mac` selecciona explícitamente el mismo contrato SQL desde
+Node. El launcher abre SQLite con `readOnly: true` y registra
+`registerMacCatalogBinding` antes de iniciar Next, en el mismo proceso. El
+proveedor utiliza un símbolo propio; no sustituye el contexto interno de OpenNext.
+Exige fingerprint y manifiestos del corte local, controla el reloj y rechaza un
+cambio de proveedor durante una lectura. No usa Cache API ni cae en Supabase si
+falta el catálogo.
+
+Esta alternativa descarga el cómputo del Worker y mantiene Cloudflare como entrada
+HTTPS. Un túnel estable y protegido reemplaza el Quick Tunnel de prueba. Depende
+de la Mac, Internet y el proceso local: comprobar caída, recuperación, arranque y
+actualización antes de publicarla. No confundir abrir toda la base con haber
+observado recientemente todas sus ofertas.
+
+Búsqueda, detalle, listas de portada y candidatas de guías pasan por el selector
+SQL. Las listas recorren ventanas de hasta 48 filas y verifican que la generación
+no cambió entre páginas. Las guías filtran modelo y variante antes de su límite;
+un conjunto de más de 200 candidatas con restricciones falla explícitamente.
+Esto no renueva automáticamente la selección editorial de una guía. Los sitemaps, páginas de tiendas y metadatos ya utilizan el selector SQL;
+la historia y otras funciones conservan accesos propios. No afirmar
+que toda la aplicación migró. Auth, favoritos y alertas conservan sus contratos
+de Supabase; este selector no migra datos de usuario.
+
+`npm test` cubre el consumidor y el lector. `npm run test:ops` ejecuta también los
+contratos del productor y del índice. Estas pruebas no sustituyen la medición
+remota del catálogo completo, el consumo de varios ciclos de actualización ni
+la revisión de búsqueda, detalle y comparación en la interfaz publicada.
+
+El piloto Mac remoto abre todo el corte local; las pruebas de identidad y cobertura
+siguen siendo parciales. No carga toda la base en D1 ni acredita capacidad gratuita
+ilimitada. El procedimiento y los límites actuales están en
+[CATALOGO_MAC_OPERACION.md](CATALOGO_MAC_OPERACION.md).

@@ -288,6 +288,25 @@ function foreignWooCurrency($: cheerio.CheerioAPI, pageUrl: string, storeId: str
   return metaConflict || visibleConflict || schemaConflict;
 }
 
+/** Etiqueta e importe del mismo bloque principal; no inferir pago por tienda. */
+function katechSpecialPriceMatches($: cheerio.CheerioAPI, prices: ReturnType<cheerio.CheerioAPI>, price: number): boolean {
+  const amounts: number[] = [];
+  for (const element of prices.filter('.product_field.price').toArray()) {
+    const node = $(element), block = node.parent();
+    if (!block.is('.w-vwrapper') || explicitlyHidden($, node)) continue;
+    const label = block.contents().filter((_, child) => child.type === 'text'
+      || (child.type === 'tag' && /^h[1-6]$/i.test(child.name) && !explicitlyHidden($, $(child))))
+      .map((_, child) => $(child).text()).get().join(' ').replace(/\s+/g, ' ').trim();
+    if (!/\bprecio\s+especial\s+efectivo\s*\/\s*transferencia\b/i.test(label)) continue;
+    // Un segundo importe directo o representaciones discrepantes impiden
+    // atribuir esta condición al monto que el lector devuelve.
+    if (block.children('.product_field.price').length !== 1) return false;
+    const current = node.find('ins .woocommerce-Price-amount bdi, ins bdi').first().text().trim() || node.text().trim();
+    amounts.push(parseWooPrice(current));
+  }
+  return amounts.length > 0 && amounts.every(amount => amount > 0 && Math.abs(amount - price) < 0.005);
+}
+
 export function parseWooProductDetail(
   html: string,
   pageUrl: string,
@@ -341,7 +360,15 @@ export function parseWooProductDetail(
   const storePrice = goldenDetail ? goldenVisibleText($, primary('.gt-ficha-cash__now'))
     : store.id === 'scphardstore' ? primary('.scp-price-main__current').first().text().trim()
     : store.id === 'maxtecno' ? primary('main.product .price-showcase-box .price-main').first().text().trim() : '';
-  const price = parseWooPrice(goldenDetail ? storePrice : storePrice || productFieldPrice || insPrice || anyPrice || metaPrice);
+  // Katech retira el importe visible al agotar una ficha pero conserva precio
+  // en OpenGraph/JSON-LD. Esa metadata no es una nueva observación de precio.
+  const katechPriceNode = store.id === 'katech' ? primaryPrices.filter('.product_field.price, p.price')
+    .filter((_, element) => !explicitlyHidden($, $(element))).first() : null;
+  const katechIns = katechPriceNode?.find('ins .woocommerce-Price-amount bdi, ins bdi')
+    .filter((_, element) => !explicitlyHidden($, $(element))).first();
+  const katechPrice = katechPriceNode ? (katechIns ? goldenVisibleText($, katechIns) : '')
+    || goldenVisibleText($, katechPriceNode) : '';
+  const price = parseWooPrice(store.id === 'katech' ? katechPrice : goldenDetail ? storePrice : storePrice || productFieldPrice || insPrice || anyPrice || metaPrice);
   if (price <= 0) return null;
 
   const imageRaw =
@@ -364,9 +391,16 @@ export function parseWooProductDetail(
     || primaryStock.toArray().some(element => /\b(?:reservas?|back[\s-]?orders?|bajo\s+pedido)\b/i.test(
       goldenDetail ? goldenVisibleText($, $(element)) : $(element).text(),
     ));
+  // La ficha propia de GoldenTech mantiene carrito habilitado para disponibilidad
+  // diferida. Sólo la pastilla visible del principal acredita esta condición;
+  // un plazo de envío o cotización general no describe el stock del producto.
+  const hasGoldenLeadTime = goldenDetail && primary('.gt-ficha__meta > .gt-ficha__pill.gt-ficha__pill--blue')
+    .toArray().some(element => /^disponible\s+en\s+24\s*[-–—]\s*48\s*(?:hs|horas)\.?$/i.test(
+      goldenVisibleText($, $(element)).replace(/\s+/g, ' ').trim(),
+    ));
   const stock = hasOutOfStockClass || hasOutOfStockText
     ? 'out-of-stock'
-    : hasBackorder
+    : hasBackorder || hasGoldenLeadTime
       ? 'unknown'
       : hasLowStockText
         ? 'low-stock'
@@ -413,6 +447,7 @@ export function parseWooProductDetail(
   if (product && sku && sku !== 'N/A') product.specs.SKU = sku;
   if (product && store.id === 'maxtecno' && storePrice) product.prices[0].priceCondition = 'special';
   if (product && goldenDetail) product.prices[0].priceCondition = 'special';
+  if (product && store.id === 'katech' && katechSpecialPriceMatches($, primaryPrices, price)) product.prices[0].priceCondition = 'special';
   return product;
 }
 
@@ -467,11 +502,12 @@ export async function fetchWooCommerceKnownOffer(storeId: string, rawUrl: string
   const html = await response.text();
   const $ = cheerio.load(html);
   if (foreignWooCurrency($, url.href, store.id)) throw new SourceHttpError('inconsistent-source');
-  // Una ficha GoldenTech presente pero rechazada conserva ese rechazo. El
+  // Una ficha propia presente pero rechazada conserva ese rechazo. El
   // JSON-LD puede seguir válido mientras el principal falta o contradice IDs.
   const goldenDetail = store.id === 'goldentechstore' && $('.gt-ficha').length > 0;
+  const katechDetail = store.id === 'katech' && $('body.single-product, main.product').length > 0;
   const product = parseWooProductDetail(html, url.href, store, category, slugFromScrapedUrl(url.href))
-    ?? (!goldenDetail && $('form.variations_form, table.variations').length === 0
+    ?? (!goldenDetail && !katechDetail && $('form.variations_form, table.variations').length === 0
       ? parseKnownProductDetail(html, url.href, store, category) : null);
   if (!product || host(product.prices[0].url) !== host(store.baseUrl)) return null;
   return product;

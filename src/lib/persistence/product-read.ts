@@ -26,10 +26,13 @@ import type { Product } from '@/lib/types';
 import { canRedirectToCanonicalProduct, mergeCanonicalDetailOffers } from './product-detail-offers';
 import { guardCategoryPage } from '@/lib/search/category-page-guard';
 import { guardIdentityPage } from '@/lib/search/identity-page-guard';
+import { getD1CatalogReader } from '@/lib/catalog/catalog-backend';
 
 export type { ProductSort } from '@/lib/persistence/product-read-types';
 
 export async function readProductByIdFromDatabase(id: string) {
+  const d1 = await getD1CatalogReader();
+  if (d1) return d1.readProductDetailById(id);
   const supabase = getServerSupabaseReadClient();
   if (!supabase || !id) return null;
 
@@ -48,13 +51,19 @@ export async function readProductByIdFromDatabase(id: string) {
   return mapDbProduct(data as DbProductRow);
 }
 
-export async function readCanonicalProductIdByKey(canonicalProductKey: string, product?: Pick<Product,'name'|'category'|'canonicalProductKey'|'prices'>) {
+export async function readCanonicalProductIdByKey(canonicalProductKey: string, product?: Pick<Product,'name'|'category'|'canonicalProductKey'|'prices'> & Partial<Pick<Product,'specs'|'id'>>) {
+  const d1 = await getD1CatalogReader();
+  if (d1) {
+    if (!product?.id) throw new Error('CATALOG_CANONICAL_PRODUCT_ID_REQUIRED');
+    const current = await d1.readProductDetailById(product.id);
+    return current ? d1.readCanonicalProductIdByKey(canonicalProductKey, current) : null;
+  }
   const supabase = getServerSupabaseReadClient();
   if (!supabase || !canonicalProductKey || !product) return null;
 
   const { data, error } = await supabase
     .from('products')
-    .select('id,name,category')
+    .select('id,name,category,specs')
     .eq('canonical_product_key', canonicalProductKey)
     .like('id', 'agrupado-%')
     .order('updated_at', { ascending: false })
@@ -75,6 +84,8 @@ const readProductRowByIdPerRequest = cache(readProductByIdFromDatabase);
 
 /** Resuelve el agrupado canónico desde la fila base, en paralelo con las ofertas relacionadas del detalle. */
 export const readCanonicalProductIdForProductId = cache(async (id: string): Promise<string | null> => {
+  const d1 = await getD1CatalogReader();
+  if (d1) return d1.readCanonicalProductIdForProductId(id);
   const product = await readProductRowByIdPerRequest(id);
   if (!product?.canonicalProductKey) return null;
   return readCanonicalProductIdByKey(product.canonicalProductKey, product);
@@ -82,6 +93,8 @@ export const readCanonicalProductIdForProductId = cache(async (id: string): Prom
 
 /** La ficha canónica incorpora altas recientes con la misma identidad exacta. */
 export const readProductDetailByIdFromDatabase = cache(async (id: string): Promise<Product | null> => {
+  const d1 = await getD1CatalogReader();
+  if (d1) return d1.readProductDetailById(id);
   const product=await readProductRowByIdPerRequest(id);
   if (!product?.canonicalProductKey) return product;
   const supabase=getServerSupabaseReadClient();
@@ -96,6 +109,8 @@ export const readProductDetailByIdFromDatabase = cache(async (id: string): Promi
 });
 
 export async function readProductsFromDatabase(params: ReadProductsParams) {
+  const sql = await getD1CatalogReader();
+  if (sql) return sql.readProducts(params);
   const supabase = getServerSupabaseReadClient();
   if (!supabase) return [];
 
@@ -169,6 +184,14 @@ export async function readProductsPageFromDatabase(
   try {
     const pageSize = Math.min(48, Math.max(1, Math.trunc(params.pageSize) || 12));
     const requestedPage = Math.max(1, Math.trunc(params.page) || 1);
+    const d1 = await getD1CatalogReader();
+    if (d1) {
+      const query = params.query?.trim() ?? '';
+      return await d1.readProductsPage({ ...params, query: prepareCatalogQuery(query,
+        params.category ?? inferHardwareCategoryFromName(query)),
+        category: params.category ?? inferHardwareCategoryFromName(query), page: requestedPage, pageSize,
+        storeIds: new Set([...params.storeIds ?? []].map(id => id.trim().toLowerCase()).filter(Boolean)) });
+    }
     const supabase = onDiagnostics
       ? createServerSupabaseReadClientForFetch(timedCatalogFetch(diagnostic))
       : getServerSupabaseReadClient();
@@ -238,6 +261,8 @@ export async function readGuideCatalogCandidatesFromDatabase(
   query?: string,
   constraints?: GuideCandidateConstraints,
 ): Promise<Product[]> {
+  const sql = await getD1CatalogReader();
+  if (sql) return sql.readGuideCandidates(category, limit, query, constraints);
   const supabase = getServerSupabaseReadClient();
   if (!supabase) throw new Error('Guide catalog database unavailable');
 
@@ -274,6 +299,8 @@ export async function readGuideCatalogCandidatesFromDatabase(
 }
 
 export async function readPopularProductsFromDatabase(limit: number = 8): Promise<Product[]> {
+  const sql = await getD1CatalogReader();
+  if (sql) return (await sql.readProducts({ sortBy: 'newest', limit })).filter(product => product.prices.length >= 2);
   const supabase = getServerSupabaseReadClient();
   if (!supabase) return [];
 

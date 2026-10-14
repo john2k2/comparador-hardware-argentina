@@ -5,7 +5,7 @@ import { ProductGrid } from '@/components/functional';
 import { hydrateProducts } from '@/lib/product-serialization';
 import type { SearchApiResponse } from '@/lib/search/search-api';
 import { useProductLoader } from '@/lib/search/search-hooks';
-import { buildApiSearchKey, parseSearchState } from '@/lib/search/search-state';
+import { buildApiSearchKey, parseSearchUrlState } from '@/lib/search/search-state';
 
 type Props = {
   searchRoute: string;
@@ -22,7 +22,7 @@ export function SearchEmptyState(props: Props) {
 }
 
 function SearchEmptyStateContent({ searchRoute, hasActiveFilters, onClearFilters, onRetry, onShowReferences, onRetryReferences }: Props & { onRetryReferences: () => void }) {
-  const state = useMemo(() => parseSearchState(Object.fromEntries(new URLSearchParams(searchRoute.split('?')[1]))), [searchRoute]);
+  const state = useMemo(() => parseSearchUrlState(searchRoute.split('?')[1]), [searchRoute]);
   const hasPriceRange = state.minPrice !== undefined || state.maxPrice !== undefined;
   const canShowReferences = !state.includeUnavailable && !hasPriceRange;
   const canReadReferences = Boolean(state.query && canShowReferences);

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { sanitizeProduct } from '@/lib/product-sanitizer';
 import type { Product } from '@/lib/types';
+import { proveManufacturerRamAttributes } from '@/lib/quality/offer-attribute-proof';
+import { normalizeIdentityText } from '@/lib/product-identity';
+import { getAvailableComparableStorePrices } from '@/lib/price-utils';
 
 function buildProduct(overrides: Partial<Product> = {}): Product {
   return {
@@ -42,6 +45,27 @@ function buildProduct(overrides: Partial<Product> = {}): Product {
 }
 
 describe('product-sanitizer', () => {
+  it('la limpieza visual no resucita un proof RAM inválido ni pierde una aprobación con SKU actual', () => {
+    const name = 'Memoria Corsair DDR4 16GB 3200MHz Vengeance RGB RS Black CL16', sku = 'CMG16GX4M1E3200C16';
+    const url = 'https://compragamer.com/producto/RAM_15558', listingRef = 'compragamer:id:15558';
+    const subject = { title: name, sku, specs: { SKU: sku } }, sourceIdentity = { title: name, storeSku: sku, listingRef };
+    const product = buildProduct({ name, category: 'memoria-ram', specs: { SKU: sku } });
+    product.prices = [{ ...product.prices[0], storeId: 'compragamer', url, lastUpdated: new Date(), sourceIdentity,
+      identityReview: { version: 1, status: 'consistent', reason: 'manufacturer-ram', model: null, confidence: null,
+        reviewedAt: new Date().toISOString(), subject: { name: normalizeIdentityText(name), category: 'memoria-ram', url },
+        sourceIdentity, proof: proveManufacturerRamAttributes(subject, subject, { storeId: 'compragamer', url, listingRef })! } }];
+    const valid = sanitizeProduct(product);
+    expect(getAvailableComparableStorePrices(valid.prices, valid)).toHaveLength(1);
+    for (const changed of [{ ...product, specs: {} }, { ...product, specs: { SKU: 'otro', ' SKU ': sku } },
+      { ...product, name: name.replace('RGB RS', 'RGB*RS') }, { ...product, specs: { SKU: sku, kit: '2x8GB' } }]) {
+      const invalid = sanitizeProduct(changed);
+      expect(getAvailableComparableStorePrices(invalid.prices, invalid)).toEqual([]);
+      expect(invalid.lowestPrice).toBe(0);
+      expect(invalid.prices[0].identityReview?.status).toBe('needs-review');
+    }
+    expect(product.prices[0].identityReview?.status).toBe('consistent');
+    expect(product.specs).toEqual({ SKU: sku });
+  });
   it('conserva centavos observados para que la oferta y el mínimo representen el mismo importe', () => {
     const product = buildProduct();
     product.prices = [{ ...product.prices[0], price: 90_670.21 }];

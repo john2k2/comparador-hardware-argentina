@@ -6,6 +6,7 @@ import { buildRateLimitHeaders, checkRateLimit, getRequestIp } from '@/lib/serve
 import { recordEndpointRequestEvent, runObservedStoreScrape } from '@/lib/telemetry/operational-metrics';
 import { hasStaleProducts } from '@/lib/persistence/product-staleness';
 import { readProductsPageFromDatabase } from '@/lib/persistence/product-read';
+import { isD1CatalogEnabled } from '@/lib/catalog/catalog-backend';
 import { sortProducts } from '@/lib/persistence/product-read-grouping';
 import { sortProductsBySearchRelevance } from '@/lib/search/search-ranking';
 import { createObservedProductsSourceRunner } from '@/lib/products/products-handler-shared';
@@ -239,7 +240,7 @@ export async function GET(request: NextRequest) {
   const hasSearchIntent = Boolean(query || hasFilterIntent);
   const stableRuntimeMode = isStableRuntimeMode();
   // La caché se lee junto al rate limit, pero sólo se usa después de admitir la solicitud.
-  const cachedRead = hasSearchIntent && !stableRuntimeMode && !bypassDb && !isRefreshRequest
+  const cachedRead = hasSearchIntent && !isD1CatalogEnabled() && !stableRuntimeMode && !bypassDb && !isRefreshRequest
     ? measure('cache_read', () => getCachedSearchResponse(cacheKey, includeUnavailable, { minPrice, maxPrice, sortBy })).catch(() => {
       logger.warn('Search catalog cache read skipped');
       return null;
@@ -264,6 +265,22 @@ export async function GET(request: NextRequest) {
   if (!hasSearchIntent) {
     const payload = emptySearchResponse(page);
     return respond(payload, undefined, { success: true, resultCount: payload.products.length, note: 'EMPTY_QUERY' });
+  }
+
+  if (isD1CatalogEnabled()) {
+    try {
+      const result = await readCatalogPage({ query: query || undefined, category: effectiveCategory,
+        minPrice, maxPrice, storeIds: selectedStoreIds, sortBy, page, pageSize: SEARCH_PAGE_SIZE,
+        onlyCurrentOffers: !includeUnavailable });
+      return respond(catalogPageResponse(result, { minPrice, maxPrice, sortBy }),
+        { headers: { 'X-Search-Cache': 'D1', 'Cache-Control': 'no-store' } },
+        { success: true, resultCount: result.products.length, note: 'D1_CATALOG' });
+    } catch (error) {
+      logger.warn('Certified D1 catalog read unavailable', { error });
+      return respond({ error: 'No pudimos consultar el catálogo. Intentá nuevamente.' },
+        { status: 503, headers: { 'Cache-Control': 'no-store' } },
+        { success: false, resultCount: 0, note: 'D1_CATALOG_UNAVAILABLE' });
+    }
   }
 
   if (stableRuntimeMode) {

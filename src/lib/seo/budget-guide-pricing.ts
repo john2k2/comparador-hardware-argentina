@@ -1,5 +1,5 @@
 import { isBundleLikeTitle, isCompleteComputerTitle, parseCpuModelSignature, parseGpuChipSignature } from '@/lib/product-identity';
-import { computeComparableStorePriceStats } from '@/lib/price-utils';
+import { computeComparableStorePriceStats, computeComparablePriceStats, pickBestStorePrices } from '@/lib/price-utils';
 import type { HardwareCategory, Product, ProductPrice } from '@/lib/types';
 import { buildIdentityEvidence, needsIdentityReview, readIdentityReview } from '@/lib/quality/offer-identity';
 import { listingReference } from '@/lib/scrapers/listing-reference';
@@ -389,7 +389,7 @@ function buyableOffers(product: Product, spec?: GuideSlotSpec): ProductPrice[] {
   ));
   if (inStock.length === 0) return [];
 
-  const stats = computeComparableStorePriceStats(inStock);
+  const stats = computeComparableStorePriceStats(inStock, product);
   return stats.comparablePrices
     .filter((offer) => (
       offer.price > 0
@@ -431,7 +431,11 @@ function collectGuideReferenceOffers(
         return url.protocol === 'https:' && !url.username && !url.password;
       } catch { return false; }
     });
-    return computeComparableStorePriceStats(eligible).comparablePrices.map((offer) => ({
+    // Las referencias de refresh no son ofertas de compra: conservan destinos
+    // reintentables sin convertir el dictamen pendiente en una aprobación.
+    const stats = requireBuyableStock ? computeComparableStorePriceStats(eligible, product)
+      : computeComparablePriceStats(pickBestStorePrices(eligible));
+    return stats.comparablePrices.map((offer) => ({
         productId: product.id,
         productName: product.name,
         storeId: offer.storeId,

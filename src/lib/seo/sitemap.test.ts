@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { getServerSupabaseReadClientMock, rpcMock, abortSignalMock } = vi.hoisted(() => ({
+const { getServerSupabaseReadClientMock, rpcMock, abortSignalMock, sqlEnabled, sqlReader, sqlCount, sqlPage } = vi.hoisted(() => ({
   getServerSupabaseReadClientMock: vi.fn(),
   rpcMock: vi.fn(),
   abortSignalMock: vi.fn(),
+  sqlEnabled: vi.fn(() => false), sqlReader: vi.fn(), sqlCount: vi.fn(), sqlPage: vi.fn(),
 }));
+vi.mock('@/lib/catalog/catalog-backend', () => ({ isD1CatalogEnabled: sqlEnabled, getD1CatalogReader: sqlReader }));
 
 vi.mock('@/lib/server/supabase-server', () => ({
   getServerSupabaseReadClient: getServerSupabaseReadClientMock,
@@ -15,6 +17,7 @@ import { countIndexedProducts, readIndexedProductCount, readProductSitemapPage }
 describe('product sitemap reads', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sqlEnabled.mockReturnValue(false);
     getServerSupabaseReadClientMock.mockReturnValue({ rpc: rpcMock });
     rpcMock.mockImplementation(() => ({ abortSignal: abortSignalMock }));
   });
@@ -64,7 +67,7 @@ describe('product sitemap reads', () => {
 
 
 describe('sitemap no confunde fallos con ausencia de productos', () => {
-  beforeEach(() => vi.resetAllMocks());
+  beforeEach(() => { vi.resetAllMocks(); sqlEnabled.mockReturnValue(false); });
   it.each([null, '', undefined, {}, -1, 0.5])('rechaza un conteo inválido %j', async (data) => {
     vi.resetModules();
     const reader = await import('./sitemap');
@@ -94,6 +97,40 @@ describe('sitemap no confunde fallos con ausencia de productos', () => {
       expect(await readProductSitemapPage(0)).toEqual({ status: 'unavailable' });
     }
     abortSignalMock.mockRejectedValueOnce(new Error('offline'));
+    expect(await readProductSitemapPage(0)).toEqual({ status: 'unavailable' });
+  });
+});
+
+describe('sitemap SQL seleccionado', () => {
+  beforeEach(() => {
+    vi.clearAllMocks(); sqlEnabled.mockReturnValue(true);
+    sqlReader.mockResolvedValue({ readIndexableCount: sqlCount, readIndexablePage: sqlPage });
+  });
+  it('lee conteo y paginación SQL, sin cliente legado', async () => {
+    sqlCount.mockResolvedValue(5001);
+    const rows = [{ id: 'agrupado-cpu-1', updated_at: null, canonical_product_key: 'cpu-1' }];
+    sqlPage.mockResolvedValue(rows);
+    expect(await readIndexedProductCount()).toEqual({ count: 5001, source: 'database' });
+    expect(await readProductSitemapPage(2, 500)).toEqual({ status: 'available', rows });
+    expect(sqlPage).toHaveBeenCalledWith(2, 500);
+    expect(getServerSupabaseReadClientMock).not.toHaveBeenCalled();
+  });
+  it('cero y página vacía confirmados son disponibles; fallo SQL no usa memoria de otro backend', async () => {
+    sqlCount.mockResolvedValue(0); sqlPage.mockResolvedValue([]);
+    expect(await readIndexedProductCount()).toEqual({ count: 0, source: 'database' });
+    expect(await readProductSitemapPage(0)).toEqual({ status: 'available', rows: [] });
+    sqlCount.mockRejectedValue(new Error('generation changed')); sqlPage.mockRejectedValue(new Error('unavailable'));
+    expect(await readIndexedProductCount()).toEqual({ count: null, source: 'unavailable' });
+    expect(await readProductSitemapPage(0)).toEqual({ status: 'unavailable' });
+    expect(getServerSupabaseReadClientMock).not.toHaveBeenCalled();
+  });
+  it('rechaza binding ausente y respuestas inválidas', async () => {
+    sqlReader.mockResolvedValue(null);
+    expect(await readIndexedProductCount()).toEqual({ count: null, source: 'unavailable' });
+    expect(await readProductSitemapPage(0)).toEqual({ status: 'unavailable' });
+    sqlReader.mockResolvedValue({ readIndexableCount: sqlCount, readIndexablePage: sqlPage });
+    sqlCount.mockResolvedValue(null); sqlPage.mockResolvedValue([{ id: 'individual' }]);
+    expect(await readIndexedProductCount()).toEqual({ count: null, source: 'unavailable' });
     expect(await readProductSitemapPage(0)).toEqual({ status: 'unavailable' });
   });
 });
