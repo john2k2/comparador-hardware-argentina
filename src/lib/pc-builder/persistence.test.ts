@@ -42,6 +42,14 @@ function draftWithCpu(overrides: Partial<BuildDraft> = {}): BuildDraft {
 }
 
 describe('build persistence', () => {
+  it('conserva propósito al compartir/restaurar y admite borradores anteriores sin propósito', () => {
+    const draft = { ...draftWithCpu(), usage: 'general' as const };
+    expect(decodeBuild(encodeBuild(draft))).toEqual(draft);
+    expect(exportBuildText(draft, [])).toContain('Uso: Uso general');
+    const legacy = { ...draftWithCpu() }; delete legacy.usage;
+    expect(parseBuildDraft(legacy)).toEqual(legacy);
+    expect(parseBuildDraft({ ...draft, usage: 'workstation' })).toBeNull();
+  });
   it('round-trips a valid draft with Unicode identifiers and URLs', () => {
     const draft = draftWithCpu();
 

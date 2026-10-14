@@ -5,10 +5,11 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Product } from '@/lib/types';
 import { formatPriceARS } from '@/lib/price-utils';
 import { parseBuilderBudgetPesos, BUILDER_BUDGET_MIN, BUILDER_BUDGET_MAX } from '@/lib/seo/budget-query';
-import { BUILD_SLOTS, SLOT_LABELS, emptyBuild, type BuildDraft, type BuildSlot } from '@/lib/pc-builder/types';
+import { BUILD_SLOTS, SLOT_LABELS, USAGE_LABELS, emptyBuild, type BuildDraft, type BuildSlot, type BuildUsage } from '@/lib/pc-builder/types';
 import { candidatesForSlot, describeBuildSuggestion, eligibleOffers, quoteBuild, selectProduct, suggestBuild } from '@/lib/pc-builder/model';
 import { BUILD_STORAGE_KEY, createBuildShareUrl, createWhatsAppShareUrl, decodeBuild, exportBuildText, parseBuildDraft, trimBuildShipping } from '@/lib/pc-builder/persistence';
-import { fetchBuilderProducts, mergeCatalog, mergeRetriedCatalog } from '@/lib/pc-builder/client';
+import { fetchBuilderProducts, fetchBuilderCatalogSelection, mergeCatalog, mergeRetriedCatalog } from '@/lib/pc-builder/client';
+import type { CatalogSelectionCoverage } from '@/lib/persistence/recent-offer-products';
 import { trackBudgetBuilder, trackPcBuilderAction, trackStoreClick, type PcBuilderAction } from '@/lib/analytics/ga4';
 import { needsIdentityReview } from '@/lib/quality/offer-identity';
 import { isOfferFresh, OFFER_FRESH_MS } from '@/lib/price-freshness';
@@ -32,6 +33,7 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
   const [loading, setLoading] = useState(true);
   const [failedSlots, setFailedSlots] = useState<BuildSlot[]>([]);
   const [catalogErrors, setCatalogErrors] = useState<Partial<Record<BuildSlot, string>>>({});
+  const [catalogCoverage, setCatalogCoverage] = useState<Partial<Record<BuildSlot, CatalogSelectionCoverage | null>>>({});
   const [notice, setNotice] = useState(invalidBudget ? `Usá un presupuesto entre ${formatPriceARS(BUILDER_BUDGET_MIN)} y ${formatPriceARS(BUILDER_BUDGET_MAX)}.` : '');
   const [saved, setSaved] = useState<BuildDraft | null>(null);
   const [queries, setQueries] = useState<Partial<Record<BuildSlot, string>>>({});
@@ -83,7 +85,8 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
       let collected: Product[] = []; const failures: string[] = []; const catalogFailures: BuildSlot[] = []; const loadErrors: Partial<Record<BuildSlot, string>> = {};
       for (let index = 0; index < BUILD_SLOTS.length; index += 2) {
         await Promise.all(BUILD_SLOTS.slice(index, index + 2).map(async (slot) => {
-          try { const incoming = await fetchBuilderProducts({ slot }, controller.signal); collected = mergeCatalog(collected, incoming); }
+          try { const incoming = await fetchBuilderCatalogSelection({ slot }, controller.signal); collected = mergeCatalog(collected, incoming.products);
+            if (!controller.signal.aborted) setCatalogCoverage(current => ({ ...current, [slot]: incoming.coverage })); }
           catch (error) {
             if (!controller.signal.aborted) {
               catalogFailures.push(slot);
@@ -144,7 +147,8 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
     let recovered: Product[] = [];
     for (let index = 0; index < failedSlots.length; index += 2) {
       await Promise.all(failedSlots.slice(index, index + 2).map(async (slot) => {
-        try { recovered = mergeCatalog(recovered, await fetchBuilderProducts({ slot })); }
+        try { const incoming = await fetchBuilderCatalogSelection({ slot }); recovered = mergeCatalog(recovered, incoming.products);
+          setCatalogCoverage(current => ({ ...current, [slot]: incoming.coverage })); }
         catch (error) { remaining.push(slot); retryErrors[slot] = error instanceof Error ? error.message : 'No se pudo consultar el catálogo.'; }
       }));
     }
@@ -182,12 +186,12 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
   }
   return <main className="container mx-auto px-4 py-8 max-w-7xl" data-testid="pc-builder">
     <nav className="font-body text-sm mb-6"><Link href="/guia" className="underline">Guías</Link> / Armá tu PC</nav>
-    <header className="mb-6 max-w-3xl"><h1 className="font-pixel text-base md:text-xl text-primary leading-relaxed">Armá tu PC gamer con un presupuesto</h1>
+    <header className="mb-6 max-w-3xl"><h1 className="font-pixel text-base md:text-xl text-primary leading-relaxed">Armá tu PC con un presupuesto</h1>
       <p className="font-body text-base mt-3">Elegí cada pieza, compará tiendas y llevate un presupuesto con las comprobaciones pendientes a la vista.</p></header>
     <form className="border-4 border-border bg-card p-4 md:p-5 mb-6 flex flex-wrap gap-4 items-end" onSubmit={(event) => {
       event.preventDefault(); const budget = parseBuilderBudgetPesos(budgetInput);
       if (!budget) { setNotice(`Usá un presupuesto entre ${formatPriceARS(BUILDER_BUDGET_MIN)} y ${formatPriceARS(BUILDER_BUDGET_MAX)}.`); return; }
-      const suggestion = suggestBuild(products, budget);
+      const suggestion = suggestBuild(products, budget, draft.usage ?? 'gaming');
       const result = describeBuildSuggestion(suggestion, products);
       if (result.status === 'empty') {
         setNotice(`${result.message}${componentCount ? ' Conservamos las piezas que ya elegiste.' : ''}`);
@@ -199,9 +203,24 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
       <label className="flex-1 min-w-48 font-body text-sm">Presupuesto en pesos argentinos<input className={`${control} mt-1`} name="pesos" inputMode="numeric" value={budgetInput} onChange={(event) => {
         setBudgetInput(event.target.value); const budget = parseBuilderBudgetPesos(event.target.value); if (budget) setDraft((current) => ({ ...current, budget }));
       }} /></label>
+      <label className="flex-1 min-w-48 font-body text-sm">Uso principal<select className={`${control} mt-1`} name="usage" disabled={loading} value={draft.usage ?? 'gaming'} onChange={event => {
+        const usage = event.target.value as BuildUsage;
+        setDraft(current => ({ ...current, usage })); setShareUrl('');
+        setNotice('Uso cambiado. Pulsá Armar PC para preparar otra sugerencia; conservamos las piezas que elegiste.');
+      }}><option value="gaming">{USAGE_LABELS.gaming} — video y plataforma</option><option value="general">{USAGE_LABELS.general} — conservar margen</option></select></label>
       <button className="pixel-button text-xs" disabled={loading} type="submit">{loading ? 'Cargando catálogo…' : 'Armar PC'}</button>
-      <button className={button} type="button" onClick={() => { const empty = emptyBuild(draft.budget); setDraft(empty); setShareUrl(''); trackAction('reset', {}, empty); }}>Empezar de cero</button>
+      <button className={button} type="button" onClick={() => { const empty = emptyBuild(draft.budget, draft.usage ?? 'gaming'); setDraft(empty); setShareUrl(''); trackAction('reset', {}, empty); }}>Empezar de cero</button>
     </form>
+    <details className="border-2 border-border bg-card p-3 mb-5 font-body text-sm">
+      <summary>Alcance de la selección automática: muestra acotada del catálogo</summary>
+      <p className="mt-2">El máximo es un límite, no una meta de gasto. Gaming prioriza video y plataforma; uso general prioriza gráficos integrados y ahorro. Podés elegir otros componentes manualmente.</p>
+      <p className="mt-2">Las ofertas usadas para sugerir requieren observación de hasta 3 horas. Esta lectura no acredita cobertura de todas las tiendas o modelos.</p>
+      <ul className="mt-2 space-y-1">{BUILD_SLOTS.map(slot => { const coverage = catalogCoverage[slot]; return <li key={slot}>
+        <strong>{SLOT_LABELS[slot]}: </strong>{coverage
+          ? `${coverage.receivedProducts} productos recibidos; ${coverage.eligibleProducts} con oferta elegible reciente.${coverage.receivedOffers === null ? '' : ` ${coverage.receivedOffers} ofertas candidatas recibidas (máximo ${coverage.offerLimit}).`} ${coverage.truncated === true ? 'Recorte de productos confirmado.' : coverage.truncated === null ? 'No sabemos si quedaron más candidatos fuera de esta lectura.' : 'Sin recorte detectado en esta lectura.'}`
+          : loading ? 'Lectura pendiente.' : 'Cobertura no informada.'}
+      </li>; })}</ul>
+    </details>
     {failedSlots.length > 0 && <div role="alert" className="border-2 border-border bg-card p-3 mb-5 font-body text-sm">
       <p>No se pudieron cargar estos catálogos. Las piezas cargadas siguen disponibles.</p>
       <ul className="mt-2 space-y-1">{failedSlots.map((slot) => <li key={slot}><strong>{SLOT_LABELS[slot]}: </strong>{catalogErrors[slot]}</li>)}</ul>

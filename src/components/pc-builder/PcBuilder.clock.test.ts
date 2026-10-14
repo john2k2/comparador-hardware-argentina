@@ -34,7 +34,10 @@ beforeAll(async () => {
       window.fetch = async url => {
         window.requests.push(url);
         const slot = new URL(url, 'https://fixture.invalid').searchParams.get('slot');
-        return new Response(JSON.stringify({products:products.filter(p => p.id === slot)}));
+        const found = products.filter(p => p.id === slot);
+        return new Response(JSON.stringify({products:found,coverage:{source:'supabase',receivedOffers:160,
+          receivedProducts:found.length,eligibleProducts:found.length,offerLimit:160,productLimit:64,
+          truncated:null,observedAt:'2026-10-07T14:59:59Z'}}));
       };
       window.clockListeners = { focus:new Set(), pageshow:new Set(), visibilitychange:new Set() };
       for (const [target, events] of [[window,['focus','pageshow']],[document,['visibilitychange']]]) {
@@ -101,6 +104,21 @@ async function requestCount(page: Page) {
 }
 
 for (const width of [1440, 390]) describe(`builder offer clock ${width}px`, () => {
+  it('expone uso claro y alcance desconocido sin editar ofertas al cambiar de propósito', async () => {
+    const page = await open(width);
+    try {
+      expect(await page.getByLabel('Uso principal').inputValue()).toBe('gaming');
+      const reads = await requestCount(page);
+      await page.getByLabel('Uso principal').selectOption('general');
+      expect(await page.getByLabel('Elegir Procesador').inputValue()).toBe('cpu');
+      expect(await page.getByLabel('Elegir Memoria RAM').inputValue()).toBe('ram');
+      expect(await requestCount(page)).toBe(reads);
+      await page.getByText('Alcance de la selección automática:', { exact: false }).click();
+      expect(await page.getByText('No sabemos si quedaron más candidatos fuera de esta lectura.', { exact: false }).count()).toBe(8);
+      await page.getByRole('button', { name: 'Descargar presupuesto' }).click();
+      await expect.poll(() => page.evaluate(() => (window as unknown as ScreenFixture).exportText)).toContain('Uso: Uso general');
+    } finally { await page.close(); }
+  });
   it('expires at 3h +1ms without editing selections, preserves dates and exports pending prices', async () => {
     const page = await open(width);
     try {

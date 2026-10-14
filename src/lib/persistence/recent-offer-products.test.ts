@@ -2,9 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DbProductRow } from './product-read-types';
 
 vi.mock('server-only', () => ({}));
-const runtime = vi.hoisted(() => ({ client: vi.fn() }));
+const runtime = vi.hoisted(() => ({ client: vi.fn(), reader: vi.fn() }));
 vi.mock('@/lib/server/supabase-server', () => ({ getServerSupabaseReadClient: runtime.client }));
-import { readRecentOfferProducts } from './recent-offer-products';
+vi.mock('@/lib/catalog/catalog-backend', () => ({ getD1CatalogReader: runtime.reader }));
+import { readRecentOfferProducts, readRecentOfferProductSelection } from './recent-offer-products';
 import { readBuilderCatalog } from '@/lib/pc-builder/catalog';
 
 const now = '2026-10-09T20:00:00.000Z';
@@ -20,7 +21,7 @@ function row(id = 'cg-17143'): DbProductRow {
       installment_amount: null, last_updated: '2026-10-09T19:00:00Z' }],
   };
 }
-function database(rows: DbProductRow[], options: { seedError?: boolean; productError?: boolean; invalid?: boolean } = {}) {
+function database(rows: DbProductRow[], options: { seedError?: boolean; productError?: boolean; invalid?: boolean; seedRows?: DbProductRow[] } = {}) {
   function chain(data: unknown, error: unknown) {
     const value = {
       select: vi.fn(() => value), in: vi.fn(() => value), gt: vi.fn(() => value),
@@ -30,17 +31,48 @@ function database(rows: DbProductRow[], options: { seedError?: boolean; productE
     };
     return value;
   }
-  const seeds = chain(options.invalid ? null : rows.map(r => ({ product_id: r.id, product: { id: r.id, name: r.name, category: r.category } })), options.seedError ? { code: '57014' } : null);
+  const seeds = chain(options.invalid ? null : (options.seedRows ?? rows).map(r => ({ product_id: r.id, product: { id: r.id, name: r.name, category: r.category } })), options.seedError ? { code: '57014' } : null);
   const products = chain(rows, options.productError ? { code: '57014' } : null);
   const from = vi.fn(table => table === 'product_prices' ? seeds : products);
   runtime.client.mockReturnValue({ from });
   return { seeds, products, from };
 }
 
-beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(now); runtime.client.mockReset(); });
+beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(now); runtime.client.mockReset(); runtime.reader.mockReset().mockResolvedValue(null); });
 afterEach(() => vi.useRealTimers());
 
 describe('candidatas desde observaciones recientes', () => {
+  it('lector de catálogo sin contadores de seeds conserva cobertura desconocida y fechas', async () => {
+    database([row()]); const products = await readRecentOfferProducts();
+    const readRecentProducts = vi.fn().mockResolvedValue(products); runtime.reader.mockResolvedValue({ readRecentProducts });
+    runtime.client.mockClear();
+    const result = await readRecentOfferProductSelection({ category: 'procesadores' });
+    expect(result.products).toEqual(products);
+    expect(result.coverage).toMatchObject({ source: 'catalog-reader', receivedOffers: null,
+      receivedProducts: 1, eligibleProducts: 1, offerLimit: null, productLimit: null, truncated: null });
+    expect(runtime.client).not.toHaveBeenCalled();
+  });
+  it('expone recibidas y elegibles por separado sin inventar total global', async () => {
+    const valid = row('valid'), unknown = row('unknown'); unknown.product_prices![0].stock = 'unknown';
+    database([valid, unknown]);
+    const result = await readRecentOfferProductSelection({ category: 'procesadores' });
+    expect(result.coverage).toEqual({ source: 'supabase', receivedOffers: 2, receivedProducts: 2,
+      eligibleProducts: 1, offerLimit: 160, productLimit: 64, truncated: false, observedAt: now });
+    expect(result.products.map(product => product.id)).toEqual(['valid']);
+  });
+  it('alcanzar160 ofertas no acredita que hubo truncamiento ni cobertura completa', async () => {
+    database([row()], { seedRows: Array.from({ length: 160 }, () => row()) });
+    const result = await readRecentOfferProductSelection();
+    expect(result.coverage).toMatchObject({ receivedOffers: 160, receivedProducts: 1, eligibleProducts: 1, truncated: null });
+  });
+  it('65 identidades dentro de la lectura confirman recorte a64 sin ampliar consultas', async () => {
+    const seeds = Array.from({ length: 65 }, (_, index) => row(`cpu-${index}`));
+    const db = database(seeds.slice(0, 64), { seedRows: seeds });
+    const result = await readRecentOfferProductSelection();
+    expect(result.products).toHaveLength(64);
+    expect(result.coverage).toMatchObject({ receivedOffers: 65, receivedProducts: 64, eligibleProducts: 64, truncated: true });
+    expect(db.seeds.limit).toHaveBeenCalledWith(160); expect(db.products.limit).toHaveBeenCalledWith(64);
+  });
   it('recupera una publicación sin agrupado y de ficha antigua, sin renovar sus fechas', async () => {
     const source = row();
     const original = structuredClone(source);

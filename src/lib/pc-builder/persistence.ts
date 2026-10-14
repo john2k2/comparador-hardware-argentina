@@ -1,7 +1,7 @@
 import type { Product } from '@/lib/types';
 import { formatPriceARS } from '@/lib/price-utils';
 import { BUILDER_BUDGET_MAX, BUILDER_BUDGET_MIN } from '@/lib/seo/budget-query';
-import { BUILD_SLOTS, SLOT_LABELS, type BuildDraft, type BuildSlot } from './types';
+import { BUILD_SLOTS, SLOT_LABELS, USAGE_LABELS, type BuildDraft, type BuildSlot } from './types';
 import { quoteBuild } from './model';
 
 export const BUILD_STORAGE_KEY = 'comparador:pc-build:v1';
@@ -13,7 +13,8 @@ const text = (value: unknown, max: number): value is string => typeof value === 
 const record = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 export function parseBuildDraft(input: unknown): BuildDraft | null {
   if (!record(input) || input.version !== 1 || !Number.isInteger(input.budget) || Number(input.budget) < BUILDER_BUDGET_MIN || Number(input.budget) > BUILDER_BUDGET_MAX
-    || !['cash', 'installments'].includes(String(input.payment)) || !record(input.selections) || !record(input.shipping)) return null;
+    || !['cash', 'installments'].includes(String(input.payment)) || !record(input.selections) || !record(input.shipping)
+    || input.usage !== undefined && !['gaming', 'general'].includes(String(input.usage))) return null;
   const selections: BuildDraft['selections'] = {};
   for (const [key, value] of Object.entries(input.selections)) {
     if (!BUILD_SLOTS.includes(key as BuildSlot) || !record(value) || !text(value.productId, 240) || !text(value.storeId, 80) || !text(value.url, 2048)
@@ -27,7 +28,7 @@ export function parseBuildDraft(input: unknown): BuildDraft | null {
     if (!text(key, 80) || ['__proto__', 'constructor', 'prototype'].includes(key) || typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 2_000_000) return null;
     shipping[key] = Math.round(value * 100) / 100;
   }
-  return { version: 1, budget: Number(input.budget), payment: input.payment as BuildDraft['payment'], selections, shipping };
+  return { version: 1, budget: Number(input.budget), ...(input.usage === undefined ? {} : { usage: input.usage as BuildDraft['usage'] }), payment: input.payment as BuildDraft['payment'], selections, shipping };
 }
 export function encodeBuild(draft: BuildDraft): string {
   return btoa(Array.from(new TextEncoder().encode(JSON.stringify(trimBuildShipping(draft))), (byte) => String.fromCharCode(byte)).join('')).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -52,6 +53,7 @@ export function exportBuildText(draft: BuildDraft, products: Product[], now = ne
   const quote = quoteBuild(draft, products, now.getTime());
   return [
     'PRESUPUESTO DE PC — Comparador Hardware Argentina',
+    `Uso: ${USAGE_LABELS[draft.usage ?? 'gaming']}`,
     `Preparado: ${now.toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })}`,
     `Estado: ${quote.complete && !quote.unquoted ? 'selección completa; confirmar condiciones en cada tienda' : 'armado incompleto / ofertas por confirmar'}`,
     `Modalidad: ${draft.payment === 'cash' ? 'precio de contado publicado' : 'total de cuotas informadas por cada comercio'}`,

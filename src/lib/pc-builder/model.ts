@@ -4,8 +4,9 @@ import { isBundleLikeTitle, isCompleteComputerTitle } from '@/lib/product-identi
 import { getComparableStorePrices } from '@/lib/price-utils';
 import { isOfferFresh } from '@/lib/price-freshness';
 import { buildBudgetFromCatalog } from '@/lib/seo/budget-builder';
+import { inferSsdCapacityGb } from '@/lib/seo/budget-build-compat';
 import { checkBuildCompatibility, hasIntegratedGraphics, includesCpuCooler, spec } from './compatibility';
-import { BUILD_SLOTS, SLOT_CATEGORIES, SLOT_LABELS, emptyBuild, type BuildDraft, type BuildLine, type BuildQuote, type BuildSelection, type BuildSlot } from './types';
+import { BUILD_SLOTS, SLOT_CATEGORIES, SLOT_LABELS, emptyBuild, type BuildDraft, type BuildLine, type BuildQuote, type BuildSelection, type BuildSlot, type BuildUsage } from './types';
 
 export function eligibleOffers(product: Product): ProductPrice[] {
   const eligible = product.prices.filter((offer) => {
@@ -50,28 +51,57 @@ export function candidatesForSlot(products: Product[], slot: BuildSlot): Product
 export function selectProduct(product: Product, offer = eligibleOffers(product)[0]): BuildSelection | undefined {
   return offer ? { productId: product.id, storeId: offer.storeId, url: offer.url, quantity: 1 } : undefined;
 }
-export function suggestBuild(products: Product[], budget: number): BuildDraft {
+export function suggestBuild(products: Product[], budget: number, usage: BuildUsage = 'gaming'): BuildDraft {
   // El selector editorial sólo puede usar ofertas recientes; no le pasamos
   // referencias ni ofertas rechazadas por las reglas del armador.
-  const eligibleProducts = BUILD_SLOTS.flatMap((slot) => candidatesForSlot(products, slot))
+  const recentProducts = BUILD_SLOTS.flatMap((slot) => candidatesForSlot(products, slot))
     .map((product) => ({ ...product, prices: eligibleOffers(product).filter((offer) => isOfferFresh(offer.lastUpdated)) }))
     .filter((product) => product.prices.length > 0);
-  const draft = assembleSuggestion(products, eligibleProducts, budget);
+  const eligibleProducts = suggestionPoolForUsage(recentProducts, usage);
+  const draft = assembleSuggestion(products, eligibleProducts, budget, usage);
   if (quoteBuild(draft, products).complete) return draft;
+  if (usage === 'general') {
+    // Una APU disponible puede ser incompatible con las otras piezas cargadas.
+    // No descartar una alternativa completa con GPU sólo por preferir integrada.
+    const alternative = assembleSuggestion(products, suggestionPoolForUsage(recentProducts, 'gaming'), budget, usage);
+    const quote = quoteBuild(alternative, products);
+    if (quote.complete && !quote.unquoted && !quote.overBudget) return alternative;
+  }
   // Si la propuesta con GPU queda incompleta, comprobamos una alternativa
   // con video integrado. Sólo la reemplaza una cotización completa y válida.
   const integratedProducts = eligibleProducts.filter((product) => product.category !== 'tarjetas-graficas'
     && (product.category !== 'procesadores' || hasIntegratedGraphics(product)));
   if (integratedProducts.some((product) => product.category === 'procesadores')) {
-    const alternative = assembleSuggestion(products, integratedProducts, budget);
+    const alternative = assembleSuggestion(products, integratedProducts, budget, usage);
     const quote = quoteBuild(alternative, products);
     if (quote.complete && !quote.unquoted && !quote.overBudget) return alternative;
   }
   return draft;
 }
 
-function assembleSuggestion(products: Product[], eligibleProducts: Product[], budget: number): BuildDraft {
-  const draft = emptyBuild(budget);
+function suggestionPoolForUsage(products: Product[], usage: BuildUsage): Product[] {
+  const ssds = products.filter(product => product.category === 'almacenamiento'
+    && (inferSsdCapacityGb(product.name) ?? 0) >= 480);
+  // Gaming prioriza video y plataforma. La capacidad extra se elige manualmente,
+  // no se consume el remanente en 2 TB si existe una opción de hasta 1 TB.
+  const baseStorage = usage === 'gaming'
+    ? ssds.filter(product => (inferSsdCapacityGb(product.name) ?? Infinity) <= 1024) : ssds;
+  const minimumBaseStorage = Math.min(...baseStorage.map(product => eligibleOffers(product)[0].price));
+  // Más capacidad al mismo precio o más barata no exige gastar margen extra.
+  const storagePool = usage === 'gaming' && baseStorage.length
+    ? ssds.filter(product => baseStorage.includes(product) || eligibleOffers(product)[0].price <= minimumBaseStorage)
+    : ssds;
+  const minimumStorage = Math.min(...storagePool.map(product => eligibleOffers(product)[0].price));
+  const allowedStorage = new Set(storagePool.filter(product => usage === 'gaming'
+    || eligibleOffers(product)[0].price === minimumStorage).map(product => product.id));
+  const hasIntegratedCpu = products.some(product => product.category === 'procesadores' && hasIntegratedGraphics(product));
+  return products.filter(product => (product.category !== 'almacenamiento' || allowedStorage.has(product.id))
+    && (usage !== 'general' || !hasIntegratedCpu || (product.category !== 'tarjetas-graficas'
+      && (product.category !== 'procesadores' || hasIntegratedGraphics(product)))));
+}
+
+function assembleSuggestion(products: Product[], eligibleProducts: Product[], budget: number, usage: BuildUsage): BuildDraft {
+  const draft = emptyBuild(budget, usage);
   const built = buildBudgetFromCatalog({ budget, products: eligibleProducts, preferComplete: true });
   for (const [slot, component] of Object.entries(built.slots)) {
     const product = products.find((item) => item.id === component.productId);
@@ -111,7 +141,13 @@ export function describeBuildSuggestion(draft: BuildDraft, products: Product[]):
   if (!quote.complete || quote.unquoted || quote.overBudget) return { status: 'partial', message:
     `Sugerencia parcial: ${count} piezas seleccionadas. ${missing.join(' ')}${cooling ? ` ${cooling.message}` : ''} Revisá compatibilidad y ofertas pendientes; el subtotal no es una PC completa.` };
   const cpu = quote.lines.find((line) => line.slot === 'cpu')?.product;
-  return { status: 'complete', message: `Piezas seleccionadas con precio reciente dentro de tu máximo.${!draft.selections.gpu && hasIntegratedGraphics(cpu ?? undefined) ? ' La CPU tiene gráficos integrados; no se agregó una placa de video dedicada.' : ''} Revisá las comprobaciones de compatibilidad y sumá el envío antes de comprar.` };
+  const integrated = !draft.selections.gpu && hasIntegratedGraphics(cpu ?? undefined);
+  const purpose = draft.usage === 'general' ? ' Para uso general se priorizan gráficos integrados y conservar margen.'
+    : ' Para gaming se priorizan video y plataforma antes de aumentar el SSD por encima de 1 TB.';
+  const video = integrated ? (draft.usage === 'general'
+    ? ' La CPU tiene gráficos integrados; no se agregó una placa de video dedicada.'
+    : ' La CPU tiene gráficos integrados. Las opciones comparadas no alcanzan para una PC completa con placa dedicada dentro de este presupuesto.') : '';
+  return { status: 'complete', message: `Piezas seleccionadas con precio reciente dentro de tu máximo.${purpose}${video} Revisá las comprobaciones de compatibilidad y sumá el envío antes de comprar.` };
 }
 export function quoteBuild(draft: BuildDraft, products: Product[], now = Date.now()): BuildQuote {
   const parts: Partial<Record<BuildSlot, Product>> = {};

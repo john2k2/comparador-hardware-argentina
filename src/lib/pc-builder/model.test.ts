@@ -351,6 +351,41 @@ function suggestionCatalog(): Product[] {
 }
 
 describe('suggestBuild y resultado comunicado', () => {
+  it('gaming conserva margen en SSD cuando 2TB no cambia la prioridad de video', () => {
+    const products = suggestionCatalog();
+    products.push(product({ id: 'ssd-2tb', name: 'SSD NVMe 2TB', category: 'almacenamiento',
+      prices: [price({ storeId: 'store', storeName: 'Store', price: 300_000 })] }));
+    const draft = suggestBuild(products, 1_200_000, 'gaming');
+    expect(draft.selections.ssd?.productId).toBe('ssd');
+    expect(draft.selections.gpu?.productId).toBe('gpu');
+    expect(quoteBuild(draft, products).overBudget).toBe(0);
+  });
+  it('mismo máximo produce uso general con video integrado y gaming con GPU', () => {
+    const products = suggestionCatalog();
+    products.push(product({ id: 'apu', name: 'AMD Ryzen 5 5600G AM4 CON COOLER', category: 'procesadores',
+      prices: [price({ storeId: 'store', storeName: 'Store', price: 150_000 })] }));
+    const gaming = suggestBuild(products, 1_200_000, 'gaming');
+    const general = suggestBuild(products, 1_200_000, 'general');
+    expect(gaming.selections.gpu?.productId).toBe('gpu');
+    expect(general.selections.gpu).toBeUndefined();
+    expect(general.selections.cpu?.productId).toBe('apu');
+    expect(quoteBuild(general, products).complete).toBe(true);
+    expect(quoteBuild(general, products).total).toBeLessThan(quoteBuild(gaming, products).total);
+  });
+  it('explica la alternativa integrada cuando la dedicada admitida no entra; ambos usos preservan guardas', () => {
+    const products = suggestionCatalog();
+    products.find(product => product.id === 'gpu')!.prices[0].price = 2_000_000;
+    products.push(product({ id: 'apu', name: 'AMD Ryzen 5 5600G AM4 CON COOLER', category: 'procesadores',
+      prices: [price({ storeId: 'store', storeName: 'Store', price: 150_000 })] }));
+    const original = structuredClone(products);
+    const draft = suggestBuild(products, 1_500_000, 'gaming');
+    expect(draft.selections.gpu).toBeUndefined();
+    expect(describeBuildSuggestion(draft, products).message).toContain('Las opciones comparadas no alcanzan para una PC completa con placa dedicada dentro de este presupuesto');
+    expect(quoteBuild(draft, products).overBudget).toBe(0);
+    expect(products).toEqual(original);
+    products.find(product => product.id === 'ram')!.prices[0].lastUpdated = new Date(Date.now() - 3 * 60 * 60 * 1000 - 1);
+    for (const usage of ['gaming', 'general'] as const) expect(suggestBuild(products, 1_500_000, usage).selections).toEqual({});
+  });
   it('no anuncia PC completa para CPU F aunque una especificación contradictoria diga video integrado', () => {
     const products = suggestionCatalog().filter((item) => item.id !== 'gpu');
     products[0].name = 'Intel Core i5 12400-F LGA1700';
