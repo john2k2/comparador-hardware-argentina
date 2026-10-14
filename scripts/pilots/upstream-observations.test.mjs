@@ -2,8 +2,31 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
+import { createRequire, Module } from 'node:module';
+import { build } from 'esbuild';
+import { resolve } from 'node:path';
 import { loadMacRefreshConsumer } from './mac-catalog-refresh.mjs';
 const { admitUpstreamObservations, syncUpstreamObservations } = await loadMacRefreshConsumer();
+// Productor actual: revisión determinista real. Proveedores/caché están prohibidos
+// y las claves de entorno se reemplazan al compilar, sin leer credenciales.
+const producerModule = new Module(import.meta.filename + '.producer.cjs');
+producerModule.require = createRequire(import.meta.url);
+producerModule._compile((await build({ stdin: { contents: `
+  export {reviewProductOffers} from './src/lib/ai/review-product-offers';
+  export {mapDbGuideProduct} from './src/lib/persistence/product-read-mapper';
+`, resolveDir: resolve('.') }, bundle: true, write: false, platform: 'node', format: 'cjs', packages: 'external',
+  define: { 'process.env.TYPESAFE_API_KEY': 'undefined', 'process.env.ENABLE_JEV_OFFER_REVIEW': '"0"' },
+  plugins: [{ name: 'offline-producer', setup(build) {
+    build.onResolve({ filter: /^(server-only|@\/lib\/(ai\/jev-client|server\/shared-cache|logger))$/ }, args => ({ path: args.path, namespace: 'offline' }));
+    build.onLoad({ filter: /.*/, namespace: 'offline' }, args => ({ contents: args.path === 'server-only' ? ''
+      : args.path.endsWith('/logger') ? 'export const logger={info(){},warn(){}};'
+        : `export const JEV_BATCH_SIZE=1,JEV_MODEL='offline',JEV_PROMPT_VERSION='offline';
+          export function evaluateOfferIdentity(){throw Error('OFFLINE_PROVIDER_FORBIDDEN');}
+          export function parseJevEvaluation(){throw Error('OFFLINE_PROVIDER_FORBIDDEN');}
+          export function getSharedCache(){throw Error('OFFLINE_CACHE_FORBIDDEN');}
+          export function setSharedCache(){throw Error('OFFLINE_CACHE_FORBIDDEN');}` }));
+  } }] })).outputFiles[0].text, producerModule.id);
+const { reviewProductOffers, mapDbGuideProduct } = producerModule.exports;
 const now = Date.parse('2026-10-14T03:00:00Z'), old = '2026-10-12T03:00:00Z', recent = '2026-10-14T02:00:00Z';
 const name = 'Memoria Corsair DDR4 16GB 3200MHz Vengeance RGB RS Black CL16';
 const url = 'https://compragamer.com/producto/Memoria_Corsair_DDR4_16GB_3200MHz_Vengeance_RGB_RS_Black_CL16_15558';
@@ -27,6 +50,58 @@ test('transporta precio/stock/fecha observados sin renovar metadata ni asociacio
   assert.equal(f.read().last_updated, recent); assert.equal(f.read().price, 180000); assert.equal(f.read().stock, 'out-of-stock');
   assert.equal(f.db.prepare('SELECT row_json FROM products').get().row_json, beforeProduct);
   assert.equal(f.db.prepare('SELECT row_json FROM pilot_offer_observations').get().row_json, JSON.stringify(f.read()));
+  assert.deepEqual(result.byStore, { compragamer: { read: 1, accepted: 1, rejected: 0, reasons: { accepted: 1 } } });
+});
+
+test('Golden188718: prueba abreviada real se rechaza; productor actual genera once atributos sin cambiar observación', async t => {
+  const f = fixture(t), title = 'Memoria Ram UDIMM CORSAIR VENGEANCE 32GB DDR5 6000MHz CL30 1.40V (2 x 16GB) Negro RGB';
+  const goldenUrl = 'https://goldentechstore.com.ar/producto/memoria-ram-udimm-corsair-vengeance-32gb-ddr5-6000mhz-cl30-1-40v-2-x-16gb-negro-rgb/';
+  const source = { title, storeSku: 'EL_CORM5VR2X1660', sourceId: '188718', listingRef: 'goldentechstore:url:' + goldenUrl.slice(0, -1) };
+  const product = { id: 'goldentechstore-api-188718', name: title, category: 'memoria-ram', specs: { SKU: source.storeSku } };
+  const before = { id: '71fa08c2-b4a8-4487-8c4e-3bf111130e26', product_id: product.id, store_id: 'goldentechstore',
+    url: goldenUrl, price: 1202122, stock: 'unknown', last_updated: '2026-10-11T18:49:20.003Z' };
+  const row = { ...before, price: 1202121.97, stock: 'in-stock', price_condition: 'special',
+    last_updated: '2026-10-14T10:16:18.351+00:00', source_identity: source, products: product,
+    identity_review: { version: 1, status: 'consistent', reason: 'exact-attributes', reviewedAt: '2026-10-14T10:16:18.984Z',
+      model: null, confidence: null, subject: { name: title.toLowerCase(), category: product.category, url: goldenUrl }, sourceIdentity: source,
+      proof: { version: 1, method: 'exact-attributes', attributes: { model: 'ram:corsair:vengeance:32gb:ddr5:6000:dimm:rgb:2x16:30:black' } } } };
+  f.db.exec('DELETE FROM product_prices');
+  f.db.prepare('UPDATE products SET id=?,category=?,row_json=?').run(product.id, product.category, JSON.stringify(product));
+  f.db.prepare('INSERT INTO product_prices(id,product_id,store_id,url,price,row_json) VALUES(?,?,?,?,?,?)')
+    .run(row.id, product.id, row.store_id, goldenUrl, before.price, JSON.stringify(before));
+  const cut = Date.parse('2026-10-14T13:05:17.793Z'), originalProduct = f.db.prepare('SELECT * FROM products').all();
+  assert.equal(admitUpstreamObservations(f.db, [row], cut).decisions[0].reason, 'source-identity-unproven');
+  assert.deepEqual(f.read(), before);
+  const reviewed = (await reviewProductOffers([mapDbGuideProduct({ ...product, product_prices: [row] })], { authorizedRefresh: true }))[0].prices[0];
+  assert.equal(reviewed.identityReview.status, 'consistent');
+  assert.equal(Object.keys(reviewed.identityReview.proof.attributes).length, 11);
+  assert.equal(reviewed.lastUpdated.toISOString(), new Date(row.last_updated).toISOString());
+  const current = { ...row, identity_review: reviewed.identityReview };
+  for (const patch of [
+    { identity_review: row.identity_review },
+    { source_identity: { ...source, title: title.replace('32GB', '16GB') } },
+    { source_identity: { ...source, listingRef: source.listingRef + '-other' } },
+    { identity_review: { ...reviewed.identityReview, proof: { ...reviewed.identityReview.proof,
+      attributes: { ...reviewed.identityReview.proof.attributes, kit: '1x32' } } } },
+  ]) {
+    assert.equal(admitUpstreamObservations(f.db, [{ ...current, ...patch }], cut).accepted, 0);
+    assert.deepEqual(f.read(), before);
+  }
+  const report = admitUpstreamObservations(f.db, [current], cut);
+  assert.deepEqual(report.byStore.goldentechstore, { read: 1, accepted: 1, rejected: 0, reasons: { accepted: 1 } });
+  assert.equal(f.read().last_updated, row.last_updated); assert.equal(f.read().price, row.price); assert.equal(f.read().stock, row.stock);
+  assert.deepEqual(f.db.prepare('SELECT * FROM products').all(), originalProduct);
+});
+
+test('diagnóstico conserva cada decisión por tienda registrada/other sin copiar IDs desconocidos ni secretos', t => {
+  const f = fixture(t), secret = 'private-fixture-token';
+  const result = admitUpstreamObservations(f.db, [f.row, { ...f.row, id: 'outside', store_id: secret },
+    { ...f.row, id: 'outside-golden', store_id: 'goldentechstore' }], now);
+  assert.equal(result.read, 3); assert.equal(result.accepted, 1); assert.equal(result.rejected, 2);
+  assert.deepEqual(result.byStore, { compragamer: { read: 1, accepted: 1, rejected: 0, reasons: { accepted: 1 } },
+    other: { read: 1, accepted: 0, rejected: 1, reasons: { 'offer-outside-snapshot': 1 } },
+    goldentechstore: { read: 1, accepted: 0, rejected: 1, reasons: { 'offer-outside-snapshot': 1 } } });
+  assert.equal(JSON.stringify({ reasons: result.reasons, byStore: result.byStore }).includes(secret), false);
 });
 test('repetir, perder frescura o recibir fuente más vieja nunca rejuvenece ni retrocede', t => {
   const f = fixture(t); admitUpstreamObservations(f.db, [f.row], now);

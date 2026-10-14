@@ -11,6 +11,7 @@ import { inferHardwareCategoryFromName } from '@/lib/catalog/hardware-categories
 import { BUDGET_GUIDES } from '@/lib/seo/budget-guides-data';
 import { catalogSearchText } from './catalog-matchers.mjs';
 import type { DbProductPriceRow, DbProductRow } from '@/lib/persistence/product-read-types';
+import { stores } from '@/lib/scrapers/static-data';
 
 export type UpstreamObservation = DbProductPriceRow & {
   id: string; product_id: string; products: DbProductRow;
@@ -18,6 +19,7 @@ export type UpstreamObservation = DbProductPriceRow & {
 type Cursor = { start: string; end: string; after: { at: string; id: string } | null; complete: boolean };
 type Decision = { offerId: string; productId: string; storeId: string; reason: string;
   beforeObservedAt: string | null; observedAt: string | null };
+const diagnosticStores = new Set(stores.map(store => store.id));
 const stateKey = 'upstream_observation_cursor_v1';
 const MAX_ROWS = 1000, PAGE_SIZE = 250, MAX_BYTES = 4 * 1024 * 1024;
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
@@ -124,8 +126,17 @@ export function admitUpstreamObservations(db: DatabaseSync, rows: UpstreamObserv
     db.exec('COMMIT');
   } catch (error) { db.exec('ROLLBACK'); throw error; }
   const reasons: Record<string, number> = {};
-  for (const decision of decisions) reasons[decision.reason] = (reasons[decision.reason] ?? 0) + 1;
-  return { read: rows.length, accepted: changes.length, rejected: rows.length - changes.length, reasons, decisions,
+  const byStore: Record<string, { read: number; accepted: number; rejected: number; reasons: Record<string, number> }> = {};
+  for (const decision of decisions) {
+    reasons[decision.reason] = (reasons[decision.reason] ?? 0) + 1;
+    // Sólo IDs registrados. Una tienda desconocida puede contener texto privado.
+    const store = diagnosticStores.has(decision.storeId) ? decision.storeId : 'other';
+    const count = byStore[store] ??= { read: 0, accepted: 0, rejected: 0, reasons: {} };
+    count.read++;
+    if (decision.reason === 'accepted') count.accepted++; else count.rejected++;
+    count.reasons[decision.reason] = (count.reasons[decision.reason] ?? 0) + 1;
+  }
+  return { read: rows.length, accepted: changes.length, rejected: rows.length - changes.length, reasons, byStore, decisions,
     changes: changes.map(change => ({ offerId: change.id, beforeSha256: hash(change.before), afterSha256: hash(change.after), observedAt: change.observedAt })),
     remoteRowsWritten: 0, productionActivated: false, requiresCertification: true };
 }

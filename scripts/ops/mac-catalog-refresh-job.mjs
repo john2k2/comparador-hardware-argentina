@@ -162,12 +162,58 @@ function readSourceFacts(file) {
   } finally { db.close(); }
 }
 function validRemoteReadCount(value) { return Number.isSafeInteger(value) && value >= 0 && value <= 1000; }
+// Contrato de diagnóstico, no de admisión. IDs registrados en static-data.ts;
+// los desconocidos se agregan a other antes de cruzar al recibo operativo.
+const UPSTREAM_DIAGNOSTIC_STORES = `37bytes acuarioinsumos armytech beings clickgaming gamerspoint hypergaming
+ hftecnologia integradosargentinos liontech megasoft mexx noxie portaltech venex fullh4rd compragamer maximus
+ gamingcity gezatek compugarden logg katech dinobyte maxtecno rockethard scphardstore shopgamer slotone
+ spacevideojuegos thegamershop hardcore goldentechstore vertexretail wiztech xtpc other`.split(/\s+/);
+const UPSTREAM_DIAGNOSTIC_REASONS = ['accepted', 'offer-outside-snapshot', 'destination-conflict', 'observation-invalid',
+  'local-date-invalid', 'not-newer', 'product-missing', 'product-variant-unproven', 'source-identity-unproven',
+  'source-variant-unproven', 'source-sku-conflict'];
+/** null conserva compatibilidad con productores anteriores; undefined señala
+ * un diagnóstico presente pero inconsistente. Nunca copiar claves arbitrarias.
+ */
+export function compactUpstreamDiagnostics(upstream) {
+  const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+  if (!object(upstream)) return null;
+  if (!Object.hasOwn(upstream, 'byStore')) return null;
+  if (!object(upstream.reasons) || !object(upstream.byStore)
+    || Object.keys(upstream.byStore).some(store => !UPSTREAM_DIAGNOSTIC_STORES.includes(store))) return undefined;
+  const compactReasons = value => {
+    if (!object(value) || Object.keys(value).some(reason => !UPSTREAM_DIAGNOSTIC_REASONS.includes(reason))) return undefined;
+    const result = {};
+    for (const reason of UPSTREAM_DIAGNOSTIC_REASONS) if (Object.hasOwn(value, reason)) {
+      if (!validRemoteReadCount(value[reason])) return undefined;
+      result[reason] = value[reason];
+    }
+    return result;
+  };
+  const reasons = compactReasons(upstream.reasons), byStore = {}, totals = { read: 0, accepted: 0, rejected: 0 }, summedReasons = {};
+  if (!reasons || !['read', 'accepted', 'rejected'].every(key => validRemoteReadCount(upstream[key]))
+    || Object.values(reasons).reduce((sum, count) => sum + count, 0) !== upstream.read
+    || (reasons.accepted ?? 0) !== upstream.accepted || upstream.accepted + upstream.rejected !== upstream.read) return undefined;
+  for (const store of UPSTREAM_DIAGNOSTIC_STORES) if (Object.hasOwn(upstream.byStore, store)) {
+    const raw = upstream.byStore[store];
+    if (!object(raw) || !['read', 'accepted', 'rejected'].every(key => validRemoteReadCount(raw[key]))) return undefined;
+    const localReasons = compactReasons(raw.reasons);
+    if (!localReasons || Object.values(localReasons).reduce((sum, count) => sum + count, 0) !== raw.read
+      || (localReasons.accepted ?? 0) !== raw.accepted || raw.accepted + raw.rejected !== raw.read) return undefined;
+    byStore[store] = { read: raw.read, accepted: raw.accepted, rejected: raw.rejected, reasons: localReasons };
+    for (const key of Object.keys(totals)) totals[key] += raw[key];
+    for (const [reason, count] of Object.entries(localReasons)) summedReasons[reason] = (summedReasons[reason] ?? 0) + count;
+  }
+  if (Object.keys(totals).some(key => totals[key] !== upstream[key])
+    || UPSTREAM_DIAGNOSTIC_REASONS.some(reason => (summedReasons[reason] ?? 0) !== (reasons[reason] ?? 0))) return undefined;
+  return { reasons, byStore };
+}
 export function validatePromotionReport(report, { source, pointer, facts, directory, now, syncUpstream = false }) {
   const candidate = report?.candidate, promotion = report?.promotion;
   if (syncUpstream && (!report?.upstream || report.upstream.receivedRows !== report.remoteRowsRead
     || report.upstream.accepted + report.upstream.rejected !== report.upstream.read
     || report.upstream.remoteRowsWritten !== 0 || report.upstream.productionActivated !== false
-    || !Number.isSafeInteger(report.upstream.requests) || report.upstream.requests < 1 || report.upstream.requests > 5))
+    || !Number.isSafeInteger(report.upstream.requests) || report.upstream.requests < 1 || report.upstream.requests > 5
+    || compactUpstreamDiagnostics(report.upstream) === undefined))
     fail('MAC_JOB_UPSTREAM_REPORT');
   if (report?.version !== 1 || report.promotionReady !== true || report.productionActivated !== false
     || !validRemoteReadCount(report.remoteRowsRead) || !syncUpstream && report.remoteRowsRead !== 0 || report.remoteRowsWritten !== 0
@@ -356,7 +402,8 @@ function compactObservation(report) {
     deferred: observation.deferred ?? null, failures, sourceHttp: report ? http : null, capture, httpRequests,
     scope: report?.candidate?.counts ?? null, coverage,
     upstream: report?.upstream ? { ...numeric({ read: report.upstream.read, receivedRows: report.upstream.receivedRows, accepted: report.upstream.accepted,
-      rejected: report.upstream.rejected, requests: report.upstream.requests }), capped: report.upstream.capped === true } : null };
+      rejected: report.upstream.rejected, requests: report.upstream.requests }), capped: report.upstream.capped === true,
+      ...(compactUpstreamDiagnostics(report.upstream) ?? { reasons: null, byStore: null }) } : null };
 }
 
 export async function runMacRefreshJob(configFile, dependencies = {}) {

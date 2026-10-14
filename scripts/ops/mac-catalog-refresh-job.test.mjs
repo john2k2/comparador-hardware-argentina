@@ -9,7 +9,7 @@ import { createRequire, Module } from 'node:module';
 import { buildSync } from 'esbuild';
 import { hashFile } from './mac-catalog-service.mjs';
 import { acquireJobLock, checkStorage, cleanupWorking, pruneJobSnapshots, refreshJobPlan,
-  runMacRefreshJob as runJob, safeRunnerCode, createRunnerDiagnosticReader } from './mac-catalog-refresh-job.mjs';
+  runMacRefreshJob as runJob, safeRunnerCode, createRunnerDiagnosticReader, compactUpstreamDiagnostics } from './mac-catalog-refresh-job.mjs';
 
 const fingerprint = 'a'.repeat(64), nextFingerprint = 'b'.repeat(64);
 const counts = { products: 1, product_prices: 1, catalog_price_summaries: 1, stores: 1 };
@@ -19,9 +19,12 @@ const runMacRefreshJob = (path, dependencies = {}) => runJob(path, { probe: ackP
 // Productor real de certificados v2, compilado en memoria sin escribir módulos.
 const require = createRequire(import.meta.url), clockModule = new Module(import.meta.filename + '.clock.cjs');
 clockModule.require = require;
-clockModule._compile(buildSync({ entryPoints: [join(import.meta.dirname, '../pilots/cloudflare-catalog/observation-clock-index.ts')],
+clockModule._compile(buildSync({ stdin: { contents: `
+  export {installObservationClockIndex} from './scripts/pilots/cloudflare-catalog/observation-clock-index';
+  export {stores} from './src/lib/scrapers/static-data';
+`, resolveDir: join(import.meta.dirname, '../..') },
   bundle: true, write: false, platform: 'node', format: 'cjs', packages: 'external' }).outputFiles[0].text, clockModule.id);
-const { installObservationClockIndex } = clockModule.exports;
+const { installObservationClockIndex, stores } = clockModule.exports;
 function directory(t) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'mac-refresh-job-test-')));
   t.after(() => rmSync(root, { recursive: true, force: true })); return root;
@@ -211,7 +214,66 @@ test('puente explícito transmite sólo ruta pública y conserva lecturas reales
       remoteRowsWritten: 0, productionActivated: false, publicKey: 'must-not-appear' };
   }) });
   assert.equal(receipt.remoteRowsRead, 12); assert.equal(receipt.observation.upstream.accepted, 3);
+  assert.equal(receipt.observation.upstream.byStore, null); // Productor anterior: diagnóstico no disponible.
   assert.equal(JSON.stringify(receipt).includes('must-not-appear'), false);
+});
+
+test('recibo conserva totales deduplicados y diagnóstico por tienda/razón sin títulos, URLs, IDs ni secretos', async t => {
+  const f = await fixture(t), secret = 'private-fixture-token';
+  f.config.envFile = join(f.root, 'public.env'); f.config.refreshJob.syncUpstream = true;
+  writeFileSync(f.configFile, JSON.stringify(f.config));
+  const reasons = { accepted: 1, 'source-identity-unproven': 1, 'offer-outside-snapshot': 1 };
+  const byStore = { goldentechstore: { read: 2, accepted: 1, rejected: 1,
+    reasons: { accepted: 1, 'source-identity-unproven': 1 }, title: secret, url: secret },
+    other: { read: 1, accepted: 0, rejected: 1, reasons: { 'offer-outside-snapshot': 1 } } };
+  const receipt = await runMacRefreshJob(f.configFile, { validateCandidate, runner: fakeRunner(f, ({ report }) => {
+    report.remoteRowsRead = 4; // Una fila solapada cuenta como lectura, pero sólo una decisión.
+    report.upstream = { read: 3, receivedRows: 4, accepted: 1, rejected: 2, requests: 2, capped: true,
+      remoteRowsWritten: 0, productionActivated: false, reasons, byStore,
+      decisions: [{ offerId: secret, title: secret, url: secret }], publicKey: secret };
+  }) });
+  assert.equal(receipt.status, 'promoted'); assert.equal(receipt.remoteRowsRead, 4);
+  assert.deepEqual(receipt.observation.upstream, { read: 3, receivedRows: 4, accepted: 1, rejected: 2, requests: 2,
+    capped: true, reasons, byStore: { goldentechstore: { read: 2, accepted: 1, rejected: 1,
+      reasons: { accepted: 1, 'source-identity-unproven': 1 } }, other: byStore.other } });
+  assert.equal(JSON.stringify(receipt).includes(secret), false);
+  assert.deepEqual(read(join(f.root, 'receipts', receipt.id + '.json')), receipt);
+});
+
+test('diagnóstico presente con sumas, tipos o razones inconsistentes no autoriza promoción', async t => {
+  for (const mutate of [
+    value => { value.byStore.goldentechstore.read = 2; },
+    value => { value.reasons.accepted = 0.5; },
+    value => { value.byStore.goldentechstore.reasons = { 'source-identity-unproven': 1 }; },
+    value => { value.reasons = { 'private-fixture-token': 1 }; },
+    value => { value.reasons['private-fixture-token'] = 0; },
+    value => { value.byStore = { 'private-fixture-token': value.byStore.goldentechstore }; },
+  ]) {
+    const f = await fixture(t);
+    f.config.envFile = join(f.root, 'public.env'); f.config.refreshJob.syncUpstream = true;
+    writeFileSync(f.configFile, JSON.stringify(f.config));
+    await assert.rejects(runMacRefreshJob(f.configFile, { validateCandidate, runner: fakeRunner(f, ({ report }) => {
+      report.remoteRowsRead = 1;
+      report.upstream = { read: 1, receivedRows: 1, accepted: 1, rejected: 0, requests: 1, capped: false,
+        remoteRowsWritten: 0, productionActivated: false, reasons: { accepted: 1 },
+        byStore: { goldentechstore: { read: 1, accepted: 1, rejected: 0, reasons: { accepted: 1 } } } };
+      mutate(report.upstream);
+    }) }), error => {
+      assert.equal(error.receipt.code, 'MAC_JOB_UPSTREAM_REPORT'); assert.equal(error.receipt.promoted, false);
+      assert.equal(error.receipt.observation.upstream.byStore, null);
+      assert.equal(JSON.stringify(error.receipt).includes('private-fixture-token'), false); return true;
+    });
+    assert.deepEqual(read(join(f.root, 'current.json')), f.pointer);
+  }
+});
+
+test('allowlist operativa cubre tiendas registradas y salida vacía/legacy sin interpretar campos arbitrarios', () => {
+  for (const { id } of stores) assert.deepEqual(compactUpstreamDiagnostics({ read: 1, accepted: 1, rejected: 0,
+    reasons: { accepted: 1 }, byStore: { [id]: { read: 1, accepted: 1, rejected: 0, reasons: { accepted: 1 } } } }).byStore,
+  { [id]: { read: 1, accepted: 1, rejected: 0, reasons: { accepted: 1 } } });
+  assert.deepEqual(compactUpstreamDiagnostics({ read: 0, accepted: 0, rejected: 0, reasons: {}, byStore: {} }), { reasons: {}, byStore: {} });
+  assert.equal(compactUpstreamDiagnostics({ read: 0, reasons: { 'private-fixture-token': 0 } }), null);
+  assert.equal(compactUpstreamDiagnostics({ read: 0, accepted: 0, rejected: 0, reasons: [], byStore: {} }), undefined);
 });
 
 test('puente habilitado sin recibo o conteo acotado no cambia pointer', async t => {
