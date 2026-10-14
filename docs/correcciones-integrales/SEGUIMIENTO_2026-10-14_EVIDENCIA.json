@@ -1,0 +1,881 @@
+{
+  "version": 1,
+  "recordedAt": "2026-10-14T13:46:37.496905+00:00",
+  "baseRevision": "13acc7413cb1f2a95bde8229d69bda9a49dc1f2d",
+  "publicGuide": {
+    "checkedAt": "2026-10-14T13:37:58.638Z",
+    "base": "https://www.comparador-hardware.com.ar",
+    "pointer": {
+      "version": 1,
+      "generation": "mac-refresh-1791984842643",
+      "database": "snapshots/mac-refresh-1791984842643.sqlite",
+      "sha256": "5e043a9199f915d64c1dd234c3b747b6c40566a5910ca8f8073132dea67a16c6",
+      "fingerprint": "7153f1b83e072a1fcccf4730f44de157e24f8901a715f51a01a0d82b5b611d27"
+    },
+    "tuples": [
+      {
+        "slot": "cpu",
+        "productId": "cg-14309",
+        "url": "https://compragamer.com/producto/Procesador_AMD_Ryzen_5_7600_5_1GHz_Turbo_AM5_Wraith_Stealth_Cooler_14309",
+        "sku": "100-100001015BOX",
+        "price": 360150,
+        "stock": "in-stock",
+        "priceCondition": "special",
+        "observedAt": "2026-10-14T12:53:25.241Z",
+        "sourceObservationId": "1230ed3f-39d1-4d4f-8f69-5e26e64b37a3",
+        "sourceProductId": "agrupado-procesadores-combo-amd-ryzen-5-7600-am5-1t9ctq",
+        "merchantCheckedAt": "2026-10-14T13:32:35.088Z"
+      },
+      {
+        "slot": "gpu",
+        "productId": "cg-17960",
+        "url": "https://compragamer.com/producto/Placa_de_Video_Asrock_Radeon_RX_9060_XT_16GB_GDDR6_Challenger_OC_17960",
+        "sku": "RX 9060XT CL 16GO",
+        "price": 947350,
+        "stock": "in-stock",
+        "priceCondition": "special",
+        "observedAt": "2026-10-14T12:53:25.241Z",
+        "sourceObservationId": "2ff998fd-e97b-4fa6-90ac-0e2f670fff85",
+        "sourceProductId": "agrupado-tarjetas-graficas-asrock-rx-9060-xt-challenger-16gb-o4jfvc",
+        "merchantCheckedAt": "2026-10-14T13:32:38.897Z"
+      },
+      {
+        "slot": "ram",
+        "productId": "cg-21565",
+        "url": "https://compragamer.com/producto/Memoria_KLEVV_DDR5_32GB_2X16GB_6000MHz_BOLT_V_CL28_21565",
+        "sku": "KD5AGUA80-60B280H",
+        "price": 872200,
+        "stock": "in-stock",
+        "priceCondition": "special",
+        "observedAt": "2026-10-14T12:32:19.247Z",
+        "sourceObservationId": "91e9cc04-aadf-4ad5-a99c-72bd6aa84075",
+        "sourceProductId": "cg-21565",
+        "merchantCheckedAt": "2026-10-14T13:32:41.678Z"
+      },
+      {
+        "slot": "ssd",
+        "productId": "cg-16872",
+        "url": "https://compragamer.com/producto/Disco_Solido_SSD_M_2_Kingston_1TB_NV3_6000MB_s_NVMe_PCI_E_Gen4_x4_16872",
+        "sku": "SNV3S/1000G",
+        "price": 289050,
+        "stock": "in-stock",
+        "priceCondition": "special",
+        "observedAt": "2026-10-14T12:32:19.247Z",
+        "sourceObservationId": "a48c82b9-31cb-4a89-ad17-a854a9e8f890",
+        "sourceProductId": "cg-16872",
+        "merchantCheckedAt": "2026-10-14T13:32:44.555Z"
+      },
+      {
+        "slot": "motherboard",
+        "productId": "cg-17076",
+        "url": "https://compragamer.com/producto/Mother_MSI_B650M_GAMING_WIFI_AM5_DDR5_17076",
+        "sku": "B650M GAMING WIFI",
+        "price": 188985,
+        "stock": "in-stock",
+        "priceCondition": "special",
+        "observedAt": "2026-10-14T12:32:19.247Z",
+        "sourceObservationId": "0c619633-bfba-4a8e-ae8c-0332444fc34f",
+        "sourceProductId": "cg-17076",
+        "merchantCheckedAt": "2026-10-14T13:32:47.447Z"
+      },
+      {
+        "slot": "psu",
+        "productId": "cg-18173",
+        "url": "https://compragamer.com/producto/Fuente_Asrock_750W_80_Plus_Gold_Steel_Legend_Full_Modular_ATX_3_1_PCIe_5_1_Cybenetics_Platinum_18173",
+        "sku": "SL-750G",
+        "price": 130000,
+        "stock": "in-stock",
+        "priceCondition": "special",
+        "observedAt": "2026-10-14T12:53:25.241Z",
+        "sourceObservationId": "00fd47d1-ef88-4773-b1ad-1fd8b8590139",
+        "sourceProductId": "agrupado-fuentes-alimentacion-asrock-steel-ybgz8c",
+        "merchantCheckedAt": "2026-10-14T13:32:50.320Z"
+      },
+      {
+        "slot": "case",
+        "productId": "agrupado-gabinetes-4x120mm-antec-argb-black-gabinete-templado-vidri-15eoh7x",
+        "url": "https://compragamer.com/producto/Gabinete_Antec_VX310_RGB_Black_4x120mm_Vidrio_Templado_18607",
+        "sku": "0-761345-10232-2",
+        "price": 59990,
+        "stock": "in-stock",
+        "priceCondition": "special",
+        "observedAt": "2026-10-14T12:32:19.247Z",
+        "sourceObservationId": "26894c4d-7b86-4820-85bc-7e00fc0f6ce7",
+        "sourceProductId": "agrupado-gabinetes-4x120mm-antec-argb-black-gabinete-templado-vidri-15eoh7x",
+        "merchantCheckedAt": "2026-10-14T13:32:52.986Z"
+      }
+    ],
+    "totalARS": 2847725,
+    "views": [
+      {
+        "width": 1440,
+        "overflow": {
+          "width": 1440,
+          "document": 1440
+        },
+        "pageErrors": [],
+        "httpErrors": [],
+        "prefetchRefusals": [
+          {
+            "url": "https://www.comparador-hardware.com.ar/product/cg-17076",
+            "status": 503
+          }
+        ],
+        "analyticsRequests": [],
+        "journey": [
+          "guide",
+          "motherboard",
+          "return",
+          "home"
+        ]
+      },
+      {
+        "width": 390,
+        "overflow": {
+          "width": 390,
+          "document": 390
+        },
+        "pageErrors": [],
+        "httpErrors": [],
+        "prefetchRefusals": [
+          {
+            "url": "https://www.comparador-hardware.com.ar/product/cg-17076",
+            "status": 503
+          }
+        ],
+        "analyticsRequests": [],
+        "journey": [
+          "guide",
+          "motherboard",
+          "return",
+          "home"
+        ]
+      }
+    ]
+  },
+  "cycles": {
+    "dispatchesByThisTurn": 0,
+    "triggerEvidence": "LaunchAgent existente StartInterval900; sin kickstart/dispatch desde13:14:30 en esta sesión. Intervalos observados, no prueba de cronGitHub ni ciclos diariosG02.",
+    "receipts": [
+      {
+        "version": 1,
+        "producer": "mac-catalog-refresh-job-v1",
+        "id": "tick-70e1c09a-19f4-4b40-8571-8cfcc945e014",
+        "status": "promoted",
+        "promoted": true,
+        "runtimeAck": {
+          "confirmed": true,
+          "generation": "mac-refresh-1791983911330",
+          "fingerprint": "3cfcc1bfb051025d09cda86190159bbaac6855d8f19796502bc1b54537a155d1",
+          "at": "2026-10-14T13:18:46.142Z"
+        },
+        "retention": {
+          "status": "complete",
+          "removedSnapshots": 1,
+          "removedBytes": 514637824,
+          "preservedUnrecognized": 5,
+          "preservedProtected": 2,
+          "rejectedSnapshots": 0,
+          "rejectedReceipts": 4
+        },
+        "startedAt": "2026-10-14T13:18:16.214Z",
+        "completedAt": "2026-10-14T13:18:46.483Z",
+        "durationMs": 30269,
+        "previous": {
+          "version": 1,
+          "generation": "mac-refresh-1791982977827",
+          "database": "snapshots/mac-refresh-1791982977827.sqlite",
+          "sha256": "879dbd09d16318ea6ce735953baef3f0da447b151bd58d79d64dfa3bcf2806e5",
+          "fingerprint": "b856475a49cd8554609d6852520e040b61c00cddb573eae71fcc3ab84af3933d"
+        },
+        "current": {
+          "version": 1,
+          "generation": "mac-refresh-1791983911330",
+          "database": "snapshots/mac-refresh-1791983911330.sqlite",
+          "sha256": "0a88348c348d97598f489ccd9d32511def32ab28d173176c533e2e2de5268aba",
+          "fingerprint": "3cfcc1bfb051025d09cda86190159bbaac6855d8f19796502bc1b54537a155d1"
+        },
+        "observation": {
+          "selected": 356,
+          "attempted": 356,
+          "observed": 351,
+          "comparable": 351,
+          "deferred": 0,
+          "failures": {
+            "REFRESH_LOCAL_NO_OBSERVATION": 5
+          },
+          "sourceHttp": {
+            "compragamer": {
+              "requests": 1,
+              "bytes": 0
+            }
+          },
+          "capture": {
+            "sourceRecords": 1750,
+            "sourceListings": 1706,
+            "stagedWrites": 1706,
+            "sourceHttp": {
+              "requests": 3,
+              "bytes": 2599868
+            }
+          },
+          "httpRequests": 4,
+          "scope": {
+            "products": 59693,
+            "product_prices": 73827,
+            "catalog_price_summaries": 59693,
+            "stores": 34
+          },
+          "coverage": {
+            "asOf": "2026-10-14T13:18:39.910Z",
+            "freshMs": 86400000,
+            "totals": {
+              "total": 73827,
+              "supported": 2698,
+              "unsupported": 71129,
+              "rejected": 0,
+              "unprogrammed": 71018,
+              "pending": 1313,
+              "leased": 0,
+              "backoff": 19,
+              "blocked": 2,
+              "failed": 576,
+              "expired": 108,
+              "observedRecent": 6926,
+              "comparableRecent": 4699,
+              "locallyObservedRecent": 1354,
+              "observedThisTrial": 351,
+              "comparableThisTrial": 351
+            }
+          },
+          "upstream": {
+            "read": 477,
+            "receivedRows": 477,
+            "accepted": 282,
+            "rejected": 195,
+            "requests": 3,
+            "capped": false
+          }
+        },
+        "storage": {
+          "usedBytes": 3334315386,
+          "estimatedPeakGrowthBytes": 1685282816,
+          "freeBytes": 24675557376,
+          "maxStorageBytes": 8589934592,
+          "reserveFreeBytes": 2147483648
+        },
+        "remoteRowsRead": 477,
+        "remoteRowsWritten": 0,
+        "rollback": "Restaurar previous.json mediante rename atómico; no editar una SQLite abierta.",
+        "scope": "500 ofertas conocidas CompraGamer por tick; no acredita catálogo entero ni otras tiendas. Además, hasta1000 observaciones existentes del productor público, con cursor y control de identidad.",
+        "cleanup": {
+          "retainedUnknownFiles": false
+        }
+      },
+      {
+        "version": 1,
+        "producer": "mac-catalog-refresh-job-v1",
+        "id": "tick-28605738-ffdd-4d0e-bdea-1f22a884fe13",
+        "status": "promoted",
+        "promoted": true,
+        "runtimeAck": {
+          "confirmed": true,
+          "generation": "mac-refresh-1791984842643",
+          "fingerprint": "7153f1b83e072a1fcccf4730f44de157e24f8901a715f51a01a0d82b5b611d27",
+          "at": "2026-10-14T13:34:16.321Z"
+        },
+        "retention": {
+          "status": "complete",
+          "removedSnapshots": 1,
+          "removedBytes": 517021696,
+          "preservedUnrecognized": 5,
+          "preservedProtected": 2,
+          "rejectedSnapshots": 0,
+          "rejectedReceipts": 4
+        },
+        "startedAt": "2026-10-14T13:33:46.629Z",
+        "completedAt": "2026-10-14T13:34:16.647Z",
+        "durationMs": 30018,
+        "previous": {
+          "version": 1,
+          "generation": "mac-refresh-1791983911330",
+          "database": "snapshots/mac-refresh-1791983911330.sqlite",
+          "sha256": "0a88348c348d97598f489ccd9d32511def32ab28d173176c533e2e2de5268aba",
+          "fingerprint": "3cfcc1bfb051025d09cda86190159bbaac6855d8f19796502bc1b54537a155d1"
+        },
+        "current": {
+          "version": 1,
+          "generation": "mac-refresh-1791984842643",
+          "database": "snapshots/mac-refresh-1791984842643.sqlite",
+          "sha256": "5e043a9199f915d64c1dd234c3b747b6c40566a5910ca8f8073132dea67a16c6",
+          "fingerprint": "7153f1b83e072a1fcccf4730f44de157e24f8901a715f51a01a0d82b5b611d27"
+        },
+        "observation": {
+          "selected": 6,
+          "attempted": 6,
+          "observed": 6,
+          "comparable": 6,
+          "deferred": 0,
+          "failures": {},
+          "sourceHttp": {
+            "compragamer": {
+              "requests": 1,
+              "bytes": 0
+            }
+          },
+          "capture": {
+            "sourceRecords": 1750,
+            "sourceListings": 1706,
+            "stagedWrites": 1706,
+            "sourceHttp": {
+              "requests": 3,
+              "bytes": 2599868
+            }
+          },
+          "httpRequests": 4,
+          "scope": {
+            "products": 59693,
+            "product_prices": 73827,
+            "catalog_price_summaries": 59693,
+            "stores": 34
+          },
+          "coverage": {
+            "asOf": "2026-10-14T13:34:11.182Z",
+            "freshMs": 86400000,
+            "totals": {
+              "total": 73827,
+              "supported": 2698,
+              "unsupported": 71129,
+              "rejected": 0,
+              "unprogrammed": 71018,
+              "pending": 1309,
+              "leased": 0,
+              "backoff": 19,
+              "blocked": 2,
+              "failed": 576,
+              "expired": 108,
+              "observedRecent": 6770,
+              "comparableRecent": 4614,
+              "locallyObservedRecent": 1360,
+              "observedThisTrial": 6,
+              "comparableThisTrial": 6
+            }
+          },
+          "upstream": {
+            "read": 1000,
+            "receivedRows": 1000,
+            "accepted": 0,
+            "rejected": 1000,
+            "requests": 5,
+            "capped": true
+          }
+        },
+        "storage": {
+          "usedBytes": 3338504076,
+          "estimatedPeakGrowthBytes": 1690689536,
+          "freeBytes": 24650743808,
+          "maxStorageBytes": 8589934592,
+          "reserveFreeBytes": 2147483648
+        },
+        "remoteRowsRead": 1000,
+        "remoteRowsWritten": 0,
+        "rollback": "Restaurar previous.json mediante rename atómico; no editar una SQLite abierta.",
+        "scope": "500 ofertas conocidas CompraGamer por tick; no acredita catálogo entero ni otras tiendas. Además, hasta1000 observaciones existentes del productor público, con cursor y control de identidad.",
+        "cleanup": {
+          "retainedUnknownFiles": false
+        }
+      },
+      {
+        "version": 1,
+        "producer": "mac-catalog-refresh-job-v1",
+        "id": "tick-7aaf9bb7-a26f-441d-85f7-8f95b815620f",
+        "status": "promoted",
+        "promoted": true,
+        "runtimeAck": {
+          "confirmed": true,
+          "generation": "mac-refresh-1791985773253",
+          "fingerprint": "5a39871ba5c438f41da5bfc2faa374d1d29b39f197de15bc8d89244c58de7148",
+          "at": "2026-10-14T13:49:46.639Z"
+        },
+        "retention": {
+          "status": "complete",
+          "removedSnapshots": 1,
+          "removedBytes": 518823936,
+          "preservedUnrecognized": 5,
+          "preservedProtected": 2,
+          "rejectedSnapshots": 0,
+          "rejectedReceipts": 4
+        },
+        "startedAt": "2026-10-14T13:49:16.815Z",
+        "completedAt": "2026-10-14T13:49:46.979Z",
+        "durationMs": 30164,
+        "previous": {
+          "version": 1,
+          "generation": "mac-refresh-1791984842643",
+          "database": "snapshots/mac-refresh-1791984842643.sqlite",
+          "sha256": "5e043a9199f915d64c1dd234c3b747b6c40566a5910ca8f8073132dea67a16c6",
+          "fingerprint": "7153f1b83e072a1fcccf4730f44de157e24f8901a715f51a01a0d82b5b611d27"
+        },
+        "current": {
+          "version": 1,
+          "generation": "mac-refresh-1791985773253",
+          "database": "snapshots/mac-refresh-1791985773253.sqlite",
+          "sha256": "81cd78d99d6e668415ac5da23520b50c62898dbf469e73544b5cd8d5af552303",
+          "fingerprint": "5a39871ba5c438f41da5bfc2faa374d1d29b39f197de15bc8d89244c58de7148"
+        },
+        "observation": {
+          "selected": 32,
+          "attempted": 32,
+          "observed": 31,
+          "comparable": 31,
+          "deferred": 0,
+          "failures": {
+            "REFRESH_LOCAL_NO_OBSERVATION": 1
+          },
+          "sourceHttp": {
+            "compragamer": {
+              "requests": 1,
+              "bytes": 0
+            }
+          },
+          "capture": {
+            "sourceRecords": 1750,
+            "sourceListings": 1706,
+            "stagedWrites": 1706,
+            "sourceHttp": {
+              "requests": 3,
+              "bytes": 2599868
+            }
+          },
+          "httpRequests": 4,
+          "scope": {
+            "products": 59693,
+            "product_prices": 73827,
+            "catalog_price_summaries": 59693,
+            "stores": 34
+          },
+          "coverage": {
+            "asOf": "2026-10-14T13:49:42.035Z",
+            "freshMs": 86400000,
+            "totals": {
+              "total": 73827,
+              "supported": 2698,
+              "unsupported": 71129,
+              "rejected": 0,
+              "unprogrammed": 71018,
+              "pending": 1295,
+              "leased": 0,
+              "backoff": 18,
+              "blocked": 2,
+              "failed": 575,
+              "expired": 108,
+              "observedRecent": 6593,
+              "comparableRecent": 4486,
+              "locallyObservedRecent": 1391,
+              "observedThisTrial": 31,
+              "comparableThisTrial": 31
+            }
+          },
+          "upstream": {
+            "read": 993,
+            "receivedRows": 1000,
+            "accepted": 0,
+            "rejected": 993,
+            "requests": 5,
+            "capped": true
+          }
+        },
+        "storage": {
+          "usedBytes": 3340226931,
+          "estimatedPeakGrowthBytes": 1690443776,
+          "freeBytes": 24520298496,
+          "maxStorageBytes": 8589934592,
+          "reserveFreeBytes": 2147483648
+        },
+        "remoteRowsRead": 1000,
+        "remoteRowsWritten": 0,
+        "rollback": "Restaurar previous.json mediante rename atómico; no editar una SQLite abierta.",
+        "scope": "500 ofertas conocidas CompraGamer por tick; no acredita catálogo entero ni otras tiendas. Además, hasta1000 observaciones existentes del productor público, con cursor y control de identidad.",
+        "cleanup": {
+          "retainedUnknownFiles": false
+        }
+      }
+    ]
+  },
+  "golden": {
+    "checkedAt": "2026-10-14T13:40:12.480Z",
+    "upstreamObservedAt": "2026-10-14T10:16:18.351+00:00",
+    "upstreamProofKeys": [
+      "model"
+    ],
+    "localObservedAt": "2026-10-11T18:49:20.003Z",
+    "localStock": "unknown",
+    "runtimeRecovered": false
+  },
+  "katech": {
+    "validatedAt": "2026-10-14T14:05:31.127Z",
+    "networkRequestsUsed": {
+      "katech": 9,
+      "fullh4rd": 1
+    },
+    "samples": [
+      {
+        "sourceReceivedAt": "2026-10-14T13:34:46.363Z",
+        "url": "https://katech.com.ar/producto/parlante-logitech-g560-lightsync-rgb-gaming/",
+        "title": "PARLANTE LOGITECH G560 LIGHTSYNC RGB GAMING",
+        "sourceId": "product-1023211",
+        "sku": "PAB125",
+        "cashLabel": "Precio especial EFECTIVO/TRANSFERENCIA Precio especial EFECTIVO/TRANSFERENCIA ",
+        "cashAmount": "$609.160,00\n",
+        "stockText": "Disponible en 24/48hs hábiles para retiro/despacho",
+        "beforeParsed": null,
+        "afterParsed": {
+          "name": "PARLANTE LOGITECH G560 LIGHTSYNC RGB GAMING",
+          "specs": {
+            "SourceListingId": "1023211",
+            "SKU": "PAB125"
+          },
+          "price": 609160,
+          "stock": "unknown",
+          "priceCondition": "special"
+        },
+        "originalChallengeFlag": true,
+        "classification": "product-html-with-js-detection"
+      },
+      {
+        "sourceReceivedAt": "2026-10-14T13:36:14.965Z",
+        "url": "https://katech.com.ar/producto/memoria-ram-sodimm-32gb-ddr5-5600-corsair-vengeance/",
+        "title": "MEMORIA RAM SODIMM 32GB DDR5 5600 CORSAIR VENGEANCE",
+        "sourceId": "product-1023210",
+        "sku": "MSO047",
+        "cashLabel": "Precio especial EFECTIVO/TRANSFERENCIA Precio especial EFECTIVO/TRANSFERENCIA ",
+        "cashAmount": "$1.022.610,00\n",
+        "stockText": "Disponible en 24/48hs hábiles para retiro/despacho",
+        "beforeParsed": null,
+        "afterParsed": {
+          "name": "MEMORIA RAM SODIMM 32GB DDR5 5600 CORSAIR VENGEANCE",
+          "specs": {
+            "SourceListingId": "1023210",
+            "SKU": "MSO047"
+          },
+          "price": 1022610,
+          "stock": "unknown",
+          "priceCondition": "special"
+        },
+        "originalChallengeFlag": true,
+        "classification": "product-html-with-js-detection"
+      },
+      {
+        "sourceReceivedAt": "2026-10-14T13:36:20.442Z",
+        "url": "https://katech.com.ar/producto/notebook-hp-16-zbook-xg2i-u9-386h-32g-1t-rtx-1000-8g-w11/",
+        "title": "NOTEBOOK HP 16 ZBOOK XG2I U9-386H 32G 1T RTX 1000 8G W11",
+        "sourceId": "product-1023037",
+        "sku": "NOT1348",
+        "cashLabel": "Precio especial EFECTIVO/TRANSFERENCIA Precio especial EFECTIVO/TRANSFERENCIA ",
+        "cashAmount": "$8.270.050,00\n",
+        "stockText": "Disponible en 24/48hs hábiles para retiro/despacho",
+        "beforeParsed": null,
+        "afterParsed": {
+          "name": "NOTEBOOK HP 16 ZBOOK XG2I U9-386H 32G 1T RTX 1000 8G W11",
+          "specs": {
+            "SourceListingId": "1023037",
+            "SKU": "NOT1348"
+          },
+          "price": 8270050,
+          "stock": "unknown",
+          "priceCondition": "special"
+        },
+        "originalChallengeFlag": true,
+        "classification": "product-html-with-js-detection"
+      },
+      {
+        "sourceReceivedAt": "2026-10-14T13:38:02.529Z",
+        "url": "https://katech.com.ar/producto/memoria-ram-32gb-2x16-ddr5-5200-corsair-vengeange-black-ddr5/",
+        "title": "MEMORIA RAM 32GB (2X16) DDR5 5200 CORSAIR VENGEANGE BLACK DDR5",
+        "sourceId": "product-1023209",
+        "sku": "MEM942",
+        "cashLabel": "Precio especial EFECTIVO/TRANSFERENCIA Precio especial EFECTIVO/TRANSFERENCIA ",
+        "cashAmount": "$990.420,00\n",
+        "stockText": "Disponible en 24/48hs hábiles para retiro/despacho",
+        "beforeParsed": null,
+        "afterParsed": {
+          "name": "MEMORIA RAM 32GB (2X16) DDR5 5200 CORSAIR VENGEANGE BLACK DDR5",
+          "specs": {
+            "SourceListingId": "1023209",
+            "SKU": "MEM942"
+          },
+          "price": 990420,
+          "stock": "unknown",
+          "priceCondition": "special"
+        },
+        "originalChallengeFlag": false,
+        "classification": "product-html-with-js-detection"
+      },
+      {
+        "sourceReceivedAt": "2026-10-14T13:38:09.018Z",
+        "url": "https://katech.com.ar/producto/pc-gamer-amd-ryzen-5-7600x3d-a620-sin-ram-1tb-rx-7600-700w/",
+        "title": "PC GAMER AMD RYZEN 5 7600X3D A620 SIN RAM 1TB RX 7600 700W",
+        "sourceId": "product-1000045",
+        "sku": "PCG232",
+        "cashLabel": "Precio especial EFECTIVO/TRANSFERENCIA Precio especial EFECTIVO/TRANSFERENCIA ",
+        "cashAmount": "$1.832.340,00\n",
+        "stockText": "Hay stock disponible!  ",
+        "beforeParsed": null,
+        "afterParsed": {
+          "name": "PC GAMER AMD RYZEN 5 7600X3D A620 SIN RAM 1TB RX 7600 700W",
+          "specs": {
+            "SourceListingId": "1000045",
+            "SKU": "PCG232"
+          },
+          "price": 1832340,
+          "stock": "in-stock",
+          "priceCondition": "special"
+        },
+        "originalChallengeFlag": false,
+        "classification": "product-html-with-js-detection"
+      }
+    ],
+    "baselineRevision": "13acc7413cb1f2a95bde8229d69bda9a49dc1f2d",
+    "reviewRepair": {
+      "offline": true,
+      "newNetworkRequests": 0,
+      "realCapturesPreserved": 5,
+      "strikeOnlyRejected": true,
+      "negativeAvailabilityOverridesPositive": true,
+      "limitedAvailabilityPreserved": true,
+      "semanticNegationDelta": {
+        "newNetworkRequests": 0,
+        "redFailures": 5,
+        "newOfflineControls": 12,
+        "realCapturesPreserved": 5,
+        "ambiguousNegativeAvailability": "unknown",
+        "positiveSubstringAndClassFallback": false
+      }
+    }
+  },
+  "githubFailure": {
+    "observedRun": {
+      "id": 38569747409,
+      "sourceRevision": "13acc7413cb1f2a95bde8229d69bda9a49dc1f2d",
+      "url": "https://github.com/john2k2/comparador-hardware-argentina/actions/runs/38569747409",
+      "createdAt": "2026-10-14T13:11:33Z",
+      "failureAt": "2026-10-14T13:12:04.4733436Z",
+      "node": "22.23.3",
+      "mode": "guides",
+      "trigger": "cloudflare-fallback",
+      "phase": "module-load",
+      "code": "ERR_MODULE_NOT_FOUND",
+      "module": "next/server",
+      "affectedEntries": [
+        "catalog/refresh-entry",
+        "measurement/home"
+      ]
+    },
+    "localBefore": {
+      "checkedAt": "2026-10-14T13:34:20.658Z",
+      "node": "v26.5.0",
+      "status": 1,
+      "moduleNotFound": true,
+      "missingNextServer": true,
+      "expectedGuardReached": false
+    },
+    "localAfter": {
+      "node22": "22.23.3",
+      "tests": 40,
+      "passed": 40,
+      "log": "runner-tests-node22.log",
+      "networkForbidden": true,
+      "remoteWrites": 0
+    },
+    "change": "CLIbundlesresuelven next/server y next/headers conextensión.js real; mismo módulo sinmock.",
+    "activation": {
+      "published": false,
+      "runtimeChanged": false,
+      "workflowsDispatched": false
+    }
+  },
+  "changesPublished": false,
+  "note": "Los recibos naturales pertenecen a producción; patches/controlesdeidentidadsonlocales. No sumar universos ni convertirreplaysenobservaciones.",
+  "postThirdCycle": {
+    "checkedAt": "2026-10-14T14:02:37.553Z",
+    "base": "https://www.comparador-hardware.com.ar",
+    "pointer": {
+      "version": 1,
+      "generation": "mac-refresh-1791985773253",
+      "database": "snapshots/mac-refresh-1791985773253.sqlite",
+      "sha256": "81cd78d99d6e668415ac5da23520b50c62898dbf469e73544b5cd8d5af552303",
+      "fingerprint": "5a39871ba5c438f41da5bfc2faa374d1d29b39f197de15bc8d89244c58de7148"
+    },
+    "budget": {
+      "day": "2026-10-14",
+      "used": 93841,
+      "ceiling": 1000000
+    },
+    "health": {
+      "readOnly": true,
+      "generation": "mac-refresh-1791985773253",
+      "fingerprint": "5a39871ba5c438f41da5bfc2faa374d1d29b39f197de15bc8d89244c58de7148"
+    },
+    "tuples": [
+      {
+        "slot": "cpu",
+        "productId": "cg-14309",
+        "url": "https://compragamer.com/producto/Procesador_AMD_Ryzen_5_7600_5_1GHz_Turbo_AM5_Wraith_Stealth_Cooler_14309",
+        "sku": "100-100001015BOX",
+        "price": 360150,
+        "stock": "in-stock",
+        "priceCondition": "special",
+        "observedAt": "2026-10-14T12:53:25.241Z",
+        "sourceObservationId": "1230ed3f-39d1-4d4f-8f69-5e26e64b37a3",
+        "sourceProductId": "agrupado-procesadores-combo-amd-ryzen-5-7600-am5-1t9ctq",
+        "merchantCheckedAt": "2026-10-14T13:32:35.088Z"
+      },
+      {
+        "slot": "gpu",
+        "productId": "cg-17960",
+        "url": "https://compragamer.com/producto/Placa_de_Video_Asrock_Radeon_RX_9060_XT_16GB_GDDR6_Challenger_OC_17960",
+        "sku": "RX 9060XT CL 16GO",
+        "price": 947350,
+        "stock": "in-stock",
+        "priceCondition": "special",
+        "observedAt": "2026-10-14T12:53:25.241Z",
+        "sourceObservationId": "2ff998fd-e97b-4fa6-90ac-0e2f670fff85",
+        "sourceProductId": "agrupado-tarjetas-graficas-asrock-rx-9060-xt-challenger-16gb-o4jfvc",
+        "merchantCheckedAt": "2026-10-14T13:32:38.897Z"
+      },
+      {
+        "slot": "ram",
+        "productId": "cg-21565",
+        "url": "https://compragamer.com/producto/Memoria_KLEVV_DDR5_32GB_2X16GB_6000MHz_BOLT_V_CL28_21565",
+        "sku": "KD5AGUA80-60B280H",
+        "price": 872200,
+        "stock": "in-stock",
+        "priceCondition": "special",
+        "observedAt": "2026-10-14T12:32:19.247Z",
+        "sourceObservationId": "91e9cc04-aadf-4ad5-a99c-72bd6aa84075",
+        "sourceProductId": "cg-21565",
+        "merchantCheckedAt": "2026-10-14T13:32:41.678Z"
+      },
+      {
+        "slot": "ssd",
+        "productId": "cg-16872",
+        "url": "https://compragamer.com/producto/Disco_Solido_SSD_M_2_Kingston_1TB_NV3_6000MB_s_NVMe_PCI_E_Gen4_x4_16872",
+        "sku": "SNV3S/1000G",
+        "price": 289050,
+        "stock": "in-stock",
+        "priceCondition": "special",
+        "observedAt": "2026-10-14T13:49:33.172Z",
+        "sourceObservationId": "e3dfa278-6e7b-4aa7-81bc-a5d61c07e0e8",
+        "sourceProductId": "agrupado-almacenamiento-kingston-1tb-11hxksf",
+        "merchantCheckedAt": "2026-10-14T13:32:44.555Z"
+      },
+      {
+        "slot": "motherboard",
+        "productId": "cg-17076",
+        "url": "https://compragamer.com/producto/Mother_MSI_B650M_GAMING_WIFI_AM5_DDR5_17076",
+        "sku": "B650M GAMING WIFI",
+        "price": 188985,
+        "stock": "in-stock",
+        "priceCondition": "special",
+        "observedAt": "2026-10-14T12:32:19.247Z",
+        "sourceObservationId": "0c619633-bfba-4a8e-ae8c-0332444fc34f",
+        "sourceProductId": "cg-17076",
+        "merchantCheckedAt": "2026-10-14T13:32:47.447Z"
+      },
+      {
+        "slot": "psu",
+        "productId": "cg-18173",
+        "url": "https://compragamer.com/producto/Fuente_Asrock_750W_80_Plus_Gold_Steel_Legend_Full_Modular_ATX_3_1_PCIe_5_1_Cybenetics_Platinum_18173",
+        "sku": "SL-750G",
+        "price": 130000,
+        "stock": "in-stock",
+        "priceCondition": "special",
+        "observedAt": "2026-10-14T12:53:25.241Z",
+        "sourceObservationId": "00fd47d1-ef88-4773-b1ad-1fd8b8590139",
+        "sourceProductId": "agrupado-fuentes-alimentacion-asrock-steel-ybgz8c",
+        "merchantCheckedAt": "2026-10-14T13:32:50.320Z"
+      },
+      {
+        "slot": "case",
+        "productId": "agrupado-gabinetes-4x120mm-antec-argb-black-gabinete-templado-vidri-15eoh7x",
+        "url": "https://compragamer.com/producto/Gabinete_Antec_VX310_RGB_Black_4x120mm_Vidrio_Templado_18607",
+        "sku": "0-761345-10232-2",
+        "price": 59990,
+        "stock": "in-stock",
+        "priceCondition": "special",
+        "observedAt": "2026-10-14T12:32:19.247Z",
+        "sourceObservationId": "26894c4d-7b86-4820-85bc-7e00fc0f6ce7",
+        "sourceProductId": "agrupado-gabinetes-4x120mm-antec-argb-black-gabinete-templado-vidri-15eoh7x",
+        "merchantCheckedAt": "2026-10-14T13:32:52.986Z"
+      }
+    ],
+    "totalARS": 2847725,
+    "guideDocument": {
+      "status": 200,
+      "offers": 7,
+      "totalMatches": true
+    },
+    "remoteWrites": 0,
+    "refreshDispatched": false
+  },
+  "localChanges": [
+    {
+      "commit": "66039ea",
+      "unit": "imports de Next en runners Node",
+      "published": false,
+      "tests": 40,
+      "node": "22.23.3"
+    },
+    {
+      "commit": "63b1c14",
+      "unit": "diagnóstico upstream por tienda y motivo",
+      "published": false,
+      "focusedTests": 61,
+      "goldenReplayChecks": 8
+    },
+    {
+      "commit": "87e7b78",
+      "unit": "fichas actuales de Katech y stock conservador",
+      "published": false,
+      "focusedTests": 99,
+      "realCapturedPages": 5,
+      "finalIndependentReviewChecks": 31
+    }
+  ],
+  "validation": {
+    "runner": {
+      "tests": 40,
+      "nodeVersions": [
+        "22.23.3",
+        "26.5.0"
+      ],
+      "realImports": true
+    },
+    "sync": {
+      "tests": 61,
+      "goldenReplay": 8
+    },
+    "katech": {
+      "tests": 99,
+      "realCapturedPages": 5,
+      "negativeReviewCasesCorrected": [
+        "strike-only price",
+        "No hay existencias",
+        "No esta en stock"
+      ],
+      "independentReview": {
+        "finalChecks": 31,
+        "result": "passed",
+        "materialFindingsOpen": 0,
+        "closedLocally": [
+          "strike-only price",
+          "negative availability text including No esta en stock"
+        ],
+        "productionRecoveryProven": false
+      }
+    },
+    "typecheck": "passed",
+    "focusedLint": "passed",
+    "newDeployment": false
+  }
+}
