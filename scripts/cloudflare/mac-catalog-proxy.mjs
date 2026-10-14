@@ -4,13 +4,13 @@ export const LEGACY_ORIGIN = 'https://comparador-hardware-argentina.ortiz-jonath
 const publicHosts = new Set(['www.comparador-hardware.com.ar', 'comparador-hardware.com.ar']);
 const forwardedHost = 'www.comparador-hardware.com.ar';
 const originHeader = 'x-comparador-origin-token', pilotHeader = 'x-comparador-pilot-token';
-const exactRoutes = new Set(['/search', '/comparativa/comparar', '/api/search', '/api/search/suggestions', '/api/products', '/api/pc-builder/catalog']);
+const exactRoutes = new Set(['/search', '/comparativa/comparar', '/api/search', '/api/search/suggestions', '/api/products', '/api/pc-builder/catalog', '/sitemap-index.xml', '/api/home/observed-sections', '/api/home/sections']);
 
 export function routeKind(pathname) {
   if (/%(?:2f|5c|00)/i.test(pathname) || pathname.includes('\\')) return null;
   if (/^\/_next\/static\/(?:[^/]+\/)*[^/]+$/.test(pathname)) return 'static';
   const path = pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname;
-  if (exactRoutes.has(path) || /^\/(?:product|comparar)\/[^/]+$/.test(path)) return 'catalog';
+  if (exactRoutes.has(path) || /^\/product-sitemap\/\d+(?:\.xml)?$/.test(path) || /^\/(?:product|comparar)\/[^/]+$/.test(path)) return 'catalog';
   return null;
 }
 function token(value) { return typeof value === 'string' && /^[A-Za-z0-9_.=+/-]{32,512}$/.test(value); }

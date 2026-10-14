@@ -331,10 +331,14 @@ async function readHomeSectionsData(): Promise<HomeSectionsData> {
 
   const dropWindowStartMs = Date.now() - PRICE_DROP_WINDOW_MS;
   const dropWindowStartIso = new Date(dropWindowStartMs).toISOString();
-  const [products, recentProducts] = await Promise.all([
-    readProductsFromDatabase({ sortBy: 'newest', limit: DB_PRODUCTS_LIMIT }),
-    readRecentOfferProducts(),
-  ]);
+  // SQL ya trae una ventana reciente acotada. Volver a ordenar todo el catálogo
+  // para secciones auxiliares costaba varios segundos por cada visita a portada.
+  const [products, recentProducts] = sqlCatalog
+    ? await readRecentOfferProducts().then(recent => [recent, recent])
+    : await Promise.all([
+      readProductsFromDatabase({ sortBy: 'newest', limit: DB_PRODUCTS_LIMIT }),
+      readRecentOfferProducts(),
+    ]);
 
   const featuredPrimary = pickFeaturedProducts(products, FEATURED_PRODUCTS_LIMIT);
   const featuredFallback = featuredPrimary.length === 0
@@ -347,7 +351,9 @@ async function readHomeSectionsData(): Promise<HomeSectionsData> {
   if (featuredProducts.length === 0 && products.length > 0) {
     featuredProducts.push(...products.slice(0, FEATURED_PRODUCTS_LIMIT));
   }
-  const historyRows = await readRecentHistoryRows(dropWindowStartIso).catch((historyError) => {
+  // El catálogo SQL no incluye historial. No mezclar la selección Mac/D1 con
+  // una lectura privilegiada de otro backend ni anunciar una baja sin evidencia.
+  const historyRows = sqlCatalog ? [] : await readRecentHistoryRows(dropWindowStartIso).catch((historyError) => {
     console.warn('[Home Sections] Historial de precios no disponible:', historyError);
     return [] as HistoryRow[];
   });
@@ -361,11 +367,11 @@ async function readHomeSectionsData(): Promise<HomeSectionsData> {
   const priceDropFallback = priceDropPrimary.length === 0
     ? pickFallbackHomeProducts(products, PRICE_DROP_PRODUCTS_LIMIT, new Set(featuredProducts.map((product) => product.id)))
     : [];
-  const priceDropProducts = priceDropPrimary.length > 0 ? priceDropPrimary : priceDropFallback;
-  const priceDropFallbackUsed = priceDropPrimary.length === 0 && priceDropFallback.length > 0;
+  const priceDropProducts = sqlCatalog ? [] : priceDropPrimary.length > 0 ? priceDropPrimary : priceDropFallback;
+  const priceDropFallbackUsed = sqlCatalog || (priceDropPrimary.length === 0 && priceDropFallback.length > 0);
 
   // Si todavia no hay productos con bajada de precio, usar cualquier producto disponible (excluyendo destacados)
-  if (priceDropProducts.length === 0 && products.length > 0) {
+  if (!sqlCatalog && priceDropProducts.length === 0 && products.length > 0) {
     const featuredIds = new Set(featuredProducts.map((product) => product.id));
     const remainingProducts = products.filter((product) => !featuredIds.has(product.id));
     priceDropProducts.push(...remainingProducts.slice(0, PRICE_DROP_PRODUCTS_LIMIT));

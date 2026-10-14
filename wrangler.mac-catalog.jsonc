@@ -7,6 +7,38 @@
   "preview_urls": false,
   "routes": [
     {
+      "pattern": "www.comparador-hardware.com.ar/api/home/observed-sections",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/api/home/sections",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/api/home/observed-sections",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/api/home/sections",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/sitemap-index.xml",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/product-sitemap/*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/sitemap-index.xml",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/product-sitemap/*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
       "pattern": "www.comparador-hardware.com.ar/search*",
       "zone_id": "a0b41fefebfd421f3c4509400e087cca"
     },

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { createMacCatalogProxy, MAC_ORIGIN, LEGACY_ORIGIN, routeKind } from './mac-catalog-proxy.mjs';
 
 const secret = 'origin-'.repeat(8), pilotSecret = 'pilot-'.repeat(8), host = 'catalog-proof.example.workers.dev';
@@ -8,6 +9,49 @@ const production = { MAC_CATALOG_MODE: 'production', MAC_CATALOG_ENABLED: '1', M
 const pilot = { MAC_CATALOG_MODE: 'pilot', MAC_ORIGIN_TOKEN: secret, MAC_CATALOG_PILOT_TOKEN: pilotSecret,
   MAC_CATALOG_PILOT_HOST: host, MAC_CATALOG_PILOT_EXPIRES_AT: '2030-01-01T00:00:00Z', ASSETS: assets };
 const request = (path = '/search?q=ram', init = {}) => new Request('https://www.comparador-hardware.com.ar' + path, init);
+
+test('sitemaps de productos llegan al mismo catálogo sin desviar el editorial', async () => {
+  const paths = ['/sitemap-index.xml', '/product-sitemap/0.xml', '/product-sitemap/2'];
+  const sent = [];
+  const xml = '<urlset><url><loc>https://www.comparador-hardware.com.ar/product/agrupado-cpu</loc><lastmod>2026-10-13T12:00:00.000Z</lastmod></url></urlset>';
+  const proxy = createMacCatalogProxy({ fetch: async req => { sent.push(req.url); return new Response(xml, { headers: { 'Content-Type': 'application/xml' } }); } });
+  for (const path of paths) {
+    assert.equal(routeKind(path), 'catalog');
+    const response = await proxy.fetch(request(path), production);
+    assert.equal(response.status, 200);
+    assert.equal(await response.text(), xml);
+  }
+  assert.deepEqual(sent, paths.map(path => MAC_ORIGIN + path));
+  for (const path of ['/sitemap.xml', '/sitemap-index.xml/admin', '/product-sitemap/foo.xml', '/product-sitemap/-1.xml', '/product-sitemap/1.xml/admin']) {
+    assert.equal(routeKind(path), null);
+  }
+});
+
+test('configuración enruta índice y páginas de ambos dominios al Worker de catálogo', () => {
+  const source = readFileSync(new URL('../../wrangler.mac-catalog.jsonc', import.meta.url), 'utf8').replace(/^\s*\/\/.*$/gm, '');
+  const config = JSON.parse(source);
+  const patterns = new Set(config.routes.map(route => route.pattern));
+  for (const hostname of ['www.comparador-hardware.com.ar', 'comparador-hardware.com.ar']) {
+    assert.ok(patterns.has(hostname + '/sitemap-index.xml'));
+    assert.ok(patterns.has(hostname + '/product-sitemap/*'));
+  }
+});
+
+test('ambas selecciones de portada usan Mac y mantienen la respuesta de fallo', async () => {
+  const paths = ['/api/home/observed-sections', '/api/home/sections'];
+  const sent = [];
+  const proxy = createMacCatalogProxy({ fetch: async req => { sent.push(req.url); return new Response('{}', { status: 503 }); } });
+  for (const path of paths) {
+    assert.equal(routeKind(path), 'catalog');
+    assert.equal((await proxy.fetch(request(path), production)).status, 503);
+  }
+  assert.deepEqual(sent, paths.map(path => MAC_ORIGIN + path));
+  const config = JSON.parse(readFileSync(new URL('../../wrangler.mac-catalog.jsonc', import.meta.url), 'utf8').replace(/^\s*\/\/.*$/gm, ''));
+  for (const host of ['www.comparador-hardware.com.ar', 'comparador-hardware.com.ar']) {
+    for (const path of paths) assert.ok(config.routes.some(route => route.pattern === host + path));
+  }
+  assert.equal(routeKind('/api/home/observed-sections/admin'), null);
+});
 
 test('mapa incluye sólo rutas de catálogo, suggestions y chunks; excluye portada/auth/admin/guías', () => {
   for (const path of ['/search', '/search/', '/product/cg-21565', '/comparar/procesadores', '/comparativa/comparar',

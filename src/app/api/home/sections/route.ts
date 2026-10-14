@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getHomeSectionsData } from '@/lib/home/home-sections';
+import { isCatalogSqlBackendEnabled } from '@/lib/catalog/catalog-backend';
+import { logger } from '@/lib/logger';
 
 export async function GET() {
   try {
@@ -7,14 +9,14 @@ export async function GET() {
     
     return NextResponse.json(data, {
       headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'Cache-Control': isCatalogSqlBackendEnabled() ? 'no-store' : 'public, s-maxage=300, stale-while-revalidate=600',
       },
     });
-  } catch (error) {
-    console.error('Home sections API error:', error);
+  } catch {
+    logger.warn('Selección de portada no disponible');
     return NextResponse.json(
       { error: 'Error al obtener secciones de home' },
-      { status: 500 },
+      { status: isCatalogSqlBackendEnabled() ? 503 : 500, headers: { 'Cache-Control': 'no-store' } },
     );
   }
 }
