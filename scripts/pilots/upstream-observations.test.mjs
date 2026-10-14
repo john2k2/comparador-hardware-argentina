@@ -6,7 +6,7 @@ import { createRequire, Module } from 'node:module';
 import { build } from 'esbuild';
 import { resolve } from 'node:path';
 import { loadMacRefreshConsumer } from './mac-catalog-refresh.mjs';
-const { admitUpstreamObservations, syncUpstreamObservations } = await loadMacRefreshConsumer();
+const { admitUpstreamObservations, syncUpstreamObservations, guidePriorityOfferIds } = await loadMacRefreshConsumer();
 // Productor actual: revisión determinista real. Proveedores/caché están prohibidos
 // y las claves de entorno se reemplazan al compilar, sin leer credenciales.
 const producerModule = new Module(import.meta.filename + '.producer.cjs');
@@ -51,6 +51,82 @@ test('transporta precio/stock/fecha observados sin renovar metadata ni asociacio
   assert.equal(f.db.prepare('SELECT row_json FROM products').get().row_json, beforeProduct);
   assert.equal(f.db.prepare('SELECT row_json FROM pilot_offer_observations').get().row_json, JSON.stringify(f.read()));
   assert.deepEqual(result.byStore, { compragamer: { read: 1, accepted: 1, rejected: 0, reasons: { accepted: 1 } } });
+});
+
+function repairedMotherFixture(t) {
+  const f = fixture(t);
+  const product = { id: 'cg-17076', name: 'Mother MSI B650M GAMING WIFI AM5 DDR5', category: 'motherboards',
+    specs: { SKU: 'B650M GAMING WIFI', SourceListingId: '17076' } };
+  const before = { id: '0c619633-bfba-4a8e-ae8c-0332444fc34f', product_id: product.id, store_id: 'compragamer',
+    url: 'https://compragamer.com/producto/Mother_MSI_B650M_GAMING_WIFI_AM5_DDR5_17076',
+    price: 188985, stock: 'in-stock', last_updated: old, identity_review: null };
+  f.db.exec('DELETE FROM product_prices');
+  f.db.prepare('UPDATE products SET id=?,category=?,row_json=?').run(product.id, product.category, JSON.stringify(product));
+  f.db.prepare('INSERT INTO product_prices(id,product_id,price,url,row_json,store_id) VALUES(?,?,?,?,?,\'compragamer\')')
+    .run(before.id, before.product_id, before.price, before.url, JSON.stringify(before));
+  const upstreamId = 'agrupado-motherboards-msi-gaming-am5-b650m-12gj446';
+  const row = { ...before, product_id: upstreamId, last_updated: recent, price: 190000, stock: 'unknown',
+    source_identity: { title: product.name, storeSku: product.specs.SKU, listingRef: 'compragamer:id:17076' },
+    products: { id: upstreamId, name: 'Motherboard MSI B650M GAMING WIFI AM5', category: product.category, specs: {} } };
+  return { ...f, product, before, row };
+}
+test('Mother17076 conserva la asociación reparada al recibir la misma publicación remota nueva', t => {
+  const f = repairedMotherFixture(t), products = f.db.prepare('SELECT * FROM products').all();
+  const original = structuredClone(f.row), report = admitUpstreamObservations(f.db, [f.row], now);
+  assert.equal(report.accepted, 1);
+  const { products: _remoteProduct, ...offer } = f.row;
+  assert.deepEqual(f.read(), { ...offer, product_id: f.product.id });
+  assert.deepEqual(f.db.prepare('SELECT * FROM products').all(), products);
+  assert.deepEqual(f.row, original);
+  assert.equal(f.read().stock, 'unknown'); assert.equal(f.read().last_updated, recent);
+  assert.equal(f.read().identity_review, null);
+  assert.equal(admitUpstreamObservations(f.db, [f.row], now).reasons['not-newer'], 1);
+});
+test('Mother17076 no extiende el alias a otra oferta, grupo, variante, SKU, fuente o dictamen', t => {
+  const patches = [
+    r => ({ ...r, id: 'other' }), r => ({ ...r, product_id: 'other' }),
+    r => ({ ...r, store_id: 'maximus' }), r => ({ ...r, url: r.url + '?other=1' }),
+    r => ({ ...r, products: { ...r.products, id: 'other' } }),
+    r => ({ ...r, products: { ...r.products, name: r.products.name.replace('B650M', 'B650') } }),
+    r => ({ ...r, products: { ...r.products, category: 'memoria-ram' } }),
+    r => ({ ...r, products: { ...r.products, specs: { revision: 'other' } } }),
+    r => ({ ...r, source_identity: { ...r.source_identity, title: r.source_identity.title.replace('WIFI', 'WIFI II') } }),
+    r => ({ ...r, source_identity: { ...r.source_identity, storeSku: 'OTHER' } }),
+    r => ({ ...r, source_identity: { ...r.source_identity, listingRef: 'compragamer:id:17077' } }),
+    r => ({ ...r, source_identity: { ...r.source_identity, sourceId: '17077' } }),
+    r => ({ ...r, source_identity: { ...r.source_identity, purchaseRestriction: 'bundle-only' } }),
+    r => ({ ...r, identity_review: { status: 'needs-review' } }),
+    r => ({ ...r, last_updated: '2099-01-01T00:00:00Z' }),
+  ];
+  for (const patch of patches) {
+    const f = repairedMotherFixture(t);
+    assert.equal(admitUpstreamObservations(f.db, [patch(f.row)], now).accepted, 0);
+    assert.deepEqual(f.read(), f.before);
+  }
+  for (const changes of [{ name: 'Mother MSI B650M GAMING WIFI II AM5 DDR5' }, { specs: { SKU: 'OTHER', SourceListingId: '17076' } }]) {
+    const f = repairedMotherFixture(t);
+    f.db.prepare('UPDATE products SET row_json=?').run(JSON.stringify({ ...f.product, ...changes }));
+    assert.equal(admitUpstreamObservations(f.db, [f.row], now).accepted, 0);
+    assert.deepEqual(f.read(), f.before);
+  }
+});
+test('las referencias editoriales CPU y SSD preceden a candidatos baratos sin ampliar el límite', t => {
+  const f = fixture(t);
+  for (const [id, category, title] of [
+    ['cg-14309', 'procesadores', 'ryzen 5 7600'], ['cg-16872', 'almacenamiento', 'kingston nv3 1tb nvme'],
+  ]) for (let index = 0; index < 5; index++) {
+    const productId = index === 4 ? id : id + '-candidate-' + index;
+    const offerId = 'offer-' + productId;
+    f.db.prepare('INSERT INTO products VALUES(?,?,?,?,?,?,?,?,?,?)')
+      .run(productId, category, title, title, title, 1, 0, old, old, JSON.stringify({ id: productId, name: title, category }));
+    f.db.prepare('INSERT INTO product_prices VALUES(?,?,?,?,?,?)')
+      .run(offerId, productId, 'compragamer', index + 1, url, JSON.stringify({ id: offerId, product_id: productId }));
+  }
+  const before = f.db.prepare('SELECT * FROM product_prices').all(), ids = guidePriorityOfferIds(f.db);
+  assert(ids.includes('offer-cg-14309')); assert(ids.includes('offer-cg-16872'));
+  assert(ids.indexOf('offer-cg-14309') < ids.indexOf('offer-cg-14309-candidate-0'));
+  assert(ids.length <= 64); assert.equal(ids.length, new Set(ids).size);
+  assert.deepEqual(f.db.prepare('SELECT * FROM product_prices').all(), before);
 });
 
 test('Golden188718: prueba abreviada real se rechaza; productor actual genera once atributos sin cambiar observación', async t => {

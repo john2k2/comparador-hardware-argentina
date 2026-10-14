@@ -12,6 +12,7 @@ import { BUDGET_GUIDES } from '@/lib/seo/budget-guides-data';
 import { catalogSearchText } from './catalog-matchers.mjs';
 import type { DbProductPriceRow, DbProductRow } from '@/lib/persistence/product-read-types';
 import { stores } from '@/lib/scrapers/static-data';
+import { GUIDE_LISTING_REPAIR } from './repair-guide-listing';
 
 export type UpstreamObservation = DbProductPriceRow & {
   id: string; product_id: string; products: DbProductRow;
@@ -37,11 +38,40 @@ function subject(raw: DbProductRow, name = raw.name) {
     canonical_product_key: buildProductIdentityKey(raw.category as HardwareCategory, name), product_prices: [] });
 }
 
+/** La reparación ya publicada separó una oferta del grupo remoto. Sólo ese
+ * vínculo auditado puede conservar el destino local; nunca agrupar por SKU o
+ * clave canónica ni trasladar una aprobación anterior a una lectura nueva.
+ */
+function repairedGuideDestination(db: DatabaseSync, row: UpstreamObservation, stored: Record<string, unknown>): DbProductRow | null {
+  const c = GUIDE_LISTING_REPAIR, source = row.source_identity;
+  if (row.id !== c.offerId || row.product_id !== c.groupedProductId || stored.product_id !== c.productId
+    || row.store_id !== 'compragamer' || row.url !== c.url || stored.store_id !== row.store_id || stored.url !== row.url
+    || row.products?.id !== c.groupedProductId || row.products.name !== c.groupedTitle || row.products.category !== c.category
+    || !row.products.specs || Object.keys(row.products.specs).length !== 0
+    || row.identity_review != null || !source || source.title !== c.title || source.storeSku !== c.sku
+    || source.listingRef !== 'compragamer:id:' + c.listingId
+    || source.sourceId !== undefined && source.sourceId !== c.listingId || source.purchaseRestriction !== undefined) return null;
+  const local = db.prepare('SELECT category,row_json FROM products WHERE id=?').get(c.productId);
+  const raw = local ? JSON.parse(String(local.row_json)) as DbProductRow : null;
+  if (!raw || local?.category !== c.category || raw.id !== c.productId || raw.name !== c.title || raw.category !== c.category
+    || raw.specs?.SKU !== c.sku || raw.specs?.SourceListingId !== c.listingId || Object.keys(raw.specs).length !== 2) return null;
+  return raw;
+}
+
 /** Adelantar destinos conocidos de guías evita esperar a terminar el backfill.
  * La coincidencia textual sólo selecciona candidatos: no acredita identidad.
  */
 export function guidePriorityOfferIds(db: DatabaseSync): string[] {
   const ids = new Set<string>();
+  // Las fichas elegidas explícitamente deben preceder a los candidatos de
+  // búsqueda: tres precios históricos más bajos no pueden desplazarlas.
+  for (const guide of BUDGET_GUIDES) for (const slot of Object.values(guide.components)) {
+    for (const productId of slot.referenceProductIds ?? []) {
+      const rows = db.prepare(`SELECT pp.id FROM products p JOIN product_prices pp ON pp.product_id=p.id
+        WHERE p.category=? AND p.id=? ORDER BY pp.price,pp.id LIMIT 3`).all(slot.category, productId);
+      for (const row of rows) ids.add(String(row.id));
+    }
+  }
   for (const guide of BUDGET_GUIDES) for (const slot of Object.values(guide.components)) {
     const terms = String(catalogSearchText(slot.searchTerms[0] ?? slot.exactModel)).split(' ').filter(Boolean);
     if (!terms.length) continue;
@@ -72,7 +102,8 @@ export function admitUpstreamObservations(db: DatabaseSync, rows: UpstreamObserv
     if (!stored || !old) { reject('offer-outside-snapshot'); continue; }
     if (old.id !== stored.id || old.product_id !== stored.product_id || old.store_id !== stored.store_id
       || old.url !== stored.url || Number(old.price) !== stored.price) throw Error('UPSTREAM_LOCAL_COLUMNS_INVALID');
-    if (row.product_id !== stored.product_id || row.store_id !== stored.store_id || row.url !== stored.url
+    const repaired = row.product_id !== stored.product_id ? repairedGuideDestination(db, row, stored) : null;
+    if (row.product_id !== stored.product_id && !repaired || row.store_id !== stored.store_id || row.url !== stored.url
       || !listingReference(row.store_id, row.url)) { reject('destination-conflict'); continue; }
     if (!stamp(row.last_updated) || Date.parse(row.last_updated) > now + 60000
       || !Number.isFinite(Number(row.price)) || Number(row.price) <= 0
@@ -83,14 +114,14 @@ export function admitUpstreamObservations(db: DatabaseSync, rows: UpstreamObserv
     if (old.last_updated && micros(row.last_updated) <= micros(old.last_updated)) {
       reject('not-newer'); continue;
     }
-    const local = db.prepare('SELECT row_json FROM products WHERE id=?').get(row.product_id);
+    const local = db.prepare('SELECT row_json FROM products WHERE id=?').get(stored.product_id);
     const raw = local ? JSON.parse(String(local.row_json)) as DbProductRow : null;
-    if (!raw || row.products?.id !== raw.id) { reject('product-missing'); continue; }
+    if (!raw || !repaired && row.products?.id !== raw.id) { reject('product-missing'); continue; }
     const target = subject(raw);
     // La categoría heredada del productor puede ser la que acabamos de reparar.
     // Sólo corregirla en la comparación si el nombre demuestra la categoría local.
     const remoteCategory = inferHardwareCategoryFromName(row.products.name);
-    const remote = subject({ ...row.products,
+    const remote = repaired ? subject(repaired) : subject({ ...row.products,
       category: remoteCategory === raw.category ? raw.category : row.products.category });
     const { products: _product, ...offer } = row;
     void _product;
@@ -109,7 +140,7 @@ export function admitUpstreamObservations(db: DatabaseSync, rows: UpstreamObserv
       reject('source-sku-conflict'); continue;
     }
     // Sólo campos de oferta; metadatos de producto y asociaciones permanecen iguales.
-    const after = JSON.stringify({ ...old, ...offer, price: Number(offer.price) });
+    const after = JSON.stringify({ ...old, ...offer, product_id: stored.product_id, price: Number(offer.price) });
     changes.push({ id: row.id, before: String(stored.row_json), after, price: Number(row.price), observedAt: row.last_updated });
   }
   db.exec('BEGIN IMMEDIATE');
