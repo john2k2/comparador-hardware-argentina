@@ -187,6 +187,31 @@ it('no cuenta compatibilidad DDR5 como memoria incluida en una APU', () => {
  expect(isCompleteComputerTitle('Procesador AMD Ryzen 5 8600G + Radeon 760M + 16GB DDR5')).toBe(true);
 });
 
+it.each([
+  ['almacenamiento', 'Pendrive Kingston DTX 64GB Blanco (3.2)', 'Pendrive Kingston DTX 128GB Blanco (3.2)'],
+  ['almacenamiento', 'Pendrive Kingston DTX 64GB Blanco (3.2)', 'Pendrive Kingston DTX 64GB Blanco (2.0)'],
+  ['gabinetes', 'Gabinete XYZ Airone 60 Mesh Black', 'Gabinete XYZ Airone 70 Mesh Black'],
+  ['gabinetes', 'Gabinete XYZ Airone 60 Mesh', 'Gabinete XYZ Airone 60 Mesh Black'],
+  ['refrigeracion', 'Cooler CPU ASUS PRIME LC 360 ARGB LCD', 'Cooler CPU ASUS PRIME LC 240 ARGB LCD'],
+  ['refrigeracion', 'Cooler CPU ASUS PRIME LC 360 ARGB LCD', 'Cooler CPU ASUS PRIME LC 360 ARGB'],
+  ['refrigeracion', 'Cooler CPU ASUS PRIME LC 360 ARGB LCD', 'Cooler CPU ASUS PRIME LC 360 ARGB LCD Black'],
+  ['tarjetas-graficas', 'Gigabyte AORUS RTX 5070 Ti 16GB GDDR7 MASTER', 'Gigabyte AORUS RTX 5070 Ti 16GB GDDR7 MASTER OC'],
+] as const)('conserva atributos explícitos de %s: %s frente a %s', (category, first, second) => {
+  expect(buildProductIdentityKey(category, first)).not.toBe(buildProductIdentityKey(category, second));
+  expect(buildProductVariantKey(category, first)).not.toBe(buildProductVariantKey(category, second));
+});
+
+it.each([
+  ['almacenamiento', 'Pendrive Kingston DTX 64GB Blanco (3.2)', 'Pen Drive Kingston DTX 64 GB White (3.2)'],
+  ['gabinetes', 'Gabinete XYZ Airone 60 Mesh Black', 'Case XYZ Airone 60 Mesh Negro'],
+  ['refrigeracion', 'Cooler CPU ASUS PRIME LC 360 ARGB LCD White', 'Cooler CPU ASUS PRIME LC 360 ARGB LCD Blanco'],
+  ['tarjetas-graficas', 'Gigabyte AORUS RTX 5070 Ti 16GB GDDR7 MASTER', 'Placa de Video Gigabyte AORUS GeForce RTX 5070 Ti 16GB GDDR7 MASTER'],
+] as const)('mantiene equivalentes referencias cercanas de %s', (category, first, second) => {
+  expect(buildProductIdentityKey(category, first)).toBe(buildProductIdentityKey(category, second));
+  expect(buildProductVariantKey(category, first)).toBe(buildProductVariantKey(category, second));
+  expect(extractExactModelIdentity(category, first)).toBe(extractExactModelIdentity(category, second));
+});
+
 it.each(['PC Intel i7 12700 con SSD 240GB', 'Notebook Asus X515EA i3 4GB SSD 256GB'])('reconoce %s por el equipo explícito aunque omita familias completas', name => {
   expect(isCompleteComputerTitle(name)).toBe(true);
 });

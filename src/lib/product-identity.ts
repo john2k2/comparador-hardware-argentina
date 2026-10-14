@@ -369,7 +369,7 @@ function extractGpuBoardAttributesUncached(value: string) {
   return {
     brand,
     series: pickVariant(normalized, GPU_VARIANTS),
-    edition: [...new Set(normalized.match(/\b(evo|advanced|ice|aero)\b/g) ?? [])].sort().join('-') || null,
+    edition: [...new Set(normalized.match(/\b(evo|advanced|ice|aero|infinity|master)\b/g) ?? [])].sort().join('-') || null,
     fans: firstMatch(/\b([1234]\s*x)\b/, normalized),
     color: firstMatch(/\b(white|blanco|blanca|black|negro|negra)\b/, normalized)?.replace(/blanc[oa]/, 'white').replace(/negr[oa]/, 'black') ?? null,
     memoryType: firstMatch(/\b(gddr\s*[567]x?)\b/, normalized),
@@ -412,7 +412,25 @@ export function extractMotherboardModelKey(value: string): string | null {
 
 type GenericModelOptions = {
   allowSoftTokens?: boolean;
+  category?: HardwareCategory;
 };
+
+// Capacidad o cantidad de fans no identifican solos un pendrive/gabinete/cooler.
+// Conservamos el contexto del modelo sin truncarlo antes del color o submodelo.
+// Ausencia de color no acredita negro; sólo normalizamos colores explícitos.
+function extractCategoryModelTokens(normalized: string, brand: string): string[] {
+  const typeWords = new Set(['pendrive', 'pen', 'drive', 'flash', 'memoria', 'gabinete', 'case',
+    'cooler', 'watercooler', 'water', 'cpu', 'refrigeracion', 'generica', 'generic']);
+  const brandWords = new Set(normalizeIdentityText(brand).split(' '));
+  return [...new Set(normalized
+    .replace(/\b(\d+)\s+(gb|tb|mm)\b/g, '$1$2')
+    .replace(/\b(blanco|blanca)\b/g, 'white')
+    .replace(/\b(negro|negra)\b/g, 'black')
+    .split(' ')
+    .filter(token => token && !typeWords.has(token) && !brandWords.has(token)
+      && !['de', 'del', 'la', 'el', 'con', 'para', 'por'].includes(token)))]
+    .sort();
+}
 
 export function extractGenericModelKey(value: string, options: GenericModelOptions = {}): string | null {
   const normalized = normalizeIdentityText(value);
@@ -420,6 +438,13 @@ export function extractGenericModelKey(value: string, options: GenericModelOptio
 
   const brand = firstMatch(BRAND_PATTERN, normalized) ?? 'na';
   const family = detectFamilyToken(normalized);
+  if (options.category && ['almacenamiento', 'gabinetes', 'refrigeracion'].includes(options.category)) {
+    const tokens = extractCategoryModelTokens(normalized, brand);
+    // Un nombre sin referencia numérica conserva la cautela de identidad exacta.
+    if (tokens.length >= 2 && (options.allowSoftTokens || tokens.some(token => /\d/.test(token)))) {
+      return `generic:${brand}:${family}:${tokens.join('-')}`;
+    }
+  }
   const strongTokens = Array.from(new Set(extractStrongModelTokens(normalized))).slice(0, 4);
   const variantTokens = Array.from(new Set(extractGenericVariantTokens(normalized, strongTokens))).slice(0, 2);
 
@@ -466,7 +491,7 @@ export function buildProductIdentityKey(
     return `${category}::name:${slugifyIdentityPart(source)}`;
   }
 
-  const genericKey = extractGenericModelKey(source, { allowSoftTokens: true });
+  const genericKey = extractGenericModelKey(source, { allowSoftTokens: true, category });
   if (genericKey) return `${category}::${genericKey}`;
 
   return `${category}::name:${slugifyIdentityPart(source)}`;
@@ -491,7 +516,7 @@ export function extractExactModelIdentity(
     return extractRamModelKey(title);
   }
 
-  return extractGenericModelKey(title, { allowSoftTokens: false });
+  return extractGenericModelKey(title, { allowSoftTokens: false, category });
 }
 
 function extractCpuFamilyKey(value: string): string | null {
@@ -582,7 +607,7 @@ export function buildProductVariantKey(
   if (exact) return `${category}::${exact}`;
   if (category === 'memoria-ram') return `${category}::name:${slugifyIdentityPart(source)}`;
 
-  const genericKey = extractGenericModelKey(source, { allowSoftTokens: true });
+  const genericKey = extractGenericModelKey(source, { allowSoftTokens: true, category });
   if (genericKey) return `${category}::${genericKey}`;
 
   return `${category}::name:${slugifyIdentityPart(source)}`;

@@ -1,0 +1,776 @@
+{
+  "source": "outputs/revision-integral-2026-10-13: primeras paginas guardadas, sin consultas nuevas a comercios",
+  "products": [
+    {
+      "id": "maxtecno-api-879981",
+      "name": "Memoria Micro SD 256 Gb Sandisk Extreme con adaptador",
+      "category": "memoria-ram",
+      "brand": "Generica",
+      "model": "Memoria Micro SD 256 Gb Sandisk Extreme con adaptador",
+      "description": "Memoria Micro SD 256 Gb Sandisk Extreme con adaptador",
+      "image": "https://maxtecno.com.ar/wp-content/uploads/2026/06/37637_480_2026-05-28_17_03_35.jpg",
+      "normalizedTitle": "256 ADAPTADOR EXTREME GB SANDISK SD",
+      "canonicalProductKey": "memoria-ram::name:memoria-micro-sd-256-gb-sandisk-extreme-con-adaptador",
+      "familyKey": "generic-family:na:other:256-adaptador-extreme",
+      "variantKey": "memoria-ram::name:256-adaptador-extreme-gb-sandisk-sd-generica-memoria-micro-sd-256-gb-sandisk-extreme-con-adaptador-memoria-micro-sd-256-gb-sandisk-extreme-con-adaptador",
+      "refreshPriority": "normal",
+      "lastScrapedAt": "2026-10-10T10:14:33.665Z",
+      "lastNormalizedAt": "2026-10-10T10:15:18.744Z",
+      "specs": {
+        "SKU": "PT_24121",
+        "SourceListingId": "879981"
+      },
+      "prices": [
+        {
+          "storeId": "maxtecno",
+          "storeName": "MaxTecno",
+          "url": "https://maxtecno.com.ar/producto/memoria-micro-sd-256-gb-sandisk-extreme-con-adaptador/",
+          "price": 133052.04,
+          "stock": "in-stock",
+          "sourceIdentity": {
+            "title": "Memoria Micro SD 256 Gb Sandisk Extreme con adaptador",
+            "sourceId": "879981",
+            "storeSku": "PT_24121",
+            "listingRef": "maxtecno:url:https://maxtecno.com.ar/producto/memoria-micro-sd-256-gb-sandisk-extreme-con-adaptador"
+          },
+          "priceCondition": "special",
+          "installment": null,
+          "lastUpdated": "2026-10-10T10:14:33.663Z"
+        }
+      ],
+      "lowestPrice": 133052.04,
+      "highestPrice": 133052.04,
+      "averagePrice": 133052,
+      "createdAt": "2026-10-10T10:15:19.595Z",
+      "updatedAt": "2026-10-10T10:14:33.665Z"
+    },
+    {
+      "id": "maxtecno-api-901942",
+      "name": "MB ASUS AM5 PRIME B850M-A DDR5 BOX",
+      "category": "memoria-ram",
+      "brand": "ASUS",
+      "model": "MB ASUS AM5 PRIME B850M-A DDR5 BOX",
+      "description": "MB ASUS AM5 PRIME B850M-A DDR5 BOX",
+      "image": "https://maxtecno.com.ar/wp-content/uploads/2026/06/AIR_216747.webp",
+      "normalizedTitle": "ASUS PRIME AM5 B850M",
+      "canonicalProductKey": "memoria-ram::name:mb-asus-am5-prime-b850m-a-ddr5-box",
+      "familyKey": "generic-family:asus:other:am5-b850m-ddr5",
+      "variantKey": "memoria-ram::name:asus-prime-am5-b850m-asus-mb-asus-am5-prime-b850m-a-ddr5-box-mb-asus-am5-prime-b850m-a-ddr5-box",
+      "refreshPriority": "normal",
+      "lastScrapedAt": "2026-10-10T22:20:09.516Z",
+      "lastNormalizedAt": "2026-10-07T09:14:40.607Z",
+      "specs": {
+        "SKU": "AIR_216747",
+        "SourceListingId": "901942"
+      },
+      "prices": [
+        {
+          "storeId": "maxtecno",
+          "storeName": "MaxTecno",
+          "url": "https://maxtecno.com.ar/producto/mb-asus-am5-prime-b850m-a-ddr5-box/",
+          "price": 283371.82,
+          "stock": "in-stock",
+          "sourceIdentity": {
+            "title": "MB ASUS AM5 PRIME B850M-A DDR5 BOX",
+            "sourceId": "901942",
+            "storeSku": "AIR_216747",
+            "listingRef": "maxtecno:url:https://maxtecno.com.ar/producto/mb-asus-am5-prime-b850m-a-ddr5-box"
+          },
+          "priceCondition": "special",
+          "installment": null,
+          "lastUpdated": "2026-10-10T22:20:09.516Z",
+          "identityReview": {
+            "model": null,
+            "reason": "provider-unavailable",
+            "status": "needs-review",
+            "subject": {
+              "url": "https://maxtecno.com.ar/producto/mb-asus-am5-prime-b850m-a-ddr5-box/",
+              "name": "mb asus am5 prime b850m a ddr5 box",
+              "category": "memoria-ram"
+            },
+            "version": 1,
+            "confidence": null,
+            "reviewedAt": "2026-10-10T22:20:23.284Z",
+            "sourceIdentity": {
+              "title": "MB ASUS AM5 PRIME B850M-A DDR5 BOX",
+              "sourceId": "901942",
+              "storeSku": "AIR_216747",
+              "listingRef": "maxtecno:url:https://maxtecno.com.ar/producto/mb-asus-am5-prime-b850m-a-ddr5-box"
+            }
+          }
+        }
+      ],
+      "lowestPrice": 0,
+      "highestPrice": 0,
+      "averagePrice": 0,
+      "createdAt": "2026-10-07T09:14:41.451Z",
+      "updatedAt": "2026-10-07T09:12:47.052Z"
+    },
+    {
+      "id": "maxtecno-api-899125",
+      "name": "CELULAR SAMSUNG GALAXY S26 ULTRA 12/512GB 6.9\" 120 Hz D AMOLED NEGRO",
+      "category": "procesadores",
+      "brand": "Samsung",
+      "model": "CELULAR SAMSUNG GALAXY S26 ULTRA 12/512GB 6.9\" 120 Hz D AMOLED NEGRO",
+      "description": "CELULAR SAMSUNG GALAXY S26 ULTRA 12/512GB 6.9\" 120 Hz D AMOLED NEGRO",
+      "image": "https://maxtecno.com.ar/wp-content/uploads/2026/06/nb_SAMSUNG-TELEFONO-CELULAR-GALAXY-S26-ULTRA-512GB-NEGRO_export_37302fd51ddc889168202056ec78ab25.png",
+      "normalizedTitle": "SAMSUNG 512GB",
+      "canonicalProductKey": "procesadores::generic:samsung:other:512gb-s26",
+      "variantKey": "procesadores::generic:samsung:other:512gb-s26",
+      "refreshPriority": "normal",
+      "lastScrapedAt": "2026-10-10T10:13:39.516Z",
+      "lastNormalizedAt": "2026-10-10T10:15:18.744Z",
+      "specs": {
+        "SKU": "NB_SM-S948BZKMARO",
+        "SourceListingId": "899125"
+      },
+      "prices": [
+        {
+          "storeId": "maxtecno",
+          "storeName": "MaxTecno",
+          "url": "https://maxtecno.com.ar/producto/samsung-telefono-celular-galaxy-s26-ultra-512gb-negro/",
+          "price": 3638526.36,
+          "stock": "in-stock",
+          "sourceIdentity": {
+            "title": "CELULAR SAMSUNG GALAXY S26 ULTRA 12/512GB 6.9\" 120 Hz D AMOLED NEGRO",
+            "sourceId": "899125",
+            "storeSku": "NB_SM-S948BZKMARO",
+            "listingRef": "maxtecno:url:https://maxtecno.com.ar/producto/samsung-telefono-celular-galaxy-s26-ultra-512gb-negro"
+          },
+          "priceCondition": "special",
+          "installment": null,
+          "lastUpdated": "2026-10-10T10:13:39.510Z"
+        }
+      ],
+      "lowestPrice": 3638526.36,
+      "highestPrice": 3638526.36,
+      "averagePrice": 3638526,
+      "createdAt": "2026-10-10T10:15:19.595Z",
+      "updatedAt": "2026-10-10T10:13:39.516Z"
+    },
+    {
+      "id": "dinobyte-api-3812429",
+      "name": "Celular Samsung Galaxy S26 Ultra 12GB+512GB",
+      "category": "procesadores",
+      "brand": "Samsung",
+      "model": "Celular Samsung Galaxy S26 Ultra 12GB+512GB",
+      "description": "Celular Samsung Galaxy S26 Ultra 12GB+512GB",
+      "image": "https://dinobyte.ar/wp-content/uploads/Celular-Samsung-Galaxy-S26-Ultra-12GB512GB.webp",
+      "normalizedTitle": "COMBO SAMSUNG 12GB",
+      "canonicalProductKey": "procesadores::bundle:combo-samsung-12gb-samsung-celular-samsung-galaxy-s26-ultra-12gb-512gb-celular-samsung-galaxy-s26-ultra-12gb-512gb",
+      "variantKey": "procesadores::bundle",
+      "refreshPriority": "cold",
+      "lastScrapedAt": "2026-10-11T02:11:07.697Z",
+      "lastNormalizedAt": "2026-10-09T09:15:40.390Z",
+      "specs": {
+        "SKU": "CEL113",
+        "SourceListingId": "3812429"
+      },
+      "prices": [
+        {
+          "storeId": "dinobyte",
+          "storeName": "Dinobyte",
+          "url": "https://dinobyte.ar/producto/celular-samsung-galaxy-s26-ultra-12gb-512gb/",
+          "price": 3532200,
+          "stock": "unknown",
+          "sourceIdentity": {
+            "title": "Celular Samsung Galaxy S26 Ultra 12GB+512GB",
+            "sourceId": "3812429",
+            "storeSku": "CEL113",
+            "listingRef": "dinobyte:url:https://dinobyte.ar/producto/celular-samsung-galaxy-s26-ultra-12gb-512gb"
+          },
+          "priceCondition": "unspecified",
+          "installment": null,
+          "lastUpdated": "2026-10-11T02:11:07.697Z",
+          "identityReview": {
+            "model": null,
+            "reason": "provider-unavailable",
+            "status": "needs-review",
+            "subject": {
+              "url": "https://dinobyte.ar/producto/celular-samsung-galaxy-s26-ultra-12gb-512gb/",
+              "name": "celular samsung galaxy s26 ultra 12gb+512gb",
+              "category": "procesadores"
+            },
+            "version": 1,
+            "confidence": null,
+            "reviewedAt": "2026-10-11T02:11:20.720Z",
+            "sourceIdentity": {
+              "title": "Celular Samsung Galaxy S26 Ultra 12GB+512GB",
+              "sourceId": "3812429",
+              "storeSku": "CEL113",
+              "listingRef": "dinobyte:url:https://dinobyte.ar/producto/celular-samsung-galaxy-s26-ultra-12gb-512gb"
+            }
+          }
+        }
+      ],
+      "lowestPrice": 0,
+      "highestPrice": 0,
+      "averagePrice": 0,
+      "createdAt": "2026-10-09T09:15:40.714Z",
+      "updatedAt": "2026-10-09T09:13:28.609Z"
+    },
+    {
+      "id": "dinobyte-api-3813055",
+      "name": "MicroSD Sandisk Ultra Lite 256GB C10-U1 Con adaptador",
+      "category": "procesadores",
+      "brand": "Generica",
+      "model": "MicroSD Sandisk Ultra Lite 256GB C10-U1 Con adaptador",
+      "description": "MicroSD Sandisk Ultra Lite 256GB C10-U1 Con adaptador",
+      "image": "https://dinobyte.ar/wp-content/uploads/MicroSD-Sandisk-Ultra-Lite-C10-256GB-Con-adaptador.jpg",
+      "normalizedTitle": "256GB ADAPTADOR C10 LITE MICROSD SANDISK U1 ULTRA",
+      "canonicalProductKey": "procesadores::generic:na:other:256gb-c10-u1",
+      "variantKey": "procesadores::generic:na:other:256gb-c10-u1",
+      "refreshPriority": "cold",
+      "lastScrapedAt": "2026-10-11T02:14:03.710Z",
+      "lastNormalizedAt": "2026-10-08T08:15:28.352Z",
+      "specs": {
+        "SKU": "DIS805",
+        "SourceListingId": "3813055"
+      },
+      "prices": [
+        {
+          "storeId": "dinobyte",
+          "storeName": "Dinobyte",
+          "url": "https://dinobyte.ar/producto/microsd-sandisk-ultra-lite-256gb-c10-u1-con-adaptador/",
+          "price": 95000,
+          "stock": "unknown",
+          "sourceIdentity": {
+            "title": "MicroSD Sandisk Ultra Lite 256GB C10-U1 Con adaptador",
+            "sourceId": "3813055",
+            "storeSku": "DIS805",
+            "listingRef": "dinobyte:url:https://dinobyte.ar/producto/microsd-sandisk-ultra-lite-256gb-c10-u1-con-adaptador"
+          },
+          "priceCondition": "unspecified",
+          "installment": null,
+          "lastUpdated": "2026-10-11T02:14:03.710Z",
+          "identityReview": {
+            "model": null,
+            "reason": "provider-unavailable",
+            "status": "needs-review",
+            "subject": {
+              "url": "https://dinobyte.ar/producto/microsd-sandisk-ultra-lite-256gb-c10-u1-con-adaptador/",
+              "name": "microsd sandisk ultra lite 256gb c10 u1 con adaptador",
+              "category": "procesadores"
+            },
+            "version": 1,
+            "confidence": null,
+            "reviewedAt": "2026-10-11T02:14:08.916Z",
+            "sourceIdentity": {
+              "title": "MicroSD Sandisk Ultra Lite 256GB C10-U1 Con adaptador",
+              "sourceId": "3813055",
+              "storeSku": "DIS805",
+              "listingRef": "dinobyte:url:https://dinobyte.ar/producto/microsd-sandisk-ultra-lite-256gb-c10-u1-con-adaptador"
+            }
+          }
+        }
+      ],
+      "lowestPrice": 0,
+      "highestPrice": 0,
+      "averagePrice": 0,
+      "createdAt": "2026-10-08T08:15:29.298Z",
+      "updatedAt": "2026-10-08T08:13:19.322Z"
+    },
+    {
+      "id": "dinobyte-api-2805048",
+      "name": "Pendrive Kingston DTX 64GB Blanco (3.2)",
+      "category": "almacenamiento",
+      "brand": "Kingston",
+      "model": "Pendrive Kingston DTX 64GB Blanco (3.2)",
+      "description": "Pendrive Kingston DTX 64GB Blanco (3.2)",
+      "image": "https://dinobyte.ar/wp-content/uploads/Pendrive-Kingston-DTX-64GB-Blanco-3.2.jpg",
+      "normalizedTitle": "KINGSTON 64GB",
+      "canonicalProductKey": "almacenamiento::generic:kingston:other:64gb",
+      "familyKey": "generic-family:kingston:other:64gb",
+      "variantKey": "almacenamiento::generic:kingston:other:64gb",
+      "refreshPriority": "cold",
+      "lastScrapedAt": "2026-10-11T02:10:56.128Z",
+      "lastNormalizedAt": "2026-10-09T09:15:40.390Z",
+      "specs": {
+        "SKU": "DIS372",
+        "SourceListingId": "2805048"
+      },
+      "prices": [
+        {
+          "storeId": "dinobyte",
+          "storeName": "Dinobyte",
+          "url": "https://dinobyte.ar/producto/pendrive-kingston-dtx-64gb-blanco-3-2/",
+          "price": 27100,
+          "stock": "unknown",
+          "sourceIdentity": {
+            "title": "Pendrive Kingston DTX 64GB Blanco (3.2)",
+            "sourceId": "2805048",
+            "storeSku": "DIS372",
+            "listingRef": "dinobyte:url:https://dinobyte.ar/producto/pendrive-kingston-dtx-64gb-blanco-3-2"
+          },
+          "priceCondition": "unspecified",
+          "installment": null,
+          "lastUpdated": "2026-10-11T02:10:56.128Z"
+        }
+      ],
+      "lowestPrice": 27100,
+      "highestPrice": 27100,
+      "averagePrice": 27100,
+      "createdAt": "2026-10-09T09:15:40.714Z",
+      "updatedAt": "2026-10-09T09:12:57.042Z"
+    },
+    {
+      "id": "dinobyte-api-2903292",
+      "name": "Pendrive Kingston DTXS 64GB (3.2)",
+      "category": "almacenamiento",
+      "brand": "Kingston",
+      "model": "Pendrive Kingston DTXS 64GB (3.2)",
+      "description": "Pendrive Kingston DTXS 64GB (3.2)",
+      "image": "https://dinobyte.ar/wp-content/uploads/Pendrive-Kingston-DTXS-64GB-3.2.png",
+      "normalizedTitle": "KINGSTON 64GB",
+      "canonicalProductKey": "almacenamiento::generic:kingston:other:64gb",
+      "familyKey": "generic-family:kingston:other:64gb",
+      "variantKey": "almacenamiento::generic:kingston:other:64gb",
+      "refreshPriority": "cold",
+      "lastScrapedAt": "2026-10-11T02:10:56.128Z",
+      "lastNormalizedAt": "2026-10-09T09:15:40.390Z",
+      "specs": {
+        "SKU": "DIS670",
+        "SourceListingId": "2903292"
+      },
+      "prices": [
+        {
+          "storeId": "dinobyte",
+          "storeName": "Dinobyte",
+          "url": "https://dinobyte.ar/producto/pendrive-kingston-dtxs-64gb-3-2/",
+          "price": 28400,
+          "stock": "unknown",
+          "sourceIdentity": {
+            "title": "Pendrive Kingston DTXS 64GB (3.2)",
+            "sourceId": "2903292",
+            "storeSku": "DIS670",
+            "listingRef": "dinobyte:url:https://dinobyte.ar/producto/pendrive-kingston-dtxs-64gb-3-2"
+          },
+          "priceCondition": "unspecified",
+          "installment": null,
+          "lastUpdated": "2026-10-11T02:10:56.128Z"
+        }
+      ],
+      "lowestPrice": 28400,
+      "highestPrice": 28400,
+      "averagePrice": 28400,
+      "createdAt": "2026-10-09T09:15:40.714Z",
+      "updatedAt": "2026-10-09T09:12:57.042Z"
+    },
+    {
+      "id": "cg-21882",
+      "name": "Placa de Video Gigabyte AORUS GeForce RTX 5070 Ti 16GB GDDR7 INFINITY",
+      "category": "tarjetas-graficas",
+      "brand": "Gigabyte",
+      "model": "Placa de Video Gigabyte AORUS GeForce RTX 5070 Ti 16GB GDDR7 INFINITY",
+      "description": "Ficha CompraGamer: SKU GV-N507TAORUS IF-16GD | Garantia 36 meses | Disponibilidad en stock",
+      "image": "https://imagenes.compragamer.com/productos/compragamer_Imganen_general_59085_Placa_de_Video_Gigabyte_AORUS_GeForce_RTX_5070_Ti_16GB_GDDR7_INFINITY_5678fbe6-med.jpg",
+      "normalizedTitle": "GIGABYTE RTX 5070 TI INFINITY 16GB",
+      "canonicalProductKey": "tarjetas-graficas::gpu:rtx5070ti:16gb:gigabyte:aorus:gddr7",
+      "familyKey": "gpu-family:rtx5070ti",
+      "variantKey": "tarjetas-graficas::gpu:rtx5070ti:16gb:gigabyte:aorus:gddr7",
+      "refreshPriority": "normal",
+      "lastScrapedAt": "2026-10-11T04:12:55.295Z",
+      "lastNormalizedAt": "2026-10-08T06:12:21.412Z",
+      "specs": {
+        "SKU": "GV-N507TAORUS IF-16GD",
+        "Stock": "10",
+        "Garantia": "36 meses",
+        "Disponibilidad": "en stock"
+      },
+      "prices": [
+        {
+          "storeId": "compragamer",
+          "storeName": "CompraGamer",
+          "url": "https://compragamer.com/producto/Placa_de_Video_Gigabyte_AORUS_GeForce_RTX_5070_Ti_16GB_GDDR7_INFINITY_21882",
+          "price": 2652850,
+          "stock": "in-stock",
+          "sourceIdentity": {
+            "listingRef": "compragamer:id:21882",
+            "title": "Placa de Video Gigabyte AORUS GeForce RTX 5070 Ti 16GB GDDR7 INFINITY",
+            "storeSku": "GV-N507TAORUS IF-16GD"
+          },
+          "priceCondition": "special",
+          "installment": null,
+          "lastUpdated": "2026-10-14T01:48:45.903Z",
+          "identityReview": {
+            "version": 1,
+            "status": "consistent",
+            "reason": "exact-attributes",
+            "reviewedAt": "2026-10-14T01:48:46.154Z",
+            "model": null,
+            "confidence": null,
+            "subject": {
+              "name": "placa de video gigabyte aorus geforce rtx 5070 ti 16gb gddr7 infinity",
+              "category": "tarjetas-graficas",
+              "url": "https://compragamer.com/producto/Placa_de_Video_Gigabyte_AORUS_GeForce_RTX_5070_Ti_16GB_GDDR7_INFINITY_21882"
+            },
+            "sourceIdentity": {
+              "listingRef": "compragamer:id:21882",
+              "title": "Placa de Video Gigabyte AORUS GeForce RTX 5070 Ti 16GB GDDR7 INFINITY",
+              "storeSku": "GV-N507TAORUS IF-16GD"
+            },
+            "proof": {
+              "version": 1,
+              "method": "exact-attributes",
+              "attributes": {
+                "family": "rtx",
+                "model": "5070",
+                "suffixes": "ti",
+                "memory": "16",
+                "brand": "gigabyte",
+                "series": "aorus",
+                "edition": "",
+                "fans": "",
+                "color": "",
+                "memoryType": "gddr7",
+                "clock": ""
+              }
+            }
+          }
+        }
+      ],
+      "lowestPrice": 2652850,
+      "highestPrice": 2652850,
+      "averagePrice": 2652850,
+      "createdAt": "2026-10-08T06:12:22.492Z",
+      "updatedAt": "2026-10-08T06:12:11.154Z"
+    },
+    {
+      "id": "cg-20207",
+      "name": "Placa de Video Gigabyte AORUS GeForce RTX 5070 Ti 16GB GDDR7 MASTER",
+      "category": "tarjetas-graficas",
+      "brand": "Gigabyte",
+      "model": "Placa de Video Gigabyte AORUS GeForce RTX 5070 Ti 16GB GDDR7 MASTER",
+      "description": "Ficha CompraGamer: SKU GV-N507TAORUS M-16GD G10 | Garantia 36 meses | Disponibilidad en stock",
+      "image": "https://imagenes.compragamer.com/productos/compragamer_Imganen_general_53160_Placa_de_Video_Gigabyte_AORUS_GeForce_RTX_5070_Ti_16GB_GDDR7_MASTER_6cb1fda1-med.jpg",
+      "normalizedTitle": "GIGABYTE RTX 5070 TI 16GB",
+      "canonicalProductKey": "tarjetas-graficas::gpu:rtx5070ti:16gb:gigabyte:aorus:gddr7",
+      "familyKey": "gpu-family:rtx5070ti",
+      "variantKey": "tarjetas-graficas::gpu:rtx5070ti:16gb:gigabyte:aorus:gddr7",
+      "refreshPriority": "normal",
+      "lastScrapedAt": "2026-10-11T04:12:55.295Z",
+      "lastNormalizedAt": "2026-10-08T06:12:21.412Z",
+      "specs": {
+        "SKU": "GV-N507TAORUS M-16GD G10",
+        "Stock": "10",
+        "Garantia": "36 meses",
+        "Disponibilidad": "en stock"
+      },
+      "prices": [
+        {
+          "storeId": "compragamer",
+          "storeName": "CompraGamer",
+          "url": "https://compragamer.com/producto/Placa_de_Video_Gigabyte_AORUS_GeForce_RTX_5070_Ti_16GB_GDDR7_MASTER_20207",
+          "price": 2481750,
+          "stock": "in-stock",
+          "sourceIdentity": {
+            "listingRef": "compragamer:id:20207",
+            "title": "Placa de Video Gigabyte AORUS GeForce RTX 5070 Ti 16GB GDDR7 MASTER",
+            "storeSku": "GV-N507TAORUS M-16GD G10"
+          },
+          "priceCondition": "special",
+          "installment": null,
+          "lastUpdated": "2026-10-14T01:48:45.903Z",
+          "identityReview": {
+            "version": 1,
+            "status": "consistent",
+            "reason": "exact-attributes",
+            "reviewedAt": "2026-10-14T01:48:46.142Z",
+            "model": null,
+            "confidence": null,
+            "subject": {
+              "name": "placa de video gigabyte aorus geforce rtx 5070 ti 16gb gddr7 master",
+              "category": "tarjetas-graficas",
+              "url": "https://compragamer.com/producto/Placa_de_Video_Gigabyte_AORUS_GeForce_RTX_5070_Ti_16GB_GDDR7_MASTER_20207"
+            },
+            "sourceIdentity": {
+              "listingRef": "compragamer:id:20207",
+              "title": "Placa de Video Gigabyte AORUS GeForce RTX 5070 Ti 16GB GDDR7 MASTER",
+              "storeSku": "GV-N507TAORUS M-16GD G10"
+            },
+            "proof": {
+              "version": 1,
+              "method": "exact-attributes",
+              "attributes": {
+                "family": "rtx",
+                "model": "5070",
+                "suffixes": "ti",
+                "memory": "16",
+                "brand": "gigabyte",
+                "series": "aorus",
+                "edition": "",
+                "fans": "",
+                "color": "",
+                "memoryType": "gddr7",
+                "clock": ""
+              }
+            }
+          }
+        }
+      ],
+      "lowestPrice": 2481750,
+      "highestPrice": 2481750,
+      "averagePrice": 2481750,
+      "createdAt": "2026-10-08T06:12:22.492Z",
+      "updatedAt": "2026-10-08T06:12:11.139Z"
+    },
+    {
+      "id": "cg-21831",
+      "name": "Gabinete XYZ Airone 60 Mesh Black 3x140mm ARGB Fans 3x120 ARGB Fans USB-C Vidrio Templado",
+      "category": "gabinetes",
+      "brand": "XYZ",
+      "model": "Gabinete XYZ Airone 60 Mesh Black 3x140mm ARGB Fans 3x120 ARGB Fans USB-C Vidrio Templado",
+      "description": "Ficha CompraGamer: SKU X-CS-AIRONE60-M-B-6 | Garantia 12 meses | Disponibilidad en stock",
+      "image": "https://imagenes.compragamer.com/productos/compragamer_Imganen_general_57782_Gabinete_XYZ_Airone_60_Mesh_Black_3x140mm_ARGB_Fans_3x120_ARGB_Fans_USB-C_Vidrio_Templado_86fbf944-med.jpg",
+      "normalizedTitle": "3X120 3X140MM 60 AIRONE ARGB BLACK FANS GABINETE MESH TEMPLADO USB VIDRIO XYZ",
+      "canonicalProductKey": "gabinetes::generic:na:other:3x120-3x140mm",
+      "familyKey": "generic-family:na:other:3x120-3x140mm",
+      "variantKey": "gabinetes::generic:na:other:3x120-3x140mm",
+      "refreshPriority": "normal",
+      "lastScrapedAt": "2026-10-10T07:42:39.348Z",
+      "lastNormalizedAt": "2026-10-10T07:42:50.621Z",
+      "specs": {
+        "SKU": "X-CS-AIRONE60-M-B-6",
+        "Stock": "10",
+        "Garantia": "12 meses",
+        "Disponibilidad": "en stock"
+      },
+      "prices": [
+        {
+          "storeId": "compragamer",
+          "storeName": "CompraGamer",
+          "url": "https://compragamer.com/producto/Gabinete_XYZ_Airone_60_Mesh_Black_3x140mm_ARGB_Fans_3x120_ARGB_Fans_USB_C_Vidrio_Templado_21831",
+          "price": 70500,
+          "stock": "in-stock",
+          "sourceIdentity": {
+            "listingRef": "compragamer:id:21831",
+            "title": "Gabinete XYZ Airone 60 Mesh Black 3x140mm ARGB Fans 3x120 ARGB Fans USB-C Vidrio Templado",
+            "storeSku": "X-CS-AIRONE60-M-B-6",
+            "sourceId": "21831"
+          },
+          "priceCondition": "special",
+          "installment": null,
+          "lastUpdated": "2026-10-14T01:48:45.903Z",
+          "identityReview": {
+            "version": 1,
+            "status": "consistent",
+            "reason": "exact-listing",
+            "reviewedAt": "2026-10-14T01:48:46.243Z",
+            "model": null,
+            "confidence": null,
+            "subject": {
+              "name": "gabinete xyz airone 60 mesh black 3x140mm argb fans 3x120 argb fans usb c vidrio templado",
+              "category": "gabinetes",
+              "url": "https://compragamer.com/producto/Gabinete_XYZ_Airone_60_Mesh_Black_3x140mm_ARGB_Fans_3x120_ARGB_Fans_USB_C_Vidrio_Templado_21831"
+            },
+            "sourceIdentity": {
+              "listingRef": "compragamer:id:21831",
+              "title": "Gabinete XYZ Airone 60 Mesh Black 3x140mm ARGB Fans 3x120 ARGB Fans USB-C Vidrio Templado",
+              "storeSku": "X-CS-AIRONE60-M-B-6",
+              "sourceId": "21831"
+            },
+            "proof": {
+              "version": 3,
+              "method": "exact-listing",
+              "target": {
+                "title": "Gabinete XYZ Airone 60 Mesh Black 3x140mm ARGB Fans 3x120 ARGB Fans USB-C Vidrio Templado",
+                "category": "gabinetes",
+                "sku": "X-CS-AIRONE60-M-B-6"
+              },
+              "source": {
+                "title": "Gabinete XYZ Airone 60 Mesh Black 3x140mm ARGB Fans 3x120 ARGB Fans USB-C Vidrio Templado",
+                "category": "gabinetes",
+                "sku": "X-CS-AIRONE60-M-B-6"
+              },
+              "binding": {
+                "storeId": "compragamer",
+                "url": "https://compragamer.com/producto/Gabinete_XYZ_Airone_60_Mesh_Black_3x140mm_ARGB_Fans_3x120_ARGB_Fans_USB_C_Vidrio_Templado_21831",
+                "listingRef": "compragamer:id:21831",
+                "sourceId": "21831"
+              }
+            }
+          }
+        }
+      ],
+      "lowestPrice": 70500,
+      "highestPrice": 70500,
+      "averagePrice": 70500,
+      "createdAt": "2026-10-10T07:42:50.934Z",
+      "updatedAt": "2026-10-10T07:42:39.348Z"
+    },
+    {
+      "id": "cg-21832",
+      "name": "Gabinete XYZ Airone 60 Mesh White 3x140mm ARGB Fans 3x120 ARGB Fans USB-C Vidrio Templado",
+      "category": "gabinetes",
+      "brand": "XYZ",
+      "model": "Gabinete XYZ Airone 60 Mesh White 3x140mm ARGB Fans 3x120 ARGB Fans USB-C Vidrio Templado",
+      "description": "Ficha CompraGamer: SKU X-CS-AIRONE60-M-W-6 | Garantia 12 meses | Disponibilidad en stock",
+      "image": "https://imagenes.compragamer.com/productos/compragamer_Imganen_general_57788_Gabinete_XYZ_Airone_60_Mesh_White_3x140mm_ARGB_Fans_3x120_ARGB_Fans_USB-C_Vidrio_Templado_cf910c48-med.jpg",
+      "normalizedTitle": "3X120 3X140MM 60 AIRONE ARGB FANS GABINETE MESH TEMPLADO USB VIDRIO WHITE XYZ",
+      "canonicalProductKey": "gabinetes::generic:na:other:3x120-3x140mm",
+      "familyKey": "generic-family:na:other:3x120-3x140mm",
+      "variantKey": "gabinetes::generic:na:other:3x120-3x140mm",
+      "refreshPriority": "normal",
+      "lastScrapedAt": "2026-10-10T07:42:39.348Z",
+      "lastNormalizedAt": "2026-10-10T07:42:50.621Z",
+      "specs": {
+        "SKU": "X-CS-AIRONE60-M-W-6",
+        "Stock": "10",
+        "Garantia": "12 meses",
+        "Disponibilidad": "en stock"
+      },
+      "prices": [
+        {
+          "storeId": "compragamer",
+          "storeName": "CompraGamer",
+          "url": "https://compragamer.com/producto/Gabinete_XYZ_Airone_60_Mesh_White_3x140mm_ARGB_Fans_3x120_ARGB_Fans_USB_C_Vidrio_Templado_21832",
+          "price": 72500,
+          "stock": "in-stock",
+          "sourceIdentity": {
+            "listingRef": "compragamer:id:21832",
+            "title": "Gabinete XYZ Airone 60 Mesh White 3x140mm ARGB Fans 3x120 ARGB Fans USB-C Vidrio Templado",
+            "storeSku": "X-CS-AIRONE60-M-W-6",
+            "sourceId": "21832"
+          },
+          "priceCondition": "special",
+          "installment": null,
+          "lastUpdated": "2026-10-14T01:48:45.903Z",
+          "identityReview": {
+            "version": 1,
+            "status": "consistent",
+            "reason": "exact-listing",
+            "reviewedAt": "2026-10-14T01:48:46.276Z",
+            "model": null,
+            "confidence": null,
+            "subject": {
+              "name": "gabinete xyz airone 60 mesh white 3x140mm argb fans 3x120 argb fans usb c vidrio templado",
+              "category": "gabinetes",
+              "url": "https://compragamer.com/producto/Gabinete_XYZ_Airone_60_Mesh_White_3x140mm_ARGB_Fans_3x120_ARGB_Fans_USB_C_Vidrio_Templado_21832"
+            },
+            "sourceIdentity": {
+              "listingRef": "compragamer:id:21832",
+              "title": "Gabinete XYZ Airone 60 Mesh White 3x140mm ARGB Fans 3x120 ARGB Fans USB-C Vidrio Templado",
+              "storeSku": "X-CS-AIRONE60-M-W-6",
+              "sourceId": "21832"
+            },
+            "proof": {
+              "version": 3,
+              "method": "exact-listing",
+              "target": {
+                "title": "Gabinete XYZ Airone 60 Mesh White 3x140mm ARGB Fans 3x120 ARGB Fans USB-C Vidrio Templado",
+                "category": "gabinetes",
+                "sku": "X-CS-AIRONE60-M-W-6"
+              },
+              "source": {
+                "title": "Gabinete XYZ Airone 60 Mesh White 3x140mm ARGB Fans 3x120 ARGB Fans USB-C Vidrio Templado",
+                "category": "gabinetes",
+                "sku": "X-CS-AIRONE60-M-W-6"
+              },
+              "binding": {
+                "storeId": "compragamer",
+                "url": "https://compragamer.com/producto/Gabinete_XYZ_Airone_60_Mesh_White_3x140mm_ARGB_Fans_3x120_ARGB_Fans_USB_C_Vidrio_Templado_21832",
+                "listingRef": "compragamer:id:21832",
+                "sourceId": "21832"
+              }
+            }
+          }
+        }
+      ],
+      "lowestPrice": 72500,
+      "highestPrice": 72500,
+      "averagePrice": 72500,
+      "createdAt": "2026-10-10T07:42:50.934Z",
+      "updatedAt": "2026-10-10T07:42:39.348Z"
+    },
+    {
+      "id": "cg-22251",
+      "name": "Cooler CPU ASUS PRIME LC 360 ARGB LCD",
+      "category": "refrigeracion",
+      "brand": "Asus",
+      "model": "Cooler CPU ASUS PRIME LC 360 ARGB LCD",
+      "description": "Ficha CompraGamer: SKU 90RC01Q1-B0AAY0 | Garantia 36 meses | Disponibilidad en stock",
+      "image": "/pixel-box.svg",
+      "normalizedTitle": "ASUS PRIME",
+      "canonicalProductKey": "refrigeracion::generic:asus:other:prime-cooler-cpu-lc",
+      "familyKey": "generic-family:asus:other:prime-cooler-cpu",
+      "variantKey": "refrigeracion::generic:asus:other:prime-cooler-cpu-lc",
+      "refreshPriority": "normal",
+      "lastScrapedAt": "2026-10-08T06:12:11.159Z",
+      "lastNormalizedAt": "2026-10-08T06:12:26.809Z",
+      "specs": {
+        "SKU": "90RC01Q1-B0AAY0",
+        "Stock": "10",
+        "Garantia": "36 meses",
+        "Disponibilidad": "en stock"
+      },
+      "prices": [
+        {
+          "storeId": "compragamer",
+          "storeName": "CompraGamer",
+          "url": "https://compragamer.com/producto/Cooler_CPU_ASUS_PRIME_LC_360_ARGB_LCD_22251",
+          "price": 237150,
+          "stock": "in-stock",
+          "sourceIdentity": {
+            "title": "Cooler CPU ASUS PRIME LC 360 ARGB LCD",
+            "sourceId": "22251",
+            "storeSku": "90RC01Q1-B0AAY0",
+            "listingRef": "compragamer:id:22251"
+          },
+          "priceCondition": "special",
+          "installment": null,
+          "lastUpdated": "2026-10-08T06:12:07.113Z"
+        }
+      ],
+      "lowestPrice": 237150,
+      "highestPrice": 237150,
+      "averagePrice": 237150,
+      "createdAt": "2026-10-08T06:12:27.108Z",
+      "updatedAt": "2026-10-08T06:12:11.159Z"
+    },
+    {
+      "id": "cg-22252",
+      "name": "Cooler CPU ASUS PRIME LC 360 ARGB LCD White",
+      "category": "refrigeracion",
+      "brand": "Asus",
+      "model": "Cooler CPU ASUS PRIME LC 360 ARGB LCD White",
+      "description": "Ficha CompraGamer: SKU 90RC01Q2-B0AAY0 | Garantia 36 meses | Disponibilidad en stock",
+      "image": "/pixel-box.svg",
+      "normalizedTitle": "ASUS PRIME",
+      "canonicalProductKey": "refrigeracion::generic:asus:other:prime-cooler-cpu-lc",
+      "familyKey": "generic-family:asus:other:prime-cooler-cpu",
+      "variantKey": "refrigeracion::generic:asus:other:prime-cooler-cpu-lc",
+      "refreshPriority": "normal",
+      "lastScrapedAt": "2026-10-08T06:12:11.159Z",
+      "lastNormalizedAt": "2026-10-08T06:12:26.809Z",
+      "specs": {
+        "SKU": "90RC01Q2-B0AAY0",
+        "Stock": "10",
+        "Garantia": "36 meses",
+        "Disponibilidad": "en stock"
+      },
+      "prices": [
+        {
+          "storeId": "compragamer",
+          "storeName": "CompraGamer",
+          "url": "https://compragamer.com/producto/Cooler_CPU_ASUS_PRIME_LC_360_ARGB_LCD_White_22252",
+          "price": 240750,
+          "stock": "in-stock",
+          "sourceIdentity": {
+            "title": "Cooler CPU ASUS PRIME LC 360 ARGB LCD White",
+            "sourceId": "22252",
+            "storeSku": "90RC01Q2-B0AAY0",
+            "listingRef": "compragamer:id:22252"
+          },
+          "priceCondition": "special",
+          "installment": null,
+          "lastUpdated": "2026-10-08T06:12:07.113Z"
+        }
+      ],
+      "lowestPrice": 240750,
+      "highestPrice": 240750,
+      "averagePrice": 240750,
+      "createdAt": "2026-10-08T06:12:27.108Z",
+      "updatedAt": "2026-10-08T06:12:11.159Z"
+    }
+  ]
+}

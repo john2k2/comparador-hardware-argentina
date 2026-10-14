@@ -151,15 +151,16 @@ function isCoolingProductTitle(value: string): boolean {
 function inferPrimaryComponentCategory(value: string): HardwareCategory | undefined {
   const title = value.trim().toLowerCase();
   if (/^(?:mini\s*pc|minipc|barebone)\b/.test(title)) return 'computadoras';
-  if (/^(?:pen\s*drive|pendrive|flash drive|memoria usb|memoria flash|tarjeta de memoria|sd\s+card)\b/.test(title)) return 'almacenamiento';
+  if (/^(?:pen\s*drive|pendrive|flash drive|memoria (?:usb|flash|(?:micro\s*)?sd)|tarjeta de memoria|(?:micro\s*)?sd\s+card)\b/.test(title)) return 'almacenamiento';
   if (/^(?:switch|hub|soporte|bracket|caddy|bandeja|adaptador)\b/.test(title)) return 'perifericos';
   if (/^(?:dell|hp|lenovo)\s+(?:soporte|bracket|caddy|bandeja|adaptador)\b/.test(title)) return 'perifericos';
-  if (/^micro\s+sd\b/.test(title)) return 'almacenamiento';
+  if (/^micro\s*sd\b/.test(title)) return 'almacenamiento';
   if (/^(?:micro(?!\s+sd\b)|procesador(?:es)?|cpu)\b/.test(title)) return 'procesadores';
   if (/^(?:placa de video|tarjeta grafica|gpu)\b/.test(title)) return 'tarjetas-graficas';
   if (/^(?:mouse|mousepad|teclado|auriculares?|headset|joystick|gamepad|webcam|monitor|parlante|escritorio|tabla para standing desk|silla)\b/.test(title)) return 'perifericos';
   if (/^(?:router|extensor de red|placa de red|placa wifi|adaptador(?: de red| wifi| bluetooth)|cable|ups|impresora|toner|powered usb hub|usb hub|elgato stream deck)\b/.test(title)) return 'perifericos';
-  if (/^(?:motherboard|mother|placa madre)\b/.test(title)) return 'motherboards';
+  if (/^(?:celular|smartphone|telefono)\b/.test(title)) return 'perifericos';
+  if (/^(?:motherboard|mother|mb|placa madre)\b/.test(title)) return 'motherboards';
   if (/^(?:gabinete|case)\b/.test(title)) return 'gabinetes';
   if (/^(?:fuente|psu)\b/.test(title)) return 'fuentes-alimentacion';
   if (/^(?:memoria|ram)\b/.test(title)) return 'memoria-ram';
