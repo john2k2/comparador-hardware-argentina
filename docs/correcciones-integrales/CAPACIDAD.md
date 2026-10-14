@@ -6,7 +6,7 @@ La modificación reduce trabajo innecesario y añade límites comprobables. No a
 | --- | --- | --- |
 | Catálogo ensayado | 59.692 productos, 73.827 ofertas y 34 tiendas; origen SQLite de 485.167.104 bytes | Conteos del corte, no ofertas actuales comprables |
 | Preparación completa | Tres ciclos válidos de unos 20–22 s, incluidos lectura pública, reconstrucción y certificación | En esta Mac; no CPU de Workers ni rendimiento con varios trabajos simultáneos |
-| Puente de precios | Hasta cinco GET, 1.000 filas y 4 MiB por página; timeout de 15 s por lectura | El barrido inicial continúa entre ciclos. No garantiza inserciones con retraso mayor al solapamiento de tres horas |
+| Puente de precios | Hasta cinco GET, 1.000 filas y 4 MiB por página; timeout de 15 s por lectura | El barrido se continuó hasta cerrar dos ventanas en diez lotes. No garantiza inserciones con retraso mayor al solapamiento de tres horas |
 | Portada | Primera lectura tras arranque: 81 ms; diez posteriores: mediana 17 ms, máximo 42 ms | Peticiones secuenciales locales. El corte anterior costaba 2.645 ms |
 | API alternativa de portada | Diez lecturas: mediana 15 ms, máximo 21 ms | Misma generación y equipo |
 | Fichas y sitemap | Nueve fichas: 3–26 ms; índice 105 ms y página de 1.000 URLs 112 ms | Muestra individual, sin red pública |
@@ -28,3 +28,5 @@ La base remota pesaba 1.029.270.675 bytes en la auditoría, incluyendo índices 
 6. Recuperar GA4 y medir compradores externos usando el seguimiento existente. Registrar también gasto y horas; $0 de ingresos y al menos 60 h por 30 días siguen siendo el punto de partida declarado por Jonathan.
 
 No se creó otra automatización. D02, D03 y G02 conservan sus estados y denominadores; las pruebas locales no cuentan como retorno de usuarios ni ciclos productivos útiles.
+
+Actualización de este mismo día: el barrido terminó al corte 04:03 UTC y la candidata de guía tiene 59.693 productos, 73.827 ofertas y 34 tiendas. Su observación de siete publicaciones necesitó tres GET, sin escritura remota. Es trabajo medido en local; no amplía las conclusiones sobre capacidad pública, concurrencia o continuidad. Detalle en [SINCRONIZACION.md](SINCRONIZACION.md) y [GUIA_3M.md](GUIA_3M.md).

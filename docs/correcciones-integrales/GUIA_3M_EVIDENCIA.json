@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "scope": "local-only",
+  "verifiedAt": "2026-10-14T04:35:11.629Z",
+  "candidate": {
+    "path": "/Users/johnortiz/.codex/worktrees/correcciones-integrales/comparador-hardware-argentina/outputs/cierre-local-2026-10-14/guia-integrada-v2/refresh/candidate.sqlite",
+    "sha256": "deefeb8b901603d2f09f9a0434c14344f2dd00ba05700e3e0e447828884bd2b9",
+    "fingerprint": "7c43f099e18f02e9cb131d59454c2fc815a2c5976046f9dc08594381d9c9af72",
+    "generation": "mac-refresh-1791951884566",
+    "counts": {
+      "products": 59693,
+      "product_prices": 73827,
+      "catalog_price_summaries": 59693,
+      "stores": 34
+    },
+    "certificate": {
+      "version": 2,
+      "validated": true,
+      "timestampPolicy": "js-sql-ms-v2",
+      "offers": 73827
+    }
+  },
+  "observationSourceHttp": {
+    "compragamer": {
+      "requests": 3,
+      "bytes": 2594583
+    }
+  },
+  "offers": [
+    {
+      "slot": "cpu",
+      "productId": "cg-14309",
+      "offerId": "89da33ac-6857-4c38-ade4-4a6c575fccc3",
+      "url": "https://compragamer.com/producto/Procesador_AMD_Ryzen_5_7600_5_1GHz_Turbo_AM5_Wraith_Stealth_Cooler_14309",
+      "sku": "100-100001015BOX",
+      "price": 360150,
+      "stock": "in-stock",
+      "priceCondition": "special",
+      "observedAt": "2026-10-14T04:24:40.261Z"
+    },
+    {
+      "slot": "gpu",
+      "productId": "cg-17960",
+      "offerId": "1b35087c-b243-4ad2-893c-e3963b8c0db6",
+      "url": "https://compragamer.com/producto/Placa_de_Video_Asrock_Radeon_RX_9060_XT_16GB_GDDR6_Challenger_OC_17960",
+      "sku": "RX 9060XT CL 16GO",
+      "price": 947350,
+      "stock": "in-stock",
+      "priceCondition": "special",
+      "observedAt": "2026-10-14T04:24:40.261Z"
+    },
+    {
+      "slot": "ram",
+      "productId": "cg-21565",
+      "offerId": "91e9cc04-aadf-4ad5-a99c-72bd6aa84075",
+      "url": "https://compragamer.com/producto/Memoria_KLEVV_DDR5_32GB_2X16GB_6000MHz_BOLT_V_CL28_21565",
+      "sku": "KD5AGUA80-60B280H",
+      "price": 872200,
+      "stock": "in-stock",
+      "priceCondition": "special",
+      "observedAt": "2026-10-14T04:24:40.261Z"
+    },
+    {
+      "slot": "ssd",
+      "productId": "cg-16872",
+      "offerId": "a48c82b9-31cb-4a89-ad17-a854a9e8f890",
+      "url": "https://compragamer.com/producto/Disco_Solido_SSD_M_2_Kingston_1TB_NV3_6000MB_s_NVMe_PCI_E_Gen4_x4_16872",
+      "sku": "SNV3S/1000G",
+      "price": 289050,
+      "stock": "in-stock",
+      "priceCondition": "special",
+      "observedAt": "2026-10-14T04:24:40.261Z"
+    },
+    {
+      "slot": "motherboard",
+      "productId": "cg-17076",
+      "offerId": "0c619633-bfba-4a8e-ae8c-0332444fc34f",
+      "url": "https://compragamer.com/producto/Mother_MSI_B650M_GAMING_WIFI_AM5_DDR5_17076",
+      "sku": "B650M GAMING WIFI",
+      "price": 188985,
+      "stock": "in-stock",
+      "priceCondition": "special",
+      "observedAt": "2026-10-14T04:24:40.261Z"
+    },
+    {
+      "slot": "psu",
+      "productId": "cg-18173",
+      "offerId": "b8c28099-b762-4d2d-aad5-9241a960cb9d",
+      "url": "https://compragamer.com/producto/Fuente_Asrock_750W_80_Plus_Gold_Steel_Legend_Full_Modular_ATX_3_1_PCIe_5_1_Cybenetics_Platinum_18173",
+      "sku": "SL-750G",
+      "price": 130000,
+      "stock": "in-stock",
+      "priceCondition": "special",
+      "observedAt": "2026-10-14T04:24:40.261Z"
+    },
+    {
+      "slot": "case",
+      "productId": "agrupado-gabinetes-4x120mm-antec-argb-black-gabinete-templado-vidri-15eoh7x",
+      "offerId": "26894c4d-7b86-4820-85bc-7e00fc0f6ce7",
+      "url": "https://compragamer.com/producto/Gabinete_Antec_VX310_RGB_Black_4x120mm_Vidrio_Templado_18607",
+      "sku": "0-761345-10232-2",
+      "price": 59990,
+      "stock": "in-stock",
+      "priceCondition": "special",
+      "observedAt": "2026-10-14T04:24:40.261Z"
+    }
+  ],
+  "totalTransferARS": 2847725,
+  "merchantOtherPaymentTotalARS": 3164139,
+  "merchantOtherPaymentWindow": "2026-10-14T03:55:11Z/2026-10-14T04:11:37Z",
+  "viewports": [
+    {
+      "width": 1440,
+      "offers": 7,
+      "horizontalOverflow": false,
+      "pageErrors": []
+    },
+    {
+      "width": 390,
+      "offers": 7,
+      "horizontalOverflow": false,
+      "pageErrors": []
+    }
+  ],
+  "qcValidUntil": "2026-10-14T06:18:57.299Z",
+  "synchronization": {
+    "complete": true,
+    "windows": [
+      {
+        "start": "2026-10-13T02:49:51.960Z",
+        "end": "2026-10-14T02:49:51.960Z",
+        "after": {
+          "at": "2026-10-14T02:24:44.074+00:00",
+          "id": "a9ad50ab-3daa-4880-a9b6-faa0e7077252"
+        },
+        "complete": true
+      },
+      {
+        "start": "2026-10-13T23:49:51.960Z",
+        "end": "2026-10-14T04:03:38.451Z",
+        "after": {
+          "at": "2026-10-14T03:11:46.283+00:00",
+          "id": "ce54eefa-8bde-4d1e-8fe8-31aba2858b66"
+        },
+        "complete": true
+      }
+    ],
+    "batches": 10,
+    "distinctOffersRead": 7292,
+    "distinctOffersAccepted": 3828,
+    "rejectedDecisions": 5662,
+    "successfulBatchRequests": 49,
+    "successfulBatchBytes": 26059833,
+    "knownFailedAttempts": 2
+  },
+  "remoteRowsWritten": 0,
+  "productionActivated": false,
+  "implementationCommit": "912a02eefe4bdd5ea27ddb0120cd9f6ae802e973"
+}

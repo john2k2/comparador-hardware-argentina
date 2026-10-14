@@ -2,9 +2,9 @@
 
 Fecha: 14/10/2026, madrugada de Santiago. Autorización de Jonathan: corregir y probar en local, sin publicar. El código queda en `codex/correcciones-integrales-local-20261013`; revisión de implementación `62820414a8d5e9a84b24fc97c67cb9227b70d9f8`. Los documentos de cierre se guardan en el commit posterior.
 
-**Resultado:** portada, sincronización, errores auditados del catálogo y correcciones técnicas complementarias implementados y probados. No se publicó, no se escribieron datos remotos y no se cambió el servicio Mac instalado. La base principal con trabajo ajeno quedó fuera de esta integración.
+**Resultado ampliado:** portada, sincronización, errores auditados del catálogo y correcciones técnicas complementarias implementados y probados; ahora también se completó el barrido y se verificaron siete ofertas de la guía de $3M en la página local. No se publicó, no se escribieron datos remotos y no se cambió el servicio Mac instalado. La base principal con trabajo ajeno quedó fuera de esta integración.
 
-Esta entrega acredita correcciones locales. La recuperación pública, la continuidad de los ciclos, las siete ofertas de la guía de $3M y la utilidad para compradores externos conservan sus comprobaciones posteriores. Los tests no convierten ingresos de $0 en un negocio validado.
+Esta entrega acredita correcciones locales. La recuperación pública, la continuidad de los ciclos y la utilidad para compradores externos conservan sus comprobaciones posteriores. Las siete ofertas de la guía de $3M tienen comprobación local completa, fechada en [GUIA_3M.md](GUIA_3M.md); su vigencia pública es otra etapa. Los tests no convierten ingresos de $0 en un negocio validado.
 
 **Qué cambió y por qué**
 
@@ -24,7 +24,7 @@ Esta entrega acredita correcciones locales. La recuperación pública, la contin
 | Caché y métricas | Trabajo asociado a la vida de la respuesta, errores observables y escrituras con timeout | Pruebas de `after`, fallback fuera de Next, rechazo, agotamiento del tiempo y clientes de scrapers |
 | Base/CI | Aislamiento entre dos usuarios y retención acotada entran al gate; se compilan y empaquetan ambos Workers | PostgreSQL 17 desechable, build completo de OpenNext, dos dry-runs y smoke local de Worker |
 
-**Verificación final**
+**Verificación del primer corte, conservada como antecedente**
 
 Evidencia conservada en `outputs/correcciones-locales-2026-10-14/`, fuera de Git. Los logs de intentos fallidos se conservan como diagnóstico; los archivos indicados aquí son los cierres finales.
 
@@ -60,7 +60,7 @@ El corte tiene 59.692 productos, 73.827 ofertas y 34 tiendas. Son existencias de
 
 La primera lectura de portada pasó de **2.645 ms a 81 ms** después de evitar el recorrido global. Diez lecturas posteriores tuvieron mediana de **17 ms** y máximo de **42 ms**. La API alternativa dio mediana de 15 ms y máximo de 21 ms. Es una medición secuencial en esta Mac; no estima usuarios simultáneos ni latencia pública.
 
-La copia usada en QA es `candidate-run-v6/candidate.sqlite`, generación `mac-refresh-1791948098734`. El último ciclo transfirió 998 filas, correspondientes a 997 ofertas únicas: 473 admitidas y 524 rechazadas. Duró 22 segundos con reconstrucción y certificación. El barrido inicial sigue incompleto. Detalle de límites, fechas y rechazos en [SINCRONIZACION.md](SINCRONIZACION.md).
+La copia usada en QA es `candidate-run-v6/candidate.sqlite`, generación `mac-refresh-1791948098734`. El último ciclo transfirió 998 filas, correspondientes a 997 ofertas únicas: 473 admitidas y 524 rechazadas. Duró 22 segundos con reconstrucción y certificación. En ese corte inicial el barrido seguía incompleto; la continuación posterior lo cerró al 14/10 04:03 UTC. Detalle de límites, fechas y rechazos en [SINCRONIZACION.md](SINCRONIZACION.md).
 
 El certificado temporal de promoción de ese corte venció el 14/10 a las 03:26:27 UTC. La copia queda como evidencia y para reproducción local; no queda lista para activarse días después sin preparar y certificar otra. La elegibilidad de cada oferta sigue venciendo según su observación original.
 
@@ -83,12 +83,30 @@ La integración parte de `5d9baa16a6e433143c40e2678f6f3744fc932a88`, que concili
 
 **Qué queda para publicación y seguimiento**
 
-- Preparar un corte vigente, autorizar publicación y verificar las cinco ternas originales entre productor, copia, API, pantalla y comercio; observar ciclos naturales y la finalización del barrido inicial.
-- Acreditar siete ofertas exactas, actuales y compatibles antes de presentar completa la guía de $3M. Reconocer correctamente un kit RAM no demuestra stock ni completa por sí solo la guía.
+- Preparar un corte vigente, autorizar publicación y verificar las cinco ternas originales entre productor, copia, API, pantalla y comercio; observar ciclos naturales y la recepción de observaciones posteriores al barrido cerrado.
+- Revalidar las siete ofertas de la guía de $3M antes de publicar. La candidata local ya demuestra siete observaciones, DB/API/página y compatibilidad documental; no garantiza stock futuro, montaje ni estabilidad de memoria.
 - Medir capacidad, continuidad y recuperación fuera de esta Mac. Ensayos y límites en [CAPACIDAD.md](CAPACIDAD.md).
 - Recuperar autorización de GA4, comprobar eventos externos y realizar D03 con compradores. Mantener el seguimiento existente, sin confundir QA con tráfico externo.
 - Registrar gastos y horas, y validar una señal comercial. La rentabilidad sigue sin demostrarse.
 
-Se detuvieron al terminar los servidores y PostgreSQL desechables usados en QA. Las capturas, recibos y copias quedan conservados localmente para revisión.
+Se detuvieron al terminar los servidores y PostgreSQL desechables del primer corte usados en QA. La ampliación conserva una vista previa local separada en el puerto 3103. Las capturas, recibos y copias quedan conservados localmente para revisión.
 
 No se crearon cuentas, cobros, campañas ni otro monitor. La finalización de este paquete local no altera D02, D03 o G02 ni autoriza ampliar AdSense.
+
+
+**Cierre ampliado: barrido y siete ofertas, 14/10/2026 04:35 UTC**
+
+- Barrido: diez lotes nuevos, ambas ventanas completas, 7.292 ofertas distintas leídas y 3.828 admitidas. Los rechazos de identidad permanecen bloqueados; no se presenta el catálogo entero como actualizado.
+- Guía: selección local KLEVV `KD5AGUA80-60B280H`, motherboard específica CompraGamer 17076 y referencias explícitas SSD/motherboard para no perderlas por el límite de ocho candidatas. Las siete ofertas observadas a las **04:24:40.261 UTC** suman **$2.847.725** por depósito o transferencia.
+- Reparación: una oferta movida a su ficha exacta en una copia nueva. Las otras ofertas y productos preexistentes permanecen iguales durante esa reparación; historia preservada. La fecha de creación de la ficha nueva no sustituye la observación de precio.
+- Runtime: base SQLite, API y página coinciden en siete precios, stock, URL, SKU y observación. Chrome 1440 y 390 px: siete enlaces correctos, sin desbordamiento ni errores de página. Capturas revisadas visualmente. Cada oferta especial de CompraGamer muestra junto al importe su condición de depósito/transferencia.
+- Pruebas finales: **3.208 aprobadas y dos opcionales omitidas**, **322/322 operativas**, lint y TypeScript aprobados, build Next completo y ocho documentos públicos generados. El tipo y la condición de precio permanecen serializables al cliente.
+- Regresiones relevantes: código distinto/ausente no acredita variante; referencia conocida fuera del top ocho no desaparece; agotamiento/vencimiento quitan la oferta; presupuesto conserva $3,3M editorial; lector D1 real exige fechas válidas de ficha nueva. La aceptación independiente D1 → cargador → resolvedor da 7/7 y, pasado el límite de tres horas, 0/7.
+
+Se conservaron los intentos fallidos. La primera candidata de guía v1 tenía siete observaciones, pero la página daba 5/7: faltaban fechas de creación/actualización de la ficha nueva y el SSD estaba fuera del top ocho. Se corrigió y se reintegró v2; no se rebajaron los filtros del lector. La suite completa también detectó una fixture que aún usaba Patriot; se actualizó a la selección KLEVV y a identidades de publicación válidas, conservando los casos negativos de stock, vencimiento y variante.
+
+Recibos de este cierre en `outputs/cierre-local-2026-10-14/`: `tests-final.log`, `verify-final.log` (incluye operación), `typecheck-final.log`, `build-final.log`, `runtime/guide-validation.json`, capturas `runtime/guia-*-cabecera.png` y `runtime/guia-*-piezas.png`. La última modificación de condición de pago se validó nuevamente con toda la suite de aplicación, lint, TypeScript, build y la prueba de página real. No se repitieron los 110 recorridos históricos ni el empaquetado Worker porque este cierre no cambia esa infraestructura; no se presentan como nuevos resultados.
+
+Candidata final: `mac-refresh-1791951884566`, SHA-256 `deefeb8b901603d2f09f9a0434c14344f2dd00ba05700e3e0e447828884bd2b9`, fingerprint `7c43f099e18f02e9cb131d59454c2fc815a2c5976046f9dc08594381d9c9af72`. Su certificado para futura promoción vence **06:18:57.299 UTC**, independientemente de las tres horas de elegibilidad de cada oferta. Es evidencia local; no autorización para activar ni promesa de datos vigentes más adelante.
+
+Implementación local de este cierre: `09fd3b4` (reparación aislada) y `912a02eefe4bdd5ea27ddb0120cd9f6ae802e973` (guía, condiciones y regresiones). Los recibos corresponden a ese contenido; no hubo push ni deploy.
