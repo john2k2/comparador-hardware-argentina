@@ -9,7 +9,7 @@ import { createRequire, Module } from 'node:module';
 import { buildSync } from 'esbuild';
 import { hashFile } from './mac-catalog-service.mjs';
 import { acquireJobLock, checkStorage, cleanupWorking, pruneJobSnapshots, refreshJobPlan,
-  runMacRefreshJob as runJob } from './mac-catalog-refresh-job.mjs';
+  runMacRefreshJob as runJob, safeRunnerCode, createRunnerDiagnosticReader } from './mac-catalog-refresh-job.mjs';
 
 const fingerprint = 'a'.repeat(64), nextFingerprint = 'b'.repeat(64);
 const counts = { products: 1, product_prices: 1, catalog_price_summaries: 1, stores: 1 };
@@ -70,6 +70,72 @@ const validateCandidate = async (runtime, pointer) => {
   assert.equal(readFileSync(path).length > 0, true); assert.throws(() => db.exec('CREATE TABLE forbidden(id)'));
   db.close();
 };
+
+function fixtureChild(f, body) {
+  mkdirSync(join(f.root, 'scripts/pilots'), { recursive: true });
+  writeFileSync(join(f.root, 'scripts/pilots/mac-catalog-refresh.mjs'), body);
+}
+async function childFailure(f) {
+  try {
+    await runMacRefreshJob(f.configFile, { validateCandidate: () => assert.fail('un hijo fallido no valida/promueve') });
+    assert.fail('el hijo debía fallar');
+  } catch (error) {
+    assert.equal(error.receipt.status, 'failed'); assert.equal(error.receipt.promoted, false);
+    assert.equal(error.receipt.code, 'MAC_JOB_RUNNER_FAILED');
+    assert.deepEqual(read(join(f.root, 'current.json')), f.pointer);
+    assert.equal(existsSync(join(f.root, 'previous.json')), false);
+    assert.equal(readdirSync(join(f.root, 'snapshots')).length, 1);
+    assert.equal(await hashFile(f.source), f.pointer.sha256);
+    const saved = read(join(f.root, 'receipts', error.receipt.id + '.json'));
+    assert.deepEqual(saved, error.receipt); return saved;
+  }
+}
+test('hijo Node real conserva sólo código estable; fallo no promueve ni copia la traza', async t => {
+  const f = await fixture(t);
+  fixtureChild(f, `export async function runMacCatalogRefresh(){throw Error('UPSTREAM_READ_FAILED');}`);
+  const receipt = await childFailure(f);
+  assert.equal(receipt.runnerCode, 'UPSTREAM_READ_FAILED');
+  assert.equal(JSON.stringify(receipt).includes('stack'), false);
+});
+test('mensaje con secreto incluso en mayúsculas se descarta; code nativo permitido conserva causa sin mensaje', async t => {
+  const secret = 'MAC_REFRESH_SUPER_PRIVATE_SECRET_TOKEN';
+  for (const nativeCode of [undefined, 'ERR_SQLITE_ERROR']) {
+    const f = await fixture(t);
+    fixtureChild(f, `export async function runMacCatalogRefresh(){const error=Error(${JSON.stringify(secret)});${nativeCode ? `error.code=${JSON.stringify(nativeCode)};` : ''}throw error;}`);
+    const receipt = await childFailure(f);
+    assert.equal(receipt.runnerCode, nativeCode ?? 'MAC_REFRESH_FAILED');
+    assert.equal(JSON.stringify(receipt).includes(secret), false);
+  }
+});
+test('stderr arbitrario y enorme se drena sin persistirlo; el frame final acotado conserva código', async t => {
+  const f = await fixture(t), secret = 'fixture-private-value-' + randomUUID();
+  fixtureChild(f, `export async function runMacCatalogRefresh(){process.stderr.write(${JSON.stringify(secret)}.repeat(20000));throw Error('UPSTREAM_PAGE_INVALID');}`);
+  const receipt = await childFailure(f);
+  assert.equal(receipt.runnerCode, 'UPSTREAM_PAGE_INVALID'); assert.equal(JSON.stringify(receipt).includes(secret), false);
+});
+test('import fallido del hijo también está protegido, sin stack de Node', async t => {
+  const f = await fixture(t), receipt = await childFailure(f);
+  assert.equal(receipt.runnerCode, 'ERR_MODULE_NOT_FOUND');
+});
+test('salida no exitosa sin marcador falla cerrado con código genérico', async t => {
+  const f = await fixture(t);
+  fixtureChild(f, `export async function runMacCatalogRefresh(){process.exitCode=1;}`);
+  assert.equal((await childFailure(f)).runnerCode, 'MAC_REFRESH_FAILED');
+});
+test('parser acotado acepta frames completos partidos en chunks y rechaza datos secretos/no permitidos', () => {
+  const reader = createRunnerDiagnosticReader();
+  reader.write(Buffer.alloc(1024 * 1024, 'x'));
+  reader.write('\nCOMPARADOR_RUNNER_ER'); reader.write('ROR:UPSTREAM_READ_FAILED\n');
+  assert.equal(reader.code(), 'UPSTREAM_READ_FAILED');
+  for (const payload of ['COMPARADOR_RUNNER_ERROR:MAC_REFRESH_SUPER_PRIVATE_SECRET_TOKEN\n',
+    'COMPARADOR_RUNNER_ERROR:UPSTREAM_READ_FAILED secret=value\n', 'COMPARADOR_RUNNER_ERROR:UPSTREAM_READ_FAILED',
+    'COMPARADOR_RUNNER_ERROR:' + 'A'.repeat(100) + '\n']) {
+    const invalid = createRunnerDiagnosticReader(); invalid.write(payload); assert.equal(invalid.code(), 'MAC_REFRESH_FAILED');
+  }
+  assert.equal(safeRunnerCode(Error('DAILY_ESTIMATED_WRITE_BUDGET_EXCEEDED:80006/80000')), 'DAILY_ESTIMATED_WRITE_BUDGET_EXCEEDED');
+  assert.equal(safeRunnerCode(Error('DAILY_ESTIMATED_WRITE_BUDGET_EXCEEDED:secret/value')), 'MAC_REFRESH_FAILED');
+  assert.equal(safeRunnerCode({ cause: { code: 'ECONNRESET' }, message: 'secret=value' }), 'ECONNRESET');
+});
 
 test('tick promueve sólo copia immutable y conserva previous, fuente y receipt compacta', async t => {
   const f = await fixture(t); let initialized;

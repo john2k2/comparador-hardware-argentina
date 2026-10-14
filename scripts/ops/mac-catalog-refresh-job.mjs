@@ -18,6 +18,64 @@ const hex = /^[a-f0-9]{64}$/;
 const producer = 'mac-catalog-refresh-job-v1';
 const scope = '500 ofertas conocidas CompraGamer por tick; no acredita catálogo entero ni otras tiendas.';
 const upstreamScope = scope + ' Además, hasta1000 observaciones existentes del productor público, con cursor y control de identidad.';
+// Sólo códigos conocidos: un mensaje en mayúsculas también puede contener secretos.
+const RUNNER_CODES = new Set(`
+ MAC_REFRESH_FAILED RUNNER_TIMEOUT RUNNER_ABORTED
+ MAC_REFRESH_BUDGET_ALREADY_LOCAL MAC_REFRESH_BUDGET_AMBIGUOUS MAC_REFRESH_BUDGET_INITIALIZATION_REQUIRED
+ MAC_REFRESH_BUDGET_LEGACY_INVALID MAC_REFRESH_BUDGET_LIMIT MAC_REFRESH_BUDGET_MARKER
+ MAC_REFRESH_BUDGET_MIGRATION_OPTIONS MAC_REFRESH_BUDGET_POLICY_CHANGE MAC_REFRESH_BUDGET_TABLE MAC_REFRESH_BUDGET_TRANSACTION
+ MAC_REFRESH_CAPTURE_REQUIRES_SWEEP MAC_REFRESH_COUNTS MAC_REFRESH_DESTINATION MAC_REFRESH_DESTINATION_INODE
+ MAC_REFRESH_FTS_COUNTS MAC_REFRESH_INTEGRITY MAC_REFRESH_LIMIT MAC_REFRESH_MANIFEST MAC_REFRESH_NEW_DIRECTORY
+ MAC_REFRESH_OFFERS MAC_REFRESH_OFFER_COLUMNS MAC_REFRESH_PREPARED_COPY_REQUIRES_OPT_IN MAC_REFRESH_PRODUCT_COLUMNS
+ MAC_REFRESH_SCOPE_CHANGED MAC_REFRESH_SNAPSHOT MAC_REFRESH_SOURCE_CHANGED MAC_REFRESH_SOURCE_FILE
+ MAC_REFRESH_SOURCE_OR_CERTIFICATE_CHANGED MAC_REFRESH_SOURCE_WAL_ACTIVE MAC_REFRESH_STORES MAC_REFRESH_SUMMARY_COUNTS
+ MAC_REFRESH_SWEEP_STORE MAC_REFRESH_SWEEP_CAPTURE_OR_PROOF_REQUIRED MAC_REFRESH_UNSUPPORTED_EXPLICIT_TARGET
+ MAC_REFRESH_UPSTREAM_CONFIG MAC_REFRESH_USAGE MAC_REFRESH_WINDOWS MAC_DAILY_BUDGET_POLICY_REQUIRED
+ UPSTREAM_CURSOR_INVALID UPSTREAM_CURSOR_STALLED UPSTREAM_DUPLICATE_CONFLICT UPSTREAM_HISTORY_CONFLICT UPSTREAM_INPUT_INVALID
+ UPSTREAM_LOCAL_COLUMNS_INVALID UPSTREAM_PAGE_INVALID UPSTREAM_PRIORITY_INVALID UPSTREAM_PRIORITY_RESPONSE
+ UPSTREAM_PUBLIC_CONFIG_INVALID UPSTREAM_PUBLIC_KEY_REQUIRED UPSTREAM_READ_FAILED UPSTREAM_RESPONSE_TOO_LARGE
+ UPSTREAM_ROW_DUPLICATE_OR_INVALID UPSTREAM_STAGING_REQUIRED UPSTREAM_WRITE_CONFLICT
+ OBSERVATION_CLOCK_COUNTS OBSERVATION_CLOCK_DATE_MISMATCH OBSERVATION_CLOCK_DATE_TYPE OBSERVATION_CLOCK_TRANSACTION_ACTIVE
+ CATALOG_QC_CLOCK_OR_PROJECTION_INVALID CATALOG_QC_CLOCK_TRANSITION_DURING_COPY CATALOG_QC_NEW_COPY_REQUIRED
+ CATALOG_QC_OFFERS_CHANGED CATALOG_QC_OFFER_BINDING_FAILED CATALOG_QC_OFFER_COLUMNS_INVALID
+ CATALOG_QC_PRODUCT_COLUMNS_INVALID CATALOG_QC_SUMMARY_MISSING
+ DAILY_BUDGET_CLOCK_REGRESSION DAILY_BUDGET_INVALID_CLOCK DAILY_BUDGET_INVALID_ESTIMATE DAILY_BUDGET_INVALID_LIMIT
+ DAILY_BUDGET_LIMIT_BELOW_USAGE DAILY_BUDGET_LIMIT_INCREASE DAILY_BUDGET_TRANSACTION_REQUIRED DAILY_ESTIMATED_WRITE_BUDGET_EXCEEDED
+ ERR_SQLITE_ERROR ERR_MODULE_NOT_FOUND MODULE_NOT_FOUND ERR_INVALID_ARG_TYPE
+ EACCES ENOENT ENOSPC EMFILE ENOMEM EIO EPIPE ECONNRESET ECONNREFUSED ENOTFOUND ETIMEDOUT
+ UND_ERR_CONNECT_TIMEOUT UND_ERR_HEADERS_TIMEOUT UND_ERR_BODY_TIMEOUT UND_ERR_SOCKET
+`.trim().split(/\s+/));
+const RUNNER_ERROR_MARKER = 'COMPARADOR_RUNNER_ERROR:';
+const MAX_RUNNER_STDERR_BYTES = 4096;
+export function safeRunnerCode(error) {
+  for (const value of [error?.code, error?.cause?.code, error?.message]) {
+    if (typeof value !== 'string') continue;
+    if (value.length <= 96 && /^[A-Z][A-Z_]+$/.test(value) && RUNNER_CODES.has(value)) return value;
+    if (/^DAILY_ESTIMATED_WRITE_BUDGET_EXCEEDED:\d{1,10}\/\d{1,10}$/.test(value)) return 'DAILY_ESTIMATED_WRITE_BUDGET_EXCEEDED';
+  }
+  return error?.name === 'TimeoutError' ? 'RUNNER_TIMEOUT' : error?.name === 'AbortError' ? 'RUNNER_ABORTED' : 'MAC_REFRESH_FAILED';
+}
+/** Drena stderr con una cola limitada; jamás devuelve texto, stack ni líneas arbitrarias. */
+export function createRunnerDiagnosticReader() {
+  let tail = Buffer.alloc(0);
+  return {
+    write(bytes) {
+      const chunk = Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes);
+      tail = Buffer.concat([tail, chunk.subarray(Math.max(0, chunk.length - MAX_RUNNER_STDERR_BYTES))]);
+      if (tail.length > MAX_RUNNER_STDERR_BYTES) tail = tail.subarray(tail.length - MAX_RUNNER_STDERR_BYTES);
+    },
+    code() {
+      let code = 'MAC_REFRESH_FAILED';
+      for (const line of tail.toString('utf8').split('\n').slice(0, -1)) {
+        if (!line.startsWith(RUNNER_ERROR_MARKER)) continue;
+        const value = line.slice(RUNNER_ERROR_MARKER.length);
+        if (value.length <= 96 && /^[A-Z][A-Z_]+$/.test(value) && RUNNER_CODES.has(value)) code = value;
+      }
+      return code;
+    },
+  };
+}
+function runnerFailure(code) { return Object.assign(Error('MAC_JOB_RUNNER_FAILED'), { runnerCode: safeRunnerCode({ code }) }); }
 function owner(file) {
   const stat = lstatSync(file);
   if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o777) !== 0o600
@@ -154,17 +212,22 @@ function atomicJson(path, value, nonce) {
 }
 async function defaultRunner(config, { signal, runtime }) {
   const entry = join(runtime.releaseDir, 'scripts/pilots/mac-catalog-refresh.mjs');
-  const script = `import {runMacCatalogRefresh} from ${json(pathToFileURL(entry).href)};let input='';for await(const bytes of process.stdin)input+=bytes;await runMacCatalogRefresh(JSON.parse(input));`;
+  // El import también queda protegido. No dejar que Node imprima la excepción completa.
+  const script = `const RUNNER_CODES=new Set(${json([...RUNNER_CODES])});const safeRunnerCode=${safeRunnerCode.toString()};
+    try {const {runMacCatalogRefresh}=await import(${json(pathToFileURL(entry).href)});let input='';for await(const bytes of process.stdin)input+=bytes;await runMacCatalogRefresh(JSON.parse(input));}
+    catch(error){process.stderr.write(${json('\n' + RUNNER_ERROR_MARKER)}+safeRunnerCode(error)+${json('\n')});process.exitCode=1;}`;
   await new Promise((done, reject) => {
     const child = spawn(process.execPath, ['--input-type=module', '-e', script], {
-      cwd: runtime.releaseDir, stdio: ['pipe', 'ignore', 'ignore'], env: process.env });
+      cwd: runtime.releaseDir, stdio: ['pipe', 'ignore', 'pipe'], env: process.env });
+    const diagnostic = createRunnerDiagnosticReader();
+    child.stderr.on('data', bytes => diagnostic.write(bytes));
     let killTimer, aborted = false;
     const abort = () => { aborted = true; child.kill('SIGTERM'); killTimer = setTimeout(() => child.kill('SIGKILL'), 3000); };
     signal.addEventListener('abort', abort, { once: true });
-    child.once('error', reject);
+    child.once('error', error => reject(runnerFailure(safeRunnerCode(error))));
     child.once('close', code => {
       clearTimeout(killTimer); signal.removeEventListener('abort', abort);
-      if (aborted) reject(Error('MAC_JOB_DEADLINE')); else if (code) reject(Error('MAC_JOB_RUNNER_FAILED')); else done();
+      if (aborted) reject(Error('MAC_JOB_DEADLINE')); else if (code !== 0) reject(runnerFailure(diagnostic.code())); else done();
     });
     child.stdin.on('error', () => {}); child.stdin.end(json(config));
     if (signal.aborted) abort();
@@ -359,6 +422,7 @@ export async function runMacRefreshJob(configFile, dependencies = {}) {
     // Un error de fsync posterior al rename no debe ocultar un pointer ya cambiado.
     if (newPointer) try { promoted = json(JSON.parse(readFileSync(manifest, 'utf8'))) === json(newPointer); } catch { /* Conserva estado conocido. */ }
     receipt = { version: 1, producer, id, status: 'failed', code: codeOf(error), promoted,
+      ...(error?.message === 'MAC_JOB_RUNNER_FAILED' ? { runnerCode: safeRunnerCode({ code: error.runnerCode }) } : {}),
       startedAt: new Date(startedAt).toISOString(), completedAt: new Date(clock()).toISOString(), durationMs: clock() - startedAt,
       observation: compactObservation(report), remoteRowsRead: report?.remoteRowsRead ?? (settings.syncUpstream ? null : 0), remoteRowsWritten: 0 };
     throw Object.assign(Error(receipt.code), { receipt });
