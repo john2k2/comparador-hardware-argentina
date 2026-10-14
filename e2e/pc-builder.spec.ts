@@ -152,6 +152,26 @@ async function choose(page: Page, label: typeof slotLabels[number]) {
 test.describe('armador de PC', () => {
   test.beforeEach(async ({ page }) => { await page.clock.setFixedTime(browserNow); });
 
+  test('uso principal se conserva al guardar, recuperar y compartir; muestra cobertura de la lectura', async ({ page }) => {
+    await installCatalogRoute(page, { modelUrls: true });
+    await loadBuilder(page);
+    const usage = page.getByLabel('Uso principal');
+    await expect(usage).toHaveValue('gaming');
+    await usage.selectOption('general');
+    await choose(page, 'Procesador');
+    await page.getByRole('button', { name: 'Guardar armado' }).click();
+    await usage.selectOption('gaming');
+    await page.getByRole('button', { name: 'Recuperar guardado' }).click();
+    await expect(usage).toHaveValue('general');
+    await page.getByRole('button', { name: 'Copiar enlace' }).click();
+    const url = await page.getByLabel('Enlace para compartir').inputValue();
+    await page.goto(url);
+    await expect(usage).toHaveValue('general');
+    await page.locator('details summary').filter({ hasText: 'catálogo' }).click();
+    await expect(page.getByTestId('pc-builder')).toContainText('Cobertura no informada');
+    await expect(page.getByTestId('pc-builder')).toContainText('no acredita cobertura de todas las tiendas');
+  });
+
   test('catálogos cargados con RAM antigua no anuncian éxito ni borran una selección manual', async ({ page }) => {
     await installCatalogRoute(page, { staleRam: true, modelUrls: true });
     await page.route(/https:\/\/www\.googletagmanager\.com\/gtag\/js/, route => route.fulfill({ contentType: 'application/javascript', body: '' }));

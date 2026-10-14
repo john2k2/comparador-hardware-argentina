@@ -22,7 +22,7 @@ jobs:
         image: postgres:17
         env:
           POSTGRES_PASSWORD: local-test-password
-          POSTGRES_DB: catalog_test
+          POSTGRES_DB: catalog_auth_qa
         ports:
           - 5432:5432
         options: >-
@@ -55,7 +55,7 @@ jobs:
           PGPORT: '5432'
           PGUSER: postgres
           PGPASSWORD: local-test-password
-          PGDATABASE: catalog_test
+          PGDATABASE: catalog_auth_qa
         run: |
           set -euo pipefail
           psql -v ON_ERROR_STOP=1 -f supabase/tests/bootstrap-local.sql
@@ -83,10 +83,21 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f supabase/tests/catalog_product_prefilter.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/catalog_current_seed.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/catalog_search_lookup.sql
+          docker exec -i -e PGPASSWORD=local-test-password "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -U postgres -d catalog_auth_qa -v ON_ERROR_STOP=1 < supabase/tests/user-data-isolation.sql
+          docker exec -i -e PGPASSWORD=local-test-password "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -U postgres -d catalog_auth_qa -v ON_ERROR_STOP=1 < supabase/tests/expired_shared_cache.sql
           node scripts/test-current-catalog-prices.mjs
           node --test supabase/tests/catalog-concurrency.test.mjs
       - name: Verify browser behavior with isolated data
         run: npm run test:e2e:critical
+      - name: Build the actual Worker entry without publishing
+        env:
+          WRANGLER_SEND_METRICS: 'false'
+        run: |
+          npx opennextjs-cloudflare build
+          npx wrangler deploy --dry-run --outdir /tmp/comparador-worker-check
+          mkdir -p outputs/cloudflare-mac-assets/_next
+          cp -R .next/static outputs/cloudflare-mac-assets/_next/static
+          npx wrangler deploy --config wrangler.mac-catalog.jsonc --dry-run --outdir /tmp/comparador-mac-proxy-check
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

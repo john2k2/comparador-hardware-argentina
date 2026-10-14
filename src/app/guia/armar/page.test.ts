@@ -9,7 +9,7 @@ describe('ArmarPcView', () => {
       createElement(ArmarPcView, { budget: null, submitted: false }),
     );
 
-    expect(markup).toContain('Armá tu PC gamer con un presupuesto');
+    expect(markup).toContain('Armá tu PC con un presupuesto');
     expect(markup).toContain('name="pesos"');
     expect(markup).toContain('Cargando catálogo');
     expect(markup).toContain('Componentes de tu PC');

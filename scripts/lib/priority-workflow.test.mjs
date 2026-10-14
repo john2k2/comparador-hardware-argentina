@@ -26,8 +26,8 @@ test('el validador real informa diferimiento sin declarar observaciones ni activ
   for (const name of ['Guardar selección pública después de actualizar ofertas', 'Measure global window updates and store freshness']) {
     const step = yaml.split(/^      - name: /m).find(value => value.startsWith(name));
     const condition = step.match(/^        if: (.+)$/m)[1];
-    assert.equal(runInNewContext(condition, { success: () => true, always: () => true,
-      steps: { resolve: { outputs: { mode: 'priority' } }, refresh: { outputs: { status: 'deferred' } } },
+    assert.equal(runInNewContext(condition, { success: () => true, always: () => true, cancelled: () => false,
+      steps: { resolve: { outputs: { mode: 'priority' } }, refresh: { outcome: 'success', outputs: { status: 'deferred' } } },
       env: { REFRESH_WINDOW_START: '2026-10-10T18:00:00Z' } }), false);
   }
 });
