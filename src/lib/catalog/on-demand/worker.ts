@@ -17,6 +17,8 @@ import { bindReviewToSource, hasExplicitIdentityConflict, needsIdentityReview } 
 import { isOfferFresh } from '@/lib/price-freshness';
 import { normalizeIdentityText, parseCpuModelSignature, parseGpuChipSignature } from '@/lib/product-identity';
 import { inferHardwareCategoryFromName } from '@/lib/catalog/hardware-categories';
+import { proveManufacturerRamAttributes } from '@/lib/quality/offer-attribute-proof';
+import { planRamEnrichment } from '@/lib/quality/ram-enrichment';
 import { createRefreshClaimError } from '../refresh-diagnostics';
 import type { Product, ProductPrice } from '@/lib/types';
 import type { RefreshItemResult, RefreshJob, RefreshTarget } from './contracts';
@@ -119,7 +121,7 @@ export async function fetchKnownOffer(product: Product, target: RefreshTarget, s
       if (!Number.isFinite(observedAt) || observedAt < startedAt || observedAt > Date.now() + 60_000) continue;
       // La URL o el ID estable de la tienda identifican la oferta. Un título contradictorio requiere revisión.
       const inferredCategory = inferHardwareCategoryFromName(source.name);
-      const categoryConflict = context.batchCatalog && (source.category !== product.category
+      const categoryConflict = (context.batchCatalog || product.category === 'memoria-ram') && (source.category !== product.category
         || (inferredCategory !== undefined && inferredCategory !== product.category));
       const conflict = categoryConflict || hasExplicitIdentityConflict({ name: product.name, category: product.category, offerText: source.name });
       const previousReview = product.prices.find(offer => offer.storeId === target.storeId && sameListing(target.storeId, offer.url, target.url))?.identityReview;
@@ -130,6 +132,27 @@ export async function fetchKnownOffer(product: Product, target: RefreshTarget, s
         ...(sku && sku.length <= 160 && !/[\x00-\x1f]/.test(sku) ? { storeSku: sku } : {}) } : undefined;
       const refreshed: ProductPrice = { ...price, url: target.url,
         identityReview: bindReviewToSource(price.identityReview ?? previousReview, sourceIdentity, product, target.url), sourceIdentity };
+      if (!conflict && product.category === 'memoria-ram' && source.category === product.category && sourceIdentity) {
+        // Revisar la observación nueva con ambas specs completas. Una prueba
+        // anterior no puede ocultar contradicciones de la fuente actual.
+        const ramTarget = { title: product.name, sku: product.specs.SKU, specs: product.specs };
+        const ramSource = { title: source.name, sku: source.specs.SKU, specs: source.specs };
+        const proof = proveManufacturerRamAttributes(ramTarget, ramSource,
+          { storeId: target.storeId, url: target.url, listingRef: sourceIdentity.listingRef });
+        if (proof) refreshed.identityReview = {
+          version: 1, status: 'consistent', reason: 'manufacturer-ram', reviewedAt: new Date().toISOString(),
+          model: null, confidence: null, sourceIdentity, proof,
+          subject: { name: normalizeIdentityText(product.name), category: product.category, url: target.url },
+        };
+        else if (target.storeId === 'compragamer' && typeof ramTarget.sku === 'string') {
+          const plan = planRamEnrichment({ manufacturerMpn: ramTarget.sku, target: ramTarget, source: ramSource });
+          if (!plan.ok && plan.reason !== 'unknown-mpn') refreshed.identityReview = {
+            version: 1, status: 'needs-review', reason: plan.reason === 'incomplete-identity' ? 'insufficient-evidence' : 'explicit-conflict',
+            reviewedAt: new Date().toISOString(), model: null, confidence: null, sourceIdentity,
+            subject: { name: normalizeIdentityText(product.name), category: product.category, url: target.url },
+          };
+        }
+      }
       if (conflict) refreshed.identityReview = { version: 1, status: 'needs-review', reason: 'explicit-conflict', reviewedAt: new Date().toISOString(), model: null, confidence: null,
         sourceIdentity,
         subject: { name: normalizeIdentityText(product.name), category: product.category, url: target.url } };

@@ -19,6 +19,7 @@ vi.mock('@/lib/server/shared-cache', () => ({
   setSharedCache: mocks.setSharedCache,
 }));
 vi.mock('@/lib/logger', () => ({ logger: { info: mocks.loggerInfo, warn: mocks.loggerWarn } }));
+vi.mock('@/lib/scrapers/scraper-registry', () => ({ getStoreScraper: () => undefined, FRAMEWORK_SCRAPERS: [] }));
 
 import { collectOfferSourceTitles, reviewProductOffers } from './review-product-offers';
 
@@ -118,6 +119,31 @@ describe('reviewProductOffers', () => {
     expect(result[0].prices[0]).toMatchObject({ lastUpdated: input.prices[0].lastUpdated, price: input.prices[0].price, stock: 'in-stock',
       identityReview: { reason: 'exact-attributes', model: null, confidence: null, proof: { method: 'exact-attributes' } } });
     expect(mocks.evaluateOfferIdentity).not.toHaveBeenCalled();
+  });
+
+  it('el lector real revalida KLEVV y el revisor real conserva manufacturer-ram sin proveedor ni caché', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-14T15:15:00Z'));
+    const { fetchKnownOffer, createKnownOfferContext } = await import('@/lib/catalog/on-demand/worker');
+    const name = 'Memoria KLEVV DDR5 32GB (2X16GB) 6000MHz BOLT V CL28';
+    const url = 'https://compragamer.com/producto/Memoria_KLEVV_DDR5_32GB_2X16GB_6000MHz_BOLT_V_CL28_21565';
+    const catalog: Product = { ...product(1, 'memoria-ram'), id: 'cg-21565', name,
+      normalizedTitle: '2X16GB 32GB 6000MHZ BOLT CL28 DDR5 KLEVV', specs: { SKU: 'KD5AGUA80-60B280H' } };
+    const source = { ...catalog, prices: [{ ...price(1, url), storeId: 'compragamer', price: 872200,
+      priceCondition: 'special' as const, lastUpdated: new Date('2026-10-14T15:12:32.980Z') }] };
+    const context = createKnownOfferContext();
+    context.sources.set('compragamer:id:21565:memoria-ram', Promise.resolve([[source]]));
+    const observed = await fetchKnownOffer(catalog, { productId: catalog.id, storeId: 'compragamer', url },
+      Date.parse('2026-10-14T15:12:00Z'), context);
+    expect(observed).not.toBeNull();
+    const reviewed = await reviewProductOffers([observed!.product], { authorizedRefresh: true });
+    expect(reviewed[0].prices[0]).toEqual(observed!.price);
+    expect(reviewed[0].prices[0].identityReview).toMatchObject({ status: 'consistent', reason: 'manufacturer-ram',
+      proof: { version: 2, attributes: { kit: '2x16', latency: '28', form: 'dimm', color: 'grey' } } });
+    expect(reviewed[0].prices[0].lastUpdated).toEqual(source.prices[0].lastUpdated);
+    expect(mocks.evaluateOfferIdentity).not.toHaveBeenCalled();
+    expect(mocks.getSharedCache).not.toHaveBeenCalled();
+    expect(mocks.setSharedCache).not.toHaveBeenCalled();
   });
 
   it('reverifica AERO sin proveedor, conservando observación y variantes incompatibles pendientes', async () => {

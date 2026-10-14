@@ -227,6 +227,85 @@ describe('runRequestedRefresh', () => {
     }));
   });
 
+  function ramFixture() {
+    const name = 'Memoria KLEVV DDR5 32GB (2X16GB) 6000MHz BOLT V CL28';
+    const ramTarget = { productId: 'cg-21565', storeId: 'compragamer',
+      url: 'https://compragamer.com/producto/Memoria_KLEVV_DDR5_32GB_2X16GB_6000MHz_BOLT_V_CL28_21565' };
+    const catalog = product({ id: ramTarget.productId, name, category: 'memoria-ram', specs: { SKU: 'KD5AGUA80-60B280H' } });
+    const source = product({ ...catalog, prices: [price({ storeId: ramTarget.storeId, storeName: 'CompraGamer',
+      url: ramTarget.url, price: 872200, priceCondition: 'special', originalPrice: 900000,
+      installment: { count: 3, amount: 300000, totalAmount: 900000, interest: true } })] });
+    const read = (current = source) => {
+      const context = createKnownOfferContext();
+      context.sources.set('compragamer:id:21565:memoria-ram', Promise.resolve([[current]]));
+      return fetchKnownOffer(catalog, ramTarget, Date.parse(job.started_at!), context);
+    };
+    return { catalog, source, read };
+  }
+
+  it('genera manufacturer-ram desde la lectura actual y conserva precio, condiciones, stock y fecha', async () => {
+    const f = ramFixture();
+    const sourceIdentity = { title: f.source.name, storeSku: f.source.specs.SKU, listingRef: 'compragamer:id:21565' };
+    f.catalog.prices = [{ ...f.source.prices[0], sourceIdentity, identityReview: {
+      version: 1, status: 'needs-review', reason: 'low-confidence', model: 'jev-1.13.0', confidence: 0.77,
+      reviewedAt: '2026-09-20T12:00:00Z', sourceIdentity,
+      subject: { name: 'memoria klevv ddr5 32gb 2x16gb 6000mhz bolt v cl28', category: f.catalog.category, url: f.source.prices[0].url },
+    } }];
+    const before = structuredClone(f.catalog);
+    const observed = await f.read();
+    expect(observed?.price).toMatchObject({ ...f.source.prices[0],
+      identityReview: { status: 'consistent', reason: 'manufacturer-ram', model: null, confidence: null,
+        proof: { method: 'manufacturer-ram', mpn: 'KD5AGUA80-60B280H',
+          target: { title: f.catalog.name, specs: f.catalog.specs }, source: { title: f.source.name, specs: f.source.specs } } },
+      sourceIdentity: { title: f.source.name, storeSku: 'KD5AGUA80-60B280H', listingRef: 'compragamer:id:21565' } });
+    expect(f.catalog).toEqual(before);
+    expect(mocks.scrape).not.toHaveBeenCalled();
+    expect(mocks.compraGamerCatalog).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['SKU', undefined, { SKU: 'KD5AGUA80-60A300I' }],
+    ['kit', '1X32GB', undefined],
+    ['latencia', 'CL30', undefined],
+    ['frecuencia', '6400MHz', undefined],
+    ['formato', 'SODIMM', undefined],
+    ['color', 'White', undefined],
+    ['voltaje', undefined, { voltage: '1.5V' }],
+  ] as const)('una contradicción nueva de %s invalida también la prueba anterior', async (field, titleClaim, specs) => {
+    const f = ramFixture(), previous = await f.read();
+    f.catalog.prices = [previous!.price];
+    const replacement = field === 'kit' ? f.source.name.replace('2X16GB', titleClaim!)
+      : field === 'latencia' ? f.source.name.replace('CL28', titleClaim!)
+      : field === 'frecuencia' ? f.source.name.replace('6000MHz', titleClaim!)
+      : titleClaim ? `${f.source.name} ${titleClaim}` : f.source.name;
+    const observed = await f.read({ ...f.source, name: replacement, specs: { ...f.source.specs, ...specs } });
+    expect(observed?.price.identityReview).toMatchObject({ status: 'needs-review', reason: 'explicit-conflict' });
+    expect(observed?.price.identityReview?.proof).toBeUndefined();
+    expect(observed?.price.lastUpdated).toEqual(f.source.prices[0].lastUpdated);
+    expect(observed?.price.price).toBe(f.source.prices[0].price);
+  });
+
+  it('un MPN desconocido no hereda la aprobación fabricante de otra SKU', async () => {
+    const f = ramFixture(), previous = await f.read();
+    f.catalog.prices = [previous!.price];
+    f.catalog.specs = { SKU: 'UNKNOWN' };
+    const observed = await f.read({ ...f.source, specs: { SKU: 'UNKNOWN' } });
+    expect(observed?.price.identityReview).toMatchObject({ status: 'needs-review', reason: 'insufficient-evidence' });
+    expect(observed?.price.identityReview?.proof).toBeUndefined();
+  });
+
+  it.each([false, true])('una categoría contradictoria no conserva la aprobación RAM anterior (batch=%s)', async batch => {
+    const f = ramFixture(), previous = await f.read();
+    f.catalog.prices = [previous!.price];
+    const source = { ...f.source, category: 'almacenamiento' as const, specs: { ...f.source.specs, voltage: '1.5V' } };
+    const context = createKnownOfferContext(batch), target = { productId: f.catalog.id, storeId: 'compragamer', url: source.prices[0].url };
+    context.sources.set('compragamer:id:21565:memoria-ram', Promise.resolve([[source]]));
+    const observed = await fetchKnownOffer(f.catalog, target, Date.parse(job.started_at!), context);
+    expect(observed?.price.identityReview).toMatchObject({ status: 'needs-review', reason: 'explicit-conflict' });
+    expect(observed?.price.identityReview?.proof).toBeUndefined();
+    expect(observed?.price.lastUpdated).toEqual(source.prices[0].lastUpdated);
+  });
+
   it('persists a current out-of-stock offer as unavailable', async () => {
     configureClaimedJob([sourceProduct({ offer: { stock: 'out-of-stock', price: 420_000 } })]);
 
