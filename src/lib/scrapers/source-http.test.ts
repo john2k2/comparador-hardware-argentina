@@ -251,4 +251,89 @@ describe('source-http', () => {
     expect(sourceHttpMetrics().safe.httpStatusCounts).toEqual({ '400': 1 });
     expect(JSON.stringify(sourceHttpMetrics())).not.toMatch(/PRIVATE_|https:|Authorization|Set-Cookie/);
   });
+
+  // Fragmento del400 real de Mexx14Oct15:51UTC; no fixture de oferta disponible.
+  const mexxMaintenance = '<html><head><title>MEXX | Mantenimiento</title></head><body><header>MEXX EN MANTENIMIENTO</header><main><p>ESTAMOS REALIZANDO TAREAS DE MANTENIMIENTO</p><p>Volvemos en breve, gracias por su paciencia.</p></main></body></html>';
+  const maintenanceResponse = (body = mexxMaintenance) => new Response(body, { status: 400, headers: { 'Content-Type': 'text/html' } });
+
+  it('clasifica mantenimiento Mexx sin perder400 y pausa sólo la tienda con una petición', async () => {
+    const { sourceFetch, sourceHttpMetrics, sourceBlockedUntil } = await loadSourceHttp();
+    const fetchMock = vi.fn().mockResolvedValueOnce(maintenanceResponse()).mockResolvedValueOnce(new Response('ok'));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(sourceFetch('mexx', 'https://www.mexx.com.ar/productos-rubro/procesadores/44152-item.html')).rejects.toMatchObject({ reason: 'maintenance', status: 400 });
+    expect(sourceBlockedUntil('mexx') - Date.now()).toBe(60000);
+    await expect(sourceFetch('mexx', 'https://www.mexx.com.ar/productos-rubro/procesadores/44153-item.html')).rejects.toMatchObject({ reason: 'rate-limited' });
+    expect(sourceHttpMetrics().mexx).toMatchObject({ requests: 1, failures: 2, backoffSkips: 1, httpStatusCounts: { '400': 1 }, failureReasons: { maintenance: 1, 'rate-limited': 1 } });
+    expect(await (await sourceFetch('other', 'https://other.example/item')).text()).toBe('ok');
+    expect(sourceBlockedUntil('other')).toBe(0);expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(JSON.stringify(sourceHttpMetrics())).not.toContain('Volvemos');
+  });
+
+  it('vuelve a consultar después de vencer la pausa sin convertir mantenimiento en stock', async () => {
+    const { sourceFetch, sourceHttpMetrics } = await loadSourceHttp();
+    const fetchMock = vi.fn().mockResolvedValueOnce(maintenanceResponse()).mockResolvedValueOnce(new Response('recovered-document'));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(sourceFetch('mexx', 'https://www.mexx.com.ar/item')).rejects.toMatchObject({ reason: 'maintenance' });
+    await vi.advanceTimersByTimeAsync(60000);
+    expect(await (await sourceFetch('mexx', 'https://www.mexx.com.ar/item')).text()).toBe('recovered-document');
+    expect(sourceHttpMetrics().mexx).toMatchObject({ requests: 2, failures: 1, httpStatusCounts: { '400': 1, '200': 1 } });
+  });
+
+  it.each([
+    ['400 ordinario', '<title>Bad Request</title><main>Invalid request</main>'],
+    ['sin mensaje principal', mexxMaintenance.replace('ESTAMOS REALIZANDO TAREAS DE MANTENIMIENTO', 'Error del producto')],
+    ['sólo script', '<title>MEXX | Mantenimiento</title><main>Error</main><script>ESTAMOS REALIZANDO TAREAS DE MANTENIMIENTO</script>'],
+    ['sólo CSS', '<title>MEXX | Mantenimiento</title><main><style>ESTAMOS REALIZANDO TAREAS DE MANTENIMIENTO</style></main>'],
+    ['con principal de producto', mexxMaintenance.replace('</body>', '<section id="prod_desc_edit"><h1 class="title">Ryzen7600X</h1></section></body>')],
+    ['con Product schema', mexxMaintenance.replace('</body>', '<section itemscope itemtype="https://schema.org/Product"></section></body>')],
+    ['con principal sin comillas', mexxMaintenance.replace('</body>', '<section id=prod_desc_edit><h1 class=title>Ryzen7600X</h1></section></body>')],
+    ['con Product schema sin comillas', mexxMaintenance.replace('</body>', '<section itemscope itemtype=https://schema.org/Product></section></body>')],
+    ...['template', 'noscript'].map(tag => [`aviso sólo en ${tag}`, mexxMaintenance.replace('<p>ESTAMOS REALIZANDO TAREAS DE MANTENIMIENTO</p>', `<${tag}>ESTAMOS REALIZANDO TAREAS DE MANTENIMIENTO</${tag}>`)]),
+    ...['hidden', 'aria-hidden="true"', 'style="display:none"', 'style="visibility: hidden !important"'].map(attribute => [`aviso oculto con ${attribute}`, mexxMaintenance.replace('<p>ESTAMOS REALIZANDO TAREAS DE MANTENIMIENTO</p>', `<p ${attribute}>ESTAMOS REALIZANDO TAREAS DE MANTENIMIENTO</p>`)]),
+    ['main oculto por ancestro', mexxMaintenance.replace('<main>', '<div hidden><main>').replace('</main>', '</main></div>')],
+    ['cuerpo incompleto', mexxMaintenance.replace('</main>', '')],
+    ['cuerpo mayor al límite', mexxMaintenance + 'x'.repeat(8192)],
+  ])('preserva http-error y no pausa Mexx para %s', async (_, body) => {
+    const { sourceFetch, sourceBlockedUntil } = await loadSourceHttp();vi.stubGlobal('fetch', vi.fn().mockResolvedValue(maintenanceResponse(body)));
+    await expect(sourceFetch('mexx', 'https://www.mexx.com.ar/item')).rejects.toMatchObject({ reason: 'http-error', status: 400 });
+    expect(sourceBlockedUntil('mexx')).toBe(0);
+  });
+
+  it('no clasifica ni lee cuerpos400 de otra tienda por compartir el texto', async () => {
+    const { sourceFetch, sourceBlockedUntil } = await loadSourceHttp();const pull = vi.fn();const cancel = vi.fn();
+    const stream = new ReadableStream({ pull, cancel });vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(stream, { status: 400, headers: { 'Content-Type': 'text/html' } })));
+    await expect(sourceFetch('other', 'https://other.example/item')).rejects.toMatchObject({ reason: 'http-error' });
+    expect(sourceBlockedUntil('other')).toBe(0);expect(cancel).toHaveBeenCalled();
+  });
+
+  it('cancela una respuesta que supera8KiB sin usar un marcador temprano como prueba', async () => {
+    const { sourceFetch, sourceBlockedUntil } = await loadSourceHttp();const cancel = vi.fn();const encoder = new TextEncoder();
+    const stream = new ReadableStream({ start(controller) { controller.enqueue(encoder.encode(mexxMaintenance));controller.enqueue(encoder.encode('x'.repeat(8192))); }, cancel });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(stream, { status: 400, headers: { 'Content-Type': 'text/html' } })));
+    await expect(sourceFetch('mexx', 'https://www.mexx.com.ar/item')).rejects.toMatchObject({ reason: 'http-error' });
+    expect(cancel).toHaveBeenCalledTimes(1);expect(sourceBlockedUntil('mexx')).toBe(0);
+  });
+
+  it('el timeout real cancela un cuerpo de mantenimiento que nunca termina', async () => {
+    vi.useRealTimers();const { sourceFetch, sourceHttpMetrics } = await loadSourceHttp();const timeout = AbortSignal.timeout.bind(AbortSignal);
+    vi.spyOn(AbortSignal, 'timeout').mockImplementation(() => timeout(20));const cancel = vi.fn();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(new ReadableStream({ cancel }), { status: 400, headers: { 'Content-Type': 'text/html' } })));
+    await expect(sourceFetch('mexx', 'https://www.mexx.com.ar/item')).rejects.toMatchObject({ name: 'TimeoutError' });
+    expect(cancel).toHaveBeenCalledTimes(1);expect(sourceHttpMetrics().mexx).toMatchObject({ requests: 1, failures: 1, httpStatusCounts: { '400': 1 }, failureReasons: { timeout: 1 } });
+  });
+  it('el carril difiere otras ofertas Mexx después de mantenimiento mientras otra tienda avanza', async () => {
+    const { sourceFetch, sourceBlockedUntil } = await loadSourceHttp();const { createStoreLanes, STORE_LANE_SKIPPED } = await import('@/lib/catalog/store-lanes');
+    const fetchMock = vi.fn().mockImplementation(async (url: string) => String(url).includes('mexx.com.ar') ? maintenanceResponse() : new Response('other-ok'));
+    vi.stubGlobal('fetch', fetchMock);const lanes = createStoreLanes({ concurrency: 2, spacingMs: 0 });
+    const first = lanes.run('mexx', async () => sourceFetch('mexx', 'https://www.mexx.com.ar/first').catch((error: { reason: string }) => error.reason));
+    const second = lanes.run('mexx', async () => sourceFetch('mexx', 'https://www.mexx.com.ar/second'), () => sourceBlockedUntil('mexx') > Date.now());
+    const other = lanes.run('other', async () => (await sourceFetch('other', 'https://other.example/item')).text());
+    expect(await Promise.all([first, second, other])).toEqual(['maintenance', STORE_LANE_SKIPPED, 'other-ok']);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+  it.each(['https://other.example/item', 'http://www.mexx.com.ar/item'])('no aplica mantenimiento a un destino fuera del contrato Mexx: %s', async url => {
+    const { sourceFetch, sourceBlockedUntil } = await loadSourceHttp();vi.stubGlobal('fetch', vi.fn().mockResolvedValue(maintenanceResponse()));
+    await expect(sourceFetch('mexx', url)).rejects.toMatchObject({ reason: 'http-error', status: 400 });
+    expect(sourceBlockedUntil('mexx')).toBe(0);
+  });
 });

@@ -1,5 +1,8 @@
+import * as cheerio from 'cheerio';
+import type { AnyNode } from 'domhandler';
+
 /** Transporte acotado para las fuentes del piloto; no utiliza sesiones del usuario. */
-export type SourceFailure = 'not-found' | 'rate-limited' | 'blocked' | 'http-error' | 'invalid-response' | 'too-large' | 'inconsistent-source';
+export type SourceFailure = 'not-found' | 'rate-limited' | 'blocked' | 'maintenance' | 'http-error' | 'invalid-response' | 'too-large' | 'inconsistent-source';
 export class SourceHttpError extends Error {
   constructor(public readonly reason: SourceFailure, public readonly status?: number) { super(reason); }
 }
@@ -32,6 +35,63 @@ export function retryAfterMs(value: string | null, now = Date.now()): number {
   const seconds = Number(value);
   const delay = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(value) - now;
   return Number.isFinite(delay) ? Math.max(1000, Math.min(delay, 24 * 60 * 60 * 1000)) : 60_000;
+}
+
+function mexxUrl(raw: string): boolean {
+  try { const url = new URL(raw); return url.protocol === 'https:' && !url.username && !url.password && !url.port
+    && ['mexx.com.ar', 'www.mexx.com.ar'].includes(url.hostname); } catch { return false; }
+}
+/** Sólo el400 de mantenimiento constatado; sin guardar ni registrar el cuerpo. */
+async function isMexxMaintenance(response: Response, signal: AbortSignal): Promise<boolean> {
+  if (!/^text\/html(?:\s*;|$)/i.test(response.headers.get('content-type') ?? '')) return false;
+  const reader = response.body?.getReader();
+  if (!reader) return false;
+  const chunks: Uint8Array[] = [];
+  let bytes = 0, onAbort!: () => void;
+  const aborted = new Promise<never>((_, reject) => {
+    onAbort = () => reject(signal.reason);
+    signal.addEventListener('abort', onAbort, { once: true });
+    if (signal.aborted) onAbort();
+  });
+  try {
+    for (;;) {
+      const next = await Promise.race([reader.read(), aborted]);
+      if (next.done) break;
+      bytes += next.value.byteLength;
+      if (bytes > 8192) return false;
+      chunks.push(next.value);
+    }
+    const body = new Uint8Array(bytes);
+    let offset = 0;
+    for (const chunk of chunks) { body.set(chunk, offset); offset += chunk.byteLength; }
+    const $ = cheerio.load(new TextDecoder().decode(body), { sourceCodeLocationInfo: true });
+    // Un principal de producto no es mantenimiento, con atributos citados o no.
+    if ($('#prod_desc_edit, [itemtype$="/Product"]').length > 0) return false;
+    $('script, style, template, noscript').remove();
+    $('*').filter((_, element) => {
+      const node = $(element), style = (node.attr('style') ?? '').replace(/\/\*[\s\S]*?\*\//g, '');
+      return node.attr('hidden') !== undefined || node.attr('aria-hidden')?.trim().toLowerCase() === 'true'
+        || /(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*hidden)\s*(?:!important\s*)?(?:;|$)/i.test(style);
+    }).remove();
+    const title = $('title'), main = $('main'), mainNode = main.get(0), pieces: string[] = [];
+    const collectText = (node: AnyNode) => {
+      if (node.type === 'text') pieces.push(node.data);
+      else if ('children' in node) node.children.forEach(collectText);
+    };
+    if (mainNode) collectText(mainNode);
+    const text = (value: string) => value.replace(/\s+/g, ' ').trim();
+    const mainText = text(pieces.join(' '));
+    // parse5 repara tags incompletos: exigir el cierre real del main observado.
+    return title.length === 1 && /^MEXX\s*\|\s*Mantenimiento$/i.test(text(title.text())) && main.length === 1
+      && Boolean(mainNode?.sourceCodeLocation?.endTag)
+      && /\bESTAMOS REALIZANDO TAREAS DE MANTENIMIENTO\b/i.test(mainText)
+      && /\bVolvemos en breve\b/i.test(mainText);
+  } finally {
+    signal.removeEventListener('abort', onAbort);
+    // Cancelar sin esperar un cancel() remoto que podría quedar colgado.
+    void reader.cancel().catch(() => undefined);
+    reader.releaseLock();
+  }
 }
 export async function sourceFetch(store: string, url: string, options: RequestInit = {}, maxBytes = 8_000_000, redirectHosts: string[] = []): Promise<Response> {
   if (!state.has(store)) state.set(store, { tail: Promise.resolve(), nextAt: 0, blockedUntil: 0, consecutiveFailures: 0 });
@@ -74,14 +134,15 @@ export async function sourceFetch(store: string, url: string, options: RequestIn
       current = next.href;
     }
     gate.nextAt = Date.now() + 2000;
-    if (response.status === 429 || response.status >= 500 || response.status === 403) {
+    const maintenance = store === 'mexx' && response.status === 400 && mexxUrl(current) && await isMexxMaintenance(response, signal);
+    if (response.status === 429 || response.status >= 500 || response.status === 403 || maintenance) {
       gate.consecutiveFailures++;
       const retry = response.headers.get('retry-after');
       gate.blockedUntil = Date.now() + (retry ? retryAfterMs(retry) : Math.min(15 * 60_000, 60_000 * 2 ** Math.min(gate.consecutiveFailures - 1, 4)));
     } else if (response.ok || response.status === 304) gate.consecutiveFailures = 0;
     if (!response.ok && response.status !== 304) {
       await response.body?.cancel();
-      throw new SourceHttpError(response.status === 404 || response.status === 410 ? 'not-found' : response.status === 429 || response.status === 503 ? 'rate-limited' : response.status === 403 ? 'blocked' : 'http-error', response.status);
+      throw new SourceHttpError(maintenance ? 'maintenance' : response.status === 404 || response.status === 410 ? 'not-found' : response.status === 429 || response.status === 503 ? 'rate-limited' : response.status === 403 ? 'blocked' : 'http-error', response.status);
     }
     if (response.status === 304) { stats.conditionalHits++; return response; }
     const reader = response.body?.getReader();

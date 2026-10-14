@@ -457,6 +457,18 @@ describe('adaptive known offers', () => {
     expect(context.failures.get(target.url)).toBe('inconsistent-source');
     expect(mocks.scrape).not.toHaveBeenCalled();
   });
+  it('mantenimiento Mexx detiene el buscador y no persiste ni renueva una oferta', async () => {
+    configureClaimedJob([sourceProduct()]);
+    mocks.knownDetail.mockRejectedValueOnce(new SourceHttpError('maintenance', 400));
+    const result = await runRequestedRefresh();
+    expect(result).toMatchObject({ status: 'failed', attempted: 1, observed: 0, comparable: 0, failures: { maintenance: 1 } });
+    expect(mocks.scrape).not.toHaveBeenCalled();
+    expect(mocks.rpc.mock.calls.some(([name]) => name === 'persist_verified_requested_offer')).toBe(false);
+    expect(mocks.reviewProductOffers).toHaveBeenCalledWith([], { authorizedRefresh: true, sourceTitles: {} });
+    expect(mocks.from.mock.results[0].value.update).toHaveBeenCalledWith(expect.objectContaining({
+      results: [expect.objectContaining({ state: 'failed', observedAt: null, failureReason: 'maintenance' })],
+    }));
+  });
 
   it('la ausencia de un detalle soportado permite buscar la publicación exacta', async () => {
     configureClaimedJob([sourceProduct()]);
