@@ -11,6 +11,12 @@ import type { HardwareCategory, Product, StockStatus } from '@/lib/types';
 // SCP queda fuera: se constató un precio de API distinto del visible.
 export const WOO_BATCH_STORES = new Set<string>(WOO_SHARED_PRICE_STORE_IDS);
 export type WooKnownTarget = { url: string; category: HardwareCategory };
+// Cada runner comparte este Set entre lotes. Una discrepancia nunca habilita
+// el resto del feed; como máximo se conserva una ficha HTML por ejecución.
+const goldenHtmlProbeUsed = new WeakSet<Set<string>>();
+class WooStockOnlyMismatch extends SourceHttpError {
+ constructor(readonly visible:Product,readonly probe:Product) { super('inconsistent-source'); }
+}
 const object = (value: unknown): value is Record<string,unknown> => !!value && typeof value==='object' && !Array.isArray(value);
 export function parseWooStoreKnownProducts(data: unknown,storeId: string,targets: WooKnownTarget[],observedAt: Date): Product[] {
  const store=WOOCOMMERCE_STORES.find(item=>item.id===storeId);
@@ -55,6 +61,7 @@ export function parseWooStoreKnownProducts(data: unknown,storeId: string,targets
 export async function fetchWooStoreKnownBatch(storeId:string,targets:WooKnownTarget[],signal?:AbortSignal,verifiedStores=new Set<string>()):Promise<Product[]> {
  const store=WOOCOMMERCE_STORES.find(item=>item.id===storeId);
  if(!store || !WOO_BATCH_STORES.has(storeId) || !targets.length || targets.length>24) return [];
+ if(storeId==='goldentechstore' && goldenHtmlProbeUsed.has(verifiedStores) && !verifiedStores.has(storeId)) throw new SourceHttpError('inconsistent-source');
  const host=new URL(store.baseUrl).hostname.replace(/^www\./,'');
  const slugs=targets.map(target=>{
   const url=new URL(target.url);
@@ -71,22 +78,42 @@ export async function fetchWooStoreKnownBatch(storeId:string,targets:WooKnownTar
  const products=parseWooStoreKnownProducts(data,storeId,targets,new Date());
  // Una lectura visible por fuente y ejecución detecta cambios de moneda, pago o caché.
  // La oferta conserva la hora original de la API, nunca la del control posterior.
- await verifyWooStoreProducts(storeId,products,signal,verifiedStores);
+ try { await verifyWooStoreProducts(storeId,products,signal,verifiedStores); }
+ catch(error) {
+  if(storeId!=='goldentechstore' || !(error instanceof WooStockOnlyMismatch)) throw error;
+  const {visible,probe}=error,observed=visible.prices[0],api=probe.prices[0];
+  const observedAt=new Date(observed.lastUpdated).getTime(),apiAt=new Date(api.lastUpdated).getTime();
+  if(visible.category!==probe.category || !sameListing(storeId,observed.url,api.url)
+    || !visible.specs.SKU || visible.specs.SKU!==probe.specs.SKU
+    || !visible.specs.SourceListingId || visible.specs.SourceListingId!==probe.specs.SourceListingId
+    || !Number.isFinite(observed.price) || observed.price<=0
+    || !Number.isFinite(observedAt) || !Number.isFinite(apiAt) || observedAt<apiAt || observedAt>Date.now()+60000
+    || !['in-stock','low-stock','out-of-stock','unknown'].includes(observed.stock)) throw new SourceHttpError('inconsistent-source');
+  // Stock, importe y fecha pertenecen a esta lectura HTML. Ninguna otra fila
+  // de API queda observada o aprobada mediante esa discrepancia.
+  return [visible];
+ }
  return products;
 }
 export async function verifyWooStoreProducts(storeId:string,products:Product[],signal?:AbortSignal,verifiedStores=new Set<string>()):Promise<void> {
  if(!WOO_BATCH_STORES.has(storeId)) throw new SourceHttpError('inconsistent-source');
  if(products.length && !verifiedStores.has(storeId)){
+  if(storeId==='goldentechstore') {
+   if(goldenHtmlProbeUsed.has(verifiedStores)) throw new SourceHttpError('inconsistent-source');
+   // Reservar antes del await evita dos controles HTML simultáneos del mismo contexto.
+   goldenHtmlProbeUsed.add(verifiedStores);
+  }
   const probe=products[0],price=probe.prices[0];
   const visible=await fetchWooCommerceKnownOffer(storeId,price.url,probe.category,signal);
   const observed=visible?.prices[0];
   if(!visible || !observed || normalizeIdentityText(visible.name)!==normalizeIdentityText(probe.name)
    || Math.abs(observed.price-price.price)>1
-   || (price.stock!=='unknown' && observed.stock!==price.stock
-     && !(['in-stock','low-stock'].includes(price.stock) && ['in-stock','low-stock'].includes(observed.stock)))
    || (visible.specs.SKU && probe.specs.SKU && visible.specs.SKU!==probe.specs.SKU)
    || (storeId==='goldentechstore' && visible.specs.SourceListingId && probe.specs.SourceListingId
      && visible.specs.SourceListingId!==probe.specs.SourceListingId)) throw new SourceHttpError('inconsistent-source');
+  if(price.stock!=='unknown' && observed.stock!==price.stock
+    && !(['in-stock','low-stock'].includes(price.stock) && ['in-stock','low-stock'].includes(observed.stock)))
+   throw new WooStockOnlyMismatch(visible,probe);
   verifiedStores.add(storeId);
  }
 }
