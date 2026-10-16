@@ -70,7 +70,7 @@ function fixtureProducts(): Product[] {
   }));
 }
 
-async function installCatalogRoute(page: Page, options: { reviewCpuAfterRefresh?: boolean; staleRam?: boolean; failGpuOnce?: boolean; modelUrls?: boolean } = {}) {
+async function installCatalogRoute(page: Page, options: { reviewCpuAfterRefresh?: boolean; staleRam?: boolean; failGpuOnce?: boolean; emptyGpuAfterFailure?: boolean; modelUrls?: boolean } = {}) {
   const products = fixtureProducts();
   // La sugerencia usa la comprobación positiva de modelo en la URL del selector
   // de guías; los enlaces abreviados de la prueba manual no la acreditan.
@@ -89,6 +89,10 @@ async function installCatalogRoute(page: Page, options: { reviewCpuAfterRefresh?
     if (options.failGpuOnce && !gpuFailed && url.searchParams.get('slot') === 'gpu') {
       gpuFailed = true;
       await route.fulfill({ status: 503, json: { error: 'Catálogo de GPU temporalmente no disponible' } });
+      return;
+    }
+    if (options.emptyGpuAfterFailure && gpuFailed && url.searchParams.get('slot') === 'gpu') {
+      await route.fulfill({ json: { products: [] } });
       return;
     }
     const catalog = products.map((product) => {
@@ -193,6 +197,9 @@ test.describe('armador de PC', () => {
     await loadBuilder(page);
     await expect(page.getByTestId('pc-builder').getByRole('alert')).toContainText('Placa de video');
     await expect(page.getByTestId('pc-builder').getByRole('alert')).toContainText('Catálogo de GPU temporalmente no disponible');
+    const gpuCard = page.locator('[data-slot="gpu"]');
+    await expect(gpuCard).toContainText('No pudimos cargar el catálogo de esta pieza.');
+    await expect(gpuCard).not.toContainText('No hay ofertas aptas');
     await page.getByRole('button', { name: 'Armar PC', exact: true }).click();
     await expect(page.getByTestId('pc-builder').locator('p[role="status"]')).toContainText('Sugerencia parcial');
     await expect(page.getByTestId('pc-builder').locator('p[role="status"]')).toContainText('Falta elegir placa de video');
@@ -201,11 +208,28 @@ test.describe('armador de PC', () => {
     await expect(page.getByTestId('pc-builder').getByRole('alert')).toContainText('Catálogo de GPU temporalmente no disponible');
     await page.getByRole('button', { name: 'Reintentar catálogos pendientes' }).click();
     await expect(page.getByTestId('pc-builder').getByRole('alert')).toHaveCount(0);
+    await expect(gpuCard).not.toContainText('No pudimos cargar el catálogo');
     await page.getByRole('button', { name: 'Armar PC', exact: true }).click();
     await expect(page.getByLabel('Elegir Placa de video')).toHaveValue('gpu-4060');
     await expect(page.getByLabel('Elegir Refrigeración del procesador')).toHaveValue('cooler-am4');
     await expect(page.getByTestId('pc-builder').locator('p[role="status"]')).toContainText('precio reciente dentro de tu máximo');
     await expect(page.getByTestId('build-total')).toContainText('720.000');
+  });
+
+  test('distingue un catálogo fallido de un reintento vacío sin borrar piezas ni su subtotal', async ({ page }) => {
+    await installCatalogRoute(page, { failGpuOnce: true, emptyGpuAfterFailure: true });
+    await loadBuilder(page);
+    await choose(page, 'Procesador');
+    const total = await page.getByTestId('build-total').textContent();
+    const gpuCard = page.locator('[data-slot="gpu"]');
+    await expect(gpuCard).toContainText('No pudimos cargar el catálogo de esta pieza.');
+    await expect(gpuCard).not.toContainText('No hay ofertas aptas');
+    await page.getByRole('button', { name: 'Reintentar catálogos pendientes' }).click();
+    await expect(page.getByTestId('pc-builder').getByRole('alert')).toHaveCount(0);
+    await expect(gpuCard).toContainText('No hay ofertas aptas en esta selección.');
+    await expect(gpuCard).not.toContainText('No pudimos cargar el catálogo');
+    await expect(page.getByLabel('Elegir Procesador')).toHaveValue('cpu-5600');
+    await expect(page.getByTestId('build-total')).toHaveText(total ?? '');
   });
 
   test('expired offers remain references and are excluded from the total', async ({ page }) => {

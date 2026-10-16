@@ -247,7 +247,9 @@ export function PcBuilder({ initialBudget, invalidBudget = false }: { initialBud
               {selection && !candidates.some((product) => product.id === selection.productId) && <option value={selection.productId}>{selected?.name ?? 'Pieza guardada no disponible'} — selección actual</option>}
               {candidates.map((product) => { const offer = eligibleOffers(product)[0]; return <option key={product.id} value={product.id}>{product.name} — {isOfferFresh(offer.lastUpdated, quoteNow) ? 'desde' : 'último precio relevado'} {formatPriceARS(offer.price)}</option>; })}
             </select></label>
-            {!loading && !candidates.length && <p className="font-body text-xs mt-2">No hay ofertas aptas en esta selección. Probá buscar otro modelo.</p>}
+            {!loading && !candidates.length && <p className="font-body text-xs mt-2">{failedSlots.includes(slot)
+              ? 'No pudimos cargar el catálogo de esta pieza. Reintentá los catálogos pendientes o buscá un modelo.'
+              : 'No hay ofertas aptas en esta selección. Probá buscar otro modelo.'}</p>}
             {selection && <>
               <label className="block font-body text-xs mt-3">Oferta de tienda<select aria-label={`Tienda para ${SLOT_LABELS[slot]}`} className={`${control} mt-1`} value={JSON.stringify([selection.storeId, selection.url])} onChange={(event) => {
                 const [storeId, url] = JSON.parse(event.target.value) as string[];
