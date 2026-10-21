@@ -19,9 +19,9 @@ test('maintenance comparte la programación y concurrencia existentes; excluye m
   assert.equal(job.env.TELEMETRY_RETENTION_MODE,"${{ vars.TELEMETRY_RETENTION_MODE || 'inspect' }}");
   assert.equal(job.env.SUPABASE_SECRET_KEY,undefined);
   const connection = job.steps.find(step => step.uses === './.github/actions/catalog-database');
-  assert.equal(connection.with.backend,"${{ needs.database-ready.outputs.backend || 'cloud' }}");
+  assert.equal(connection.with.backend,'cloud');
   assert.equal(connection.with['cloud-secret-key'],'${{ secrets.SUPABASE_SECRET_KEY }}');
-  assert.equal(connection.with['vps-secret-key'],'${{ secrets.VPS_SUPABASE_SECRET_KEY }}');
+  assert.equal(connection.with['vps-secret-key'],undefined);
   assert.equal(job.steps.find(step => step.uses === 'actions/setup-node@v4').with['node-version'],22);
 });
 test('la guardia del job excluye reintentos del diario y eventos a pedido', () => {

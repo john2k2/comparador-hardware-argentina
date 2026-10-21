@@ -22,10 +22,19 @@ for (const name of ['catalog-refresh', 'catalog-adaptive-refresh', 'requested-of
       assert.equal(changed['timeout-minutes'], job['timeout-minutes']);
       assert.ok([changed.needs].flat().includes('database-ready'));
       const connection = changed.steps.find(step => step.uses === './.github/actions/catalog-database');
-      assert.equal(connection.with.backend, "${{ needs.database-ready.outputs.backend || 'cloud' }}");
+      // El archivo histórico usa Storage Cloud; nunca debe recibir las claves del VPS.
+      assert.equal(connection.with.backend, jobName === 'telemetry-maintenance'
+        ? 'cloud' : "${{ needs.database-ready.outputs.backend || 'cloud' }}");
+      if (jobName === 'telemetry-maintenance') assert.equal(connection.with['vps-secret-key'], undefined);
       for (const step of changed.steps) {
         assert.ok(!Object.keys(step.env || {}).some(key => key.startsWith('SUPABASE_')));
       }
     }
   });
 }
+
+test('la consulta liviana de solicitudes identifica al actualizador ante Cloudflare', () => {
+  const workflow = parse(readFileSync('.github/workflows/requested-offer-refresh.yml', 'utf8'));
+  const query = workflow.jobs['refresh-requested'].steps.find(step => step.id === 'queue').run;
+  assert.match(query, /'User-Agent': 'comparador-catalog-runner\/1\.0'/);
+});

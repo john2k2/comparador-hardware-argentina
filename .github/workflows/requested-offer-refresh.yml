@@ -61,7 +61,7 @@ jobs:
           base = os.environ['SUPABASE_URL'].rstrip('/')
           key = os.environ['SUPABASE_SECRET_KEY']
           query = urlencode({'select': 'id', 'status': 'eq.queued', 'expires_at': 'gt.' + datetime.now(timezone.utc).isoformat(), 'limit': '1'})
-          request = urllib.request.Request(base + '/rest/v1/requested_offer_refreshes?' + query, headers={'apikey': key, 'Authorization': 'Bearer ' + key})
+          request = urllib.request.Request(base + '/rest/v1/requested_offer_refreshes?' + query, headers={'apikey': key, 'Authorization': 'Bearer ' + key, 'User-Agent': 'comparador-catalog-runner/1.0'})
           with urllib.request.urlopen(request, timeout=15) as response:
               pending = bool(json.load(response))
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:

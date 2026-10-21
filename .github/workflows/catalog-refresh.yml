@@ -424,16 +424,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Configure catalog database
+      # Este mantenimiento conserva archivos en Supabase Storage, exclusivo de Cloud.
+      # El catálogo del VPS tiene su propio backup diario; no ampliar allí el retiro.
+      - name: Configure legacy telemetry archive database
         uses: ./.github/actions/catalog-database
         with:
-          backend: ${{ needs.database-ready.outputs.backend || 'cloud' }}
+          backend: cloud
           cloud-url: ${{ secrets.SUPABASE_URL }}
           cloud-publishable-key: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           cloud-secret-key: ${{ secrets.SUPABASE_SECRET_KEY }}
-          vps-url: ${{ secrets.VPS_SUPABASE_URL }}
-          vps-publishable-key: ${{ secrets.VPS_SUPABASE_PUBLISHABLE_KEY }}
-          vps-secret-key: ${{ secrets.VPS_SUPABASE_SECRET_KEY }}
 
       - name: Configure Node
         uses: actions/setup-node@v4
