@@ -1,0 +1,165 @@
+{
+  "name": "comparador-catalogo-mac",
+  "main": "scripts/cloudflare/mac-catalog-proxy.mjs",
+  "compatibility_date": "2026-10-12",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    {
+      "pattern": "www.comparador-hardware.com.ar/api/home/observed-sections*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/api/home/sections*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/api/home/observed-sections*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/api/home/sections*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/sitemap-index.xml*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/product-sitemap/*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/sitemap-index.xml*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/product-sitemap/*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/search*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/api/search*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/api/products*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/product/*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/comparar/*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/comparativa/comparar*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/_next/static/*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/search*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/api/search*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/api/products*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/product/*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/comparar/*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/comparativa/comparar*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/_next/static/*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/guia/pc-gamer-1-millon*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/guia/pc-gamer-2-millones*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/guia/pc-gamer-3-millones*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/api/pc-builder/catalog*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/guia/pc-gamer-1-millon*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/guia/pc-gamer-2-millones*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/guia/pc-gamer-3-millones*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/api/pc-builder/catalog*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/api/categories*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "www.comparador-hardware.com.ar/api/stores*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/api/categories*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    },
+    {
+      "pattern": "comparador-hardware.com.ar/api/stores*",
+      "zone_id": "a0b41fefebfd421f3c4509400e087cca"
+    }
+  ],
+  "account_id": "a80650839fdd1917a4585c51e5c0522b",
+  "vars": {
+    "MAC_CATALOG_MODE": "production",
+    "MAC_CATALOG_ENABLED": "1"
+  },
+  "assets": {
+    "directory": "tmp/vps-cloudflare-assets",
+    "binding": "ASSETS",
+    "run_worker_first": false
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "services": [
+    {
+      "binding": "LEGACY_ASSETS",
+      "service": "comparador-hardware-argentina"
+    }
+  ]
+}

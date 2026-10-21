@@ -9,6 +9,20 @@ function request(body: unknown = { accessToken: 'valid-fixture' }, extraHeaders:
 }
 
 describe('sesión nativa validada sin render de Next', () => {
+  it('conserva Auth Cloud cuando el catálogo cambia de URL y clave', async () => {
+    const fetcher = vi.fn().mockImplementation(validUser);
+    const setting = { ...env, SUPABASE_URL: 'https://catalog-api.example', SUPABASE_PUBLISHABLE_KEY: 'catalog-public',
+      SUPABASE_AUTH_URL: env.SUPABASE_URL, SUPABASE_AUTH_PUBLISHABLE_KEY: 'auth-public' };
+    expect((await handleAuthSessionEdge(request(), setting, fetcher))?.status).toBe(200);
+    expect(String(fetcher.mock.calls[0][0])).toBe(env.SUPABASE_URL + '/auth/v1/user');
+    expect(fetcher.mock.calls[0][1].headers.apikey).toBe('auth-public');
+  });
+  it('una pareja explícita incompleta no toma la clave del catálogo', async () => {
+    const fetcher = vi.fn();
+    const setting = { ...env, SUPABASE_AUTH_URL: env.SUPABASE_URL };
+    expect((await handleAuthSessionEdge(request(), setting, fetcher))?.status).toBe(503);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
   it('una cuenta normal conserva el ingreso; validar la sesión no concede el rol de administrador', async () => {
     const fetcher = vi.fn().mockImplementation(validUser);
     const response = await handleAuthSessionEdge(request(), env, fetcher);

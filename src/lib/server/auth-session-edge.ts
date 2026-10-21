@@ -1,4 +1,6 @@
-type SessionEnv = {
+import { supabaseAuthConnection, type SupabaseAuthEnvironment } from './supabase-auth-config';
+
+type SessionEnv = SupabaseAuthEnvironment & {
   MEASUREMENT_COLLECTION_MODE?: string;
   SUPABASE_URL?: string;
   NEXT_PUBLIC_SUPABASE_URL?: string;
@@ -46,8 +48,9 @@ export async function handleAuthSessionEdge(request: Request, env: SessionEnv, f
   const accessToken = record(body) && typeof body.accessToken === 'string' ? body.accessToken.trim() : '';
   if (!accessToken || accessToken.length > 8192 || !/^[a-zA-Z0-9_.-]+$/.test(accessToken)) return json({ error: 'accessToken inválido' }, 400);
 
-  const origin = env.SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = env.SUPABASE_PUBLISHABLE_KEY || env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const connection = supabaseAuthConnection(env);
+  const origin = connection?.url;
+  const key = connection?.key;
   if (!key || !/^https:\/\/zyiyziubpcpgoqlkcrie\.supabase\.co\/?$/.test(origin ?? '')) return json({ error: 'No se pudo validar la sesión' }, 503);
   try {
     const response = await fetcher(new URL('/auth/v1/user', origin), {

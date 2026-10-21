@@ -13,7 +13,7 @@ on:
       trigger:
         description: Origen de la solicitud (para evidencia operativa)
         type: choice
-        options: [manual, cloudflare-fallback]
+        options: [ manual, cloudflare-fallback ]
         default: manual
 permissions:
   contents: read
@@ -21,11 +21,41 @@ concurrency:
   group: catalog-adaptive-refresh
   cancel-in-progress: false
 jobs:
+  database-ready:
+    name: Wait for VPS database handoff
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for the validated catalog copy
+        uses: ./.github/actions/catalog-database
+        with:
+          backend: ${{ vars.CATALOG_DATABASE_BACKEND || 'cloud' }}
+          cloud-url: ${{ secrets.SUPABASE_URL }}
+          cloud-publishable-key: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          cloud-secret-key: ${{ secrets.SUPABASE_SECRET_KEY }}
+          vps-url: ${{ secrets.VPS_SUPABASE_URL }}
+          vps-publishable-key: ${{ secrets.VPS_SUPABASE_PUBLISHABLE_KEY }}
+          vps-secret-key: ${{ secrets.VPS_SUPABASE_SECRET_KEY }}
+          mode: wait
+        id: database
+    outputs:
+      backend: ${{ steps.database.outputs.backend }}
   refresh:
     runs-on: ubuntu-latest
     timeout-minutes: 24
     steps:
       - uses: actions/checkout@v4
+      - name: Configure catalog database
+        uses: ./.github/actions/catalog-database
+        with:
+          backend: ${{ needs.database-ready.outputs.backend || 'cloud' }}
+          cloud-url: ${{ secrets.SUPABASE_URL }}
+          cloud-publishable-key: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          cloud-secret-key: ${{ secrets.SUPABASE_SECRET_KEY }}
+          vps-url: ${{ secrets.VPS_SUPABASE_URL }}
+          vps-publishable-key: ${{ secrets.VPS_SUPABASE_PUBLISHABLE_KEY }}
+          vps-secret-key: ${{ secrets.VPS_SUPABASE_SECRET_KEY }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -33,20 +63,20 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Refresh due catalog offers
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           CATALOG_REQUESTED_RUNNER: '1'
           CATALOG_INVENTORY_DISCOVERY: '1'
           CATALOG_ADAPTIVE_MAX_OFFERS: ${{ github.event.inputs.max_offers || '2500' }}
-          CATALOG_RUN_TRIGGER: ${{ github.event_name == 'schedule' && 'github-schedule' || github.event.inputs.trigger || 'manual' }}
+          CATALOG_RUN_TRIGGER: ${{ github.event_name == 'schedule' && 'github-schedule' ||
+            github.event.inputs.trigger || 'manual' }}
           # Mantener revisiones existentes; este barrido no contrata nuevas consultas de IA.
           ENABLE_JEV_OFFER_REVIEW: '0'
           LOG_LEVEL: warn
-        run: node scripts/run-catalog-refresh.mjs adaptive "$RUNNER_TEMP/catalog-adaptive-result.json"
+        run: node scripts/run-catalog-refresh.mjs adaptive
+          "$RUNNER_TEMP/catalog-adaptive-result.json"
       - name: Explain complete or partial catalog result
         if: always()
-        run: node scripts/lib/catalog-run-summary.mjs "$RUNNER_TEMP/catalog-adaptive-result.json"
+        run: node scripts/lib/catalog-run-summary.mjs
+          "$RUNNER_TEMP/catalog-adaptive-result.json"
       - name: Preserve measured coverage
         if: always()
         uses: actions/upload-artifact@v4
@@ -55,3 +85,6 @@ jobs:
           path: ${{ runner.temp }}/catalog-adaptive-result.json
           if-no-files-found: warn
           retention-days: 7
+    needs: database-ready
+    if: ${{ always() && !cancelled() && (needs.database-ready.result == 'success' ||
+      needs.database-ready.result == 'skipped') }}

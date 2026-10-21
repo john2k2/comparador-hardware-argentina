@@ -1,0 +1,12 @@
+[Unit]
+Description=Actualización acotada del catálogo (%i)
+Requires=docker.service
+After=docker.service network-online.target
+ConditionPathExists=/opt/comparador-catalog/updater-enabled
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/comparador-catalog-job %i
+TimeoutStartSec=22min
+UMask=0077
+SuccessExitStatus=75

@@ -1,10 +1,11 @@
 import { hasAdminRole } from '../server/admin-role';
+import { supabaseAuthConnection, type SupabaseAuthEnvironment } from '../server/supabase-auth-config';
 import { freshDocument } from '../server/public-document-cache';
 import { decodeStoredReading } from './reading-decoder';
 import { isProvider, isRecord, parseCommand } from './validation';
 import { PROVIDER_IDS, DECISION_IDS, type MeasurementDashboard, type ProviderConnection, type TrackedDecision } from './types';
 
-type EdgeEnv = {
+type EdgeEnv = SupabaseAuthEnvironment & {
   MEASUREMENT_COLLECTION_MODE?: string;
   MEASUREMENT_GOOGLE_CLIENT_TYPE?: string;
   MEASUREMENT_GOOGLE_CLIENT_ID?: string;
@@ -45,8 +46,9 @@ function token(request: Request, page: boolean) {
 async function authorize(request: Request, env: EdgeEnv, fetcher: typeof fetch, page: boolean) {
   const access = token(request, page);
   if (!access) return 'denied';
-  const key = env.SUPABASE_PUBLISHABLE_KEY || env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  const origin = supabaseOrigin(env);
+  const connection = supabaseAuthConnection(env);
+  const key = connection?.key;
+  const origin = connection?.url;
   if (!key || !/^https:\/\/zyiyziubpcpgoqlkcrie\.supabase\.co\/?$/.test(origin ?? '')) return 'unavailable';
   try {
     // Igual que auth.getUser(token): valida la sesión con Supabase y recibe

@@ -4,7 +4,7 @@ export const LEGACY_ORIGIN = 'https://comparador-hardware-argentina.ortiz-jonath
 const publicHosts = new Set(['www.comparador-hardware.com.ar', 'comparador-hardware.com.ar']);
 const forwardedHost = 'www.comparador-hardware.com.ar';
 const originHeader = 'x-comparador-origin-token', pilotHeader = 'x-comparador-pilot-token';
-const exactRoutes = new Set(['/search', '/comparativa/comparar', '/api/search', '/api/search/suggestions', '/api/products', '/api/pc-builder/catalog', '/sitemap-index.xml', '/api/home/observed-sections', '/api/home/sections']);
+const exactRoutes = new Set(['/search', '/comparativa/comparar', '/api/search', '/api/search/suggestions', '/api/products', '/api/categories', '/api/stores', '/api/pc-builder/catalog', '/sitemap-index.xml', '/api/home/observed-sections', '/api/home/sections']);
 // Selecciones editoriales conocidas: comparten generación con sus fichas y ofertas.
 const guideRoutes = new Set(['/guia/pc-gamer-1-millon', '/guia/pc-gamer-2-millones', '/guia/pc-gamer-3-millones']);
 

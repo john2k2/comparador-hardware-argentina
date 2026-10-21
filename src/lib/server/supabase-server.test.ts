@@ -31,3 +31,43 @@ it('cliente aislado no usa service cuando falta configuración readonly', async 
   expect(api.createServerSupabaseReadClientForFetch(vi.fn())).toBeNull();
   expect(createClient).not.toHaveBeenCalled();
 });
+
+it('valida usuarios en Auth Cloud sin enviar su token al catálogo separado', async () => {
+  vi.stubEnv('SUPABASE_URL', 'http://127.0.0.1:3000');
+  vi.stubEnv('SUPABASE_PUBLISHABLE_KEY', 'catalog-public-test-key');
+  vi.stubEnv('SUPABASE_SECRET_KEY', 'catalog-service-test-key');
+  vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://auth.test');
+  vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'auth-public-test-key');
+  const api = await import('./supabase-server');
+  const auth = api.getServerSupabaseAuthClient();
+  expect(api.getServerSupabaseAuthClient()).toBe(auth);
+  api.getServerSupabaseReadClient();
+  api.getServerSupabaseServiceClient();
+  expect(createClient.mock.calls.map(([url, key]) => [url, key])).toEqual([
+    ['https://auth.test', 'auth-public-test-key'],
+    ['http://127.0.0.1:3000', 'catalog-public-test-key'],
+    ['http://127.0.0.1:3000', 'catalog-service-test-key'],
+  ]);
+});
+
+it('Auth explícito incompleto falla sin mezclar claves de otro origen', async () => {
+  vi.stubEnv('SUPABASE_AUTH_URL', 'https://explicit-auth.test');
+  vi.stubEnv('SUPABASE_AUTH_PUBLISHABLE_KEY', '');
+  vi.stubEnv('SUPABASE_AUTH_ANON_KEY', '');
+  vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://auth.test');
+  vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'auth-public-test-key');
+  vi.stubEnv('SUPABASE_SECRET_KEY', 'catalog-service-test-key');
+  const api = await import('./supabase-server');
+  expect(api.getServerSupabaseAuthClient()).toBeNull();
+  expect(createClient).not.toHaveBeenCalled();
+});
+
+it('conserva Auth con configuración sólo de servidor y clave pública legacy', async () => {
+  for (const key of ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY']) vi.stubEnv(key, '');
+  vi.stubEnv('SUPABASE_URL', 'https://legacy-auth.test');
+  vi.stubEnv('SUPABASE_PUBLISHABLE_KEY', '');
+  vi.stubEnv('SUPABASE_ANON_KEY', 'legacy-public-test-key');
+  const api = await import('./supabase-server');
+  expect(api.getServerSupabaseAuthClient()).not.toBeNull();
+  expect(createClient.mock.calls[0].slice(0, 2)).toEqual(['https://legacy-auth.test', 'legacy-public-test-key']);
+});

@@ -1,0 +1,29 @@
+name: comparador-catalog
+services:
+  gateway:
+    image: node@sha256:a5f4366e834695d5f363b920c104953a535d3a9864d1bdf74566a0ebe01daee5
+    container_name: comparador-catalog-gateway
+    user: '1000:1000'
+    command: [node, /app/database-gateway.mjs]
+    restart: unless-stopped
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    volumes:
+      - ./database-gateway.mjs:/app/database-gateway.mjs:ro
+      - ./secrets/gateway-tokens.json:/run/private/gateway-tokens.json:ro
+      - ./state:/run/state:ro
+    networks: [catalog_private, web_egress]
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+networks:
+  catalog_private:
+    external: true
+    name: comparador_catalog_private
+  web_egress:
+    external: true
+    name: comparador_web_egress

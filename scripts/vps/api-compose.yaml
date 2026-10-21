@@ -1,0 +1,46 @@
+name: comparador-catalog
+services:
+  rest:
+    image: postgrest/postgrest@sha256:c7cd7e265a85b05248abf53f4473fcec7e327c282d0bd0cf60f1551996d09fcf
+    container_name: comparador-catalog-rest
+    user: '1000:1000'
+    entrypoint: [/bin/postgrest]
+    command: /run/private/postgrest.conf
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 1
+    pids_limit: 64
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    volumes:
+      - ./secrets/postgrest.conf:/run/private/postgrest.conf:ro
+    networks: [catalog_private]
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+  api:
+    image: nginx@sha256:970364228b1e4f932abc22d321932816782cca8a20b85a77552a7cfe9acfb3b5
+    container_name: comparador-catalog-api
+    user: '101:101'
+    entrypoint: [nginx]
+    command: ['-g', 'daemon off;']
+    restart: unless-stopped
+    mem_limit: 64m
+    cpus: 0.5
+    pids_limit: 32
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ['/tmp:size=16m,mode=1777']
+    volumes:
+      - ./api-nginx.conf:/etc/nginx/nginx.conf:ro
+    networks: [catalog_private]
+    depends_on: [rest]
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+networks:
+  catalog_private:
+    external: true
+    name: comparador_catalog_private

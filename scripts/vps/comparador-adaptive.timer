@@ -1,0 +1,9 @@
+[Unit]
+Description=Barrido adaptativo horario del catálogo
+[Timer]
+OnCalendar=*-*-* *:41:00 UTC
+AccuracySec=30s
+Persistent=false
+Unit=comparador-refresh@adaptive.service
+[Install]
+WantedBy=timers.target

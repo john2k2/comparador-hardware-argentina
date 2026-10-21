@@ -8,6 +8,17 @@ const view = { demo: false, readings: [reading], history: [reading], connections
 function request(path = '/api/admin/measurement', headers: Record<string, string> = { Cookie: 'sb-access-token=admin-fixture' }) { return new Request(`${root}${path}`, { headers }); }
 
 describe('lectura ligera con autorización vigente', () => {
+  it('valida al administrador en Auth Cloud y lee el panel desde el catálogo VPS sin mezclar tokens', async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(Response.json({ id: 'admin', app_metadata: { role: 'admin' } }))
+      .mockResolvedValueOnce(Response.json([{ payload: { kind: 'dashboard-view', dashboard: view } }]));
+    const setting = { ...env, SUPABASE_URL: 'https://catalog-api.example', SUPABASE_PUBLISHABLE_KEY: 'catalog-public', SUPABASE_SECRET_KEY: 'catalog-private',
+      SUPABASE_AUTH_URL: env.SUPABASE_URL, SUPABASE_AUTH_PUBLISHABLE_KEY: 'auth-public' };
+    expect((await handleMeasurementEdgeRead(request(), setting, fetcher))?.status).toBe(200);
+    expect(String(fetcher.mock.calls[0][0])).toBe(env.SUPABASE_URL + '/auth/v1/user');
+    expect(fetcher.mock.calls[0][1].headers).toMatchObject({ apikey: 'auth-public', Authorization: 'Bearer admin-fixture' });
+    expect(String(fetcher.mock.calls[1][0])).toMatch(/^https:\/\/catalog-api\.example\/rest\/v1\//);
+    expect(fetcher.mock.calls[1][1].headers).toEqual({ apikey: 'catalog-private', Authorization: 'Bearer catalog-private' });
+  });
   it('sin sesión no consulta la base ni sirve el documento administrativo', async () => {
     const fetcher = vi.fn(); const assets = { fetch: vi.fn() };
     expect((await handleMeasurementEdgeRead(request('/api/admin/measurement', {}), { ...env, ASSETS: assets }, fetcher))?.status).toBe(401);

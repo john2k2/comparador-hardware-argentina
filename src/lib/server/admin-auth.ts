@@ -1,7 +1,7 @@
 import type { User } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getServerSupabaseReadClient } from '@/lib/server/supabase-server';
+import { getServerSupabaseAuthClient } from '@/lib/server/supabase-server';
 import { hasAdminRole } from './admin-role';
 
 const ADMIN_AUTH_COOKIE_NAME = 'sb-access-token';
@@ -11,7 +11,7 @@ export function isAdminUser(user: User | null): boolean {
 }
 
 async function getUserByAccessToken(accessToken: string): Promise<User | null> {
-  const supabase = getServerSupabaseReadClient();
+  const supabase = getServerSupabaseAuthClient();
   if (!supabase || !accessToken) return null;
 
   const { data, error } = await supabase.auth.getUser(accessToken);

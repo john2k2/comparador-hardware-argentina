@@ -1,0 +1,25 @@
+name: Catalog database connection
+description: Selecciona una pareja completa de credenciales sin cambiar Auth Cloud.
+outputs:
+  backend:
+    description: Base fijada para toda esta ejecución, aunque cambie la variable del repositorio.
+inputs:
+  backend:
+    default: cloud
+  mode:
+    default: configure
+  cloud-url:
+    required: true
+  cloud-publishable-key:
+    required: true
+  cloud-secret-key:
+    required: true
+  vps-url:
+    required: false
+  vps-publishable-key:
+    required: false
+  vps-secret-key:
+    required: false
+runs:
+  using: node24
+  main: index.mjs

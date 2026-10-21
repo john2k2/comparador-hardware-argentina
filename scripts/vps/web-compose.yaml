@@ -1,0 +1,25 @@
+name: comparador-catalog
+services:
+  web:
+    image: comparador-web:20261020-candidate
+    container_name: comparador-catalog-web
+    restart: unless-stopped
+    mem_limit: 1536m
+    cpus: 1.5
+    pids_limit: 256
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    volumes:
+      - ./secrets/web-runtime.json:/run/private/web-runtime.json:ro
+      - ./secrets/origin-token:/run/private/origin-token:ro
+    ports: ['127.0.0.1:3100:3100']
+    networks: [catalog_private, web_egress]
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+networks:
+  catalog_private:
+    external: true
+    name: comparador_catalog_private
+  web_egress:
+    name: comparador_web_egress

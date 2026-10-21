@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 // Mockear Supabase ANTES de importar admin-auth
 vi.mock('@/lib/server/supabase-server', () => ({
-  getServerSupabaseReadClient: vi.fn(() => null),
+  getServerSupabaseAuthClient: vi.fn(() => null),
 }));
 
 import { isAdminUser } from './admin-auth';

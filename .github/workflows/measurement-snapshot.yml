@@ -11,23 +11,66 @@ on:
         description: Lectura para actualizar
         type: choice
         default: measurements
-        options: [measurements, home]
+        options: [ measurements, home ]
       provider:
         description: Fuente de lectura
         type: choice
         default: all
-        options: [all, ga4, search-console, cloudflare, catalog, operations, github, eneba, database, adsense, google-ads]
+        options:
+          [
+            all,
+            ga4,
+            search-console,
+            cloudflare,
+            catalog,
+            operations,
+            github,
+            eneba,
+            database,
+            adsense,
+            google-ads
+          ]
 permissions:
   contents: read
 concurrency:
   group: measurement-snapshots
   cancel-in-progress: false
 jobs:
+  database-ready:
+    name: Wait for VPS database handoff
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for the validated catalog copy
+        uses: ./.github/actions/catalog-database
+        with:
+          backend: ${{ vars.CATALOG_DATABASE_BACKEND || 'cloud' }}
+          cloud-url: ${{ secrets.SUPABASE_URL }}
+          cloud-publishable-key: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          cloud-secret-key: ${{ secrets.SUPABASE_SECRET_KEY }}
+          vps-url: ${{ secrets.VPS_SUPABASE_URL }}
+          vps-publishable-key: ${{ secrets.VPS_SUPABASE_PUBLISHABLE_KEY }}
+          vps-secret-key: ${{ secrets.VPS_SUPABASE_SECRET_KEY }}
+          mode: wait
+        id: database
+    outputs:
+      backend: ${{ steps.database.outputs.backend }}
   collect:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      - name: Configure catalog database
+        uses: ./.github/actions/catalog-database
+        with:
+          backend: ${{ needs.database-ready.outputs.backend || 'cloud' }}
+          cloud-url: ${{ secrets.SUPABASE_URL }}
+          cloud-publishable-key: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          cloud-secret-key: ${{ secrets.SUPABASE_SECRET_KEY }}
+          vps-url: ${{ secrets.VPS_SUPABASE_URL }}
+          vps-publishable-key: ${{ secrets.VPS_SUPABASE_PUBLISHABLE_KEY }}
+          vps-secret-key: ${{ secrets.VPS_SUPABASE_SECRET_KEY }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -35,9 +78,6 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Guardar la lectura correspondiente fuera de la web
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           MEASUREMENT_CREDENTIAL_ENCRYPTION_KEY: ${{ secrets.MEASUREMENT_CREDENTIAL_ENCRYPTION_KEY }}
           MEASUREMENT_GOOGLE_CLIENT_ID: ${{ vars.MEASUREMENT_GOOGLE_CLIENT_ID }}
           MEASUREMENT_GOOGLE_CLIENT_SECRET: ${{ secrets.MEASUREMENT_GOOGLE_CLIENT_SECRET }}
@@ -45,7 +85,8 @@ jobs:
           MEASUREMENT_PUBLIC_URL: http://localhost:3122
           MEASUREMENT_COLLECTION_MODE: inline
           MEASUREMENT_PROVIDER: ${{ inputs.provider || 'all' }}
-          MEASUREMENT_TASK: ${{ inputs.task || (github.event.schedule == '7 * * * *' && 'home' || 'measurements') }}
+          MEASUREMENT_TASK: ${{ inputs.task || (github.event.schedule == '7 * * * *' &&
+            'home' || 'measurements') }}
           # Sólo el runner recupera un feed ausente/vencido; conserva fecha oficial y seis horas.
           ENEBA_AFFILIATE_PILOT_ENABLED: ${{ vars.ENEBA_AFFILIATE_PILOT_ENABLED || '1' }}
           DISABLE_LIVE_SCRAPING: '1'
@@ -53,3 +94,6 @@ jobs:
           LOG_LEVEL: silent
         run: node scripts/measurement-collect.mjs
       # Los datos de cuentas y los tokens no se suben a artefactos ni a logs.
+    needs: database-ready
+    if: ${{ always() && !cancelled() && (needs.database-ready.result == 'success' ||
+      needs.database-ready.result == 'skipped') }}

@@ -10,11 +10,41 @@ concurrency:
   group: eneba-affiliate-pilot
   cancel-in-progress: false
 jobs:
+  database-ready:
+    name: Wait for VPS database handoff
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for the validated catalog copy
+        uses: ./.github/actions/catalog-database
+        with:
+          backend: ${{ vars.CATALOG_DATABASE_BACKEND || 'cloud' }}
+          cloud-url: ${{ secrets.SUPABASE_URL }}
+          cloud-publishable-key: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          cloud-secret-key: ${{ secrets.SUPABASE_SECRET_KEY }}
+          vps-url: ${{ secrets.VPS_SUPABASE_URL }}
+          vps-publishable-key: ${{ secrets.VPS_SUPABASE_PUBLISHABLE_KEY }}
+          vps-secret-key: ${{ secrets.VPS_SUPABASE_SECRET_KEY }}
+          mode: wait
+        id: database
+    outputs:
+      backend: ${{ steps.database.outputs.backend }}
   snapshot:
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
+      - name: Configure catalog database
+        uses: ./.github/actions/catalog-database
+        with:
+          backend: ${{ needs.database-ready.outputs.backend || 'cloud' }}
+          cloud-url: ${{ secrets.SUPABASE_URL }}
+          cloud-publishable-key: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          cloud-secret-key: ${{ secrets.SUPABASE_SECRET_KEY }}
+          vps-url: ${{ secrets.VPS_SUPABASE_URL }}
+          vps-publishable-key: ${{ secrets.VPS_SUPABASE_PUBLISHABLE_KEY }}
+          vps-secret-key: ${{ secrets.VPS_SUPABASE_SECRET_KEY }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -22,11 +52,10 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Persist the dated official feed selection
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           ENEBA_AFFILIATE_PILOT_ENABLED: ${{ vars.ENEBA_AFFILIATE_PILOT_ENABLED || '1' }}
           LOG_LEVEL: warn
-        run: node scripts/run-catalog-refresh.mjs eneba-pilot "$RUNNER_TEMP/eneba-pilot-snapshot.json"
+        run: node scripts/run-catalog-refresh.mjs eneba-pilot
+          "$RUNNER_TEMP/eneba-pilot-snapshot.json"
       - name: Preserve the result without private account data
         if: always()
         uses: actions/upload-artifact@v4
@@ -35,3 +64,6 @@ jobs:
           path: ${{ runner.temp }}/eneba-pilot-snapshot.json
           if-no-files-found: warn
           retention-days: 30
+    needs: database-ready
+    if: ${{ always() && !cancelled() && (needs.database-ready.result == 'success' ||
+      needs.database-ready.result == 'skipped') }}

@@ -11,6 +11,21 @@ const pilot = { MAC_CATALOG_MODE: 'pilot', MAC_ORIGIN_TOKEN: secret, MAC_CATALOG
   MAC_CATALOG_PILOT_HOST: host, MAC_CATALOG_PILOT_EXPIRES_AT: '2030-01-01T00:00:00Z', ASSETS: assets };
 const request = (path = '/search?q=ram', init = {}) => new Request('https://www.comparador-hardware.com.ar' + path, init);
 
+test('categorías y tiendas del VPS conservan autenticación del origen y excluyen subrutas', async () => {
+  const sent = [];
+  const proxy = createMacCatalogProxy({ fetch: async req => {
+    sent.push({ url: req.url, token: req.headers.get('x-comparador-origin-token') });
+    return Response.json({ items: [] });
+  } });
+  for (const path of ['/api/categories', '/api/stores']) {
+    assert.equal((await proxy.fetch(request(path + '?source=catalog'), production)).status, 200);
+    assert.equal(routeKind(path + '/admin'), null);
+  }
+  assert.deepEqual(sent, ['/api/categories', '/api/stores'].map(path => ({
+    url: MAC_ORIGIN + path + '?source=catalog', token: secret,
+  })));
+});
+
 test('sitemaps de productos llegan al mismo catálogo sin desviar el editorial', async () => {
   const paths = ['/sitemap-index.xml', '/product-sitemap/0.xml', '/product-sitemap/2'];
   const sent = [];

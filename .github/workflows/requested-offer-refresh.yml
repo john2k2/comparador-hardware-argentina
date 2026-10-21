@@ -13,17 +13,48 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  database-ready:
+    name: Wait for VPS database handoff
+    if: ${{ vars.ENABLE_ON_DEMAND_REFRESH == '1' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for the validated catalog copy
+        uses: ./.github/actions/catalog-database
+        with:
+          backend: ${{ vars.CATALOG_DATABASE_BACKEND || 'cloud' }}
+          cloud-url: ${{ secrets.SUPABASE_URL }}
+          cloud-publishable-key: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          cloud-secret-key: ${{ secrets.SUPABASE_SECRET_KEY }}
+          vps-url: ${{ secrets.VPS_SUPABASE_URL }}
+          vps-publishable-key: ${{ secrets.VPS_SUPABASE_PUBLISHABLE_KEY }}
+          vps-secret-key: ${{ secrets.VPS_SUPABASE_SECRET_KEY }}
+          mode: wait
+        id: database
+    outputs:
+      backend: ${{ steps.database.outputs.backend }}
   refresh-requested:
-    if: vars.ENABLE_ON_DEMAND_REFRESH == '1'
+    if: ${{ always() && !cancelled() && (needs.database-ready.result == 'success' ||
+      needs.database-ready.result == 'skipped') &&
+      (vars.ENABLE_ON_DEMAND_REFRESH == '1') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       # No instalar dependencias ni ejecutar scrapers cuando la cola está vacía.
+      - uses: actions/checkout@v4
+      - name: Configure catalog database
+        uses: ./.github/actions/catalog-database
+        with:
+          backend: ${{ needs.database-ready.outputs.backend || 'cloud' }}
+          cloud-url: ${{ secrets.SUPABASE_URL }}
+          cloud-publishable-key: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          cloud-secret-key: ${{ secrets.SUPABASE_SECRET_KEY }}
+          vps-url: ${{ secrets.VPS_SUPABASE_URL }}
+          vps-publishable-key: ${{ secrets.VPS_SUPABASE_PUBLISHABLE_KEY }}
+          vps-secret-key: ${{ secrets.VPS_SUPABASE_SECRET_KEY }}
       - name: Check pending requests
         id: queue
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: |
           python3 - <<'PY'
           import json, os, urllib.request
@@ -38,8 +69,6 @@ jobs:
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
               output.write('pending=' + str(pending).lower() + '\n')
           PY
-      - uses: actions/checkout@v4
-        if: steps.queue.outputs.pending == 'true'
       - uses: actions/setup-node@v4
         if: steps.queue.outputs.pending == 'true'
         with:
@@ -51,9 +80,6 @@ jobs:
       - name: Refresh queued offers
         if: steps.queue.outputs.pending == 'true'
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           CATALOG_REFRESH_CRON_SECRET: ${{ secrets.CATALOG_REFRESH_CRON_SECRET }}
           CATALOG_REQUESTED_RUNNER: '1'
           DISABLE_INTERNAL_BACKGROUND_REFRESH: '1'
@@ -102,3 +128,4 @@ jobs:
           path: ${{ runner.temp }}/requested-refresh-*.json
           if-no-files-found: ignore
           retention-days: 30
+    needs: database-ready

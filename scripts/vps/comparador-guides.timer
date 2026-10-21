@@ -1,0 +1,9 @@
+[Unit]
+Description=Observación horaria de ofertas de guías
+[Timer]
+OnCalendar=*-*-* 00..04,06..23:17:00 UTC
+AccuracySec=30s
+Persistent=false
+Unit=comparador-refresh@guides.service
+[Install]
+WantedBy=timers.target

@@ -19,6 +19,7 @@ let warnedServiceMissing = false;
 
 let cachedReadClient: SupabaseClient | null | undefined;
 let cachedServiceClient: SupabaseClient | null | undefined;
+let cachedAuthClient: SupabaseClient | null | undefined;
 
 function baseClientOptions() {
   return {
@@ -28,6 +29,22 @@ function baseClientOptions() {
       detectSessionInUrl: false,
     },
   } as const;
+}
+
+/** Auth conserva su origen aunque el catálogo se traslade a otro PostgREST. */
+export function getServerSupabaseAuthClient(): SupabaseClient | null {
+  if (cachedAuthClient !== undefined) return cachedAuthClient;
+
+  const explicitUrl = (process.env.SUPABASE_AUTH_URL || '').trim();
+  const explicitKey = (process.env.SUPABASE_AUTH_PUBLISHABLE_KEY || process.env.SUPABASE_AUTH_ANON_KEY || '').trim();
+  const publicUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim();
+  const publicKey = (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim();
+  // Cada URL conserva su propia clave. Una pareja incompleta no toma credenciales
+  // de otro destino ni sustituye la clave pública por service_role.
+  const [url, key] = explicitUrl || explicitKey ? [explicitUrl, explicitKey]
+    : publicUrl || publicKey ? [publicUrl, publicKey] : [supabaseUrl, supabasePublishableKey];
+  cachedAuthClient = url && key ? createClient(url, key, baseClientOptions()) : null;
+  return cachedAuthClient;
 }
 
 export function getServerSupabaseReadClient(): SupabaseClient | null {

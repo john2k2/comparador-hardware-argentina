@@ -8,7 +8,7 @@ import { extractRefreshClaimDiagnostic } from '../../src/lib/catalog/refresh-dia
 const [mode, output] = process.argv.slice(2);
 if (!output || !['priority', 'guides', 'requested', 'adaptive'].includes(mode)) throw new Error('INVALID_REFRESH_ARGUMENTS');
 if (process.env.CATALOG_REQUESTED_RUNNER !== '1') throw new Error('REFRESH_RUNNER_REQUIRED');
-const trigger = ['github-schedule', 'cloudflare-fallback'].includes(process.env.CATALOG_RUN_TRIGGER ?? '')
+const trigger = ['github-schedule', 'cloudflare-fallback', 'vps-schedule'].includes(process.env.CATALOG_RUN_TRIGGER ?? '')
   ? process.env.CATALOG_RUN_TRIGGER : 'manual';
 try {
   const result = mode === 'adaptive' ? await runAdaptiveRefresh() : mode === 'requested' ? await runRequestedRefresh() : await runPriorityRefresh(mode === 'priority');
