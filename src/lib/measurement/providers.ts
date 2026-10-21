@@ -26,6 +26,29 @@ export function getConnection(id: ProviderId, settings: ConnectionSecrets): Prov
 async function readJson(url: string, init: RequestInit = {}): Promise<Record<string, unknown>> {
   const response = await fetch(url, { ...init, cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(12_000) });
   if (!response.ok) {
+    if (url === 'https://oauth2.googleapis.com/token' && response.status === 400) {
+      // Sólo clasificar códigos conocidos. Nunca conservar error_description,
+      // credenciales ni cuerpos arbitrarios del proveedor en el panel o logs.
+      const reader = response.body?.getReader();
+      let text = '';
+      let bytes = 0;
+      if (reader) {
+        try {
+          const decoder = new TextDecoder();
+          for (;;) {
+            const part = await reader.read();
+            if (part.done) break;
+            bytes += part.value.length;
+            if (bytes > 2048) { text = ''; break; }
+            text += decoder.decode(part.value, { stream: true });
+          }
+        } finally { await reader.cancel().catch(() => undefined); }
+      }
+      let code: unknown;
+      try { code = (JSON.parse(text) as { error?: unknown }).error; } catch { /* Error no clasificable. */ }
+      if (code === 'invalid_grant') throw new ProviderReadError('needs_setup', 'Google rechazó la autorización guardada. Volvé a autorizar la lectura; el dato anterior conserva su fecha.');
+      if (code === 'invalid_client') throw new ProviderReadError('error', 'Google rechazó la configuración del cliente. Revisá sus credenciales de servidor antes de volver a autorizar.');
+    }
     if (response.status === 401 || response.status === 403) throw new ProviderReadError('error', 'La cuenta rechazó la lectura. Revisar autorización y permisos.');
     if (response.status === 429) throw new ProviderReadError('error', 'La cuenta limitó las consultas. Esperá unos minutos antes de volver a intentar.');
     throw new ProviderReadError('error', 'El servicio no pudo entregar la lectura. Se conserva el dato anterior con su fecha.');

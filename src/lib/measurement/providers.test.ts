@@ -32,6 +32,15 @@ function mockGaReports(change: (report: GaReport, dimensions: string[]) => void 
   });
 }
 describe('consultas privadas de las fuentes', () => {
+  it('distingue autorización Google rechazada de configuración inválida sin revelar el cuerpo', async () => {
+    authorizeGoogle();
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ error: 'invalid_grant', error_description: 'private-fixture-refresh' }, { status: 400 })));
+    await expect(createProviderReader(now)('ga4')).rejects.toMatchObject({ kind: 'needs_setup', message: expect.stringContaining('Volvé a autorizar') });
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ error: 'invalid_client', error_description: 'private-fixture-secret' }, { status: 400 })));
+    const error = await createProviderReader(now)('ga4').catch(error => error);
+    expect(error).toMatchObject({ kind: 'error', message: expect.stringContaining('configuración del cliente') });
+    expect(error.message).not.toContain('private-fixture');
+  });
   beforeEach(() => {
     vi.stubEnv('MEASUREMENT_GOOGLE_CLIENT_ID', ''); vi.stubEnv('MEASUREMENT_GOOGLE_CLIENT_SECRET', ''); vi.stubEnv('MEASUREMENT_GOOGLE_REFRESH_TOKEN', '');
     vi.stubEnv('MEASUREMENT_CLOUDFLARE_TOKEN', ''); vi.stubEnv('MEASUREMENT_CLOUDFLARE_ACCOUNT_ID', '');

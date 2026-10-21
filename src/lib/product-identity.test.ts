@@ -14,6 +14,13 @@ import {
 } from './product-identity';
 
 describe('product identity', () => {
+  it('reconoce equipos llamados CPU cuando declaran RAM, almacenamiento y sistema operativo', () => {
+    expect(isCompleteComputerTitle('CPU UWD AMD R3-3200G/8GB/256GB/Freedos')).toBe(true);
+    expect(isCompleteComputerTitle('CPU Ryzen 5 5600G 16GB 1TB Windows 11')).toBe(true);
+    expect(isCompleteComputerTitle('CPU AMD Ryzen 5 8600G + Radeon 760M + Cooler')).toBe(false);
+    expect(isCompleteComputerTitle('CPU Ryzen 5 compatible Windows 11 DDR5 hasta 128GB')).toBe(false);
+    expect(isCompleteComputerTitle('CPU AMD Ryzen 5 5600G 8GB 256GB')).toBe(false);
+  });
   it('memo de parsers mantiene familias/sufijos y no comparte arrays mutables entre consumidores', () => {
     const cpu = parseCpuModelSignature('AMD Ryzen 7 5700X3D')!;
     cpu.family = 'changed'; cpu.suffixes.push('changed');

@@ -200,6 +200,11 @@ export function isCompleteComputerTitle(value: string): boolean {
   if (/^(?:nb|not)\s+(?:hp|asus|lenovo|acer|dell|msi|gigabyte|samsung|apple|bangho|noblex)\b/.test(normalized)) return true;
   const standaloneRam = /^(?:memoria|ram)\b/.test(normalized);
   const standaloneCpu = /^(?:micro(?!\s+sd\b)|procesador(?:es)?|cpu)\b/.test(normalized);
+  // Algunas tiendas llaman CPU al equipo completo. RAM, almacenamiento y SO
+  // explícitos juntos distinguen ese equipo de un procesador con video/cooler.
+  if (standaloneCpu && /\b(?:freedos|windows|linux|ubuntu)\b/.test(normalized)
+    && /\b(?:4|8|12|16|24|32|48|64|96)\s*gb\b/.test(normalized)
+    && /\b(?:(?:128|240|250|256|480|500|512|960|1000|1024|2000|2048)\s*gb|[1-9]\s*tb)\b/.test(normalized)) return true;
   const wrapped = ` ${normalized} `;
   if (!standaloneCpu && !standaloneRam && COMPLETE_COMPUTER_TERMS.some((term) => wrapped.includes(` ${term} `))) return true;
 
