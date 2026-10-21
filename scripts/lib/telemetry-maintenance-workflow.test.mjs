@@ -10,14 +10,18 @@ test('maintenance comparte la programación y concurrencia existentes; excluye m
   assert.deepEqual(workflow.on.schedule.map(value => value.cron), ['5 5 * * *','17 0-4,6-23 * * *']);
   assert.deepEqual(workflow.concurrency,{ group:'catalog-refresh','cancel-in-progress':false });
   const job = workflow.jobs['telemetry-maintenance'];
-  assert.equal(job.needs,'refresh');
+  assert.deepEqual(job.needs,['refresh','database-ready']);
   assert.ok(job.if.includes("github.event_name == 'schedule'"));
   assert.ok(job.if.includes("github.run_attempt == '1'"));
   assert.ok(job.if.includes("github.event.schedule == '5 5 * * *'"));
   assert.ok(job.if.includes("needs.refresh.outputs.mode == 'priority'"));
   assert.equal(workflow.jobs.refresh.outputs.mode,'${{ steps.resolve.outputs.mode }}');
   assert.equal(job.env.TELEMETRY_RETENTION_MODE,"${{ vars.TELEMETRY_RETENTION_MODE || 'inspect' }}");
-  assert.equal(job.env.SUPABASE_SECRET_KEY,'${{ secrets.SUPABASE_SECRET_KEY }}');
+  assert.equal(job.env.SUPABASE_SECRET_KEY,undefined);
+  const connection = job.steps.find(step => step.uses === './.github/actions/catalog-database');
+  assert.equal(connection.with.backend,"${{ needs.database-ready.outputs.backend || 'cloud' }}");
+  assert.equal(connection.with['cloud-secret-key'],'${{ secrets.SUPABASE_SECRET_KEY }}');
+  assert.equal(connection.with['vps-secret-key'],'${{ secrets.VPS_SUPABASE_SECRET_KEY }}');
   assert.equal(job.steps.find(step => step.uses === 'actions/setup-node@v4').with['node-version'],22);
 });
 test('la guardia del job excluye reintentos del diario y eventos a pedido', () => {
@@ -56,7 +60,11 @@ test('el respaldo de guías registra origen sin crear crons ni mantenimiento adi
   const refresh = workflow.jobs.refresh.steps.find(step => step.name === 'Run catalog refresh');
   assert.equal(refresh.env.CATALOG_RUN_TRIGGER,
     "${{ github.event_name == 'schedule' && 'github-schedule' || github.event.inputs.trigger || 'manual' }}");
-  assert.deepEqual(Object.keys(workflow.jobs), ['refresh', 'telemetry-maintenance']);
+  assert.deepEqual(Object.keys(workflow.jobs), ['database-ready', 'refresh', 'telemetry-maintenance']);
+  const gate = workflow.jobs['database-ready'];
+  assert.equal(gate.steps.find(step => step.uses === './.github/actions/catalog-database').with.mode,'wait');
+  assert.equal(gate.outputs.backend,'${{ steps.database.outputs.backend }}');
+  assert.ok(gate.steps.every(step => !step.run));
 });
 test('los límites del workflow parsean y sólo preserva el resumen agregado, incluso en error', () => {
   const job = workflow.jobs['telemetry-maintenance'];

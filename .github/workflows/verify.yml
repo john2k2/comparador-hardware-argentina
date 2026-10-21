@@ -49,6 +49,8 @@ jobs:
       - run: npx playwright install --with-deps chrome
       - name: Check application and runner contracts
         run: npm run verify
+      - name: Verify VPS handoff and gateway contracts
+        run: node --test .github/actions/catalog-database/*.test.mjs scripts/vps/database-gateway.test.mjs
       - name: Replay migrations and database regressions
         env:
           PGHOST: 127.0.0.1
