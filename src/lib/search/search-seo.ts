@@ -50,7 +50,7 @@ const CATEGORY_SEO_COPY: Record<HardwareCategory, CategorySeoCopy> = {
       },
       {
         question: '¿AMD Ryzen o Intel Core, cuál conviene?',
-        answer: 'Para armar una PC nueva, Ryzen AM5 suele rendir mejor a futuro. Intel puede convivir si ya tenés motherboard y memoria compatibles, o si un modelo puntual está mucho más barato. Compará el total de plataforma, no solo el procesador.',
+        answer: 'No hay una marca ganadora para todos los usos. Si conservás piezas, comprobá primero qué procesadores admite tu motherboard y desde qué BIOS. Si armás desde cero, compará CPU, motherboard, RAM y refrigeración, junto con pruebas de los modelos exactos en tu tarea.',
       },
       {
         question: '¿Qué mirar además del precio del procesador?',
@@ -88,11 +88,11 @@ const CATEGORY_SEO_COPY: Record<HardwareCategory, CategorySeoCopy> = {
       },
       {
         question: '¿RTX o Radeon, cuál conviene?',
-        answer: 'NVIDIA suele ganar en Ray Tracing, DLSS y encoding para streaming. AMD Radeon a veces ofrece más rendimiento raster por peso. La decisión correcta sale de tu resolución, fuente y del precio real de cada modelo en el comparador.',
+        answer: 'Elegí modelos concretos y contrastá pruebas en tus juegos o aplicaciones. Revisá memoria, funciones requeridas por el programa, consumo y conectores de la variante publicada. El nombre de la marca no demuestra mejor rendimiento por peso ni compatibilidad con tu equipo.',
       },
       {
         question: '¿Qué mirar además del precio de la GPU?',
-        answer: 'VRAM, largo de la placa, conector de alimentación y watts recomendados de la fuente. Una 8 GB puede alcanzar en 1080p, pero 1440p o texturas altas piden más memoria y mejor refrigeración.',
+        answer: 'Memoria, dimensiones, salidas de video, conectores y fuente recomendada para la edición exacta. Contrastá pruebas con tu resolución y ajustes: una cantidad de VRAM por sí sola no garantiza una calidad de imagen ni una tasa de cuadros.',
       },
     ],
   },
@@ -122,7 +122,7 @@ const CATEGORY_SEO_COPY: Record<HardwareCategory, CategorySeoCopy> = {
       },
       {
         question: '¿Qué motherboard conviene para AM5 o LGA 1700?',
-        answer: 'En AM5 un B650 suele alcanzar para Ryzen 5 y 7. En Intel LGA 1700, B760 o Z790 según si vas a overclockear. Compará el costo total con procesador y RAM, no solo la placa.',
+        answer: 'El chipset no alcanza para elegir. Contrastá CPU exacto, revisión de la placa, BIOS requerida, memoria y conexiones en el soporte del fabricante. Después compará el costo completo y las funciones que realmente necesitás.',
       },
       {
         question: '¿Qué mirar además del precio de la motherboard?',
@@ -152,15 +152,15 @@ const CATEGORY_SEO_COPY: Record<HardwareCategory, CategorySeoCopy> = {
     faqs: [
       {
         question: '¿Cómo comparar memoria RAM en Argentina?',
-        answer: 'Compará el mismo kit: tipo (DDR4 o DDR5), capacidad total, frecuencia y cantidad de módulos. Después mirá precio, stock y si la publicación es 1x16 o 2x8. No son intercambiables si tu motherboard pide dual channel.',
+        answer: 'Compará el código exacto del kit, generación, capacidad total, cantidad de módulos, velocidad y latencia. Un módulo de 16 GB y dos de 8 GB suman lo mismo, pero ocupan distintas ranuras. Consultá las configuraciones admitidas por tu motherboard y CPU; no se deducen de la capacidad total.',
       },
       {
         question: '¿DDR5 o DDR4, cuál conviene?',
-        answer: 'Si armás en AM5 o Intel reciente, DDR5 es el camino. Si tu plataforma es AM4 o LGA 1200, quedate en DDR4. La diferencia en juegos es chica; el salto caro es cambiar motherboard y procesador.',
+        answer: 'Comprá la generación admitida por la motherboard y el procesador exactos. DDR4 y DDR5 no son intercambiables. Para cambiar de plataforma, presupuestá también las piezas que debés reemplazar; no asumimos una diferencia de rendimiento universal entre generaciones.',
       },
       {
         question: '¿Qué mirar además del precio de la RAM?',
-        answer: 'Capacidad, frecuencia, latencia y que el kit sea compatible con tu motherboard. Un módulo suelto puede salir más barato y después no rendir en dual channel.',
+        answer: 'Revisá formato, generación, cantidad de módulos y código del kit. Contrastá la QVL y las condiciones de CPU y BIOS: un perfil XMP o EXPO es una configuración de overclock, no una velocidad garantizada para cualquier equipo.',
       },
     ],
   },
@@ -168,7 +168,7 @@ const CATEGORY_SEO_COPY: Record<HardwareCategory, CategorySeoCopy> = {
     title: 'SSD NVMe y SATA: precios',
     description: 'Compará precios de SSD NVMe, SATA y discos en tiendas de Argentina. Revisá capacidad, velocidad y stock actual antes de comprar.',
     heading: 'Compará precios de SSD NVMe y SATA',
-    intro: 'Compará precios de SSD NVMe, SATA y discos HDD publicados por tiendas argentinas. Un NVMe rápido mejora cargas; un SATA o HDD todavía sirve para bibliotecas grandes o backups. Revisá formato, interfaz, garantía y espacio real que necesitás.',
+    intro: 'Compará precios de SSD NVMe, SATA y discos HDD publicados por tiendas argentinas. Revisá capacidad, formato, interfaz, garantía y conexiones disponibles en tu equipo. Separá las velocidades anunciadas de los resultados medidos en la tarea que necesitás.',
     relatedLinks: [
       {
         href: '/guia/pc-gamer-2-millones',
@@ -190,11 +190,11 @@ const CATEGORY_SEO_COPY: Record<HardwareCategory, CategorySeoCopy> = {
       },
       {
         question: '¿NVMe o SATA, cuál conviene?',
-        answer: 'NVMe es la mejor unidad principal para Windows y juegos. SATA alcanza para archivos o PCs más viejas. Si tu motherboard tiene M.2, conviene comparar SSD NVMe del tamaño que vas a llenar.',
+        answer: 'Primero verificá las interfaces admitidas por tu equipo. Una ranura M.2 puede admitir SATA, PCIe/NVMe o ambas según la motherboard. Entre opciones compatibles, compará capacidad, garantía, precio y pruebas de tu tarea; el formato por sí solo no decide la compra.',
       },
       {
         question: '¿Qué mirar además del precio del SSD?',
-        answer: 'Capacidad usable, interfaz, DRAM o no, garantía y TBW. Un NVMe barato de 512 GB puede quedar corto si instalás pocos juegos AAA.',
+        answer: 'Capacidad, interfaz, formato, garantía y resistencia publicada para el código exacto. Calculá el espacio que ocupan tus programas y archivos, y revisá las limitaciones de la ranura. No deduzcas velocidades sostenidas ni componentes internos únicamente de la marca.',
       },
     ],
   },
@@ -202,19 +202,19 @@ const CATEGORY_SEO_COPY: Record<HardwareCategory, CategorySeoCopy> = {
     title: 'Fuentes de PC en Argentina',
     description: 'Compará costos de fuentes de alimentación para PC en Argentina, revisá potencia, disponibilidad y opciones de locales para comprar con más contexto.',
     heading: 'Comparador de precios de fuentes de alimentacion en Argentina',
-    intro: 'Explora fuentes ATX y SFX de distintas potencias y certificaciones para encontrar una opcion segura y bien posicionada. La fuente es una pieza crítica: no alcanza con mirar watts publicados. Conviene validar marca, protecciones, certificación, conectores para GPU, garantía y margen para futuros upgrades. Una buena elección reduce riesgos de inestabilidad y protege el resto del hardware, especialmente en PCs con placas de video de consumo alto.',
+    intro: 'Compará publicaciones de fuentes por modelo exacto, potencia, formato y conectores. Revisá protecciones documentadas, accesorios y garantía. El precio, la marca o la certificación de eficiencia por sí solos no acreditan la calidad ni la compatibilidad de una fuente.',
   },
   'gabinetes': {
     title: 'Gabinetes PC en Argentina',
     description: 'Compará valores de gabinetes para PC gamer y oficina en Argentina, revisá stock y enlaces de comercios para elegir el formato más conveniente.',
     heading: 'Comparador de precios de gabinetes para PC en Argentina',
-    intro: 'Revisa gabinetes mid tower, full tower y compactos comparando disponibilidad para elegir el mas conveniente. Además del aspecto visual, importan flujo de aire, espacio para GPU, altura de cooler, soporte para radiadores, cantidad de bahías, filtros de polvo y comodidad de armado. Un gabinete correcto mejora temperaturas, mantenimiento y ruido. Esta categoría ayuda a encontrar opciones equilibradas para PCs gamer, oficina o estaciones de trabajo.',
+    intro: 'Compará gabinetes por formato, espacio interior y accesorios incluidos. Contrastá las medidas de tu GPU, fuente, cooler y radiadores con la configuración que vas a instalar. Separá las piezas incluidas de las que sólo aparecen en las fotos de la tienda.',
   },
   'refrigeracion': {
     title: 'Coolers PC en Argentina',
     description: 'Compará importes de coolers CPU, ventiladores y watercooling para PC en Argentina, con stock por local y referencias útiles antes de comprar.',
     heading: 'Comparador de precios de refrigeracion para PC en Argentina',
-    intro: 'Compara soluciones de aire y liquido para mantener tu PC fria, revisando opciones reales en comercios argentinos. Antes de elegir, considerá socket compatible, altura disponible, tamaño del radiador, ruido, mantenimiento y capacidad térmica del procesador. Un cooler adecuado evita thermal throttling, mejora estabilidad y puede extender la vida útil del equipo. Para builds compactas o CPUs exigentes, la compatibilidad física es tan importante como el rendimiento anunciado.',
+    intro: 'Compará coolers, ventiladores y refrigeración líquida por modelo, montaje y dimensiones. Confirmá soportes para el socket, espacio y conexiones disponibles en tu PC. Las temperaturas y el ruido requieren pruebas del conjunto: no los deducimos de la foto o del precio.',
   },
   'computadoras': {
     title: 'Computadoras armadas en Argentina',
