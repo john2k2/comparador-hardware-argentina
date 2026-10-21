@@ -32,7 +32,7 @@ test.describe('Home Page', () => {
   test('comparar y armar tienen acceso directo antes de ofertas y publicidad', async ({ page }, testInfo) => {
     await page.goto('/');
     const tasks = page.getByRole('navigation', { name: 'Comparar y armar hardware' });
-    await expect(tasks.getByRole('link', { name: 'Comparar un componente' })).toHaveAttribute('href', '/comparativa/comparar');
+    await expect(tasks.getByRole('link', { name: 'Comparar dos modelos' })).toHaveAttribute('href', '/comparativa/comparar');
     await expect(tasks.getByRole('link', { name: 'Armar una PC' })).toHaveAttribute('href', '/guia/armar');
     if (process.env.ENEBA_AFFILIATE_PILOT_ENABLED === '1') {
       await expect(page.getByRole('complementary', { name: 'Juegos para PC en Eneba' })).toBeVisible();
@@ -159,3 +159,4 @@ test.describe('Home Page', () => {
     }
   });
 });
+
