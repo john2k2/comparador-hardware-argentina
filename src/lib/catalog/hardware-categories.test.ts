@@ -8,6 +8,10 @@ import {
 } from '@/lib/catalog/hardware-categories';
 
 describe('hardware-categories', () => {
+  it('clasifica equipos llamados CPU con RAM, disco y SO como computadoras', () => {
+    expect(inferHardwareCategoryFromName('CPU UWD AMD R3-3200G/8GB/256GB/Freedos')).toBe('computadoras');
+    expect(inferHardwareCategoryFromName('CPU AMD Ryzen 5 8600G + Radeon 760M + Cooler')).toBe('procesadores');
+  });
   it('validates allowed categories', () => {
     expect(isHardwareCategory('procesadores')).toBe(true);
     expect(isHardwareCategory('tarjetas-graficas')).toBe(true);

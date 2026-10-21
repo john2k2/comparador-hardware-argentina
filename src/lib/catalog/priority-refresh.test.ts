@@ -2,7 +2,12 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { Product } from '@/lib/types';
 import sample from '../../../docs/reports/crecimiento-2026-09-12/G02-MUESTRA-PRIORITARIA.json';
 
-const mocks = vi.hoisted(() => ({ rpc: vi.fn(), load: vi.fn(), fetch: vi.fn(), demands: vi.fn(), byId: vi.fn() }));
+const mocks = vi.hoisted(() => ({ rpc: vi.fn(), load: vi.fn(), fetch: vi.fn(), demands: vi.fn(), byId: vi.fn(), ramPlan: vi.fn(), ramReferences: [] as { id: string }[] }));
+vi.mock('./builder-ram-planning', async () => ({
+  ...await vi.importActual<typeof import('./builder-ram-planning')>('./builder-ram-planning'),
+  BUILDER_RAM_REFERENCES: mocks.ramReferences,
+  planBuilderRamTargets: mocks.ramPlan,
+}));
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/server/supabase-server', () => ({ getServerSupabaseServiceClient: () => ({ rpc: mocks.rpc }) }));
 vi.mock('@/lib/seo/budget-guides-data', () => ({ BUDGET_GUIDES: [{ slug: 'test' }] }));
@@ -22,7 +27,9 @@ vi.mock('./priority-planning', async () => {
 import { runPriorityRefresh } from './priority-refresh';
 
 beforeEach(() => {
+  mocks.ramReferences.length = 0;
   vi.resetAllMocks(); vi.useFakeTimers(); vi.setSystemTime(new Date('2026-09-29T12:00:00Z'));
+  mocks.ramPlan.mockReturnValue({ targets: [], missing: [] });
   vi.stubEnv('ENABLE_JEV_OFFER_REVIEW', '1'); vi.stubEnv('TYPESAFE_API_KEY', 'test-only-not-a-credential');
   mocks.rpc.mockImplementation(async (name: string) => ({ error: null,
     data: name === 'check_api_rate_limit' ? { allowed: true } : true }));
@@ -31,6 +38,16 @@ beforeEach(() => {
   mocks.load.mockResolvedValue([product]);
   mocks.fetch.mockResolvedValue({ product, price, sourceTitle: product.name });
   mocks.demands.mockResolvedValue({ demands: 0, products: [], groups: [], deferred: false });
+});
+
+it('separa la RAM del armador de las observaciones críticas y falla si cambia una referencia', async () => {
+  mocks.ramReferences.push({ id: 'cg-15522' });
+  mocks.ramPlan.mockReturnValue({ targets: [], missing: ['cg-15522', 'cg-15558', 'cg-16112'] });
+  mocks.byId.mockResolvedValue({ id: 'cg-15522', category: 'memoria-ram', specs: { SKU: 'VARIANTE-DIFERENTE' }, prices: [] });
+  const promise = runPriorityRefresh(false); await vi.runAllTimersAsync(); const result = await promise;
+  expect(result).toMatchObject({ status: 'failed', critical: { attempted: 1, observed: 1, comparable: 1 },
+    demand: { attempted: 0 }, builderRam: { status: 'failed', attempted: 0, missing: ['cg-15522', 'cg-15558', 'cg-16112'] } });
+  expect(mocks.fetch).toHaveBeenCalledTimes(1);
 });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
 

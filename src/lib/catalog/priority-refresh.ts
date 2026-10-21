@@ -13,6 +13,7 @@ import type { RefreshItemResult, RefreshTarget } from './on-demand/contracts';
 import { nextPriorityTargets, planGuideGroups, planSampleTargets, targetKey, PRIORITY_MAX_GUIDE_OFFERS, PRIORITY_MAX_SAMPLE_OFFERS, type PriorityGroup } from './priority-planning';
 import type { Product } from '@/lib/types';
 import { loadPriorityDemandPlan, PRIORITY_MAX_DEMAND_OFFERS, PRIORITY_DEMAND_MAX_MS, PRIORITY_DEMAND_REQUEST_RESERVE_MS } from './demand-planning';
+import { BUILDER_RAM_REFERENCES, planBuilderRamTargets } from './builder-ram-planning';
 import sample from '../../../docs/reports/crecimiento-2026-09-12/G02-MUESTRA-PRIORITARIA.json';
 
 const MAX_RUN_MS = 18 * 60_000;
@@ -149,10 +150,49 @@ export async function runPriorityRefresh(includeSample: boolean) {
   demand.attempted = attempted.size - demandAttemptStart;
   demand.observed = demandResults.filter(result => result.observedAt).length;
   demand.comparable = demandResults.filter(result => result.comparable).length;
+  // Referencias acotadas del armador: sólo usan tiempo remanente y no acreditan G02.
+  const builderRam: { status: 'completed' | 'deferred' | 'failed'; requested: number; attempted: number;
+    observed: number; comparable: number; missing: string[]; failureCode?: string } = {
+    status: 'deferred', requested: 0, attempted: 0, observed: 0, comparable: 0, missing: [],
+  };
+  if (Date.now() + PRIORITY_DEMAND_REQUEST_RESERVE_MS <= started + MAX_RUN_MS) {
+    const before = attempted.size;
+    let planned: RefreshTarget[] = [];
+    try {
+      const references: Product[] = [];
+      for (const reference of BUILDER_RAM_REFERENCES) {
+        const product = await readProductByIdFromDatabase(reference.id);
+        if (product) references.push(product);
+      }
+      const plan = planBuilderRamTargets(references);
+      planned = plan.targets;
+      references.forEach(product => products.set(product.id, product));
+      builderRam.requested = plan.targets.length; builderRam.missing = plan.missing;
+      for (const target of plan.targets) {
+        if (Date.now() + PRIORITY_DEMAND_REQUEST_RESERVE_MS > started + MAX_RUN_MS) break;
+        await refreshBatch([target]);
+      }
+      const selected = new Set(plan.targets.map(targetKey));
+      const found = results.filter(result => selected.has(targetKey(result)));
+      builderRam.attempted = attempted.size - before;
+      builderRam.observed = found.filter(result => result.observedAt).length;
+      builderRam.comparable = found.filter(result => result.comparable).length;
+      builderRam.status = plan.missing.length || found.some(result => result.state === 'failed') ? 'failed'
+        : found.length < plan.targets.length ? 'deferred' : 'completed';
+    } catch {
+      builderRam.status = 'failed'; builderRam.failureCode = 'BUILDER_RAM_REFRESH_FAILED';
+    } finally {
+      const selected = new Set(planned.map(targetKey));
+      const found = results.filter(result => selected.has(targetKey(result)));
+      builderRam.attempted = attempted.size - before;
+      builderRam.observed = found.filter(result => result.observedAt).length;
+      builderRam.comparable = found.filter(result => result.comparable).length;
+    }
+  }
   const missingGuideSlots = groups.filter(group => !group.covered && !results.some(result => result.comparable
     && group.targets.some(target => targetKey(target) === targetKey(result)))).map(group => group.key);
-  return { source: 'priority-known-offers', status: demand.status === 'failed' ? 'failed' : 'completed',
-    startedAt, finishedAt: new Date().toISOString(), includeSample, demand, critical,
+  return { source: 'priority-known-offers', status: demand.status === 'failed' || builderRam.status === 'failed' ? 'failed' : 'completed',
+    startedAt, finishedAt: new Date().toISOString(), includeSample, demand, critical, builderRam,
     attempted: attempted.size, observed: results.filter(result => result.observedAt).length,
     comparable: results.filter(result => result.comparable).length, missingGuideSlots, sampleRequested,
     sampleTruncated, deadlineReached, results, sourceHttp: sourceHttpMetrics(), sharedListingReads: context.sharedReads };
