@@ -9,6 +9,7 @@ import { trackStoreClick } from '@/lib/analytics';
 import { getOutboundStoreLinkType, getOutboundStoreRel } from '@/lib/commercial';
 import { normalizeDisplayText } from '@/lib/text-utils';
 import type { InstallmentInfo, Product, ProductPrice } from '@/lib/types';
+import { FinalCostComparison } from './FinalCostComparison';
 
 type PriceSummaryProps = {
   product: Product;
@@ -77,6 +78,7 @@ export function PriceSummary({ product, merchantPrices, selectedInstallment, onS
           <p className="text-muted-foreground">Rango: {formatPriceARS(lowest)} – {formatPriceARS(highest)} · diferencia {formatPriceARS(highest - lowest)}.</p>
         </div>
       ) : <p className="font-body text-sm text-muted-foreground">Una tienda con oferta comparable en las últimas 24 h. Todavía no hay precios de otras tiendas para medir una diferencia.</p>}
+      <FinalCostComparison product={product} prices={merchantPrices} now={now} />
       {installments.length > 0 && (
         <details className="border-t border-border/50 pt-2">
           <summary className="min-h-11 flex items-center cursor-pointer font-mono text-sm font-bold text-secondary">Ver cuotas y medios de pago</summary>

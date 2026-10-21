@@ -7,6 +7,7 @@ import { categories, stores as defaultStores } from '@/lib/scrapers/static-data'
 import { type Product, type SearchFilters } from '@/lib/types';
 import { buildSearchPaginationHref, toSearchFilters } from '@/lib/search/search-state';
 import { SearchEmptyState } from './SearchEmptyState';
+import { CATEGORY_BUYING_HELP, CATEGORY_BUYING_SOURCES } from '@/lib/search/category-buying-help';
 
 type SearchPageViewProps = {
   products: Product[];
@@ -140,18 +141,17 @@ export function SearchPageView({
       {isSeoCategoryLanding && categorySeoCopy && (
         <section className="mt-8 min-w-0 bg-card border-[3px] border-border p-4 md:p-6 pixel-shadow" aria-label="Ayuda para comparar esta categoría">
           <h2 className="font-mono! text-lg text-secondary">Cómo elegir y comparar</h2>
-          <p className="mt-4 text-[12px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/80 font-mono">{categorySeoCopy.intro}</p>
-          <div className="mt-4 grid md:grid-cols-2 gap-3 text-[12px] md:text-[12px] leading-relaxed normal-case tracking-normal text-foreground/80 font-mono">
-            <p>
-              Para comparar mejor, revisá si el producto publicado corresponde exactamente a la variante que buscás:
-              capacidad, generación, conectividad, garantía, accesorios incluidos y condiciones finales pueden cambiar entre
-              tiendas aunque el título sea parecido.
-            </p>
-            <p>
-              El ordenamiento y los filtros ayudan a reducir ruido, pero la validación final siempre conviene hacerla en el
-              comercio de destino. Confirmá stock, cuotas, costo de envío y política de cambios antes de completar la compra.
-            </p>
+          <div className="mt-4 grid md:grid-cols-2 gap-5 font-body text-base leading-relaxed">
+            {filters.category && CATEGORY_BUYING_HELP[filters.category].map(({ situation, check }) => <div key={situation}>
+              <h3 className="font-body! text-base font-bold text-foreground normal-case">{situation}</h3>
+              <p className="mt-2 text-muted-foreground">{check}</p>
+            </div>)}
           </div>
+          <p className="mt-4 font-body text-sm leading-relaxed text-muted-foreground">Compará el mismo producto y sumá envío y cargos del medio de pago. El precio final y la garantía se confirman en la tienda. <Link href="/acerca" className="text-secondary underline underline-offset-4">Cómo comparamos y qué queda pendiente de confirmar</Link>.</p>
+          {filters.category && CATEGORY_BUYING_SOURCES[filters.category] && <nav aria-label="Documentación técnica de referencia" className="mt-3 font-body text-sm">
+            <p className="font-bold">Para comprobar los datos del modelo:</p>
+            <ul className="mt-2 space-y-2">{CATEGORY_BUYING_SOURCES[filters.category]!.map(source => <li key={source.href}><a href={source.href} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-secondary underline underline-offset-4">{source.label}<span className="sr-only"> (abre una pestaña nueva)</span></a></li>)}</ul>
+          </nav>}
           {categorySeoCopy.relatedLinks && categorySeoCopy.relatedLinks.length > 0 && (
             <nav aria-label="Comparativas y guías relacionadas" className="mt-5 border-t-2 border-border pt-4">
               <p className="text-[12px] font-bold uppercase tracking-wide md:tracking-[0.2em] text-secondary mb-3">

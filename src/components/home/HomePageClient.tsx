@@ -60,9 +60,19 @@ export function HomePageClient({ latestOffersSection, priceDropSection, showGame
         </h1>
         <SearchBar onSearch={handleSearch} placeholder="[ BUSCAR PRODUCTO... ]" />
         <nav aria-label="Comparar y armar hardware" className="mt-4 flex flex-wrap gap-3">
-          <Link href="/comparativa/comparar" prefetch={false} className="pixel-button inline-flex min-h-11 items-center justify-center text-xs">Comparar un componente</Link>
+          <Link href="/comparativa/comparar" prefetch={false} className="pixel-button inline-flex min-h-11 items-center justify-center text-xs">Comparar dos modelos</Link>
           <Link href="/guia/armar" prefetch={false} className="pixel-button inline-flex min-h-11 items-center justify-center text-xs">Armar una PC</Link>
         </nav>
+      </section>
+
+      <section aria-labelledby="home-method-title" className="mb-8 min-w-0 border-2 border-border bg-card p-4 md:p-5 font-body text-sm leading-relaxed">
+        <h2 id="home-method-title" className="font-mono! text-base font-bold text-secondary">Del precio publicado a una compra comparable</h2>
+        <ol className="mt-3 grid gap-4 md:grid-cols-3 list-decimal pl-5">
+          <li><strong>Misma variante.</strong> Contrastá modelo, capacidad y accesorios. Apartamos de la comparación las ofertas cuya identidad necesita revisión.</li>
+          <li><strong>Fecha por oferta.</strong> El catálogo compara precios observados en las últimas 24 h; guías y armador exigen hasta tres horas. Una referencia vencida no confirma agotamiento.</li>
+          <li><strong>Costo final.</strong> Revisá el medio de pago y el envío en la tienda. En las fichas con varias ofertas podés cargar el envío de cada una y comparar los totales.</li>
+        </ol>
+        <p className="mt-3 text-muted-foreground">No vendemos productos ni probamos físicamente todos los modelos. Las guías separan sus fuentes, criterios y límites. <Link href="/acerca" prefetch={false} className="text-secondary underline underline-offset-4">Conocé cómo comparamos</Link> o <Link href="/contacto" prefetch={false} className="text-secondary underline underline-offset-4">reportá un precio o una variante incorrecta</Link>.</p>
       </section>
 
       <div className={hasSponsoredStores ? 'grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_320px]' : ''}>
