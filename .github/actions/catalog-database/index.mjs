@@ -23,11 +23,14 @@ export async function waitForHandoff(selection, { fetcher = fetch, clock = Date.
   while (clock() - start < timeoutMs) {
     try {
       const response = await fetcher(VPS + '/__ready', {
-        headers: { Authorization: 'Bearer ' + selection.env.SUPABASE_SECRET_KEY }, redirect: 'manual', signal: AbortSignal.timeout(10000),
+        headers: { Authorization: 'Bearer ' + selection.env.SUPABASE_SECRET_KEY, 'User-Agent': 'comparador-catalog-runner/1.0' }, redirect: 'manual', signal: AbortSignal.timeout(10000),
       });
       await response.body?.cancel();
       if (response.status === 200) return;
-      if (response.status === 401 || response.status === 403) throw Error('CATALOG_DATABASE_AUTH_FAILED');
+      if (response.status === 401 || response.status === 403) {
+        console.error('CATALOG_DATABASE_HTTP_' + response.status + (response.headers.get('cf-mitigated') === 'challenge' ? '_EDGE_CHALLENGE' : ''));
+        throw Error('CATALOG_DATABASE_AUTH_FAILED');
+      }
       if (![502, 503, 504].includes(response.status)) throw Error('CATALOG_DATABASE_GATE_INVALID');
     } catch (error) {
       if (/^CATALOG_DATABASE_/.test(error?.message)) throw error;

@@ -42,8 +42,7 @@ assert request('/rest/v1/products?select=id&limit=1', 'service_role')[0] == 200
 assert request('/rest/v1/products?select=id&limit=1', 'anon')[0] == 200
 status, body = request('/rest/v1/user_profiles?select=user_id', 'anon')
 assert status == 200 and json.loads(body) == [], 'GATEWAY_PRIVATE_PROFILE_VISIBLE'
-if not args.public:
-    assert request('/auth/v1/user', 'service_role')[0] == 404
+assert request('/auth/v1/user', 'service_role')[0] == 404
 ready_status = request('/__ready', 'service_role')[0]
 assert ready_status == (200 if (root / 'state/handoff-ready').exists() else 503)
 receipt = {'status': 'passed', 'authenticationRequired': True, 'publicCatalogRead': True,

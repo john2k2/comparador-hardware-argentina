@@ -16,20 +16,7 @@ on:
         description: Fuente de lectura
         type: choice
         default: all
-        options:
-          [
-            all,
-            ga4,
-            search-console,
-            cloudflare,
-            catalog,
-            operations,
-            github,
-            eneba,
-            database,
-            adsense,
-            google-ads
-          ]
+        options: [ all, ga4, search-console, cloudflare, catalog, operations, github, eneba, database, adsense, google-ads ]
 permissions:
   contents: read
 concurrency:
@@ -85,8 +72,7 @@ jobs:
           MEASUREMENT_PUBLIC_URL: http://localhost:3122
           MEASUREMENT_COLLECTION_MODE: inline
           MEASUREMENT_PROVIDER: ${{ inputs.provider || 'all' }}
-          MEASUREMENT_TASK: ${{ inputs.task || (github.event.schedule == '7 * * * *' &&
-            'home' || 'measurements') }}
+          MEASUREMENT_TASK: ${{ inputs.task || (github.event.schedule == '7 * * * *' && 'home' || 'measurements') }}
           # Sólo el runner recupera un feed ausente/vencido; conserva fecha oficial y seis horas.
           ENEBA_AFFILIATE_PILOT_ENABLED: ${{ vars.ENEBA_AFFILIATE_PILOT_ENABLED || '1' }}
           DISABLE_LIVE_SCRAPING: '1'
@@ -95,5 +81,4 @@ jobs:
         run: node scripts/measurement-collect.mjs
       # Los datos de cuentas y los tokens no se suben a artefactos ni a logs.
     needs: database-ready
-    if: ${{ always() && !cancelled() && (needs.database-ready.result == 'success' ||
-      needs.database-ready.result == 'skipped') }}
+    if: ${{ always() && !cancelled() && (needs.database-ready.result == 'success' || needs.database-ready.result == 'skipped') }}

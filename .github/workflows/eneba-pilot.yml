@@ -54,8 +54,7 @@ jobs:
         env:
           ENEBA_AFFILIATE_PILOT_ENABLED: ${{ vars.ENEBA_AFFILIATE_PILOT_ENABLED || '1' }}
           LOG_LEVEL: warn
-        run: node scripts/run-catalog-refresh.mjs eneba-pilot
-          "$RUNNER_TEMP/eneba-pilot-snapshot.json"
+        run: node scripts/run-catalog-refresh.mjs eneba-pilot "$RUNNER_TEMP/eneba-pilot-snapshot.json"
       - name: Preserve the result without private account data
         if: always()
         uses: actions/upload-artifact@v4
@@ -65,5 +64,4 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
     needs: database-ready
-    if: ${{ always() && !cancelled() && (needs.database-ready.result == 'success' ||
-      needs.database-ready.result == 'skipped') }}
+    if: ${{ always() && !cancelled() && (needs.database-ready.result == 'success' || needs.database-ready.result == 'skipped') }}

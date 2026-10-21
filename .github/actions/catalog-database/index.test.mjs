@@ -15,6 +15,7 @@ test('la barrera espera sin ejecutar productores y conserva redirect manual y la
   let now = 0, calls = 0;
   await waitForHandoff(selectDatabase(input), { clock: () => now, sleep: async ms => { now += ms; }, fetcher: async (url, options) => {
     assert.equal(url, input.vpsUrl + '/__ready'); assert.equal(options.redirect, 'manual'); assert.equal(options.headers.Authorization, 'Bearer vps-private');
+    assert.equal(options.headers['User-Agent'], 'comparador-catalog-runner/1.0');
     return new Response(null, { status: ++calls === 2 ? 200 : 503 });
   } });
   assert.equal(calls, 2);

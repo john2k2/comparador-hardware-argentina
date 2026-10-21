@@ -35,9 +35,7 @@ jobs:
     outputs:
       backend: ${{ steps.database.outputs.backend }}
   refresh-requested:
-    if: ${{ always() && !cancelled() && (needs.database-ready.result == 'success' ||
-      needs.database-ready.result == 'skipped') &&
-      (vars.ENABLE_ON_DEMAND_REFRESH == '1') }}
+    if: ${{ always() && !cancelled() && (needs.database-ready.result == 'success' || needs.database-ready.result == 'skipped') && (vars.ENABLE_ON_DEMAND_REFRESH == '1') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
