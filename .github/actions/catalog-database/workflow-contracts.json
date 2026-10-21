@@ -1,0 +1,207 @@
+{
+  "catalog-refresh": {
+    "on": {
+      "workflow_dispatch": {
+        "inputs": {
+          "mode": {
+            "description": "Modo de refresh",
+            "required": true,
+            "default": "tracked",
+            "type": "choice",
+            "options": [
+              "tracked",
+              "hot",
+              "full",
+              "cleanup-history",
+              "custom",
+              "demand",
+              "guides",
+              "priority"
+            ]
+          },
+          "trigger": {
+            "description": "Origen de la solicitud (para evidencia operativa)",
+            "type": "choice",
+            "options": [
+              "manual",
+              "cloudflare-fallback"
+            ],
+            "default": "manual"
+          },
+          "query": {
+            "description": "Query opcional para mode=custom",
+            "required": false,
+            "type": "string"
+          },
+          "categories": {
+            "description": "CSV de categorias opcional para mode=custom",
+            "required": false,
+            "type": "string"
+          },
+          "stores": {
+            "description": "CSV de stores opcional",
+            "required": false,
+            "type": "string"
+          },
+          "max_queries": {
+            "description": "Override opcional de maxQueries",
+            "required": false,
+            "type": "string"
+          },
+          "stale_minutes": {
+            "description": "Override opcional de staleMinutes",
+            "required": false,
+            "type": "string"
+          }
+        }
+      },
+      "schedule": [
+        {
+          "cron": "5 5 * * *"
+        },
+        {
+          "cron": "17 0-4,6-23 * * *"
+        }
+      ]
+    },
+    "concurrency": {
+      "group": "catalog-refresh",
+      "cancel-in-progress": false
+    },
+    "jobs": {
+      "refresh": {
+        "timeout-minutes": 30
+      },
+      "telemetry-maintenance": {
+        "timeout-minutes": 5
+      }
+    }
+  },
+  "catalog-adaptive-refresh": {
+    "on": {
+      "schedule": [
+        {
+          "cron": "41 * * * *"
+        }
+      ],
+      "workflow_dispatch": {
+        "inputs": {
+          "max_offers": {
+            "description": "Máximo de ofertas (1–5000), sujeto a 17 minutos",
+            "type": "number",
+            "default": 2500,
+            "required": true
+          },
+          "trigger": {
+            "description": "Origen de la solicitud (para evidencia operativa)",
+            "type": "choice",
+            "options": [
+              "manual",
+              "cloudflare-fallback"
+            ],
+            "default": "manual"
+          }
+        }
+      }
+    },
+    "concurrency": {
+      "group": "catalog-adaptive-refresh",
+      "cancel-in-progress": false
+    },
+    "jobs": {
+      "refresh": {
+        "timeout-minutes": 24
+      }
+    }
+  },
+  "requested-offer-refresh": {
+    "on": {
+      "workflow_dispatch": null,
+      "schedule": [
+        {
+          "cron": "2-57/5 * * * *"
+        }
+      ]
+    },
+    "concurrency": {
+      "group": "catalog-refresh",
+      "cancel-in-progress": false
+    },
+    "jobs": {
+      "refresh-requested": {
+        "timeout-minutes": 20
+      }
+    }
+  },
+  "measurement-snapshot": {
+    "on": {
+      "schedule": [
+        {
+          "cron": "43 6 * * *"
+        },
+        {
+          "cron": "7 * * * *"
+        }
+      ],
+      "workflow_dispatch": {
+        "inputs": {
+          "task": {
+            "description": "Lectura para actualizar",
+            "type": "choice",
+            "default": "measurements",
+            "options": [
+              "measurements",
+              "home"
+            ]
+          },
+          "provider": {
+            "description": "Fuente de lectura",
+            "type": "choice",
+            "default": "all",
+            "options": [
+              "all",
+              "ga4",
+              "search-console",
+              "cloudflare",
+              "catalog",
+              "operations",
+              "github",
+              "eneba",
+              "database",
+              "adsense",
+              "google-ads"
+            ]
+          }
+        }
+      }
+    },
+    "concurrency": {
+      "group": "measurement-snapshots",
+      "cancel-in-progress": false
+    },
+    "jobs": {
+      "collect": {
+        "timeout-minutes": 5
+      }
+    }
+  },
+  "eneba-pilot": {
+    "on": {
+      "schedule": [
+        {
+          "cron": "29 1,5,9,13,17,21 * * *"
+        }
+      ],
+      "workflow_dispatch": null
+    },
+    "concurrency": {
+      "group": "eneba-affiliate-pilot",
+      "cancel-in-progress": false
+    },
+    "jobs": {
+      "snapshot": {
+        "timeout-minutes": 4
+      }
+    }
+  }
+}

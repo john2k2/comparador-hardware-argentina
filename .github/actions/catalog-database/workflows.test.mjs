@@ -1,13 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
 import { parse } from 'yaml';
+const contracts = JSON.parse(readFileSync(new URL('./workflow-contracts.json', import.meta.url), 'utf8'));
 
 for (const name of ['catalog-refresh', 'catalog-adaptive-refresh', 'requested-offer-refresh', 'measurement-snapshot', 'eneba-pilot']) {
   test(name + ': fija la base por ejecución y conserva horarios, exclusión y presupuestos', () => {
     const path = '.github/workflows/' + name + '.yml';
-    const previous = parse(execFileSync('git', ['show', 'HEAD:' + path], { encoding: 'utf8' }));
+    const previous = contracts[name];
     const current = parse(readFileSync(path, 'utf8'));
     assert.deepEqual(current.on, previous.on);
     assert.deepEqual(current.concurrency, previous.concurrency);
