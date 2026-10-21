@@ -8,6 +8,7 @@ COPY . .
 ENV NEXT_PUBLIC_SUPABASE_URL=https://zyiyziubpcpgoqlkcrie.supabase.co \
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_YarIgxU8K--eKMJMsRrB6g_Ka-7xj40 \
     NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_YarIgxU8K--eKMJMsRrB6g_Ka-7xj40 \
+    NEXT_PUBLIC_GA4_MEASUREMENT_ID=G-7BHXTCQFTP \
     SITE_URL=https://www.comparador-hardware.com.ar \
     DISABLE_INTERNAL_BACKGROUND_REFRESH=1 DISABLE_LIVE_SCRAPING=1 ENABLE_ON_DEMAND_REFRESH=0
 RUN npm run build

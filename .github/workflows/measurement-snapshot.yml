@@ -68,8 +68,8 @@ jobs:
           MEASUREMENT_CREDENTIAL_ENCRYPTION_KEY: ${{ secrets.MEASUREMENT_CREDENTIAL_ENCRYPTION_KEY }}
           MEASUREMENT_GOOGLE_CLIENT_ID: ${{ vars.MEASUREMENT_GOOGLE_CLIENT_ID }}
           MEASUREMENT_GOOGLE_CLIENT_SECRET: ${{ secrets.MEASUREMENT_GOOGLE_CLIENT_SECRET }}
-          MEASUREMENT_GOOGLE_CLIENT_TYPE: installed
-          MEASUREMENT_PUBLIC_URL: http://localhost:3122
+          MEASUREMENT_GOOGLE_CLIENT_TYPE: web
+          MEASUREMENT_PUBLIC_URL: https://www.comparador-hardware.com.ar
           MEASUREMENT_COLLECTION_MODE: inline
           MEASUREMENT_PROVIDER: ${{ inputs.provider || 'all' }}
           MEASUREMENT_TASK: ${{ inputs.task || (github.event.schedule == '7 * * * *' && 'home' || 'measurements') }}
