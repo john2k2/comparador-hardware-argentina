@@ -1,7 +1,7 @@
 // Backend de pruebas ligado a loopback. No cambia la autorización de la aplicación.
 import http from 'node:http';
 import { spawn } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
 
@@ -84,7 +84,7 @@ const auditPath = process.env.MEASUREMENT_LOCAL_AUDIT_PATH;
 const baseline = JSON.parse(await readFile(auditPath ? path.resolve(root, auditPath) : path.join(root, 'e2e/fixtures/measurement-audit.json'), 'utf8'));
 env.MEASUREMENT_AUDIT_BASELINE_JSON = JSON.stringify(baseline);
 env.MEASUREMENT_FIXTURE_BASELINE_REAL = auditPath ? '1' : '0';
-const child = spawn(process.execPath, ['--import', path.join(root, 'scripts/measurement-fixture-fetch.mjs'), path.join(root, 'node_modules/next/dist/bin/next'), ...(build ? ['build'] : ['start', '-p', String(nextPort), '-H', '127.0.0.1'])], { cwd: root, env, stdio: 'inherit' });
+const child = spawn(process.execPath, ['--import', pathToFileURL(path.join(root, 'scripts/measurement-fixture-fetch.mjs')).href, path.join(root, 'node_modules/next/dist/bin/next'), ...(build ? ['build'] : ['start', '-p', String(nextPort), '-H', '127.0.0.1'])], { cwd: root, env, stdio: 'inherit' });
 function stop() { child.kill('SIGTERM'); server.close(); proxy.close(); }
 process.on('SIGTERM', stop); process.on('SIGINT', stop);
 child.on('exit', (code) => { server.close(); proxy.close(); process.exit(code ?? 0); });

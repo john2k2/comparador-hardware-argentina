@@ -231,4 +231,10 @@
   .dialog { padding: 22px; }
 }
 @media (max-width: 360px) { .metrics { grid-template-columns: 1fr; } .tabs button { font-size: 12px; } }
+.journey { display: grid; gap: 20px; margin-top: 20px; }
+.journey table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 14px; }
+.journey caption { text-align: left; font-weight: 700; margin-bottom: 10px; }
+.journey th, .journey td { padding: 10px 6px; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+.journey th:first-child { width: 60%; text-align: left; }
+.journey td, .journey thead th:not(:first-child) { text-align: right; }
 @media (prefers-reduced-motion: reduce) { .root *, .dialog * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

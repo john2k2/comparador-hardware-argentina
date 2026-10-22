@@ -134,6 +134,37 @@ describe('consultas privadas de las fuentes', () => {
     expect(result.metrics.users).toBe(0);
     expect(result.breakdown).toHaveLength(8);
   });
+  it('consulta etapas y usuarios sin sumar personas ni inventar detalle histórico del armador', async () => {
+    mockGaReports((report, dimensions) => {
+      if (dimensions[0] === 'eventName') Object.assign(report, {
+        rowCount: 4, rows: [
+          ['search', '8', '2'], ['comparison_result', '3', '1'],
+          ['pc_builder_action', '17', '3'], ['generate_pc_budget', '2', '1'],
+        ].map(([name, count, users]) => ({ dimensionValues: [{ value: name }], metricValues: [{ value: count }, { value: users }] })),
+      });
+    });
+    const result = await createProviderReader(now)('ga4');
+    expect(result.metrics).toMatchObject({ searchEvents: 8, searchUsers: 2, comparisonEvents: 3,
+      comparisonUsers: 1, builderActionEvents: 17, builderActionUsers: 3, budgetSuggestionEvents: 2,
+      budgetSuggestionUsers: 1, productViewEvents: 0, builderSavedEvents: null, builderCompleteActionUsers: null });
+    const request = vi.mocked(fetch).mock.calls.filter(([url]) => String(url).includes(':runReport')).map(([, init]) => init?.body && JSON.parse(String(init.body)))
+      .find(body => body?.dimensions?.[0]?.name === 'eventName');
+    expect(request.dimensionFilter.filter.inListFilter.values).toEqual(expect.arrayContaining([
+      'search', 'view_item', 'comparison_result', 'comparison_product_open', 'pc_builder_action',
+      'pc_builder_share_link', 'pc_builder_share_whatsapp', 'pc_builder_download', 'pc_builder_complete_action',
+    ]));
+  });
+  it('conserva usuarios únicos por acción y separa acciones completas de guardados parciales', async () => {
+    mockGaReports((report, dimensions) => {
+      if (dimensions[0] === 'eventName') Object.assign(report, {
+        rowCount: 3, rows: [['pc_builder_saved', '4', '2'], ['pc_builder_complete_action', '1', '1'], ['pc_builder_action', '9', '3']]
+          .map(([name, count, users]) => ({ dimensionValues: [{ value: name }], metricValues: [{ value: count }, { value: users }] })),
+      });
+    });
+    expect((await createProviderReader(now)('ga4')).metrics).toMatchObject({ builderSavedEvents: 4,
+      builderSavedUsers: 2, builderCompleteActionEvents: 1, builderCompleteActionUsers: 1,
+      builderDownloadEvents: 0, builderActionEvents: 9, builderActionUsers: 3 });
+  });
   it('rechaza truncamiento de eventos o días y filas faltantes dentro del ranking de canales', async () => {
     for (const [dimension, rowCount, returned] of [['eventName', 101, 100], ['date', 8, 7], ['sessionSourceMedium', 12, 7]] as const) {
       mockGaReports((report, dimensions) => {

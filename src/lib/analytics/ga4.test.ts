@@ -216,4 +216,20 @@ describe('ga4 analytics helpers', () => {
     expect(() => withoutMeasurementId.trackPcBuilderAction({ action: 'restored', componentCount: 2, complete: false })).not.toThrow();
     expect(gtag).not.toHaveBeenCalled();
   });
+  it('desglosa compartir y descargar con consentimiento sin convertir armados parciales en completos', async () => {
+    const { trackPcBuilderAction } = await import('./ga4');
+    window.__chaAnalyticsAllowed = false;
+    trackPcBuilderAction({ action: 'download', componentCount: 7, complete: true });
+    expect(gtag).not.toHaveBeenCalled();
+    window.__chaAnalyticsAllowed = true;
+    trackPcBuilderAction({ action: 'saved', componentCount: 3, complete: false });
+    expect(gtag.mock.calls.map(call => call[1])).toEqual(['pc_builder_action', 'pc_builder_saved']);
+    gtag.mockClear();
+    trackPcBuilderAction({ action: 'download', componentCount: 7, complete: true });
+    expect(gtag.mock.calls.map(call => call[1])).toEqual(['pc_builder_action', 'pc_builder_download', 'pc_builder_complete_action']);
+    expect(gtag.mock.calls[1][2]).toEqual({ send_to: 'G-TEST123' });
+    gtag.mockClear();
+    trackPcBuilderAction({ action: 'share_whatsapp', componentCount: 2, complete: false });
+    expect(gtag.mock.calls.map(call => call[1])).toEqual(['pc_builder_action', 'pc_builder_share_whatsapp']);
+  });
 });

@@ -1,4 +1,5 @@
 import { firstEventInNavigation } from './navigation-events';
+import { BUILDER_DETAIL_EVENTS } from './journey';
 
 const GA4_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID;
 
@@ -235,6 +236,10 @@ export function trackPcBuilderAction(params: {
     ...(params.updatedCount !== undefined ? { updated_offers: params.updatedCount } : {}),
     send_to: getMeasurementId(),
   });
+  const detail = BUILDER_DETAIL_EVENTS.find(({ action }) => action === params.action);
+  if (detail) window.gtag('event', detail.event, { send_to: getMeasurementId() });
+  // Cuenta acciones explícitas con cotización completa; no presupuestos únicos ni compras.
+  if (detail && params.complete) window.gtag('event', 'pc_builder_complete_action', { send_to: getMeasurementId() });
 }
 
 /**

@@ -54,6 +54,8 @@ test('el resumen usa lecturas fechadas y explica los límites sin errores del na
   expect(data.readings.find((reading: { provider: string }) => reading.provider === 'ga4').origin).toBe('audit');
   expect(JSON.stringify(data)).not.toMatch(/fixture-private|fixture-access-only|sb_secret/);
   expect(errors).toEqual([]);
+  const historical = page.getByRole('table', { name: 'Detalle del armador', exact: true });
+  await expect(historical.getByRole('row', { name: /Armados guardados/ })).toContainText('Sin dato');
 });
 
 test('actualizar guarda consultas, indica las fuentes sin autorización y permite revisar conexiones', async ({ page }) => {
@@ -61,6 +63,12 @@ test('actualizar guarda consultas, indica las fuentes sin autorización y permit
   await page.getByRole('button', { name: 'Actualizar lecturas', exact: true }).click();
   await expect(page.getByText(/6 lecturas actualizadas y guardadas/)).toBeVisible();
   await expect(page.getByText('52', { exact: true })).toBeVisible();
+  const activity = page.getByRole('table', { name: 'Actividad por etapa', exact: true });
+  await expect(activity.getByRole('row', { name: /^Búsquedas/ })).toContainText('9');
+  await expect(activity.getByRole('row', { name: /^Búsquedas/ })).toContainText('4');
+  const detail = page.getByRole('table', { name: 'Detalle del armador', exact: true });
+  await expect(detail.getByRole('row', { name: /Armados guardados/ })).toContainText('4');
+  await expect(detail.getByRole('row', { name: /Acciones con armado completo/ })).toContainText('1');
   await page.getByRole('button', { name: 'Conexiones', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Google Analytics', exact: true })).toBeVisible();
   await page.getByRole('searchbox', { name: 'Buscar conexión' }).fill('AdSense');
