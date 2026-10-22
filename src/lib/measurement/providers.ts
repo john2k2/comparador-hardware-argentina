@@ -1,4 +1,5 @@
 import 'server-only';
+import { ALL_JOURNEY_EVENTS, BUILDER_DETAIL_EVENTS } from '@/lib/analytics/journey';
 import { getServerSupabaseServiceClient } from '@/lib/server/supabase-server';
 import { buildSnapshotFromState } from '@/lib/metrics/calculator';
 import { ENDPOINT_SCOPE, STORE_SCOPE, ENDPOINT_EVENT_LIMIT, STORE_EVENT_LIMIT } from '@/lib/metrics/constants';
@@ -137,7 +138,7 @@ async function readGa4(now: Date, token: () => Promise<string>): Promise<Measure
   const report = (body: Record<string, unknown>) => readJson(`https://analyticsdata.googleapis.com/v1beta/properties/${property}:runReport`, { method: 'POST', headers: { Authorization: authorization, 'Content-Type': 'application/json' }, body: JSON.stringify({ dateRanges: [{ startDate: period.start, endDate: period.end }], ...body }) });
   const [overview, events, daily, channels] = await Promise.all([
     report({ metrics: ['totalUsers', 'sessions', 'screenPageViews', 'engagedSessions'].map((name) => ({ name })) }),
-    report({ dimensions: [{ name: 'eventName' }], metrics: [{ name: 'eventCount' }, { name: 'totalUsers' }], limit: '100', dimensionFilter: { filter: { fieldName: 'eventName', inListFilter: { values: ['outbound_store_click', 'generate_pc_budget', 'affiliate_outbound_click', 'affiliate_pilot_view', 'contact_intent'] } } } }),
+    report({ dimensions: [{ name: 'eventName' }], metrics: [{ name: 'eventCount' }, { name: 'totalUsers' }], limit: '100', dimensionFilter: { filter: { fieldName: 'eventName', inListFilter: { values: [...new Set([...ALL_JOURNEY_EVENTS.map(({ event }) => event), 'affiliate_outbound_click', 'affiliate_pilot_view', 'contact_intent'])] } } } }),
     report({ dimensions: [{ name: 'date' }], metrics: [{ name: 'totalUsers' }], orderBys: [{ dimension: { dimensionName: 'date' } }], limit: '7' }),
     report({ dimensions: [{ name: 'sessionSourceMedium' }], metrics: [{ name: 'sessions' }], orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: '8' }),
   ]);
@@ -149,12 +150,22 @@ async function readGa4(now: Date, token: () => Promise<string>): Promise<Measure
   const metrics = totals ? gaValues(totals, 'metricValues').map(number) : [0, 0, 0, 0];
   if (metrics.length !== 4) throw new Error('Incomplete metrics');
   const eventMap = new Map(rows(events).map((row) => [gaValues(row, 'dimensionValues')[0], gaValues(row, 'metricValues').map(number)]));
+  // Sin señal del nuevo contrato, el desglose no se interpreta como cero histórico.
+  const hasBuilderDetail = BUILDER_DETAIL_EVENTS.some(({ event }) => eventMap.has(event));
+  const journeyMetrics: MeasurementReading['metrics'] = {};
+  for (const { key, event } of ALL_JOURNEY_EVENTS) {
+    const unavailable = !hasBuilderDetail && BUILDER_DETAIL_EVENTS.some(item => item.event === event);
+    journeyMetrics[`${key}Events`] = unavailable ? null : eventMap.get(event)?.[0] ?? 0;
+    journeyMetrics[`${key}Users`] = unavailable ? null : eventMap.get(event)?.[1] ?? 0;
+  }
   const result = reading('ga4', { users: metrics[0], sessions: metrics[1], views: metrics[2], engagedSessions: metrics[3], outboundClicks: eventMap.get('outbound_store_click')?.[0] ?? 0, outboundUsers: eventMap.get('outbound_store_click')?.[1] ?? 0, budgets: eventMap.get('generate_pc_budget')?.[0] ?? 0, affiliateClicks: eventMap.get('affiliate_outbound_click')?.[0] ?? 0, affiliateViews: eventMap.get('affiliate_pilot_view')?.[0] ?? 0, contactIntents: eventMap.get('contact_intent')?.[0] ?? 0 }, now, ['Usuarios medidos por Analytics según consentimiento y filtros de la propiedad. Los clics hacia tiendas miden uso del comparador; los ingresos se consultan por separado.', 'Las vistas requieren la verificación de duplicación indicada en la auditoría.']);
   result.daily = rows(daily).map((row) => {
     const date = gaValues(row, 'dimensionValues')[0];
     if (!/^\d{8}$/.test(date)) throw new Error('Invalid date');
     return { date: `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6)}`, value: number(gaValues(row, 'metricValues')[0]) };
   });
+  Object.assign(result.metrics, journeyMetrics);
+  result.notes.push('Actividad por etapa, no una secuencia de las mismas personas. No sumar usuarios entre filas ni calcular abandono a partir de estos agregados.', 'Las sugerencias pueden ser parciales. El detalle del armador sólo existe desde su publicación; sin señal del nuevo detalle se muestra Sin dato. Una ventana que cruza esa publicación tiene cobertura parcial.', 'Los eventos de detalle complementan pc_builder_action: no sumarlos al total de acciones ni usar el aumento del total de eventos como crecimiento.');
   result.breakdown = rows(channels).map((row) => ({ label: gaValues(row, 'dimensionValues')[0].slice(0, 100), value: number(gaValues(row, 'metricValues')[0]) }));
   return result;
 }

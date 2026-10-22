@@ -10,10 +10,10 @@ globalThis.fetch = async (input, init) => {
     const row = (dimensions, values) => ({ dimensionValues: dimensions.map((value) => ({ value })), metricValues: values.map((value) => ({ value: String(value) })) });
     let rows;
     if (!name) rows = [row([], [52, 80, 140, 44])];
-    else if (name === 'eventName') rows = [row(['outbound_store_click'], [12, 8]), row(['generate_pc_budget'], [3, 2])];
+    else if (name === 'eventName') rows = [row(['outbound_store_click'], [12, 8]), row(['generate_pc_budget'], [3, 2]), row(['search'], [9, 4]), row(['comparison_result'], [4, 2]), row(['pc_builder_action'], [17, 3]), row(['pc_builder_saved'], [4, 2]), row(['pc_builder_complete_action'], [1, 1])];
     else if (name === 'date') rows = [row([body.dateRanges[0].startDate.replaceAll('-', '')], [8]), row([body.dateRanges[0].endDate.replaceAll('-', '')], [12])];
     else rows = [row(['google / organic'], [35]), row(['(direct) / (none)'], [28])];
-    return Response.json({ metricHeaders, rows, metadata: { timeZone: 'America/Buenos_Aires' } });
+    return Response.json({ metricHeaders, dimensionHeaders: body.dimensions ?? [], rowCount: rows.length, rows, metadata: { timeZone: 'America/Buenos_Aires' } });
   }
   if (url.startsWith('https://www.googleapis.com/webmasters/v3/sites/')) return Response.json({ responseAggregationType: 'byProperty', rows: [{ clicks: 320, impressions: 14000, ctr: 320 / 14000, position: 7.5 }] });
   if (url === 'https://api.cloudflare.com/client/v4/graphql') return Response.json({ data: { viewer: { accounts: [{ workersInvocationsAdaptive: [{ dimensions: { status: 'success' }, sum: { requests: 100, errors: 0 } }] }] } } });

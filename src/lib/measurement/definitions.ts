@@ -1,4 +1,5 @@
 import type { DecisionId, ProviderId } from './types';
+import { JOURNEY_METRIC_KEYS } from '@/lib/analytics/journey';
 
 export const PROVIDERS: Record<ProviderId, { name: string; purpose: string; url: string; setup: string[]; automatic: boolean; scope: string }> = {
   ga4: {
@@ -54,7 +55,7 @@ export const PROVIDERS: Record<ProviderId, { name: string; purpose: string; url:
 };
 
 export const METRIC_KEYS: Record<ProviderId, readonly string[]> = {
-  ga4: ['users', 'sessions', 'views', 'engagedSessions', 'outboundClicks', 'outboundUsers', 'budgets', 'affiliateClicks', 'affiliateViews', 'contactIntents'],
+  ga4: ['users', 'sessions', 'views', 'engagedSessions', 'outboundClicks', 'outboundUsers', 'budgets', 'affiliateClicks', 'affiliateViews', 'contactIntents', ...JOURNEY_METRIC_KEYS],
   'search-console': ['clicks', 'impressions', 'ctr', 'position', 'previousClicks'],
   cloudflare: ['requests', 'errors', 'resourceErrors'],
   catalog: ['total', 'observed24h', 'observed3h', 'neverAttempted', 'stores'],
