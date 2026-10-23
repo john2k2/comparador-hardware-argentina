@@ -443,7 +443,7 @@ export function extractGenericModelKey(value: string, options: GenericModelOptio
 
   const brand = firstMatch(BRAND_PATTERN, normalized) ?? 'na';
   const family = detectFamilyToken(normalized);
-  if (options.category && ['almacenamiento', 'gabinetes', 'refrigeracion'].includes(options.category)) {
+  if (options.category && ['almacenamiento', 'gabinetes', 'refrigeracion', 'fuentes-alimentacion'].includes(options.category)) {
     const tokens = extractCategoryModelTokens(normalized, brand);
     // Un nombre sin referencia numérica conserva la cautela de identidad exacta.
     if (tokens.length >= 2 && (options.allowSoftTokens || tokens.some(token => /\d/.test(token)))) {

@@ -186,7 +186,7 @@ export function dedupeProductsByCanonicalName(products: Product[]): Product[] {
     // Las claves antiguas omitían variantes RAM/GPU y modelo/color de
     // almacenamiento/gabinete/cooler. La lectura conserva ID y observaciones,
     // pero no usa esas claves para fusionar fichas de variantes distintas.
-    const key = ['memoria-ram', 'tarjetas-graficas', 'almacenamiento', 'gabinetes', 'refrigeracion'].includes(product.category)
+    const key = ['memoria-ram', 'tarjetas-graficas', 'almacenamiento', 'gabinetes', 'refrigeracion', 'fuentes-alimentacion'].includes(product.category)
       ? buildProductIdentityKey(product.category, normalizedName)
       : product.canonicalProductKey ?? buildProductIdentityKey(product.category, normalizedName, buildIdentityFallback(product));
     const existing = grouped.get(key);

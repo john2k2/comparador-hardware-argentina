@@ -35,6 +35,11 @@ function createProduct(input: Partial<Product> & Pick<Product, 'id' | 'name'>): 
 }
 
 describe('product-read-grouping', () => {
+  it('ignora la clave heredada de fuentes que compartía watts pero no marca/modelo', () => {
+    const products = ['Fuente 650W Arkham Coreshield by XPG Gold OEM', 'Fuente Gamer 650W Raidmax XTB', 'Fuente XYZ 650W Phantom Bronze'].map((name, index) =>
+      createProduct({ id: 'psu-'+index, name, category: 'fuentes-alimentacion', canonicalProductKey: 'legacy:650w' }));
+    expect(dedupeProductsByCanonicalName(products).map(product => product.id)).toEqual(['psu-0', 'psu-1', 'psu-2']);
+  });
   it('muestra RAM para notebook y CPU vendido para PC armada, conservando la exclusión de paquetes', () => {
     const priced = (id: string, name: string, category: Product['category']) => createProduct({
       id, name, category, prices: [{ storeId: 'test', storeName: 'Test', url: `https://example.com/${id}`,
