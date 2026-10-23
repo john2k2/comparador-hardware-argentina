@@ -176,6 +176,22 @@ describe('stockToSchemaAvailability', () => {
 });
 
 describe('buildProductJsonLd', () => {
+  it('no anuncia fuentes de otro modelo como ofertas del Arkham Coreshield', () => {
+    const product = makeProduct({ name: 'Fuente 650W Arkham by XPG Coreshield 80 PLUS Gold - OEM', category: 'fuentes-alimentacion',
+      prices: [
+        { storeId: 'goldentechstore', storeName: 'Golden Tech', url: 'https://goldentechstore.com.ar/producto/fuente-gamer-650w-raidmax-xtb/',
+          price: 50072, stock: 'in-stock', lastUpdated: new Date() },
+        { storeId: 'xtpc', storeName: 'XT-PC', url: 'https://www.xt-pc.com.ar/prod/32916/fuente-650w-arkham-coreshield-by-xpg-80-plus-gold-oem',
+          price: 95240, stock: 'in-stock', lastUpdated: new Date() },
+      ] });
+    const entry = buildProductJsonLd(product, product.id).find(item => item['@type'] === 'Product') as {
+      offers: { lowPrice: number; offerCount: number; offers: Array<{ url: string }> };
+    };
+    expect(entry.offers.lowPrice).toBe(95240);
+    expect(entry.offers.offerCount).toBe(1);
+    expect(entry.offers.offers.map(offer => offer.url)).toEqual([product.prices[1].url]);
+    expect(product.prices).toHaveLength(2); // La lectura no borra la observación histórica.
+  });
   it('genera BreadcrumbList, Organization y Product con offers reales', () => {
     const product = makeProduct();
     const jsonLd = buildProductJsonLd(product, product.id);
