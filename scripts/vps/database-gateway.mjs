@@ -28,6 +28,7 @@ async function boundedBody(request) {
 
 export function createDatabaseGateway({ tokens, ready, fetcher = fetch }) {
   if (!tokens?.anon || !tokens?.service_role || equal(tokens.anon, tokens.service_role)) throw Error('GATEWAY_CONFIGURATION');
+  let sourceBusy = false, sourceNextAt = 0;
   return async request => {
     const authorization = request.headers.get('authorization');
     const credential = authorization?.startsWith('Bearer ') ? authorization.slice(7) : null;
@@ -36,6 +37,26 @@ export function createDatabaseGateway({ tokens, ready, fetcher = fetch }) {
     if (!authorized) return failure(401, 'unauthorized');
     if (request.url.length > 32768) return failure(414, 'url_too_long');
     const url = new URL(request.url);
+    if (url.pathname === '/__sources/katech') {
+      if (!equal(credential, tokens.service_role)) return failure(403, 'service_required');
+      if (request.method !== 'GET' || request.body) return failure(405, 'method_not_allowed');
+      if (!ready()) return failure(503, 'not_ready');
+      const target = katechSourceTarget(url);
+      if (!target) return failure(400, 'source_target_not_allowed');
+      if (sourceBusy || Date.now() < sourceNextAt) return new Response(null, { status: 429, headers: { 'Retry-After': '2', 'Cache-Control': 'no-store' } });
+      sourceBusy = true;
+      try {
+        const response = await fetcher(target, { redirect: 'manual', signal: AbortSignal.timeout(22000),
+          headers: { Accept: target.includes('/wp-json/') ? 'application/json' : 'text/html', 'User-Agent': 'Mozilla/5.0' } });
+        // No seguir redirects a otros hosts ni transferir credenciales/cookies a la tienda.
+        if (response.status >= 300 && response.status < 400) { await response.body?.cancel(); return failure(502, 'source_redirect'); }
+        const body = await boundedSourceBody(response);
+        const headers = new Headers({ 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
+        for (const name of ['content-type', 'x-wp-total', 'x-wp-totalpages', 'retry-after']) if (response.headers.has(name)) headers.set(name, response.headers.get(name));
+        return new Response(body, { status: response.status, headers });
+      } catch { return failure(502, 'source_unavailable'); }
+      finally { sourceBusy = false; sourceNextAt = Date.now() + 1500; }
+    }
     if (url.pathname === '/__ready') {
       if (!['GET', 'HEAD'].includes(request.method)) return failure(405, 'method_not_allowed');
       return new Response(request.method === 'HEAD' ? null : JSON.stringify({ ready: ready() }), {
@@ -66,6 +87,38 @@ export function createDatabaseGateway({ tokens, ready, fetcher = fetch }) {
       return failure(error?.message === 'BODY_LIMIT' ? 413 : 502, error?.message === 'BODY_LIMIT' ? 'body_too_large' : 'database_unavailable');
     }
   };
+}
+
+/** Destino fijo y rutas públicas acotadas: no es un proxy de URLs arbitrarias. */
+export function katechSourceTarget(requestUrl) {
+  if ([...requestUrl.searchParams.keys()].some(key => key !== 'target') || requestUrl.searchParams.getAll('target').length !== 1) return null;
+  try {
+    const raw = requestUrl.searchParams.get('target');
+    const url = new URL(raw);
+    if (url.protocol !== 'https:' || url.hostname !== 'katech.com.ar' || url.username || url.password || url.port || url.hash || raw.length > 1800) return null;
+    if (url.pathname === '/wp-json/wc/store/v1/products') {
+      const keys = [...url.searchParams.keys()];
+      if (keys.length !== 3 || new Set(keys).size !== 3 || keys.some(key => !['page', 'per_page', '_fields'].includes(key))
+        || url.searchParams.get('per_page') !== '100' || url.searchParams.get('_fields') !== 'id,name,permalink'
+        || !/^(?:[1-9]|[1-9][0-9]|100)$/.test(url.searchParams.get('page') ?? '')) return null;
+    } else if (url.search || !/^\/producto\/[\p{L}\p{N}_-]{1,300}\/?$/u.test(decodeURIComponent(url.pathname))) return null;
+    return url.href;
+  } catch { return null; }
+}
+async function boundedSourceBody(response) {
+  if (Number(response.headers.get('content-length')) > 8_000_000) { await response.body?.cancel(); throw Error('SOURCE_LIMIT'); }
+  const reader = response.body?.getReader();
+  if (!reader) return null;
+  const chunks = []; let bytes = 0;
+  try {
+    for (;;) {
+      const part = await reader.read(); if (part.done) break;
+      bytes += part.value.byteLength;
+      if (bytes > 8_000_000) throw Error('SOURCE_LIMIT');
+      chunks.push(part.value);
+    }
+    return Buffer.concat(chunks, bytes);
+  } finally { await reader.cancel().catch(() => undefined); }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

@@ -52,6 +52,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     } else {
       if (!process.env.GITHUB_ENV) throw Error('CATALOG_DATABASE_ENV_MISSING');
       appendFileSync(process.env.GITHUB_ENV, Object.entries(selection.env).map(([key, value]) => key + '=' + value + '\n').join(''));
+      // Misma credencial privada; el gateway limita las rutas públicas de esta fuente.
+      appendFileSync(process.env.GITHUB_ENV, 'CATALOG_KATECH_VPS_TRANSPORT=' + (selection.backend === 'vps' ? '1' : '0') + '\n');
     }
     if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, 'backend=' + selection.backend + '\n');
     console.log('CATALOG_DATABASE_' + selection.backend.toUpperCase() + '_READY');

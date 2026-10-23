@@ -11,7 +11,7 @@ const code = value => sourceReasons.includes(value) ? value : typeof value === '
 export function formatCatalogRunSummary(receipt) {
   if (!receipt || typeof receipt !== 'object' || Array.isArray(receipt)) throw new Error('REFRESH_SUMMARY_INVALID');
   const status = ['completed', 'deadline', 'failed', 'partial', 'deferred'].includes(receipt.status) ? receipt.status : 'no informado';
-  const lines = ['### Catálogo: ' + status, '',
+  const lines = ['### Catálogo: ' + status + (receipt.health === 'degraded' ? ' · parcial, fuentes con incidencias' : ''), '',
     `Intentadas: ${count(receipt.attempted)}. Observadas: ${count(receipt.observed)}. Comparables: ${count(receipt.comparable)}.`,
     '', 'Una observación guardada no acredita cobertura completa ni disponibilidad futura.'];
   if (receipt.failureCode || receipt.error) lines.push('', 'Fallo del runner: ' + code(receipt.failureCode ?? receipt.error) + '.');
@@ -23,6 +23,7 @@ export function formatCatalogRunSummary(receipt) {
   const global = receipt.persistenceDiagnostic?.global;
   if (global) lines.push('', `ACK de observaciones: ${count(global.confirmed)} confirmados; ${count(global.ackUnconfirmed)} sin confirmar; ${count(global.invalidResponse)} inválidos.`);
   if (status === 'failed') lines.push('', 'La ejecución conserva exit 1. Las observaciones parciales no reparan la fuente fallida.');
+  else if (receipt.health === 'degraded') lines.push('', 'El proceso terminó con progreso parcial. Las incidencias de fuentes siguen visibles; no se renovaron sus precios ni se declaró cobertura completa. Los errores de base o persistencia siguen fallando la tarea.');
   return lines.join('\n') + '\n';
 }
 

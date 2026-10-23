@@ -1,6 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { formatCatalogRunSummary } from './catalog-run-summary.mjs';
+test('diferencia ejecución parcial de fallo global y conserva la incidencia de fuente', () => {
+  const text = formatCatalogRunSummary({ status: 'completed', health: 'degraded', attempted: 100, observed: 90, comparable: 50,
+    inventory: [{ storeId: 'katech', status: 'failed', code: 'blocked' }] });
+  assert.match(text, /parcial, fuentes con incidencias/);
+  assert.match(text, /katech — blocked/);
+  assert.doesNotMatch(text, /conserva exit 1/);
+});
 test('explica fallo de Katech y ACK parciales sin declarar cobertura', () => {
   const summary = formatCatalogRunSummary({ status: 'failed', attempted: 1654, observed: 1189, comparable: 475,
     inventory: [{ storeId: 'katech', status: 'failed', code: 'blocked' }],
