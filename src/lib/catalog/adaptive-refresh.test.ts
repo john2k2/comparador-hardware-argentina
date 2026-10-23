@@ -21,6 +21,27 @@ beforeEach(()=>{
  mocks.rpc.mockImplementation(async(name:string)=>({error:null,data:name==='seed_catalog_refresh_queue'?0:name==='catalog_refresh_coverage'?[]:name==='claim_catalog_feed_refresh'||name==='claim_catalog_refresh'?[]:true}));
 });
 afterEach(()=>{vi.useRealTimers();vi.unstubAllEnvs();});
+it('informa una fuente degradada sin fallar toda la tarea ni afirmar inventario completo', async () => {
+ vi.stubEnv('CATALOG_INVENTORY_DISCOVERY', '1');
+ mocks.inventory.mockResolvedValue([{ storeId: 'katech', status: 'failed', code: 'blocked', failureScope: 'source' }]);
+ mocks.details.mockResolvedValue({ status: 'completed', attempted: 0, imported: 0, failures: 0 });
+ const result = await runAdaptiveRefresh({ maxOffers: 24 });
+ expect(result).toMatchObject({ status: 'completed', health: 'degraded', completion: 'partial', inventory: [{ status: 'failed', code: 'blocked' }] });
+});
+it('mantiene error global si falla el ACK de inventario aunque las fuentes sean parciales', async () => {
+ vi.stubEnv('CATALOG_INVENTORY_DISCOVERY', '1');
+ mocks.inventory.mockResolvedValue([{ storeId: 'katech', status: 'failed', code: 'REFRESH_INVENTORY_FINISH_FAILED', failureScope: 'internal' }]);
+ mocks.details.mockResolvedValue({ status: 'completed', attempted: 0, imported: 0, failures: 0 });
+ expect(await runAdaptiveRefresh({ maxOffers: 24 })).toMatchObject({ status: 'failed' });
+});
+it('una fuente degradada no oculta un fallo de cobertura de la base', async () => {
+ vi.stubEnv('CATALOG_INVENTORY_DISCOVERY', '1');
+ mocks.inventory.mockResolvedValue([{ storeId: 'katech', status: 'failed', code: 'blocked', failureScope: 'source' }]);
+ mocks.details.mockResolvedValue({ status: 'completed', attempted: 0, imported: 0, failures: 0 });
+ mocks.rpc.mockImplementation(async (name: string) => ({ error: name === 'catalog_refresh_coverage' ? { code: '57014' } : null,
+  data: name === 'seed_catalog_refresh_queue' ? 0 : name.startsWith('claim_') ? [] : true }));
+ expect(await runAdaptiveRefresh({ maxOffers: 24 })).toMatchObject({ status: 'failed', health: 'degraded', completion: 'failed' });
+});
 it('actualiza la fuente compartida sin consumir el presupuesto de las demás tiendas',async()=>{
  const claims:string[]=[];
  mocks.rpc.mockImplementation(async(name:string)=>{if(name.startsWith('claim_')){claims.push(name);return {data:claims.length<=2?[target]:[],error:null};}return {data:name==='seed_catalog_refresh_queue'?0:name==='catalog_refresh_coverage'?[]:true,error:null};});

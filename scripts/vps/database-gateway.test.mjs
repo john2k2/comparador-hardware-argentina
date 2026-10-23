@@ -3,6 +3,37 @@ import assert from 'node:assert/strict';
 import { createDatabaseGateway } from './database-gateway.mjs';
 const tokens = { anon: 'public-fixture-token', service_role: 'private-fixture-token' };
 const request = (path, options = {}) => new Request('https://catalog-api.example' + path, { headers: { Authorization: 'Bearer ' + tokens.service_role }, ...options });
+const sourcePath = target => '/__sources/katech?target=' + encodeURIComponent(target);
+
+test('Katech exige service_role y restringe host, rutas, parámetros, método y redirects', async () => {
+  let calls = 0;
+  const handle = createDatabaseGateway({ tokens, ready: () => true, fetcher: async () => { calls++; return new Response(null, { status: 302, headers: { Location: 'http://127.0.0.1' } }); } });
+  const valid = 'https://katech.com.ar/producto/ram-ddr5/';
+  assert.equal((await handle(request(sourcePath(valid), { headers: { Authorization: 'Bearer ' + tokens.anon } }))).status, 403);
+  assert.equal((await handle(request(sourcePath(valid), { method: 'POST' }))).status, 405);
+  for (const target of ['http://katech.com.ar/producto/ram/', 'https://127.0.0.1/producto/ram/', 'https://katech.com.ar.evil.example/producto/ram/', 'https://user@katech.com.ar/producto/ram/', 'https://katech.com.ar/wp-admin/', 'https://katech.com.ar/producto/ram/?redirect=http://127.0.0.1', 'https://katech.com.ar/wp-json/wc/store/v1/products?per_page=100&page=101&_fields=id,name,permalink']) {
+    assert.equal((await handle(request(sourcePath(target)))).status, 400, target);
+  }
+  assert.equal(calls, 0);
+  assert.equal((await handle(request(sourcePath(valid)))).status, 502);
+  assert.equal(calls, 1);
+});
+test('Katech preserva totales sin filtrar credenciales y limita concurrencia, cuerpo y frecuencia', async () => {
+  let captured;
+  const handle = createDatabaseGateway({ tokens, ready: () => true, fetcher: async (url, init) => {
+    captured = { url, init };
+    return Response.json([{ id: 1 }], { headers: { 'x-wp-total': '4035', 'x-wp-totalpages': '41', 'set-cookie': 'private' } });
+  } });
+  const target = 'https://katech.com.ar/wp-json/wc/store/v1/products?per_page=100&page=1&_fields=id,name,permalink';
+  const response = await handle(request(sourcePath(target)));
+  assert.equal(response.status, 200); assert.equal(response.headers.get('x-wp-total'), '4035');
+  assert.equal(response.headers.has('set-cookie'), false);
+  assert.equal(captured.url, target); assert.equal(captured.init.headers.Authorization, undefined);
+  assert.equal(captured.init.headers.Cookie, undefined);
+  assert.equal((await handle(request(sourcePath(target)))).status, 429);
+  const oversized = createDatabaseGateway({ tokens, ready: () => true, fetcher: async () => new Response(new Uint8Array(8_000_001)) });
+  assert.equal((await oversized(request(sourcePath(target)))).status, 502);
+});
 test('rechaza credenciales ausentes, alteradas y de otro proveedor sin llamar a la base', async () => {
   let calls = 0; const handle = createDatabaseGateway({ tokens, ready: () => true, fetcher: () => { calls++; } });
   for (const value of ['', 'Bearer other-project', 'Bearer ' + tokens.service_role + 'x']) {

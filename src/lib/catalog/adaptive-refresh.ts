@@ -310,13 +310,18 @@ export async function runAdaptiveRefresh(options: { maxOffers?: number; maxRunMs
     closureFailureCodes.push('REFRESH_COVERAGE_FAILED');
     status = 'failed';
   }
-  if (inventory.some(item => item.status === 'failed')) status = 'failed';
+  const sourceIssues = inventory.filter(item => item.status === 'failed' && item.failureScope === 'source');
+  if (inventory.some(item => item.status === 'failed' && item.failureScope !== 'source')) status = 'failed';
   if (inventoryDetails?.status === 'failed') status = 'failed';
+  if (persistenceDiagnostic.global.ackUnconfirmed > 0 || persistenceDiagnostic.global.invalidResponse > 0) status = 'failed';
+  // Una fuente inaccesible queda degradada, sin convertir un ciclo persistido en caída global.
+  // Los fallos de DB, ACK, leases, cobertura o ausencia de observaciones conservan exit 1.
+  const health = sourceIssues.length ? 'degraded' : 'healthy';
   const sourceFailureReasons: Record<string,number> = {};
   for (const reason of context.failures.values()) sourceFailureReasons[reason]=(sourceFailureReasons[reason] ?? 0)+1;
   const seedDiagnostic = sanitizeRefreshSeedDiagnostic({ attempts: seedAttempts });
   const summary = { source: 'adaptive-catalog', trigger: ['github-schedule','cloudflare-fallback'].includes(process.env.CATALOG_RUN_TRIGGER ?? '') ? process.env.CATALOG_RUN_TRIGGER : 'manual', runId: run.data.id, startedAt, finishedAt: new Date().toISOString(),
-    status, failureCode, ...(claimDiagnostic ? { claimDiagnostic } : {}), ...(seedDiagnostic ? { seedDiagnostic } : {}),
+    status, health, completion: status === 'failed' ? 'failed' : health === 'degraded' ? 'partial' : status, failureCode, ...(claimDiagnostic ? { claimDiagnostic } : {}), ...(seedDiagnostic ? { seedDiagnostic } : {}),
     ...(hasFailureDiagnostic() ? { closure: { failureCodes: closureFailureCodes } } : {}), inventory, inventoryDetails, feedClaimed, sourceFailureReasons, limitReached: counts.attempted + deferred >= maxOffers, ...counts, groups, persistenceDiagnostic: snapshotPersistenceDiagnostic(persistenceDiagnostic), deferred, deferredStores, seeded, seed: seedSummary, phaseMs, sourceHttp: sourceHttpMetrics(), sharedReads: context.sharedReads, coverage: coverageData };
   let summaryPersistence: 'confirmed' | 'unconfirmed' = 'unconfirmed';
   try {

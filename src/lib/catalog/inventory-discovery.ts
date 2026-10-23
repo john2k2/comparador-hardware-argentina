@@ -96,14 +96,14 @@ export async function runInventoryDiscovery() {
       success = true;
     } catch (error) {
       const code = error instanceof SourceHttpError ? error.reason : error instanceof Error && /^REFRESH_[A-Z_]+$/.test(error.message) ? error.message : 'REFRESH_INVENTORY_FAILED';
-      summary = { ...summary, code, finishedAt: new Date().toISOString() };
+      summary = { ...summary, code, failureScope: error instanceof SourceHttpError ? 'source' : 'internal', finishedAt: new Date().toISOString() };
     }
     const complete = () => client.rpc('finish_catalog_inventory', { p_store_id: storeId, p_token: token, p_success: success, p_summary: summary });
     let finished = await complete();
     for (let retry = 0; finished.error && retry < 2; retry++) {
       await new Promise(resolve => setTimeout(resolve, 300 * (retry + 1))); finished = await complete();
     }
-    if (finished.error || finished.data !== true) return { ...summary, status: 'failed', code: 'REFRESH_INVENTORY_FINISH_FAILED' };
+    if (finished.error || finished.data !== true) return { ...summary, status: 'failed', failureScope: 'internal', code: 'REFRESH_INVENTORY_FINISH_FAILED' };
     return summary;
   }));
 }

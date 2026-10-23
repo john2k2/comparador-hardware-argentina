@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import type { AnyNode } from 'domhandler';
+import { sourceTransport } from './source-transport';
 
 /** Transporte acotado para las fuentes del piloto; no utiliza sesiones del usuario. */
 export type SourceFailure = 'not-found' | 'rate-limited' | 'blocked' | 'maintenance' | 'http-error' | 'invalid-response' | 'too-large' | 'inconsistent-source';
@@ -118,7 +119,8 @@ export async function sourceFetch(store: string, url: string, options: RequestIn
     let response: Response;
     for (let hop = 0; ; hop++) {
       stats.requests++;
-      response = await fetch(current, { ...options, redirect: redirectHosts.length ? 'manual' : 'error', signal });
+      const transport = sourceTransport(store, current, { ...options, redirect: redirectHosts.length ? 'manual' : 'error', signal });
+      response = await fetch(transport.url, transport.options);
       // Una entrada por respuesta HTTP, incluidos redirects/304. Un error de
       // transporte o un backoff sin respuesta nunca fabrica un código.
       const status = response.status;
