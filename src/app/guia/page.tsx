@@ -26,6 +26,19 @@ export default function GuiasIndexPage() {
         </div>
       </header>
 
+      <div className="mb-8 grid gap-6 md:grid-cols-3" aria-label="Guías por presupuesto">
+        {BUDGET_GUIDES.map((guide) => (
+          <EditorialLinkCard
+            key={guide.slug}
+            href={`/guia/${guide.slug}`}
+            title={formatPriceARS(guide.budget)}
+            description={guide.description}
+            actionLabel="Ver guía"
+            headingLevel={2}
+          />
+        ))}
+      </div>
+
       <section className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow mb-8">
         <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-4">
           [ COMO USAR ESTAS GUIAS ]
@@ -92,19 +105,6 @@ export default function GuiasIndexPage() {
           Armá tu PC →
         </Link>
       </section>
-
-      <div className="grid md:grid-cols-3 gap-6">
-        {BUDGET_GUIDES.map((guide) => (
-          <EditorialLinkCard
-            key={guide.slug}
-            href={`/guia/${guide.slug}`}
-            title={formatPriceARS(guide.budget)}
-            description={guide.description}
-            actionLabel="Ver guía"
-            headingLevel={2}
-          />
-        ))}
-      </div>
 
       <section className="mt-8 bg-card border-4 border-border p-5 md:p-6 pixel-shadow">
         <h2 className="text-[12px] md:text-[14px] uppercase font-bold text-primary mb-3">

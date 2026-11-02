@@ -6,6 +6,8 @@ import type { RefreshTarget } from '@/lib/catalog/on-demand/contracts';
 import { createGuideRefreshSession, nextGuideRefreshTargets } from '@/lib/catalog/on-demand/guide-refresh-session';
 import { normalizeIdentityText } from '@/lib/product-identity';
 import { proveOfferAttributes } from '@/lib/quality/offer-attribute-proof';
+import * as cheerio from 'cheerio';
+import { getBudgetGuideBySlug } from '@/lib/seo/budget-guides-data';
 
 const mocks = vi.hoisted(() => ({
   snapshot: vi.fn(),
@@ -46,6 +48,10 @@ describe('botón de comprobación de la guía', () => {
     mocks.snapshot.mockResolvedValue({ products: [product], unavailableSlots: [] });
     const markup = renderToStaticMarkup(await BudgetGuidePage({ params: Promise.resolve({ slug: 'pc-gamer-3-millones' }) }));
     expect(markup).toContain(`href="${purchaseUrl}"`);
+    const $ = cheerio.load(markup);
+    const pending = $('section[aria-labelledby="guide-missing-title"] li');
+    expect(pending).toHaveLength(6);
+    expect(pending.find('h3').map((_, node) => $(node).text()).get()).not.toContain('PROCESADOR');
     const groups = mocks.refreshPanel.mock.calls[0][0].groups;
     const targets = nextGuideRefreshTargets(createGuideRefreshSession(groups));
     // Reproduce el contrato literal de request_offer_refresh, sin crear jobs ni despachar trabajo.
@@ -62,5 +68,37 @@ describe('botón de comprobación de la guía', () => {
     expect(targets).toEqual([{ productId: product.id, storeId: 'compragamer', url }]);
     expect(groups[0]).toHaveLength(1);
     expect(product).toEqual(before);
+  });
+});
+
+describe('continuar una guía incompleta', () => {
+  it('muestra las piezas pendientes con búsquedas de modelo y categoría sin publicar precios estimados', async () => {
+    mocks.snapshot.mockResolvedValue({ products: [], unavailableSlots: [] });
+    const guide = getBudgetGuideBySlug('pc-gamer-3-millones')!;
+    const markup = renderToStaticMarkup(await BudgetGuidePage({ params: Promise.resolve({ slug: guide.slug }) }));
+    const $ = cheerio.load(markup);
+    const section = $('section[aria-labelledby="guide-missing-title"]');
+    expect(section.find('li')).toHaveLength(7);
+    expect(section.text()).toContain('Esto no confirma agotamiento');
+    expect(section.text()).not.toMatch(/\$|agotado|precio estimado/i);
+    const ram = section.find('li').filter((_, node) => $(node).find('h3').text() === 'MEMORIA RAM');
+    const search = new URL(ram.find('a').first().attr('href')!, 'https://example.test');
+    expect(search.pathname).toBe('/search');
+    expect(search.searchParams.get('q')).toBe(guide.components.ram.exactPartNumber);
+    expect(search.searchParams.get('category')).toBe('memoria-ram');
+    expect(ram.find('a').last().attr('href')).toBe('/comparar/memoria-ram');
+    expect(ram.text()).toContain(guide.components.ram.name);
+  });
+
+  it('distingue un error de lectura de una pieza sin oferta reciente', async () => {
+    mocks.snapshot.mockResolvedValue({ products: [], unavailableSlots: ['ssd'] });
+    const markup = renderToStaticMarkup(await BudgetGuidePage({ params: Promise.resolve({ slug: 'pc-gamer-1-millon' }) }));
+    const $ = cheerio.load(markup);
+    const storage = $('section[aria-labelledby="guide-missing-title"] li').filter((_, node) => $(node).find('h3').text() === 'ALMACENAMIENTO');
+    expect(storage.text()).toContain('No pudimos consultar esta pieza');
+    expect(storage.text()).not.toContain('Sin oferta observada');
+    const search = new URL(storage.find('a').first().attr('href')!, 'https://example.test');
+    expect(search.searchParams.get('q')).toBe('adata 512gb su650ss');
+    expect(search.searchParams.get('category')).toBe('almacenamiento');
   });
 });

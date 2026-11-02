@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { loadGuideCatalogSnapshot } from '@/lib/seo/guide-catalog';
 import { formatPriceARS } from '@/lib/price-utils';
-import { GUIDE_SLOT_KEYS, publishedGuideBudgetLimit, resolveLiveGuideSlots } from '@/lib/seo/budget-builder';
+import { GUIDE_SLOT_KEYS, GUIDE_SLOT_LABELS, publishedGuideBudgetLimit, resolveLiveGuideSlots } from '@/lib/seo/budget-builder';
 import { getBudgetGuideBySlug } from '@/lib/seo/budget-guides-data';
 import { resolveGuideFaqs } from '@/lib/seo/guide-faqs';
 import { resolveGuidePageMetadata } from '@/lib/seo/landing-metadata';
@@ -23,6 +23,7 @@ import { DEFAULT_OG_IMAGE } from '@/lib/seo/metadata';
 import { getEditorialMethodology } from '@/lib/seo/editorial-methodology';
 import { EditorialMethodology } from '@/components/seo/EditorialMethodology';
 import { EditorialAdPreview } from '@/components/adsense/EditorialAdPreview';
+import { buildCategoryLandingPath } from '@/lib/seo/category-landing-routes';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -63,6 +64,10 @@ export default async function BudgetGuidePage({ params }: Props) {
   });
   const faqs = resolveGuideFaqs(guide.faqs, resolved.cpu, resolved.gpu);
   const slotCount = GUIDE_SLOT_KEYS.length;
+  const missingSlots = GUIDE_SLOT_KEYS.filter((key) => {
+    const item = resolved[key];
+    return item.priceSource !== 'catalog' || item.price <= 0 || item.offers.length === 0;
+  });
   const methodology = getEditorialMethodology(slug);
   const editorialDate = methodology?.updatedAt ?? EDITORIAL_UPDATED_AT;
 
@@ -136,6 +141,54 @@ export default async function BudgetGuidePage({ params }: Props) {
       </section>
 
       {process.env.ENABLE_ON_DEMAND_REFRESH === '1' && <GuideRefreshPanel groups={refreshGroups} />}
+
+      {missingSlots.length > 0 && (
+        <section aria-labelledby="guide-missing-title" className="mb-8 border-4 border-border bg-card p-5 md:p-6 pixel-shadow">
+          <h2 id="guide-missing-title" className="font-mono! text-base font-bold text-primary">
+            Qué falta para completar esta PC
+          </h2>
+          <p className="mt-3 max-w-prose font-body text-sm leading-relaxed">
+            {missingSlots.length === 1 ? 'Esta pieza todavía no tiene una oferta válida para la guía.' : 'Estas piezas todavía no tienen una oferta válida para la guía.'}
+            {' '}Podés buscar el modelo elegido o explorar otras opciones. Si cambiás una pieza, revisá la compatibilidad y el total del armado.
+          </p>
+          <ul className="mt-2 divide-y-2 divide-border">
+            {missingSlots.map((key) => {
+              const spec = guide.components[key];
+              return (
+                <li key={key} className="grid min-w-0 gap-3 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                  <div className="min-w-0">
+                    <h3 className="font-body text-sm font-bold">{GUIDE_SLOT_LABELS[key]}</h3>
+                    <p className="mt-1 break-words font-body text-sm">{spec.name}</p>
+                    <p className="mt-1 font-body text-sm text-muted-foreground">
+                      {unavailableSlots.includes(key)
+                        ? 'No pudimos consultar esta pieza. Volvé a consultar la guía o buscá el modelo.'
+                        : 'Sin oferta observada que cumpla los controles de la guía en las últimas 3 horas. Esto no confirma agotamiento.'}
+                    </p>
+                  </div>
+                  <div className="flex min-w-0 flex-wrap gap-3 md:flex-col md:items-start">
+                    <Link
+                      href={{ pathname: '/search', query: { q: spec.exactPartNumber || spec.searchTerms[0] || spec.name, category: spec.category } }}
+                      prefetch={false}
+                      aria-label={`Buscar este modelo: ${spec.name}`}
+                      className="inline-flex min-h-11 items-center border-2 border-secondary px-3 py-2 font-body text-sm font-bold text-secondary hover:bg-secondary hover:text-secondary-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-secondary"
+                    >
+                      Buscar este modelo
+                    </Link>
+                    <Link
+                      href={buildCategoryLandingPath(spec.category)}
+                      prefetch={false}
+                      aria-label={`Ver alternativas de ${GUIDE_SLOT_LABELS[key].toLowerCase()}`}
+                      className="inline-flex min-h-11 items-center font-body text-sm text-foreground underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-secondary"
+                    >
+                      Ver alternativas
+                    </Link>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       {/* Components */}
       <section className="bg-card border-4 border-border p-5 md:p-6 pixel-shadow mb-8">
