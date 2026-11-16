@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { RetroPageShell } from '@/components/layout/RetroPageShell';
+import { requireAdminPageAccess } from '@/lib/server/admin-auth';
 import { getOperationalMetricsSnapshot } from '@/lib/telemetry/operational-metrics';
 
 export const metadata: Metadata = {
@@ -19,6 +20,8 @@ const cards = [
 ];
 
 export default async function AdminPage() {
+  // El layout no es la frontera de autorización: cada página valida antes de leer datos.
+  await requireAdminPageAccess('/admin');
   const snapshot = await getOperationalMetricsSnapshot();
   const criticalAlerts = snapshot.alerts.filter((alert) => alert.severity === 'critical').length;
   const warningAlerts = snapshot.alerts.filter((alert) => alert.severity === 'warning').length;

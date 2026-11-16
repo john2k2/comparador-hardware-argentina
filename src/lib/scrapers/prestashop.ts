@@ -86,7 +86,8 @@ function extractBrand(name: string): string {
 function inferStock(text: string): StockStatus {
   const normalized = text.toLowerCase();
   if (!normalized) return 'unknown';
-  if (normalized.includes('no disponible') || normalized.includes('sin stock') || normalized.includes('agotado')) return 'out-of-stock';
+  // Las negaciones contienen "stock"/"disponible": evaluarlas antes del caso positivo.
+  if (/no disponible|sin stock|agotado|fuera de stock|no hay (?:suficientes? )?(?:productos? )?(?:en )?stock|sin existencias/.test(normalized)) return 'out-of-stock';
   if (normalized.includes('ultimas') || normalized.includes('últimas')) return 'low-stock';
   if (normalized.includes('stock') || normalized.includes('disponible')) return 'in-stock';
   return 'unknown';
