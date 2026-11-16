@@ -92,66 +92,19 @@ function isLowerOutlier(price: number, medianPrice: number): boolean {
 export function parseLocalizedArsPrice(value: string): number {
   if (!value) return 0;
 
-  // Cada caracter se reemplaza por un espacio: los indices siguen alineados con `value`.
-  const normalized = value.replace(/[^\d.,$-]/g, ' ');
+  const normalized = value
+    .replace(/[^\d.,$-]/g, ' ')
+    .trim();
 
-  if (!normalized.trim()) return 0;
+  if (!normalized) return 0;
 
   // Extraer todos los montos numericos (evita concatenar cuotas u otros numeros)
   // Busca patrones como: 248.496, 248496, 248.496,50, $248496
-  const priceMatches = [...normalized.matchAll(/[\d]+(?:[\.,]\d{3})*(?:[\.,]\d{1,2})?/g)];
-  if (priceMatches.length === 0) return 0;
+  const priceMatches = normalized.match(/[\d]+(?:[\.,]\d{3})*(?:[\.,]\d{1,2})?/g);
+  if (!priceMatches || priceMatches.length === 0) return 0;
 
-  // Convertir todos los matches a numeros, conservando el texto que los rodea
-  const parsedAmounts = priceMatches.map(priceMatch => {
-    const match = priceMatch[0];
-    const start = priceMatch.index ?? 0;
-    const before = value.slice(0, start).toLowerCase();
-    const after = value.slice(start + match.length).toLowerCase();
-    // "6 cuotas ..." (cantidad) y "cuotas de $200.000" (importe de la cuota) no son el precio.
-    const isInstallment = /^\s*cuotas?\b/.test(after)
-      || /cuotas?\s*(?:fijas\s*)?(?:sin\s+inter[eé]s\s*)?(?:fijas\s*)?(?:de\s*)?\$?\s*$/.test(before);
-    // "antes $500.000" es el precio viejo, este donde este en el texto.
-    const isPreviousPrice = /(?:\bantes|\bbefore|precio\s*anterior)\s*:?\s*\$?\s*$/.test(before);
-    return { amount: parseLocalizedAmount(match), isInstallment, isPreviousPrice };
-  }).filter(entry => Number.isFinite(entry.amount) && entry.amount > 0);
-
-  if (parsedAmounts.length === 0) return 0;
-  if (parsedAmounts.length === 1) return Math.round(parsedAmounts[0].amount);
-
-  // Con al menos un importe que no es cuota ni precio anterior, decidir solo entre esos.
-  const mainAmounts = parsedAmounts.filter(entry => !entry.isInstallment && !entry.isPreviousPrice);
-  const narrowed = mainAmounts.length > 0 && mainAmounts.length < parsedAmounts.length;
-  if (narrowed && mainAmounts.length === 1) return Math.round(mainAmounts[0].amount);
-  const prices = (narrowed ? mainAmounts : parsedAmounts).map(entry => entry.amount);
-  const explicitInstallments = narrowed && parsedAmounts.some(entry => entry.isInstallment);
-
-  // Estrategia inteligente para multiples numeros:
-  // 1. Si hay "antes/ahora" o similar, tomar el ultimo (precio actual)
-  const lowerValue = value.toLowerCase();
-  const hasBeforeAfter = /antes|before|precio\s*anterior|precio\s*lista/i.test(lowerValue);
-  const hasNow = /ahora|now|oferta|descuento|precio\s*final/i.test(lowerValue);
-
-  if (hasBeforeAfter || hasNow) {
-    // Tomar el ultimo numero (precio actual despues del descuento)
-    return Math.round(prices[prices.length - 1]);
-  }
-
-  // 2. Si hay palabras de cuotas, filtrar numeros muy pequenos (cuotas)
-  const hasInstallments = /cuota|cuotas|pago|mes/i.test(lowerValue);
-  if (hasInstallments && !explicitInstallments) {
-    // Filtrar cuotas (generalmente menores a 100.000)
-    const nonInstallmentPrices = prices.filter(p => p >= 100_000);
-    if (nonInstallmentPrices.length > 0) {
-      return Math.round(Math.min(...nonInstallmentPrices));
-    }
-  }
-
-  // 3. Por defecto: tomar el mayor (precio principal vs cuotas)
-  return Math.round(Math.max(...prices));
-}
-
-function parseLocalizedAmount(match: string): number {
+  // Convertir todos los matches a numeros
+  const prices = priceMatches.map(match => {
     let num = match;
     const hasComma = num.includes(',');
     const hasDot = num.includes('.');
@@ -171,6 +124,34 @@ function parseLocalizedAmount(match: string): number {
     }
 
     return Number.parseFloat(num);
+  }).filter(n => Number.isFinite(n) && n > 0);
+
+  if (prices.length === 0) return 0;
+  if (prices.length === 1) return Math.round(prices[0]);
+
+  // Estrategia inteligente para multiples numeros:
+  // 1. Si hay "antes/ahora" o similar, tomar el ultimo (precio actual)
+  const lowerValue = value.toLowerCase();
+  const hasBeforeAfter = /antes|before|precio\s*anterior|precio\s*lista/i.test(lowerValue);
+  const hasNow = /ahora|now|oferta|descuento|precio\s*final/i.test(lowerValue);
+  
+  if (hasBeforeAfter || hasNow) {
+    // Tomar el ultimo numero (precio actual despues del descuento)
+    return Math.round(prices[prices.length - 1]);
+  }
+
+  // 2. Si hay palabras de cuotas, filtrar numeros muy pequenos (cuotas)
+  const hasInstallments = /cuota|cuotas|pago|mes/i.test(lowerValue);
+  if (hasInstallments) {
+    // Filtrar cuotas (generalmente menores a 100.000)
+    const nonInstallmentPrices = prices.filter(p => p >= 100_000);
+    if (nonInstallmentPrices.length > 0) {
+      return Math.round(Math.min(...nonInstallmentPrices));
+    }
+  }
+
+  // 3. Por defecto: tomar el mayor (precio principal vs cuotas)
+  return Math.round(Math.max(...prices));
 }
 
 export function preferStorePrice<T extends StorePriceLike>(existing: T, candidate: T, now = Date.now()): T {

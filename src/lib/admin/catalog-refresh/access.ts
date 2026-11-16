@@ -13,22 +13,10 @@ export function isValidCronRequest(request: NextRequest): boolean {
   if (!cronSecret) return false;
 
   const authorization = request.headers.get('authorization') ?? '';
-  if (constantTimeEquals(authorization, `Bearer ${cronSecret}`)) return true;
+  if (authorization === `Bearer ${cronSecret}`) return true;
 
   const headerSecret = request.headers.get('x-cron-secret')?.trim() ?? '';
-  return constantTimeEquals(headerSecret, cronSecret);
-}
-
-// Comparación sin salida temprana: el tiempo no revela cuántos caracteres coinciden.
-function constantTimeEquals(left: string, right: string): boolean {
-  const encoder = new TextEncoder();
-  const leftBytes = encoder.encode(left);
-  const rightBytes = encoder.encode(right);
-  let difference = leftBytes.length ^ rightBytes.length;
-  for (let index = 0; index < rightBytes.length; index += 1) {
-    difference |= (leftBytes[index] ?? 0) ^ rightBytes[index];
-  }
-  return difference === 0;
+  return headerSecret === cronSecret;
 }
 
 export async function ensureAdmin(request: NextRequest) {

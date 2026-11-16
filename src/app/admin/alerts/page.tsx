@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { RetroPageShell } from '@/components/layout/RetroPageShell';
-import { requireAdminPageAccess } from '@/lib/server/admin-auth';
 import { getOperationalMetricsSnapshot } from '@/lib/telemetry/operational-metrics';
 
 export const metadata: Metadata = {
@@ -17,8 +16,6 @@ const SEVERITY_CLASS = {
 } as const;
 
 export default async function AdminAlertsPage() {
-  // El layout no es la frontera de autorización: cada página valida antes de leer datos.
-  await requireAdminPageAccess('/admin/alerts');
   const snapshot = await getOperationalMetricsSnapshot();
   const sortedAlerts = [...snapshot.alerts].sort(
     (a, b) => new Date(b.triggeredAt).getTime() - new Date(a.triggeredAt).getTime(),

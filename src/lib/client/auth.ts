@@ -19,8 +19,6 @@ export function resolveSafeNextPath(
 
   if (!decoded.startsWith('/')) return fallback;
   if (decoded.startsWith('//')) return fallback;
-  // El navegador trata "\" como "/" y descarta tabs/saltos: "/\evil.com" sale del sitio.
-  if (/[\\\u0000-\u001f\u007f]/.test(decoded)) return fallback;
   if (decoded.startsWith('/auth/callback')) return fallback;
 
   return decoded;

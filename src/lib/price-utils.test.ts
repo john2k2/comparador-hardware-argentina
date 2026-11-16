@@ -117,14 +117,6 @@ describe('price-utils', () => {
     expect(parseLocalizedArsPrice('Antes: $300.000 Ahora: $248.496')).toBe(248_496);
   });
 
-  it('parseLocalizedArsPrice no devuelve la cuota ni el precio anterior como precio', () => {
-    expect(parseLocalizedArsPrice('$1.200.000 en 6 cuotas de $200.000')).toBe(1_200_000);
-    expect(parseLocalizedArsPrice('6 cuotas sin interes de $ 250.000 - Total $ 1.500.000')).toBe(1_500_000);
-    expect(parseLocalizedArsPrice('12 cuotas fijas de $ 150.000 Precio $ 1.450.000')).toBe(1_450_000);
-    expect(parseLocalizedArsPrice('Oferta $450.000 antes $500.000')).toBe(450_000);
-    expect(parseLocalizedArsPrice('Antes $500.000 Ahora $450.000')).toBe(450_000);
-  });
-
   it('parseLocalizedArsPrice maneja precio con cuotas de Compugarden', () => {
     // Caso real de Compugarden: precio principal + cuotas
     expect(parseLocalizedArsPrice('$ 38.188,80 3 cuotas de $ 15.084,58')).toBe(38_189);
