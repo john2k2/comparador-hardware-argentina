@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { RetroPageShell } from '@/components/layout/RetroPageShell';
-import { requireAdminPageAccess } from '@/lib/server/admin-auth';
 import { getOperationalMetricsSnapshot } from '@/lib/telemetry/operational-metrics';
 
 export const metadata: Metadata = {
@@ -11,8 +10,6 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default async function AdminScrapersPage() {
-  // El layout no es la frontera de autorización: cada página valida antes de leer datos.
-  await requireAdminPageAccess('/admin/scrapers');
   const snapshot = await getOperationalMetricsSnapshot();
   const slowestStores = [...snapshot.stores]
     .filter((store) => store.avgLatencyMs24h !== null)

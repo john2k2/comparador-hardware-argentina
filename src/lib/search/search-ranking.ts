@@ -104,11 +104,8 @@ export function hasRequiredSingleCharVariants(
   for (const variant of singleCharVariants) {
     const hasVariant = modelTokens.some((modelToken) => {
       if (!modelToken) return false;
-      // La consulta del usuario puede traer "+", "(" u otros metacaracteres.
-      const escapedToken = modelToken.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
-      const escapedVariant = variant.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
       return normalizedName.includes(`${modelToken}${variant}`)
-        || new RegExp(`\\b${escapedToken}\\s+${escapedVariant}\\b`).test(normalizedName);
+        || new RegExp(`\\b${modelToken}\\s+${variant}\\b`).test(normalizedName);
     });
     if (!hasVariant) return false;
   }
