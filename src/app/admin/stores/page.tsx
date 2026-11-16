@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { RetroPageShell } from '@/components/layout/RetroPageShell';
+import { requireAdminPageAccess } from '@/lib/server/admin-auth';
 import { getOperationalMetricsSnapshot, StoreHealthStatus } from '@/lib/telemetry/operational-metrics';
 
 export const metadata: Metadata = {
@@ -28,6 +29,8 @@ const STATUS_CLASS: Record<StoreHealthStatus, string> = {
 };
 
 export default async function AdminStoresPage() {
+  // El layout no es la frontera de autorización: cada página valida antes de leer datos.
+  await requireAdminPageAccess('/admin/stores');
   const snapshot = await getOperationalMetricsSnapshot();
 
   return (
