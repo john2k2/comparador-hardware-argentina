@@ -177,8 +177,13 @@ export async function runPriorityRefresh(includeSample: boolean) {
       builderRam.attempted = attempted.size - before;
       builderRam.observed = found.filter(result => result.observedAt).length;
       builderRam.comparable = found.filter(result => result.comparable).length;
-      builderRam.status = plan.missing.length || found.some(result => result.state === 'failed') ? 'failed'
-        : found.length < plan.targets.length ? 'deferred' : 'completed';
+      // Que la tienda deje de listar una referencia ("no-observation") es una
+      // ausencia normal, no un fallo de la fuente: queda pendiente sin tumbar el run.
+      const sourceFailure = found.some(result => result.state === 'failed'
+        && Boolean(result.failureReason) && result.failureReason !== 'no-observation');
+      const unobserved = found.some(result => result.state === 'failed');
+      builderRam.status = plan.missing.length || sourceFailure ? 'failed'
+        : unobserved || found.length < plan.targets.length ? 'deferred' : 'completed';
     } catch {
       builderRam.status = 'failed'; builderRam.failureCode = 'BUILDER_RAM_REFRESH_FAILED';
     } finally {

@@ -1,3 +1,4 @@
+import { parseScrapedArsPrice as parseArsPrice } from './scraper-helpers';
 import * as cheerio from 'cheerio';
 import { Product, HardwareCategory, StockStatus } from '../types';
 import { MonitoredEndpoint, runObservedStoreScrape } from '../telemetry/operational-metrics';
@@ -40,14 +41,6 @@ const CATEGORY_SEARCH_TERMS: Record<HardwareCategory, string[]> = {
 type PrestashopRequestOptions = {
   signal?: AbortSignal;
 };
-
-function parseArsPrice(text: string): number {
-  let cleaned = text.replace(/[^0-9,.]/g, '');
-  if (!cleaned) return 0;
-  cleaned = cleaned.replace(/[,.]\d{1,2}$/, '');
-  cleaned = cleaned.replace(/[,.]/g, '');
-  return parseInt(cleaned, 10) || 0;
-}
 
 function cleanName(value: string | undefined): string {
   return (value ?? '').replace(/\s+/g, ' ').trim();

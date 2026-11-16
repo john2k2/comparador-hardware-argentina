@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { resolveSafeNextPath } from '@/lib/client/auth';
 import { buildProductIdentityKey, extractCpuModelKey, parseGpuChipSignature } from '@/lib/product-identity';
+import { parseScrapedArsPrice } from '@/lib/scrapers/scraper-helpers';
 import { matchesSearchQueryIntent } from '@/lib/search/search-ranking';
 
 // Regresiones de la revisión del 16/11/2026.
@@ -21,6 +22,14 @@ describe('regresiones de la revisión', () => {
   it('una consulta con metacaracteres no lanza al evaluar la intención', () => {
     expect(() => matchesSearchQueryIntent('Mouse Logitech G502 Hero', 'logitech g502 hero a1++ x')).not.toThrow();
     expect(() => matchesSearchQueryIntent('Mouse Logitech G502 Hero', 'g502 (x) [a] c++ z')).not.toThrow();
+  });
+
+  it('el parser compartido de los scrapers no infla decimales largos ni centavos', () => {
+    expect(parseScrapedArsPrice('248496.000000')).toBe(248_496);
+    expect(parseScrapedArsPrice('$ 248.496,50')).toBe(248_497);
+    expect(parseScrapedArsPrice('$ 248.496')).toBe(248_496);
+    expect(parseScrapedArsPrice(248496)).toBe(248_496);
+    expect(parseScrapedArsPrice('')).toBe(0);
   });
 
   it('el destino post-login no acepta barras invertidas ni caracteres de control', () => {
