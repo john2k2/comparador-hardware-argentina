@@ -1,3 +1,4 @@
+import { parseScrapedArsPrice as parseArsPrice } from './scraper-helpers';
 import * as cheerio from 'cheerio';
 import type { Element } from 'domhandler';
 import { HardwareCategory, Product, StockStatus } from '../types';
@@ -28,11 +29,6 @@ const GAMING_CITY_CATEGORY_URLS: Record<HardwareCategory, string> = {
   computadoras: `${GAMING_CITY_BASE_URL}/busqueda_avanzada.php?buscar=1&palabra=pc%20armada`,
   perifericos: `${GAMING_CITY_BASE_URL}/perifericos--prod--178`,
 };
-
-function parseArsPrice(value: string): number {
-  const digits = value.replace(/\D/g, '');
-  return parseInt(digits, 10) || 0;
-}
 
 function slugify(value: string): string {
   return value

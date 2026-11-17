@@ -1,3 +1,4 @@
+import { parseScrapedArsPrice as parseArsPrice } from './scraper-helpers';
 import * as cheerio from 'cheerio';
 import type { Element } from 'domhandler';
 import { HardwareCategory, Product, StockStatus } from '../types';
@@ -29,11 +30,6 @@ const LOGG_CATEGORY_NAMES: Record<HardwareCategory, string> = {
   computadoras: 'Computadoras',
   perifericos: 'Perifericos',
 };
-
-function parseArsPrice(value: string): number {
-  const digits = value.replace(/\D/g, '');
-  return parseInt(digits, 10) || 0;
-}
 
 function slugify(value: string): string {
   return value
