@@ -1,3 +1,4 @@
+import { parseScrapedArsPrice as parseArsPrice } from './scraper-helpers';
 import { HardwareCategory, Product, StockStatus } from '../types';
 
 const WIZTECH_BASE_URL = 'https://wiztech.com.ar';
@@ -43,14 +44,6 @@ const CATEGORY_COMPONENT_TERMS: Record<HardwareCategory, string[]> = {
   computadoras: ['pc armada', 'notebook', 'computadora'],
   perifericos: ['monitor', 'mouse', 'teclado', 'auricular', 'microfono', 'parlante', 'mousepad'],
 };
-
-function parseArsPrice(value: string | number | null | undefined): number {
-  if (typeof value === 'number' && Number.isFinite(value)) return Math.max(0, Math.trunc(value));
-  const raw = String(value ?? '').replace(/[^0-9,.]/g, '');
-  if (!raw) return 0;
-  const normalized = raw.replace(/[,.]\d{1,2}$/, '').replace(/[,.]/g, '');
-  return parseInt(normalized, 10) || 0;
-}
 
 function cleanText(value: string | null | undefined): string {
   return (value ?? '').replace(/\s+/g, ' ').trim();

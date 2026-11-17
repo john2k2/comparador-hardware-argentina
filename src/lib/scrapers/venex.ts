@@ -155,6 +155,9 @@ export async function fetchVenexProducts(
   signal?: AbortSignal,
 ): Promise<Product[]> {
   const result = await scrapeVenexProducts(categoryUrl, categorySlug, signal);
+  // Un 403/429 o un corte de red no es una búsqueda vacía: quien observa la
+  // fuente debe registrarlo como fallo para abrir el circuito de protección.
+  if (result.error) throw new Error(result.error.message);
   return result.data;
 }
 

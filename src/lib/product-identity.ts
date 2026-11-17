@@ -253,7 +253,8 @@ function parseCpuModelSignatureUncached(value: string): ChipSignature | null {
     };
   }
 
-  const intel = normalized.match(/\bcore\s*i([3579])\s*(\d{4,5})([a-z]{0,2})\b/);
+  // Muchas tiendas omiten "Core": "Intel i5 12400" es el mismo chip que "Core i5 12400".
+  const intel = normalized.match(/\b(?:core\s*)?i([3579])\s*(\d{4,5})([a-z]{0,2})\b/);
   if (intel) {
     return {
       family: `corei${intel[1]}`,
@@ -290,7 +291,8 @@ function parseGpuChipSignatureUncached(value: string): ChipSignature | null {
   if (nvidia) {
     const suffixes: string[] = [];
     if (nvidia[3]) suffixes.push('ti');
-    if (nvidia[4] === 'super' || (nvidia[3] && /\b(?:rtx|gtx)\s*\d{3,4}\s*ti\s+s(?:\s|$)/.test(normalized))) {
+    // "RTX 4070 S" y "RTX 4070 Ti S" abrevian Super.
+    if (nvidia[4] === 'super' || /\b(?:rtx|gtx)\s*\d{3,4}(?:\s*ti)?\s+s(?:\s|$)/.test(normalized)) {
       suffixes.push('super');
     }
     return { family: nvidia[1], number: nvidia[2], suffixes };
@@ -533,7 +535,7 @@ function extractCpuFamilyKey(value: string): string | null {
     return `cpu-family:ryzen${ryzenMatch[1]}-${ryzenMatch[2]}`;
   }
 
-  const intelMatch = normalized.match(/\bcore\s*i([3579])\s*(\d{4,5})[a-z]{0,2}\b/);
+  const intelMatch = normalized.match(/\b(?:core\s*)?i([3579])\s*(\d{4,5})[a-z]{0,2}\b/);
   if (intelMatch) {
     return `cpu-family:corei${intelMatch[1]}-${intelMatch[2]}`;
   }

@@ -63,18 +63,16 @@ describe('venex scraper', () => {
       expect(result.length).toBeGreaterThan(0);
     });
 
-    it('returns empty array on HTTP error', async () => {
+    it('rejects on HTTP error so the failure is observable', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
         ok: false,
         status: 500,
       }));
 
-      const result = await fetchVenexProducts(
+      await expect(fetchVenexProducts(
         'https://www.venex.com.ar/productos/tarjetas-graficas',
         'tarjetas-graficas'
-      );
-
-      expect(result).toEqual([]);
+      )).rejects.toThrow(/HTTP 500/);
     });
 
     it('conserva el título completo y distingue una oferta comprable de stock desconocido', async () => {
