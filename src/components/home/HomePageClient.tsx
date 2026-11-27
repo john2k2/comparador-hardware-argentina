@@ -55,9 +55,12 @@ export function HomePageClient({ latestOffersSection, priceDropSection, showGame
   return (
     <>
       <section aria-labelledby="home-search-title" className="mb-6 min-w-0 max-w-full">
-        <h1 id="home-search-title" className="mb-3 font-mono! text-base font-bold text-foreground">
-          Compará precios de hardware
+        <h1 id="home-search-title" className="mb-2 font-mono! text-lg font-bold text-foreground md:text-xl">
+          Compará precios de hardware en más de 30 tiendas argentinas
         </h1>
+        <p className="mb-4 max-w-3xl font-body text-sm leading-relaxed text-muted-foreground md:text-base">
+          Buscá un componente y mirá en un solo lugar quién lo tiene más barato, con stock y fecha de cada precio. Gratis y sin registrarte.
+        </p>
         <SearchBar onSearch={handleSearch} placeholder="[ BUSCAR PRODUCTO... ]" />
         <nav aria-label="Comparar y armar hardware" className="mt-4 flex flex-wrap gap-3">
           <Link href="/comparativa/comparar" prefetch={false} className="pixel-button inline-flex min-h-11 items-center justify-center text-xs">Comparar dos modelos</Link>
@@ -66,13 +69,13 @@ export function HomePageClient({ latestOffersSection, priceDropSection, showGame
       </section>
 
       <section aria-labelledby="home-method-title" className="mb-8 min-w-0 border-2 border-border bg-card p-4 md:p-5 font-body text-sm leading-relaxed">
-        <h2 id="home-method-title" className="font-mono! text-base font-bold text-secondary">Del precio publicado a una compra comparable</h2>
-        <ol className="mt-3 grid gap-4 md:grid-cols-3 list-decimal pl-5">
-          <li><strong>Misma variante.</strong> Contrastá modelo, capacidad y accesorios. Apartamos de la comparación las ofertas cuya identidad necesita revisión.</li>
-          <li><strong>Fecha por oferta.</strong> El catálogo compara precios observados en las últimas 24 h; guías y armador exigen hasta tres horas. Una referencia vencida no confirma agotamiento.</li>
-          <li><strong>Costo final.</strong> Revisá el medio de pago y el envío en la tienda. En las fichas con varias ofertas podés cargar el envío de cada una y comparar los totales.</li>
-        </ol>
-        <p className="mt-3 text-muted-foreground">No vendemos productos ni probamos físicamente todos los modelos. Las guías separan sus fuentes, criterios y límites. <Link href="/acerca" prefetch={false} className="text-secondary underline underline-offset-4">Conocé cómo comparamos</Link> o <Link href="/contacto" prefetch={false} className="text-secondary underline underline-offset-4">reportá un precio o una variante incorrecta</Link>.</p>
+        <h2 id="home-method-title" className="font-mono! text-base font-bold text-secondary">Por qué confiar en nuestras comparaciones</h2>
+        <ul className="mt-3 grid gap-4 md:grid-cols-3">
+          <li><strong>Mismo modelo, sin trampas.</strong> Agrupamos sólo ofertas de la misma variante: no mezclamos una RTX 5060 con una 5060 Ti ni 16 GB con 32 GB.</li>
+          <li><strong>Cada precio con su fecha.</strong> Ves cuándo revisamos cada oferta. Las guías y el armador usan precios de las últimas tres horas.</li>
+          <li><strong>Costo final real.</strong> Podés sumar el envío de cada tienda y comparar totales antes de comprar.</li>
+        </ul>
+        <p className="mt-3 text-muted-foreground">No vendemos hardware: comprás directo en la tienda. <Link href="/acerca" prefetch={false} className="text-secondary underline underline-offset-4">Cómo comparamos</Link> · <Link href="/contacto" prefetch={false} className="text-secondary underline underline-offset-4">Reportar un precio incorrecto</Link></p>
       </section>
 
       <div className={hasSponsoredStores ? 'grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_320px]' : ''}>

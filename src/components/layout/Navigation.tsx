@@ -149,12 +149,12 @@ export function Navigation({ showGames = false }: { showGames?: boolean } = {}) 
               {/* Logo Text */}
               <div className="min-w-0 flex flex-col justify-center">
                 <span
-                  className="font-bold text-[14px] md:text-[18px] text-foreground uppercase tracking-wider truncate md:[text-shadow:4px_4px_0_#88c0d0]"
+                  className="font-bold text-[14px] md:text-[18px] text-foreground uppercase tracking-wider truncate md:[text-shadow:2px_2px_0_#88c0d0]"
                 >
                   HARDWARE<span className="text-primary group-hover:text-secondary transition-colors ml-[1px]">AR</span>
                 </span>
                 <span className="text-[10px] font-mono! text-muted-foreground font-bold uppercase ml-1">
-                  V1.0_READY
+                  Comparador de precios
                 </span>
               </div>
             </Link>
