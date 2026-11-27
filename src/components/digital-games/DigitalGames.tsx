@@ -6,6 +6,7 @@ import { isEnebaOfferFresh, readEnebaSnapshot, type EnebaSnapshot } from '@/lib/
 import { trackEnebaClick, trackEnebaPilotView } from '@/lib/eneba/analytics';
 import { ANALYTICS_READY_EVENT } from '@/lib/analytics/consent';
 import { OfferReportLink } from '@/components/commercial/OfferReportLink';
+import { EnebaBlackFridayBanner } from './EnebaBlackFridayBanner';
 
 const formatDate = (value: string) => new Intl.DateTimeFormat('es-AR', {
   dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Argentina/Buenos_Aires',
@@ -61,7 +62,9 @@ export function DigitalGames({ testData = false }: { testData?: boolean } = {}) 
         <Link href="/search" className="mt-4 inline-flex min-h-11 items-center font-mono text-sm text-secondary underline underline-offset-4">Buscar componentes de hardware</Link>
       </header>
 
-      <aside aria-label="Aviso de afiliación" className="mt-8 border-2 border-secondary bg-card p-5 font-mono text-sm normal-case leading-7">
+      <div className="mt-8"><EnebaBlackFridayBanner surface="digital_games" /></div>
+
+      <aside aria-label="Aviso de afiliación" className="mt-2 border-2 border-secondary bg-card p-5 font-mono text-sm normal-case leading-7">
         <p className="font-bold text-secondary">ENLACES AFILIADOS</p>
         <p>Si comprás desde estos enlaces, Comparador Hardware Argentina puede recibir una comisión de Eneba. El precio final puede incluir cargos según el medio de pago: confirmalo en la tienda.</p>
       </aside>

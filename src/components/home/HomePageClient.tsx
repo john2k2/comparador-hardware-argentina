@@ -15,6 +15,7 @@ import { SponsoredStoresSection } from './SponsoredStoresSection';
 import { hydrateProducts } from '@/lib/product-serialization';
 import { SectionTitle } from './SectionTitle';
 import { EnebaPromotion } from './EnebaPromotion';
+import { EnebaBlackFridayBanner } from '@/components/digital-games/EnebaBlackFridayBanner';
 
 const PRIMARY_CATEGORIES = ['procesadores', 'tarjetas-graficas', 'memoria-ram', 'motherboards'];
 const RECENT_PRODUCTS_LIMIT = 4;
@@ -77,6 +78,8 @@ export function HomePageClient({ latestOffersSection, priceDropSection, showGame
         </ul>
         <p className="mt-3 text-muted-foreground">No vendemos hardware: comprás directo en la tienda. <Link href="/acerca" prefetch={false} className="text-secondary underline underline-offset-4">Cómo comparamos</Link> · <Link href="/contacto" prefetch={false} className="text-secondary underline underline-offset-4">Reportar un precio incorrecto</Link></p>
       </section>
+
+      {showGamesPromotion && <EnebaBlackFridayBanner surface="home" />}
 
       <div className={hasSponsoredStores ? 'grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_320px]' : ''}>
         <div className="min-w-0">
