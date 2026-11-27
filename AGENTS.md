@@ -113,6 +113,7 @@ public/                # Assets estáticos
 - **WooCommerce** (11): Katech, Dinobyte, MaxTecno, TheGamerShop, Hardcore, GoldenTechStore, Acuario Insumos, Beings, Gamers Point, LionTech, SCP Hardstore.
 - **Plataformas**: TiendaNube, PrestaShop, Qloud, Foxtienda.
 - **PortalTech**: pasa por Cloudflare (token opcional).
+- **Pausadas** (`stores.is_active = false`, migración `20261127200000_pause_unresponsive_stores.sql`): FullH4rd, Venex, Hardcore, SCP Hardstore (bloquean al runner), Beings, PortalTech, HF Tecnología, Compugarden, Click Gaming, Gezatek, WizTech y 37bytes (sin observaciones). La cola adaptativa no las reclama; historial y última observación se conservan. Reactivar sólo con evidencia de que su scraper vuelve a observar precios.
 - Rate limit por defecto: 2s entre requests. Backoff ante 403/429 para WooCommerce.
 
 ### Refresh del catálogo
