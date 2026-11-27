@@ -1,0 +1,56 @@
+name: Public uptime check
+# Comprueba rutas públicas clave y abre un issue visible si el sitio responde 5xx.
+# Sólo hace GET públicos: no usa secretos del catálogo ni despacha refresh.
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: public-uptime
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      BASE_URL: https://www.comparador-hardware.com.ar
+      ISSUE_TITLE: 'Sitio caído: rutas públicas con error 5xx'
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Probe public routes
+        id: probe
+        run: |
+          failed=""
+          for path in "/" "/search?q=ryzen" "/comparar/procesadores" "/guia/pc-gamer-1-millon" "/api/home/sections"; do
+            code=000
+            # Dos intentos para no alertar por un error aislado.
+            for attempt in 1 2; do
+              code=$(curl -s -o /dev/null -w '%{http_code}' -A 'comparador-uptime/1.0' --max-time 25 "$BASE_URL$path" || echo 000)
+              case "$code" in 5*|000) sleep 10 ;; *) break ;; esac
+            done
+            echo "$path -> $code"
+            case "$code" in 5*|000) failed="$failed $path($code)" ;; esac
+          done
+          echo "failed=$failed" >> "$GITHUB_OUTPUT"
+      - name: Open or update outage issue
+        if: steps.probe.outputs.failed != ''
+        run: |
+          body="Rutas con error:${{ steps.probe.outputs.failed }}"$'\n\n'"Comprobado: $(date -u +%FT%TZ). Revisar túnel del VPS del catálogo (catalog-api) y el contenedor cloudflared."
+          number=$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number -q '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body "$body"
+          else
+            gh issue create --title "$ISSUE_TITLE" --body "$body"
+          fi
+          exit 1
+      - name: Close outage issue when healthy
+        if: steps.probe.outputs.failed == ''
+        run: |
+          number=$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number -q '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue close "$number" --comment "Rutas públicas respondiendo sin 5xx desde $(date -u +%FT%TZ)."
+          fi
