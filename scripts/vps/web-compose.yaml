@@ -1,7 +1,7 @@
 name: comparador-catalog
 services:
   web:
-    image: comparador-web:20261020-candidate
+    image: comparador-web:20261102-guide-recovery
     container_name: comparador-catalog-web
     restart: unless-stopped
     mem_limit: 1536m

@@ -43,7 +43,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # Fijado: Node 22.23.5 trae un SQLite que rechaza las consultas del lector D1 en tests.
+          node-version: '22.23.4'
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chrome
@@ -97,9 +98,9 @@ jobs:
         run: |
           npx opennextjs-cloudflare build
           npx wrangler deploy --dry-run --outdir /tmp/comparador-worker-check
-          mkdir -p outputs/cloudflare-mac-assets/_next
-          cp -R .next/static outputs/cloudflare-mac-assets/_next/static
-          npx wrangler deploy --config wrangler.mac-catalog.jsonc --dry-run --outdir /tmp/comparador-mac-proxy-check
+          mkdir -p tmp/vps-cloudflare-assets/_next
+          cp -R .next/static tmp/vps-cloudflare-assets/_next/static
+          npx wrangler deploy --config wrangler.vps-catalog.jsonc --dry-run --outdir /tmp/comparador-catalog-proxy-check
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

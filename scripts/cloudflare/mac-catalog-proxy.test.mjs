@@ -44,7 +44,7 @@ test('sitemaps de productos llegan al mismo catálogo sin desviar el editorial',
 });
 
 test('configuración enruta índice y páginas de ambos dominios al Worker de catálogo', () => {
-  const source = readFileSync(new URL('../../wrangler.mac-catalog.jsonc', import.meta.url), 'utf8').replace(/^\s*\/\/.*$/gm, '');
+  const source = readFileSync(new URL('../../wrangler.vps-catalog.jsonc', import.meta.url), 'utf8').replace(/^\s*\/\/.*$/gm, '');
   const config = JSON.parse(source);
   const patterns = new Set(config.routes.map(route => route.pattern));
   for (const hostname of ['www.comparador-hardware.com.ar', 'comparador-hardware.com.ar']) {
@@ -62,7 +62,7 @@ test('ambas selecciones de portada usan Mac y mantienen la respuesta de fallo', 
     assert.equal((await proxy.fetch(request(path), production)).status, 503);
   }
   assert.deepEqual(sent, paths.map(path => MAC_ORIGIN + path));
-  const config = JSON.parse(readFileSync(new URL('../../wrangler.mac-catalog.jsonc', import.meta.url), 'utf8').replace(/^\s*\/\/.*$/gm, ''));
+  const config = JSON.parse(readFileSync(new URL('../../wrangler.vps-catalog.jsonc', import.meta.url), 'utf8').replace(/^\s*\/\/.*$/gm, ''));
   for (const host of ['www.comparador-hardware.com.ar', 'comparador-hardware.com.ar']) {
     for (const path of paths) assert.ok(config.routes.some(route => route.pattern === host + path + '*'));
   }
@@ -78,7 +78,7 @@ test('mapa incluye sólo rutas de catálogo, suggestions y chunks; excluye porta
     assert.equal(routeKind(path), null, path);
 });
 test('Cloudflare selecciona Mac con queries reales sin salir de su allowlist', () => {
-  const config = JSON.parse(readFileSync(new URL('../../wrangler.mac-catalog.jsonc', import.meta.url), 'utf8').replace(/^\s*\/\/.*$/gm, ''));
+  const config = JSON.parse(readFileSync(new URL('../../wrangler.vps-catalog.jsonc', import.meta.url), 'utf8').replace(/^\s*\/\/.*$/gm, ''));
   const routes = parseRoutes(new Map([['mac', config.routes.map(route => route.pattern)]]));
   const paths = ['/guia/pc-gamer-1-millon', '/guia/pc-gamer-2-millones', '/guia/pc-gamer-3-millones',
     '/api/pc-builder/catalog', '/api/home/sections', '/api/home/observed-sections', '/sitemap-index.xml'];
@@ -100,7 +100,7 @@ test('guías editoriales y catálogo del armador leen Mac con límites de sólo 
   const paths = ['/guia/pc-gamer-1-millon', '/guia/pc-gamer-2-millones', '/guia/pc-gamer-3-millones', '/api/pc-builder/catalog'];
   const sent = [];
   const proxy = createMacCatalogProxy({ fetch: async req => { sent.push(req.url); return new Response('catalog-current'); } });
-  const config = JSON.parse(readFileSync(new URL('../../wrangler.mac-catalog.jsonc', import.meta.url), 'utf8').replace(/^\s*\/\/.*$/gm, ''));
+  const config = JSON.parse(readFileSync(new URL('../../wrangler.vps-catalog.jsonc', import.meta.url), 'utf8').replace(/^\s*\/\/.*$/gm, ''));
   for (const path of paths) {
     assert.equal(routeKind(path), 'catalog');
     assert.equal(routeKind(path + '/'), 'catalog');
