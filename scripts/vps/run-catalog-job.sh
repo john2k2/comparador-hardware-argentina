@@ -16,4 +16,4 @@ docker run --rm --name comparador-refresh-job --memory=1536m --cpus=1.5 --pids-l
   --log-driver=json-file --log-opt=max-size=10m --log-opt=max-file=2 \
   --mount "type=bind,src=$root/secrets/runner-runtime.json,dst=/run/private/runner-runtime.json,readonly" \
   --mount "type=bind,src=$root/receipts,dst=/receipts" \
-  comparador-web:20261020-candidate node scripts/vps/catalog-runner.mjs "$mode" "/receipts/$name.json"
+  comparador-web:20261102-guide-recovery node scripts/vps/catalog-runner.mjs "$mode" "/receipts/$name.json"
