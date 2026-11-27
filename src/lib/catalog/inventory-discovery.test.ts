@@ -3,9 +3,9 @@ import type { Product } from '@/lib/types';
 vi.mock('server-only', () => ({}));
 const mocks = vi.hoisted(() => ({ client: vi.fn(), fetch: vi.fn(), persist: vi.fn(), rpc: vi.fn() }));
 vi.mock('@/lib/server/supabase-server', () => ({ getServerSupabaseServiceClient: mocks.client }));
-vi.mock('@/lib/scrapers/source-inventory', () => ({ fetchSourceInventory: mocks.fetch, WOO_INVENTORY_STORES: new Set(['maxtecno', 'katech']) }));
+vi.mock('@/lib/scrapers/source-inventory', () => ({ fetchSourceInventory: mocks.fetch, WOO_INVENTORY_STORES: new Set(['maxtecno', 'katech', 'goldentechstore']) }));
 vi.mock('@/lib/persistence/product-catalog', () => ({ persistProductsSnapshot: mocks.persist }));
-import { planInventoryDiscovery, runInventoryDiscovery } from './inventory-discovery';
+import { inventoryDiscoveryStores, planInventoryDiscovery, runInventoryDiscovery } from './inventory-discovery';
 const product = (id: string, url = `https://maxtecno.com.ar/producto/${id}/`) => ({
   id: `maxtecno-api-${id}`, name: 'Memoria RAM Kingston DDR4 16GB', category: 'memoria-ram', specs: { SourceListingId: id, SKU: 'store-sku' },
   prices: [{ storeId: 'maxtecno', url, lastUpdated: new Date('2026-10-02T00:30:00Z') }],
@@ -42,4 +42,17 @@ it('no confirma inventario completo si falla el registro posterior a una observa
   expect(results.find(item => item.storeId === 'maxtecno')).toMatchObject({ status: 'failed', imported: 1, code: 'REFRESH_INVENTORY_REGISTER_FAILED' });
   expect(mocks.rpc.mock.calls.find(([name]) => name === 'finish_catalog_inventory')?.[1].p_success).toBe(false);
   expect(mocks.persist.mock.calls[0][0][0].prices[0].lastUpdated).toEqual(new Date('2026-10-02T00:30:00Z'));
+});
+
+it('no programa el inventario de Golden Tech y conserva el resto de las fuentes', () => {
+  expect(inventoryDiscoveryStores(['maxtecno', 'dinobyte', 'goldentechstore', 'katech']))
+    .toEqual(['compragamer', 'maxtecno', 'dinobyte', 'katech']);
+});
+it('no reclama ni lee el inventario de Golden Tech durante la corrida', async () => {
+  mocks.client.mockReturnValue({ rpc: mocks.rpc }); mocks.rpc.mockResolvedValue({ data: false, error: null });
+  const results = await runInventoryDiscovery();
+  const claimed = mocks.rpc.mock.calls.filter(([name]) => name === 'claim_catalog_inventory').map(([, args]) => args.p_store_id);
+  expect(claimed).toEqual(['compragamer', 'maxtecno', 'katech']);
+  expect(results.map(item => item.storeId)).not.toContain('goldentechstore');
+  expect(mocks.fetch).not.toHaveBeenCalled();
 });

@@ -8,6 +8,19 @@ import { persistProductsSnapshot } from '@/lib/persistence/product-catalog';
 import type { Product } from '@/lib/types';
 
 type SavedListing = { url: string; product_id: string };
+
+/**
+ * Inventarios diarios en pausa. El de Golden Tech nunca terminó en las corridas del 27/11/2026:
+ * el Store API respondió 403 en la página 17. Después, en la cola, el control visible de su ficha
+ * HTML (una lectura por corrida, ver woocommerce-known-batch) también recibió 403 y sus 704 ofertas
+ * quedaron diferidas. Hipótesis a comprobar: el volumen del inventario dispara el bloqueo de la
+ * tienda. Si el control HTML sigue en 403 sin inventario, la causa es otra y esta pausa se revierte.
+ */
+export const INVENTORY_PAUSED_STORES: ReadonlySet<string> = new Set(['goldentechstore']);
+
+export function inventoryDiscoveryStores(wooStores: Iterable<string>): string[] {
+  return ['compragamer', ...wooStores].filter(storeId => !INVENTORY_PAUSED_STORES.has(storeId));
+}
 type RegistryListing = { source_id: string; url: string; product_id: string | null };
 
 export function planInventoryDiscovery(storeId: string, products: Product[], saved: SavedListing[], registry: RegistryListing[]) {
@@ -38,7 +51,7 @@ export async function runInventoryDiscovery() {
   const client = getServerSupabaseServiceClient();
   if (!client) throw new Error('REFRESH_DATABASE_UNAVAILABLE');
   const signal = AbortSignal.timeout(7 * 60_000);
-  return Promise.all(['compragamer', ...WOO_INVENTORY_STORES].map(async storeId => {
+  return Promise.all(inventoryDiscoveryStores(WOO_INVENTORY_STORES).map(async storeId => {
     const token = randomUUID(), startedAt = new Date().toISOString();
     const claimed = await client.rpc('claim_catalog_inventory', { p_store_id: storeId, p_token: token });
     if (claimed.error) return { storeId, status: 'failed', code: 'REFRESH_INVENTORY_CLAIM_FAILED' };
