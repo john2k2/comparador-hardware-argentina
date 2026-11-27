@@ -21,6 +21,13 @@ export function trackEnebaPromotionClick(): void {
     affiliate_surface: 'home', cta_id: 'home-eneba-games' });
 }
 
+/** Clic saliente al banner de Black Friday; no acredita una compra ni el uso del código. */
+export function trackEnebaBlackFridayClick(surface: 'home' | 'digital_games'): void {
+  if (!canMeasure()) return;
+  trackEvent('affiliate_outbound_click', { affiliate_partner: 'eneba', affiliate_campaign: 'eneba-black-friday-2026',
+    affiliate_surface: surface, cta_id: 'eneba-black-friday', destination_host: 'www.eneba.com' });
+}
+
 /** Vista consentida de la selección resuelta, nunca una impresión publicitaria. */
 export function trackEnebaPilotView(status: 'ready' | 'empty' | 'error', offerCount: number): void {
   if (!canMeasure() || !firstEventInNavigation('eneba-pilot-view')) return;
