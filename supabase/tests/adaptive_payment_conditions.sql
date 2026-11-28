@@ -2,13 +2,13 @@
 BEGIN;
 INSERT INTO public.stores(id,name,url)
  SELECT sid,sid,'https://' || sid || '.example'
- FROM unnest(ARRAY['compragamer','mexx','xtpc','gamingcity','compugarden','maxtecno','gezatek','maximus','goldentechstore','katech']) sid
+ FROM unnest(ARRAY['compragamer','mexx','xtpc','gamingcity','compugarden','maxtecno','gezatek','maximus','goldentechstore','katech','dinobyte']) sid
  ON CONFLICT(id) DO NOTHING;
 INSERT INTO public.products(id,name,model,category) VALUES ('payment-test-product','Procesador Ryzen 7600','7600','procesadores');
 DO $$
 DECLARE sid text; target uuid; tok uuid:=gen_random_uuid(); observed timestamptz:=clock_timestamp(); evidence jsonb;
 BEGIN
- FOR sid IN SELECT unnest(ARRAY['compragamer','mexx','xtpc','gamingcity','compugarden','maxtecno','gezatek','maximus','goldentechstore','katech']) LOOP
+ FOR sid IN SELECT unnest(ARRAY['compragamer','mexx','xtpc','gamingcity','compugarden','maxtecno','gezatek','maximus','goldentechstore','katech','dinobyte']) LOOP
   INSERT INTO public.product_prices(product_id,store_id,url,price,stock,last_updated)
    VALUES ('payment-test-product',sid,'https://example.com/payment-test',100,'out-of-stock',now()-interval '3 days') RETURNING id INTO target;
   INSERT INTO public.catalog_offer_refresh_state(offer_id,category,lease_token,leased_until) VALUES (target,'procesadores',tok,now()+interval '20 minutes')
@@ -16,7 +16,7 @@ BEGIN
   evidence:=jsonb_build_object('listingRef',sid||':url:https://example.com/payment-test','title','Procesador Ryzen 7600');
   IF persist_adaptive_offer(target,tok,1,NULL,'in-stock',NULL,NULL,now(),observed,NULL,'template',jsonb_set(evidence,'{title}','"§ITEMTIT§"'),'special') THEN RAISE EXCEPTION 'Acepta plantilla no resuelta'; END IF;
   IF persist_adaptive_offer(target,gen_random_uuid(),200,NULL,'unknown',NULL,NULL,now(),observed,NULL,'payment',evidence,'special') THEN RAISE EXCEPTION 'Acepta token incorrecto'; END IF;
-  IF sid='katech' THEN
+  IF sid='dinobyte' THEN
    IF persist_adaptive_offer(target,tok,200,NULL,'unknown',NULL,NULL,now(),observed,NULL,'payment',evidence,'special') THEN RAISE EXCEPTION 'Amplió condiciones a una fuente sin constatación'; END IF;
   ELSE
    IF NOT persist_adaptive_offer(target,tok,200,NULL,'unknown',NULL,NULL,now(),observed,NULL,'payment',evidence,'special') THEN RAISE EXCEPTION 'Rechaza condición constatada: %',sid; END IF;
@@ -25,7 +25,7 @@ BEGIN
   END IF;
   IF NOT finish_catalog_refresh(target,tok,'observed') THEN RAISE EXCEPTION 'No libera reserva'; END IF;
  END LOOP;
- IF (SELECT count(*) FROM price_history WHERE product_id='payment-test-product') <> 9 THEN RAISE EXCEPTION 'Historial incorrecto'; END IF;
+ IF (SELECT count(*) FROM price_history WHERE product_id='payment-test-product') <> 10 THEN RAISE EXCEPTION 'Historial incorrecto'; END IF;
  IF has_function_privilege('anon','public.persist_adaptive_offer(uuid,uuid,numeric,numeric,text,integer,numeric,timestamptz,timestamptz,jsonb,text,jsonb,text)','EXECUTE') THEN RAISE EXCEPTION 'Amplió permisos públicos'; END IF;
 END $$;
 ROLLBACK;
