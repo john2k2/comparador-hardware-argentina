@@ -34,7 +34,7 @@ const server = http.createServer(async (req, res) => {
     if (!['Bearer fixture-admin', 'Bearer fixture-member', 'Bearer fixture-forged'].includes(token)) return json(res, { message: 'Invalid fixture token' }, 401);
     return json(res, { id: token === 'Bearer fixture-admin' ? adminId : '00000000-0000-4000-8000-000000000002', aud: 'authenticated', role: 'authenticated', email: 'fixture@example.invalid', app_metadata: token === 'Bearer fixture-admin' ? { is_admin: true } : {}, user_metadata: token === 'Bearer fixture-forged' ? { is_admin: true, role: 'admin' } : {}, created_at: '2026-01-01T00:00:00Z' });
   }
-  if (url.pathname === '/rest/v1/rpc/catalog_refresh_coverage') return json(res, [{ reason: 'components', store_id: 'fixture-store', total: 100, observed_24h: 20, observed_3h: 5, never_attempted: 10 }]);
+  if (url.pathname === '/rest/v1/rpc/catalog_refresh_coverage') return json(res, [{ reason: 'components', store_id: 'fixture-store', total: 100, observed_24h: 20, observed_3h: 5, never_attempted: 10, stock_total: 40, stock_observed_24h: 12, stock_observed_3h: 3, out_of_stock_total: 50, stock_unknown: 10 }]);
   if (['/rest/v1/api_cache_entries', '/rest/v1/measurement_dashboard_entries'].includes(url.pathname)) {
     if (req.headers.apikey !== 'sb_secret_measurement_fixture_only') return json(res, { message: 'RLS denied fixture public access' }, 403);
     if (req.method === 'POST') {

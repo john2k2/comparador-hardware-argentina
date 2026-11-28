@@ -83,6 +83,7 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f supabase/tests/network_thermal_categories.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/current_offer_evidence.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/adaptive_component_window.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/coverage_components_with_stock.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/catalog_product_prefilter.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/catalog_current_seed.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/catalog_search_lookup.sql

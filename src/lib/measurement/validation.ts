@@ -34,6 +34,7 @@ export function parseManualReading(value: unknown, now = new Date()): Measuremen
     metrics[key] = number as number | null;
   }
   if (typeof metrics.observed24h === 'number' && typeof metrics.total === 'number' && metrics.observed24h > metrics.total) throw new Error('Las observaciones no pueden superar el total de ofertas.');
+  if (typeof metrics.stockObserved24h === 'number' && typeof metrics.stockTotal === 'number' && metrics.stockObserved24h > metrics.stockTotal) throw new Error('Las observaciones no pueden superar el total de ofertas con stock.');
   return { version: 1, provider: value.provider, origin: 'manual', collectedAt: new Date(at).toISOString(), period: { start, end, timeZone }, metrics, notes: ['Lectura cargada por el administrador. Contrastarla con el informe original de la cuenta.'] };
 }
 

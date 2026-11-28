@@ -211,12 +211,32 @@ async function readCatalog(now: Date): Promise<MeasurementReading> {
   if (!client) throw new ProviderReadError('needs_setup', 'Falta la conexión privada de Supabase.');
   const { data, error } = await client.rpc('catalog_refresh_coverage').abortSignal(AbortSignal.timeout(12_000));
   if (error || !Array.isArray(data)) throw new ProviderReadError('error', 'No se pudo leer la cobertura del catálogo. Se conserva la última lectura.');
-  const components = data.filter((row: unknown) => isRecord(row) && row.reason === 'components') as Record<string, unknown>[];
+  // 'unavailable' agrupa componentes agotados espaciados en la cola: siguen siendo componentes
+  // y no pueden salir del denominador sin decirlo (AGENTS.md).
+  const components = data.filter((row: unknown) => isRecord(row) && (row.reason === 'components' || row.reason === 'unavailable')) as Record<string, unknown>[];
   if (!components.length) throw new ProviderReadError('error', 'La consulta no devolvió observaciones de componentes.');
   const sum = (key: string) => components.reduce((total, row) => total + number(row[key]), 0);
-  const result = reading('catalog', { total: sum('total'), observed24h: sum('observed_24h'), observed3h: sum('observed_3h'), neverAttempted: sum('never_attempted'), stores: components.length }, now, ['Observaciones reales de componentes en las últimas 24 horas. No acredita stock, identidad ni elegibilidad de una guía.', 'Lectura de la cobertura existente: no ejecuta scraping ni renueva fechas.']);
+  // Meta desde el 28/11/2026: componentes con stock (último estado observado) vistos en 24 h.
+  // Sin la migración 20261128060000 la base no informa estos campos y la lectura lo dice.
+  const withStock = components.every((row) => typeof row.stock_total === 'number' && typeof row.stock_observed_24h === 'number');
+  const metrics: Record<string, number | null> = withStock
+    ? { stockTotal: sum('stock_total'), stockObserved24h: sum('stock_observed_24h'), stockObserved3h: sum('stock_observed_3h') }
+    : { stockTotal: null, stockObserved24h: null, stockObserved3h: null };
+  Object.assign(metrics, { total: sum('total'), observed24h: sum('observed_24h'), observed3h: sum('observed_3h'), neverAttempted: sum('never_attempted'), stores: new Set(components.map((row) => row.store_id)).size });
+  const result = reading('catalog', metrics, now, [
+    withStock ? 'Componentes con stock observados en las últimas 24 horas, según el último stock visto. No acredita identidad ni elegibilidad de una guía.'
+      : 'La base todavía no informa ofertas con stock: falta aplicar la migración de cobertura. Se muestran todos los componentes.',
+    'Lectura de la cobertura existente: no ejecuta scraping ni renueva fechas.']);
   result.period = { start: new Date(now.getTime() - 86400000).toISOString().slice(0, 10), end: now.toISOString().slice(0, 10), timeZone: 'UTC' };
-  result.breakdown = components.map((row) => ({ label: String(row.store_id).slice(0, 80), value: number(row.total) ? number(row.observed_24h) / number(row.total) * 100 : 0 })).sort((a, b) => a.value - b.value).slice(0, 8);
+  const byStore = new Map<string, { total: number; observed: number }>();
+  for (const row of components) {
+    const store = String(row.store_id).slice(0, 80), entry = byStore.get(store) ?? { total: 0, observed: 0 };
+    entry.total += number(withStock ? row.stock_total : row.total);
+    entry.observed += number(withStock ? row.stock_observed_24h : row.observed_24h);
+    byStore.set(store, entry);
+  }
+  // Una tienda sin ofertas con stock no tiene porcentaje: no se muestra como 0 %.
+  result.breakdown = [...byStore].filter(([, entry]) => entry.total > 0).map(([label, entry]) => ({ label, value: entry.observed / entry.total * 100 })).sort((a, b) => a.value - b.value).slice(0, 8);
   return result;
 }
 
