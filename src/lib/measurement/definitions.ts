@@ -18,8 +18,8 @@ export const PROVIDERS: Record<ProviderId, { name: string; purpose: string; url:
     setup: ['Crear una autorización de lectura de estadísticas para la cuenta y el Worker.', 'Guardarla en el servidor con acceso limitado a este proyecto.', 'Las alertas por correo y el rendimiento real del navegador se verifican aparte.'],
   },
   catalog: {
-    name: 'Catálogo y precios', purpose: 'Qué proporción de las ofertas se revisó en las últimas 24 horas.',
-    url: '/admin/stores', automatic: true, scope: 'Componentes · observaciones reales de las últimas 24 horas',
+    name: 'Catálogo y precios', purpose: 'Qué proporción de los componentes con stock se revisó en las últimas 24 horas.',
+    url: '/admin/stores', automatic: true, scope: 'Componentes con stock (último estado observado) · observaciones reales de las últimas 24 horas',
     setup: ['Usa la conexión privada de Supabase que ya tiene el proyecto.', 'Actualizar lee la cobertura existente; no inicia scraping ni cambia precios.', 'Una observación reciente no garantiza stock ni compatibilidad.'],
   },
   operations: {
@@ -58,7 +58,7 @@ export const METRIC_KEYS: Record<ProviderId, readonly string[]> = {
   ga4: ['users', 'sessions', 'views', 'engagedSessions', 'outboundClicks', 'outboundUsers', 'budgets', 'affiliateClicks', 'affiliateViews', 'contactIntents', ...JOURNEY_METRIC_KEYS],
   'search-console': ['clicks', 'impressions', 'ctr', 'position', 'previousClicks'],
   cloudflare: ['requests', 'errors', 'resourceErrors'],
-  catalog: ['stockTotal', 'stockObserved24h', 'stockObserved3h', 'total', 'observed24h', 'observed3h', 'neverAttempted', 'stores'],
+  catalog: ['stockTotal', 'stockObserved24h', 'stockObserved3h', 'outOfStockTotal', 'stockUnknown', 'total', 'observed24h', 'observed3h', 'neverAttempted', 'stores'],
   operations: ['requests', 'errors', 'storesWithObservations', 'criticalAlerts', 'warningAlerts'],
   github: ['runs', 'successful', 'failed', 'inProgress'],
   eneba: ['offers'],

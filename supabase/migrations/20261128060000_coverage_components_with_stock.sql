@@ -2,10 +2,14 @@
 -- observados en 24 h. Agotado o reserva no es un precio comprable; medir su frescura junto con
 -- las ofertas con stock mezclaba dos cosas distintas.
 --
--- Agrega tres conteos por grupo, sin cambiar los existentes:
+-- Agrega cinco conteos por grupo, sin cambiar los existentes:
 --   stock_total        ofertas cuya última observación fue 'in-stock' o 'low-stock';
 --   stock_observed_24h esas mismas, observadas en las últimas 24 h;
---   stock_observed_3h  esas mismas, observadas en las últimas 3 h.
+--   stock_observed_3h  esas mismas, observadas en las últimas 3 h;
+--   out_of_stock_total ofertas cuya última observación fue 'out-of-stock';
+--   stock_unknown      ofertas con stock 'unknown'. Varios parsers devuelven 'unknown' si no
+--                      encuentran el texto de stock: si este número sube en una tienda, revisar
+--                      su parser antes de leer la cobertura (el denominador con stock baja).
 -- "Con stock" es el último estado observado: una oferta con stock vista hace un mes sigue en el
 -- denominador y no en el numerador. No se infiere stock ni agotamiento por vencimiento.
 --
@@ -13,6 +17,8 @@
 -- La ventana de siete días de la meta del 95 % se reinicia el día en que se aplica esta migración.
 -- CREATE OR REPLACE conserva propietario y permisos; jit=off se repite porque los SET no se heredan.
 -- Revertir: recrear la definición de 20261001184805_adaptive_catalog_refresh.sql con set jit=off.
+-- Antes de aplicar y después, correr EXPLAIN (ANALYZE, BUFFERS) select catalog_refresh_coverage();
+-- el tablero la lee con un límite de 12 s.
 begin;
 set local lock_timeout='5s';
 set local statement_timeout='60s';
@@ -29,7 +35,9 @@ language sql stable security invoker set search_path = pg_catalog, public set ji
       count(*) filter (where pp.stock in ('in-stock','low-stock')
         and v.last_updated between now()-interval '24 hours' and now()+interval '1 minute') stock_observed_24h,
       count(*) filter (where pp.stock in ('in-stock','low-stock')
-        and v.last_updated between now()-interval '3 hours' and now()+interval '1 minute') stock_observed_3h
+        and v.last_updated between now()-interval '3 hours' and now()+interval '1 minute') stock_observed_3h,
+      count(*) filter (where pp.stock = 'out-of-stock') out_of_stock_total,
+      count(*) filter (where pp.stock = 'unknown') stock_unknown
     from public.catalog_refresh_policy v
     join public.product_prices pp on pp.id = v.offer_id
     group by v.store_id, v.reason, v.interval_hours order by v.store_id, v.reason

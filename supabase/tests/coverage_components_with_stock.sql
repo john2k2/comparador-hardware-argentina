@@ -17,7 +17,8 @@ begin
  select jsonb_build_object(
    'total', sum((g->>'total')::int), 'observed_24h', sum((g->>'observed_24h')::int),
    'stock_total', sum((g->>'stock_total')::int), 'stock_observed_24h', sum((g->>'stock_observed_24h')::int),
-   'stock_observed_3h', sum((g->>'stock_observed_3h')::int))
+   'stock_observed_3h', sum((g->>'stock_observed_3h')::int),
+   'out_of_stock_total', sum((g->>'out_of_stock_total')::int), 'stock_unknown', sum((g->>'stock_unknown')::int))
  into cov
  from jsonb_array_elements(public.catalog_refresh_coverage()) g where g->>'store_id' = 'coverage-store';
  -- Los campos anteriores no cambian: 5 ofertas, 4 observadas en 24 h.
@@ -27,6 +28,9 @@ begin
  assert (cov->>'stock_total')::int = 3, format('Denominador con stock: %s', cov);
  assert (cov->>'stock_observed_24h')::int = 2, format('Con stock observadas en 24 h: %s', cov);
  assert (cov->>'stock_observed_3h')::int = 1, format('Con stock observadas en 3 h: %s', cov);
+ -- Lo excluido queda a la vista: 1 agotada y 1 desconocida.
+ assert (cov->>'out_of_stock_total')::int = 1, format('Agotadas: %s', cov);
+ assert (cov->>'stock_unknown')::int = 1, format('Stock desconocido: %s', cov);
  assert not has_function_privilege('anon','public.catalog_refresh_coverage()','EXECUTE'), 'La cobertura sigue privada';
  assert has_function_privilege('service_role','public.catalog_refresh_coverage()','EXECUTE'), 'El runner conserva acceso';
 end $$;

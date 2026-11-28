@@ -235,7 +235,8 @@ async function readCatalog(now: Date): Promise<MeasurementReading> {
     entry.observed += number(withStock ? row.stock_observed_24h : row.observed_24h);
     byStore.set(store, entry);
   }
-  result.breakdown = [...byStore].map(([label, entry]) => ({ label, value: entry.total ? entry.observed / entry.total * 100 : 0 })).sort((a, b) => a.value - b.value).slice(0, 8);
+  // Una tienda sin ofertas con stock no tiene porcentaje: no se muestra como 0 %.
+  result.breakdown = [...byStore].filter(([, entry]) => entry.total > 0).map(([label, entry]) => ({ label, value: entry.observed / entry.total * 100 })).sort((a, b) => a.value - b.value).slice(0, 8);
   return result;
 }
 
