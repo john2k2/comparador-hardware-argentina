@@ -58,7 +58,7 @@ export const METRIC_KEYS: Record<ProviderId, readonly string[]> = {
   ga4: ['users', 'sessions', 'views', 'engagedSessions', 'outboundClicks', 'outboundUsers', 'budgets', 'affiliateClicks', 'affiliateViews', 'contactIntents', ...JOURNEY_METRIC_KEYS],
   'search-console': ['clicks', 'impressions', 'ctr', 'position', 'previousClicks'],
   cloudflare: ['requests', 'errors', 'resourceErrors'],
-  catalog: ['total', 'observed24h', 'observed3h', 'neverAttempted', 'stores'],
+  catalog: ['stockTotal', 'stockObserved24h', 'stockObserved3h', 'total', 'observed24h', 'observed3h', 'neverAttempted', 'stores'],
   operations: ['requests', 'errors', 'storesWithObservations', 'criticalAlerts', 'warningAlerts'],
   github: ['runs', 'successful', 'failed', 'inProgress'],
   eneba: ['offers'],

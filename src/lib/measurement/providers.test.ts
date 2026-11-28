@@ -210,6 +210,25 @@ describe('consultas privadas de las fuentes', () => {
     expect(mocked.rpc).toHaveBeenCalledWith('catalog_refresh_coverage');
     expect(fetch).not.toHaveBeenCalled();
   });
+  it('mide componentes con stock y no saca a los agotados espaciados del total', async () => {
+    mocked.rpc.mockReturnValue({ abortSignal: async () => ({ data: [
+      { reason: 'components', store_id: 'a', total: 100, observed_24h: 60, observed_3h: 5, never_attempted: 0, stock_total: 40, stock_observed_24h: 30, stock_observed_3h: 4 },
+      { reason: 'unavailable', store_id: 'a', total: 50, observed_24h: 10, observed_3h: 1, never_attempted: 0, stock_total: 0, stock_observed_24h: 0, stock_observed_3h: 0 },
+      { reason: 'components', store_id: 'b', total: 10, observed_24h: 2, observed_3h: 0, never_attempted: 1, stock_total: 10, stock_observed_24h: 2, stock_observed_3h: 0 },
+      { reason: 'maintenance', store_id: 'a', total: 900, observed_24h: 800, stock_total: 900, stock_observed_24h: 800 },
+    ], error: null }) });
+    const result = await createProviderReader(now)('catalog');
+    expect(result.metrics).toEqual({ stockTotal: 50, stockObserved24h: 32, stockObserved3h: 4, total: 160, observed24h: 72, observed3h: 6, neverAttempted: 1, stores: 2 });
+    expect(result.breakdown).toEqual([{ label: 'b', value: 20 }, { label: 'a', value: 75 }]);
+  });
+  it('sin la migración de stock no inventa la meta nueva y lo avisa', async () => {
+    mocked.rpc.mockReturnValue({ abortSignal: async () => ({ data: [
+      { reason: 'components', store_id: 'a', total: 100, observed_24h: 10, observed_3h: 3, never_attempted: 5 },
+    ], error: null }) });
+    const result = await createProviderReader(now)('catalog');
+    expect(result.metrics).toMatchObject({ stockTotal: null, stockObserved24h: null, total: 100, observed24h: 10 });
+    expect(result.notes[0]).toMatch(/falta aplicar la migración/);
+  });
   it('un error de Supabase no convierte las observaciones en cero', async () => {
     mocked.rpc.mockReturnValue({ abortSignal: async () => ({ data: null, error: { message: 'private diagnostic' } }) });
     await expect(createProviderReader(now)('catalog')).rejects.toThrow('No se pudo leer');

@@ -1,6 +1,8 @@
 # Espaciado de ofertas agotadas en la cola adaptativa
 
-Estado: propuesta, revisión 2 (28/11/2026). No implementado. Necesita dos cosas antes de escribir código: la medición previa en el VPS y una decisión sobre la meta de cobertura.
+Estado: propuesta, revisión 3 (28/11/2026).
+- **Decidido:** la meta de cobertura se redefine como componentes con stock (opción 2), decisión de Jonathan del 28/11/2026. El cambio de métrica ya está implementado (migración `20261128060000_coverage_components_with_stock.sql` y tablero).
+- **Pendiente:** el espaciado de la cola sigue sin implementar hasta tener la medición previa en el VPS y `EXPLAIN` de los reclamos.
 
 ## Problema
 
@@ -75,7 +77,7 @@ then 72   -- reason 'unavailable'
 
 El techo de cobertura en 24 h baja. Si `u` es la fracción de componentes que pasa a `unavailable`, esas ofertas se observan como mucho una vez cada 72 h, y la cobertura máxima posible en 24 h queda cerca de `(1 - u) + u / 3`. Con u = 30 %, el techo es del 80 %, y la meta del 95 % deja de ser alcanzable con el criterio actual.
 
-Hay dos salidas honestas, y la decisión es de Jonathan:
+Había dos salidas honestas. **Se eligió la 2** (28/11/2026):
 
 1. **Mantener la meta tal como está** (componentes observados en 24 h, con los agotados incluidos) y aceptar que el número baja. Conviene si la meta mide frescura de todo el catálogo.
 2. **Redefinir la meta** como "componentes con stock observados en 24 h", anunciando el cambio con fecha, tamaño del conjunto excluido y nueva ventana de siete días, como se hizo con la pausa de tiendas. Conviene si la meta mide precios útiles para comprar. `scripts/catalog-freshness-report.mjs:30-32` ya cuenta sólo `in-stock`/`low-stock`, así que esta definición tiene precedente.
